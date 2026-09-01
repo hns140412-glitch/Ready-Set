@@ -1,0 +1,495 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><meta name="theme-color" content="#ffc91e"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="타임어택"><link rel="manifest" href="./manifest.json"><link rel="apple-touch-icon" href="./assets/icon-192.png"><title>타임어택 · 과제 집중</title><style>
+:root{--ink:#191817;--peach:#f7a88f;--cream:#fff9f1;--yellow:#ffc91e;--orange:#ff7047;--line:#ecd7c7;--muted:#7d6d64;--black:#171716;--good:#3c7a45}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#e9e3dc;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}body{display:flex;justify-content:center}button,input,select{font:inherit}button{touch-action:manipulation}.app{width:100%;max-width:430px;min-height:100dvh;background:#fff;position:relative;overflow:hidden}.view{min-height:100dvh;padding:calc(env(safe-area-inset-top) + 8px) 16px calc(env(safe-area-inset-bottom) + 14px)}.hidden{display:none!important}
+/* HOME — master mockup */
+.home{position:relative;overflow:hidden;background:linear-gradient(180deg,#f7aa90 0%,#fdb79e 51%,#ffe4cf 100%)}.home:before{content:"";position:absolute;left:50%;top:128px;width:620px;height:620px;transform:translateX(-50%);border-radius:50%;background:repeating-conic-gradient(from -4deg,rgba(255,247,221,.46) 0 3deg,transparent 3deg 15deg);opacity:.95}.grain{position:absolute;inset:0;background-image:radial-gradient(rgba(116,64,43,.16) .5px,transparent .5px);background-size:5px 5px;opacity:.2;pointer-events:none}.homeHead{position:relative;z-index:3;text-align:center;padding-top:5px}.eyebrow{font-size:10px;font-weight:900;letter-spacing:.26em;color:#704132}.homeTitle{font-size:46px;line-height:.87;font-weight:1000;letter-spacing:-.07em;margin-top:7px;color:#211a17}.homeSub{font-size:12px;font-weight:760;color:#65453a;margin-top:9px}.watchBox{position:relative;z-index:2;height:278px;margin:2px -8px -3px;display:flex;align-items:center;justify-content:center}.watchBox img{width:258px;max-width:100%;display:block;filter:drop-shadow(0 18px 14px rgba(91,50,34,.18))}.menuPanel{position:relative;z-index:4;background:rgba(255,250,243,.96);border:1px solid rgba(122,82,62,.20);border-radius:20px;padding:6px 10px;box-shadow:0 10px 24px rgba(95,57,42,.08)}.menuRow{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid #ecdacd!important;min-height:55px}.menuRow:last-child{border-bottom:0!important}.menuIcon{width:36px;height:36px;border-radius:11px;background:#f2dfd1;color:#b35a36;display:grid;place-items:center;flex:0 0 auto}.menuIcon svg{width:21px;height:21px}.menuText{min-width:0;flex:1}.menuText b{display:block;font-size:14px;letter-spacing:-.02em}.menuText small{display:block;font-size:10px;color:#856f62;margin-top:3px}.chev{font-size:22px;color:#9c6349}.categories{position:relative;z-index:4;margin-top:9px;background:rgba(255,250,243,.96);border:1px solid rgba(122,82,62,.18);border-radius:20px;padding:11px 12px}.categories h3{font-size:14px;margin:0 0 9px;letter-spacing:-.02em}.catGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.catHome{min-height:65px;border:1px solid #e7cdbd;background:#fffaf5;border-radius:13px;padding:9px 5px;font-weight:900;color:#302621}.catHome.active{background:linear-gradient(180deg,#ff8258,#ff6842);color:#fff;border-color:#ff6842}.catHome span{display:block;font-size:9px;font-weight:650;margin-top:4px;opacity:.88}.bottomNav{position:relative;z-index:5;margin-top:9px;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(255,250,243,.96);border:1px solid rgba(122,82,62,.16);border-radius:18px;padding:7px 5px}.navItem{border:0;background:transparent;font-size:9px;color:#77695f;display:grid;place-items:center;gap:3px;min-height:44px}.navItem svg{width:19px;height:19px}.navItem.active{color:#f2633d;font-weight:900}
+/* SETUP — exact hierarchy */
+.setup{background:linear-gradient(180deg,#ffd533 0 76px,#fffaf5 76px)}.topbar{height:54px;display:flex;align-items:center;justify-content:center;position:relative}.back{position:absolute;left:0;width:42px;height:42px;border:0;background:transparent;font-size:28px}.topbar b{font-size:16px;letter-spacing:-.03em}.steps{display:grid;grid-template-columns:repeat(3,1fr);margin:8px 7px 15px;position:relative}.steps:before{content:"";position:absolute;left:16%;right:16%;top:15px;height:2px;background:#ddd8d3}.step{position:relative;text-align:center;z-index:1}.step i{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;margin:0 auto 5px;background:#e6e2df;color:#8d837d;font-style:normal;font-weight:900;font-size:13px}.step.on i{background:#1d1c1a;color:#fff}.step span{font-size:10px;color:#766c66}.step.on span{font-weight:900;color:#2b2521}.setupCard{background:transparent;border:0;border-radius:0;padding:0;box-shadow:none}.label{display:block;font-size:13px;font-weight:900;margin:0 0 8px}.mainCats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.mainCat{position:relative;min-height:112px;border:1px solid #eadbd0;border-radius:15px;background:#fff;padding:50px 6px 12px;font-weight:900;font-size:18px;color:#201d1a}.mainCat:before{content:"";position:absolute;left:50%;top:15px;transform:translateX(-50%);width:38px;height:38px;border-radius:10px;background:#f0f0ee;box-shadow:inset 0 0 0 1px rgba(0,0,0,.04)}.mainCat[data-cat="재능"]:before{background:linear-gradient(180deg,#ff8a58,#ff6941)}.mainCat[data-cat="학교"]:before{background:linear-gradient(180deg,#4d9ce1,#2c76c5)}.mainCat[data-cat="영어"]:before{background:linear-gradient(180deg,#57b968,#30994e)}.mainCat:after{content:"";position:absolute;left:50%;top:25px;transform:translateX(-50%);width:19px;height:15px;border:2px solid white;border-radius:3px}.mainCat[data-cat="재능"]:after{border-radius:50% 50% 38% 38%;border-top-width:0}.mainCat[data-cat="학교"]:after{border-radius:1px;border-top:0;box-shadow:8px 0 0 -6px #fff}.mainCat[data-cat="영어"]:after{content:"A";border:0;color:#fff;font-size:18px;font-weight:1000;top:23px;width:auto;height:auto}.mainCat small{display:block;font-size:10px;font-weight:600;margin-top:4px;color:#81746d}.mainCat.active{background:linear-gradient(180deg,#ff8556,#ff6a42);border-color:#ff6a42;color:#fff}.mainCat.active small{color:#fff}.mainCat.active:before{background:rgba(255,255,255,.18)}.chips{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.chip{min-height:38px;border:1px solid #e5d6cb;background:#fff;border-radius:10px;padding:0 4px;font-size:12px;font-weight:800}.chip.active{background:#ffe16c;border-color:#e0a81a}.fieldRow{display:grid;grid-template-columns:1fr 116px;gap:0;border:1px solid #e5d6cb;border-radius:12px;overflow:hidden;background:#fff}.field{width:100%;min-height:46px;border:0;background:#fff;padding:10px 13px;font-size:16px;outline:none}.fieldRow .field+ .field{border-left:1px solid #ece0d6}.field:focus{box-shadow:inset 0 0 0 2px rgba(225,170,32,.25)}.times{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.timeBtn{min-height:39px;border:1px solid #e5d6cb;background:#fff;border-radius:10px;font-size:11px;font-weight:800;padding:0 2px}.timeBtn.active{background:#ffe16c;border-color:#dea617}.preview{margin-top:11px;background:linear-gradient(135deg,#fff9df,#fff1c1);border:1px solid #ecd07a;border-radius:13px;padding:11px 13px;font-size:11px;line-height:1.55}.preview strong{font-size:12px}.shareBtn,.startBtn{width:100%;min-height:48px;border-radius:12px;font-weight:900;margin-top:10px}.shareBtn{border:1px solid #d99355;background:#fff9f4;color:#673f2d}.startBtn{border:0;background:#171716;color:#fff;font-size:16px;box-shadow:none}.shareStatus{text-align:center;color:var(--good);font-size:10px;font-weight:800;margin-top:7px}.customTime{display:none;margin-top:8px}.customTime.show{display:block}
+/* FOCUS — master mockup */
+.focus{background:linear-gradient(180deg,#ffd41d 0%,#ffc20d 60%,#ffb512 100%);position:relative;overflow:hidden}.focus:before{content:"";position:absolute;left:50%;top:115px;width:620px;height:620px;transform:translateX(-50%);border-radius:50%;background:repeating-conic-gradient(from -3deg,rgba(203,108,0,.19) 0 2deg,transparent 2deg 14deg)}.focusHead{position:relative;z-index:3;text-align:center;padding-top:5px}.mode{display:inline-block;background:#1a1a19;color:#ffd52a;border-radius:999px;padding:6px 13px;font-size:9px;font-weight:900;letter-spacing:.17em}.focusTitle{font-size:58px;line-height:.84;font-weight:1000;letter-spacing:-.08em;margin-top:8px}.missionPill{display:inline-block;margin-top:9px;background:#1c1c1b;color:#fff;border-radius:999px;padding:7px 14px;font-size:12px;font-weight:850;max-width:94%}.clockAsset{position:relative;z-index:2;height:304px;margin:0 -7px -10px;display:flex;align-items:center;justify-content:center}.clockAsset img{width:304px;max-width:100%;display:block;filter:drop-shadow(0 18px 15px rgba(86,50,0,.24))}.focusPanel{position:relative;z-index:4;background:linear-gradient(180deg,#20201f,#151514);color:#fff;border-radius:20px;padding:14px 15px 12px;box-shadow:0 12px 28px rgba(74,45,0,.18)}.timerTop{display:flex;align-items:end;justify-content:space-between;gap:12px}.timerTop small{color:#c7c7c3;font-size:10px}.timerDigits{font-size:46px;font-weight:1000;line-height:1;color:#ffd31c;letter-spacing:-.05em;font-variant-numeric:tabular-nums;margin-top:3px}.goal{text-align:right}.goal b{display:block;font-size:16px;margin-top:3px}.progress{height:4px;background:#474744;border-radius:999px;margin-top:7px;overflow:hidden}.progress i{display:block;height:100%;background:#ffd31c;width:100%;transition:width .2s}.bgm{display:flex;align-items:center;justify-content:space-between;margin-top:11px;background:#2b2b29;border-radius:11px;padding:9px 10px;font-size:11px}.bgm strong{color:#fff}.musicBtn{min-height:32px;border:1px solid #565650;background:#3b3b38;color:#fff;border-radius:999px;padding:0 10px;font-size:9px;font-weight:900}.controlGrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}.pauseBtn,.finishBtn{min-height:52px;border-radius:12px;font-weight:950;font-size:14px}.pauseBtn{border:0;background:#fff8f1;color:#2b241f}.finishBtn{border:0;background:#ffd11a;color:#1c1b18}.issueSheet{display:none;margin-top:10px;border-top:1px solid #393936;padding-top:10px}.issueSheet.show{display:block}.issueSheet h4{margin:0;color:#ffd42a;font-size:11px}.issueSheet p{font-size:9px;color:#c4c4bf;margin:4px 0 8px}.issueGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.issueBtn{min-height:39px;border:1px solid #44443f;background:#31312f;color:#fff;border-radius:9px;font-size:9px;font-weight:800}.resumeBtn{display:none;width:100%;min-height:44px;margin-top:8px;border:1px solid #55554f;background:#333331;color:#fff;border-radius:10px;font-weight:900}.resumeBtn.show{display:block}.stats{display:grid;grid-template-columns:repeat(3,1fr);margin-top:11px;border-top:1px solid #343431;padding-top:10px}.stat{text-align:center;border-right:1px solid #343431}.stat:last-child{border-right:0}.stat span{display:block;font-size:9px;color:#bbb}.stat b{display:block;font-size:14px;margin-top:4px;font-variant-numeric:tabular-nums}
+/* RESULT */
+.result{background:linear-gradient(180deg,#fff5e7,#ffe1c5);padding-top:calc(env(safe-area-inset-top) + 28px)}.resultHead{text-align:center}.resultBadge{width:48px;height:48px;border-radius:50%;background:#1d1d1b;color:#ffd229;display:grid;place-items:center;margin:auto}.resultBadge svg{width:25px}.resultHead h2{margin:10px 0 5px;font-size:25px}.resultHead p{margin:0;color:#7d695d;font-size:12px}.resultCard{margin-top:14px;background:#fffaf4;border:1px solid #e7d1bf;border-radius:18px;padding:12px}.resultRow{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #efe2d8;font-size:12px}.resultRow:last-child{border-bottom:0}.resultRow span{color:#7a695f}.praise h3{font-size:13px;margin:0 0 9px}.stickers{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.sticker{min-height:42px;border:1px solid #dfcdbf;background:#fff;border-radius:10px;font-size:11px;font-weight:800}.sticker.selected{background:#ffe16b;border-color:#dfa719}.resultBtn{width:100%;min-height:48px;margin-top:9px;border-radius:13px;font-weight:900}.calendarBtn{border:1px solid #cf9c69;background:#fff1db}.resultShare{border:0;background:#1d1d1b;color:#fff}.newBtn{border:1px solid #d7c3b3;background:#fff9f2}.statusBox{display:none;margin-top:8px;padding:9px 10px;border-radius:10px;font-size:10px}.statusBox.show{display:block}.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);max-width:340px;background:#1e1e1d;color:#fff;padding:10px 14px;border-radius:999px;font-size:11px;z-index:99;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+@media(max-height:760px){.watchBox{height:245px}.watchBox img{width:230px}.homeTitle{font-size:42px}.menuRow{min-height:51px;padding:8px 2px}.categories{margin-top:7px}.bottomNav{margin-top:7px}.clockAsset{height:270px}.clockAsset img{width:275px}.focusTitle{font-size:53px}.focusPanel{padding-top:12px}.mainCat{min-height:104px;padding-top:46px}.setup .label{margin-bottom:7px}}
+
+/* pixel-matched hero assets from approved master UI */
+.home{padding-left:0;padding-right:0;padding-top:env(safe-area-inset-top);background:#f8aa90}.homeHero{position:relative;z-index:2;width:100%;line-height:0}.homeHero img{display:block;width:100%;height:auto}.home .menuPanel,.home .categories,.home .bottomNav{margin-left:16px;margin-right:16px}.home .menuPanel{margin-top:-2px}.home .categories{margin-top:10px}.home .bottomNav{margin-top:10px;margin-bottom:12px}.home:before,.home .grain{display:none}
+.focus{padding-left:0;padding-right:0;padding-top:env(safe-area-inset-top);background:#ffc315}.focusHero{position:relative;z-index:2;width:100%;line-height:0}.focusHero img{display:block;width:100%;height:auto}.focusHero .missionPill{position:absolute;left:50%;top:32.7%;transform:translate(-50%,-50%);margin:0;z-index:5;line-height:1.2;background:#1b1b1a;color:#fff;min-width:145px;text-align:center;font-size:11px;padding:7px 14px;box-shadow:0 1px 0 rgba(255,255,255,.08) inset}.focus .focusPanel{margin:-8px 16px 0}.focus:before{display:none}.focusPanel{border-radius:20px}.focus .timerDigits{font-size:46px}.focus .stats{padding-bottom:1px}
+@media(max-width:390px){.home .menuPanel,.home .categories,.home .bottomNav,.focus .focusPanel{margin-left:14px;margin-right:14px}.focusHero .missionPill{top:32.7%;font-size:10.5px}}
+
+/* FINAL POLISH — rose-gold depth + sound selector */
+.home{
+  background:
+    radial-gradient(120% 46% at 50% 55%,rgba(255,238,222,.88) 0%,rgba(255,199,176,.58) 38%,rgba(224,123,91,.18) 65%,transparent 82%),
+    linear-gradient(180deg,#f5a289 0%,#f7ae93 35%,#fbc0a6 66%,#ffe5d1 100%)!important;
+}
+.homeHero{
+  background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,218,196,.10));
+}
+.home .menuPanel{
+  margin-top:-6px!important;
+  background:
+    linear-gradient(140deg,rgba(255,255,255,.93),rgba(255,247,238,.88)) padding-box,
+    linear-gradient(135deg,rgba(255,255,255,.92),rgba(206,119,82,.34),rgba(255,222,201,.86)) border-box!important;
+  border:1px solid transparent!important;
+  box-shadow:
+    0 18px 36px rgba(143,77,51,.12),
+    0 3px 10px rgba(155,83,57,.07),
+    inset 0 1px 0 rgba(255,255,255,.95)!important;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.home .menuPanel:before{
+  content:"";
+  position:absolute;
+  left:-18%;
+  right:-18%;
+  top:-84px;
+  height:160px;
+  z-index:-1;
+  background:radial-gradient(ellipse at center,rgba(222,133,96,.30),rgba(245,172,141,.18) 44%,transparent 73%);
+  filter:blur(20px);
+  pointer-events:none;
+}
+.home .categories,.home .bottomNav{
+  background:linear-gradient(145deg,rgba(255,252,247,.95),rgba(255,244,234,.90))!important;
+  box-shadow:0 12px 28px rgba(131,72,48,.08),inset 0 1px 0 rgba(255,255,255,.9);
+}
+.setupSound{
+  margin-top:12px;
+  border:1px solid #ead8ca;
+  border-radius:14px;
+  background:linear-gradient(135deg,#fffdf9,#fff5e7);
+  padding:11px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.setupSoundText{min-width:0}
+.setupSoundText small{display:block;color:#92776a;font-size:9px;font-weight:750}
+.setupSoundText b{display:block;margin-top:3px;font-size:12px}
+.soundPickBtn{
+  min-height:35px;border:1px solid #deb676;background:#fff8ec;color:#6a452d;
+  border-radius:999px;padding:0 11px;font-size:10px;font-weight:900;white-space:nowrap
+}
+.bgm{cursor:pointer}.bgmText{min-width:0;overflow:hidden}.bgmText span{color:#c8c8c3}.bgmName{color:#ffd31c!important;font-weight:900}
+.musicBtn{min-width:48px}
+.soundOverlay{
+  position:fixed;inset:0;z-index:1000;display:none;align-items:flex-end;justify-content:center;
+  background:rgba(29,19,14,.36);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
+  padding:16px max(14px,env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));
+}
+.soundOverlay.show{display:flex}
+.soundSheet{
+  width:min(100%,430px);border-radius:26px 26px 22px 22px;padding:15px 14px 14px;
+  background:
+    radial-gradient(120% 100% at 88% 0%,rgba(255,201,111,.26),transparent 42%),
+    linear-gradient(155deg,#fffaf2,#fff3e7);
+  border:1px solid rgba(198,132,91,.25);
+  box-shadow:0 -18px 50px rgba(65,35,22,.20),inset 0 1px 0 rgba(255,255,255,.92);
+}
+.soundHandle{width:42px;height:4px;border-radius:99px;background:#d8c5b9;margin:0 auto 10px}
+.soundHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:11px}
+.soundHead h3{margin:0;font-size:18px;letter-spacing:-.04em}.soundHead p{margin:4px 0 0;font-size:10px;color:#8a7165}
+.soundClose{width:34px;height:34px;border:0;border-radius:50%;background:#f0dfd2;color:#734b37;font-size:20px}
+.soundRecommend{
+  display:flex;align-items:center;gap:8px;background:#211f1d;color:#fff;border-radius:13px;padding:9px 10px;margin-bottom:10px
+}
+.soundRecommend i{font-style:normal;background:#ffd22d;color:#201b16;border-radius:999px;padding:3px 7px;font-size:8px;font-weight:950}
+.soundRecommend span{font-size:10px}.soundRecommend b{color:#ffd22d}
+.soundGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.soundOption{
+  position:relative;text-align:left;min-height:78px;border:1px solid #ead8ca;border-radius:14px;background:#fff;
+  padding:11px 11px 10px;color:#29211d
+}
+.soundOption.active{border-color:#e2a22b;background:linear-gradient(145deg,#fff8df,#ffefb0);box-shadow:0 6px 16px rgba(196,135,25,.10)}
+.soundOption strong{display:block;font-size:12px}.soundOption small{display:block;font-size:9px;color:#8a7469;margin-top:4px;line-height:1.35}
+.soundOption .soundIcon{width:25px;height:25px;border-radius:8px;display:grid;place-items:center;margin-bottom:7px;background:#f2e3d9;color:#a85433}
+.soundOption.active .soundIcon{background:#ffd338;color:#2e261d}
+.soundOption svg{width:16px;height:16px}
+.soundFoot{margin-top:10px;display:flex;gap:8px}.soundDone,.soundOff{
+  flex:1;min-height:43px;border-radius:12px;font-weight:900;font-size:11px
+}
+.soundDone{border:0;background:#191817;color:#fff}.soundOff{border:1px solid #e0d1c6;background:#fff;color:#6f5b50}
+.ytHost{position:fixed;width:2px;height:2px;left:-9999px;top:-9999px;overflow:hidden;pointer-events:none}
+@media(max-width:360px){.soundGrid{grid-template-columns:1fr}.soundSheet{max-height:87dvh;overflow:auto}}
+
+
+/* SETTINGS — same warm rose-gold visual system */
+.settings{
+  min-height:100dvh;
+  background:
+    radial-gradient(120% 60% at 50% 0%,rgba(255,238,226,.95) 0%,rgba(248,171,143,.62) 42%,transparent 72%),
+    linear-gradient(180deg,#f6a58c 0%,#f9b79d 38%,#ffe5d1 100%);
+  padding-left:16px;padding-right:16px;
+}
+.settingsTop{
+  height:54px;display:flex;align-items:center;justify-content:center;position:relative;
+}
+.settingsTop .back{
+  color:#3a261e;
+}
+.settingsTop b{font-size:16px;letter-spacing:-.035em}
+.settingsIntro{
+  text-align:center;padding:8px 8px 14px;
+}
+.settingsKicker{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:9px;font-weight:950;letter-spacing:.18em;color:#784534;
+}
+.settingsIntro h2{
+  margin:7px 0 4px;font-size:31px;line-height:1;font-weight:1000;letter-spacing:-.055em;color:#291b16;
+}
+.settingsIntro p{margin:0;font-size:11px;color:#78594d;font-weight:650}
+.settingsCard{
+  position:relative;margin-top:10px;padding:15px;
+  border-radius:21px;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.94),rgba(255,247,239,.90)) padding-box,
+    linear-gradient(135deg,rgba(255,255,255,.96),rgba(207,126,91,.30),rgba(255,224,205,.84)) border-box;
+  border:1px solid transparent;
+  box-shadow:0 14px 34px rgba(113,61,42,.10),inset 0 1px 0 rgba(255,255,255,.95);
+}
+.settingsTitleRow{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.settingsIcon{
+  width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+  background:linear-gradient(145deg,#f6e3d7,#f2d5c4);color:#b35734;
+}
+.settingsIcon svg{width:21px;height:21px}
+.settingsTitleRow b{display:block;font-size:14px}
+.settingsTitleRow small{display:block;margin-top:2px;font-size:9px;color:#8a7064}
+.nameField{
+  display:flex;align-items:center;gap:8px;
+  border:1px solid #e5cfc1;border-radius:13px;background:#fffaf6;padding:5px 6px 5px 12px;
+}
+.nameField input{
+  flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:15px;font-weight:850;color:#2b211c;
+}
+.nameField button{
+  min-height:38px;border:0;border-radius:10px;padding:0 13px;background:#1d1b1a;color:#fff;font-size:10px;font-weight:900;
+}
+.settingHint{margin:8px 2px 0;font-size:9px;line-height:1.45;color:#8a7468}
+.soundSummary{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:11px 12px;border:1px solid #ead5c5;border-radius:13px;background:#fffaf5;
+}
+.soundSummaryText small{display:block;font-size:9px;color:#8d7569}
+.soundSummaryText b{display:block;margin-top:3px;font-size:13px}
+.soundChange{
+  min-height:35px;border:1px solid #dcae7b;border-radius:999px;background:#fff4e8;color:#75452f;padding:0 11px;font-size:10px;font-weight:900;
+}
+.musicQuick{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px;
+}
+.musicQuick button{
+  min-height:42px;border:1px solid #ead7ca;border-radius:12px;background:#fff;font-size:10px;font-weight:850;color:#54433a;
+}
+.musicQuick button.active{background:linear-gradient(145deg,#fff1b9,#ffdf69);border-color:#dca425;color:#2a221c}
+.settingsNote{
+  margin-top:10px;border-radius:13px;padding:11px 12px;background:rgba(65,46,36,.88);color:#fff;
+}
+.settingsNote b{font-size:11px}.settingsNote p{margin:4px 0 0;font-size:9px;line-height:1.45;color:#e9ddd6}
+.settingsBottom{
+  margin-top:10px;display:grid;grid-template-columns:repeat(4,1fr);
+  background:rgba(255,250,244,.94);border:1px solid rgba(122,82,62,.16);
+  border-radius:18px;padding:7px 5px;
+}
+.settingsBottom .navItem.active{color:#f2633d;font-weight:900}
+@media(max-height:760px){
+  .settingsIntro{padding-top:3px;padding-bottom:8px}.settingsIntro h2{font-size:27px}
+  .settingsCard{padding:12px;margin-top:8px}.settingsNote{padding:9px 10px}
+}
+
+</style></head><body>
+<main class="app">
+<section id="homeView" class="view home hidden">
+  <div class="grain"></div>
+  <div class="homeHero"><img src="./assets/home-hero-master.png" alt="타임어택 이벤트 로즈골드 스톱워치"></div>
+  <div class="menuPanel">
+    <button class="menuRow" id="goalMenu" style="width:100%;border:0;background:transparent;text-align:left"><span class="menuIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M22 12h-3"/></svg></span><span class="menuText"><b>오늘 목표 정하기</b><small>효과적인 목표 설정으로 시작해요</small></span><span class="chev">›</span></button>
+    <button class="menuRow" id="shareMenu" style="width:100%;border:0;background:transparent;text-align:left"><span class="menuIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H8l-4 3z"/><path d="M8 9h8M8 12h5"/></svg></span><span class="menuText"><b>시작 전 작전 공유</b><small>부모님께 오늘의 계획을 알려드려요</small></span><span class="chev">›</span></button>
+    <button class="menuRow" id="calendarMenu" style="width:100%;border:0;background:transparent;text-align:left"><span class="menuIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg></span><span class="menuText"><b>기록 및 캘린더</b><small>시작부터 완료까지 실제 시간대로 남겨요</small></span><span class="chev">›</span></button>
+  </div>
+  <div class="categories"><h3>어떤 과제에 도전할까요?</h3><div class="catGrid"><button class="catHome active" data-homecat="재능">재능<span>개인 학습 과제</span></button><button class="catHome" data-homecat="학교">학교<span>과제</span></button><button class="catHome" data-homecat="영어">영어<span>학습</span></button></div></div>
+  <div class="bottomNav"><button class="navItem active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8v10H6V9"/></svg>홈</button><button class="navItem" id="navHistory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h14v17H5z"/><path d="M8 2v4M16 2v4M8 10h8M8 14h6"/></svg>기록</button><button class="navItem" id="navCalendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg>캘린더</button><button class="navItem" id="navSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.4 1A7 7 0 0 0 15 6l-.3-2.6h-4L10.5 6A7 7 0 0 0 9 7L6.6 6 4.6 9.5l2 1.5a7 7 0 0 0 0 2L4.6 14.5 6.6 18l2.4-1a7 7 0 0 0 1.5 1l.2 2.6h4L15 18a7 7 0 0 0 1.5-1l2.4 1 2-3.5-2-1.5c.1-.3.1-.7.1-1z"/></svg>설정</button></div>
+</section>
+
+<section id="settingsView" class="view settings">
+  <div class="settingsTop"><button id="settingsBack" class="back" aria-label="뒤로">‹</button><b>설정</b></div>
+  <div class="settingsIntro">
+    <div class="settingsKicker">MY FOCUS PROFILE</div>
+    <h2>나만의 타임어택</h2>
+    <p>이름과 기본 집중 사운드를 편하게 바꿀 수 있어요.</p>
+  </div>
+
+  <div class="settingsCard">
+    <div class="settingsTitleRow">
+      <span class="settingsIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-5 3.5-7 8-7s7.2 2 8 7"/></svg></span>
+      <span><b>프로필 이름</b><small>작전 공유와 완료 메시지에 사용해요</small></span>
+    </div>
+    <div class="nameField">
+      <input id="profileName" type="text" maxlength="12" autocomplete="off" placeholder="이름을 입력하세요">
+      <button id="saveName" type="button">저장</button>
+    </div>
+    <p class="settingHint">회원가입 없이 이 기기에만 저장됩니다. 언제든 다시 바꿀 수 있어요.</p>
+  </div>
+
+  <div class="settingsCard">
+    <div class="settingsTitleRow">
+      <span class="settingsIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg></span>
+      <span><b>기본 집중 사운드</b><small>START 할 때 자동으로 재생할 음악이에요</small></span>
+    </div>
+    <div class="soundSummary">
+      <div class="soundSummaryText"><small>현재 기본값</small><b id="settingsSoundName">집중 피아노</b></div>
+      <button id="settingsSoundOpen" class="soundChange" type="button">전체 보기</button>
+    </div>
+    <div class="musicQuick">
+      <button type="button" data-quick-sound="piano">집중 피아노</button>
+      <button type="button" data-quick-sound="water">물방울</button>
+      <button type="button" data-quick-sound="essential">essential;</button>
+    </div>
+    <div class="settingsNote"><b>추천 사운드는 그대로 유지돼요</b><p>과제에 따라 추천음을 보여주지만, 직접 고른 기본 사운드가 START 때 우선 적용됩니다.</p></div>
+  </div>
+
+  <div class="settingsBottom">
+    <button class="navItem" id="settingsHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8v10H6V9"/></svg>홈</button>
+    <button class="navItem" id="settingsHistory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h14v17H5z"/><path d="M8 2v4M16 2v4M8 10h8M8 14h6"/></svg>기록</button>
+    <button class="navItem" id="settingsCalendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg>캘린더</button>
+    <button class="navItem active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.4 1A7 7 0 0 0 15 6l-.3-2.6h-4L10.5 6A7 7 0 0 0 9 7L6.6 6 4.6 9.5l2 1.5a7 7 0 0 0 0 2L4.6 14.5 6.6 18l2.4-1a7 7 0 0 0 1.5 1l.2 2.6h4L15 18a7 7 0 0 0 1.5-1l2.4 1 2-3.5-2-1.5c.1-.3.1-.7.1-1z"/></svg>설정</button>
+  </div>
+</section>
+
+<section id="setupView" class="view setup hidden">
+  <div class="topbar"><button id="backHome" class="back" aria-label="뒤로">‹</button><b>타임어택 작전 설정</b></div>
+  <div class="steps"><div class="step on"><i>1</i><span>과제 선택</span></div><div class="step on"><i>2</i><span>과제 양 &amp; 시간</span></div><div class="step"><i>3</i><span>작전 공유</span></div></div>
+  <div class="setupCard">
+    <span class="label">1. 과제 분류를 선택하세요</span>
+    <div class="mainCats"><button class="mainCat active" data-cat="재능">재능<small>개인 학습 과제</small></button><button class="mainCat" data-cat="학교">학교<small>과제</small></button><button class="mainCat" data-cat="영어">영어<small>학습</small></button></div>
+    <span class="label" style="margin-top:16px">2. 세부 과목을 선택하세요</span><div id="detailChips" class="chips"></div>
+    <span class="label" style="margin-top:15px">3. 오늘 할 과제 양을 정하세요</span><div class="fieldRow"><input id="amount" class="field" type="number" min="1" max="999" inputmode="numeric" value="20"><select id="unit" class="field"><option>문제</option><option>쪽</option><option>장</option><option>단어</option><option>회</option></select></div>
+    <span class="label" style="margin-top:15px">4. 목표 시간을 선택하세요</span><div class="times"><button class="timeBtn" data-min="15">15분</button><button class="timeBtn active" data-min="25">25분</button><button class="timeBtn" data-min="40">40분</button><button class="timeBtn" data-min="60">60분</button><button class="timeBtn" data-min="custom">직접 설정</button></div><div id="customTimeWrap" class="customTime"><input id="customTime" class="field" type="number" min="1" max="180" inputmode="numeric" placeholder="목표 시간(분)"></div>
+
+    <div class="setupSound" id="setupSoundOpen">
+      <div class="setupSoundText"><small>오늘의 집중 사운드</small><b id="setupSoundName">집중 피아노</b></div>
+      <button class="soundPickBtn" type="button">BGM 선택</button>
+    </div>
+    <div id="planPreview" class="preview"></div>
+    <button id="sharePlan" class="shareBtn">작전 공유하기</button><div id="shareStatus" class="shareStatus hidden">작전 공유 준비 완료! 이제 시작해도 좋아요.</div>
+    <button id="startBtn" class="startBtn">타임어택 START</button>
+  </div>
+</section>
+<section id="focusView" class="view focus hidden">
+  <div class="focusHero"><img src="./assets/focus-hero-master.png" alt="타임어택 집중 모드 아날로그 시계"><div id="missionPill" class="missionPill"></div></div>
+  <div class="focusPanel"><div class="timerTop"><div><small id="timerLabel">남은 시간</small><div id="timerDigits" class="timerDigits">25:00</div></div><div class="goal"><small>목표 시간</small><b id="goalText">25:00</b><div class="progress"><i id="progressBar"></i></div></div></div>
+  <div class="bgm" id="focusSoundOpen"><div class="bgmText"><strong>집중 모드 ON · 방해 금지</strong><span> · </span><span id="focusSoundName" class="bgmName">집중 피아노</span><span id="bgmState"> · 준비</span></div><button id="musicToggle" class="musicBtn" type="button">음악</button></div>
+  <div class="controlGrid"><button id="pauseBtn" class="pauseBtn">잠깐 멈춤</button><button id="finishBtn" class="finishBtn">완료했어요</button></div>
+  <div id="issueSheet" class="issueSheet"><h4>잠깐 멈춘 이유를 선택해 주세요</h4><p>ISSUE 시간은 전체 도전시간과 따로 기록됩니다.</p><div class="issueGrid"><button class="issueBtn">화장실</button><button class="issueBtn">물 / 간식</button><button class="issueBtn">도움 필요</button><button class="issueBtn">준비물 찾기</button><button class="issueBtn">컨디션 조절</button><button class="issueBtn">기타 사유</button></div></div><button id="resumeBtn" class="resumeBtn">다시 집중하기</button>
+  <div class="stats"><div class="stat"><span>시작 시간</span><b id="startStat">--:--</b></div><div class="stat"><span>집중 시간</span><b id="focusStat">00:00</b></div><div class="stat"><span>ISSUE 시간</span><b id="issueStat">00:00</b></div></div></div>
+  <audio id="bgmAudio" preload="auto" loop></audio><div id="ytHost" class="ytHost"></div>
+</section>
+<section id="resultView" class="view result hidden">
+  <div class="resultHead"><div class="resultBadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4 10-10"/></svg></div><h2>오늘의 미션 완료</h2><p id="resultMessage">끝까지 집중해서 마무리했어요.</p></div>
+  <div class="resultCard"><div class="resultRow"><span>오늘 과제</span><b id="rMission"></b></div><div class="resultRow"><span>목표 시간</span><b id="rTarget"></b></div><div class="resultRow"><span>시작</span><b id="rStart"></b></div><div class="resultRow"><span>완료</span><b id="rEnd"></b></div><div class="resultRow"><span>전체 도전시간</span><b id="rTotal"></b></div><div class="resultRow"><span>ISSUE</span><b id="rIssue"></b></div><div class="resultRow"><span>실제 집중시간</span><b id="rFocus"></b></div><div class="resultRow"><span>목표 대비</span><b id="rDelta"></b></div></div>
+  <div class="resultCard praise"><h3>부모님 응원 스티커</h3><div class="stickers"><button class="sticker">최고야</button><button class="sticker">집중왕</button><button class="sticker">끝까지 멋져</button><button class="sticker">수고했어</button><button class="sticker">괜찮아</button><button class="sticker">다음 도전</button></div></div>
+  <button id="calendarBtn" class="resultBtn calendarBtn">Google Calendar에 기록하기</button><div id="calendarStatus" class="statusBox"></div>
+  <button id="resultShare" class="resultBtn resultShare">오늘의 결과 공유하기</button><button id="newMission" class="resultBtn newBtn">새 미션 시작하기</button>
+</section>
+</main>
+
+<div id="soundOverlay" class="soundOverlay" aria-hidden="true">
+  <section class="soundSheet" role="dialog" aria-modal="true" aria-labelledby="soundTitle">
+    <div class="soundHandle"></div>
+    <div class="soundHead">
+      <div><h3 id="soundTitle">오늘의 집중 사운드</h3><p>과제에 맞는 소리를 추천하고, 언제든 바꿀 수 있어요.</p></div>
+      <button id="soundClose" class="soundClose" type="button" aria-label="닫기">×</button>
+    </div>
+    <div class="soundRecommend"><i>추천</i><span id="soundRecommendText">수학에는 <b>물방울 · 자연음</b>이 잘 어울려요.</span></div>
+    <div class="soundGrid">
+      <button class="soundOption" type="button" data-sound="piano">
+        <span class="soundIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4v16M10 4v16M14 4v16M18 4v16"/><path d="M4 4h16v16H4z"/></svg></span>
+        <strong>집중 피아노</strong><small>독서 · 글쓰기 · 라이팅</small>
+      </button>
+      <button class="soundOption" type="button" data-sound="water">
+        <span class="soundIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg></span>
+        <strong>물방울 · 자연음</strong><small>수학 · 연산 · 단어 암기</small>
+      </button>
+      <button class="soundOption" type="button" data-sound="nature">
+        <span class="soundIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V9"/><path d="M12 12c-4 0-7-2-8-6 4 0 7 1 8 4"/><path d="M12 14c4 0 7-2 8-6-4 0-7 1-8 4"/></svg></span>
+        <strong>숲 · 잔잔한 자연</strong><small>긴 과제 · 차분한 집중</small>
+      </button>
+      <button class="soundOption" type="button" data-sound="lofi">
+        <span class="soundIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 4v3M20 12h-3"/></svg></span>
+        <strong>Soft Lo-fi</strong><small>일반 과제 · 가벼운 집중</small>
+      </button>
+      <button class="soundOption" type="button" data-sound="essential">
+        <span class="soundIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg></span>
+        <strong>essential;</strong><small>YouTube 재생목록 · 온라인 재생</small>
+      </button>
+      <button class="soundOption" type="button" data-sound="off">
+        <span class="soundIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9v6h4l5 4V5L9 9H5z"/><path d="M18 9l4 4M22 9l-4 4"/></svg></span>
+        <strong>무음</strong><small>소리 없이 집중하고 싶을 때</small>
+      </button>
+    </div>
+    <div class="soundFoot"><button id="soundOff" class="soundOff" type="button">무음으로</button><button id="soundDone" class="soundDone" type="button">이 사운드로 집중하기</button></div>
+  </section>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+<script src="./config.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+(()=>{
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const cfg=window.TIMEATTACK_CONFIG||{};
+const TASKS={재능:['국어','한자','피자','수학','연산'],학교:['과제','독서','글쓰기','시험·복습','기타'],영어:['라이팅','녹음','단어 외우기','문법','독해']};
+const savedSound=localStorage.getItem('ta-sound')||'piano';
+const savedName=localStorage.getItem('ta-name')||'';
+const state={name:savedName,cat:'재능',detail:'국어',amount:20,unit:'문제',targetMin:25,shared:false,startAt:null,endAt:null,running:false,paused:false,pauseStart:null,issueMs:0,issues:[],serverOffset:0,serverSynced:false,tick:null,bgm:savedSound!=='off',sound:savedSound,last:null};
+function show(id){['#homeView','#settingsView','#setupView','#focusView','#resultView'].forEach(x=>$(x).classList.add('hidden'));$(id).classList.remove('hidden');window.scrollTo(0,0)}
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.remove('hidden');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.add('hidden'),2200)}
+async function syncTime(){try{const a=Date.now();const r=await fetch('/.netlify/functions/time?t='+a,{cache:'no-store'});if(!r.ok)throw 0;const j=await r.json(),b=Date.now();state.serverOffset=Number(j.now)-(a+(b-a)/2);state.serverSynced=true;localStorage.setItem('ta-offset',String(state.serverOffset));}catch(e){state.serverOffset=Number(localStorage.getItem('ta-offset')||0);state.serverSynced=false}}
+const now=()=>Date.now()+state.serverOffset;
+const fmtClock=ms=>new Date(ms).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false});
+const fmtDur=ms=>{const s=Math.max(0,Math.round(ms/1000));const m=Math.floor(s/60),ss=s%60;return m?`${m}분 ${ss}초`:`${ss}초`};
+const mmss=s=>`${String(Math.floor(Math.max(0,s)/60)).padStart(2,'0')}:${String(Math.max(0,s)%60).padStart(2,'0')}`;
+function mission(){return `${state.cat} · ${state.detail} · ${state.amount}${state.unit}`}
+
+function displayName(){return (state.name||'').trim()}
+function updateProfileUI(){
+  const input=$('#profileName'); if(input) input.value=displayName();
+}
+
+
+const SOUNDS={
+  piano:{name:'집중 피아노',src:'./assets/bgm-piano.wav'},
+  water:{name:'물방울 · 자연음',src:'./assets/bgm-water.wav'},
+  nature:{name:'숲 · 잔잔한 자연',src:'./assets/bgm-nature.wav'},
+  lofi:{name:'Soft Lo-fi',src:'./assets/bgm-lofi.wav'},
+  essential:{name:'essential;',youtube:true},
+  off:{name:'무음'}
+};
+const RECOMMEND={
+  '국어':'piano','한자':'water','피자':'lofi','수학':'water','연산':'water',
+  '과제':'lofi','독서':'piano','글쓰기':'piano','시험·복습':'nature','기타':'lofi',
+  '라이팅':'piano','녹음':'nature','단어 외우기':'water','문법':'lofi','독해':'piano'
+};
+let ytPlayer=null,ytReady=false,pendingYoutubePlay=false;
+window.onYouTubeIframeAPIReady=()=>{ytReady=true;if(state.sound==='essential')ensureYoutube()};
+function ensureYoutube(){
+  if(ytPlayer||!ytReady||!(window.YT&&YT.Player))return;
+  ytPlayer=new YT.Player('ytHost',{
+    height:'2',width:'2',videoId:'h2sHEe_xnmU',
+    playerVars:{listType:'playlist',list:'PLKRZTF1Q1uwYFbRwQzrySyGXYJVXqcUVu',playsinline:1,controls:0,rel:0},
+    events:{onReady:()=>{if(pendingYoutubePlay){pendingYoutubePlay=false;try{ytPlayer.playVideo()}catch(e){}}}}
+  });
+}
+function recommendedSound(){return RECOMMEND[state.detail]||'lofi'}
+function updateSoundUI(){
+  const s=SOUNDS[state.sound]||SOUNDS.piano;
+  $('#setupSoundName').textContent=s.name;
+  $('#focusSoundName').textContent=s.name;
+  if($('#settingsSoundName'))$('#settingsSoundName').textContent=s.name;
+  $$('[data-quick-sound]').forEach(b=>b.classList.toggle('active',b.dataset.quickSound===state.sound));
+  $$('.soundOption').forEach(b=>b.classList.toggle('active',b.dataset.sound===state.sound));
+  const rec=recommendedSound(),rs=SOUNDS[rec];
+  $('#soundRecommendText').innerHTML=`${state.detail}에는 <b>${rs.name}</b>을 추천해요.`;
+  localStorage.setItem('ta-sound',state.sound);
+}
+function openSoundSheet(){
+  updateSoundUI();
+  $('#soundOverlay').classList.add('show');$('#soundOverlay').setAttribute('aria-hidden','false');
+}
+function closeSoundSheet(){
+  $('#soundOverlay').classList.remove('show');$('#soundOverlay').setAttribute('aria-hidden','true');
+}
+function pauseAllAudio(){
+  const a=$('#bgmAudio');a.pause();
+  if(ytPlayer&&ytPlayer.pauseVideo)try{ytPlayer.pauseVideo()}catch(e){}
+}
+function stopAllAudio(){
+  const a=$('#bgmAudio');a.pause();a.currentTime=0;
+  if(ytPlayer&&ytPlayer.stopVideo)try{ytPlayer.stopVideo()}catch(e){}
+}
+async function playBgm(){
+  if(!state.bgm||state.sound==='off'){pauseAllAudio();$('#bgmState').textContent=' · 꺼짐';return}
+  const s=SOUNDS[state.sound]||SOUNDS.piano;
+  if(s.youtube){
+    $('#bgmAudio').pause();
+    ensureYoutube();
+    try{
+      if(ytPlayer&&ytPlayer.playVideo){ytPlayer.playVideo();$('#bgmState').textContent=' · 재생 중'}
+      else{pendingYoutubePlay=true;$('#bgmState').textContent=' · 연결 중'}
+    }catch(e){$('#bgmState').textContent=' · 화면에서 음악을 다시 선택해 주세요'}
+    return;
+  }
+  if(ytPlayer&&ytPlayer.pauseVideo)try{ytPlayer.pauseVideo()}catch(e){}
+  const a=$('#bgmAudio');
+  if(a.getAttribute('src')!==s.src){a.setAttribute('src',s.src);a.load()}
+  try{await a.play();$('#bgmState').textContent=' · 재생 중'}catch(e){$('#bgmState').textContent=' · START 후 재생할게요'}
+}
+function chooseSound(key,autoplay=false){
+  state.sound=key;state.bgm=key!=='off';updateSoundUI();
+  if(state.startAt&&!state.paused&&autoplay){pauseAllAudio();playBgm()}
+  persist();
+}
+
+function renderChips(){const box=$('#detailChips');box.innerHTML='';TASKS[state.cat].forEach((v,i)=>{const b=document.createElement('button');b.className='chip'+(v===state.detail?' active':'');b.textContent=v;b.type='button';b.onclick=()=>{state.detail=v;renderChips();preview()};box.appendChild(b)});if(!TASKS[state.cat].includes(state.detail))state.detail=TASKS[state.cat][0];[...box.children].forEach(b=>b.classList.toggle('active',b.textContent===state.detail));preview()}
+function preview(){state.amount=Math.max(1,Number($('#amount').value)||1);state.unit=$('#unit').value;$('#planPreview').innerHTML=`<strong>오늘의 작전 미리보기</strong><br><b>${mission()}</b><br>목표 ${state.targetMin}분 안에 집중해서 끝내기`;if($('#soundRecommendText'))updateSoundUI()}
+$$('.catHome').forEach(b=>b.onclick=()=>{$$('.catHome').forEach(x=>x.classList.remove('active'));b.classList.add('active');state.cat=b.dataset.homecat;state.detail=TASKS[state.cat][0];show('#setupView');$$('.mainCat').forEach(x=>x.classList.toggle('active',x.dataset.cat===state.cat));renderChips()});
+$('#goalMenu').onclick=()=>show('#setupView');$('#shareMenu').onclick=()=>{show('#setupView');toast('과제를 정한 뒤 작전 공유하기를 눌러주세요.')};$('#calendarMenu').onclick=()=>toast('완료한 기록은 결과 화면에서 Google Calendar에 저장할 수 있어요.');$('#navHistory').onclick=()=>toast('완료 기록은 이 기기에 저장됩니다.');$('#navCalendar').onclick=()=>toast('완료 후 실제 시작·종료 시간으로 캘린더에 기록합니다.');$('#navSettings').onclick=()=>{updateProfileUI();updateSoundUI();show('#settingsView')};
+
+$('#settingsBack').onclick=()=>show('#homeView');
+$('#settingsHome').onclick=()=>show('#homeView');
+$('#settingsHistory').onclick=()=>toast('완료 기록은 이 기기에 저장됩니다.');
+$('#settingsCalendar').onclick=()=>toast('완료한 기록은 결과 화면에서 Google Calendar에 저장할 수 있어요.');
+$('#saveName').onclick=()=>{
+  const v=$('#profileName').value.trim().slice(0,12);
+  state.name=v;
+  localStorage.setItem('ta-name',v);
+  updateProfileUI();
+  toast(v?`${v} 이름으로 저장했어요.`:'이름을 비워두었어요.');
+};
+$('#profileName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#saveName').click()}});
+$('#settingsSoundOpen').onclick=openSoundSheet;
+$$('[data-quick-sound]').forEach(b=>b.onclick=()=>chooseSound(b.dataset.quickSound,false));
+
+$('#backHome').onclick=()=>show('#homeView');
+$$('.mainCat').forEach(b=>b.onclick=()=>{state.cat=b.dataset.cat;state.detail=TASKS[state.cat][0];$$('.mainCat').forEach(x=>x.classList.toggle('active',x===b));renderChips()});
+$('#amount').oninput=preview;$('#unit').onchange=preview;
+$$('.timeBtn').forEach(b=>b.onclick=()=>{if(b.dataset.min==='custom'){$('#customTimeWrap').classList.add('show');$('#customTime').focus();return}$('#customTimeWrap').classList.remove('show');state.targetMin=Number(b.dataset.min);$$('.timeBtn').forEach(x=>x.classList.toggle('active',x===b));preview()});
+$('#customTime').oninput=e=>{const v=Math.max(1,Math.min(180,Number(e.target.value)||25));state.targetMin=v;$$('.timeBtn').forEach(x=>x.classList.remove('active'));$$('.timeBtn').find(x=>x.dataset.min==='custom').classList.add('active');preview()};
+async function shareText(text){if(navigator.share){try{await navigator.share({title:'타임어택',text});return true}catch(e){if(e.name==='AbortError')return false}}try{await navigator.clipboard.writeText(text);toast('공유 문구를 복사했어요.');return true}catch(e){toast(text);return false}}
+$('#sharePlan').onclick=async()=>{preview();const who=displayName()?`${displayName()}의 `:'';const txt=`[타임어택 작전]\n${who}오늘의 과제: ${mission()}\n목표 시간: ${state.targetMin}분\n지금부터 집중해서 도전할게요. 끝나면 결과도 알려드릴게요.`;const ok=await shareText(txt);if(ok){state.shared=true;$('#shareStatus').classList.remove('hidden');$$('.step')[2].classList.add('on')}};
+function persist(){localStorage.setItem('ta-active',JSON.stringify({name:state.name,cat:state.cat,detail:state.detail,amount:state.amount,unit:state.unit,targetMin:state.targetMin,startAt:state.startAt,running:state.running,paused:state.paused,pauseStart:state.pauseStart,issueMs:state.issueMs,issues:state.issues,bgm:state.bgm,sound:state.sound}))}
+function elapsed(){return state.startAt?Math.max(0,now()-state.startAt):0}function currentIssue(){return state.paused&&state.pauseStart?Math.max(0,now()-state.pauseStart):0}function focusMs(){return Math.max(0,elapsed()-state.issueMs-currentIssue())}
+function update(){if(!state.startAt)return;const total=elapsed(),target=state.targetMin*60000,remain=target-focusMs();if(remain>=0){$('#timerLabel').textContent='남은 시간';$('#timerDigits').textContent=mmss(Math.ceil(remain/1000));$('#timerDigits').style.color='#ffd31c'}else{$('#timerLabel').textContent='목표시간 돌파';$('#timerDigits').textContent='+'+mmss(Math.floor(Math.abs(remain)/1000));$('#timerDigits').style.color='#ff7654'}$('#progressBar').style.width=Math.max(0,Math.min(100,(remain/target)*100))+'%';$('#focusStat').textContent=mmss(Math.floor(focusMs()/1000));$('#issueStat').textContent=mmss(Math.floor((state.issueMs+currentIssue())/1000));}
+
+$('#startBtn').onclick=async()=>{preview();await syncTime();state.startAt=now();state.running=true;state.paused=false;state.pauseStart=null;state.issueMs=0;state.issues=[];$('#missionPill').textContent=mission();$('#goalText').textContent=state.targetMin+':00';$('#startStat').textContent=fmtClock(state.startAt);show('#focusView');persist();clearInterval(state.tick);state.tick=setInterval(update,250);update();playBgm()};
+$('#musicToggle').onclick=e=>{e.stopPropagation();openSoundSheet()};
+$('#focusSoundOpen').onclick=openSoundSheet;
+$('#setupSoundOpen').onclick=openSoundSheet;
+$('#soundClose').onclick=closeSoundSheet;
+$('#soundDone').onclick=closeSoundSheet;
+$('#soundOff').onclick=()=>{chooseSound('off',true);closeSoundSheet()};
+$('#soundOverlay').onclick=e=>{if(e.target===$('#soundOverlay'))closeSoundSheet()};
+$$('.soundOption').forEach(b=>b.onclick=()=>chooseSound(b.dataset.sound,!!state.startAt&&!state.paused));
+$('#pauseBtn').onclick=()=>$('#issueSheet').classList.toggle('show');
+$$('.issueBtn').forEach(b=>b.onclick=()=>{if(state.paused)return;state.paused=true;state.running=false;state.pauseStart=now();state.issues.push({reason:b.textContent,start:state.pauseStart,end:null});$('#issueSheet').classList.remove('show');$('#resumeBtn').classList.add('show');pauseAllAudio();persist();update()});
+$('#resumeBtn').onclick=()=>{if(!state.paused)return;const end=now(),d=end-state.pauseStart;state.issueMs+=d;const last=state.issues[state.issues.length-1];if(last)last.end=end;state.paused=false;state.running=true;state.pauseStart=null;$('#resumeBtn').classList.remove('show');playBgm();persist();update()};
+function finishSession(){if(state.paused&&state.pauseStart){const end=now(),d=end-state.pauseStart;state.issueMs+=d;const last=state.issues[state.issues.length-1];if(last)last.end=end;state.pauseStart=null;state.paused=false}state.endAt=now();clearInterval(state.tick);stopAllAudio();localStorage.removeItem('ta-active');const total=state.endAt-state.startAt,focus=Math.max(0,total-state.issueMs),target=state.targetMin*60000,delta=focus-target;state.last={mission:mission(),targetMin:state.targetMin,startAt:state.startAt,endAt:state.endAt,total,issue:state.issueMs,focus,delta,issues:state.issues};const records=JSON.parse(localStorage.getItem('ta-records')||'[]');records.unshift(state.last);localStorage.setItem('ta-records',JSON.stringify(records.slice(0,50)));renderResult();show('#resultView')}
+$('#finishBtn').onclick=finishSession;
+function renderResult(){const r=state.last;$('#rMission').textContent=r.mission;$('#rTarget').textContent=r.targetMin+'분';$('#rStart').textContent=fmtClock(r.startAt);$('#rEnd').textContent=fmtClock(r.endAt);$('#rTotal').textContent=fmtDur(r.total);$('#rIssue').textContent=fmtDur(r.issue);$('#rFocus').textContent=fmtDur(r.focus);$('#rDelta').textContent=r.delta>0?'+'+fmtDur(r.delta):r.delta<0?'-'+fmtDur(Math.abs(r.delta)):'목표와 같음';$('#resultMessage').textContent=(displayName()?displayName()+', ':'')+(r.delta<=0?'집중력이 반짝였어요. 계획한 시간 안에 마무리했어요.':r.issue>0?'중간에 일이 있어도 다시 돌아와 끝까지 해냈어요.':'조금 더 걸렸지만 끝까지 해냈어요.')}
+$$('.sticker').forEach(b=>b.onclick=()=>{$$('.sticker').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');if(state.last){state.last.sticker=b.textContent;const records=JSON.parse(localStorage.getItem('ta-records')||'[]');if(records[0]){records[0].sticker=b.textContent;localStorage.setItem('ta-records',JSON.stringify(records))}}});
+$('#resultShare').onclick=()=>{const r=state.last;const issueText=r.issues.length?r.issues.map(x=>x.reason).join(', '):'없음';shareText(`[타임어택 결과]\n${displayName()?displayName()+' · ':''}과제: ${r.mission}\n목표: ${r.targetMin}분\n시작: ${fmtClock(r.startAt)} / 완료: ${fmtClock(r.endAt)}\n전체 도전시간: ${fmtDur(r.total)}\nISSUE: ${fmtDur(r.issue)} (${issueText})\n실제 집중시간: ${fmtDur(r.focus)}\n목표 대비: ${r.delta>0?'+':''}${fmtDur(Math.abs(r.delta))}`)};
+let tokenClient=null;
+function showCal(msg,ok=true){const e=$('#calendarStatus');e.textContent=msg;e.style.background=ok?'#eef7e9':'#fff0e8';e.style.color=ok?'#3c6c3b':'#9a4d2e';e.classList.add('show')}
+async function createCalendarEvent(accessToken){const r=state.last;const issueText=r.issues.length?r.issues.map(x=>x.reason).join(', '):'없음';const body={summary:`타임어택 · ${r.mission}`,description:`목표 ${r.targetMin}분\n전체 도전시간 ${fmtDur(r.total)}\nISSUE ${fmtDur(r.issue)} (${issueText})\n실제 집중시간 ${fmtDur(r.focus)}\n목표 대비 ${r.delta>0?'+':''}${fmtDur(Math.abs(r.delta))}`,start:{dateTime:new Date(r.startAt).toISOString(),timeZone:cfg.TIME_ZONE||'Asia/Seoul'},end:{dateTime:new Date(r.endAt).toISOString(),timeZone:cfg.TIME_ZONE||'Asia/Seoul'}};const resp=await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cfg.CALENDAR_ID||'primary')}/events`,{method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify(body)});if(!resp.ok)throw new Error(await resp.text());return resp.json()}
+$('#calendarBtn').onclick=()=>{if(!cfg.GOOGLE_CLIENT_ID){showCal('config.js에 Google OAuth Client ID를 입력해 주세요.',false);return}if(!(window.google&&google.accounts&&google.accounts.oauth2)){showCal('Google 로그인 모듈을 불러오지 못했습니다. 인터넷 연결 후 다시 눌러주세요.',false);return}tokenClient=google.accounts.oauth2.initTokenClient({client_id:cfg.GOOGLE_CLIENT_ID,scope:'https://www.googleapis.com/auth/calendar.events',callback:async token=>{if(token.error){showCal('Google Calendar 권한을 받지 못했습니다.',false);return}try{await createCalendarEvent(token.access_token);showCal('Google Calendar에 실제 시작·종료 시간으로 기록했어요.')}catch(e){console.error(e);showCal('캘린더 기록에 실패했습니다. OAuth 도메인 설정을 확인해 주세요.',false)}}});tokenClient.requestAccessToken({prompt:'consent'})};
+$('#newMission').onclick=()=>{state.startAt=null;state.endAt=null;state.last=null;$('#shareStatus').classList.add('hidden');show('#homeView')};
+async function restore(){try{const s=JSON.parse(localStorage.getItem('ta-active')||'null');if(!s||!s.startAt)return;Object.assign(state,s);if(!state.sound)state.sound=localStorage.getItem('ta-sound')||'piano';state.bgm=state.sound!=='off';updateSoundUI();await syncTime();$('#missionPill').textContent=mission();$('#goalText').textContent=state.targetMin+':00';$('#startStat').textContent=fmtClock(state.startAt);show('#focusView');if(state.paused)$('#resumeBtn').classList.add('show');clearInterval(state.tick);state.tick=setInterval(update,250);update();if(!state.paused)playBgm()}catch(e){console.error(e)}}
+renderChips();preview();updateProfileUI();updateSoundUI();syncTime();restore();if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
+})();
+</script>
+</body>
+</html>

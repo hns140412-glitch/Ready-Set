@@ -1,0 +1,9 @@
+﻿타임어택 GitHub 최종 검증
+================================
+[PASS] index.html
+[PASS] manifest.json
+[PASS] sw.js
+[PASS] README.md
+[PASS] .nojekyll
+[PASS] 결과화면 고급화 CSS
+[PASS] JavaScript 문법

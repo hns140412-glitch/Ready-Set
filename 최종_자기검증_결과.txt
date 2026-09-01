@@ -1,0 +1,28 @@
+﻿타임어택 PWA 최종 자기검증 결과
+======================================
+
+[PASS] HTML ID 중복 - 중복 없음
+[PASS] 필수 UI 요소 - 모두 존재
+[PASS] 10/15/25/직접입력 목표시간 - 반영
+[PASS] 과제 텍스트 입력 - 반영
+[PASS] 음성 입력 - 반영
+[PASS] 실제 움직이는 아날로그 시계 - 반영
+[PASS] 공유 성공 검증 - 반영
+[PASS] 공유 실패 수동창 - 반영
+[PASS] Netlify 서버시간 동기화 - 반영
+[PASS] ISSUE 시간 분리 - 반영
+[PASS] 설정 이름 저장 - 반영
+[PASS] 설정 BGM 저장 - 반영
+[PASS] essential; 재생목록 - 반영
+[PASS] 로컬 에셋 경로 - 누락 없음
+[PASS] JavaScript 문법 - node --check 통과
+[PASS] START_PC_TEST.bat - 포함
+[PASS] local_server.ps1 - 포함
+[PASS] PC_테스트_방법과순서.txt - 포함
+
+환경 제약
+- 음성 입력은 브라우저의 Web Speech API 지원 여부에 따라 달라집니다.
+- essential;은 YouTube 외부 임베드 허용 및 인터넷 연결이 필요합니다.
+- Google Calendar는 OAuth Client ID와 허용 도메인 설정이 완료되어야 실제 저장됩니다.
+- 일반 PC 로컬 서버에서는 Netlify 서버시간 함수가 없으므로 로컬시간 fallback으로 테스트됩니다.
+- iPhone 잠금 상태에서 YouTube 임베드 BGM 지속 재생은 보장되지 않습니다.
