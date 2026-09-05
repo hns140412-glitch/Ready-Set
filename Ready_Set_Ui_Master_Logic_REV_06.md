@@ -4088,3 +4088,119 @@ Change Request
 > **실사용 피드백은 다음 MASTER Revision으로 환류한다.**
 
 **END OF READY & SET UI MASTER LOGIC REV_06**
+
+
+---
+
+# 114. READY & SET–NOTION FAMILY TIMETABLE / TO-DO INTEGRATION — APPROVED DELTA / HARD LOCK
+
+## 114.1 Scope and default execution
+
+- Timetable, To-do and performance records are isolated per family.
+- The currently connected administrator account `soma (hns140412@gmail.com)` uses `즉시 실행` by default.
+- Administrator default execution SHALL NOT require a second opt-in prompt.
+- The administrator may later change the mode to `선택 실행` or `중지`.
+- Other families are not automatically enabled. Each family chooses whether to use the integration.
+- One family's timetable, To-do or performance records SHALL NOT be shared, copied or exposed to another family.
+
+## 114.2 Notion configuration contract
+
+Family integration settings SHALL contain at minimum:
+- family identity
+- applied account
+- account role
+- execution mode: `즉시 실행 / 선택 실행 / 중지`
+- Ready & Set integration enabled state
+- Timetable-to-To-do enabled state
+- changeable state
+- Private state
+
+Current administrator default:
+
+```text
+family = 관리자 가족
+account = soma (hns140412@gmail.com)
+role = 관리자
+executionMode = 즉시 실행
+readySetSync = ON
+timetableToTodo = ON
+changeable = YES
+private = YES
+```
+
+## 114.3 Timetable data contract
+
+A timetable item SHALL support:
+- family setting relation
+- day of week
+- subject / activity
+- start time
+- end time
+- Ready & Set integration state
+- later-change permission
+- related To-do item(s)
+
+Actual subject/day/time values SHALL come from user-provided or approved timetable evidence. Missing timetable evidence SHALL remain `UNKNOWN`; do not invent subjects or times.
+
+## 114.4 To-do creation and link contract
+
+When a family's execution mode permits execution and both integration toggles are ON:
+
+```text
+FAMILY TIMETABLE
+→ resolve local date/day
+→ select enabled timetable items for the same family
+→ create or update the family's To-do
+→ attach Timetable relation
+→ attach Family Setting relation
+→ mark Ready & Set integration
+→ record creation source
+→ assign deterministic sync key
+→ expose as a selectable Ready & Set mission
+```
+
+Recommended deterministic key:
+
+```text
+familyId | localDate | weekday | startTime | subject
+```
+
+The same key SHALL NOT create duplicate To-do items.
+
+## 114.5 Change, stop and history rules
+
+- A later settings change is allowed.
+- `중지` blocks future automatic creation; it SHALL NOT silently delete prior To-do or performance history.
+- Before completion, an automatically created To-do may follow an approved timetable correction.
+- After completion, historical records are preserved. Corrections are recorded as later changes rather than silent rewrites.
+- Manual To-do items SHALL NOT be overwritten by timetable synchronization.
+- Existing source files and records SHALL NOT be silently replaced.
+
+## 114.6 Runtime and validation
+
+Notion Relation fields alone do not prove runtime synchronization.
+
+Required validation:
+- administrator immediate-mode configuration exists
+- family isolation fields exist on Timetable and To-do
+- one approved timetable item creates exactly one related To-do item
+- the To-do links back to the correct Timetable and Family Setting
+- the item appears as a Ready & Set mission candidate
+- mode change affects future creation without deleting history
+- another family receives no copied data
+- duplicate execution creates no duplicate item
+
+Status must remain separate:
+
+```text
+SCHEMA PASS ≠ DATA PASS ≠ SYNC FUNCTION PASS ≠ READY & SET UI PASS ≠ RELEASE PASS
+```
+
+Current state at approval:
+- administrator default configuration: IMPLEMENTED IN NOTION
+- family-scoped schema: IMPLEMENTED IN NOTION
+- actual user timetable rows: UNKNOWN / source not recovered
+- automatic runtime synchronization: NOT YET VERIFIED
+- Ready & Set UI exposure: NOT YET VERIFIED
+
+**END OF SECTION 114**
