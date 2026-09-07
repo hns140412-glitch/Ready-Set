@@ -155,4 +155,33 @@ FAIL if:
 - child-defined island/base-camp names are lost,
 - REV_06 existing validated features are silently removed.
 
+## 13. SHARED ASSIGNMENT CAPTURE SURFACE — GUIDE CONTRACT
+
+Ready & Set may render or route the shared GUIDE / MAIN Assignment Camera/OCR intake, but does not own OCR interpretation.
+
+This is not a direct import of a specialist-project OCR feature. It is a shared assignment-intake capability governed by `TAKY/OS/GUIDE_FAMILY_LEARNING_OS.md`.
+
+Required project behavior:
+- normal capture view = live camera + bottom shutter priority;
+- no persistent photo-count emphasis during rapid capture;
+- shutter → local temporary save → immediate next shot;
+- analysis action = `분석 맡기기`; it marks a batch boundary, not capture completion;
+- analysis may be followed by `이어서 촬영하기`;
+- failed quality result identifies `N번째 장` with thumbnail and retakes only that image;
+- valid photos and analysis results survive a targeted retake;
+- Review-before-Commit precedes confirmed assignment and Google Drive save;
+- system copy stays literal; Guide carries short warmth/wit without interrupting capture.
+
+Inherited Guide lines:
+- `좋아, 이제 내 차례네.`
+- `사진 속 단서부터 꺼내는 중.`
+- `비슷한 건 모으고, 수상한 건 따로.`
+- `놓친 게 있나 한 바퀴만 더.`
+- `정리 끝. 다음 사진도 가져와.`
+- quality repair examples use `N번째 장` and joke about light/focus/page, never the child or parent.
+
+`촬영 완료`, per-shot forced classification, always-visible count emphasis and full-batch restart for one failed image are superseded for this flow.
+
+Actual PWA implementation, deployment, OCR provider/thresholds and real-device validation remain outside this document delta and UNVERIFIED.
+
 END — READY & SET UI MASTER LOGIC REV_07
