@@ -184,4 +184,21 @@ Inherited Guide lines:
 
 Actual PWA implementation, deployment, OCR provider/thresholds and real-device validation remain outside this document delta and UNVERIFIED.
 
+## 14. PLANNER ENTITY SEMANTICS — HARD LOCK
+
+`SCHEDULE COMMITMENT ≠ HOMEWORK TEMPLATE ≠ DATED TODO INSTANCE ≠ PROGRESS EVENT`
+
+A fixed timetable, academy schedule or recurring life commitment SHALL NOT automatically become a learning mission.
+
+Ready & Set / Planner SHALL distinguish:
+- reusable schedule/commitment source,
+- reusable homework/assignment template where applicable,
+- dated execution instance,
+- progress/state-transition event/history.
+
+Identity keys SHALL match the lifecycle of the entity they identify.
+A weekly recurring key SHALL NOT be reused as the sole identity of a dated execution instance or completion event.
+
+Exact schema/property names remain implementation-owned and may be refined by the applicable Notion/runtime migration contract.
+
 END — READY & SET UI MASTER LOGIC REV_07
