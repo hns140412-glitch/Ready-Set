@@ -1,17 +1,20 @@
 {
   "product": "Ready & Set",
-  "masterRevision": "REV_06",
-  "masterFile": "Ready_Set_Ui_Master_Logic_REV_06.md",
-  "appVersion": "0.9.2",
+  "masterRevision": "REV_07",
+  "masterFile": "Ready_Set_Ui_Master_Logic_REV_07.md",
+  "appVersion": "0.9.3-rc1",
   "schemaVersion": "5",
-  "cacheVersion": "ready-set-v092",
-  "releaseStatus": "PRE_RC_LIVE_VALIDATION_PENDING",
+  "sessionContractVersion": "REV_07",
+  "cacheVersion": "ready-set-v093-rev07",
+  "releaseStatus": "DEPLOYMENT_CANDIDATE_DEVICE_VALIDATION_PENDING",
   "notes": [
-    "BGM restored with original bundled audio assets; static audio integrity validated",
-    "Visible Main Guide assets integrated across Home/Focus/Recording/Result",
-    "Guide name recommendations and voice styles added",
-    "Pause reason sheet restored",
-    "Mission voice input fallback restored",
-    "Guest guide linked to actual recording session and result/share card"
+    "REV_06 validated product/UI features remain the inherited baseline",
+    "REV_07 compatibility runtime adds one-session/one-target-time/multi-task/Lap state without replacing the legacy state schema",
+    "Ready & Set is the single session-state owner; specialist app switches do not pause or end the active Lap",
+    "Hide & Seek handoff uses session_id/goal_id/task_id/lap_id/return_target and returns task state to Ready & Set",
+    "Task states are tracked independently from session end: COMPLETED/PARTIAL/DEFERRED/WAITING_FOR_PARENT/BLOCKED",
+    "Session end now passes through a Wrap-up Gate; Guide voice is limited to unresolved-state clarification",
+    "Timestamp-derived session timing remains authoritative across navigation/background return",
+    "Real-device cross-app return, voice wrap-up, PWA cache update and Snap & Pop bridge remain validation gates before Release PASS"
   ]
 }
