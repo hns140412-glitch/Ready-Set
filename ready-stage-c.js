@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION = '2026.09.08-stage-e1';
+  const VERSION = '2026.09.08-stage-e2';
   const load = src => new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = `${src}?v=${encodeURIComponent(VERSION)}`;
