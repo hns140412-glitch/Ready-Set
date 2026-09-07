@@ -1,7 +1,7 @@
-const CACHE='ready-set-v092';
+const CACHE='ready-set-v093-rev07';
 const CORE=[
-'./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./VERSION.json',
-'./Ready_Set_Ui_Master_Logic_REV_06.md',
+'./','./index.html','./styles.css','./app.js','./ready-runtime-v07.js','./manifest.webmanifest','./VERSION.json',
+'./Ready_Set_Ui_Master_Logic_REV_06.md','./Ready_Set_Ui_Master_Logic_REV_07.md',
 './assets/icon-192.png','./assets/icon-512.png',
 './assets/guide-lumi.png','./assets/guide-pico.png','./assets/guide-mori.png',
 './assets/bgm-piano.wav','./assets/bgm-nature.wav','./assets/bgm-water.wav','./assets/bgm-lofi.wav'
@@ -16,5 +16,5 @@ self.addEventListener('fetch',e=>{
    e.respondWith(fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put('./index.html',copy));return r}).catch(()=>caches.match('./index.html')));
    return;
  }
- e.respondWith(caches.match(e.request).then(cached=>cached||fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r})));
+ e.respondWith(fetch(e.request).then(r=>{if(r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));}return r}).catch(()=>caches.match(e.request)));
 });
