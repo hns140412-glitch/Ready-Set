@@ -1,4 +1,4 @@
-const CACHE='ready-set-v093-rev07-staging1';
+const CACHE='ready-set-v093-rev07-staging2';
 const CORE=[
 './','./index.html','./styles.css','./app.js','./ready-runtime-v07.js','./ready-stage-c.js','./manifest.webmanifest','./VERSION.json',
 './Ready_Set_Ui_Master_Logic_REV_06.md','./Ready_Set_Ui_Master_Logic_REV_07.md',

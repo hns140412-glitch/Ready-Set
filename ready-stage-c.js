@@ -1,10 +1,11 @@
 (() => {
   'use strict';
 
-  const STAGE_VERSION = '2026.09.07-stage-c1';
+  const STAGE_VERSION = '2026.09.07-stage-c2';
   const APP_VERSION = '0.9.3-rc2';
-  const CACHE_VERSION = 'ready-set-v093-rev07-staging1';
+  const CACHE_VERSION = 'ready-set-v093-rev07-staging2';
   const ESSENTIAL = 'essential;';
+  const LEGACY_ESSENTIAL = 'essential';
   const VIDEO_ID = 'h2sHEe_xnmU';
   const PLAYLIST_ID = 'PLKRZTF1Q1uwYFbRwQzrySyGXYJVXqcUVu';
 
@@ -33,9 +34,36 @@
     if (el) el.textContent = text;
   }
 
+  function migrateEssentialKey() {
+    let changed = false;
+    if (state.sound === LEGACY_ESSENTIAL) {
+      state.sound = ESSENTIAL;
+      changed = true;
+    }
+    if (state.activeSession?.sound === LEGACY_ESSENTIAL) {
+      state.activeSession.sound = ESSENTIAL;
+      changed = true;
+    }
+    if (changed) save();
+    return changed;
+  }
+
+  function removeFailedYouTubeScript() {
+    document.querySelectorAll('script[data-ready-essential-youtube]').forEach(script => script.remove());
+  }
+
+  function resetYouTubeHost() {
+    const wrap = document.getElementById('readyEssentialHostWrap');
+    if (wrap) wrap.remove();
+  }
+
   function ensureYouTubeHost() {
     let wrap = document.getElementById('readyEssentialHostWrap');
-    if (wrap) return document.getElementById('readyEssentialHost');
+    if (wrap) {
+      let host = document.getElementById('readyEssentialHost');
+      if (host) return host;
+      wrap.remove();
+    }
     wrap = document.createElement('div');
     wrap.id = 'readyEssentialHostWrap';
     wrap.setAttribute('aria-hidden', 'true');
@@ -50,6 +78,7 @@
   function loadYouTubeApi() {
     if (window.YT?.Player) return Promise.resolve(window.YT);
     if (ytApiPromise) return ytApiPromise;
+
     ytApiPromise = new Promise((resolve, reject) => {
       const previous = window.onYouTubeIframeAPIReady;
       window.onYouTubeIframeAPIReady = () => {
@@ -57,6 +86,7 @@
         if (window.YT?.Player) resolve(window.YT);
         else reject(new Error('YOUTUBE_API_UNAVAILABLE'));
       };
+
       let script = document.querySelector('script[data-ready-essential-youtube]');
       if (!script) {
         script = document.createElement('script');
@@ -66,22 +96,35 @@
         script.onerror = () => reject(new Error('YOUTUBE_API_LOAD_FAILED'));
         document.head.appendChild(script);
       }
+
       setTimeout(() => {
         if (window.YT?.Player) resolve(window.YT);
         else reject(new Error('YOUTUBE_API_TIMEOUT'));
       }, 8000);
     }).catch(error => {
       ytApiPromise = null;
+      if (!window.YT?.Player) removeFailedYouTubeScript();
       throw error;
     });
+
     return ytApiPromise;
   }
 
   async function ensureYouTubePlayer() {
     if (ytPlayer?.playVideo) return ytPlayer;
     if (ytPlayerPromise) return ytPlayerPromise;
+
     ytPlayerPromise = loadYouTubeApi().then(() => new Promise((resolve, reject) => {
       ensureYouTubeHost();
+      let settled = false;
+      const fail = code => {
+        status(`${ESSENTIAL} · 재생목록 연결을 확인해 주세요`);
+        if (!settled) {
+          settled = true;
+          reject(new Error(code));
+        }
+      };
+
       try {
         ytPlayer = new YT.Player('readyEssentialHost', {
           height: '2',
@@ -95,23 +138,31 @@
             rel: 0
           },
           events: {
-            onReady: event => resolve(event.target),
+            onReady: event => {
+              if (!settled) {
+                settled = true;
+                resolve(event.target);
+              }
+            },
             onStateChange: event => {
               if (activeSound() !== ESSENTIAL) return;
               if (event.data === YT.PlayerState.PLAYING) status(`${ESSENTIAL} · 재생 중`);
               if (event.data === YT.PlayerState.PAUSED) status(`${ESSENTIAL} · 일시정지`);
             },
-            onError: () => status(`${ESSENTIAL} · 재생목록 연결을 확인해 주세요`)
+            onError: event => fail(`YOUTUBE_PLAYER_ERROR_${event?.data ?? 'UNKNOWN'}`)
           }
         });
       } catch (error) {
-        reject(error);
+        fail(error?.message || 'YOUTUBE_PLAYER_CREATE_FAILED');
       }
     })).catch(error => {
+      try { ytPlayer?.destroy?.(); } catch {}
       ytPlayerPromise = null;
       ytPlayer = null;
+      resetYouTubeHost();
       throw error;
     });
+
     return ytPlayerPromise;
   }
 
@@ -125,6 +176,7 @@
       try { local.pause(); } catch {}
     }
     status(`${ESSENTIAL} · 연결 중`);
+
     try {
       const player = await ensureYouTubePlayer();
       try { player.setVolume(preview ? 26 : 34); } catch {}
@@ -237,14 +289,31 @@
   }
 
   function installResumeGesture() {
-    const resumeOnce = async () => {
+    const resumeWhenSafe = async () => {
+      const focus = document.getElementById('focusView');
+      if (!focus?.classList.contains('active')) return;
+      if (mediaRecorder?.state === 'recording') return;
       const session = state.activeSession;
       if (!session || session.pausedAt || session.sound === 'OFF') return;
       if (session.sound === ESSENTIAL && ytPlayer?.getPlayerState?.() === 1) return;
       if (session.sound !== ESSENTIAL && !bgm()?.paused) return;
       await resumeBgm(session.sound);
     };
-    window.addEventListener('pointerdown', resumeOnce, { passive: true });
+    window.addEventListener('pointerdown', resumeWhenSafe, { passive: true });
+  }
+
+  function restoreActiveSessionSurface() {
+    const session = state.activeSession;
+    if (!session || session.completed) return false;
+    const focus = document.getElementById('focusView');
+    const recording = document.getElementById('recordingView');
+    if (recording?.classList.contains('active')) return false;
+    if (!focus?.classList.contains('active')) {
+      nav('focus');
+      return true;
+    }
+    renderFocus();
+    return false;
   }
 
   function validate() {
@@ -256,18 +325,23 @@
       essentialInSoundMap: Object.prototype.hasOwnProperty.call(SOUND_MAP, ESSENTIAL),
       essentialSettingsButton: !!document.querySelector(`[data-sound="${ESSENTIAL}"]`),
       essentialSheetButton: !!document.querySelector(`[data-sheet-sound="${ESSENTIAL}"]`),
+      essentialLegacyKeyMigrated: state.sound !== LEGACY_ESSENTIAL && state.activeSession?.sound !== LEGACY_ESSENTIAL,
       readyRev07Loaded: !!window.ReadySetRev07,
+      activeSessionOnFocus: !state.activeSession || state.activeSession.completed || !!document.getElementById('focusView')?.classList.contains('active'),
+      recordingBgmGuard: true,
       routeMode: 'HTTPS_CONTEXT_PRESERVING',
       installedPwaDirectLaunch: 'REVIEW_REQUIRED'
     };
   }
 
   function boot() {
+    migrateEssentialKey();
     installEssentialControls();
     normalizeStageText();
     warmYouTubeWhenChooserOpens();
     installResumeGesture();
-    window.ReadyStageC = Object.freeze({ version: STAGE_VERSION, validate, loadYouTubeApi });
+    restoreActiveSessionSurface();
+    window.ReadyStageC = Object.freeze({ version: STAGE_VERSION, validate, loadYouTubeApi, restoreActiveSessionSurface });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
