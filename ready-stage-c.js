@@ -1,9 +1,10 @@
 (() => {
   'use strict';
-  const VERSION = '2026.09.08-stage-f2';
+  const VERSION = '2026.09.08-stage-f3-loaderfix';
   const load = src => new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = `${src}?v=${encodeURIComponent(VERSION)}`;
+    const join = src.includes('?') ? '&' : '?';
+    script.src = `${src}${join}v=${encodeURIComponent(VERSION)}&cb=${Date.now()}`;
     script.async = false;
     script.onload = resolve;
     script.onerror = () => reject(new Error(`LOAD_FAILED:${src}`));
@@ -14,9 +15,16 @@
     await load('./ready-stage-d.js');
     await load('./ready-stage-e.js');
     await load('./ready-stage-f.js');
+    if (!window.ReadyStageF) throw new Error('STAGE_F_BOOT_MISSING');
+    document.documentElement.dataset.readyStageLoader = VERSION;
+    window.ReadyStageF.render?.();
   })().catch(error => {
     console.error('[Ready Stage Loader]', error);
+    document.documentElement.dataset.readyStageLoader = 'ERROR';
     const t = document.getElementById('toast');
-    if (t) { t.textContent = 'Preview 업데이트를 불러오지 못했어요. 새로고침해 주세요.'; t.hidden = false; }
+    if (t) {
+      t.textContent = `Preview 업데이트 오류 · ${error.message}`;
+      t.hidden = false;
+    }
   });
 })();
