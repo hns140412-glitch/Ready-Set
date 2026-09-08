@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION = '2026.09.08-stage-f3-loaderfix';
+  const VERSION = '2026.09.08-stage-f4-rolehome';
   const load = src => new Promise((resolve, reject) => {
     const script = document.createElement('script');
     const join = src.includes('?') ? '&' : '?';
@@ -16,15 +16,14 @@
     await load('./ready-stage-e.js');
     await load('./ready-stage-f.js');
     if (!window.ReadyStageF) throw new Error('STAGE_F_BOOT_MISSING');
-    document.documentElement.dataset.readyStageLoader = VERSION;
     window.ReadyStageF.render?.();
+    const check=window.ReadyStageF.validate?.();
+    if(!check?.roleMarker||!check?.homePrimary)throw new Error('STAGE_F_ROLE_HOME_MISSING');
+    document.documentElement.dataset.readyStageLoader = VERSION;
   })().catch(error => {
     console.error('[Ready Stage Loader]', error);
     document.documentElement.dataset.readyStageLoader = 'ERROR';
     const t = document.getElementById('toast');
-    if (t) {
-      t.textContent = `Preview 업데이트 오류 · ${error.message}`;
-      t.hidden = false;
-    }
+    if (t) { t.textContent = `Preview 업데이트 오류 · ${error.message}`; t.hidden = false; }
   });
 })();
