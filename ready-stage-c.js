@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION = '2026.09.08-stage-g1-intake-planner';
+  const VERSION = '2026.09.08-stage-g1.1-regression-fix';
   const load = src => new Promise((resolve, reject) => {
     const script = document.createElement('script');
     const join = src.includes('?') ? '&' : '?';
@@ -15,11 +15,14 @@
     await load('./ready-stage-d.js');
     await load('./ready-stage-e.js');
     await load('./ready-stage-f.js');
-    if (!window.ReadyStageE || !window.ReadyStageF || !window.ReadyAssignmentModel) throw new Error('STAGE_G1_BOOT_MISSING');
+    await load('./ready-stage-g1-fix.js');
+    if (!window.ReadyStageE || !window.ReadyStageF || !window.ReadyAssignmentModel || !window.ReadyStageG11) throw new Error('STAGE_G11_BOOT_MISSING');
     window.ReadyStageF.render?.();
-    const f=window.ReadyStageF.validate?.(),e=window.ReadyStageE.validate?.();
-    if(!f?.roleMarker||!f?.homePrimary||!f?.assignmentFactModel)throw new Error('STAGE_G1_ROLE_OR_FACT_MODEL_MISSING');
-    if(e?.minuteCapacityAuthority!==false||e?.nextTuesdayNormalSlot!==false)throw new Error('STAGE_G1_PLANNER_SEMANTICS_MISSING');
+    window.ReadyStageG11.hydrateParentInputs?.();
+    const f=window.ReadyStageF.validate?.(),e=window.ReadyStageE.validate?.(),g=window.ReadyStageG11.validate?.();
+    if(!f?.roleMarker||!f?.homePrimary||!f?.assignmentFactModel)throw new Error('STAGE_G11_ROLE_OR_FACT_MODEL_MISSING');
+    if(e?.minuteCapacityAuthority!==false||e?.nextTuesdayNormalSlot!==false)throw new Error('STAGE_G11_PLANNER_SEMANTICS_MISSING');
+    if(!g?.wrappedModel||g?.talentSourceTuesdayActiveTasks!==0)throw new Error('STAGE_G11_REGRESSION_FIX_MISSING');
     document.documentElement.dataset.readyStageLoader = VERSION;
   })().catch(error => {
     console.error('[Ready Stage Loader]', error);
