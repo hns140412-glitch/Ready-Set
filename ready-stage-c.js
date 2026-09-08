@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION = '2026.09.08-stage-e2';
+  const VERSION = '2026.09.08-stage-f2';
   const load = src => new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = `${src}?v=${encodeURIComponent(VERSION)}`;
@@ -13,6 +13,7 @@
     await load('./ready-stage-c-base.js');
     await load('./ready-stage-d.js');
     await load('./ready-stage-e.js');
+    await load('./ready-stage-f.js');
   })().catch(error => {
     console.error('[Ready Stage Loader]', error);
     const t = document.getElementById('toast');
