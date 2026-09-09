@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION='2026.09.09-base-selftest-v1';
+  const VERSION='2026.09.09-base-selftest-v2';
   const tests=[];
   const push=(name,pass,detail='')=>tests.push({name,pass:!!pass,detail:String(detail||'')});
   function run(){
@@ -14,6 +14,8 @@
     push('legacy-compatibility-absent',!q('legacyCompatibility'));
     push('legacy-home-hero-absent',!q('heroTime'));
     push('legacy-home-categories-absent',!document.querySelector('#homeView .categoryGrid'));
+    push('g13-runtime-retired',!window.ReadyStageG13);
+    push('g13-script-not-loaded',![...document.scripts].some(s=>/ready-stage-g13-authority-recovery\.js/.test(s.src)));
     push('home-todo-root',!!q('homeTodayTodoList'));
     push('mission-planner-root',!!q('todayPlannerCard'));
     push('focus-controls',!!q('focusMission')&&!!q('pauseBtn')&&!!q('completeBtn'));
@@ -24,8 +26,6 @@
     push('planner-id-binding',runtime.plannerIdBinding===true);
     push('completion-writes-planner',runtime.completionWritesPlanner===true);
     push('time-optional',runtime.timeOptional===true);
-    const g13=window.ReadyStageG13?.validate?.()||{};
-    push('g13-no-presentation-overlay',g13.presentationOverlay===false&&g13.mutationObserver===false&&g13.titleMatchingBridge===false);
     const g14=window.ReadyStageG14?.validate?.()||{};
     push('no-free-time-inference',g14.noFreeTimeInference===true);
     push('science-conditional-cycle',g14.scienceConditionalCycle===true);
