@@ -1,0 +1,18 @@
+/* Ready & Set confirmed Base Home — no legacy-first flash */
+#homeView{background:linear-gradient(180deg,#f6b097 0%,#f8c3aa 45%,#fff3e8 100%)}
+#homeView .heroBlock{min-height:230px;padding-top:20px}
+#homeView .stopwatchArt{display:none!important}
+#homeView .heroCopy{width:100%;padding-right:92px}
+#homeView .heroCopy .kicker{font-size:10px;letter-spacing:.16em}
+#homeView .heroCopy h1{font-size:38px;line-height:1.02;margin:8px 0 10px}
+#homeView .heroCopy h1 br{display:none}
+#homeView .heroCopy p{font-size:12px}
+#homeView .homeGuideCard{position:absolute;right:0;top:22px;width:86px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.6);border-radius:22px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;box-shadow:0 12px 28px rgba(117,64,44,.08)}
+#homeView .homeGuideCopy small{font-size:8px;font-weight:900;color:#8a604e}#homeView .homeGuideCopy b{display:block;font-size:9px;line-height:1.35;margin-top:3px}#homeView .homeGuideCard>button{display:none}
+#homeView .commandCard{margin-top:0}#homeView .commandCard button{min-height:61px}
+#homeView .challengePanel{margin-top:20px}#homeView .challengePanel>.sectionTitle span{font-size:10px}#homeView .challengePanel>.sectionTitle h2{font-size:21px;margin-top:4px}
+/* Legacy category presentation is not part of the confirmed base home. */
+#homeView .challengePanel>.categoryGrid,#homeView #homeChips{display:none!important}
+#homeView #homeTodayTodoList{display:grid;gap:10px;margin-top:12px}
+#homeView .g12-empty{min-height:76px;display:flex;align-items:center;padding:16px;border:1px dashed rgba(28,27,24,.15);border-radius:18px;background:rgba(255,255,255,.48);font-size:13px;color:#6f685e}
+/* Time is secondary on Home; the old 25:00 hero is deliberately absent. */
