@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION = '2026.09.09-stage-base-ui-v4';
+  const VERSION = '2026.09.09-stage-base-ui-v5';
   const load = src => new Promise((resolve, reject) => {
     const script = document.createElement('script');
     const join = src.includes('?') ? '&' : '?';
@@ -16,17 +16,20 @@
     await load('./ready-stage-g13-authority-recovery.js');
     await load('./ready-stage-g14-planner-authority.js');
     await load('./ready-base-native-v2.js');
-    if (!window.ReadyBaseRuntimeV1 || !window.ReadyStageE || !window.ReadyStageF || !window.ReadyAssignmentModel || !window.ReadyStageG11 || !window.ReadyStageG13 || !window.ReadyStageG14 || !window.ReadyBaseNativeV2) throw new Error('BASE_UI_V4_BOOT_MISSING');
+    await load('./ready-base-selftest-v1.js');
+    if (!window.ReadyBaseRuntimeV1 || !window.ReadyStageE || !window.ReadyStageF || !window.ReadyAssignmentModel || !window.ReadyStageG11 || !window.ReadyStageG13 || !window.ReadyStageG14 || !window.ReadyBaseNativeV2 || !window.ReadyBaseSelfTestV1) throw new Error('BASE_UI_V5_BOOT_MISSING');
     window.ReadyStageF.render?.(); window.ReadyStageG11.hydrateParentInputs?.(); window.ReadyStageG14.render?.(); window.ReadyBaseNativeV2.render?.();
     const r=window.ReadyBaseRuntimeV1.validate?.(),e=window.ReadyStageE.validate?.(),g=window.ReadyStageG11.validate?.(),i=window.ReadyStageG13.validate?.(),j=window.ReadyStageG14.validate?.(),n=window.ReadyBaseNativeV2.validate?.();
-    if(!r?.nativeRuntime||r?.legacyAppJsRequired!==false||!r?.plannerIdBinding||!r?.completionWritesPlanner||!r?.timeOptional)throw new Error('BASE_UI_V4_NATIVE_RUNTIME_MISSING');
-    if(e?.minuteCapacityAuthority!==false||e?.nextTuesdayNormalSlot!==false)throw new Error('BASE_UI_V4_PLANNER_SEMANTICS_MISSING');
-    if(!g?.wrappedModel||g?.talentSourceTuesdayActiveTasks!==0)throw new Error('BASE_UI_V4_REGRESSION_FIX_MISSING');
-    if(!i?.pendingSessionBridge||i?.presentationOverlay!==false||i?.mutationObserver!==false||i?.titleMatchingBridge!==false)throw new Error('BASE_UI_V4_SESSION_BRIDGE_MISSING');
-    if(!j?.scheduleAuthority||!j?.noFreeTimeInference||!j?.scienceConditionalCycle||!j?.englishNextClassFromTimetable)throw new Error('BASE_UI_V4_PLANNER_AUTHORITY_MISSING');
-    if(!n?.nativeHome||!n?.legacyCategoryAbsent||!n?.plannerSelectionBridgesCore)throw new Error('BASE_UI_V4_NATIVE_HOME_MISSING');
-    if(document.getElementById('legacyCompatibility'))throw new Error('BASE_UI_V4_LEGACY_COMPATIBILITY_STILL_PRESENT');
-    if([...document.scripts].some(s=>/\/app\.js(?:$|\?)/.test(s.src)))throw new Error('BASE_UI_V4_LEGACY_APP_JS_STILL_LOADED');
+    if(!r?.nativeRuntime||r?.legacyAppJsRequired!==false||!r?.plannerIdBinding||!r?.completionWritesPlanner||!r?.timeOptional)throw new Error('BASE_UI_V5_NATIVE_RUNTIME_MISSING');
+    if(e?.minuteCapacityAuthority!==false||e?.nextTuesdayNormalSlot!==false)throw new Error('BASE_UI_V5_PLANNER_SEMANTICS_MISSING');
+    if(!g?.wrappedModel||g?.talentSourceTuesdayActiveTasks!==0)throw new Error('BASE_UI_V5_REGRESSION_FIX_MISSING');
+    if(!i?.pendingSessionBridge||i?.presentationOverlay!==false||i?.mutationObserver!==false||i?.titleMatchingBridge!==false)throw new Error('BASE_UI_V5_SESSION_BRIDGE_MISSING');
+    if(!j?.scheduleAuthority||!j?.noFreeTimeInference||!j?.scienceConditionalCycle||!j?.englishNextClassFromTimetable)throw new Error('BASE_UI_V5_PLANNER_AUTHORITY_MISSING');
+    if(!n?.nativeHome||!n?.legacyCategoryAbsent||!n?.plannerSelectionBridgesCore)throw new Error('BASE_UI_V5_NATIVE_HOME_MISSING');
+    if(document.getElementById('legacyCompatibility'))throw new Error('BASE_UI_V5_LEGACY_COMPATIBILITY_STILL_PRESENT');
+    if([...document.scripts].some(s=>/\/app\.js(?:$|\?)/.test(s.src)))throw new Error('BASE_UI_V5_LEGACY_APP_JS_STILL_LOADED');
+    const selftest=window.ReadyBaseSelfTestV1.run();
+    if(!selftest?.pass)throw new Error(`BASE_UI_V5_SELFTEST_FAIL:${selftest?.failures?.map(x=>x.name).join(',')||'UNKNOWN'}`);
     document.documentElement.dataset.readyStageLoader = VERSION;
   })().catch(error => { console.error('[Ready Base Loader]', error); document.documentElement.dataset.readyStageLoader='ERROR'; const t=document.getElementById('toast'); if(t){t.textContent=`Preview 업데이트 오류 · ${error.message}`;t.hidden=false;} });
 })();
