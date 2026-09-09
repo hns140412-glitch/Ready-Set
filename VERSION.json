@@ -2,21 +2,22 @@
   "product": "Ready & Set",
   "masterRevision": "REV_07",
   "masterFile": "Ready_Set_Ui_Master_Logic_REV_07.md",
-  "appVersion": "0.9.4-rc14",
+  "appVersion": "0.9.4-rc15",
   "schemaVersion": "5 + planner-v2-assignment-facts + schedule-authority-v1",
   "sessionContractVersion": "REV_07",
-  "cacheVersion": "ready-set-v094-rev07-staging17-base-ui-v5",
-  "releaseStatus": "STAGING_BASE_UI_V5_SELFTEST_WIRED_DEVICE_VALIDATION_PENDING",
+  "cacheVersion": "ready-set-v094-rev07-staging18-base-ui-v6",
+  "releaseStatus": "STAGING_BASE_UI_V6_G13_RETIRED_DEVICE_VALIDATION_PENDING",
   "notes": [
     "Production/main and central TAKY canonical remain unchanged",
     "Confirmed Home and Mission UI remain native markup in index.html",
     "Legacy app.js and legacyCompatibility remain removed",
     "ready-base-runtime-v1.js owns Base navigation, Planner-id Mission binding, optional Focus timer, pause, completion, Planner status writes, result, history, and calendar rendering",
-    "ready-base-selftest-v1.js now performs non-destructive runtime/DOM/authority checks without creating fake Planner Todos or altering homework facts",
-    "Staging loader fails visibly if native runtime, Planner authority, legacy-removal, time-secondary, or G1.4 authority invariants are missing",
-    "G1.3 remains session-contract compatibility only with no presentation overlay or MutationObserver",
+    "ready-base-native-v2.js owns native Home hydration and exact Planner task-id selection",
+    "G1.3 compatibility bridge is no longer loaded in the staging runtime; its historical file remains in the repository only for traceability",
+    "ready-base-selftest-v1.js now asserts that G1.3 is not loaded and that no G1.3 script is present in the live document",
     "Time remains optional/secondary and implicit legacy 25-minute state is not restored",
     "Existing readyset_planner_v1 and readyset_state records remain preserved",
+    "G1.4 schedule authority, English/science/Talent semantics, and no-free-time-inference remain unchanged",
     "Real iPhone path FACT -> Planner Todo -> Mission -> Focus -> completion -> history remains device-validation pending"
   ]
 }
