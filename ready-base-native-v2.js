@@ -1,0 +1,29 @@
+(() => {
+  'use strict';
+  const VERSION='2026.09.09-base-native-v2';
+  const ROLE=new URLSearchParams(location.search).get('role')==='parent'?'PARENT':'CHILD';
+  const TODAY=()=>new Date().toLocaleDateString('sv-SE');
+  const PLANNER_KEY='readyset_planner_v1';
+  const CORE_KEY='readyset_state';
+  const PENDING_KEY='ready_g13_pending_task';
+  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const read=(key,fallback={})=>{try{return JSON.parse(localStorage.getItem(key)||'null')||fallback}catch{return fallback}};
+  const write=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
+  const statusRank=s=>s==='IN_PROGRESS'?0:(s==='COMPLETED'?2:1);
+  const statusLabel=s=>s==='IN_PROGRESS'?'진행 중':s==='COMPLETED'?'완료':'아직 시작 전';
+  function todayTasks(){const p=read(PLANNER_KEY,{});return [...(p.days?.[TODAY()]?.tasks||[])].map((task,index)=>({task,index})).sort((a,b)=>statusRank(a.task.status)-statusRank(b.task.status)||a.index-b.index).map(x=>x.task)}
+  function taskTitle(t){return t?.title||t?.subject||'할 일'}
+  function taskDetail(t){return t?.volume||t?.unitLabel||t?.note||'분량/단위 확인 필요'}
+  function syncMission(t){const core=read(CORE_KEY,{});const label=[taskTitle(t),taskDetail(t)].filter(Boolean).join(' · ');core.selected=[];core.tasks=[label];core.activeSession=null;core.g13PlannerTask={id:t.id,date:TODAY(),status:t.status||'PLANNED',confirmationState:t.confirmationState||t.allocationState||null};write(CORE_KEY,core)}
+  function chooseTask(id){const p=read(PLANNER_KEY,{});const day=p.days?.[TODAY()];if(!day)return;const t=(day.tasks||[]).find(x=>String(x.id)===String(id));if(!t)return;day.tasks=(day.tasks||[]).map(x=>({...x,selected:String(x.id)===String(id)}));write(PLANNER_KEY,p);syncMission(t);sessionStorage.setItem(PENDING_KEY,String(id));location.reload()}
+  function hydrateIdentity(){const core=read(CORE_KEY,{});const name=(core.profile?.name||'RS').trim();const initials=name.slice(0,2).toUpperCase()||'RS';['homeAvatar','baseUserAvatar'].forEach(id=>{const el=document.getElementById(id);if(!el)return;if(core.profile?.photo){el.textContent='';el.style.backgroundImage=`url(${core.profile.photo})`;el.style.backgroundSize='cover';el.style.backgroundPosition='center'}else el.textContent=initials});const explorer=core.guide?.name||'루미';const en=document.getElementById('baseExplorerName');if(en)en.textContent=explorer;const ep=document.getElementById('baseExplorerPortrait');if(ep){ep.classList.add(core.guide?.type||'lumi');ep.setAttribute('data-guide',core.guide?.type||'lumi')}}
+  function render(){const home=document.getElementById('homeView');if(!home)return;const title=document.getElementById('baseHomeTitle'),lead=document.getElementById('baseHomeLead'),line=document.getElementById('baseExplorerLine'),kicker=document.getElementById('baseTodayKicker'),todayTitle=document.getElementById('baseTodayTitle'),actions=document.getElementById('baseActions'),root=document.getElementById('homeTodayTodoList');if(title)title.textContent=ROLE==='PARENT'?'오늘의 배정':'오늘, 어디부터 탐험할까?';if(lead)lead.textContent=ROLE==='PARENT'?'Planner가 배정한 오늘의 할 일을 확인해요.':'오늘 할 일을 하나씩 발견하고 시작해요.';if(line)line.textContent=ROLE==='PARENT'?'오늘 탐험을 함께 확인하고 있어요.':'오늘도 같이 가볼까?';if(kicker)kicker.textContent=ROLE==='PARENT'?'오늘 배정 현황':'오늘의 할 일';if(todayTitle)todayTitle.textContent=ROLE==='PARENT'?'Planner가 오늘 배정한 할 일이에요':'오늘 뭐부터 탐험할까?';if(actions)actions.innerHTML=`<button data-nav="mission"><b>${ROLE==='PARENT'?'숙제 입력 · 확인':'오늘 탐험 정하기'}</b><small>${ROLE==='PARENT'?'숙제 원본 FACT 촬영·입력·확인':'Planner가 준비한 오늘 할 일에서 선택'}</small><strong>→</strong></button><button data-nav="history"><b>${ROLE==='PARENT'?'학습 기록':'탐험 기록'}</b><small>${ROLE==='PARENT'?'아이의 진행과 완료 기록 보기':'완료한 탐험과 기록 보기'}</small><strong>→</strong></button>`;
+    hydrateIdentity();
+    const list=todayTasks();if(root){root.innerHTML='';if(!list.length){root.innerHTML=`<div class="baseEmpty">오늘 배정된 탐험은 없어요.${ROLE==='PARENT'?'<small>숙제 원본 FACT가 있다면 Planner 배정 상태를 확인해 주세요.</small>':''}</div>`}else{list.slice(0,3).forEach(t=>{const el=document.createElement(ROLE==='PARENT'?'div':'button');if(ROLE!=='PARENT')el.type='button';el.className=`baseTask ${t.status==='COMPLETED'?'completed':''}`;el.innerHTML=`<span><b>${esc(taskTitle(t))}</b><small>${esc(taskDetail(t))}</small></span><em>${esc(statusLabel(t.status))}</em>`;if(ROLE!=='PARENT')el.addEventListener('click',()=>chooseTask(t.id));root.appendChild(el)});if(list.length>3){const more=document.createElement('div');more.className='g12-home-more';more.textContent=`외 ${list.length-3}개`;root.appendChild(more)}}}
+    home.querySelectorAll('[data-nav]').forEach(btn=>{if(btn.dataset.nativeNavBound)return;btn.dataset.nativeNavBound='1';btn.addEventListener('click',()=>{const target=btn.dataset.nav;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.dataset.view===target));window.scrollTo(0,0)})});
+    document.documentElement.dataset.readyBaseNative=VERSION;
+  }
+  function validate(){return{version:VERSION,nativeHome:!!document.getElementById('baseHomeTitle'),legacyHeroAbsent:!document.getElementById('heroTime')||document.getElementById('heroTime')?.closest('#legacyCompatibility'),legacyCategoryAbsent:!document.querySelector('#homeView .categoryGrid'),todayTaskCount:todayTasks().length,role:ROLE,plannerSelectionBridgesCore:true}}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',render,{once:true});else render();
+  window.ReadyBaseNativeV2={version:VERSION,render,validate,todayTasks,chooseTask};
+})();
