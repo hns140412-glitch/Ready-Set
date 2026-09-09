@@ -1,0 +1,42 @@
+(() => {
+  'use strict';
+  const VERSION='2026.09.09-base-selftest-v1';
+  const tests=[];
+  const push=(name,pass,detail='')=>tests.push({name,pass:!!pass,detail:String(detail||'')});
+  function run(){
+    tests.length=0;
+    const q=id=>document.getElementById(id);
+    push('native-runtime',!!window.ReadyBaseRuntimeV1,window.ReadyBaseRuntimeV1?.version);
+    push('native-home',!!window.ReadyBaseNativeV2,window.ReadyBaseNativeV2?.version);
+    push('planner-model',!!window.ReadyAssignmentModel);
+    push('schedule-authority',!!window.ReadyStageG14);
+    push('legacy-app-js-absent',![...document.scripts].some(s=>/\/app\.js(?:$|\?)/.test(s.src)));
+    push('legacy-compatibility-absent',!q('legacyCompatibility'));
+    push('legacy-home-hero-absent',!q('heroTime'));
+    push('legacy-home-categories-absent',!document.querySelector('#homeView .categoryGrid'));
+    push('home-todo-root',!!q('homeTodayTodoList'));
+    push('mission-planner-root',!!q('todayPlannerCard'));
+    push('focus-controls',!!q('focusMission')&&!!q('pauseBtn')&&!!q('completeBtn'));
+    push('result-root',!!q('resultTasks')&&!!q('resultFocus'));
+    push('history-root',!!q('historyList'));
+    push('timer-secondary-copy',/보조/.test(q('targetTime')?.previousElementSibling?.textContent||'')||/보조 타이머/.test(q('focusView')?.textContent||''));
+    const runtime=window.ReadyBaseRuntimeV1?.validate?.()||{};
+    push('planner-id-binding',runtime.plannerIdBinding===true);
+    push('completion-writes-planner',runtime.completionWritesPlanner===true);
+    push('time-optional',runtime.timeOptional===true);
+    const g13=window.ReadyStageG13?.validate?.()||{};
+    push('g13-no-presentation-overlay',g13.presentationOverlay===false&&g13.mutationObserver===false&&g13.titleMatchingBridge===false);
+    const g14=window.ReadyStageG14?.validate?.()||{};
+    push('no-free-time-inference',g14.noFreeTimeInference===true);
+    push('science-conditional-cycle',g14.scienceConditionalCycle===true);
+    push('english-next-class-authority',g14.englishNextClassFromTimetable===true);
+    const failures=tests.filter(t=>!t.pass);
+    const result={version:VERSION,pass:failures.length===0,total:tests.length,failures,tests};
+    window.ReadyBaseSelfTestResult=result;
+    document.documentElement.dataset.readyBaseSelftest=result.pass?'PASS':'FAIL';
+    if(!result.pass) console.error('[Ready Base SelfTest]',result);
+    else console.info('[Ready Base SelfTest] PASS',result);
+    return result;
+  }
+  window.ReadyBaseSelfTestV1={version:VERSION,run};
+})();
