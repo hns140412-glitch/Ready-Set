@@ -1,6 +1,6 @@
-const CACHE='ready-set-v094-rev07-staging12-stage-g13';
+const CACHE='ready-set-v094-rev07-staging13-stage-g14';
 const CORE=[
-'./','./index.html','./styles.css','./app.js','./ready-runtime-v07.js','./ready-stage-c.js','./ready-stage-c-base.js','./ready-stage-d.js','./ready-stage-e.js','./ready-stage-f.js','./ready-stage-g1-fix.js','./ready-stage-g12-home-todos.js','./ready-stage-g13-authority-recovery.js','./manifest.webmanifest','./VERSION.json',
+'./','./index.html','./styles.css','./app.js','./ready-runtime-v07.js','./ready-stage-c.js','./ready-stage-c-base.js','./ready-stage-d.js','./ready-stage-e.js','./ready-stage-f.js','./ready-stage-g1-fix.js','./ready-stage-g12-home-todos.js','./ready-stage-g13-authority-recovery.js','./ready-stage-g14-planner-authority.js','./manifest.webmanifest','./VERSION.json',
 './Ready_Set_Ui_Master_Logic_REV_06.md','./Ready_Set_Ui_Master_Logic_REV_07.md',
 './assets/icon-192.png','./assets/icon-512.png',
 './assets/guide-lumi.png','./assets/guide-pico.png','./assets/guide-mori.png',
