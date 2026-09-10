@@ -1,13 +1,13 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.09.11-ready-home-homework-mvp-v1';
+  const VERSION = '2026.09.11-ready-home-homework-mvp-v1.1';
   const PLANNER_KEY = 'readyset_planner_v1';
   const IDENTITY_KEY = 'readyset_identity_v1';
   const SESSION_KEY = 'readyset_homework_session_v1';
 
   const clone = value => {
-    try { return structuredClone(value); } catch { return JSON.parse(JSON.stringify(value)); }
+    try { return structuredClone(value); } catch { return value == null ? value : JSON.parse(JSON.stringify(value)); }
   };
   const todayKey = () => new Date().toLocaleDateString('sv-SE');
   const uid = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -23,8 +23,8 @@
   function planner() { return readJSON(PLANNER_KEY, {version:1, days:{}}) || {version:1, days:{}}; }
   function dayPlan() { return planner().days?.[todayKey()] || {localDate:todayKey(), tasks:[]}; }
   function tasks() {
-    return (dayPlan().tasks || []).filter(task => task && task.status !== 'COMPLETED').map(task => ({
-      task_id: task.task_id || task.id || uid('task'),
+    return (dayPlan().tasks || []).filter(task => task && task.status !== 'COMPLETED').map((task, index) => ({
+      task_id: task.task_id || task.id || `task_${todayKey()}_${index + 1}`,
       subject: task.subject || '기타',
       title: task.title || '숙제',
       volume: task.volume || '',
@@ -113,11 +113,18 @@
   }
 
   const RESULT_STATES = new Set(['COMPLETED','PARTIAL','DEFERRED','BLOCKED','WAITING_FOR_PARENT']);
+  const LAP_REASON_BY_RESULT = Object.freeze({
+    COMPLETED: 'TASK_COMPLETED',
+    PARTIAL: 'TASK_PARTIAL',
+    DEFERRED: 'TASK_DEFERRED',
+    BLOCKED: 'TASK_BLOCKED',
+    WAITING_FOR_PARENT: 'WAITING_FOR_PARENT'
+  });
   function finishTask(result) {
     if (!RESULT_STATES.has(result)) throw new Error('INVALID_TASK_RESULT');
     const session = activeSession();
     if (!session || session.state !== 'ACTIVE') throw new Error('NO_ACTIVE_SESSION');
-    closeLap(session, result === 'COMPLETED' ? 'TASK_COMPLETED' : `TASK_${result}`);
+    closeLap(session, LAP_REASON_BY_RESULT[result]);
     session.results = {...(session.results || {}), [session.active_task_id]: {state:result, at:new Date().toISOString()}};
     session.active_lap_id = null;
     writeJSON(SESSION_KEY, session);
@@ -160,7 +167,8 @@
       timerOptional: true,
       startMode: model.start_mode,
       sessionPresent: !!activeSession(),
-      resultStates: [...RESULT_STATES]
+      resultStates: [...RESULT_STATES],
+      lapReasons: Object.values(LAP_REASON_BY_RESULT)
     };
   }
 
