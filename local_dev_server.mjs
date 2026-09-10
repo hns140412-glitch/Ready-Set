@@ -2,7 +2,6 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import characterCandidates from './netlify/functions/character-candidates.mjs';
 
 const __filename=fileURLToPath(import.meta.url);
 const ROOT=path.dirname(__filename);
@@ -23,6 +22,7 @@ function loadEnvLocal(){
   }
 }
 loadEnvLocal();
+const {default:characterCandidates}=await import('./netlify/functions/character-candidates.mjs');
 
 const MIME={'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.mjs':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.wav':'audio/wav','.mp3':'audio/mpeg','.webmanifest':'application/manifest+json'};
 
