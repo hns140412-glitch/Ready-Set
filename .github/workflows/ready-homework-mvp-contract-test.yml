@@ -68,7 +68,9 @@ jobs:
           set -euo pipefail
           grep -q "readyHomeworkPrimary" ready-home-homework-ui-v1.js
           grep -q "어떤 숙제부터 갈까?" ready-home-homework-ui-v1.js
-          grep -q "timerRequiredBeforeStart: false" ready-home-homework-ui-v1.js
+          grep -q "timerRequiredBeforeStart:false" ready-home-homework-ui-v1.js
+          ! grep -q "attempts >= 20" ready-home-homework-ui-v1.js
+          grep -q "ready-homework-refresh" ready-home-homework-ui-v1.js
           grep -q "ready-home-homework-mvp-v1.js" ready-stage-d.js
           grep -q "ready-home-homework-ui-v1.js" ready-stage-d.js
           grep -q "ready-stage-d-base-v1.js" ready-stage-d.js
