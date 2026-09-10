@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.09.11-ready-home-homework-mvp-v1.2';
+  const VERSION = '2026.09.11-ready-home-homework-mvp-v1.3';
   const PLANNER_KEY = 'readyset_planner_v1';
   const IDENTITY_KEY = 'readyset_identity_v1';
 
@@ -14,6 +14,7 @@
     catch { return fallback; }
   };
   const writeJSON = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+  const taskLabel = task => [String(task?.title || task?.subject || '숙제').trim(), String(task?.volume || '').trim()].filter(Boolean).join(' · ');
 
   function identity() { return readJSON(IDENTITY_KEY, {}) || {}; }
   function planner() { return readJSON(PLANNER_KEY, {version:1, days:{}}) || {version:1, days:{}}; }
@@ -56,6 +57,8 @@
 
   function canonical() { return window.ReadySetRev07 || null; }
   function canonicalSession() { return canonical()?.contract?.() || null; }
+  function hostSession() { return window.state?.activeSession || null; }
+  function persistHost() { if (typeof window.save === 'function') window.save(); }
 
   function selectPlannerTask(task) {
     const data = planner();
@@ -73,26 +76,73 @@
     writeJSON(PLANNER_KEY, data);
   }
 
+  function readyTasks(chosen) {
+    const available = tasks().filter(task => ['PLANNED','PARTIAL','DEFERRED'].includes(task.status));
+    const hit = available.find(task => task.task_id === chosen.task_id);
+    if (!hit) throw new Error('TASK_NOT_READY');
+    return [hit, ...available.filter(task => task.task_id !== hit.task_id)];
+  }
+
+  function seedCanonicalTaskList(chosen) {
+    const host = hostSession();
+    if (!host) throw new Error('READY_HOST_SESSION_REQUIRED');
+    const ordered = readyTasks(chosen);
+    host.tasks = ordered.map(taskLabel);
+    host.selected = [];
+    host.taskLabel = taskLabel(ordered[0]);
+    host.homeworkTaskMap = ordered.map((task, position) => ({
+      homework_task_id:task.task_id,
+      planner_id:task.planner_id,
+      label:taskLabel(task),
+      position,
+      canonical_task_id:null
+    }));
+    persistHost();
+    return ordered;
+  }
+
+  function bindCanonicalTaskIds() {
+    const host = hostSession();
+    const contract = canonicalSession();
+    if (!host?.homeworkTaskMap || !contract?.tasks) return false;
+    host.homeworkTaskMap = host.homeworkTaskMap.map(entry => ({
+      ...entry,
+      canonical_task_id:contract.tasks[entry.position]?.task_id || null
+    }));
+    persistHost();
+    return host.homeworkTaskMap.every(entry => !!entry.canonical_task_id);
+  }
+
+  function resolveCanonicalTaskId(homeworkTaskId) {
+    const host = hostSession();
+    const entry = host?.homeworkTaskMap?.find(item => item.homework_task_id === String(homeworkTaskId));
+    return entry?.canonical_task_id || null;
+  }
+
   function createSession(task) {
     if (!task?.task_id) throw new Error('TASK_REQUIRED');
     if (!window.ReadyBaseRuntimeV1?.start) throw new Error('CANONICAL_READY_RUNTIME_REQUIRED');
+    if (!canonical()?.switchTask) throw new Error('REV07_RUNTIME_REQUIRED');
     selectPlannerTask(task);
     window.ReadyBaseRuntimeV1.start();
-    // switchTask performs ensureContract before lookup; the sentinel never changes the active task.
-    canonical()?.switchTask?.('__READY_HOME_ENSURE_CONTRACT__');
+    const ordered = seedCanonicalTaskList(task);
+    canonical().switchTask('__READY_HOME_ENSURE_CONTRACT__');
     const session = canonicalSession();
     if (!session?.session_id) throw new Error('CANONICAL_SESSION_NOT_CREATED');
-    return clone(session);
+    if (session.tasks?.length !== ordered.length) throw new Error('CANONICAL_TASK_SEED_MISMATCH');
+    if (!bindCanonicalTaskIds()) throw new Error('CANONICAL_TASK_BIND_FAILED');
+    return clone(canonicalSession());
   }
 
   function activeSession() { return canonicalSession(); }
 
-  function switchTask(taskId) {
+  function switchTask(homeworkTaskId) {
     const runtime = canonical();
     const session = canonicalSession();
     if (!runtime || !session) throw new Error('NO_ACTIVE_CANONICAL_SESSION');
-    if (!session.tasks?.some(task => task.task_id === taskId)) throw new Error('TASK_NOT_IN_CANONICAL_SESSION');
-    runtime.switchTask(taskId); // canonical runtime closes the current lap with TASK_CHANGE/TASK_SWITCH semantics.
+    const canonicalTaskId = resolveCanonicalTaskId(homeworkTaskId);
+    if (!canonicalTaskId) throw new Error('TASK_NOT_IN_CANONICAL_SESSION');
+    runtime.switchTask(canonicalTaskId);
     return clone(canonicalSession());
   }
 
@@ -137,6 +187,7 @@
   function validate() {
     const model = renderHomeModel();
     const session = canonicalSession();
+    const map = hostSession()?.homeworkTaskMap || [];
     return {
       version:VERSION,
       characterGate:['READY_HOME','CHARACTER_REQUIRED'].includes(model.gate),
@@ -147,6 +198,7 @@
       sessionPresent:!!session,
       sessionOwner:'ReadySetRev07',
       duplicateSessionStore:false,
+      multiTaskCanonical:session ? session.tasks?.length === map.length && map.every(entry => !!entry.canonical_task_id) : true,
       canonicalValid:session ? !!canonical()?.validate?.().ok : true,
       resultStates:[...RESULT_STATES],
       lapReasons:Object.values(LAP_REASON_BY_RESULT)
@@ -155,7 +207,8 @@
 
   window.ReadyHomeHomeworkMVPV1 = Object.freeze({
     version:VERSION, model:renderHomeModel, tasks, chooseStartMode, createSession,
-    activeSession:() => clone(activeSession()), switchTask, finishTask, endSession, validate
+    activeSession:() => clone(activeSession()), switchTask, finishTask, endSession,
+    resolveCanonicalTaskId, validate
   });
 
   document.documentElement.dataset.readyHomeHomeworkMvp = VERSION;
