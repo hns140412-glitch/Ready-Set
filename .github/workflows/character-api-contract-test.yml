@@ -6,6 +6,8 @@ on:
       - runtime-session-bridge-2026-09-10
     paths:
       - 'index.html'
+      - 'boot-health.html'
+      - '_headers'
       - 'ready-stage-c.js'
       - 'ready-onboarding-identity-v1.js'
       - 'netlify/functions/character-candidates.mjs'
@@ -49,6 +51,16 @@ jobs:
           ]) if(!stage.includes(marker)) throw new Error(`MISSING:${marker}`);
           if(!/\.catch\(error=>\{[^}]*releaseStaticPaint\(\)/s.test(stage)) throw new Error('IDENTITY_FAIL_OPEN_MISSING');
           NODE
+      - name: Verify transport probe and boot cache policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'BOOT_HEALTH_STATIC_OK' boot-health.html
+          grep -q '/index.html' _headers
+          grep -q 'Cache-Control: no-store, max-age=0' _headers
+          grep -q '/ready-onboarding-identity-v1.js' _headers
+          grep -q '/ready-character-candidate-v1.js' _headers
+          grep -q '/ready-stage-c.js' _headers
       - name: Start local API locked
         env:
           READY_CHARACTER_PAID_GENERATION: 'false'
@@ -61,6 +73,10 @@ jobs:
           done
           cat /tmp/ready-local.log
           exit 1
+      - name: Verify static transport probe is independently served
+        run: |
+          set -euo pipefail
+          curl -fsS http://127.0.0.1:8080/boot-health.html | grep -q 'BOOT_HEALTH_STATIC_OK'
       - name: Verify real API round trip is locked before provider
         run: |
           status=$(curl -sS -o /tmp/response.json -w '%{http_code}' \
