@@ -37,7 +37,7 @@ jobs:
           grep -q "숙제 시작" ready-home-homework-mvp-v1.js
           grep -q "CHARACTER_REQUIRED" ready-home-homework-mvp-v1.js
           grep -q "READY_HOME" ready-home-homework-mvp-v1.js
-          grep -q "TASK_SWITCH" ready-home-homework-mvp-v1.js
+          grep -q "switchTask" ready-home-homework-mvp-v1.js
           grep -q "WAITING_FOR_PARENT" ready-home-homework-mvp-v1.js
           grep -Eq "target_min:[[:space:]]*null" ready-home-homework-mvp-v1.js
           grep -q "timerOptional:true" ready-home-homework-mvp-v1.js
@@ -49,6 +49,7 @@ jobs:
           grep -q "ReadyBaseRuntimeV1.start" ready-home-homework-mvp-v1.js
           grep -q "duplicateSessionStore:false" ready-home-homework-mvp-v1.js
           ! grep -q "readyset_homework_session_v1" ready-home-homework-mvp-v1.js
+          grep -q "endActiveLap('TASK_CHANGE'" ready-runtime-v07.js
           grep -q "oneSessionId" ready-runtime-v07.js
           grep -q "atMostOneActiveLap" ready-runtime-v07.js
       - name: Verify multi-task canonical mapping
