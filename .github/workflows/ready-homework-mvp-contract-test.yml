@@ -1,0 +1,41 @@
+name: Ready Homework MVP Contract Test
+
+on:
+  push:
+    branches:
+      - runtime-session-bridge-2026-09-10
+    paths:
+      - 'ready-home-homework-mvp-v1.js'
+      - 'READY_HOMEWORK_MVP_CONTRACT.md'
+      - '.github/workflows/ready-homework-mvp-contract-test.yml'
+  workflow_dispatch:
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: node --check ready-home-homework-mvp-v1.js
+      - name: Verify canonical homework contract markers
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "오늘 뭐부터 탐험할까?" ready-home-homework-mvp-v1.js
+          grep -q "숙제 시작" ready-home-homework-mvp-v1.js
+          grep -q "CHARACTER_REQUIRED" ready-home-homework-mvp-v1.js
+          grep -q "READY_HOME" ready-home-homework-mvp-v1.js
+          grep -q "TASK_SWITCH" ready-home-homework-mvp-v1.js
+          grep -q "WAITING_FOR_PARENT" ready-home-homework-mvp-v1.js
+          grep -q "target_min: null" ready-home-homework-mvp-v1.js
+          grep -q "timerOptional: true" ready-home-homework-mvp-v1.js
+      - name: Verify isolated surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -q "character-candidates" ready-home-homework-mvp-v1.js
+          ! grep -q "images/edits" ready-home-homework-mvp-v1.js
+          ! grep -q "READY_CHARACTER_PAID_GENERATION" ready-home-homework-mvp-v1.js
