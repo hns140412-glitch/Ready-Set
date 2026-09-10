@@ -1,0 +1,14 @@
+/index.html
+  Cache-Control: no-store, max-age=0
+
+/boot-health.html
+  Cache-Control: no-store, max-age=0
+
+/ready-onboarding-identity-v1.js
+  Cache-Control: no-store, max-age=0
+
+/ready-character-candidate-v1.js
+  Cache-Control: no-store, max-age=0
+
+/ready-stage-c.js
+  Cache-Control: no-store, max-age=0
