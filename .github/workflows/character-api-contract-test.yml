@@ -46,8 +46,12 @@ jobs:
           for(const marker of [
             "if(!window.ReadyIdentityV1)await load(IDENTITY)",
             "window.ReadyIdentityV1.render?.()",
-            "releaseStaticPaint()",
-            "if(step!=='CHARACTER')return true"
+            "if(step!=='CHARACTER')return true",
+            "transitionToCharacter('CAPTURE_CLICK')",
+            "event.stopImmediatePropagation()",
+            "characterTransitionSource",
+            "classList.remove('worldFirstPaint')",
+            "window.addEventListener('pageshow',recover)"
           ]) if(!stage.includes(marker)) throw new Error(`MISSING:${marker}`);
           if(!/\.catch\(error=>\{[^}]*releaseStaticPaint\(\)/s.test(stage)) throw new Error('IDENTITY_FAIL_OPEN_MISSING');
           NODE
