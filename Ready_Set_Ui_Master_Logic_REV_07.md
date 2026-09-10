@@ -201,4 +201,23 @@ A weekly recurring key SHALL NOT be reused as the sole identity of a dated execu
 
 Exact schema/property names remain implementation-owned and may be refined by the applicable Notion/runtime migration contract.
 
+## 15. FAMILY LEARNING ROLE INHERITANCE — HARD LOCK
+
+Ready & Set SHALL inherit the current authority split from `TAKY/OS/GUIDE_FAMILY_LEARNING_OS.md` rather than reassigning those responsibilities inside the app.
+
+Current role semantics:
+`PARENT = CAPTURE / INPUT / CONFIRM / SUPPORT`
+`LEARNING MASTER / SUBJECT = INTERPRET / LOAD ANALYSIS`
+`PLANNER / MAIN = ALLOCATE`
+`CHILD = VIEW / FACT INPUT WHEN APPLICABLE / SELECT TODAY / EXECUTE`
+
+Therefore:
+- Parent does not distribute homework, choose the child's daily study amount, or become the difficulty/estimated-time authority merely because Parent captured the source.
+- Assignment/source FACT and Planner allocation remain distinct.
+- A child may enter newly received factual assignment information when the child is the actual recipient; provenance/confirmation state must be preserved.
+- Ready & Set owns the execution/session projection of the plan but SHALL NOT absorb Learning Master interpretation authority or rewrite Planner allocation authority.
+- `FREE TIME EXISTS ≠ MUST STUDY`, `CAPACITY ≠ REQUIRED STUDY AMOUNT`, `PLANNED STUDY END ≤ 22:00` and carry-over semantics are inherited from the Family Learning OS rather than duplicated as competing project formulas.
+
+Runtime evidence is separate. Presence of this contract does not prove that role-specific UI, dated task creation, allocation, handoff, persistence or device behavior is implemented.
+
 END — READY & SET UI MASTER LOGIC REV_07
