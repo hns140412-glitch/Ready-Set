@@ -5,6 +5,9 @@ on:
     branches:
       - runtime-session-bridge-2026-09-10
     paths:
+      - 'index.html'
+      - 'ready-stage-c.js'
+      - 'ready-onboarding-identity-v1.js'
       - 'netlify/functions/character-candidates.mjs'
       - 'ready-character-candidate-v1.js'
       - 'local_dev_server.mjs'
@@ -20,6 +23,32 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Verify deterministic identity and candidate boot wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check ready-stage-c.js
+          node --check ready-onboarding-identity-v1.js
+          node --check ready-character-candidate-v1.js
+          grep -q 'ready-onboarding-identity-v1.js?v=20260911-directboot2' index.html
+          grep -q 'ready-character-candidate-v1.js?v=20260911-directboot2' index.html
+          grep -q 'ready-stage-c.js?v=20260911-directboot2' index.html
+          node - <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('index.html','utf8');
+          const ids=html.indexOf('ready-onboarding-identity-v1.js?v=20260911-directboot2');
+          const cds=html.indexOf('ready-character-candidate-v1.js?v=20260911-directboot2');
+          const scs=html.indexOf('ready-stage-c.js?v=20260911-directboot2');
+          if(!(ids>=0 && cds>ids && scs>cds)) throw new Error('BOOT_ORDER_INVALID');
+          const stage=fs.readFileSync('ready-stage-c.js','utf8');
+          for(const marker of [
+            "if(!window.ReadyIdentityV1)await load(IDENTITY)",
+            "window.ReadyIdentityV1.render?.()",
+            "releaseStaticPaint()",
+            "if(step!=='CHARACTER')return true"
+          ]) if(!stage.includes(marker)) throw new Error(`MISSING:${marker}`);
+          if(!/\.catch\(error=>\{[^}]*releaseStaticPaint\(\)/s.test(stage)) throw new Error('IDENTITY_FAIL_OPEN_MISSING');
+          NODE
       - name: Start local API locked
         env:
           READY_CHARACTER_PAID_GENERATION: 'false'
