@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.09.11-ready-home-homework-ui-v1';
+  const VERSION = '2026.09.11-ready-home-homework-ui-v1.1';
 
   const escape = value => String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
   const api = () => window.ReadyHomeHomeworkMVPV1 || null;
@@ -118,27 +118,22 @@
     const core = api();
     const model = core?.model?.();
     return {
-      version: VERSION,
-      corePresent: !!core,
-      readyGate: model?.gate || null,
-      title: document.getElementById('baseTodayTitle')?.textContent || null,
-      primaryCTA: document.getElementById('readyHomeworkPrimary')?.textContent?.includes(model?.primary_action || '') || false,
-      timerRequiredBeforeStart: false,
-      uiMounted: document.documentElement.dataset.readyHomeworkUI === VERSION
+      version:VERSION,
+      corePresent:!!core,
+      readyGate:model?.gate || null,
+      title:document.getElementById('baseTodayTitle')?.textContent || null,
+      primaryCTA:document.getElementById('readyHomeworkPrimary')?.textContent?.includes(model?.primary_action || '') || false,
+      timerRequiredBeforeStart:false,
+      uiMounted:document.documentElement.dataset.readyHomeworkUI === VERSION
     };
   }
 
   function boot() {
     style();
-    let attempts = 0;
-    const tryRender = () => {
-      attempts += 1;
-      if (render() || attempts >= 20) return;
-      setTimeout(tryRender, 100);
-    };
-    tryRender();
+    render();
     window.addEventListener('pageshow', render);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') render(); });
+    window.addEventListener('ready-homework-refresh', render);
     window.ReadyHomeHomeworkUIV1 = Object.freeze({version:VERSION, render, validate});
   }
 
