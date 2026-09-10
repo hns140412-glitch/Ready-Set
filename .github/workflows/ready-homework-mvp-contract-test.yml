@@ -51,6 +51,16 @@ jobs:
           ! grep -q "readyset_homework_session_v1" ready-home-homework-mvp-v1.js
           grep -q "oneSessionId" ready-runtime-v07.js
           grep -q "atMostOneActiveLap" ready-runtime-v07.js
+      - name: Verify multi-task canonical mapping
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "seedCanonicalTaskList" ready-home-homework-mvp-v1.js
+          grep -q "homeworkTaskMap" ready-home-homework-mvp-v1.js
+          grep -q "canonical_task_id" ready-home-homework-mvp-v1.js
+          grep -q "CANONICAL_TASK_SEED_MISMATCH" ready-home-homework-mvp-v1.js
+          grep -q "multiTaskCanonical" ready-home-homework-mvp-v1.js
+          grep -q "resolveCanonicalTaskId" ready-home-homework-mvp-v1.js
       - name: Verify child-facing home bridge
         shell: bash
         run: |
