@@ -1,8 +1,8 @@
 (() => {
   'use strict';
-  const VERSION='2026.09.10-stage-identity-owner-v8.2';
-  const IDENTITY='./ready-onboarding-identity-v1.js';
-  const CANDIDATE='./ready-character-candidate-v1.js?v=20260910-character-v9-mount2';
+  const VERSION='2026.09.11-stage-identity-owner-v8.3';
+  const IDENTITY='./ready-onboarding-identity-v1.js?v=20260911-directboot2';
+  const CANDIDATE='./ready-character-candidate-v1.js?v=20260911-directboot2';
   const AFTER_IDENTITY=['./ready-stage-c-base.js','./ready-stage-d.js','./ready-stage-e.js','./ready-stage-f.js','./ready-stage-g1-fix.js','./ready-stage-g14-planner-authority.js','./ready-base-native-v2.js','./ready-planner-selection-bridge-v1.js','./ready-focus-tools-v1.js','./ready-schedule-base-v1.js','./ready-world-base-v1.js','./ready-world-shell-v1.js','./ready-base-selftest-v1.js'];
   const load=src=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.async=false;s.onload=()=>resolve(src);s.onerror=()=>reject(new Error(`LOAD_FAILED:${src}`));document.head.appendChild(s)});
   const mark=(state,detail='')=>{document.documentElement.dataset.readyBootState=state;if(detail)document.documentElement.dataset.readyBootDetail=detail};
@@ -64,12 +64,14 @@
   };
   let candidateLoading=null;
   const ensureCandidate=async(force=false)=>{
+    const step=safeRead().onboardingStep;
+    if(step!=='CHARACTER')return true;
     if(window.ReadyCharacterCandidateV1&&!force){if(mountCandidate())return true}
     if(candidateLoading&&!force)return candidateLoading;
     candidateLoading=(async()=>{
       try{
         if(force)delete window.ReadyCharacterCandidateV1;
-        await load(`${CANDIDATE}${force?'&retry='+Date.now():''}`);
+        if(!window.ReadyCharacterCandidateV1)await load(`${CANDIDATE}${force?'&retry='+Date.now():''}`);
         if(!window.ReadyCharacterCandidateV1)throw new Error('CANDIDATE_GLOBAL_MISSING');
         if(!mountCandidate())throw new Error('CANDIDATE_MOUNT_FAILED');
         document.querySelector('#readyCharacterCandidateMount')?.removeAttribute('data-candidate-fallback');
@@ -78,12 +80,19 @@
       finally{candidateLoading=null}
     })();return candidateLoading;
   };
-  const bootIdentity=async()=>{mark('IDENTITY_LOADING');await load(IDENTITY);if(!window.ReadyIdentityV1)throw new Error('IDENTITY_OWNER_MISSING');releaseStaticPaint();mark('IDENTITY_READY')};
+  const bootIdentity=async()=>{
+    mark('IDENTITY_LOADING');
+    if(!window.ReadyIdentityV1)await load(IDENTITY);
+    if(!window.ReadyIdentityV1)throw new Error('IDENTITY_OWNER_MISSING');
+    window.ReadyIdentityV1.render?.();
+    releaseStaticPaint();
+    mark('IDENTITY_READY');
+  };
   const bootRest=async()=>{
     await ensureCandidate();
     for(const src of AFTER_IDENTITY){try{await load(src)}catch(error){console.error('[Ready Optional Boot]',src,error);mark('DEGRADED',src)}}
     window.ReadyStageF?.render?.();window.ReadyStageG11?.hydrateParentInputs?.();window.ReadyStageG14?.render?.();window.ReadyBaseNativeV2?.render?.();window.ReadyBaseRuntimeV1?.syncSelectedTask?.();window.ReadyFocusToolsV1?.render?.();window.ReadyScheduleBaseV1?.render?.();window.ReadyWorldShellV1?.render?.();mountCandidate();if(document.documentElement.dataset.readyBootState!=='DEGRADED')mark('READY');
   };
-  const recover=()=>{releaseStaticPaint();if(window.ReadyIdentityV1&&!window.ReadyIdentityV1.isReady?.()){document.documentElement.classList.add('readyFirstRun');if(document.querySelector('#readyCharacterCandidateMount')){if(!mountCandidate())ensureCandidate()}}};
-  (async()=>{mark('BOOT');await bootIdentity();bootRest().catch(error=>{console.error('[Ready Post Identity Boot]',error);mark('DEGRADED',error.message||'POST_IDENTITY');fallbackConsult(error.message||'POST_IDENTITY')});window.addEventListener('pageshow',recover);window.addEventListener('focus',recover);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')recover()});document.documentElement.dataset.readyStageLoader=VERSION})().catch(error=>{console.error('[Ready Identity Boot]',error);mark('IDENTITY_ERROR',error.message||'UNKNOWN');document.documentElement.dataset.readyStageLoader='ERROR';const t=document.getElementById('toast');if(t){t.textContent=`Identity 시작 오류 · ${error.message}`;t.hidden=false}});
+  const recover=()=>{releaseStaticPaint();window.ReadyIdentityV1?.render?.();if(window.ReadyIdentityV1&&!window.ReadyIdentityV1.isReady?.()){document.documentElement.classList.add('readyFirstRun');if(document.querySelector('#readyCharacterCandidateMount')){if(!mountCandidate())ensureCandidate()}}};
+  (async()=>{mark('BOOT');await bootIdentity();bootRest().catch(error=>{console.error('[Ready Post Identity Boot]',error);mark('DEGRADED',error.message||'POST_IDENTITY');fallbackConsult(error.message||'POST_IDENTITY')});window.addEventListener('pageshow',recover);window.addEventListener('focus',recover);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')recover()});document.documentElement.dataset.readyStageLoader=VERSION})().catch(error=>{console.error('[Ready Identity Boot]',error);releaseStaticPaint();mark('IDENTITY_ERROR',error.message||'UNKNOWN');document.documentElement.dataset.readyStageLoader='ERROR';const t=document.getElementById('toast');if(t){t.textContent=`Identity 시작 오류 · ${error.message}`;t.hidden=false}});
 })();
