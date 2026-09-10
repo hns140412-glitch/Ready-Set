@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "routeMode": "same-origin-path",
+  "notes": [
+    "Installed PWA launch is controlled by each platform. External links cannot force iOS Safari to hand off to an installed PWA in every case.",
+    "Internal and cross-app navigation should prefer shared-origin paths and app-aware routing to minimize browser-tab transitions.",
+    "App identity and cross-app event links must use stable appId values, not display names."
+  ],
+  "apps": [
+    {
+      "appId": "ready-set",
+      "displayName": "Ready & Set",
+      "currentPath": "/",
+      "targetPath": "/ready-set/",
+      "status": "ACTIVE_STAGING"
+    },
+    {
+      "appId": "snap-pop",
+      "displayName": "Snap & Pop",
+      "targetPath": "/snap-pop/",
+      "status": "PLANNED"
+    },
+    {
+      "appId": "hide-seek",
+      "displayName": "Hide & Seek",
+      "targetPath": "/hide-seek/",
+      "status": "PLANNED"
+    }
+  ],
+  "deprecatedNames": [
+    {
+      "name": "ZPD WORD",
+      "replacement": "Hide & Seek",
+      "status": "SUPERSEDED_DO_NOT_USE"
+    }
+  ]
+}

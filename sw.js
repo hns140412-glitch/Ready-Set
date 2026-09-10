@@ -1,6 +1,6 @@
-const CACHE='ready-set-v093-rev07';
+const CACHE='ready-set-v094-rev07-staging18-base-ui-v6';
 const CORE=[
-'./','./index.html','./styles.css','./app.js','./ready-runtime-v07.js','./manifest.webmanifest','./VERSION.json',
+'./','./index.html','./styles.css','./ready-base-home-v1.css','./ready-base-runtime-v1.js','./ready-base-selftest-v1.js','./ready-runtime-v07.js','./ready-stage-c.js','./ready-stage-c-base.js','./ready-stage-d.js','./ready-stage-e.js','./ready-stage-f.js','./ready-stage-g1-fix.js','./ready-stage-g14-planner-authority.js','./ready-base-native-v2.js','./manifest.webmanifest','./VERSION.json',
 './Ready_Set_Ui_Master_Logic_REV_06.md','./Ready_Set_Ui_Master_Logic_REV_07.md',
 './assets/icon-192.png','./assets/icon-512.png',
 './assets/guide-lumi.png','./assets/guide-pico.png','./assets/guide-mori.png',
@@ -13,8 +13,8 @@ self.addEventListener('fetch',e=>{
  const u=new URL(e.request.url);
  if(u.origin!==location.origin)return;
  if(e.request.mode==='navigate'){
-   e.respondWith(fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put('./index.html',copy));return r}).catch(()=>caches.match('./index.html')));
+   e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put('./index.html',copy));return r}).catch(()=>caches.match('./index.html')));
    return;
  }
- e.respondWith(fetch(e.request).then(r=>{if(r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));}return r}).catch(()=>caches.match(e.request)));
+ e.respondWith(fetch(e.request,{cache:'no-store'}).then(r=>{if(r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));}return r}).catch(()=>caches.match(e.request)));
 });
