@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const RUNTIME_VERSION = '2026.09.07-rev07-b';
+  const RUNTIME_VERSION = '2026.09.10-rev07-c';
   const HIDE_URL = 'https://dainty-froyo-a6e427.netlify.app';
   const SNAP_URL = 'https://cheerful-pothos-d1c3ee.netlify.app';
   const VALID_TASK_STATES = new Set(['PENDING','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
@@ -161,6 +161,10 @@
     url.searchParams.set('lap_id', lap.lap_id);
     url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
     url.searchParams.set('snap_target', SNAP_URL);
+    url.searchParams.set('target_time_ms', String(session.targetMs || 0));
+    url.searchParams.set('session_start_at', String(session.startAt || 0));
+    url.searchParams.set('issue_ms', String(session.issueMs || 0));
+    if (session.pausedAt) url.searchParams.set('paused_at', String(session.pausedAt));
     url.searchParams.set('from_app', 'ready-set');
     location.assign(url.href);
   }
@@ -199,10 +203,11 @@
       task_id: p.get('task_id'),
       lap_id: p.get('lap_id'),
       task_state: p.get('task_state'),
-      from_app: p.get('from_app')
+      from_app: p.get('from_app'),
+      event_id: p.get('event_id')
     };
     if (!args.session_id || !args.task_id || !applyInboundResult(args)) return;
-    ['session_id','goal_id','task_id','lap_id','task_state','from_app'].forEach(k => p.delete(k));
+    ['session_id','goal_id','task_id','lap_id','task_state','from_app','event_id'].forEach(k => p.delete(k));
     const clean = `${location.pathname}${p.toString() ? `?${p}` : ''}${location.hash}`;
     history.replaceState(null, '', clean);
   }
