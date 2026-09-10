@@ -1,21 +1,17 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.09.11-ready-home-homework-mvp-v1.1';
+  const VERSION = '2026.09.11-ready-home-homework-mvp-v1.2';
   const PLANNER_KEY = 'readyset_planner_v1';
   const IDENTITY_KEY = 'readyset_identity_v1';
-  const SESSION_KEY = 'readyset_homework_session_v1';
 
   const clone = value => {
     try { return structuredClone(value); } catch { return value == null ? value : JSON.parse(JSON.stringify(value)); }
   };
   const todayKey = () => new Date().toLocaleDateString('sv-SE');
-  const uid = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const readJSON = (key, fallback = null) => {
-    try {
-      const value = JSON.parse(localStorage.getItem(key) || 'null');
-      return value ?? fallback;
-    } catch { return fallback; }
+    try { const value = JSON.parse(localStorage.getItem(key) || 'null'); return value ?? fallback; }
+    catch { return fallback; }
   };
   const writeJSON = (key, value) => localStorage.setItem(key, JSON.stringify(value));
 
@@ -24,7 +20,8 @@
   function dayPlan() { return planner().days?.[todayKey()] || {localDate:todayKey(), tasks:[]}; }
   function tasks() {
     return (dayPlan().tasks || []).filter(task => task && task.status !== 'COMPLETED').map((task, index) => ({
-      task_id: task.task_id || task.id || `task_${todayKey()}_${index + 1}`,
+      task_id: String(task.task_id || task.id || `task_${todayKey()}_${index + 1}`),
+      planner_id: task.id == null ? null : String(task.id),
       subject: task.subject || '기타',
       title: task.title || '숙제',
       volume: task.volume || '',
@@ -42,104 +39,83 @@
     const value = identity();
     const confirmed = value.status === 'READY' || value.characterStatus === 'CONFIRMED' || !!value.characterVisualId;
     return confirmed ? {
-      confirmed: true,
-      name: value.nickname || value.userName || value.legalName || '',
-      characterVisualId: value.characterVisualId || null,
-      explorerId: value.explorerId || null
+      confirmed:true,
+      name:value.nickname || value.userName || value.legalName || '',
+      characterVisualId:value.characterVisualId || null,
+      explorerId:value.explorerId || null
     } : {confirmed:false, name:'', characterVisualId:null, explorerId:null};
   }
 
   function chooseStartMode(list = tasks()) {
-    const ready = list.filter(task => task.status === 'PLANNED' || task.status === 'PARTIAL' || task.status === 'DEFERRED');
+    const ready = list.filter(task => ['PLANNED','PARTIAL','DEFERRED'].includes(task.status));
     if (!ready.length) return {mode:'EMPTY', tasks:[]};
     if (ready.length === 1) return {mode:'DIRECT', tasks:ready};
     const selected = ready.filter(task => task.selected);
     return {mode:'PICK', tasks:selected.length ? selected : ready};
   }
 
+  function canonical() { return window.ReadySetRev07 || null; }
+  function canonicalSession() { return canonical()?.contract?.() || null; }
+
+  function selectPlannerTask(task) {
+    const data = planner();
+    const day = data.days?.[todayKey()];
+    if (!day) throw new Error('TODAY_PLAN_REQUIRED');
+    const wanted = String(task?.planner_id || task?.task_id || '');
+    let found = false;
+    day.tasks = (day.tasks || []).map(item => {
+      const id = String(item.id ?? item.task_id ?? '');
+      const selected = id === wanted;
+      if (selected) found = true;
+      return {...item, selected};
+    });
+    if (!found) throw new Error('PLANNER_TASK_NOT_FOUND');
+    writeJSON(PLANNER_KEY, data);
+  }
+
   function createSession(task) {
     if (!task?.task_id) throw new Error('TASK_REQUIRED');
-    const now = new Date().toISOString();
-    const session = {
-      version: 1,
-      session_id: uid('session'),
-      state: 'ACTIVE',
-      started_at: now,
-      ended_at: null,
-      active_task_id: task.task_id,
-      active_lap_id: uid('lap'),
-      task_order: tasks().map(item => item.task_id),
-      target_min: null,
-      laps: [],
-      results: {}
-    };
-    session.laps.push({
-      lap_id: session.active_lap_id,
-      task_id: task.task_id,
-      started_at: now,
-      ended_at: null,
-      end_reason: null
-    });
-    writeJSON(SESSION_KEY, session);
+    if (!window.ReadyBaseRuntimeV1?.start) throw new Error('CANONICAL_READY_RUNTIME_REQUIRED');
+    selectPlannerTask(task);
+    window.ReadyBaseRuntimeV1.start();
+    // switchTask performs ensureContract before lookup; the sentinel never changes the active task.
+    canonical()?.switchTask?.('__READY_HOME_ENSURE_CONTRACT__');
+    const session = canonicalSession();
+    if (!session?.session_id) throw new Error('CANONICAL_SESSION_NOT_CREATED');
     return clone(session);
   }
 
-  function activeSession() { return readJSON(SESSION_KEY, null); }
-
-  function closeLap(session, reason) {
-    if (!session?.active_lap_id) return;
-    const lap = session.laps?.find(item => item.lap_id === session.active_lap_id);
-    if (lap && !lap.ended_at) {
-      lap.ended_at = new Date().toISOString();
-      lap.end_reason = reason;
-    }
-  }
+  function activeSession() { return canonicalSession(); }
 
   function switchTask(taskId) {
-    const list = tasks();
-    const nextTask = list.find(task => task.task_id === taskId);
-    if (!nextTask) throw new Error('TASK_NOT_FOUND');
-    const session = activeSession();
-    if (!session || session.state !== 'ACTIVE') return createSession(nextTask);
-    if (session.active_task_id === taskId) return clone(session);
-    closeLap(session, 'TASK_SWITCH');
-    const now = new Date().toISOString();
-    const lap = {lap_id:uid('lap'), task_id:taskId, started_at:now, ended_at:null, end_reason:null};
-    session.active_task_id = taskId;
-    session.active_lap_id = lap.lap_id;
-    session.laps = [...(session.laps || []), lap];
-    writeJSON(SESSION_KEY, session);
-    return clone(session);
+    const runtime = canonical();
+    const session = canonicalSession();
+    if (!runtime || !session) throw new Error('NO_ACTIVE_CANONICAL_SESSION');
+    if (!session.tasks?.some(task => task.task_id === taskId)) throw new Error('TASK_NOT_IN_CANONICAL_SESSION');
+    runtime.switchTask(taskId); // canonical runtime closes the current lap with TASK_CHANGE/TASK_SWITCH semantics.
+    return clone(canonicalSession());
   }
 
   const RESULT_STATES = new Set(['COMPLETED','PARTIAL','DEFERRED','BLOCKED','WAITING_FOR_PARENT']);
   const LAP_REASON_BY_RESULT = Object.freeze({
-    COMPLETED: 'TASK_COMPLETED',
-    PARTIAL: 'TASK_PARTIAL',
-    DEFERRED: 'TASK_DEFERRED',
-    BLOCKED: 'TASK_BLOCKED',
-    WAITING_FOR_PARENT: 'WAITING_FOR_PARENT'
+    COMPLETED:'TASK_COMPLETED', PARTIAL:'TASK_PARTIAL', DEFERRED:'TASK_DEFERRED',
+    BLOCKED:'TASK_BLOCKED', WAITING_FOR_PARENT:'WAITING_FOR_PARENT'
   });
+
   function finishTask(result) {
     if (!RESULT_STATES.has(result)) throw new Error('INVALID_TASK_RESULT');
-    const session = activeSession();
-    if (!session || session.state !== 'ACTIVE') throw new Error('NO_ACTIVE_SESSION');
-    closeLap(session, LAP_REASON_BY_RESULT[result]);
-    session.results = {...(session.results || {}), [session.active_task_id]: {state:result, at:new Date().toISOString()}};
-    session.active_lap_id = null;
-    writeJSON(SESSION_KEY, session);
-    return clone(session);
+    const runtime = canonical();
+    const session = canonicalSession();
+    if (!runtime || !session?.active_task_id) throw new Error('NO_ACTIVE_CANONICAL_SESSION');
+    if (!runtime.setTaskState(session.active_task_id, result)) throw new Error('CANONICAL_TASK_UPDATE_FAILED');
+    return clone(canonicalSession());
   }
 
   function endSession() {
-    const session = activeSession();
-    if (!session) return null;
-    if (session.state === 'ACTIVE' && session.active_lap_id) closeLap(session, 'SESSION_END');
-    session.state = 'ENDED';
-    session.ended_at = new Date().toISOString();
-    session.active_lap_id = null;
-    writeJSON(SESSION_KEY, session);
-    return clone(session);
+    const runtime = canonical();
+    if (!runtime || !canonicalSession()) return null;
+    runtime.openWrapUp();
+    return clone(canonicalSession());
   }
 
   function renderHomeModel() {
@@ -147,42 +123,39 @@
     const list = tasks();
     const start = chooseStartMode(list);
     return {
-      version: VERSION,
-      gate: character.confirmed ? 'READY_HOME' : 'CHARACTER_REQUIRED',
+      version:VERSION,
+      gate:character.confirmed ? 'READY_HOME' : 'CHARACTER_REQUIRED',
       character,
-      title: '오늘 뭐부터 탐험할까?',
-      primary_action: start.mode === 'EMPTY' ? '숙제 추가' : '숙제 시작',
-      start_mode: start.mode,
-      task_count: list.length,
-      tasks: start.tasks
+      title:'오늘 뭐부터 탐험할까?',
+      primary_action:start.mode === 'EMPTY' ? '숙제 추가' : '숙제 시작',
+      start_mode:start.mode,
+      task_count:list.length,
+      tasks:start.tasks
     };
   }
 
   function validate() {
     const model = renderHomeModel();
+    const session = canonicalSession();
     return {
-      version: VERSION,
-      characterGate: ['READY_HOME','CHARACTER_REQUIRED'].includes(model.gate),
-      oneDominantCTA: ['숙제 시작','숙제 추가'].includes(model.primary_action),
-      timerOptional: true,
-      startMode: model.start_mode,
-      sessionPresent: !!activeSession(),
-      resultStates: [...RESULT_STATES],
-      lapReasons: Object.values(LAP_REASON_BY_RESULT)
+      version:VERSION,
+      characterGate:['READY_HOME','CHARACTER_REQUIRED'].includes(model.gate),
+      oneDominantCTA:['숙제 시작','숙제 추가'].includes(model.primary_action),
+      timerOptional:true,
+      target_min:null,
+      startMode:model.start_mode,
+      sessionPresent:!!session,
+      sessionOwner:'ReadySetRev07',
+      duplicateSessionStore:false,
+      canonicalValid:session ? !!canonical()?.validate?.().ok : true,
+      resultStates:[...RESULT_STATES],
+      lapReasons:Object.values(LAP_REASON_BY_RESULT)
     };
   }
 
   window.ReadyHomeHomeworkMVPV1 = Object.freeze({
-    version: VERSION,
-    model: renderHomeModel,
-    tasks,
-    chooseStartMode,
-    createSession,
-    activeSession: () => clone(activeSession()),
-    switchTask,
-    finishTask,
-    endSession,
-    validate
+    version:VERSION, model:renderHomeModel, tasks, chooseStartMode, createSession,
+    activeSession:() => clone(activeSession()), switchTask, finishTask, endSession, validate
   });
 
   document.documentElement.dataset.readyHomeHomeworkMvp = VERSION;
