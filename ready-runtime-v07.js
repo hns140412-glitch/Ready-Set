@@ -1,9 +1,32 @@
 (() => {
   'use strict';
 
-  const RUNTIME_VERSION = '2026.09.10-rev07-c';
-  const HIDE_URL = 'https://dainty-froyo-a6e427.netlify.app';
-  const SNAP_URL = 'https://cheerful-pothos-d1c3ee.netlify.app';
+  const RUNTIME_VERSION = '2026.09.10-rev07-d';
+  const DEFAULT_HIDE_URL = 'https://dainty-froyo-a6e427.netlify.app';
+  const DEFAULT_SNAP_URL = 'https://cheerful-pothos-d1c3ee.netlify.app';
+
+  function normalizeTestTarget(raw, fallback) {
+    if (!raw) return fallback;
+    try {
+      const url = new URL(raw);
+      const host = url.hostname.toLowerCase();
+      const isLocal = host === 'localhost' || host === '127.0.0.1';
+      const isQuickTunnel = host.endsWith('.trycloudflare.com');
+      const protocolOk = isLocal ? ['http:','https:'].includes(url.protocol) : url.protocol === 'https:';
+      if (!protocolOk || (!isLocal && !isQuickTunnel)) return fallback;
+      url.username = '';
+      url.password = '';
+      url.search = '';
+      url.hash = '';
+      return url.href.replace(/\/$/, '');
+    } catch {
+      return fallback;
+    }
+  }
+
+  const BOOT_PARAMS = new URLSearchParams(location.search);
+  const HIDE_URL = normalizeTestTarget(BOOT_PARAMS.get('hide_target'), DEFAULT_HIDE_URL);
+  const SNAP_URL = normalizeTestTarget(BOOT_PARAMS.get('snap_target'), DEFAULT_SNAP_URL);
   const VALID_TASK_STATES = new Set(['PENDING','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
   const TRUSTED_APP_ORIGINS = new Set([new URL(HIDE_URL).origin, new URL(SNAP_URL).origin]);
 
@@ -143,6 +166,13 @@
     return app === 'hide-seek' ? HIDE_URL : app === 'snap-pop' ? SNAP_URL : location.href;
   }
 
+  function readyReturnUrl() {
+    const url = new URL(`${location.origin}${location.pathname}`);
+    if (HIDE_URL !== DEFAULT_HIDE_URL) url.searchParams.set('hide_target', HIDE_URL);
+    if (SNAP_URL !== DEFAULT_SNAP_URL) url.searchParams.set('snap_target', SNAP_URL);
+    return url.href;
+  }
+
   function launchSpecialist(app) {
     const session = state.activeSession;
     const c = ensureContract(session);
@@ -159,7 +189,7 @@
     url.searchParams.set('goal_id', c.goal_id);
     url.searchParams.set('task_id', task.task_id);
     url.searchParams.set('lap_id', lap.lap_id);
-    url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
+    url.searchParams.set('return_target', readyReturnUrl());
     url.searchParams.set('snap_target', SNAP_URL);
     url.searchParams.set('target_time_ms', String(session.targetMs || 0));
     url.searchParams.set('session_start_at', String(session.startAt || 0));
@@ -430,6 +460,7 @@
 
   function boot() {
     document.documentElement.dataset.readyRuntime = RUNTIME_VERSION;
+    document.documentElement.dataset.readyTestRouting = (HIDE_URL !== DEFAULT_HIDE_URL || SNAP_URL !== DEFAULT_SNAP_URL) ? 'on' : 'off';
     injectStyles();
     patchHandlers();
     ensureWrapUp();
@@ -447,7 +478,8 @@
       launchSpecialist,
       setTaskState,
       switchTask,
-      openWrapUp
+      openWrapUp,
+      routing: () => ({ hide_url:HIDE_URL, snap_url:SNAP_URL, test_mode:HIDE_URL !== DEFAULT_HIDE_URL || SNAP_URL !== DEFAULT_SNAP_URL })
     });
   }
 
