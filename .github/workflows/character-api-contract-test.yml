@@ -1,0 +1,46 @@
+name: Character API Contract Test
+
+on:
+  push:
+    branches:
+      - runtime-session-bridge-2026-09-10
+    paths:
+      - 'netlify/functions/character-candidates.mjs'
+      - 'ready-character-candidate-v1.js'
+      - 'local_dev_server.mjs'
+      - '.github/workflows/character-api-contract-test.yml'
+  workflow_dispatch:
+
+jobs:
+  no-cost-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Start local API locked
+        env:
+          READY_CHARACTER_PAID_GENERATION: 'false'
+        run: |
+          node local_dev_server.mjs > /tmp/ready-local.log 2>&1 &
+          echo $! > /tmp/ready-local.pid
+          for i in {1..20}; do
+            if curl -sS http://127.0.0.1:8080/index.html >/dev/null; then exit 0; fi
+            sleep 0.25
+          done
+          cat /tmp/ready-local.log
+          exit 1
+      - name: Verify real API round trip is locked before provider
+        run: |
+          status=$(curl -sS -o /tmp/response.json -w '%{http_code}' \
+            -X POST http://127.0.0.1:8080/api/character-candidates \
+            -H 'content-type: application/json' \
+            --data '{"confirmCost":false}')
+          cat /tmp/response.json
+          test "$status" = "423"
+          node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('/tmp/response.json','utf8'));if(x.code!=='PAID_GENERATION_DISABLED'||x.ok!==false)process.exit(1)"
+      - name: Show local trace
+        if: always()
+        run: cat /tmp/ready-local.log || true
