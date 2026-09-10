@@ -7,6 +7,7 @@ on:
     paths:
       - 'ready-home-homework-mvp-v1.js'
       - 'ready-home-homework-ui-v1.js'
+      - 'ready-runtime-v07.js'
       - 'ready-stage-d.js'
       - 'ready-stage-d-base-v1.js'
       - 'READY_HOMEWORK_MVP_CONTRACT.md'
@@ -25,6 +26,7 @@ jobs:
         run: |
           node --check ready-home-homework-mvp-v1.js
           node --check ready-home-homework-ui-v1.js
+          node --check ready-runtime-v07.js
           node --check ready-stage-d.js
           node --check ready-stage-d-base-v1.js
       - name: Verify canonical homework contract markers
@@ -37,8 +39,18 @@ jobs:
           grep -q "READY_HOME" ready-home-homework-mvp-v1.js
           grep -q "TASK_SWITCH" ready-home-homework-mvp-v1.js
           grep -q "WAITING_FOR_PARENT" ready-home-homework-mvp-v1.js
-          grep -q "target_min: null" ready-home-homework-mvp-v1.js
-          grep -q "timerOptional: true" ready-home-homework-mvp-v1.js
+          grep -Eq "target_min:[[:space:]]*null" ready-home-homework-mvp-v1.js
+          grep -q "timerOptional:true" ready-home-homework-mvp-v1.js
+      - name: Verify canonical Ready session ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "ReadySetRev07" ready-home-homework-mvp-v1.js
+          grep -q "ReadyBaseRuntimeV1.start" ready-home-homework-mvp-v1.js
+          grep -q "duplicateSessionStore:false" ready-home-homework-mvp-v1.js
+          ! grep -q "readyset_homework_session_v1" ready-home-homework-mvp-v1.js
+          grep -q "oneSessionId" ready-runtime-v07.js
+          grep -q "atMostOneActiveLap" ready-runtime-v07.js
       - name: Verify child-facing home bridge
         shell: bash
         run: |
