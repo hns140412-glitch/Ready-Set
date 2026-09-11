@@ -11,6 +11,7 @@ on:
       - 'ready-stage-d.js'
       - 'ready-stage-d-base-v1.js'
       - 'READY_HOMEWORK_MVP_CONTRACT.md'
+      - 'tests/ready-manual-learning-contract.mjs'
       - '.github/workflows/ready-homework-mvp-contract-test.yml'
   workflow_dispatch:
 
@@ -83,3 +84,6 @@ jobs:
             ! grep -q "images/edits" "$f"
             ! grep -q "READY_CHARACTER_PAID_GENERATION" "$f"
           done
+
+      - name: Verify manual learning and automatic session contracts
+        run: node tests/ready-manual-learning-contract.mjs

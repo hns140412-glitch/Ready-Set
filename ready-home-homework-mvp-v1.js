@@ -14,13 +14,13 @@
     catch { return fallback; }
   };
   const writeJSON = (key, value) => localStorage.setItem(key, JSON.stringify(value));
-  const taskLabel = task => [String(task?.title || task?.subject || '숙제').trim(), String(task?.volume || '').trim()].filter(Boolean).join(' · ');
+  const taskLabel = task => [String(task?.title || task?.subject || '숙제').trim(), String(task?.volume || '').trim(), task?.learningProgress ? `${task.learningProgress.remainingQuantity}% 남음` : ''].filter(Boolean).join(' · ');
 
   function identity() { return readJSON(IDENTITY_KEY, {}) || {}; }
   function planner() { return readJSON(PLANNER_KEY, {version:1, days:{}}) || {version:1, days:{}}; }
   function dayPlan() { return planner().days?.[todayKey()] || {localDate:todayKey(), tasks:[]}; }
-  function tasks() {
-    return (dayPlan().tasks || []).filter(task => task && task.status !== 'COMPLETED').map((task, index) => ({
+  function tasks(includeCompleted = false) {
+    return (dayPlan().tasks || []).filter(task => task && (includeCompleted || task.status !== 'COMPLETED')).map((task, index) => ({
       task_id: String(task.task_id || task.id || `task_${todayKey()}_${index + 1}`),
       planner_id: task.id == null ? null : String(task.id),
       subject: task.subject || '기타',
@@ -32,8 +32,53 @@
       status: task.status || 'PLANNED',
       estimate_min: Number(task.estimatedMin) > 0 ? Number(task.estimatedMin) : null,
       estimate_kind: task.estimateKind || 'UNVERIFIED',
-      selected: !!task.selected
+      selected: !!task.selected,
+      learningProgress: clone(task.learningProgress || null),
+      learningReports: clone(task.learningReports || [])
     }));
+  }
+
+  // A cumulative share of the original plan, never minutes or inferred page counts.
+  const reportRole = () => new URLSearchParams(location.search).get('role') === 'parent' ? 'PARENT_REPORTED' : 'CHILD_REPORTED';
+  function reportTask(data, taskId) {
+    const task = data.days?.[todayKey()]?.tasks?.find(item => String(item.task_id || item.id) === String(taskId));
+    if (!task) throw new Error('TODAY_TASK_REQUIRED');
+    return task;
+  }
+  function recordLearning(taskId, {completedQuantity, actualWorkDate = null} = {}) {
+    if (!Number.isFinite(completedQuantity) || completedQuantity <= 0 || completedQuantity > 100) throw new Error('QUANTITY_1_TO_100_REQUIRED');
+    if (actualWorkDate !== null && (!/^\d{4}-\d{2}-\d{2}$/.test(actualWorkDate) ||
+        !Number.isFinite(Date.parse(actualWorkDate)) || new Date(actualWorkDate).toISOString().slice(0,10) !== actualWorkDate || actualWorkDate > todayKey())) throw new Error('INVALID_WORK_DATE');
+    const data = planner();
+    const task = reportTask(data, taskId);
+    const previous = task.learningProgress?.completedQuantity ?? null;
+    if (task.status === 'COMPLETED' || (previous !== null && completedQuantity <= previous)) throw new Error('REPORT_MUST_INCREASE_TOTAL');
+    const reports = task.learningReports || [];
+    if (reports.length >= 100) throw new Error('REPORT_LIMIT_REACHED');
+    const report = {
+      reportId: `report_${Date.now()}_${Math.random().toString(36).slice(2,10)}`,
+      source: reportRole(), reportedAt: new Date().toISOString(), actualWorkDate,
+      plannedQuantity: 100, completedQuantity, unit: 'PERCENT_OF_PLAN',
+      plannedVolume: task.volume || null, previousStatus: task.status || 'PLANNED',
+      confirmedBy: null, confirmedAt: null
+    };
+    task.learningReports = [...reports, report];
+    task.learningProgress = {plannedQuantity:100, completedQuantity, remainingQuantity:100-completedQuantity, unit:'PERCENT_OF_PLAN'};
+    task.status = completedQuantity === 100 ? 'COMPLETED' : 'PARTIAL';
+    writeJSON(PLANNER_KEY, data);
+    return clone(report);
+  }
+  function confirmLearning(taskId, reportId) {
+    if (reportRole() !== 'PARENT_REPORTED') throw new Error('PARENT_ROLE_REQUIRED');
+    const data = planner();
+    const report = reportTask(data, taskId).learningReports?.find(item => item.reportId === reportId);
+    if (!report || report.source !== 'CHILD_REPORTED') throw new Error('CHILD_REPORT_REQUIRED');
+    if (!report.confirmedAt) {
+      report.confirmedBy = 'PARENT_REPORTED';
+      report.confirmedAt = new Date().toISOString();
+      writeJSON(PLANNER_KEY, data);
+    }
+    return clone(report);
   }
 
   function confirmedCharacter() {
@@ -208,7 +253,7 @@
   window.ReadyHomeHomeworkMVPV1 = Object.freeze({
     version:VERSION, model:renderHomeModel, tasks, chooseStartMode, createSession,
     activeSession:() => clone(activeSession()), switchTask, finishTask, endSession,
-    resolveCanonicalTaskId, validate
+    resolveCanonicalTaskId, recordLearning, confirmLearning, reportRole, validate
   });
 
   document.documentElement.dataset.readyHomeHomeworkMvp = VERSION;

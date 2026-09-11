@@ -172,3 +172,40 @@ PASS requires all of the following:
 Existing `ready-stage-d.js` already provides a Planner/local store, homework volume/difficulty/estimate fields, selected-task distribution to mission, optional target time behavior, and active task/specialist tooling. This contract is the target for tightening that implementation after the CHARACTER mount blocker is resolved.
 
 No paid image generation is authorized by this contract.
+
+## 13. Retrospective learning reconciliation (2026-09-11)
+
+Ready execution history is evidence of app sessions, not the sole authority for
+learning. Today's existing planner tasks accept cumulative manual completion,
+including homework done while Ready was closed. No Session/Lap or duration is
+created, inferred, or changed by recording or confirming a report.
+
+- Storage stays on the existing planner task: `learningReports` is provenance
+  history, and `learningProgress` is the current reported quantity projection.
+  This is not a session store. Existing source/assignment fields remain intact.
+- Existing volume is free text. Quantity is explicitly `PERCENT_OF_PLAN`, with
+  plannedQuantity=100, cumulative completedQuantity in (0,100], and
+  remainingQuantity=100-completedQuantity. No pages or minutes are inferred.
+  A later report must increase the cumulative total; it is not an increment.
+  Partial results set PARTIAL; 100 sets COMPLETED and removes the start action.
+  Unreported quantities stay unknown, including legacy PARTIAL results.
+- Reports preserve CHILD_REPORTED or PARENT_REPORTED, reportedAt, optional
+  actualWorkDate (unknown is null), and original plannedVolume. Dates must be
+  valid and not future dates. At most 100 reports per task are accepted.
+- Parent confirmation adds confirmedBy/confirmedAt to a child report without
+  changing its source or counting its amount again. Completed reports remain
+  visible for confirmation. Role selection follows the existing `?role=parent`
+  convention; this local app convention is not authenticated identity.
+- Automatic task-state events retain their existing source and now explicitly
+  carry SESSION_DERIVED provenance. Canonical ReadySetRev07 session/lap behavior
+  is otherwise unchanged. Manual quantities do not rewrite session outcomes or
+  turn session time into an amount. Conflicting/corrected reports, plan edits
+  after reports, and cross-device merging are outside this bounded path.
+- Child and parent entry points show all today's tasks, whole/partial percentage
+  capture, optional work date, report sources, and remaining quantity. Starting
+  a partially reported task labels its remaining share in the canonical mapping.
+- No growth, rewards, diary, letters, notes, location, or paid generation added.
+
+Bounded verification: `node tests/ready-manual-learning-contract.mjs`, plus
+`node --check` on the homework core/UI, canonical runtime, and stage-D loaders.
+Browser/mobile dialog rendering and parent navigation still require runtime QA.

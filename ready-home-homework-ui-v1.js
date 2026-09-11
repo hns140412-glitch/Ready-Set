@@ -30,7 +30,7 @@
   }
 
   function taskMeta(task) {
-    return [task.subject, task.volume, task.deadline && task.deadline !== '미확정' ? `마감 ${task.deadline}` : ''].filter(Boolean).join(' · ');
+    return [task.subject, task.volume, task.learningProgress ? `${task.learningProgress.remainingQuantity}% 남음` : '', task.deadline && task.deadline !== '미확정' ? `마감 ${task.deadline}` : ''].filter(Boolean).join(' · ');
   }
 
   function startTask(task) {
@@ -80,8 +80,61 @@
     picker(model.tasks);
   }
 
+  function reportDialog(task) {
+    const dialog = document.createElement('dialog');
+    dialog.setAttribute('aria-label', '한 일 기록');
+    dialog.innerHTML = `<form><h3>이미 한 숙제 기록</h3><p>${escape(task.title)} · ${escape(task.volume)}</p>
+      <p>이 숙제 전체에서 지금까지 한 만큼 알려 줘. 절반은 50%, 전부는 100%야.</p>
+      <label>지금까지 한 양 (%) <input name="quantity" type="number" min="1" max="100" step="1" required value="${task.learningProgress?.completedQuantity || 100}"></label>
+      <button type="button" data-whole>전부 했어 (100%)</button>
+      <p><label>실제로 한 날짜 (몰라도 괜찮아) <input name="workDate" type="date" max="${new Date().toLocaleDateString('sv-SE')}"></label></p>
+      <p role="alert"></p><button type="submit">기록하기</button> <button type="button" data-cancel>취소</button></form>`;
+    document.body.appendChild(dialog);
+    const form = dialog.querySelector('form');
+    dialog.querySelector('[data-whole]').onclick = () => { form.elements.quantity.value = 100; };
+    dialog.querySelector('[data-cancel]').onclick = () => dialog.close();
+    dialog.addEventListener('close', () => dialog.remove());
+    form.onsubmit = event => {
+      event.preventDefault();
+      try {
+        api().recordLearning(task.task_id, {completedQuantity:Number(form.elements.quantity.value), actualWorkDate:form.elements.workDate.value || null});
+        dialog.close();
+        window.dispatchEvent(new Event('ready-homework-refresh'));
+      } catch {
+        dialog.querySelector('[role="alert"]').textContent = '이전보다 큰 전체 완료 비율(1~100%)과 오늘까지의 날짜를 넣어 줘. 저장이 안 되면 다시 열어 줘.';
+      }
+    };
+    dialog.showModal();
+  }
+
+  function renderReports() {
+    const core = api();
+    if (!core) return;
+    const parent = core.reportRole() === 'PARENT_REPORTED';
+    const host = (parent && document.getElementById('rsfParent')?.parentElement) || document.getElementById('homeTodayTodoList')?.parentElement;
+    if (!host) return;
+    let section = document.getElementById('readyLearningReports');
+    if (!section) { section = document.createElement('section'); section.id = 'readyLearningReports'; }
+    if (section.parentElement !== host) host.appendChild(section);
+    const tasks = core.tasks(true);
+    section.innerHTML = '<h3>이미 한 숙제 · 한 일 기록</h3>' + tasks.map(task => {
+      const progress = task.learningProgress;
+      const reports = task.learningReports || [];
+      return `<div class="readyHomeworkTask"><div><b>${escape(task.title)}</b><small>${escape(task.volume)}${progress ? ` · ${progress.completedQuantity}% 완료 · ${progress.remainingQuantity}% 남음` : ''}</small>
+        ${reports.map(report => `<small>${report.source === 'CHILD_REPORTED' ? '내가 기록' : '보호자 기록'} · ${report.completedQuantity}% · 기록 ${escape(report.reportedAt.slice(0,10))} · 한 날짜 ${escape(report.actualWorkDate || '모름')}${report.confirmedAt ? ' · 보호자 확인됨' : ''}</small>
+          ${parent && report.source === 'CHILD_REPORTED' && !report.confirmedAt ? `<button data-confirm-task="${escape(task.task_id)}" data-report="${escape(report.reportId)}">보호자 확인</button>` : ''}`).join('')}</div>
+        ${task.status !== 'COMPLETED' ? `<button data-record-task="${escape(task.task_id)}">이미 했어 · 기록</button>` : '<span>완료</span>'}</div>`;
+    }).join('');
+    section.querySelectorAll('[data-record-task]').forEach(button => button.onclick = () => reportDialog(tasks.find(task => task.task_id === button.dataset.recordTask)));
+    section.querySelectorAll('[data-confirm-task]').forEach(button => button.onclick = () => {
+      try { core.confirmLearning(button.dataset.confirmTask, button.dataset.report); renderReports(); }
+      catch { (window.toast || window.alert)('확인할 기록을 다시 선택해 주세요.'); }
+    });
+  }
+
   function render() {
     const core = api();
+    renderReports();
     const actions = document.getElementById('baseActions');
     const todo = document.getElementById('homeTodayTodoList');
     if (!core || !actions || !todo) return false;

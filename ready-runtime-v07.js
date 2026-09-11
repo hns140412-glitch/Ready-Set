@@ -145,7 +145,7 @@
     const previous = task.state;
     task.state = nextState;
     task.updated_at = iso();
-    emit('TASK_STATE_CHANGED', { task_id: taskId, previous, next: nextState, source });
+    emit('TASK_STATE_CHANGED', { task_id: taskId, previous, next: nextState, source, provenance: 'SESSION_DERIVED' });
     save();
     renderContractUI();
     return true;
