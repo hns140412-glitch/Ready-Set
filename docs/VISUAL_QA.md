@@ -1,5 +1,7 @@
 # Ready visual QA (non-production)
 
+Character/reference acceptance additionally requires the seven fail-closed gates in [VISUAL_FIDELITY_GATE.md](VISUAL_FIDELITY_GATE.md). This boot harness alone cannot grant visual PASS. The capture adapter also supports `small` (320 × 740) and `wide` (430 × 932), and records overflow, touch-target and image-load measurements; clipping and overlap remain explicitly unreviewed.
+
 Run from this repository with Node 18+:
 
 ```sh
