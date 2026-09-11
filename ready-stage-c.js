@@ -3,19 +3,14 @@
   if(window.__readyJourneyLoader)return;
   window.__readyJourneyLoader=true;
   const VERSION='2026.09.11-stage-identity-owner-v8.5';
-  const IDENTITY='./ready-onboarding-identity-v1.js?v=20260911-directboot2';
-  const CANDIDATE='./ready-character-candidate-v1.js?v=20260911-directboot2';
+  const IDENTITY='./ready-onboarding-identity-v1.js?v=20260911-mood2';
+  const CANDIDATE='./ready-character-candidate-v1.js?v=20260911-mood2';
   const AFTER_IDENTITY=['./ready-stage-c-base.js','./ready-stage-d.js','./ready-stage-e.js','./ready-stage-f.js','./ready-stage-g1-fix.js','./ready-stage-g14-planner-authority.js','./ready-base-native-v2.js','./ready-planner-selection-bridge-v1.js','./ready-focus-tools-v1.js','./ready-schedule-base-v1.js','./ready-world-base-v1.js','./ready-world-shell-v1.js','./ready-base-selftest-v1.js'];
   const load=(src,timeout=0)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.async=false;const timer=timeout?setTimeout(()=>reject(new Error(`LOAD_TIMEOUT:${src}`)),timeout):null;s.onload=()=>{clearTimeout(timer);resolve(src)};s.onerror=()=>{clearTimeout(timer);reject(new Error(`LOAD_FAILED:${src}`))};document.head.appendChild(s)});
   const mark=(state,detail='')=>{document.documentElement.dataset.readyBootState=state;if(detail)document.documentElement.dataset.readyBootDetail=detail};
   const releaseStaticPaint=()=>{document.documentElement.classList.remove('identityFirstPaint');document.documentElement.classList.remove('worldFirstPaint')};
   const safeRead=()=>{if(window.ReadyIdentityV1)return window.ReadyIdentityV1.get();try{return JSON.parse(localStorage.getItem('readyset_identity_v1')||'{}')||{}}catch{return {}}};
   const safeWrite=v=>window.ReadyIdentityV1?window.ReadyIdentityV1.patch(v):localStorage.setItem('readyset_identity_v1',JSON.stringify(v));
-  const CONSULT_STEPS=[
-    {key:'MOOD',title:'어떤 분위기가 끌려?',hint:'첫인상과 움직임의 느낌을 골라봐.',tiles:[['BOLD','당당한 발견가','선명하고 자신감 있게'],['PLAYFUL','자유로운 탐험가','경쾌하고 재치 있게'],['MYSTERIOUS','신비로운 관찰가','차분하고 호기심 있게']]},
-    {key:'STYLE',title:'어떤 스타일로 떠나볼까?',hint:'착장과 헤어 스타일링의 방향을 골라봐.',tiles:[['FIELD','필드 익스플로러','활동적인 아웃도어'],['URBAN','모던 어드벤처','깔끔하고 세련된 캐주얼'],['STORY','스토리 트래블러','특별한 여행자 무드']]},
-    {key:'GEAR',title:'탐험의 한 장면을 완성한다면?',hint:'캐릭터를 기억하게 할 대표 아이템을 골라봐.',tiles:[['CAMERA','기록하는 발견가','카메라와 기록 장비'],['OPTICS','멀리 보는 탐험가','쌍안경과 관찰 도구'],['MAP','길을 만드는 탐험가','지도와 나침반']]}
-  ];
   const installReferenceStyle=()=>{
     if(document.getElementById('ready-character-reference-ui-v1'))return;
     const s=document.createElement('style');s.id='ready-character-reference-ui-v1';s.textContent=`
@@ -46,27 +41,18 @@
     const mount=document.querySelector('#readyCharacterCandidateMount');if(!mount)return;
     installReferenceStyle();
     const i=safeRead();if(i.onboardingStep!=='CHARACTER')return;
-    const signature=JSON.stringify(i.characterStyleConsultation||{});
-    if(mount.dataset.fallbackView===signature&&mount.querySelector('.ccConsult'))return;
-    mount.dataset.fallbackView=signature;delete mount.dataset.candidateUi;
-    const cs=i.characterStyleConsultation||{version:1,step:0,picks:{}},picks=cs.picks||{};
-    const complete=CONSULT_STEPS.every(x=>picks[x.key]);
-    const idx=Math.max(0,Math.min(2,Number(cs.step)||0)),step=CONSULT_STEPS[idx];
-    mount.classList.add('ccPanel');mount.dataset.candidateFallback='1';
-    if(complete){
-      mount.innerHTML=`<div class="ccConsult"><span class="ccKicker">STYLE CONSULTATION · COMPLETE</span><b>좋아, Judy의 탐험 스타일이 모였어.</b><p>이제 같은 얼굴 기준으로 서로 다른 세 가지 후보를 만들 차례야.</p><div class="ccSummary">${CONSULT_STEPS.map(x=>`<span><small>${x.key}</small><strong>${(x.tiles.find(t=>t[0]===picks[x.key])||[])[1]||''}</strong></span>`).join('')}</div><button data-fallback-handoff>후보 생성 단계 연결</button><small>${detail?`연결 진단 · ${detail}`:'선택 내용은 안전하게 저장되어 있어요.'}</small></div>`;
-      mount.querySelector('[data-fallback-handoff]')?.addEventListener('click',()=>ensureCandidate(true));return;
-    }
-    mount.innerHTML=`<div class="ccConsult"><span class="ccKicker">STYLE CONSULTATION · ${idx+1} / 3</span><b>${step.title}</b><p>${step.hint}</p><div class="ccTileGrid">${step.tiles.map((t,n)=>`<button class="ccTile ccTone${n+1}" data-fallback-key="${t[0]}"><span class="ccArt"><i></i><i></i><i></i></span><strong>${t[1]}</strong><small>${t[2]}</small></button>`).join('')}</div>${idx?'<button class="ccTextButton" data-fallback-back>이전 선택</button>':''}<small>얼굴은 기준 사진 그대로 두고, 스타일만 선택해요.</small></div>`;
-    mount.querySelectorAll('[data-fallback-key]').forEach(b=>b.onclick=()=>{const nextPicks={...picks,[step.key]:b.dataset.fallbackKey};const next=Math.min(2,idx+1);safeWrite({...i,characterStyleConsultation:{version:1,step:next,picks:nextPicks,completedAt:CONSULT_STEPS.every(x=>nextPicks[x.key])?new Date().toISOString():null},updatedAt:new Date().toISOString()});fallbackConsult(detail)});
-    mount.querySelector('[data-fallback-back]')?.addEventListener('click',()=>{safeWrite({...i,characterStyleConsultation:{...cs,step:Math.max(0,idx-1),picks},updatedAt:new Date().toISOString()});fallbackConsult(detail)});
+    if(mount.dataset.candidateFallback==='1')return;
+    mount.dataset.candidateFallback='1';mount.classList.add('ccPanel');
+    mount.innerHTML='<div class="ccConsult"><b>사진은 그대로 보관 중이에요.</b><p>기분 선택 화면을 다시 연결해 주세요. 생성과 비용은 잠겨 있어요.</p><button data-fallback-handoff style="min-height:44px">다시 연결</button></div>';
+    mount.querySelector('[data-fallback-handoff]')?.addEventListener('click',()=>ensureCandidate(true));
   };
+
   const mountCandidate=()=>{
     installReferenceStyle();
     const mount=document.querySelector('#readyCharacterCandidateMount'),candidate=window.ReadyCharacterCandidateV1;
     if(!mount||!candidate)return false;
     try{if(candidate.mount)candidate.mount(mount);else if(candidate.render)candidate.render(mount);else return false}catch(error){console.error('[Ready Candidate Mount]',error);return false}
-    return mount.dataset.candidateUi===candidate.version || !!mount.querySelector('[data-style-tile],[data-candidate-action],.ccMaking,.ccReady,.ccRefine,.ccIntro');
+    return mount.dataset.candidateUi===candidate.version || !!mount.querySelector('[data-mood-tile],[data-candidate-action],.ccMaking,.ccReady,.ccRefine,.ccIntro');
   };
   let candidateLoading=null,candidateAttempted=false;
   const ensureCandidate=async(force=false)=>{
@@ -78,6 +64,7 @@
     candidateAttempted=true;
     candidateLoading=(async()=>{
       try{
+        if(!globalThis.ReadyMoodDirectionV2)await load('./ready-mood-direction-v2.js?v=20260911-mood2',8000);
         if(!window.ReadyCharacterCandidateV1)await load(`${CANDIDATE}${force?'&retry='+Date.now():''}`,8000);
         if(!window.ReadyCharacterCandidateV1)throw new Error('CANDIDATE_GLOBAL_MISSING');
         if(!mountCandidate())throw new Error('CANDIDATE_MOUNT_FAILED');

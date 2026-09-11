@@ -8,7 +8,7 @@ const server = createServer();
 await new Promise(resolve => server.listen(4177, '127.0.0.1', resolve));
 let browser;
 try {
- browser = await chromium.launch({headless:true,timeout:15000});
+ browser = await chromium.launch({headless:true,timeout:15000,...(process.argv[3]?{executablePath:process.argv[3]}:{})});
  for (const scenario of ['normal','quota','candidate-unavailable']) {
   const context = await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
   let apiCalls=0;
@@ -67,10 +67,12 @@ try {
    window.dispatchEvent(new Event('focus'));
   });
   assert.equal(await page.evaluate(()=>originalMount===document.querySelector('#readyCharacterCandidateMount')),true);
-  for(let n=0;n<3;n++)await page.locator('#readyCharacterCandidateMount [data-style-tile],#readyCharacterCandidateMount [data-fallback-key]').first().tap();
-  assert.equal(await page.evaluate(()=>Object.keys(ReadyIdentityV1.get().characterStyleConsultation.picks).length),3);
-  // Approval is still required. Never accept a paid generation dialog.
-  if(scenario!=='candidate-unavailable')await page.locator('[data-candidate-action="generate"]').tap();
+  if(scenario!=='candidate-unavailable'){
+   for(const key of ['EXCITED','COZY','IMAGINING'])await page.locator('[data-mood-tile="'+key+'"]').tap();
+   assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections.length),3);
+   await page.locator('[data-candidate-action="generate"]').tap();
+   for(const width of [320,390,430]){await page.setViewportSize({width,height:844});const measurements=await page.locator('#readyCharacterCandidateMount').evaluate(el=>({overflow:document.documentElement.scrollWidth>innerWidth,small:[...el.querySelectorAll('button')].some(b=>{const r=b.getBoundingClientRect();return r.width<44||r.height<44})}));assert.equal(measurements.overflow,false);assert.equal(measurements.small,false);}
+  }else assert.equal(await page.locator('[data-fallback-handoff]').count(),1);
   assert.equal(apiCalls,0);
   if(scenario==='quota')await page.evaluate(()=>{Storage.prototype.setItem=originalSetItem;window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}))});
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('readyset_identity_v1')).onboardingStep),'CHARACTER');

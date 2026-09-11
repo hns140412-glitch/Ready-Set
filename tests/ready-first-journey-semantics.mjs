@@ -29,6 +29,7 @@ async function run({quota=false,candidate=true}={}){
  const timers=new Map();let timerId=0;const window=new Element('window');const callbacks=[];
  const context=vm.createContext({window,document,console,Date,Math,JSON,Event:class {constructor(type){this.type=type}},MutationObserver:class {constructor(fn){observers++;callbacks.push(fn)}observe(){}},localStorage:{getItem:k=>store.get(k),setItem(k,v){if(failWrites)throw Error('QuotaExceededError');writes++;store.set(k,v)}},setTimeout:fn=>{timers.set(++timerId,fn);return timerId},clearTimeout:id=>timers.delete(id),alert(){throw Error('Unexpected alert')},confirm:()=>false,fetch(){apiCalls++;throw Error('PAID_API_FORBIDDEN')}});
  const settleObservers=()=>{for(let n=0;n<10;n++){const before=mutations;callbacks.forEach(fn=>fn());if(mutations===before)return;}assert.fail('Candidate MutationObserver never settles: textContent writes prevent CHARACTER paint');};
+ vm.runInContext(fs.readFileSync('ready-mood-direction-v2.js','utf8'),context);
  const execute=n=>vm.runInContext(sources[n],context);
  execute(0);if(candidate)execute(1);execute(2);
  await Promise.resolve();await Promise.resolve();
@@ -54,9 +55,16 @@ async function run({quota=false,candidate=true}={}){
  assert.equal(window.listeners.pageshow.length,pageListeners);assert.equal(observers,candidate?1:0);
  window.dispatchEvent({type:'pageshow',persisted:true});window.dispatchEvent({type:'focus'});
  assert.equal(root.querySelector('#readyCharacterCandidateMount'),mount);
- for(let step=0;step<3;step++){mount.querySelector(candidate?'[data-style-tile]':'[data-fallback-key]').click();settleObservers();const tile=mount.querySelector(candidate?'[data-style-tile]':'[data-fallback-key]');window.dispatchEvent({type:'focus'});assert.equal(mount.querySelector(candidate?'[data-style-tile]':'[data-fallback-key]'),tile);}
- assert.equal(Object.keys(api.get().characterStyleConsultation.picks).length,3);
- if(candidate)mount.querySelector('[data-candidate-action="generate"]').click();
+ if(candidate){for(const key of ['EXCITED','COZY','IMAGINING']){mount.querySelectorAll('[data-mood-tile]').find(b=>b.dataset.moodTile===key).click();settleObservers();const tile=mount.querySelector('[data-mood-tile]');window.dispatchEvent({type:'focus'});assert.equal(mount.querySelector('[data-mood-tile]'),tile);}assert.equal(api.get().characterMoodDirections.selections.length,3);
+ const cc=window.ReadyCharacterCandidateV1;
+ cc.chooseMood('FOCUSED');assert.equal(api.get().characterMoodDirections.selections.length,3);
+ cc.chooseKeyword('EXCITED','활발');cc.chooseKeyword('EXCITED','씩씩');cc.chooseKeyword('EXCITED','장난꾸러기');assert.equal(api.get().characterMoodDirections.selections[0].keywords.length,2);
+ const items=['EXCITED','COZY','IMAGINING'].map((directionKey,k)=>({id:'fake'+k,assetRef:'synthetic'+k,directionKey,identitySource:'SOURCE_PHOTO',quality:'high'}));
+ assert.throws(()=>cc.setCandidates(items),/GENERATED_OUTPUT_REVIEW_REQUIRED/);
+ api.patch({characterVisualReview:{kind:'STATIC_TEST',CHARACTER_IDENTITY:'PASS',MOOD_DIRECTION_DISTANCE:'PASS'}});assert.throws(()=>cc.setCandidates(items),/GENERATED_OUTPUT_REVIEW_REQUIRED/);
+ assert.throws(()=>cc.setCandidates([items[0],items[0],items[2]]),/CONTRACT_MISMATCH/);
+ api.patch({characterCandidateState:'READY',characterCandidates:items,characterStyleConsultation:{version:1,picks:{MOOD:'BOLD',STYLE:'FIELD',GEAR:'MAP'}}});assert.equal(cc.get().candidateState,'NOT_REQUESTED');
+ mount.querySelector('[data-candidate-action="generate"]').click();}else assert.ok(mount.querySelector('[data-fallback-handoff]'));
  assert.equal(apiCalls,0,'generation remains behind approval');
  failWrites=false;window.dispatchEvent({type:'pageshow',persisted:true});
  assert.equal(JSON.parse(store.get('readyset_identity_v1')).onboardingStep,'CHARACTER');

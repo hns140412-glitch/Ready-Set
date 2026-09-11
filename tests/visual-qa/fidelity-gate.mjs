@@ -8,6 +8,7 @@ export const criteria = {
   REFERENCE_COVERAGE:['four-original-boards','all-reference-regions-mapped','no-material-reference-drift'],
   UI_LAYOUT:['premium-child-friendly','pale-sky-blue-world','navy-blue-type-hierarchy','rounded-white-cards','deliberate-spacing','mascot-and-speech-bubbles'],
   CHARACTER_IDENTITY:['photo-resemblance-permitted','recognizable-same-child','stable-face-hair-age','coherent-explorer-outfit-accessories','meaningfully-distinct-candidates'],
+  MOOD_DIRECTION_DISTANCE:['three-selected-tile-lineage','pairwise-first-glance-distance','distinct-expression-pose-energy','distinct-props-staging-atmosphere','same-photo-same-child-same-age-quality','reject-near-duplicates-and-identity-drift'],
   CHARACTER_RENDER_QUALITY:['premium-3d-animated-film','dimensional-materials-lighting','clean-silhouette','natural-anatomy-hands-eyes','full-body-uncropped','sharp-native-resolution','no-placeholder-emoji-icon-flat-cartoon'],
   CROSS_VIEW_CONSISTENCY:['same-selected-identity','stable-face-hair-outfit','front-side-back-reusable','expressions-actions-reusable'],
   MOBILE_RESPONSIVE:['no-overflow-clipping-overlap','readable-type','touch-targets-44px','safe-area-and-scroll-access'],
@@ -22,7 +23,7 @@ export function evaluate(e = {}, root = '.') {
   const gates = Object.fromEntries(Object.keys(criteria).map(k=>[k,{status:'BLOCKED',reasons:[]}]));
   const issue = (g, message) => gates[g].reasons.push(message);
   const artifacts = new Map();
-  const records = [...(e.references||[]),...(e.screenshots||[]),...(e.outputs||[]),...(e.comparisons||[])];
+  const records = [...(e.sourcePhotos||[]),...(e.references||[]),...(e.screenshots||[]),...(e.outputs||[]),...(e.comparisons||[])];
   const evidenceRoot = fs.realpathSync(root);
   for (const a of records) {
     try {
@@ -55,6 +56,9 @@ export function evaluate(e = {}, root = '.') {
   if (new Set(outputs.map(x=>x.identityId)).size!==1 || !outputs.length) issue('CHARACTER_IDENTITY','One child identity required across outputs');
   const candidates=outputs.filter(x=>/^candidate-[123]$/.test(x.role));
   if (candidates.length!==3 || new Set(candidates.map(x=>x.sha256)).size!==3) issue('CHARACTER_IDENTITY','Three distinct candidate images required');
+  if(candidates.length!==3||new Set(candidates.map(x=>x.moodTileKey)).size!==3||candidates.some(x=>!nonempty(x.moodTileKey)||!nonempty(x.originalPhotoEvidenceId)||!artifacts.has(x.originalPhotoEvidenceId)||!(e.sourcePhotos||[]).some(p=>p.id===x.originalPhotoEvidenceId)))issue('MOOD_DIRECTION_DISTANCE','Three distinct selected mood directions and original photo evidence required');
+  if(new Set(candidates.map(x=>x.originalPhotoEvidenceId)).size!==1)issue('MOOD_DIRECTION_DISTANCE','Same original photo evidence required');
+  for(const review of Object.values(e.reviews?.MOOD_DIRECTION_DISTANCE?.criteria||{}))if(candidates.some(x=>!review.evidenceIds?.includes(x.id)))issue('MOOD_DIRECTION_DISTANCE','Each distance criterion must inspect all three generated candidates');
   const selected=outputs.find(x=>x.role==='selected');
   if (!selected || !candidates.some(x=>x.id===e.selectedCandidateId)) issue('CROSS_VIEW_CONSISTENCY','Selected candidate/master lineage required');
   for (const s of shots.filter(x=>['CONFIRM','COMPLETE','VISUAL_ID'].includes(x.state))) {
@@ -79,7 +83,7 @@ export function evaluate(e = {}, root = '.') {
     basis:'Evidence integrity plus explicit human visual review; not automated perceptual certification',gates};
 }
 export function template() {
-  return {version:1,revision:'',references:[],screenshots:[],outputs:[],comparisons:[],selectedCandidateId:'',
+  return {version:1,revision:'',sourcePhotos:[],references:[],screenshots:[],outputs:[],comparisons:[],selectedCandidateId:'',
     reviews:Object.fromEntries(Object.entries(criteria).map(([g,keys])=>[g,{reviewer:'',reviewedAt:'',criteria:Object.fromEntries(keys.map(k=>[k,{verdict:'UNREVIEWED',observation:'',evidenceIds:[]}]))}]))};
 }
 if (process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {

@@ -24,4 +24,4 @@ for(const file of ['../photo.png','.env','https://example.com/a.png','C:/photo.p
 }
 assert.equal(states.length*widths.length,18);
 assert.equal(outputRoles.length,9);
-console.log('PASS: seven fail-closed gates, marker/forged-evidence rejection, explicit failures, unsafe paths, required coverage');
+console.log('PASS: eight fail-closed gates, marker/forged-evidence rejection, explicit failures, unsafe paths, required coverage');
