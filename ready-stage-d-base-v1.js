@@ -204,6 +204,7 @@
 
   function taskFromElement(el){ return dayPlan().tasks.find(t=>t.id===el.dataset.planId); }
   function capturePlannerEdits(e){
+    if(window.ReadyFoundationV1?.enabled)return;
     const el=e.target.closest('.planner-task'); if(!el) return;
     const task=taskFromElement(el); if(!task) return;
     if(e.target.classList.contains('plan-select')) task.selected=e.target.checked;
@@ -215,6 +216,7 @@
   }
 
   function handlePlannerClick(e){
+    if(window.ReadyFoundationV1?.enabled)return;
     const action=e.target.closest('[data-plan-action]')?.dataset.planAction; if(!action) return;
     if(action==='add'){
       const plan=dayPlan();
@@ -229,6 +231,7 @@
   }
 
   function createTalentTasks(){
+    if(window.ReadyFoundationV1?.enabled)return;
     const rows=[...document.querySelectorAll('[data-talent]')];
     const plan=dayPlan(); let added=0;
     rows.forEach(row=>{
@@ -245,6 +248,7 @@
   }
 
   function applyPlanToMission(){
+    if(window.ReadyFoundationV1?.enabled)return;
     captureOpenInputs();
     const selected=dayPlan().tasks.filter(t=>t.selected);
     if(!selected.length){toast('오늘 세션에 넣을 과제를 선택해 주세요.');return;}
@@ -260,6 +264,7 @@
   }
 
   function captureOpenInputs(){
+    if(window.ReadyFoundationV1?.enabled)return;
     document.querySelectorAll('.planner-task').forEach(el=>{
       const task=taskFromElement(el); if(!task) return;
       task.selected=!!el.querySelector('.plan-select')?.checked;

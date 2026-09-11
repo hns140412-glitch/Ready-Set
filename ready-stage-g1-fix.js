@@ -64,6 +64,7 @@
     task.localDate=toDate;to.tasks.push(task);
   }
   function repairTalentTuesday(packageId){
+    if(window.ReadyFoundationV1?.enabled)return {superseded:true};
     const p=BASE.load(),pkg=p.assignmentPackages?.[packageId];if(!pkg)return{moved:0};
     const candidates=candidateTalentDates(pkg.sourceDate,pkg.deadlineBoundary);if(!candidates.length)return{moved:0};
     const movable=[];

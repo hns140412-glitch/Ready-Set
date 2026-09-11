@@ -124,6 +124,7 @@
     candidates.sort((a,b)=>a.score-b.score||a.date.localeCompare(b.date));return candidates[0]?.date||null;
   }
   function allocateTalentPackage(packageId){
+    if(window.ReadyFoundationV1?.enabled)return {ok:false,reason:'FOUNDATION_INTERPRETATION_REQUIRED'};
     const p=load(),pkg=p.assignmentPackages[packageId];if(!pkg)return{ok:false,reason:'PACKAGE_NOT_FOUND'};
     const facts=(pkg.factIds||[]).map(id=>p.assignmentFacts[id]).filter(f=>f&&f.range&&f.confirmationState==='FACT_CONFIRMED');
     if(!facts.length)return{ok:false,reason:'NO_CONFIRMED_BOOK_FACTS'};
@@ -190,6 +191,7 @@
     return chooseActivityDay(p,dates,unit.profile||ENGLISH_ACTIVITY.other,planned);
   }
   function allocateEnglishPackage(factId){
+    if(window.ReadyFoundationV1?.enabled)return {ok:false,reason:'FOUNDATION_INTERPRETATION_REQUIRED'};
     const p=load(),fact=p.assignmentFacts[factId];if(!fact)return{ok:false,reason:'FACT_NOT_FOUND'};
     if(fact.confirmationState!=='FACT_CONFIRMED')return{ok:false,reason:'FACT_NOT_CONFIRMED'};
     if(!validDate(fact.deadlineBoundary)||fact.deadlineBoundary<=localDate()){fact.plannerState='WAITING_NEXT_ACADEMY';save(p);return{ok:false,reason:'NEXT_ACADEMY_UNVERIFIED'};}
@@ -218,6 +220,7 @@
     appendClaim(fact,actor,{title,range:String(range||'').trim(),deadlineBoundary:String(deadline||'').trim()},{confirm:actor==='PARENT'});
     if(actor==='CHILD')fact.confirmationState='INPUT_CAPTURED';
     fact.plannerState='PLANNER_REEVALUATED_TODAY';
+    if(window.ReadyFoundationV1?.enabled){fact.plannerState='WAITING_LEARNING_INTERPRETATION';save(p);return {fact:structuredClone(fact),task:null};}
     const day=ensureDay(p,date),task={id:id('todo'),localDate:date,subject:fact.subject,sourceAssignmentId:factId,sourceType:'SCHOOL_EVENT',title,volume:fact.range,difficulty:'UNVERIFIED',estimatedMin:null,estimateKind:'UNVERIFIED',deadline:fact.deadlineBoundary||'미확정',selected:false,status:'PLANNED',origin:actor==='CHILD'?'CHILD_ADDED':'PARENT_INPUT',reviewState:actor==='CHILD'?'PARENT_REVIEW_PENDING':'PARENT_REVIEWED',allocationState:'PLANNER_REEVALUATED_TODAY',note:'갑작스런 학교/이벤트 FACT · 출처 보존 · 주간 배정 권한과 분리'};
     day.tasks.push(task);save(p);return{fact:structuredClone(fact),task:structuredClone(task)};
   }

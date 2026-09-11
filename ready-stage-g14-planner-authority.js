@@ -58,13 +58,13 @@
     return p;
   }
   function weekday(date){return WD[new Date(`${date}T12:00:00`).getDay()]}
-  function rowsForDate(date){const w=weekday(date);return SCHEDULE_AUTHORITY.rows.filter(r=>r.weekday===w)}
+  function rowsForDate(date){if(window.ReadyFoundationControlV1)return window.ReadyFoundationV1.effective(window.ReadyFoundationControlV1.load(),date).events.map(e=>({...e,activity:e.title}));const w=weekday(date);return SCHEDULE_AUTHORITY.rows.filter(r=>r.weekday===w)}
   function rowsForActivity(activity){return SCHEDULE_AUTHORITY.rows.filter(r=>r.activity===activity)}
   function nextConfirmedClassDate(activity,afterDate,{includeSame=false}={}){
-    const rows=rowsForActivity(activity);if(!rows.length)return null;
+    const rows=rowsForActivity(activity);if(!window.ReadyFoundationV1?.enabled&&!rows.length)return null;
     for(let i=includeSame?0:1;i<=21;i++){
       const date=datePlus(afterDate,i),w=weekday(date);
-      if(rows.some(r=>r.weekday===w))return date;
+      if(window.ReadyFoundationV1?.enabled?rowsForDate(date).some(r=>r.activity===activity):rows.some(r=>r.weekday===w))return date;
     }
     return null;
   }
@@ -170,7 +170,7 @@
       confirmationState:actor==='PARENT'?'FACT_CONFIRMED':'CONFIRMATION_REQUIRED',plannerState:nextClass?'READY_FOR_ALLOCATION':'WAITING_NEXT_ACADEMY',lifecycle:'ACTIVE',scheduleAuthorityId:SCHEDULE_AUTHORITY.authorityId
     };
     p.assignmentFacts[id]=fact;
-    if(nextClass){
+    if(nextClass&&!window.ReadyFoundationV1?.enabled){
       const candidates=datesBetween(sourceClassDate,nextClass);const target=chooseDateByExistingLoad(p,candidates);
       if(target){ensureDay(p,target).tasks.push({id:`todo_${id}`,localDate:target,subject:'과학학원',sourceType:'SCIENCE_ACADEMY_HOMEWORK',sourceAssignmentId:id,title:fact.title,volume:fact.range||'분량/단위 확인 필요',status:'PLANNED',selected:false,deadline:nextClass,cycleBoundary:nextClass,required:true,estimatedMin:null,allocationState:'LIGHT_LOAD_DEFAULT_SINGLE_UNIT',scheduleAuthorityId:SCHEDULE_AUTHORITY.authorityId,note:'과학학원 숙제가 실제 발생한 경우만 생성 · 기본은 불필요한 분할 없음'});fact.plannerState='PLANNER_ALLOCATED';fact.allocatedDate=target;}
     }
@@ -191,6 +191,7 @@
   }
 
   function reconcile(){
+    if(window.ReadyFoundationV1?.enabled)return {superseded:true,reason:'FOUNDATION_PRESERVES_LEGACY_HISTORY'};
     const p=ensureShape(load());
     p.scheduleAuthority=structuredClone(SCHEDULE_AUTHORITY);
     p.schedulePolicy=structuredClone(LIFESTYLE_POLICY);
@@ -204,6 +205,7 @@
   }
 
   function render(){installScienceParentUI()}
+  window.ReadyFoundationControlV1?.importBaseline(SCHEDULE_AUTHORITY);
   const audit=reconcile();
   render();
   const observer=new MutationObserver(()=>render());observer.observe(document.body,{subtree:true,childList:true});
