@@ -1,14 +1,16 @@
 (() => {
   'use strict';
-  const VERSION='2026.09.11-stage-identity-owner-v8.4';
+  if(window.__readyJourneyLoader)return;
+  window.__readyJourneyLoader=true;
+  const VERSION='2026.09.11-stage-identity-owner-v8.5';
   const IDENTITY='./ready-onboarding-identity-v1.js?v=20260911-directboot2';
   const CANDIDATE='./ready-character-candidate-v1.js?v=20260911-directboot2';
   const AFTER_IDENTITY=['./ready-stage-c-base.js','./ready-stage-d.js','./ready-stage-e.js','./ready-stage-f.js','./ready-stage-g1-fix.js','./ready-stage-g14-planner-authority.js','./ready-base-native-v2.js','./ready-planner-selection-bridge-v1.js','./ready-focus-tools-v1.js','./ready-schedule-base-v1.js','./ready-world-base-v1.js','./ready-world-shell-v1.js','./ready-base-selftest-v1.js'];
-  const load=src=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.async=false;s.onload=()=>resolve(src);s.onerror=()=>reject(new Error(`LOAD_FAILED:${src}`));document.head.appendChild(s)});
+  const load=(src,timeout=0)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.async=false;const timer=timeout?setTimeout(()=>reject(new Error(`LOAD_TIMEOUT:${src}`)),timeout):null;s.onload=()=>{clearTimeout(timer);resolve(src)};s.onerror=()=>{clearTimeout(timer);reject(new Error(`LOAD_FAILED:${src}`))};document.head.appendChild(s)});
   const mark=(state,detail='')=>{document.documentElement.dataset.readyBootState=state;if(detail)document.documentElement.dataset.readyBootDetail=detail};
   const releaseStaticPaint=()=>{document.documentElement.classList.remove('identityFirstPaint');document.documentElement.classList.remove('worldFirstPaint')};
-  const safeRead=()=>{try{return JSON.parse(localStorage.getItem('readyset_identity_v1')||'{}')||{}}catch{return {}}};
-  const safeWrite=v=>localStorage.setItem('readyset_identity_v1',JSON.stringify(v));
+  const safeRead=()=>{if(window.ReadyIdentityV1)return window.ReadyIdentityV1.get();try{return JSON.parse(localStorage.getItem('readyset_identity_v1')||'{}')||{}}catch{return {}}};
+  const safeWrite=v=>window.ReadyIdentityV1?window.ReadyIdentityV1.patch(v):localStorage.setItem('readyset_identity_v1',JSON.stringify(v));
   const CONSULT_STEPS=[
     {key:'MOOD',title:'어떤 분위기가 끌려?',hint:'첫인상과 움직임의 느낌을 골라봐.',tiles:[['BOLD','당당한 발견가','선명하고 자신감 있게'],['PLAYFUL','자유로운 탐험가','경쾌하고 재치 있게'],['MYSTERIOUS','신비로운 관찰가','차분하고 호기심 있게']]},
     {key:'STYLE',title:'어떤 스타일로 떠나볼까?',hint:'착장과 헤어 스타일링의 방향을 골라봐.',tiles:[['FIELD','필드 익스플로러','활동적인 아웃도어'],['URBAN','모던 어드벤처','깔끔하고 세련된 캐주얼'],['STORY','스토리 트래블러','특별한 여행자 무드']]},
@@ -43,7 +45,11 @@
   const fallbackConsult=detail=>{
     const mount=document.querySelector('#readyCharacterCandidateMount');if(!mount)return;
     installReferenceStyle();
-    const i=safeRead(),cs=i.characterStyleConsultation||{version:1,step:0,picks:{}},picks=cs.picks||{};
+    const i=safeRead();if(i.onboardingStep!=='CHARACTER')return;
+    const signature=JSON.stringify(i.characterStyleConsultation||{});
+    if(mount.dataset.fallbackView===signature&&mount.querySelector('.ccConsult'))return;
+    mount.dataset.fallbackView=signature;delete mount.dataset.candidateUi;
+    const cs=i.characterStyleConsultation||{version:1,step:0,picks:{}},picks=cs.picks||{};
     const complete=CONSULT_STEPS.every(x=>picks[x.key]);
     const idx=Math.max(0,Math.min(2,Number(cs.step)||0)),step=CONSULT_STEPS[idx];
     mount.classList.add('ccPanel');mount.dataset.candidateFallback='1';
@@ -62,16 +68,17 @@
     try{if(candidate.mount)candidate.mount(mount);else if(candidate.render)candidate.render(mount);else return false}catch(error){console.error('[Ready Candidate Mount]',error);return false}
     return mount.dataset.candidateUi===candidate.version || !!mount.querySelector('[data-style-tile],[data-candidate-action],.ccMaking,.ccReady,.ccRefine,.ccIntro');
   };
-  let candidateLoading=null;
+  let candidateLoading=null,candidateAttempted=false;
   const ensureCandidate=async(force=false)=>{
     const step=safeRead().onboardingStep;
     if(step!=='CHARACTER')return true;
-    if(window.ReadyCharacterCandidateV1&&!force){if(mountCandidate())return true}
-    if(candidateLoading&&!force)return candidateLoading;
+    if(window.ReadyCharacterCandidateV1){if(mountCandidate())return true}
+    if(candidateLoading)return candidateLoading;
+    if(candidateAttempted&&!force){fallbackConsult('CANDIDATE_UNAVAILABLE');return false}
+    candidateAttempted=true;
     candidateLoading=(async()=>{
       try{
-        if(force)delete window.ReadyCharacterCandidateV1;
-        if(!window.ReadyCharacterCandidateV1)await load(`${CANDIDATE}${force?'&retry='+Date.now():''}`);
+        if(!window.ReadyCharacterCandidateV1)await load(`${CANDIDATE}${force?'&retry='+Date.now():''}`,8000);
         if(!window.ReadyCharacterCandidateV1)throw new Error('CANDIDATE_GLOBAL_MISSING');
         if(!mountCandidate())throw new Error('CANDIDATE_MOUNT_FAILED');
         document.querySelector('#readyCharacterCandidateMount')?.removeAttribute('data-candidate-fallback');
@@ -80,31 +87,9 @@
       finally{candidateLoading=null}
     })();return candidateLoading;
   };
-  const transitionToCharacter=async source=>{
-    const i=safeRead();
-    if(i.onboardingStep!=='PHOTO'||!i.sourcePhoto)return false;
-    safeWrite({...i,onboardingStep:'CHARACTER',status:'PHOTO_CAPTURED',updatedAt:new Date().toISOString(),characterTransitionSource:source||'UNKNOWN'});
-    releaseStaticPaint();
-    window.ReadyIdentityV1?.render?.();
-    await Promise.resolve();
-    if(!document.querySelector('#readyCharacterCandidateMount'))window.ReadyIdentityV1?.render?.();
-    if(!mountCandidate())await ensureCandidate();
-    mark('CHARACTER_TRANSITION_READY',source||'UNKNOWN');
-    return true;
-  };
-  const installTransitionGuard=()=>{
-    if(document.documentElement.dataset.readyTransitionGuard==='1')return;
-    document.documentElement.dataset.readyTransitionGuard='1';
-    document.addEventListener('click',event=>{
-      const btn=event.target?.closest?.('#readyFirstRun #next');
-      if(!btn)return;
-      const i=safeRead();
-      if(i.onboardingStep!=='PHOTO'||!i.sourcePhoto)return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      transitionToCharacter('CAPTURE_CLICK').catch(error=>{console.error('[Ready Character Transition]',error);mark('DEGRADED',error.message||'CHARACTER_TRANSITION_FAILED')});
-    },true);
-  };
+  // The mounted PHOTO button owns activation. Recovery must not replace it
+  // between Safari focus/pageshow and the synthesized click.
+  window.addEventListener('ready-character-consultation',()=>{releaseStaticPaint();ensureCandidate()});
   const bootIdentity=async()=>{
     mark('IDENTITY_LOADING');
     if(!window.ReadyIdentityV1)await load(IDENTITY);
@@ -122,7 +107,7 @@
     releaseStaticPaint();
     const i=safeRead();
     if(window.ReadyIdentityV1&&!window.ReadyIdentityV1.isReady?.()){
-      window.ReadyIdentityV1.render?.();
+      (window.ReadyIdentityV1.recover||window.ReadyIdentityV1.render)?.();
       document.documentElement.classList.add('readyFirstRun');
       if(i.onboardingStep==='CHARACTER'){
         if(!document.querySelector('#readyCharacterCandidateMount'))window.ReadyIdentityV1.render?.();
@@ -130,5 +115,5 @@
       }
     }
   };
-  (async()=>{mark('BOOT');installTransitionGuard();await bootIdentity();bootRest().catch(error=>{console.error('[Ready Post Identity Boot]',error);mark('DEGRADED',error.message||'POST_IDENTITY');fallbackConsult(error.message||'POST_IDENTITY')});window.addEventListener('pageshow',recover);window.addEventListener('focus',recover);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')recover()});document.documentElement.dataset.readyStageLoader=VERSION})().catch(error=>{console.error('[Ready Identity Boot]',error);releaseStaticPaint();mark('IDENTITY_ERROR',error.message||'UNKNOWN');document.documentElement.dataset.readyStageLoader='ERROR';const t=document.getElementById('toast');if(t){t.textContent=`Identity 시작 오류 · ${error.message}`;t.hidden=false}});
+  (async()=>{mark('BOOT');await bootIdentity();bootRest().catch(error=>{console.error('[Ready Post Identity Boot]',error);mark('DEGRADED',error.message||'POST_IDENTITY');fallbackConsult(error.message||'POST_IDENTITY')});window.addEventListener('pageshow',recover);window.addEventListener('focus',recover);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')recover()});document.documentElement.dataset.readyStageLoader=VERSION})().catch(error=>{console.error('[Ready Identity Boot]',error);releaseStaticPaint();mark('IDENTITY_ERROR',error.message||'UNKNOWN');document.documentElement.dataset.readyStageLoader='ERROR';const t=document.getElementById('toast');if(t){t.textContent=`Identity 시작 오류 · ${error.message}`;t.hidden=false}});
 })();
