@@ -10,6 +10,7 @@ on:
       - '_headers'
       - 'ready-stage-c.js'
       - 'ready-onboarding-identity-v1.js'
+      - 'ready-mood-direction-v2.js'
       - 'netlify/functions/character-candidates.mjs'
       - 'ready-character-candidate-v1.js'
       - 'local_dev_server.mjs'
@@ -31,29 +32,32 @@ jobs:
           set -euo pipefail
           node --check ready-stage-c.js
           node --check ready-onboarding-identity-v1.js
+          node --check ready-mood-direction-v2.js
           node --check ready-character-candidate-v1.js
-          grep -q 'ready-onboarding-identity-v1.js?v=20260911-directboot2' index.html
-          grep -q 'ready-character-candidate-v1.js?v=20260911-directboot2' index.html
-          grep -q 'ready-stage-c.js?v=20260911-directboot2' index.html
+          grep -q 'ready-onboarding-identity-v1.js?v=20260911-mood2' index.html
+          grep -q 'ready-mood-direction-v2.js?v=20260911-mood2' index.html
+          grep -q 'ready-character-candidate-v1.js?v=20260911-mood2' index.html
+          grep -q 'ready-stage-c.js?v=20260911-mood2' index.html
           node - <<'NODE'
           const fs=require('fs');
           const html=fs.readFileSync('index.html','utf8');
-          const ids=html.indexOf('ready-onboarding-identity-v1.js?v=20260911-directboot2');
-          const cds=html.indexOf('ready-character-candidate-v1.js?v=20260911-directboot2');
-          const scs=html.indexOf('ready-stage-c.js?v=20260911-directboot2');
-          if(!(ids>=0 && cds>ids && scs>cds)) throw new Error('BOOT_ORDER_INVALID');
+          const ids=html.indexOf('ready-onboarding-identity-v1.js?v=20260911-mood2');
+          const mds=html.indexOf('ready-mood-direction-v2.js?v=20260911-mood2');
+          const cds=html.indexOf('ready-character-candidate-v1.js?v=20260911-mood2');
+          const scs=html.indexOf('ready-stage-c.js?v=20260911-mood2');
+          if(!(ids>=0 && mds>ids && cds>mds && scs>cds)) throw new Error('BOOT_ORDER_INVALID');
           const stage=fs.readFileSync('ready-stage-c.js','utf8');
           for(const marker of [
             "if(!window.ReadyIdentityV1)await load(IDENTITY)",
             "window.ReadyIdentityV1.render?.()",
             "if(step!=='CHARACTER')return true",
-            "transitionToCharacter('CAPTURE_CLICK')",
-            "event.stopImmediatePropagation()",
-            "characterTransitionSource",
-            "classList.remove('worldFirstPaint')",
+            "if(!globalThis.ReadyMoodDirectionV2)await load('./ready-mood-direction-v2.js?v=20260911-mood2',8000)",
+            "window.addEventListener('ready-character-consultation'",
+            "mountCandidate()",
+            "releaseStaticPaint()",
             "window.addEventListener('pageshow',recover)"
           ]) if(!stage.includes(marker)) throw new Error(`MISSING:${marker}`);
-          if(!/\.catch\(error=>\{[^}]*releaseStaticPaint\(\)/s.test(stage)) throw new Error('IDENTITY_FAIL_OPEN_MISSING');
+          if(!stage.includes("fallbackConsult(error.message||'CANDIDATE_BOOT_FAILED')")) throw new Error('CANDIDATE_FAIL_OPEN_MISSING');
           NODE
       - name: Verify transport probe and boot cache policy
         shell: bash
