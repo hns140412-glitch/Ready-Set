@@ -10,7 +10,16 @@ The character onboarding branch is complete when a child has a confirmed charact
 
 Canonical path:
 
-`PHOTO → 3-step STYLE CONSULTATION → 3 CANDIDATES → SELECT → RESEMBLANCE REFINEMENT → CHARACTER CONFIRMED → READY HOME → HOMEWORK START`
+`PHOTO → STYLE CONSULTATION CHOICE 1 (3-way) → STYLE CONSULTATION CHOICE 2 (3-way) → SYSTEM-DERIVED CONTRAST DIRECTION → 3 CANDIDATES → SELECT → RESEMBLANCE REFINEMENT → CHARACTER CONFIRMED → READY HOME → HOMEWORK START`
+
+Character consultation rules:
+
+- The child makes exactly two choices. Each choice is one of three visual cards.
+- The third candidate direction is not another child question and is not uncontrolled randomness. Ready derives a deterministic contrasting direction so the three candidate moods remain meaningfully different.
+- Candidate generation uses the same source photo as the sole identity authority. Face, age, hair, and child identity must remain the same across all three candidates.
+- The final candidate set interprets the consultation rather than cloning it three times: one direction stays closest to the child's choices while the others deliberately widen the mood toward playful / fantasy-adventure / discovery contrast as applicable.
+- Consultation cards must not use emoji, emoticons, or simplistic pictogram substitutes. Final visual treatment is illustration-led and must be mobile-reviewed before production promotion.
+- Paid image generation remains locked until separately authorized.
 
 ## 2. Ready ownership
 
