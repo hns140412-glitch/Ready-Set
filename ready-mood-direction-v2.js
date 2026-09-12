@@ -1,26 +1,34 @@
-/* Shared, extensible MOOD_TILE -> KEYWORDS -> PROMPT_DIRECTION contract. */
-(() => {
- 'use strict';
- const tile=(key,label,keywords,expression,pose,energy,props,staging,atmosphere)=>({key,label,keywords,direction:{expression,pose,energy,props,staging,atmosphere}});
- const tiles=[
-  tile('EXCITED','신나!',['활발','씩씩','장난꾸러기'],'open joyful laugh','wide skipping stride','explosive playful motion','ribbon wand','sweeping outdoor arc','bright festive breeze'),
-  tile('DISCOVERY','두근두근',['호기심','모험','발견'],'wide-eyed anticipation','lean forward peeking','tentative discovery','magnifying glass','close garden discovery','fresh dawn wonder'),
-  tile('COZY','포근해',['따뜻','친근','다정'],'gentle welcoming smile','seated open embrace','soft restful warmth','small cushion','sheltered reading nook','diffuse peach afternoon'),
-  tile('CONFIDENT','멋져!',['자신감','당당','용감'],'determined proud grin','upright hands on hips','bold steady presence','small pennant','high lookout platform','clear heroic blue sky'),
-  tile('FOCUSED','집중!',['차분','똑똑','꼼꼼'],'intent thoughtful gaze','crouched careful inspection','quiet precise attention','field notebook','ordered study station','cool focused task light'),
-  tile('IMAGINING','상상중',['신비','창의','이야기'],'dreamy amazed smile','reaching upward in a spiral','floating imaginative flow','paper story mobile','layered storybook clouds','luminous lilac twilight')
- ];
- function direction(selection){
-  const t=tiles.find(t=>t.key===selection?.tileKey),keywords=selection?.keywords||[];
-  if(!t||!Array.isArray(keywords)||keywords.length>2||new Set(keywords).size!==keywords.length||keywords.some(k=>!t.keywords.includes(k)))throw Error('INVALID_MOOD_DIRECTION');
-  return {tileKey:t.key,label:t.label,keywords:[...keywords],promptDirection:{...t.direction},prompt:`Expression/generation direction only, never personality or identity classification. ${Object.entries(t.direction).map(([k,v])=>`${k}: ${v}`).join('; ')}. Optional nuances: ${keywords.join(', ')||'none'}.`};
- }
- function plan(raw){
-  if(raw?.version!==2||!Array.isArray(raw.selections)||raw.selections.length!==3)throw Error('THREE_MOOD_TILES_REQUIRED');
-  const directions=raw.selections.map(direction);
-  if(new Set(directions.map(d=>d.tileKey)).size!==3)throw Error('NEAR_DUPLICATE_DIRECTION');
-  for(let a=0;a<3;a++)for(let b=a+1;b<3;b++)if(Object.keys(directions[a].promptDirection).filter(k=>directions[a].promptDirection[k]!==directions[b].promptDirection[k]).length<5)throw Error('NEAR_DUPLICATE_DIRECTION');
-  return directions;
- }
- globalThis.ReadyMoodDirectionV2=Object.freeze({version:2,tiles, direction,plan});
+/* TAKY approved character consultation: child chooses twice from 3 cards; system derives a third contrast direction. */
+(()=>{
+'use strict';
+const KEY='readyset_identity_v1';
+const tile=(key,label,keywords,expression,pose,energy,props,staging,atmosphere,stage)=>({key,label,keywords,stage,direction:{expression,pose,energy,props,staging,atmosphere}});
+const all=[
+ tile('FEEL_BRIGHT','신나고 발랄하게',['활발','밝음','호기심'],'open joyful smile','energetic forward step','bright playful motion','light explorer accent','open discovery scene','clear lively daylight',1),
+ tile('FEEL_WARM','따뜻하고 다정하게',['따뜻','친근','편안'],'gentle welcoming smile','relaxed open pose','soft friendly warmth','small personal charm','sheltered discovery scene','soft warm daylight',1),
+ tile('FEEL_CALM','차분하고 똑똑하게',['차분','집중','탐구'],'thoughtful focused gaze','steady observing pose','quiet precise attention','field note detail','ordered discovery scene','clean focused light',1),
+ tile('LOOK_ACTIVE','가볍고 활동적인 모습',['활동적','경쾌','자유'],'confident bright expression','dynamic explorer stride','quick adventurous rhythm','compact daypack','trail-ready scene','fresh outdoor color',2),
+ tile('LOOK_NATURAL','편안하고 자연스러운 모습',['자연스러움','편안','부드러움'],'natural soft smile','easy balanced stance','calm everyday energy','simple explorer bag','gentle outdoor scene','soft natural palette',2),
+ tile('LOOK_BOLD','조금 더 모험가다운 모습',['모험','당당','발견'],'curious confident grin','upright discovery pose','bold exploratory energy','map and explorer gear','wide adventure scene','clear cinematic daylight',2),
+ tile('AUTO_PLAYFUL','장난스럽게 비틀어 보기',['장난','움직임','반전'],'playful mischievous smile','unexpected lively pose','high playful contrast','surprising explorer prop','off-axis discovery scene','bright punchy atmosphere',3),
+ tile('AUTO_FANTASY','판타지 탐험으로 넓히기',['판타지','상상','모험'],'wide-eyed wonder','reaching discovery pose','dreamlike adventurous flow','imaginative explorer object','layered fantasy landscape','luminous storybook atmosphere',3),
+ tile('AUTO_DISCOVERY','새로운 발견 쪽으로 넓히기',['발견','호기심','탐구'],'curious discovery expression','leaning inspection pose','active discovery energy','magnifier and field note','close-to-wide discovery scene','fresh dawn atmosphere',3)
+];
+const byKey=k=>all.find(t=>t.key===k);
+function direction(selection){const t=byKey(selection?.tileKey),keywords=selection?.keywords||[];if(!t)throw Error('INVALID_MOOD_DIRECTION');return{tileKey:t.key,label:t.label,keywords:[...keywords],promptDirection:{...t.direction},prompt:`Expression/generation direction only, never personality or identity classification. ${Object.entries(t.direction).map(([k,v])=>`${k}: ${v}`).join('; ')}.`}}
+function plan(raw){if(raw?.version!==2||!Array.isArray(raw.selections)||raw.selections.length!==3)throw Error('THREE_MOOD_TILES_REQUIRED');const d=raw.selections.map(direction);if(new Set(d.map(x=>x.tileKey)).size!==3)throw Error('NEAR_DUPLICATE_DIRECTION');return d}
+const api={version:2,tiles:all,direction,plan};globalThis.ReadyMoodDirectionV2=Object.freeze(api);
+const read=()=>{try{return globalThis.ReadyIdentityV1?.get?.()||JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch{return{}}};
+const patch=p=>{if(globalThis.ReadyIdentityV1?.patch)return globalThis.ReadyIdentityV1.patch(p);const n={...read(),...p,updatedAt:new Date().toISOString()};localStorage.setItem(KEY,JSON.stringify(n));return n};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const selected=()=>{const r=read().characterMoodDirections;return r?.version===2&&Array.isArray(r.selections)?r.selections:[]};
+function derive(a,b){const seed=`${a.tileKey}|${b.tileKey}`;const pool=['AUTO_PLAYFUL','AUTO_FANTASY','AUTO_DISCOVERY'];let h=0;for(const c of seed)h=(h*31+c.charCodeAt(0))>>>0;return pool[h%pool.length]}
+function choose(key){const picks=selected().filter(x=>byKey(x.tileKey)?.stage<3);if(picks.length>=2)return;const t=byKey(key);if(!t||t.stage!==picks.length+1)return;const next=[...picks,{tileKey:key,keywords:t.keywords.slice(0,2)}];if(next.length===2){const auto=derive(next[0],next[1]);next.push({tileKey:auto,keywords:byKey(auto).keywords.slice(0,2),derived:true})}patch({characterMoodDirections:{version:2,selections:next},characterStyleConsultation:{version:3,childChoiceCount:Math.min(2,next.length),derivedThird:next[2]?.tileKey||null,source:'TAKY_APPROVED_2026_09_12'}});paintSoon()}
+function reset(){patch({characterMoodDirections:{version:2,selections:[]},characterStyleConsultation:{version:3,childChoiceCount:0,derivedThird:null,source:'TAKY_APPROVED_2026_09_12'}});paintSoon()}
+function card(t){return `<button class="takyChoiceCard" data-taky-choice="${t.key}"><span class="takyArt" data-art="${t.key}"></span><strong>${esc(t.label)}</strong><small>${t.keywords.map(esc).join(' · ')}</small></button>`}
+function markup(){const p=selected().filter(x=>byKey(x.tileKey)?.stage<3),done=selected().length===3;if(done){const dirs=selected().map(direction);return `<div class="takyConsult"><span class="takyStep">STYLE CONSULTATION · COMPLETE</span><h2>좋아, 두 번의 선택이면 충분해.</h2><p>마지막 한 방향은 세 후보의 분위기가 겹치지 않도록 Ready & Set이 다르게 펼쳤어.</p><div class="takySummary">${dirs.map((d,i)=>`<div><b>${i<2?`선택 ${i+1}`:'자동 대비 방향'}</b><span>${esc(d.label)}</span></div>`).join('')}</div><button class="takyPrimary" data-taky-generate>세 가지 방향 준비 확인</button><button class="takyReset" data-taky-reset>다시 고르기</button><small>이미지 생성과 크레딧 사용은 아직 잠겨 있어요.</small></div>`}const stage=p.length+1,choices=all.filter(t=>t.stage===stage);return `<div class="takyConsult"><span class="takyStep">STYLE CONSULTATION · ${stage} / 2</span><h2>${stage===1?'어떤 느낌의 탐험가가 좋아?':'오늘은 어떤 모습으로 떠나볼까?'}</h2><p>${stage===1?'마음에 먼저 닿는 분위기 하나를 골라줘.':'첫 선택과 어울리는 모습을 하나만 더 골라줘.'}</p><div class="takyChoiceGrid">${choices.map(card).join('')}</div><small>${stage===2?'세 번째 분위기는 후보들이 서로 닮지 않도록 자동으로 다르게 구성해요.':'정답은 없어. 가장 끌리는 카드면 충분해.'}</small></div>`}
+function paint(){const i=read();if(i.onboardingStep!=='CHARACTER')return;const m=document.querySelector('#readyCharacterCandidateMount')||document.querySelector('#readyFirstRun .pendingCard');if(!m||!m.querySelector('.ccConsult'))return;if(m.dataset.takyConsult==='v3')return;m.dataset.takyConsult='v3';m.innerHTML=markup();m.querySelectorAll('[data-taky-choice]').forEach(b=>b.onclick=()=>choose(b.dataset.takyChoice));m.querySelector('[data-taky-reset]')?.addEventListener('click',reset);m.querySelector('[data-taky-generate]')?.addEventListener('click',()=>globalThis.ReadyCharacterCandidateV1?.generate?.())}
+function paintSoon(){queueMicrotask(()=>{const m=document.querySelector('#readyCharacterCandidateMount')||document.querySelector('#readyFirstRun .pendingCard');if(m){m.dataset.takyConsult='';m.dataset.candidateUi='';globalThis.ReadyCharacterCandidateV1?.render?.(m)}setTimeout(paint,0)})}
+const style=document.createElement('style');style.textContent=`.takyConsult{display:grid;gap:16px}.takyStep{font:900 11px/1 system-ui;letter-spacing:.14em;color:#3277a7}.takyConsult h2{margin:0;font:950 25px/1.12 system-ui;letter-spacing:-.04em;color:#153d5d}.takyConsult p,.takyConsult small{margin:0;color:#60788b;line-height:1.5}.takyChoiceGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.takyChoiceCard{appearance:none;border:1px solid #dcebf4;border-radius:20px;background:#fff;padding:8px;text-align:left;box-shadow:0 10px 26px #164e7212}.takyArt{display:block;aspect-ratio:.86;border-radius:15px;background:linear-gradient(145deg,#eaf8ff,#cfefff 48%,#fff0d7);position:relative;overflow:hidden}.takyArt:after{content:'';position:absolute;inset:14% 18%;border-radius:48% 48% 42% 42%;background:radial-gradient(circle at 50% 27%,#fff 0 17%,#8f6c57 18% 22%,transparent 23%),linear-gradient(155deg,#6fc5e9,#7a9bd7);box-shadow:0 12px 20px #174a6c22}.takyChoiceCard strong{display:block;margin:10px 2px 4px;font:900 13px/1.25 system-ui;color:#163f60}.takyChoiceCard small{font-size:10px}.takySummary{display:grid;gap:8px}.takySummary div{display:flex;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:14px;background:#f4faff}.takySummary b{font-size:12px;color:#3277a7}.takySummary span{font-size:12px;font-weight:850;color:#173f5f}.takyPrimary,.takyReset{border:0;border-radius:15px;padding:14px 16px;font-weight:900}.takyPrimary{background:#1769ff;color:#fff}.takyReset{background:#eef6fb;color:#315d79}@media(max-width:420px){.takyChoiceGrid{gap:7px}.takyChoiceCard{padding:6px;border-radius:16px}.takyChoiceCard strong{font-size:11px}.takyArt{border-radius:12px}}`;document.head.appendChild(style);
+new MutationObserver(paint).observe(document.documentElement,{subtree:true,childList:true});document.addEventListener('ready-character-consultation',()=>setTimeout(paint,0));setTimeout(paint,0);
 })();
