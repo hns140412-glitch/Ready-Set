@@ -15,18 +15,50 @@ const all=[
  tile('AUTO_DISCOVERY','새로운 발견 쪽으로 넓히기',['발견','호기심','탐구'],'curious discovery expression','leaning inspection pose','active discovery energy','magnifier and field note','close-to-wide discovery scene','fresh dawn atmosphere',3)
 ];
 const byKey=k=>all.find(t=>t.key===k);
-function direction(selection){const t=byKey(selection?.tileKey),keywords=selection?.keywords||[];if(!t)throw Error('INVALID_MOOD_DIRECTION');return{tileKey:t.key,label:t.label,keywords:[...keywords],promptDirection:{...t.direction},prompt:`Expression/generation direction only, never personality or identity classification. ${Object.entries(t.direction).map(([k,v])=>`${k}: ${v}`).join('; ')}.`}}
-function plan(raw){if(raw?.version!==2||!Array.isArray(raw.selections)||raw.selections.length!==3)throw Error('THREE_MOOD_TILES_REQUIRED');const d=raw.selections.map(direction);if(new Set(d.map(x=>x.tileKey)).size!==3)throw Error('NEAR_DUPLICATE_DIRECTION');return d}
-const api={version:2,tiles:all,direction,plan};globalThis.ReadyMoodDirectionV2=Object.freeze(api);
+function direction(selection){
+ const t=byKey(selection?.tileKey),keywords=selection?.keywords||[];
+ if(!t||!Array.isArray(keywords)||keywords.length>2||new Set(keywords).size!==keywords.length||keywords.some(k=>!t.keywords.includes(k)))throw Error('INVALID_MOOD_DIRECTION');
+ return{tileKey:t.key,label:t.label,stage:t.stage,keywords:[...keywords],promptDirection:{...t.direction},prompt:`Expression/generation direction only, never personality or identity classification. ${Object.entries(t.direction).map(([k,v])=>`${k}: ${v}`).join('; ')}.`};
+}
+function plan(raw){
+ if(raw?.version!==2||!Array.isArray(raw.selections)||raw.selections.length!==3)throw Error('THREE_MOOD_TILES_REQUIRED');
+ const d=raw.selections.map(direction);
+ if(d.map(x=>x.stage).join(',')!=='1,2,3')throw Error('CONSULTATION_STAGE_ORDER_INVALID');
+ if(new Set(d.map(x=>x.tileKey)).size!==3)throw Error('NEAR_DUPLICATE_DIRECTION');
+ return d;
+}
+function deriveThird(first,second){
+ const a=direction(first),b=direction(second);
+ if(a.stage!==1||b.stage!==2)throw Error('CONSULTATION_STAGE_ORDER_INVALID');
+ const pool=['AUTO_PLAYFUL','AUTO_FANTASY','AUTO_DISCOVERY'];let h=0;
+ for(const c of `${a.tileKey}|${b.tileKey}`)h=(h*31+c.charCodeAt(0))>>>0;
+ const tileKey=pool[h%pool.length],t=byKey(tileKey);
+ return{tileKey,keywords:t.keywords.slice(0,2),derived:true};
+}
+const api={version:2,tiles:all,direction,plan,deriveThird,stageChoices:stage=>all.filter(t=>t.stage===stage)};
+globalThis.ReadyMoodDirectionV2=Object.freeze(api);
+
+// Pure contract above must also execute in Node/Netlify tests. Browser-only UI below.
+if(typeof document==='undefined'||typeof MutationObserver==='undefined')return;
 const read=()=>{try{return globalThis.ReadyIdentityV1?.get?.()||JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch{return{}}};
 const patch=p=>{if(globalThis.ReadyIdentityV1?.patch)return globalThis.ReadyIdentityV1.patch(p);const n={...read(),...p,updatedAt:new Date().toISOString()};localStorage.setItem(KEY,JSON.stringify(n));return n};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const selected=()=>{const r=read().characterMoodDirections;return r?.version===2&&Array.isArray(r.selections)?r.selections:[]};
-function derive(a,b){const seed=`${a.tileKey}|${b.tileKey}`;const pool=['AUTO_PLAYFUL','AUTO_FANTASY','AUTO_DISCOVERY'];let h=0;for(const c of seed)h=(h*31+c.charCodeAt(0))>>>0;return pool[h%pool.length]}
-function choose(key){const picks=selected().filter(x=>byKey(x.tileKey)?.stage<3);if(picks.length>=2)return;const t=byKey(key);if(!t||t.stage!==picks.length+1)return;const next=[...picks,{tileKey:key,keywords:t.keywords.slice(0,2)}];if(next.length===2){const auto=derive(next[0],next[1]);next.push({tileKey:auto,keywords:byKey(auto).keywords.slice(0,2),derived:true})}patch({characterMoodDirections:{version:2,selections:next},characterStyleConsultation:{version:3,childChoiceCount:Math.min(2,next.length),derivedThird:next[2]?.tileKey||null,source:'TAKY_APPROVED_2026_09_12'}});paintSoon()}
+function choose(key){
+ const picks=selected().filter(x=>byKey(x.tileKey)?.stage<3);if(picks.length>=2)return;
+ const t=byKey(key);if(!t||t.stage!==picks.length+1)return;
+ const next=[...picks,{tileKey:key,keywords:t.keywords.slice(0,2)}];
+ if(next.length===2)next.push(deriveThird(next[0],next[1]));
+ patch({characterMoodDirections:{version:2,selections:next},characterStyleConsultation:{version:3,childChoiceCount:Math.min(2,next.length),derivedThird:next[2]?.tileKey||null,source:'TAKY_APPROVED_2026_09_12'}});paintSoon();
+}
 function reset(){patch({characterMoodDirections:{version:2,selections:[]},characterStyleConsultation:{version:3,childChoiceCount:0,derivedThird:null,source:'TAKY_APPROVED_2026_09_12'}});paintSoon()}
 function card(t){return `<button class="takyChoiceCard" data-taky-choice="${t.key}"><span class="takyArt" data-art="${t.key}"></span><strong>${esc(t.label)}</strong><small>${t.keywords.map(esc).join(' · ')}</small></button>`}
-function markup(){const p=selected().filter(x=>byKey(x.tileKey)?.stage<3),done=selected().length===3;if(done){const dirs=selected().map(direction);return `<div class="takyConsult"><span class="takyStep">STYLE CONSULTATION · COMPLETE</span><h2>좋아, 두 번의 선택이면 충분해.</h2><p>마지막 한 방향은 세 후보의 분위기가 겹치지 않도록 Ready & Set이 다르게 펼쳤어.</p><div class="takySummary">${dirs.map((d,i)=>`<div><b>${i<2?`선택 ${i+1}`:'자동 대비 방향'}</b><span>${esc(d.label)}</span></div>`).join('')}</div><button class="takyPrimary" data-taky-generate>세 가지 방향 준비 확인</button><button class="takyReset" data-taky-reset>다시 고르기</button><small>이미지 생성과 크레딧 사용은 아직 잠겨 있어요.</small></div>`}const stage=p.length+1,choices=all.filter(t=>t.stage===stage);return `<div class="takyConsult"><span class="takyStep">STYLE CONSULTATION · ${stage} / 2</span><h2>${stage===1?'어떤 느낌의 탐험가가 좋아?':'오늘은 어떤 모습으로 떠나볼까?'}</h2><p>${stage===1?'마음에 먼저 닿는 분위기 하나를 골라줘.':'첫 선택과 어울리는 모습을 하나만 더 골라줘.'}</p><div class="takyChoiceGrid">${choices.map(card).join('')}</div><small>${stage===2?'세 번째 분위기는 후보들이 서로 닮지 않도록 자동으로 다르게 구성해요.':'정답은 없어. 가장 끌리는 카드면 충분해.'}</small></div>`}
+function markup(){
+ const p=selected().filter(x=>byKey(x.tileKey)?.stage<3),done=selected().length===3;
+ if(done){const dirs=plan({version:2,selections:selected()});return `<div class="takyConsult"><span class="takyStep">STYLE CONSULTATION · COMPLETE</span><h2>좋아, 두 번의 선택이면 충분해.</h2><p>마지막 한 방향은 세 후보의 분위기가 겹치지 않도록 Ready & Set이 다르게 펼쳤어.</p><div class="takySummary">${dirs.map((d,i)=>`<div><b>${i<2?`선택 ${i+1}`:'자동 대비 방향'}</b><span>${esc(d.label)}</span></div>`).join('')}</div><button class="takyPrimary" data-taky-generate>세 가지 방향 준비 확인</button><button class="takyReset" data-taky-reset>다시 고르기</button><small>이미지 생성과 크레딧 사용은 아직 잠겨 있어요.</small></div>`}
+ const stage=p.length+1,choices=api.stageChoices(stage);
+ return `<div class="takyConsult"><span class="takyStep">STYLE CONSULTATION · ${stage} / 2</span><h2>${stage===1?'어떤 느낌의 탐험가가 좋아?':'오늘은 어떤 모습으로 떠나볼까?'}</h2><p>${stage===1?'마음에 먼저 닿는 분위기 하나를 골라줘.':'첫 선택과 어울리는 모습을 하나만 더 골라줘.'}</p><div class="takyChoiceGrid">${choices.map(card).join('')}</div><small>${stage===2?'세 번째 분위기는 후보들이 서로 닮지 않도록 자동으로 다르게 구성해요.':'정답은 없어. 가장 끌리는 카드면 충분해.'}</small></div>`;
+}
 function paint(){const i=read();if(i.onboardingStep!=='CHARACTER')return;const m=document.querySelector('#readyCharacterCandidateMount')||document.querySelector('#readyFirstRun .pendingCard');if(!m||!m.querySelector('.ccConsult'))return;if(m.dataset.takyConsult==='v3')return;m.dataset.takyConsult='v3';m.innerHTML=markup();m.querySelectorAll('[data-taky-choice]').forEach(b=>b.onclick=()=>choose(b.dataset.takyChoice));m.querySelector('[data-taky-reset]')?.addEventListener('click',reset);m.querySelector('[data-taky-generate]')?.addEventListener('click',()=>globalThis.ReadyCharacterCandidateV1?.generate?.())}
 function paintSoon(){queueMicrotask(()=>{const m=document.querySelector('#readyCharacterCandidateMount')||document.querySelector('#readyFirstRun .pendingCard');if(m){m.dataset.takyConsult='';m.dataset.candidateUi='';globalThis.ReadyCharacterCandidateV1?.render?.(m)}setTimeout(paint,0)})}
 const style=document.createElement('style');style.textContent=`.takyConsult{display:grid;gap:16px}.takyStep{font:900 11px/1 system-ui;letter-spacing:.14em;color:#3277a7}.takyConsult h2{margin:0;font:950 25px/1.12 system-ui;letter-spacing:-.04em;color:#153d5d}.takyConsult p,.takyConsult small{margin:0;color:#60788b;line-height:1.5}.takyChoiceGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.takyChoiceCard{appearance:none;border:1px solid #dcebf4;border-radius:20px;background:#fff;padding:8px;text-align:left;box-shadow:0 10px 26px #164e7212}.takyArt{display:block;aspect-ratio:.86;border-radius:15px;background:linear-gradient(145deg,#eaf8ff,#cfefff 48%,#fff0d7);position:relative;overflow:hidden}.takyArt:after{content:'';position:absolute;inset:14% 18%;border-radius:48% 48% 42% 42%;background:radial-gradient(circle at 50% 27%,#fff 0 17%,#8f6c57 18% 22%,transparent 23%),linear-gradient(155deg,#6fc5e9,#7a9bd7);box-shadow:0 12px 20px #174a6c22}.takyChoiceCard strong{display:block;margin:10px 2px 4px;font:900 13px/1.25 system-ui;color:#163f60}.takyChoiceCard small{font-size:10px}.takySummary{display:grid;gap:8px}.takySummary div{display:flex;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:14px;background:#f4faff}.takySummary b{font-size:12px;color:#3277a7}.takySummary span{font-size:12px;font-weight:850;color:#173f5f}.takyPrimary,.takyReset{border:0;border-radius:15px;padding:14px 16px;font-weight:900}.takyPrimary{background:#1769ff;color:#fff}.takyReset{background:#eef6fb;color:#315d79}@media(max-width:420px){.takyChoiceGrid{gap:7px}.takyChoiceCard{padding:6px;border-radius:16px}.takyChoiceCard strong{font-size:11px}.takyArt{border-radius:12px}}`;document.head.appendChild(style);
