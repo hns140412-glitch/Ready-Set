@@ -70,6 +70,7 @@ jobs:
           grep -q '/index.html' _headers
           grep -q 'Cache-Control: no-store, max-age=0' _headers
           grep -q '/ready-onboarding-identity-v1.js' _headers
+          grep -q '/ready-mood-direction-v2.js' _headers
           grep -q '/ready-character-candidate-v1.js' _headers
           grep -q '/ready-stage-c.js' _headers
       - name: Start local API locked
