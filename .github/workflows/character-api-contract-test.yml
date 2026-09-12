@@ -14,6 +14,7 @@ on:
       - 'netlify/functions/character-candidates.mjs'
       - 'ready-character-candidate-v1.js'
       - 'local_dev_server.mjs'
+      - 'tests/ready-mood-direction.mjs'
       - '.github/workflows/character-api-contract-test.yml'
   workflow_dispatch:
 
@@ -59,6 +60,8 @@ jobs:
           ]) if(!stage.includes(marker)) throw new Error(`MISSING:${marker}`);
           if(!stage.includes("fallbackConsult(error.message||'CANDIDATE_BOOT_FAILED')")) throw new Error('CANDIDATE_FAIL_OPEN_MISSING');
           NODE
+      - name: Verify no-cost mood and generation contract
+        run: node tests/ready-mood-direction.mjs
       - name: Verify transport probe and boot cache policy
         shell: bash
         run: |
