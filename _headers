@@ -7,6 +7,9 @@
 /ready-onboarding-identity-v1.js
   Cache-Control: no-store, max-age=0
 
+/ready-mood-direction-v2.js
+  Cache-Control: no-store, max-age=0
+
 /ready-character-candidate-v1.js
   Cache-Control: no-store, max-age=0
 
