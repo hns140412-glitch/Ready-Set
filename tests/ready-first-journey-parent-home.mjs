@@ -135,31 +135,42 @@ try{
   },factResult);
   assert.deepEqual(parentRoundtrip,{studyOpportunity:true,factCommitted:true,plannerCandidate:true,todayTask:true});
 
-  // Parent → child role reload. The child home must expose the governed Today Task.
+  // Parent → child role reload. The live child UI is Today's Island; governed tasks surface as island pins.
   await page.evaluate(()=>window.ReadyRoleContextV1.switchRole('child',{reload:true}));
   await page.waitForLoadState('load',{timeout:12000});
-  await page.waitForFunction(()=>window.ReadyRoleContextV1?.current?.()==='child'&&window.ReadyHomeHomeworkMVPV1,{timeout:12000});
-  await page.evaluate(()=>window.ReadyHomeHomeworkUIV1?.render?.());
+  await page.waitForFunction(()=>window.ReadyRoleContextV1?.current?.()==='child'&&window.ReadyHomeHomeworkMVPV1&&window.ReadyWorldShellV1,{timeout:12000});
   await page.waitForFunction(()=>window.ReadyHomeHomeworkMVPV1.tasks().length>0,{timeout:10000});
-  await page.waitForSelector('#readyHomeworkPrimary',{timeout:10000});
+  await page.evaluate(()=>window.ReadyWorldShellV1?.render?.());
+  await page.waitForSelector('#worldStage .worldTaskPin',{timeout:10000});
   const childOutcome=await page.evaluate(({id})=>({
     role:ReadyRoleContextV1.current(),
     parentHub:!!document.querySelector('#readyParentSetupHub'),
     taskCount:ReadyHomeHomeworkMVPV1.tasks().length,
     sourceTask:ReadyHomeHomeworkMVPV1.tasks().some(t=>t.task_id.includes(id)||t.title==='수학 숙제'||t.subject==='수학'),
-    primaryText:document.querySelector('#readyHomeworkPrimary')?.textContent||'',
-    taskCards:document.querySelectorAll('#homeTodayTodoList .readyHomeworkTask').length
+    worldPins:document.querySelectorAll('#worldStage .worldTaskPin').length,
+    pinText:[...document.querySelectorAll('#worldStage .worldTaskPin')].map(x=>x.textContent||'').join(' ')
   }),factResult);
   assert.equal(childOutcome.role,'child');
   assert.equal(childOutcome.parentHub,false);
   assert.ok(childOutcome.taskCount>0);
   assert.equal(childOutcome.sourceTask,true);
-  assert.match(childOutcome.primaryText,/숙제 시작/);
-  assert.ok(childOutcome.taskCards>0);
+  assert.ok(childOutcome.worldPins>0);
+  assert.match(childOutcome.pinText,/수학|10~15|발견하기/);
+
+  // Tap the actual island task pin. This is the child-facing start/select action and must persist the governed task.
+  await page.locator('#worldStage .worldTaskPin').first().tap();
+  await page.waitForLoadState('load',{timeout:12000});
+  await page.waitForFunction(({id,today})=>{
+    const planner=JSON.parse(localStorage.getItem('readyset_planner_v1')||'{"days":{}}');
+    const tasks=planner.days?.[today]?.tasks||[];
+    const selected=tasks.find(t=>t.selected===true);
+    const core=JSON.parse(localStorage.getItem('readyset_state')||'{}');
+    return !!selected&&selected.sourceAssignmentId===id&&String(core.g13PlannerTask?.id)===String(selected.id);
+  },factResult,{timeout:12000});
 
   assert.equal(apiCalls,0);
   assert.deepEqual(errors,[]);
-  console.log('PASS: First Journey → parent timetable STUDY_OPPORTUNITY → reviewed homework FACT → Planner TODAY_TASK → child home; API calls 0');
+  console.log('PASS: First Journey → parent STUDY_OPPORTUNITY → reviewed homework FACT → Planner TODAY_TASK → child island pin selection; API calls 0');
   await context.close();
 } finally {
   await browser?.close();
