@@ -43,10 +43,13 @@ assert.match(hub,/시간표 확인 · 수정/,'parent setup hub must expose time
 assert.match(hub,/숙제 촬영 · 입력/,'parent setup hub must expose homework first-class action');
 assert.match(hub,/표시되지 않은 시간은 자유시간으로 추론하지 않아요/,'schedule editor must preserve no-free-time-inference');
 assert.match(hub,/ReadyStageG14\?\.reconcile/,'schedule changes must reconcile Planner authority');
+assert.ok(hub.includes('window.ReadyIdentityV1?.isReady?.()')&&hub.includes('b?.remove()'),'role switch must stay hidden until first-run identity is actually ready');
+assert.match(hub,/NO_CONFIRMED_OPPORTUNITY/,'parent hub must inspect the explicit no-opportunity planner blocker');
+assert.match(hub,/학습 가능 시간 추가/,'parent hub must offer a direct action when confirmed study opportunity is missing');
 
 assert.match(capture,/PENDING_ANALYSIS/,'captured homework must remain pending until analysis/confirmation');
 assert.match(analysis,/ANALYZED_PENDING_PARENT_CONFIRMATION/,'AI extraction must remain candidate-only');
 assert.doesNotMatch(analysis,/FACT_CONFIRMED/,'AI analysis bridge must not self-confirm facts');
 assert.match(planner,/FACT_CONFIRMED/,'Planner authority must require confirmed assignment facts somewhere in the allocation path');
 
-console.log(JSON.stringify({pass:true,contract:'ready-first-run-parent-activation-v2-effective-boot',checks:30}));
+console.log(JSON.stringify({pass:true,contract:'ready-first-run-parent-activation-v2-effective-boot',checks:33}));
