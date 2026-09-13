@@ -23,7 +23,16 @@ mustInclude(ready, [
   "url.searchParams.set('issue_ms', String(session.issueMs || 0))",
   "emit('APP_SWITCH', { from: 'ready-set', to: app, lap_ended: false })",
   "event_id: p.get('event_id')",
-  "if (event_id && c.applied_event_ids?.includes(event_id)) return false"
+  "if (event_id && c.applied_event_ids?.includes(event_id)) return false",
+  "function applyInboundResult({ session_id, goal_id, task_id, lap_id, task_state, from_app, event_id = null })",
+  "if (!goal_id || goal_id !== c.goal_id) return false",
+  "const lap = lap_id ? (task.laps || []).find(l => l.lap_id === lap_id) : null",
+  "if (!lap || lap.ended_at) return false",
+  "if (c.active_lap_id && c.active_lap_id !== lap.lap_id) return false",
+  "if (!normalized) return false",
+  "goal_id: p.get('goal_id')",
+  "if (!taskState) return;",
+  "goal_id: e.goal_id"
 ], 'Ready');
 
 mustInclude(hide, [
@@ -53,9 +62,8 @@ mustInclude(snap, [
 assert.ok(hideIndex.includes('<script src="./hide-bridge.js"></script>'), 'Hide bridge not mounted by index');
 assert.ok(snapIndex.includes('<script src="app.js"></script><script src="snap-bridge.js"></script>'), 'Snap bridge not mounted after app runtime');
 
-// Specialist apps transport Ready-owned timer timestamps; they do not create a second canonical timer contract.
 for (const [label, source] of [['Hide & Seek', hide], ['Snap & Pop', snap]]) {
   mustInclude(source, ['target_time_ms','session_start_at','issue_ms'], `${label} timer transport`);
 }
 
-console.log('PASS: Ready ↔ Hide & Seek ↔ Snap & Pop bridge identifiers, event_id, return routing and timer transport are statically aligned.');
+console.log('PASS: Ready ↔ Hide & Seek ↔ Snap & Pop bridge transport and inbound goal/task/lap ownership are statically aligned.');
