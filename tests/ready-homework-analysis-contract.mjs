@@ -3,14 +3,15 @@ import assert from 'node:assert/strict';
 
 const fn=fs.readFileSync('netlify/functions/homework-analysis.mjs','utf8');
 const bridge=fs.readFileSync('ready-homework-analysis-bridge-v1.js','utf8');
+const capture=fs.readFileSync('ready-parent-capture-intake-v1.js','utf8');
 const loader=fs.readFileSync('ready-stage-c.js','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
 const version=JSON.parse(fs.readFileSync('VERSION.json','utf8'));
 
 assert.match(loader,/ready-homework-analysis-bridge-v1\.js/);
 assert.match(sw,/ready-homework-analysis-bridge-v1\.js/);
-assert.equal(version.appVersion,'0.9.4-rc17');
-assert.match(version.releaseStatus,/HOMEWORK_ANALYSIS_V1/);
+assert.match(version.appVersion,/^0\.9\.4-rc\d+$/);
+assert.match(version.schemaVersion,/homework-analysis-v1/);
 
 assert.match(fn,/READY_HOMEWORK_ANALYSIS_ENABLED/,'analysis must be admin-gated');
 assert.match(fn,/process\.env\.OPENAI_API_KEY/,'provider key must remain server-side');
@@ -27,5 +28,6 @@ assert.match(bridge,/ANALYZED_PENDING_PARENT_CONFIRMATION/,'analysis must remain
 assert.match(bridge,/needsRecapture/,'bridge must surface recapture requirements');
 assert.match(bridge,/부모 확인 후 FACT로 확정/,'parent confirmation must be visible');
 assert.doesNotMatch(bridge,/upsertTalentPackage|FACT_CONFIRMED/,'bridge must not directly promote AI extraction to confirmed FACT');
+assert.doesNotMatch(capture,/rsfTalentFactSave.*click/,'capture queue must not auto-confirm before analysis result review');
 
-console.log(JSON.stringify({pass:true,contract:'ready-homework-analysis-v1',checks:18}));
+console.log(JSON.stringify({pass:true,contract:'ready-homework-analysis-v1',checks:19}));
