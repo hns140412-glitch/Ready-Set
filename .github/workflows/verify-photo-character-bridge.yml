@@ -17,62 +17,43 @@ jobs:
         with:
           ref: runtime-session-bridge-2026-09-10
           fetch-depth: 0
-      - name: Align approved mood owner and current branch regression
+      - name: Give staged mood UI explicit CHARACTER ownership
         run: |
           python - <<'PY'
           from pathlib import Path
 
           mood = Path('ready-mood-direction-v2.js')
           s = mood.read_text(encoding='utf-8')
-          old = "document.addEventListener('ready-character-consultation',()=>setTimeout(()=>paint(true),0));"
-          new = "window.addEventListener('ready-character-consultation',()=>setTimeout(()=>paint(true),0));"
-          if old not in s and new not in s:
-              raise SystemExit('mood consultation event anchor missing')
-          s = s.replace(old, new, 1)
+          anchor = "new MutationObserver(()=>paint()).observe(document.documentElement,{subtree:true,childList:true});"
+          export = "globalThis.ReadyMoodDirectionV2UI=Object.freeze({paint:()=>paint(true)});"
+          if export not in s:
+              if anchor not in s:
+                  raise SystemExit('mood UI export anchor missing')
+              s = s.replace(anchor, export+'\n'+anchor, 1)
           mood.write_text(s, encoding='utf-8')
 
-          test = Path('tests/ready-first-journey-transition.mjs')
-          t = test.read_text(encoding='utf-8')
-          t = t.replace("for (const scenario of ['normal','quota','candidate-unavailable']) {", "for (const scenario of ['normal','quota']) {", 1)
-          t = t.replace("#readyCharacterCandidateMount .ccConsult", "#readyCharacterCandidateMount .takyConsult")
-          old_block = '''  if(scenario!=='candidate-unavailable'){
-           for(const key of ['EXCITED','COZY','IMAGINING'])await page.locator('[data-mood-tile="'+key+'"]' ).tap();
-           assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections.length),3);
-           await page.locator('[data-candidate-action="generate"]').tap();
-           for(const width of [320,390,430]){await page.setViewportSize({width,height:844});const measurements=await page.locator('#readyCharacterCandidateMount').evaluate(el=>({overflow:document.documentElement.scrollWidth>innerWidth,small:[...el.querySelectorAll('button')].some(b=>{const r=b.getBoundingClientRect();return r.width<44||r.height<44})}));assert.equal(measurements.overflow,false);assert.equal(measurements.small,false);}
-          }else assert.equal(await page.locator('[data-fallback-handoff]').count(),1);'''
-          if old_block not in t:
-              # tolerate the exact repository spacing variant
-              start = t.find("  if(scenario!=='candidate-unavailable'){")
-              end_marker = "  }else assert.equal(await page.locator('[data-fallback-handoff]').count(),1);"
-              end = t.find(end_marker, start)
-              if start < 0 or end < 0:
-                  raise SystemExit('stale mood test block missing')
-              end += len(end_marker)
-              old_block = t[start:end]
-          new_block = '''  await page.locator('[data-taky-choice="FEEL_BRIGHT"]').tap();
-          await page.locator('[data-taky-confirm]').tap();
-          await page.locator('[data-taky-choice="LOOK_ACTIVE"]').tap();
-          await page.locator('[data-taky-confirm]').tap();
-          assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections.length),3);
-          assert.match(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections[2].tileKey),/^AUTO_/);
-          await page.locator('[data-taky-generate]').tap();
-          for(const width of [320,390,430]){await page.setViewportSize({width,height:844});const measurements=await page.locator('#readyCharacterCandidateMount').evaluate(el=>({overflow:document.documentElement.scrollWidth>innerWidth,small:[...el.querySelectorAll('button')].some(b=>{const r=b.getBoundingClientRect();return r.width<44||r.height<44})}));assert.equal(measurements.overflow,false);assert.equal(measurements.small,false);}'''
-          t = t.replace(old_block, new_block, 1)
-          t = t.replace('PASS ${scenario}: upload, tap ownership, recovery target, CHARACTER render, consultation, approval lock, reload, PHOTO preview', 'PASS ${scenario}: upload, tap ownership, CHARACTER render, staged mood consultation, zero-cost lock, reload, PHOTO preview')
-          test.write_text(t, encoding='utf-8')
+          stage = Path('ready-stage-c.js')
+          s = stage.read_text(encoding='utf-8')
+          old = """  const mountCandidate=()=>{\n    installReferenceStyle();\n    const mount=document.querySelector('#readyCharacterCandidateMount'),candidate=window.ReadyCharacterCandidateV1;\n    if(!mount||!candidate)return false;\n    try{if(candidate.mount)candidate.mount(mount);else if(candidate.render)candidate.render(mount);else return false}catch(error){console.error('[Ready Candidate Mount]',error);return false}\n    return mount.dataset.candidateUi===candidate.version || !!mount.querySelector('[data-mood-tile],[data-candidate-action],.ccMaking,.ccReady,.ccRefine,.ccIntro');\n  };"""
+          new = """  const mountCandidate=()=>{\n    installReferenceStyle();\n    const mount=document.querySelector('#readyCharacterCandidateMount');\n    if(!mount)return false;\n    const moodCount=safeRead().characterMoodDirections?.selections?.length||0;\n    if(moodCount<3&&window.ReadyMoodDirectionV2UI?.paint){\n      window.ReadyMoodDirectionV2UI.paint();\n      return !!mount.querySelector('.takyConsult');\n    }\n    const candidate=window.ReadyCharacterCandidateV1;\n    if(!candidate)return false;\n    try{if(candidate.mount)candidate.mount(mount);else if(candidate.render)candidate.render(mount);else return false}catch(error){console.error('[Ready Candidate Mount]',error);return false}\n    return mount.dataset.candidateUi===candidate.version || !!mount.querySelector('[data-mood-tile],[data-candidate-action],.ccMaking,.ccReady,.ccRefine,.ccIntro');\n  };"""
+          if old not in s and new not in s:
+              raise SystemExit('stage candidate owner anchor missing')
+          s = s.replace(old, new, 1)
+          s = s.replace("2026.09.13-stage-first-journey-parent-setup-v3", "2026.09.13-stage-first-journey-parent-setup-v4-mood-owner")
+          stage.write_text(s, encoding='utf-8')
           PY
       - name: Syntax
         run: |
           node --check ready-mood-direction-v2.js
+          node --check ready-stage-c.js
           node --check tests/ready-first-journey-transition.mjs
-      - name: Commit branch owner and regression alignment
+      - name: Commit product ownership fix
         run: |
           git config user.name "TAKY Actions"
           git config user.email "actions@users.noreply.github.com"
-          git add ready-mood-direction-v2.js tests/ready-first-journey-transition.mjs
+          git add ready-mood-direction-v2.js ready-stage-c.js
           if ! git diff --cached --quiet; then
-            git commit -m "Align approved mood consultation with CHARACTER event"
+            git commit -m "Give staged mood UI explicit CHARACTER ownership"
             git push origin HEAD:runtime-session-bridge-2026-09-10
           fi
       - name: Static first-run contract
