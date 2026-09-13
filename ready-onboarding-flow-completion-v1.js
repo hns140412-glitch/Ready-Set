@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   if(window.ReadyOnboardingFlowCompletionV1)return;
-  const VERSION='2026.09.13-first-journey-completion-v2';
+  const VERSION='2026.09.13-first-journey-completion-v3';
   const INTRO_KEY='readyset_intro_seen_v1';
   const identity=()=>window.ReadyIdentityV1?.get?.()||{};
   const patch=p=>window.ReadyIdentityV1?.patch?.(p);
@@ -23,10 +23,22 @@
       .rof-intro{min-height:100dvh;box-sizing:border-box;padding:max(64px,calc(env(safe-area-inset-top) + 38px)) 26px max(34px,calc(env(safe-area-inset-bottom) + 22px));background:linear-gradient(#83d3ff,#ebfaff 58%,#71cfe5);color:#123f63;display:flex;flex-direction:column}.rof-intro .brand{font-size:11px;font-weight:950;letter-spacing:.18em}.rof-intro h1{font-size:36px;line-height:1.04;letter-spacing:-.045em;margin:14px 0 10px}.rof-intro p{font-size:14px;line-height:1.55;font-weight:750;opacity:.74;margin:0}.rof-intro .flow{margin-top:30px;display:grid;gap:10px}.rof-intro .flow span{display:flex;align-items:center;gap:10px;padding:13px 14px;border-radius:17px;background:rgba(255,255,255,.78);font-size:12px;font-weight:900}.rof-intro .flow i{width:26px;height:26px;border-radius:9px;background:#0d8ee9;color:#fff;display:grid;place-items:center;font-style:normal;font-size:11px}.rof-intro button,.rof-primary{width:100%;border:0;border-radius:18px;background:#0d8ee9;color:#fff;padding:15px;font-size:15px;font-weight:950}.rof-intro button{margin-top:auto}.rof-defer{width:100%;border:1px solid rgba(18,63,99,.18);border-radius:18px;background:rgba(255,255,255,.84);color:#15537b;padding:14px;font-weight:950;margin:8px 0}.rof-defer small{display:block;font-size:10px;opacity:.62;margin-top:4px}.rof-grid{display:grid;gap:12px;margin:24px 0}.rof-guide,.rof-theme{width:100%;border:2px solid transparent;border-radius:24px;background:rgba(255,255,255,.86);padding:13px;text-align:left;color:#123f63;box-shadow:0 14px 30px rgba(24,93,133,.12)}.rof-guide{display:grid;grid-template-columns:86px 1fr;align-items:center;gap:14px}.rof-guide img{width:86px;height:86px;border-radius:22px;object-fit:cover;background:#eef8fb}.rof-guide b,.rof-guide small,.rof-theme b,.rof-theme small{display:block}.rof-guide b,.rof-theme b{font-size:16px}.rof-guide small,.rof-theme small{font-size:11px;line-height:1.4;opacity:.66;margin-top:5px}.rof-theme{padding:18px}.rof-theme[data-selected='1'],.rof-guide[data-selected='1']{border-color:#0d8ee9;background:#fff}.rof-summary{padding:16px;border-radius:20px;background:rgba(255,255,255,.78);font-size:12px;line-height:1.55;margin:18px 0}.rof-summary b{display:block;font-size:15px;margin-bottom:5px}
     `;document.head.appendChild(s);
   }
+  function startIntro(){
+    localStorage.setItem(INTRO_KEY,'1');
+    window.ReadyIdentityV1?.render?.();
+    setTimeout(sync,0);
+  }
   function welcome(r){
     if(localStorage.getItem(INTRO_KEY)==='1')return false;
+    const existing=r.querySelector('#rofIntroStart');
+    if(existing){
+      if(existing.dataset.bound!=='1'){existing.dataset.bound='1';existing.addEventListener('click',startIntro)}
+      return true;
+    }
     r.innerHTML=`<div class="rof-intro"><span class="brand">READY & SET · FIRST JOURNEY</span><h1>준비는 가볍게.<br>시작은 자신 있게.</h1><p>시간표와 숙제 원본을 먼저 정리하면 Planner가 오늘 할 일을 준비해요. 부모의 준비 화면과 아이의 탐험 화면은 분리해서 사용합니다.</p><div class="flow"><span><i>1</i>누가 준비하는지 정하기</span><span><i>2</i>아이 또는 사용자 기본 정보</span><span><i>3</i>탐험대와 기본 세계 정하기</span><span><i>4</i>시간표 · 숙제 입력으로 바로 이어가기</span></div><button id="rofIntroStart" type="button">Ready & Set 시작하기</button></div>`;
-    r.querySelector('#rofIntroStart').onclick=()=>{localStorage.setItem(INTRO_KEY,'1');window.ReadyIdentityV1?.render?.();setTimeout(sync,0)};
+    const button=r.querySelector('#rofIntroStart');
+    button.dataset.bound='1';
+    button.addEventListener('click',startIntro);
     return true;
   }
   function addCharacterDefer(r,i){
