@@ -7,21 +7,27 @@ on:
     paths:
       - 'ready-foundation-v1.js'
       - 'ready-foundation-control-v1.js'
+      - 'ready-schedule-base-v1.js'
+      - 'ready-stage-g14-planner-authority.js'
       - 'ready-stage-e.js'
       - 'ready-stage-f.js'
       - 'ready-stage-g1-fix.js'
       - 'tests/ready-foundation-assignment-bridge-contract.mjs'
       - 'tests/ready-foundation-assignment-bridge-execution.mjs'
+      - 'tests/ready-schedule-delta-planner-e2e.mjs'
       - '.github/workflows/ready-foundation-assignment-bridge-contract-test.yml'
   pull_request:
     paths:
       - 'ready-foundation-v1.js'
       - 'ready-foundation-control-v1.js'
+      - 'ready-schedule-base-v1.js'
+      - 'ready-stage-g14-planner-authority.js'
       - 'ready-stage-e.js'
       - 'ready-stage-f.js'
       - 'ready-stage-g1-fix.js'
       - 'tests/ready-foundation-assignment-bridge-contract.mjs'
       - 'tests/ready-foundation-assignment-bridge-execution.mjs'
+      - 'tests/ready-schedule-delta-planner-e2e.mjs'
       - '.github/workflows/ready-foundation-assignment-bridge-contract-test.yml'
 
 permissions:
@@ -41,3 +47,5 @@ jobs:
         run: node tests/ready-foundation-assignment-bridge-contract.mjs
       - name: Execute Foundation assignment bridge
         run: node tests/ready-foundation-assignment-bridge-execution.mjs
+      - name: Baseline timetable delta to Planner E2E
+        run: node tests/ready-schedule-delta-planner-e2e.mjs
