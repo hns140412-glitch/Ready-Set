@@ -50,7 +50,7 @@ const baseline={
 };
 C.importBaseline(baseline);
 const afterBaseline=C.load();
-const baselineSnapshot=JSON.stringify(afterBaseline.profiles);
+const baselineProfileSnapshot=JSON.stringify(afterBaseline.profiles[0]);
 assert.equal(afterBaseline.profiles.length,1,'baseline must import once');
 assert.equal(afterBaseline.profiles[0].provenance.source,'NOTION_SNAPSHOT');
 
@@ -87,8 +87,6 @@ C.saveOverride({
 });
 
 const afterDelta=C.load();
-assert.equal(JSON.stringify(afterDelta.profiles),baselineSnapshot.replace(/\]$/,','+JSON.stringify(afterBaseline.profiles[0]).slice(1,-1)+']').replace(',,',','), '');
-
 planner=JSON.parse(localStorage.getItem('readyset_planner_v1'));
 projected=Object.values(planner.days).flatMap(d=>d.tasks||[]).filter(t=>t.authority==='PLANNER/MAIN'&&t.sourceAssignmentId==='fact-delta');
 assert.equal(projected.length,1,'planner must keep one projection after delta');
@@ -97,7 +95,7 @@ assert.deepEqual(planner.days[yesterday].tasks[0],pastBefore,'past completed act
 
 const baselineProfiles=afterDelta.profiles.filter(p=>p.provenance?.source==='NOTION_SNAPSHOT');
 assert.equal(baselineProfiles.length,1,'baseline authority must not be overwritten');
-assert.equal(baselineProfiles[0].events[0].title,'기본 학원');
+assert.equal(JSON.stringify(baselineProfiles[0]),baselineProfileSnapshot,'baseline profile must remain byte-for-byte equivalent after delta');
 assert.ok(afterDelta.overrides.some(o=>o.id==='delta-block-today'),'schedule change must be stored as delta override');
 
 console.log(JSON.stringify({pass:true,contract:'ready-schedule-delta-planner-e2e-v1',before:today,after:tomorrow,pastPreserved:true,baselinePreserved:true,deltaStored:true}));
