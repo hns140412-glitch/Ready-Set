@@ -2,8 +2,8 @@
   'use strict';
   if (window.ReadyParentCaptureIntakeV1) return;
 
-  const VERSION = '2026.09.13-parent-capture-intake-v1';
-  const ROLE = new URLSearchParams(location.search).get('role') === 'parent' ? 'PARENT' : 'CHILD';
+  const VERSION = '2026.09.13-parent-capture-intake-v1.1';
+  const ROLE = (window.ReadyRoleContextV1?.isParent?.() || new URLSearchParams(location.search).get('role') === 'parent') ? 'PARENT' : 'CHILD';
   const DB_NAME = 'readyset_capture_v1';
   const STORE = 'captures';
   const TALENT_SUBJECTS = ['연산','한자','국어','사회','수학','생각하는 피자'];
@@ -92,9 +92,8 @@
   async function queueAnalysis(){
     const rows=await allCaptures();if(!rows.length){toast('먼저 숙제 사진을 촬영해 주세요.');return}
     await updateAnalysisState('PENDING_ANALYSIS');
-    document.getElementById('rsfTalentFactSave')?.click();
-    setTimeout(()=>toast(`사진 ${rows.length}장 저장 완료 · 권별 분류 완료 · 숙제 OCR 분석 API 연결 대기`),120);
-    await refresh();
+    setTimeout(()=>toast(`사진 ${rows.length}장 저장 완료 · 권별 분류 완료 · 분석 대기 등록`),120);
+    await refresh();return rows;
   }
   function cameraShell(){
     if(document.getElementById('rscCamera'))return;
@@ -110,7 +109,7 @@
     installStyles();cameraShell();
     const talent=[...parent.querySelectorAll('.rsf-section')].find(s=>s.querySelector('h3')?.textContent?.includes('재능'));
     if(!talent)return;
-    const root=document.createElement('div');root.id='rscCaptureRoot';root.className='rsc-wrap';root.innerHTML=`<div class="rsc-head"><div><b>빠른 촬영</b><small>권을 고르고 찍으면 자동 임시저장돼요. 같은 권은 계속 찍고, 끝나면 다음 권으로 넘겨요.</small></div><span class="rsf-badge" data-rsc-total>현재 0장</span></div><div class="rsc-tools"><select id="rscSubject" aria-label="재능 권 선택">${TALENT_SUBJECTS.map(s=>`<option>${s}</option>`).join('')}</select><select id="rscKind" aria-label="촬영 종류">${KINDS.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div><div class="rsc-actions"><button id="rscOpenCamera" class="rsc-btn" type="button">촬영 시작</button><button id="rscQueue" class="rsc-btn alt" type="button">저장하고 분석</button></div><input id="rscFile" class="rsc-file" type="file" accept="image/*" capture="environment" hidden><div class="rsc-progress"></div><div class="rsc-recent"></div><div class="rsc-note">답안·해설지는 <b>부모 전용</b>으로 저장되며 아이 화면에 노출하지 않습니다. 현재 브랜치는 사진 원본 저장·권별 분류까지 수행하며 OCR/AI 숙제 분석은 아직 연결 전이라 분석 대기 상태로 보존합니다.</div>`;
+    const root=document.createElement('div');root.id='rscCaptureRoot';root.className='rsc-wrap';root.innerHTML=`<div class="rsc-head"><div><b>빠른 촬영</b><small>권을 고르고 찍으면 자동 임시저장돼요. 같은 권은 계속 찍고, 끝나면 다음 권으로 넘겨요.</small></div><span class="rsf-badge" data-rsc-total>현재 0장</span></div><div class="rsc-tools"><select id="rscSubject" aria-label="재능 권 선택">${TALENT_SUBJECTS.map(s=>`<option>${s}</option>`).join('')}</select><select id="rscKind" aria-label="촬영 종류">${KINDS.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div><div class="rsc-actions"><button id="rscOpenCamera" class="rsc-btn" type="button">촬영 시작</button><button id="rscQueue" class="rsc-btn alt" type="button">저장하고 분석</button></div><input id="rscFile" class="rsc-file" type="file" accept="image/*" capture="environment" hidden><div class="rsc-progress"></div><div class="rsc-recent"></div><div class="rsc-note">답안·해설지는 <b>부모 전용</b>으로 저장되며 아이 화면에 노출하지 않습니다. 사진은 먼저 기기에 보존되고, AI 분석은 서버 승인 상태일 때만 실행됩니다. 분석 결과도 부모가 확인하기 전에는 숙제 FACT로 확정되지 않습니다.</div>`;
     talent.insertBefore(root,talent.children[2]||talent.firstChild);
     root.querySelector('#rscSubject').onchange=e=>{state.subject=e.target.value;refresh().catch(()=>{})};
     root.querySelector('#rscKind').onchange=e=>{state.kind=e.target.value;refresh().catch(()=>{})};
