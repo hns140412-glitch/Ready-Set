@@ -2,10 +2,10 @@
   'use strict';
   if(window.__readyJourneyLoader)return;
   window.__readyJourneyLoader=true;
-  const VERSION='2026.09.13-stage-first-journey-parent-setup-v1';
+  const VERSION='2026.09.13-stage-first-journey-parent-setup-v2';
   const IDENTITY='./ready-onboarding-identity-v1.js?v=20260911-mood2';
   const CANDIDATE='./ready-character-candidate-v1.js?v=20260911-mood2';
-  const AFTER_IDENTITY=['./ready-role-context-v1.js','./ready-onboarding-flow-completion-v1.js','./ready-foundation-v1.js','./ready-foundation-control-v1.js','./ready-stage-c-base.js','./ready-stage-d.js','./ready-stage-e.js','./ready-stage-f.js','./ready-parent-capture-intake-v1.js','./ready-homework-analysis-bridge-v1.js','./ready-stage-g1-fix.js','./ready-stage-g14-planner-authority.js','./ready-base-native-v2.js','./ready-planner-selection-bridge-v1.js','./ready-focus-tools-v1.js','./ready-schedule-base-v1.js','./ready-world-base-v1.js','./ready-world-shell-v1.js','./ready-base-selftest-v1.js'];
+  const AFTER_IDENTITY=['./ready-role-context-v1.js','./ready-onboarding-flow-completion-v1.js','./ready-foundation-v1.js','./ready-foundation-control-v1.js','./ready-stage-c-base.js','./ready-stage-d.js','./ready-stage-e.js','./ready-stage-f.js','./ready-parent-capture-intake-v1.js','./ready-homework-analysis-bridge-v1.js','./ready-stage-g1-fix.js','./ready-stage-g14-planner-authority.js','./ready-base-native-v2.js','./ready-planner-selection-bridge-v1.js','./ready-focus-tools-v1.js','./ready-schedule-base-v1.js','./ready-world-base-v1.js','./ready-world-shell-v1.js','./ready-parent-setup-hub-v1.js','./ready-base-selftest-v1.js'];
   const load=(src,timeout=0)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.async=false;const timer=timeout?setTimeout(()=>reject(new Error(`LOAD_TIMEOUT:${src}`)),timeout):null;s.onload=()=>{clearTimeout(timer);resolve(src)};s.onerror=()=>{clearTimeout(timer);reject(new Error(`LOAD_FAILED:${src}`))};document.head.appendChild(s)});
   const mark=(state,detail='')=>{document.documentElement.dataset.readyBootState=state;if(detail)document.documentElement.dataset.readyBootDetail=detail};
   const releaseStaticPaint=()=>{document.documentElement.classList.remove('identityFirstPaint');document.documentElement.classList.remove('worldFirstPaint')};
@@ -88,7 +88,7 @@
   const bootRest=async()=>{
     await ensureCandidate();
     for(const src of AFTER_IDENTITY){try{await load(src)}catch(error){console.error('[Ready Optional Boot]',src,error);mark('DEGRADED',src)}}
-    window.ReadyOnboardingFlowCompletionV1?.render?.();window.ReadyStageF?.render?.();window.ReadyStageG11?.hydrateParentInputs?.();window.ReadyStageG14?.render?.();window.ReadyBaseNativeV2?.render?.();window.ReadyBaseRuntimeV1?.syncSelectedTask?.();window.ReadyFocusToolsV1?.render?.();window.ReadyScheduleBaseV1?.render?.();window.ReadyWorldShellV1?.render?.();mountCandidate();if(document.documentElement.dataset.readyBootState!=='DEGRADED')mark('READY');
+    window.ReadyOnboardingFlowCompletionV1?.render?.();window.ReadyStageF?.render?.();window.ReadyStageG11?.hydrateParentInputs?.();window.ReadyStageG14?.render?.();window.ReadyBaseNativeV2?.render?.();window.ReadyBaseRuntimeV1?.syncSelectedTask?.();window.ReadyFocusToolsV1?.render?.();window.ReadyScheduleBaseV1?.render?.();window.ReadyWorldShellV1?.render?.();window.ReadyParentSetupHubV1?.render?.();mountCandidate();if(document.documentElement.dataset.readyBootState!=='DEGRADED')mark('READY');
   };
   const recover=()=>{
     releaseStaticPaint();
