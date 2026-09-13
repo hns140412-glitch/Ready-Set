@@ -1,0 +1,115 @@
+name: One-shot PHOTO to CHARACTER transition fix
+
+on:
+  push:
+    branches:
+      - runtime-session-bridge-2026-09-10
+    paths:
+      - '.github/workflows/one-shot-photo-transition-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix-test-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout work branch
+        uses: actions/checkout@v4
+        with:
+          ref: runtime-session-bridge-2026-09-10
+          fetch-depth: 0
+
+      - name: Apply robust delegated PHOTO advance
+        shell: python
+        run: |
+          from pathlib import Path
+
+          stage = Path('ready-stage-c.js')
+          s = stage.read_text(encoding='utf-8')
+          s = s.replace("const VERSION='2026.09.13-stage-first-journey-parent-setup-v3';", "const VERSION='2026.09.13-stage-first-journey-parent-setup-v4';")
+          old = """  // The mounted PHOTO button owns activation. Recovery must not replace it
+  // between Safari focus/pageshow and the synthesized click.
+  window.addEventListener('ready-character-consultation',()=>{releaseStaticPaint();ensureCandidate()});
+"""
+          new = """  // iOS/in-app browsers can synthesize the final click after focus/pageshow recovery.
+  // Own PHOTO -> CHARACTER activation at document capture level so a transient button
+  // listener/DOM replacement cannot strand the user on PHOTO. The identity owner still
+  // performs the state transition; this layer only guarantees delivery of the user intent.
+  let photoAdvanceAt=0;
+  const advancePhotoFromDelegatedInput=event=>{
+    const target=event.target?.closest?.('#readyFirstRun #next');
+    if(!target||target.disabled)return;
+    const i=safeRead();
+    if(i.onboardingStep!=='PHOTO'||!i.sourcePhoto)return;
+    const now=Date.now();
+    if(now-photoAdvanceAt<450){event.preventDefault?.();return}
+    photoAdvanceAt=now;
+    event.preventDefault?.();
+    const owner=window.ReadyIdentityV1;
+    const moved=owner?.transitionToCharacter?.();
+    if(moved===false)return;
+    releaseStaticPaint();
+    setTimeout(()=>{
+      owner?.render?.();
+      ensureCandidate();
+      window.ReadyOnboardingFlowCompletionV1?.render?.();
+    },0);
+  };
+  document.addEventListener('pointerup',advancePhotoFromDelegatedInput,true);
+  document.addEventListener('click',advancePhotoFromDelegatedInput,true);
+  window.addEventListener('ready-character-consultation',()=>{releaseStaticPaint();ensureCandidate()});
+"""
+          if old not in s:
+              raise SystemExit('stage-c activation anchor not found')
+          stage.write_text(s.replace(old,new), encoding='utf-8')
+
+          test = Path('tests/ready-first-journey-transition.mjs')
+          t = test.read_text(encoding='utf-8')
+          anchor = "  await page.locator('#readyFirstRun #next').tap();\n"
+          replacement = """  // Reproduce the physical-device failure mode: the leaf button handler is gone,
+  // but the user's tap must still be delivered by the delegated capture owner.
+  await page.evaluate(()=>{document.querySelector('#readyFirstRun #next').onclick=null});
+  await page.locator('#readyFirstRun #next').tap();
+"""
+          if anchor not in t:
+              raise SystemExit('transition test tap anchor not found')
+          test.write_text(t.replace(anchor,replacement,1), encoding='utf-8')
+
+          contract = Path('tests/ready-first-run-parent-activation-contract.mjs')
+          c = contract.read_text(encoding='utf-8')
+          anchor = "assert.match(completion,/button\\.addEventListener\\('click',startIntro\\)/,'intro start must use a stable click handler');\n"
+          addition = anchor + """assert.match(loader,/document\\.addEventListener\\('pointerup',advancePhotoFromDelegatedInput,true\\)/,'PHOTO advance must have delegated pointer activation for iOS recovery');
+assert.match(loader,/document\\.addEventListener\\('click',advancePhotoFromDelegatedInput,true\\)/,'PHOTO advance must have delegated click fallback');
+assert.match(loader,/owner\\?\\.transitionToCharacter\\?\\.\\(\\)/,'delegated activation must route through the identity transition owner');
+"""
+          if anchor not in c:
+              raise SystemExit('contract insertion anchor not found')
+          c = c.replace(anchor, addition, 1).replace('checks:37','checks:40')
+          contract.write_text(c, encoding='utf-8')
+
+      - name: Static first-run contract
+        run: node tests/ready-first-run-parent-activation-contract.mjs
+
+      - name: Syntax checks
+        run: |
+          node --check ready-stage-c.js
+          node --check ready-onboarding-identity-v2.js
+          node --check tests/ready-first-journey-transition.mjs
+
+      - name: Install browser test runtime
+        run: |
+          npm install --no-save playwright@latest
+          npx playwright install --with-deps chromium
+
+      - name: Real mobile-width transition regression
+        run: node tests/ready-first-journey-transition.mjs
+
+      - name: Remove one-shot workflow and commit tested fix
+        run: |
+          rm .github/workflows/one-shot-photo-transition-fix.yml
+          git config user.name 'TAKY Commander'
+          git config user.email 'actions@users.noreply.github.com'
+          git add ready-stage-c.js tests/ready-first-journey-transition.mjs tests/ready-first-run-parent-activation-contract.mjs .github/workflows/one-shot-photo-transition-fix.yml
+          git commit -m 'Fix iOS photo-to-character transition ownership'
+          git push origin HEAD:runtime-session-bridge-2026-09-10
