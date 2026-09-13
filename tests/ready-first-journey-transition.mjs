@@ -9,7 +9,7 @@ await new Promise(resolve => server.listen(4177, '127.0.0.1', resolve));
 let browser;
 try {
  browser = await chromium.launch({headless:true,timeout:15000,...(process.argv[3]?{executablePath:process.argv[3]}:{})});
- for (const scenario of ['normal','quota']) {
+ for (const scenario of ['normal','quota','candidate-unavailable']) {
   const context = await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
   let apiCalls=0;
   await context.route('**/*',route=>{
