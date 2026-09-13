@@ -24,4 +24,5 @@ jobs:
         run: |
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
           test -n "$CHROME"
-          timeout 150s node tests/ready-first-journey-transition.mjs "$PWD/node_modules/playwright/index.js" "$CHROME"
+          test -f "$PWD/node_modules/playwright/index.mjs"
+          timeout 150s node tests/ready-first-journey-transition.mjs "$PWD/node_modules/playwright/index.mjs" "$CHROME"
