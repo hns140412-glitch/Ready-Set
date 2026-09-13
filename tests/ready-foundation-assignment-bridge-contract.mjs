@@ -9,7 +9,9 @@ assert.match(control,/cycleBoundarySources=new Set\(\['TALENT_BOOK_ASSIGNMENT','
 assert.match(control,/return cycleBoundarySources\.has\(f\.sourceType\)\?datePlus\(d,-1\):d/,'cycle boundary day must not become a normal allocation slot');
 assert.match(control,/authority:'LEARNING\/SUBJECT'/,'Foundation units must carry Learning interpretation authority');
 assert.match(control,/prepareConfirmedFacts/,'confirmed facts must have an explicit Foundation replanning bridge');
-assert.match(control,/service\.prepare\(\{from:today\(\),dates,units,carryOver:\[\],actualHistory:\[\]\}\)/,'bridge must invoke the Foundation Planner with bounded inputs');
+assert.match(control,/const history=actualHistory\(units\),result=service\.prepare\(\{from:today\(\),dates,units,carryOver:\[\],actualHistory:history\}\)/,'bridge must invoke the Foundation Planner with bounded inputs and real execution history');
+assert.match(control,/function actualHistory\(units=\[\]\)/,'bridge must derive actual execution history from Planner state');
+assert.match(control,/\['COMPLETED','IN_PROGRESS','WAITING_FOR_PARENT'\]/,'stable execution states must be protected from replanning');
 assert.match(control,/upsertTalentPackage\(args=\{\}\).*service\.prepareConfirmedFacts\(\)/s,'Talent parent FACT save must trigger Foundation replanning');
 assert.match(control,/upsertEnglishPackage\(args=\{\}\).*service\.prepareConfirmedFacts\(\)/s,'English parent FACT save must trigger Foundation replanning');
 assert.match(control,/confirmFact\(id,actor='PARENT'\).*service\.prepareConfirmedFacts\(\)/s,'explicit FACT confirmation must trigger Foundation replanning');
@@ -21,4 +23,4 @@ assert.match(foundation,/kind==='STUDY_OPPORTUNITY'/,'Planner capacity must come
 assert.match(foundation,/absence of events never implies capacity/,'missing timetable rows must never imply free capacity');
 assert.match(foundation,/candidateOnly:true/,'Foundation plan output must remain candidate projection until its governed publication path');
 
-console.log(JSON.stringify({pass:true,contract:'ready-foundation-assignment-bridge-v1',checks:15}));
+console.log(JSON.stringify({pass:true,contract:'ready-foundation-assignment-bridge-v2',checks:17}));
