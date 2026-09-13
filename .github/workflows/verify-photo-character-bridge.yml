@@ -6,62 +6,50 @@ on:
     paths: ['.github/workflows/verify-photo-character-bridge.yml']
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  patch-and-regress:
+  diagnose:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
         with:
           ref: runtime-session-bridge-2026-09-10
-          fetch-depth: 0
-      - name: Give staged mood UI explicit CHARACTER ownership
+      - name: Instrument CHARACTER mount snapshot in runner only
         run: |
           python - <<'PY'
           from pathlib import Path
-
-          mood = Path('ready-mood-direction-v2.js')
-          s = mood.read_text(encoding='utf-8')
-          anchor = "new MutationObserver(()=>paint()).observe(document.documentElement,{subtree:true,childList:true});"
-          export = "globalThis.ReadyMoodDirectionV2UI=Object.freeze({paint:()=>paint(true)});"
-          if export not in s:
-              if anchor not in s:
-                  raise SystemExit('mood UI export anchor missing')
-              s = s.replace(anchor, export+'\n'+anchor, 1)
-          mood.write_text(s, encoding='utf-8')
-
-          stage = Path('ready-stage-c.js')
-          s = stage.read_text(encoding='utf-8')
-          old = """  const mountCandidate=()=>{\n    installReferenceStyle();\n    const mount=document.querySelector('#readyCharacterCandidateMount'),candidate=window.ReadyCharacterCandidateV1;\n    if(!mount||!candidate)return false;\n    try{if(candidate.mount)candidate.mount(mount);else if(candidate.render)candidate.render(mount);else return false}catch(error){console.error('[Ready Candidate Mount]',error);return false}\n    return mount.dataset.candidateUi===candidate.version || !!mount.querySelector('[data-mood-tile],[data-candidate-action],.ccMaking,.ccReady,.ccRefine,.ccIntro');\n  };"""
-          new = """  const mountCandidate=()=>{\n    installReferenceStyle();\n    const mount=document.querySelector('#readyCharacterCandidateMount');\n    if(!mount)return false;\n    const moodCount=safeRead().characterMoodDirections?.selections?.length||0;\n    if(moodCount<3&&window.ReadyMoodDirectionV2UI?.paint){\n      window.ReadyMoodDirectionV2UI.paint();\n      return !!mount.querySelector('.takyConsult');\n    }\n    const candidate=window.ReadyCharacterCandidateV1;\n    if(!candidate)return false;\n    try{if(candidate.mount)candidate.mount(mount);else if(candidate.render)candidate.render(mount);else return false}catch(error){console.error('[Ready Candidate Mount]',error);return false}\n    return mount.dataset.candidateUi===candidate.version || !!mount.querySelector('[data-mood-tile],[data-candidate-action],.ccMaking,.ccReady,.ccRefine,.ccIntro');\n  };"""
-          if old not in s and new not in s:
-              raise SystemExit('stage candidate owner anchor missing')
-          s = s.replace(old, new, 1)
-          s = s.replace("2026.09.13-stage-first-journey-parent-setup-v3", "2026.09.13-stage-first-journey-parent-setup-v4-mood-owner")
-          stage.write_text(s, encoding='utf-8')
+          p=Path('tests/ready-first-journey-transition.mjs')
+          s=p.read_text(encoding='utf-8')
+          anchor="  await page.locator('#readyFirstRun #next').tap();\n  await page.waitForSelector('#readyCharacterCandidateMount .takyConsult',{timeout:12000});"
+          diag="""  await page.locator('#readyFirstRun #next').tap();
+  await page.waitForTimeout(1200);
+  console.log('CHARACTER_DIAG',JSON.stringify(await page.evaluate(()=>({
+   step:window.ReadyIdentityV1?.get?.().onboardingStep||null,
+   moodUi:!!window.ReadyMoodDirectionV2UI,
+   moodApi:!!window.ReadyMoodDirectionV2,
+   candidate:!!window.ReadyCharacterCandidateV1,
+   stageLoader:document.documentElement.dataset.readyStageLoader||null,
+   bootState:document.documentElement.dataset.readyBootState||null,
+   mount:document.querySelector('#readyCharacterCandidateMount')?.innerHTML?.slice(0,1200)||null,
+   mountClass:document.querySelector('#readyCharacterCandidateMount')?.className||null,
+   candidateUi:document.querySelector('#readyCharacterCandidateMount')?.dataset?.candidateUi||null
+  })),errors);
+  await page.waitForSelector('#readyCharacterCandidateMount .takyConsult',{timeout:3000});"""
+          if anchor not in s: raise SystemExit('diagnostic anchor missing')
+          p.write_text(s.replace(anchor,diag,1),encoding='utf-8')
           PY
-      - name: Syntax
-        run: |
-          node --check ready-mood-direction-v2.js
-          node --check ready-stage-c.js
-          node --check tests/ready-first-journey-transition.mjs
-      - name: Commit product ownership fix
-        run: |
-          git config user.name "TAKY Actions"
-          git config user.email "actions@users.noreply.github.com"
-          git add ready-mood-direction-v2.js ready-stage-c.js
-          if ! git diff --cached --quiet; then
-            git commit -m "Give staged mood UI explicit CHARACTER ownership"
-            git push origin HEAD:runtime-session-bridge-2026-09-10
-          fi
-      - name: Static first-run contract
-        run: node tests/ready-first-run-parent-activation-contract.mjs
       - name: Install Playwright package only
         run: npm install --no-save playwright@latest
-      - name: Run bounded mobile browser regression
+      - name: Run one bounded diagnostic scenario
         run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tests/ready-first-journey-transition.mjs');s=p.read_text(encoding='utf-8')
+          s=s.replace("for (const scenario of ['normal','quota']) {","for (const scenario of ['normal']) {",1)
+          p.write_text(s,encoding='utf-8')
+          PY
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
           test -n "$CHROME"
-          timeout 150s node tests/ready-first-journey-transition.mjs "$PWD/node_modules/playwright/index.mjs" "$CHROME"
+          timeout 60s node tests/ready-first-journey-transition.mjs "$PWD/node_modules/playwright/index.mjs" "$CHROME"
