@@ -7,11 +7,13 @@ on:
     paths:
       - 'ready-home-homework-mvp-v1.js'
       - 'ready-home-homework-ui-v1.js'
+      - 'ready-base-runtime-v1.js'
       - 'ready-runtime-v07.js'
       - 'ready-stage-d.js'
       - 'ready-stage-d-base-v1.js'
       - 'READY_HOMEWORK_MVP_CONTRACT.md'
       - 'tests/ready-manual-learning-contract.mjs'
+      - 'tests/ready-daily-loop-result-planner-contract.mjs'
       - '.github/workflows/ready-homework-mvp-contract-test.yml'
   workflow_dispatch:
 
@@ -27,6 +29,7 @@ jobs:
         run: |
           node --check ready-home-homework-mvp-v1.js
           node --check ready-home-homework-ui-v1.js
+          node --check ready-base-runtime-v1.js
           node --check ready-runtime-v07.js
           node --check ready-stage-d.js
           node --check ready-stage-d-base-v1.js
@@ -84,6 +87,7 @@ jobs:
             ! grep -q "images/edits" "$f"
             ! grep -q "READY_CHARACTER_PAID_GENERATION" "$f"
           done
-
       - name: Verify manual learning and automatic session contracts
         run: node tests/ready-manual-learning-contract.mjs
+      - name: Verify daily session result reaches Planner history
+        run: node tests/ready-daily-loop-result-planner-contract.mjs
