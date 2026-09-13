@@ -12,10 +12,16 @@ const context = vm.createContext({console, structuredClone, Date, Math, URL, URL
 });
 context.window = context;
 // Expose real runtime operations while omitting browser-only boot wiring.
-vm.runInContext(runtimeSource.slice(0, runtimeSource.lastIndexOf("  if (document.readyState")) + `
+const runtimeHarnessSource = runtimeSource
+  .slice(0, runtimeSource.lastIndexOf("  if (document.readyState"))
+  .replace(/\n\}\)\(\);\s*$/, '\n');
+vm.runInContext(runtimeHarnessSource + `
 window.ReadySetRev07 = {contract:()=>state.activeSession?.rev07 || null, switchTask, setTaskState};
 })();`, context);
-context.ReadyBaseRuntimeV1 = {start(){ state.activeSession = {id:'real-session', startAt:Date.now(), tasks:[]}; }};
+context.ReadyBaseRuntimeV1 = {
+  start(){ state.activeSession = {id:'real-session', startAt:Date.now(), tasks:[]}; },
+  publishPlannerResult(){ return null; }
+};
 vm.runInContext(coreSource, context);
 const api = context.ReadyHomeHomeworkMVPV1;
 const day = new Date().toLocaleDateString('sv-SE');
