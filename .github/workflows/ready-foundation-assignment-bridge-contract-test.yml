@@ -11,6 +11,7 @@ on:
       - 'ready-stage-f.js'
       - 'ready-stage-g1-fix.js'
       - 'tests/ready-foundation-assignment-bridge-contract.mjs'
+      - 'tests/ready-foundation-assignment-bridge-execution.mjs'
       - '.github/workflows/ready-foundation-assignment-bridge-contract-test.yml'
   pull_request:
     paths:
@@ -20,6 +21,7 @@ on:
       - 'ready-stage-f.js'
       - 'ready-stage-g1-fix.js'
       - 'tests/ready-foundation-assignment-bridge-contract.mjs'
+      - 'tests/ready-foundation-assignment-bridge-execution.mjs'
       - '.github/workflows/ready-foundation-assignment-bridge-contract-test.yml'
 
 permissions:
@@ -37,3 +39,5 @@ jobs:
         run: node --check ready-foundation-control-v1.js
       - name: Foundation assignment bridge contract
         run: node tests/ready-foundation-assignment-bridge-contract.mjs
+      - name: Execute Foundation assignment bridge
+        run: node tests/ready-foundation-assignment-bridge-execution.mjs
