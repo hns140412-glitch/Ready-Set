@@ -1,8 +1,37 @@
-name: Temporary first journey full browser gate
+name: Ready First Journey Browser Gate
 on:
   push:
     branches: [runtime-session-bridge-2026-09-10]
-    paths: ['.github/workflows/temporary-first-journey-full.yml']
+    paths:
+      - '.github/workflows/temporary-first-journey-full.yml'
+      - 'index.html'
+      - 'ready-onboarding-*.js'
+      - 'ready-character-*.js'
+      - 'ready-role-context-v1.js'
+      - 'ready-parent-setup-hub-v1.js'
+      - 'ready-parent-capture-intake-v1.js'
+      - 'ready-homework-analysis-bridge-v1.js'
+      - 'ready-schedule-base-v1.js'
+      - 'ready-foundation-v1.js'
+      - 'ready-foundation-control-v1.js'
+      - 'ready-stage-g14-planner-authority.js'
+      - 'tests/ready-first-journey-*.mjs'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/temporary-first-journey-full.yml'
+      - 'index.html'
+      - 'ready-onboarding-*.js'
+      - 'ready-character-*.js'
+      - 'ready-role-context-v1.js'
+      - 'ready-parent-setup-hub-v1.js'
+      - 'ready-parent-capture-intake-v1.js'
+      - 'ready-homework-analysis-bridge-v1.js'
+      - 'ready-schedule-base-v1.js'
+      - 'ready-foundation-v1.js'
+      - 'ready-foundation-control-v1.js'
+      - 'ready-stage-g14-planner-authority.js'
+      - 'tests/ready-first-journey-*.mjs'
 permissions:
   contents: read
 jobs:
@@ -12,7 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: runtime-session-bridge-2026-09-10
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - name: Package exact staging source
         run: git archive --format=zip HEAD -o "$RUNNER_TEMP/ready-set-staging-source.zip"
       - name: Upload exact staging source
@@ -40,7 +69,7 @@ jobs:
       - name: Run bounded First Journey browser gates
         shell: bash
         run: |
-          echo "gate revision 11"
+          echo "gate revision 12"
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
           test -n "$CHROME"
           timeout 150s node tests/ready-first-journey-transition.mjs "$PWD/node_modules/playwright/index.mjs" "$CHROME"
