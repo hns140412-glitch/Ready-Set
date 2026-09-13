@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   if(window.ReadyParentSetupHubV1)return;
-  const VERSION='2026.09.13-parent-setup-hub-v1.1';
+  const VERSION='2026.09.13-parent-setup-hub-v1.2-stable';
   const $=s=>document.querySelector(s);
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const today=()=>new Date().toLocaleDateString('sv-SE');
@@ -59,31 +59,43 @@
     if(!window.ReadyIdentityV1?.isReady?.()){b?.remove();return}
     const i=identity();if(i.setupMode!=='GUARDIAN_FOR_CHILD'){b?.remove();return}
     if(!b){b=document.createElement('button');b.id='rpsRoleSwitch';b.className='rps-role';document.body.appendChild(b)}
-    b.textContent=role()==='parent'?'아이 화면으로':'보호자 준비로';b.onclick=()=>window.ReadyRoleContextV1?.switchRole?.(role()==='parent'?'child':'parent',{reload:true});
+    const currentRole=role(),label=currentRole==='parent'?'아이 화면으로':'보호자 준비로';
+    if(b.textContent!==label)b.textContent=label;
+    if(b.dataset.boundRole!==currentRole){b.dataset.boundRole=currentRole;b.onclick=()=>window.ReadyRoleContextV1?.switchRole?.(currentRole==='parent'?'child':'parent',{reload:true})}
   }
   function mountParentHub(){
     if(role()!=='parent'){ $('#readyParentSetupHub')?.remove();return }
     const world=$('#worldStage .worldSky');if(!world)return;
     let hub=$('#readyParentSetupHub');if(hub&&hub.parentElement!==world)hub.remove();if(!hub){hub=document.createElement('section');hub.id='readyParentSetupHub';hub.className='rps-hub';const top=world.querySelector('.worldTop');top?.insertAdjacentElement('afterend',hub)}
     const ss=scheduleSummary(),hs=homeworkSummary(),ps=plannerSummary();
-    hub.innerHTML=`<div class="rps-head"><div><span>PARENT SETUP · 먼저 준비할 것</span><b>시간표와 숙제를 먼저 잡아요</b><small>확정 시간표 → 숙제 원본 FACT → Planner 날짜 배정 순서로 연결됩니다.</small></div></div><div class="rps-steps"><button type="button" class="rps-step" data-rps-schedule><i>1</i><b>시간표 확인 · 수정</b><small>학원·고정 일정과 확인된 학습 가능 구간</small></button><button type="button" class="rps-step homework" data-rps-homework><i>2</i><b>숙제 촬영 · 입력</b><small>재능 6권·영어·과학 숙제 원본 FACT</small></button></div><div class="rps-status"><span class="rps-chip">시간표 ${ss.events}개 기준</span><span class="rps-chip">숙제 FACT ${hs.facts}개</span><span class="rps-chip">확정 ${hs.confirmed}개</span>${ps.planned?`<span class="rps-chip">배정 ${ps.planned}개</span>`:''}${ps.noOpportunity?'<button type="button" class="rps-chip action" data-rps-opportunity>학습 가능 시간 추가</button>':''}</div>`;
-    hub.querySelector('[data-rps-schedule]').onclick=()=>{nav('schedule');setTimeout(()=>$('#scheduleView')?.scrollIntoView({block:'start'}),60)};
-    hub.querySelector('[data-rps-homework]').onclick=goHomework;
-    hub.querySelector('[data-rps-opportunity]')?.addEventListener('click',openScheduleEditor);
-    const h1=world.querySelector('.worldTop h1'),p=world.querySelector('.worldTop p');if(h1)h1.innerHTML='먼저 준비하고<br>오늘을 배정할까?';if(p)p.textContent='시간표 → 숙제 원본 → Planner';
+    const signature=JSON.stringify({events:ss.events,facts:hs.facts,confirmed:hs.confirmed,planned:ps.planned,noOpportunity:ps.noOpportunity});
+    if(hub.dataset.renderSignature!==signature){
+      hub.dataset.renderSignature=signature;
+      hub.innerHTML=`<div class="rps-head"><div><span>PARENT SETUP · 먼저 준비할 것</span><b>시간표와 숙제를 먼저 잡아요</b><small>확정 시간표 → 숙제 원본 FACT → Planner 날짜 배정 순서로 연결됩니다.</small></div></div><div class="rps-steps"><button type="button" class="rps-step" data-rps-schedule><i>1</i><b>시간표 확인 · 수정</b><small>학원·고정 일정과 확인된 학습 가능 구간</small></button><button type="button" class="rps-step homework" data-rps-homework><i>2</i><b>숙제 촬영 · 입력</b><small>재능 6권·영어·과학 숙제 원본 FACT</small></button></div><div class="rps-status"><span class="rps-chip">시간표 ${ss.events}개 기준</span><span class="rps-chip">숙제 FACT ${hs.facts}개</span><span class="rps-chip">확정 ${hs.confirmed}개</span>${ps.planned?`<span class="rps-chip">배정 ${ps.planned}개</span>`:''}${ps.noOpportunity?'<button type="button" class="rps-chip action" data-rps-opportunity>학습 가능 시간 추가</button>':''}</div>`;
+      hub.querySelector('[data-rps-schedule]').onclick=()=>{nav('schedule');setTimeout(()=>$('#scheduleView')?.scrollIntoView({block:'start'}),60)};
+      hub.querySelector('[data-rps-homework]').onclick=goHomework;
+      hub.querySelector('[data-rps-opportunity]')?.addEventListener('click',openScheduleEditor);
+    }
+    const h1=world.querySelector('.worldTop h1'),p=world.querySelector('.worldTop p');
+    const heading='먼저 준비하고<br>오늘을 배정할까?',lead='시간표 → 숙제 원본 → Planner';
+    if(h1&&h1.innerHTML!==heading)h1.innerHTML=heading;if(p&&p.textContent!==lead)p.textContent=lead;
   }
   function mountScheduleActions(){
     if(role()!=='parent')return;const main=$('#scheduleView main');if(!main)return;
     let a=$('#rpsScheduleActions');if(!a){a=document.createElement('div');a.id='rpsScheduleActions';a.className='rps-schedule-actions';main.prepend(a)}
-    a.innerHTML='<button type="button" data-edit-schedule>시간표 추가 · 변경</button><button type="button" class="alt" data-go-homework>숙제 입력으로</button>';
-    a.querySelector('[data-edit-schedule]').onclick=openScheduleEditor;a.querySelector('[data-go-homework]').onclick=goHomework;
+    if(a.dataset.bound!=='1'){
+      a.dataset.bound='1';
+      a.innerHTML='<button type="button" data-edit-schedule>시간표 추가 · 변경</button><button type="button" class="alt" data-go-homework>숙제 입력으로</button>';
+      a.querySelector('[data-edit-schedule]').onclick=openScheduleEditor;a.querySelector('[data-go-homework]').onclick=goHomework;
+    }
   }
   function patchLegacyParentControls(){
     if(role()!=='parent')return;const root=$('#readyParentFoundation');if(!root)return;
-    const sb=root.querySelector('[data-schedule]'),hb=root.querySelector('[data-homework]');if(sb)sb.onclick=openScheduleEditor;if(hb){hb.textContent='숙제 촬영 · 입력';hb.onclick=goHomework}
+    const sb=root.querySelector('[data-schedule]'),hb=root.querySelector('[data-homework]');if(sb)sb.onclick=openScheduleEditor;if(hb){if(hb.textContent!=='숙제 촬영 · 입력')hb.textContent='숙제 촬영 · 입력';hb.onclick=goHomework}
   }
   function render(){installStyle();mountRoleSwitch();mountParentHub();mountScheduleActions();patchLegacyParentControls();document.documentElement.dataset.readyParentSetupHub=VERSION}
-  const observer=new MutationObserver(()=>requestAnimationFrame(render));observer.observe(document.documentElement,{subtree:true,childList:true});
+  let renderQueued=false;
+  const observer=new MutationObserver(()=>{if(renderQueued)return;renderQueued=true;requestAnimationFrame(()=>{renderQueued=false;render()})});observer.observe(document.documentElement,{subtree:true,childList:true});
   window.addEventListener('ready-foundation-change',render);window.addEventListener('pageshow',render);
   window.ReadyParentSetupHubV1={version:VERSION,render,openScheduleEditor,goHomework,scheduleSummary,homeworkSummary,plannerSummary};
   render();
