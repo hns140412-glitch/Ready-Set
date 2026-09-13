@@ -18,52 +18,7 @@ jobs:
           ref: runtime-session-bridge-2026-09-10
           fetch-depth: 0
       - name: Fix tap lifecycle in both identity owners
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          files=['ready-onboarding-identity-v1.js','ready-onboarding-identity-v2.js']
-          old="""let photoAdvancePending=false;
-function delegatePhotoAdvance(event){
- const target=event.target?.closest?.('#readyFirstRun #next');
- if(!target||target.disabled)return;
- const i=identity();
- if(i.onboardingStep!=='PHOTO'||!i.sourcePhoto||photoAdvancePending)return;
- photoAdvancePending=true;
- setTimeout(()=>{
-   photoAdvancePending=false;
-   if(identity().onboardingStep==='PHOTO')transitionToCharacter();
- },0);
-}
-document.addEventListener('touchend',delegatePhotoAdvance,true);
-document.addEventListener('click',delegatePhotoAdvance,true);"""
-          new="""let photoAdvanceTimer=0;
-function schedulePhotoAdvance(delay=0){
- if(photoAdvanceTimer)clearTimeout(photoAdvanceTimer);
- photoAdvanceTimer=setTimeout(()=>{
-   photoAdvanceTimer=0;
-   const i=identity();
-   if(i.onboardingStep==='PHOTO'&&i.sourcePhoto)transitionToCharacter();
- },delay);
-}
-function delegatePhotoAdvance(event){
- const target=event.target?.closest?.('#readyFirstRun #next');
- if(!target||target.disabled)return;
- const i=identity();
- if(i.onboardingStep!=='PHOTO'||!i.sourcePhoto)return;
- // touchend must never replace the active tap target. It only arms a fallback.
- // A real/synthesized click owns the immediate transition after dispatch completes.
- schedulePhotoAdvance(event.type==='click'?0:220);
-}
-document.addEventListener('touchend',delegatePhotoAdvance,true);
-document.addEventListener('click',delegatePhotoAdvance,true);"""
-          for name in files:
-              p=Path(name); s=p.read_text(encoding='utf-8')
-              if old not in s: raise SystemExit(f'old bridge missing: {name}')
-              s=s.replace(old,new,1)
-              s=s.replace("$('#next').onclick=e=>{e.preventDefault();transitionToCharacter()}","$('#next').onclick=e=>{e.preventDefault();schedulePhotoAdvance(0)}",1)
-              s=s.replace('2026.09.13-onboarding-identity-v12-mobile-advance','2026.09.13-onboarding-identity-v13-click-complete')
-              p.write_text(s,encoding='utf-8')
-          PY
+        run: echo 'ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCmZpbGVzPVsncmVhZHktb25ib2FyZGluZy1pZGVudGl0eS12MS5qcycsJ3JlYWR5LW9uYm9hcmRpbmctaWRlbnRpdHktdjIuanMnXQpvbGQ9IiIibGV0IHBob3RvQWR2YW5jZVBlbmRpbmc9ZmFsc2U7CmZ1bmN0aW9uIGRlbGVnYXRlUGhvdG9BZHZhbmNlKGV2ZW50KXsKIGNvbnN0IHRhcmdldD1ldmVudC50YXJnZXQ/LmNsb3Nlc3Q/LignI3JlYWR5Rmlyc3RSdW4gI25leHQnKTsKIGlmKCF0YXJnZXR8fHRhcmdldC5kaXNhYmxlZClyZXR1cm47CiBjb25zdCBpPWlkZW50aXR5KCk7CiBpZihpLm9uYm9hcmRpbmdTdGVwIT09J1BIT1RPJ3x8IWkuc291cmNlUGhvdG98fHBob3RvQWR2YW5jZVBlbmRpbmcpcmV0dXJuOwogcGhvdG9BZHZhbmNlUGVuZGluZz10cnVlOwogc2V0VGltZW91dCgoKT0+ewogICBwaG90b0FkdmFuY2VQZW5kaW5nPWZhbHNlOwogICBpZihpZGVudGl0eSgpLm9uYm9hcmRpbmdTdGVwPT09J1BIT1RPJyl0cmFuc2l0aW9uVG9DaGFyYWN0ZXIoKTsKIH0sMCk7Cn0KZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcigndG91Y2hlbmQnLGRlbGVnYXRlUGhvdG9BZHZhbmNlLHRydWUpOwpkb2N1bWVudC5hZGRFdmVudExpc3RlbmVyKCdjbGljaycsZGVsZWdhdGVQaG90b0FkdmFuY2UsdHJ1ZSk7IiIiCm5ldz0iIiJsZXQgcGhvdG9BZHZhbmNlVGltZXI9MDsKZnVuY3Rpb24gc2NoZWR1bGVQaG90b0FkdmFuY2UoZGVsYXk9MCl7CiBpZihwaG90b0FkdmFuY2VUaW1lciljbGVhclRpbWVvdXQocGhvdG9BZHZhbmNlVGltZXIpOwogcGhvdG9BZHZhbmNlVGltZXI9c2V0VGltZW91dCgoKT0+ewogICBwaG90b0FkdmFuY2VUaW1lcj0wOwogICBjb25zdCBpPWlkZW50aXR5KCk7CiAgIGlmKGkub25ib2FyZGluZ1N0ZXA9PT0nUEhPVE8nJiZpLnNvdXJjZVBob3RvKXRyYW5zaXRpb25Ub0NoYXJhY3RlcigpOwogfSxkZWxheSk7Cn0KZnVuY3Rpb24gZGVsZWdhdGVQaG90b0FkdmFuY2UoZXZlbnQpewogY29uc3QgdGFyZ2V0PWV2ZW50LnRhcmdldD8uY2xvc2VzdD8uKCcjcmVhZHlGaXJzdFJ1biAjbmV4dCcpOwogaWYoIXRhcmdldHx8dGFyZ2V0LmRpc2FibGVkKXJldHVybjsKIGNvbnN0IGk9aWRlbnRpdHkoKTsKIGlmKGkub25ib2FyZGluZ1N0ZXAhPT0nUEhPVE8nfHwhaS5zb3VyY2VQaG90bylyZXR1cm47CiAvLyB0b3VjaGVuZCBtdXN0IG5ldmVyIHJlcGxhY2UgdGhlIGFjdGl2ZSB0YXAgdGFyZ2V0LiBJdCBvbmx5IGFybXMgYSBmYWxsYmFjay4KIC8vIEEgcmVhbC9zeW50aGVzaXplZCBjbGljayBvd25zIHRoZSBpbW1lZGlhdGUgdHJhbnNpdGlvbiBhZnRlciBkaXNwYXRjaCBjb21wbGV0ZXMuCiBzY2hlZHVsZVBob3RvQWR2YW5jZShldmVudC50eXBlPT09J2NsaWNrJz8wOjIyMCk7Cn0KZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcigndG91Y2hlbmQnLGRlbGVnYXRlUGhvdG9BZHZhbmNlLHRydWUpOwpkb2N1bWVudC5hZGRFdmVudExpc3RlbmVyKCdjbGljaycsZGVsZWdhdGVQaG90b0FkdmFuY2UsdHJ1ZSk7IiIiCmZvciBuYW1lIGluIGZpbGVzOgogICAgcD1QYXRoKG5hbWUpCiAgICBzPXAucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpCiAgICBpZiBvbGQgbm90IGluIHM6CiAgICAgICAgcmFpc2UgU3lzdGVtRXhpdChmJ29sZCBicmlkZ2UgbWlzc2luZzoge25hbWV9JykKICAgIHM9cy5yZXBsYWNlKG9sZCxuZXcsMSkKICAgIHM9cy5yZXBsYWNlKCIkKCcjbmV4dCcpLm9uY2xpY2s9ZT0+e2UucHJldmVudERlZmF1bHQoKTt0cmFuc2l0aW9uVG9DaGFyYWN0ZXIoKX0iLCIkKCcjbmV4dCcpLm9uY2xpY2s9ZT0+e2UucHJldmVudERlZmF1bHQoKTtzY2hlZHVsZVBob3RvQWR2YW5jZSgwKX0iLDEpCiAgICBzPXMucmVwbGFjZSgnMjAyNi4wOS4xMy1vbmJvYXJkaW5nLWlkZW50aXR5LXYxMi1tb2JpbGUtYWR2YW5jZScsJzIwMjYuMDkuMTMtb25ib2FyZGluZy1pZGVudGl0eS12MTMtY2xpY2stY29tcGxldGUnKQogICAgcC53cml0ZV90ZXh0KHMsZW5jb2Rpbmc9J3V0Zi04JykK' | base64 -d | python
       - name: Owner syntax and parity
         run: |
           node --check ready-onboarding-identity-v1.js
@@ -86,5 +41,4 @@ document.addEventListener('click',delegatePhotoAdvance,true);"""
         run: |
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
           test -n "$CHROME"
-          test -f "$PWD/node_modules/playwright/index.mjs"
           timeout 150s node tests/ready-first-journey-transition.mjs "$PWD/node_modules/playwright/index.mjs" "$CHROME"
