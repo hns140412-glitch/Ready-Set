@@ -18,7 +18,7 @@ jobs:
       - name: Run bounded First Journey browser gates
         shell: bash
         run: |
-          echo "gate revision 7"
+          echo "gate revision 8"
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
           test -n "$CHROME"
           timeout 150s node tests/ready-first-journey-transition.mjs "$PWD/node_modules/playwright/index.mjs" "$CHROME"
