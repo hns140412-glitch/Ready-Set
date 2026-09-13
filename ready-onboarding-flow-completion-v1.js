@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   if(window.ReadyOnboardingFlowCompletionV1)return;
-  const VERSION='2026.09.13-first-journey-completion-v1';
+  const VERSION='2026.09.13-first-journey-completion-v2';
   const INTRO_KEY='readyset_intro_seen_v1';
   const identity=()=>window.ReadyIdentityV1?.get?.()||{};
   const patch=p=>window.ReadyIdentityV1?.patch?.(p);
@@ -35,8 +35,7 @@
     const btn=document.createElement('button');btn.id='rofCharacterDefer';btn.type='button';btn.className='rof-defer';btn.innerHTML='<b>캐릭터는 나중에 완성하고 계속</b><small>지금은 비용 없이 인트로·시간표·숙제 기능부터 사용할 수 있어요.</small>';
     const back=sky.querySelector('.firstRunBack');sky.insertBefore(btn,back||null);
     btn.onclick=()=>{
-      const current=identity(),visual=current.characterVisualId||`char_deferred_${current.userId||Date.now()}`;
-      patch({characterVisualId:visual,characterSetupState:'DEFERRED_NO_COST',characterCandidateState:'DEFERRED',status:'CHARACTER_DEFERRED',onboardingStep:'EXPLORER'});renderStep();
+      patch({characterSetupState:'DEFERRED_NO_COST',characterCandidateState:'DEFERRED',status:'CHARACTER_DEFERRED',onboardingStep:'EXPLORER'});renderStep();
     };
   }
   function explorer(r,i){
@@ -53,7 +52,7 @@
     r.querySelector('#rofFinish').onclick=()=>{
       const now=identity(),themeId=now.journeyTheme||selected,g=guides.find(x=>x.id===(now.explorerId||'lumi'))||guides[0];
       try{
-        window.ReadyIdentityV1.complete({characterVisualId:now.characterVisualId||`char_deferred_${now.userId||Date.now()}`,explorerId:g.id,explorerName:g.name,teamName:now.teamName||`${now.nickname||'Ready'} 탐험대`,journeyTheme:themeId,status:'READY'});
+        window.ReadyIdentityV1.complete({explorerId:g.id,explorerName:g.name,teamName:now.teamName||`${now.nickname||'Ready'} 탐험대`,journeyTheme:themeId,characterSetupState:now.characterVisualId?(now.characterSetupState||'CONFIRMED'):'DEFERRED_NO_COST',status:'READY'});
         document.getElementById('readyFirstRun')?.remove();
         document.documentElement.classList.remove('readyFirstRun','identityFirstPaint');
         window.ReadyRoleContextV1?.activateIdentityRole?.({reload:true});
