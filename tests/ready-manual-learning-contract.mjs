@@ -12,9 +12,7 @@ const context = vm.createContext({console, structuredClone, Date, Math, URL, URL
 });
 context.window = context;
 // Expose real runtime operations while omitting browser-only boot wiring.
-const runtimeHarnessSource = runtimeSource
-  .slice(0, runtimeSource.lastIndexOf("  if (document.readyState"))
-  .replace(/\n\}\)\(\);\s*$/, '\n');
+const runtimeHarnessSource = runtimeSource.slice(0, runtimeSource.lastIndexOf("  if(document.readyState"));
 vm.runInContext(runtimeHarnessSource + `
 window.ReadySetRev07 = {contract:()=>state.activeSession?.rev07 || null, switchTask, setTaskState};
 })();`, context);
@@ -43,9 +41,7 @@ assert.deepEqual([...store.keys()],[key]);
 assert.equal(task('a').source,'PARENT');
 assert.doesNotMatch(JSON.stringify(child),/elapsed|focus|session_id|lap_id|duration/);
 assert.throws(()=>api.confirmLearning('a',child.reportId),/PARENT_ROLE/);
-for (const quantity of [0,-1,101,NaN,Infinity,'50',40,20]) {
-  assert.throws(()=>api.recordLearning('a',{completedQuantity:quantity}));
-}
+for (const quantity of [0,-1,101,NaN,Infinity,'50',40,20]) assert.throws(()=>api.recordLearning('a',{completedQuantity:quantity}));
 assert.throws(()=>api.recordLearning('missing',{completedQuantity:10}),/TODAY_TASK/);
 assert.throws(()=>api.recordLearning('a',{completedQuantity:50,actualWorkDate:'2026-02-30'}),/WORK_DATE/);
 context.location.search='?role=parent';
@@ -63,7 +59,6 @@ assert.equal(task('a').learningReports.length,2);
 assert.ok(!api.tasks().some(t=>t.task_id==='a'));
 vm.runInContext(coreSource,context);
 assert.equal(context.ReadyHomeHomeworkMVPV1.tasks(true)[0].learningReports[0].source,'CHILD_REPORTED');
-// Actual canonical session creation, switch, and result functions still operate.
 const session = api.createSession(api.tasks()[0]);
 assert.equal(session.session_id,'real-session');
 assert.equal(session.tasks.length,2);
