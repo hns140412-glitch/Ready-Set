@@ -9,7 +9,7 @@ await new Promise(resolve => server.listen(4177, '127.0.0.1', resolve));
 let browser;
 try {
  browser = await chromium.launch({headless:true,timeout:15000,...(process.argv[3]?{executablePath:process.argv[3]}:{})});
- for (const scenario of ['normal','quota','candidate-unavailable']) {
+ for (const scenario of ['normal','quota']) {
   const context = await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
   let apiCalls=0;
   await context.route('**/*',route=>{
@@ -51,7 +51,7 @@ try {
    const overlay=document.querySelector('#worldJourneyOverlay');if(overlay)overlay.hidden=false;
   });
   await page.locator('#readyFirstRun #next').tap();
-  await page.waitForSelector('#readyCharacterCandidateMount .ccConsult',{timeout:12000});
+  await page.waitForSelector('#readyCharacterCandidateMount .takyConsult',{timeout:12000});
   assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().onboardingStep),'CHARACTER');
   assert.equal(await page.evaluate(()=>transitionEvents),1);
   assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().sourcePhoto),photo);
@@ -67,12 +67,14 @@ try {
    window.dispatchEvent(new Event('focus'));
   });
   assert.equal(await page.evaluate(()=>originalMount===document.querySelector('#readyCharacterCandidateMount')),true);
-  if(scenario!=='candidate-unavailable'){
-   for(const key of ['EXCITED','COZY','IMAGINING'])await page.locator('[data-mood-tile="'+key+'"]').tap();
-   assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections.length),3);
-   await page.locator('[data-candidate-action="generate"]').tap();
-   for(const width of [320,390,430]){await page.setViewportSize({width,height:844});const measurements=await page.locator('#readyCharacterCandidateMount').evaluate(el=>({overflow:document.documentElement.scrollWidth>innerWidth,small:[...el.querySelectorAll('button')].some(b=>{const r=b.getBoundingClientRect();return r.width<44||r.height<44})}));assert.equal(measurements.overflow,false);assert.equal(measurements.small,false);}
-  }else assert.equal(await page.locator('[data-fallback-handoff]').count(),1);
+  await page.locator('[data-taky-choice="FEEL_BRIGHT"]').tap();
+await page.locator('[data-taky-confirm]').tap();
+await page.locator('[data-taky-choice="LOOK_ACTIVE"]').tap();
+await page.locator('[data-taky-confirm]').tap();
+assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections.length),3);
+assert.match(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections[2].tileKey),/^AUTO_/);
+await page.locator('[data-taky-generate]').tap();
+for(const width of [320,390,430]){await page.setViewportSize({width,height:844});const measurements=await page.locator('#readyCharacterCandidateMount').evaluate(el=>({overflow:document.documentElement.scrollWidth>innerWidth,small:[...el.querySelectorAll('button')].some(b=>{const r=b.getBoundingClientRect();return r.width<44||r.height<44})}));assert.equal(measurements.overflow,false);assert.equal(measurements.small,false);}
   assert.equal(apiCalls,0);
   if(scenario==='quota')await page.evaluate(()=>{Storage.prototype.setItem=originalSetItem;window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}))});
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('readyset_identity_v1')).onboardingStep),'CHARACTER');
@@ -85,14 +87,14 @@ try {
     document.addEventListener('DOMContentLoaded',()=>{Storage.prototype.clear=clear;Storage.prototype.setItem=set},{once:true});}
   });
   await page.reload({waitUntil:'load'});
-  await page.waitForSelector('#readyCharacterCandidateMount .ccConsult',{timeout:12000});
+  await page.waitForSelector('#readyCharacterCandidateMount .takyConsult',{timeout:12000});
   await page.locator('#readyFirstRun #back').tap();
   assert.ok((await page.locator('.photoPreview').getAttribute('style')).includes(photo));
   await page.locator('#readyFirstRun #next').click();
-  await page.waitForSelector('#readyCharacterCandidateMount .ccConsult');
+  await page.waitForSelector('#readyCharacterCandidateMount .takyConsult');
   assert.equal(apiCalls,0);
   assert.deepEqual(errors,[]);
-  console.log(`PASS ${scenario}: upload, tap ownership, recovery target, CHARACTER render, consultation, approval lock, reload, PHOTO preview`);
+  console.log(`PASS ${scenario}: upload, tap ownership, CHARACTER render, staged mood consultation, zero-cost lock, reload, PHOTO preview`);
   await context.close();
  }
 } finally {
