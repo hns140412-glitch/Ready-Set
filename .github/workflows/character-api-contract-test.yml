@@ -1,0 +1,103 @@
+name: Character API Contract Test
+
+on:
+  push:
+    branches:
+      - runtime-session-bridge-2026-09-10
+    paths:
+      - 'index.html'
+      - 'boot-health.html'
+      - '_headers'
+      - 'ready-stage-c.js'
+      - 'ready-onboarding-identity-v1.js'
+      - 'ready-mood-direction-v2.js'
+      - 'netlify/functions/character-candidates.mjs'
+      - 'ready-character-candidate-v1.js'
+      - 'local_dev_server.mjs'
+      - 'tests/ready-mood-direction.mjs'
+      - '.github/workflows/character-api-contract-test.yml'
+  workflow_dispatch:
+
+jobs:
+  no-cost-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify deterministic identity and candidate boot wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check ready-stage-c.js
+          node --check ready-onboarding-identity-v1.js
+          node --check ready-mood-direction-v2.js
+          node --check ready-character-candidate-v1.js
+          grep -q 'ready-onboarding-identity-v1.js?v=20260911-mood2' index.html
+          grep -q 'ready-mood-direction-v2.js?v=20260911-mood2' index.html
+          grep -q 'ready-character-candidate-v1.js?v=20260911-mood2' index.html
+          grep -q 'ready-stage-c.js?v=20260911-mood2' index.html
+          node - <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('index.html','utf8');
+          const ids=html.indexOf('ready-onboarding-identity-v1.js?v=20260911-mood2');
+          const mds=html.indexOf('ready-mood-direction-v2.js?v=20260911-mood2');
+          const cds=html.indexOf('ready-character-candidate-v1.js?v=20260911-mood2');
+          const scs=html.indexOf('ready-stage-c.js?v=20260911-mood2');
+          if(!(ids>=0 && mds>ids && cds>mds && scs>cds)) throw new Error('BOOT_ORDER_INVALID');
+          const stage=fs.readFileSync('ready-stage-c.js','utf8');
+          for(const marker of [
+            "if(!window.ReadyIdentityV1)await load(IDENTITY)",
+            "window.ReadyIdentityV1.render?.()",
+            "if(step!=='CHARACTER')return true",
+            "if(!globalThis.ReadyMoodDirectionV2)await load('./ready-mood-direction-v2.js?v=20260911-mood2',8000)",
+            "window.addEventListener('ready-character-consultation'",
+            "mountCandidate()",
+            "releaseStaticPaint()",
+            "window.addEventListener('pageshow',recover)"
+          ]) if(!stage.includes(marker)) throw new Error(`MISSING:${marker}`);
+          if(!stage.includes("fallbackConsult(error.message||'CANDIDATE_BOOT_FAILED')")) throw new Error('CANDIDATE_FAIL_OPEN_MISSING');
+          NODE
+      - name: Verify no-cost mood and generation contract
+        run: node tests/ready-mood-direction.mjs
+      - name: Verify transport probe and boot cache policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'BOOT_HEALTH_STATIC_OK' boot-health.html
+          grep -q '/index.html' _headers
+          grep -q 'Cache-Control: no-store, max-age=0' _headers
+          grep -q '/ready-onboarding-identity-v1.js' _headers
+          grep -q '/ready-mood-direction-v2.js' _headers
+          grep -q '/ready-character-candidate-v1.js' _headers
+          grep -q '/ready-stage-c.js' _headers
+      - name: Start local API locked
+        env:
+          READY_CHARACTER_PAID_GENERATION: 'false'
+        run: |
+          node local_dev_server.mjs > /tmp/ready-local.log 2>&1 &
+          echo $! > /tmp/ready-local.pid
+          for i in {1..20}; do
+            if curl -sS http://127.0.0.1:8080/index.html >/dev/null; then exit 0; fi
+            sleep 0.25
+          done
+          cat /tmp/ready-local.log
+          exit 1
+      - name: Verify static transport probe is independently served
+        run: |
+          set -euo pipefail
+          curl -fsS http://127.0.0.1:8080/boot-health.html | grep -q 'BOOT_HEALTH_STATIC_OK'
+      - name: Verify real API round trip is locked before provider
+        run: |
+          status=$(curl -sS -o /tmp/response.json -w '%{http_code}' \
+            -X POST http://127.0.0.1:8080/api/character-candidates \
+            -H 'content-type: application/json' \
+            --data '{"confirmCost":false}')
+          cat /tmp/response.json
+          test "$status" = "423"
+          node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('/tmp/response.json','utf8'));if(x.code!=='PAID_GENERATION_DISABLED'||x.ok!==false)process.exit(1)"
+      - name: Show local trace
+        if: always()
+        run: cat /tmp/ready-local.log || true

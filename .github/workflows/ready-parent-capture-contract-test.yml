@@ -1,0 +1,35 @@
+name: Ready Parent Capture Contract
+
+on:
+  push:
+    branches:
+      - runtime-session-bridge-2026-09-10
+    paths:
+      - 'ready-parent-capture-intake-v1.js'
+      - 'ready-stage-c.js'
+      - 'sw.js'
+      - 'VERSION.json'
+      - 'tests/ready-parent-capture-contract.mjs'
+      - '.github/workflows/ready-parent-capture-contract-test.yml'
+  pull_request:
+    paths:
+      - 'ready-parent-capture-intake-v1.js'
+      - 'ready-stage-c.js'
+      - 'sw.js'
+      - 'VERSION.json'
+      - 'tests/ready-parent-capture-contract.mjs'
+      - '.github/workflows/ready-parent-capture-contract-test.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parent capture contract
+        run: node tests/ready-parent-capture-contract.mjs

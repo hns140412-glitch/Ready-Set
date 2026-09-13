@@ -1,0 +1,89 @@
+name: Ready Homework MVP Contract Test
+
+on:
+  push:
+    branches:
+      - runtime-session-bridge-2026-09-10
+    paths:
+      - 'ready-home-homework-mvp-v1.js'
+      - 'ready-home-homework-ui-v1.js'
+      - 'ready-runtime-v07.js'
+      - 'ready-stage-d.js'
+      - 'ready-stage-d-base-v1.js'
+      - 'READY_HOMEWORK_MVP_CONTRACT.md'
+      - 'tests/ready-manual-learning-contract.mjs'
+      - '.github/workflows/ready-homework-mvp-contract-test.yml'
+  workflow_dispatch:
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: |
+          node --check ready-home-homework-mvp-v1.js
+          node --check ready-home-homework-ui-v1.js
+          node --check ready-runtime-v07.js
+          node --check ready-stage-d.js
+          node --check ready-stage-d-base-v1.js
+      - name: Verify canonical homework contract markers
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "오늘 뭐부터 탐험할까?" ready-home-homework-mvp-v1.js
+          grep -q "숙제 시작" ready-home-homework-mvp-v1.js
+          grep -q "CHARACTER_REQUIRED" ready-home-homework-mvp-v1.js
+          grep -q "READY_HOME" ready-home-homework-mvp-v1.js
+          grep -q "switchTask" ready-home-homework-mvp-v1.js
+          grep -q "WAITING_FOR_PARENT" ready-home-homework-mvp-v1.js
+          grep -Eq "target_min:[[:space:]]*null" ready-home-homework-mvp-v1.js
+          grep -q "timerOptional:true" ready-home-homework-mvp-v1.js
+      - name: Verify canonical Ready session ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "ReadySetRev07" ready-home-homework-mvp-v1.js
+          grep -q "ReadyBaseRuntimeV1.start" ready-home-homework-mvp-v1.js
+          grep -q "duplicateSessionStore:false" ready-home-homework-mvp-v1.js
+          ! grep -q "readyset_homework_session_v1" ready-home-homework-mvp-v1.js
+          grep -q "endActiveLap('TASK_CHANGE'" ready-runtime-v07.js
+          grep -q "oneSessionId" ready-runtime-v07.js
+          grep -q "atMostOneActiveLap" ready-runtime-v07.js
+      - name: Verify multi-task canonical mapping
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "seedCanonicalTaskList" ready-home-homework-mvp-v1.js
+          grep -q "homeworkTaskMap" ready-home-homework-mvp-v1.js
+          grep -q "canonical_task_id" ready-home-homework-mvp-v1.js
+          grep -q "CANONICAL_TASK_SEED_MISMATCH" ready-home-homework-mvp-v1.js
+          grep -q "multiTaskCanonical" ready-home-homework-mvp-v1.js
+          grep -q "resolveCanonicalTaskId" ready-home-homework-mvp-v1.js
+      - name: Verify child-facing home bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "readyHomeworkPrimary" ready-home-homework-ui-v1.js
+          grep -q "어떤 숙제부터 갈까?" ready-home-homework-ui-v1.js
+          grep -q "timerRequiredBeforeStart:false" ready-home-homework-ui-v1.js
+          ! grep -q "attempts >= 20" ready-home-homework-ui-v1.js
+          grep -q "ready-homework-refresh" ready-home-homework-ui-v1.js
+          grep -q "ready-home-homework-mvp-v1.js" ready-stage-d.js
+          grep -q "ready-home-homework-ui-v1.js" ready-stage-d.js
+          grep -q "ready-stage-d-base-v1.js" ready-stage-d.js
+      - name: Verify isolated no-cost surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in ready-home-homework-mvp-v1.js ready-home-homework-ui-v1.js ready-stage-d.js; do
+            ! grep -q "character-candidates" "$f"
+            ! grep -q "images/edits" "$f"
+            ! grep -q "READY_CHARACTER_PAID_GENERATION" "$f"
+          done
+
+      - name: Verify manual learning and automatic session contracts
+        run: node tests/ready-manual-learning-contract.mjs

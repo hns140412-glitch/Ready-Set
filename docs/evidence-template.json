@@ -1,0 +1,16 @@
+{
+  "taskId": "",
+  "referenceId": "",
+  "referencePath": "",
+  "fixture": "onboarding-mode",
+  "viewport": {"width": 390, "height": 844, "dpr": 1},
+  "environment": {"browser": "", "os": "", "fonts": "", "locale": "ko-KR", "timezone": "Asia/Seoul", "zoom": "100%", "scroll": "0,0"},
+  "implementationScreenshot": "",
+  "majorDeltas": [{"area": "", "description": "", "rationale": "", "acceptedBy": ""}],
+  "visualContractChecked": false,
+  "verdict": null,
+  "allowedVerdicts": ["MATCHED", "ACCEPTABLE_DELTA", "FAILED_DELTA"],
+  "reviewer": "",
+  "reviewedAt": "",
+  "blocker": "Template only: capture and review required; null is not a completed verdict."
+}
