@@ -47,8 +47,8 @@ try{
   assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().onboardingStep),'THEME');
   await page.locator('button[data-theme="TODAYS_ISLAND"]').tap();
 
-  // The finish action intentionally reloads to the derived parent role. Keep the completed
-  // identity instead of letting the disposable PHOTO fixture reseed on that reload.
+  // The finish action intentionally reloads to the derived parent role. Keep completed
+  // identity and local-first state instead of letting the disposable PHOTO fixture reseed.
   await page.addInitScript(()=>{
     const clear=Storage.prototype.clear,set=Storage.prototype.setItem;
     Storage.prototype.clear=function(){};
@@ -75,9 +75,91 @@ try{
   assert.equal(outcome.hub,true);
   assert.equal(outcome.schedule,true);
   assert.equal(outcome.homework,true);
+
+  // Parent home → timetable → explicit STUDY_OPPORTUNITY through the actual editor UI.
+  await page.locator('#readyParentSetupHub [data-rps-schedule]').tap();
+  await page.waitForSelector('#rpsScheduleActions [data-edit-schedule]',{timeout:8000});
+  await page.locator('#rpsScheduleActions [data-edit-schedule]').tap();
+  await page.waitForSelector('#rpsScheduleDialog[open]',{timeout:8000});
+  const calendar=await page.evaluate(()=>({
+    today:new Date().toLocaleDateString('sv-SE'),
+    weekday:new Date(`${new Date().toLocaleDateString('sv-SE')}T12:00:00`).getDay()
+  }));
+  const scheduleDialog=page.locator('#rpsScheduleDialog');
+  await scheduleDialog.locator('input[name="title"]').fill('오늘 학습 가능');
+  await scheduleDialog.locator('input[name="subject"]').fill('수학');
+  await scheduleDialog.locator('input[name="date"]').fill(calendar.today);
+  await scheduleDialog.locator('select[name="weekday"]').selectOption(String(calendar.weekday));
+  await scheduleDialog.locator('input[name="start"]').fill('13:00');
+  await scheduleDialog.locator('input[name="end"]').fill('14:00');
+  await scheduleDialog.locator('select[name="kind"]').selectOption('STUDY_OPPORTUNITY');
+  await scheduleDialog.locator('button.save').tap();
+  await page.waitForFunction(()=>window.ReadyFoundationControlV1?.load?.().profiles?.some(p=>p.state==='ACTIVE'&&(p.events||[]).some(e=>e.kind==='STUDY_OPPORTUNITY')),{timeout:8000});
+
+  // Parent home homework entry remains first-class: navigate through the actual homework action.
+  await page.evaluate(()=>window.ReadyBaseRuntimeV1?.nav?.('home'));
+  await page.waitForSelector('#readyParentSetupHub [data-rps-homework]',{timeout:8000});
+  await page.locator('#readyParentSetupHub [data-rps-homework]').tap();
+  await page.waitForFunction(()=>!!(document.querySelector('#rscCaptureRoot')||document.querySelector('#rsfParent')||document.querySelector('#assignmentIntakeRoot')),{timeout:10000});
+
+  // Use the product's reviewed manual FACT commit contract; no AI/API call is allowed here.
+  const factResult=await page.evaluate(()=>{
+    const today=new Date().toLocaleDateString('sv-SE');
+    const fact={id:`e2e_fact_${Date.now()}`,title:'수학 숙제',subject:'수학',volume:'10~15쪽',deadline:today,source:'MANUAL'};
+    const C=window.ReadyFoundationControlV1;
+    C.capture('ADD',{id:fact.id,path:'MANUAL',fact});
+    C.capture('ANALYZE');
+    C.capture('RESULT',{retakeIds:[]});
+    C.capture('COMMIT',{reviewed:true,facts:[fact]});
+    return {id:fact.id,today};
+  });
+  await page.waitForFunction(({id,today})=>{
+    const C=window.ReadyFoundationControlV1;
+    const state=C?.load?.();
+    const committed=(state?.assignments||[]).some(a=>a.id===id);
+    const planner=JSON.parse(localStorage.getItem('readyset_planner_v1')||'{"days":{}}');
+    const todayTasks=planner.days?.[today]?.tasks||[];
+    return committed&&todayTasks.some(t=>t.authority==='PLANNER/MAIN'&&t.projection==='TODAY_TASK'&&t.sourceAssignmentId===id);
+  },factResult,{timeout:12000});
+
+  const parentRoundtrip=await page.evaluate(({id,today})=>{
+    const state=ReadyFoundationControlV1.load();
+    const planner=JSON.parse(localStorage.getItem('readyset_planner_v1')||'{"days":{}}');
+    const tasks=planner.days?.[today]?.tasks||[];
+    return {
+      studyOpportunity:state.profiles.some(p=>(p.events||[]).some(e=>e.kind==='STUDY_OPPORTUNITY')),
+      factCommitted:(state.assignments||[]).some(a=>a.id===id),
+      plannerCandidate:(state.plans.at(-1)?.candidates||[]).some(t=>t.sourceAssignmentId===id),
+      todayTask:tasks.some(t=>t.authority==='PLANNER/MAIN'&&t.projection==='TODAY_TASK'&&t.sourceAssignmentId===id)
+    };
+  },factResult);
+  assert.deepEqual(parentRoundtrip,{studyOpportunity:true,factCommitted:true,plannerCandidate:true,todayTask:true});
+
+  // Parent → child role reload. The child home must expose the governed Today Task.
+  await page.evaluate(()=>window.ReadyRoleContextV1.switchRole('child',{reload:true}));
+  await page.waitForLoadState('load',{timeout:12000});
+  await page.waitForFunction(()=>window.ReadyRoleContextV1?.current?.()==='child'&&window.ReadyHomeHomeworkMVPV1,{timeout:12000});
+  await page.evaluate(()=>window.ReadyHomeHomeworkUIV1?.render?.());
+  await page.waitForFunction(()=>window.ReadyHomeHomeworkMVPV1.tasks().length>0,{timeout:10000});
+  await page.waitForSelector('#readyHomeworkPrimary',{timeout:10000});
+  const childOutcome=await page.evaluate(({id})=>({
+    role:ReadyRoleContextV1.current(),
+    parentHub:!!document.querySelector('#readyParentSetupHub'),
+    taskCount:ReadyHomeHomeworkMVPV1.tasks().length,
+    sourceTask:ReadyHomeHomeworkMVPV1.tasks().some(t=>t.task_id.includes(id)||t.title==='수학 숙제'||t.subject==='수학'),
+    primaryText:document.querySelector('#readyHomeworkPrimary')?.textContent||'',
+    taskCards:document.querySelectorAll('#homeTodayTodoList .readyHomeworkTask').length
+  }),factResult);
+  assert.equal(childOutcome.role,'child');
+  assert.equal(childOutcome.parentHub,false);
+  assert.ok(childOutcome.taskCount>0);
+  assert.equal(childOutcome.sourceTask,true);
+  assert.match(childOutcome.primaryText,/숙제 시작/);
+  assert.ok(childOutcome.taskCards>0);
+
   assert.equal(apiCalls,0);
   assert.deepEqual(errors,[]);
-  console.log('PASS: PHOTO → mood directions → no-cost character defer → Explorer → world → parent setup hub; API calls 0');
+  console.log('PASS: First Journey → parent timetable STUDY_OPPORTUNITY → reviewed homework FACT → Planner TODAY_TASK → child home; API calls 0');
   await context.close();
 } finally {
   await browser?.close();
