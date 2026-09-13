@@ -6,16 +6,78 @@ on:
     paths: ['.github/workflows/verify-photo-character-bridge.yml']
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  browser-regression:
+  patch-and-regress:
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
         with:
           ref: runtime-session-bridge-2026-09-10
+          fetch-depth: 0
+      - name: Fix tap lifecycle in both identity owners
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          files=['ready-onboarding-identity-v1.js','ready-onboarding-identity-v2.js']
+          old="""let photoAdvancePending=false;
+function delegatePhotoAdvance(event){
+ const target=event.target?.closest?.('#readyFirstRun #next');
+ if(!target||target.disabled)return;
+ const i=identity();
+ if(i.onboardingStep!=='PHOTO'||!i.sourcePhoto||photoAdvancePending)return;
+ photoAdvancePending=true;
+ setTimeout(()=>{
+   photoAdvancePending=false;
+   if(identity().onboardingStep==='PHOTO')transitionToCharacter();
+ },0);
+}
+document.addEventListener('touchend',delegatePhotoAdvance,true);
+document.addEventListener('click',delegatePhotoAdvance,true);"""
+          new="""let photoAdvanceTimer=0;
+function schedulePhotoAdvance(delay=0){
+ if(photoAdvanceTimer)clearTimeout(photoAdvanceTimer);
+ photoAdvanceTimer=setTimeout(()=>{
+   photoAdvanceTimer=0;
+   const i=identity();
+   if(i.onboardingStep==='PHOTO'&&i.sourcePhoto)transitionToCharacter();
+ },delay);
+}
+function delegatePhotoAdvance(event){
+ const target=event.target?.closest?.('#readyFirstRun #next');
+ if(!target||target.disabled)return;
+ const i=identity();
+ if(i.onboardingStep!=='PHOTO'||!i.sourcePhoto)return;
+ // touchend must never replace the active tap target. It only arms a fallback.
+ // A real/synthesized click owns the immediate transition after dispatch completes.
+ schedulePhotoAdvance(event.type==='click'?0:220);
+}
+document.addEventListener('touchend',delegatePhotoAdvance,true);
+document.addEventListener('click',delegatePhotoAdvance,true);"""
+          for name in files:
+              p=Path(name); s=p.read_text(encoding='utf-8')
+              if old not in s: raise SystemExit(f'old bridge missing: {name}')
+              s=s.replace(old,new,1)
+              s=s.replace("$('#next').onclick=e=>{e.preventDefault();transitionToCharacter()}","$('#next').onclick=e=>{e.preventDefault();schedulePhotoAdvance(0)}",1)
+              s=s.replace('2026.09.13-onboarding-identity-v12-mobile-advance','2026.09.13-onboarding-identity-v13-click-complete')
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Owner syntax and parity
+        run: |
+          node --check ready-onboarding-identity-v1.js
+          node --check ready-onboarding-identity-v2.js
+          cmp ready-onboarding-identity-v1.js ready-onboarding-identity-v2.js
+      - name: Commit product fix before browser regression
+        run: |
+          git config user.name "TAKY Actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add ready-onboarding-identity-v1.js ready-onboarding-identity-v2.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Complete PHOTO tap before character transition"
+            git push origin HEAD:runtime-session-bridge-2026-09-10
+          fi
       - name: Static first-run contract
         run: node tests/ready-first-run-parent-activation-contract.mjs
       - name: Install Playwright package only
