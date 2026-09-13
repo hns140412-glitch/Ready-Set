@@ -8,17 +8,18 @@ permissions:
 jobs:
   browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
         with:
           ref: runtime-session-bridge-2026-09-10
       - name: Install Playwright package only
         run: npm install --no-save playwright@latest
-      - name: Run bounded first journey browser test
+      - name: Run bounded First Journey browser gates
         shell: bash
         run: |
-          echo "gate revision 3"
+          echo "gate revision 4"
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
           test -n "$CHROME"
           timeout 150s node tests/ready-first-journey-transition.mjs "$PWD/node_modules/playwright/index.mjs" "$CHROME"
+          timeout 120s node tests/ready-first-journey-parent-home.mjs "$PWD/node_modules/playwright/index.mjs" "$CHROME"
