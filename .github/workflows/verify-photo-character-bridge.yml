@@ -11,45 +11,15 @@ permissions:
 jobs:
   diagnose:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 2
     steps:
       - uses: actions/checkout@v4
         with:
           ref: runtime-session-bridge-2026-09-10
-      - name: Instrument CHARACTER mount snapshot in runner only
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('tests/ready-first-journey-transition.mjs')
-          s=p.read_text(encoding='utf-8')
-          anchor="  await page.locator('#readyFirstRun #next').tap();\n  await page.waitForSelector('#readyCharacterCandidateMount .takyConsult',{timeout:12000});"
-          diag="""  await page.locator('#readyFirstRun #next').tap();
-  await page.waitForTimeout(1200);
-  console.log('CHARACTER_DIAG',JSON.stringify(await page.evaluate(()=>({
-   step:window.ReadyIdentityV1?.get?.().onboardingStep||null,
-   moodUi:!!window.ReadyMoodDirectionV2UI,
-   moodApi:!!window.ReadyMoodDirectionV2,
-   candidate:!!window.ReadyCharacterCandidateV1,
-   stageLoader:document.documentElement.dataset.readyStageLoader||null,
-   bootState:document.documentElement.dataset.readyBootState||null,
-   mount:document.querySelector('#readyCharacterCandidateMount')?.innerHTML?.slice(0,1200)||null,
-   mountClass:document.querySelector('#readyCharacterCandidateMount')?.className||null,
-   candidateUi:document.querySelector('#readyCharacterCandidateMount')?.dataset?.candidateUi||null
-  })),errors);
-  await page.waitForSelector('#readyCharacterCandidateMount .takyConsult',{timeout:3000});"""
-          if anchor not in s: raise SystemExit('diagnostic anchor missing')
-          p.write_text(s.replace(anchor,diag,1),encoding='utf-8')
-          PY
       - name: Install Playwright package only
         run: npm install --no-save playwright@latest
-      - name: Run one bounded diagnostic scenario
+      - name: Run bounded CHARACTER mount diagnostic
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('tests/ready-first-journey-transition.mjs');s=p.read_text(encoding='utf-8')
-          s=s.replace("for (const scenario of ['normal','quota']) {","for (const scenario of ['normal']) {",1)
-          p.write_text(s,encoding='utf-8')
-          PY
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
           test -n "$CHROME"
-          timeout 60s node tests/ready-first-journey-transition.mjs "$PWD/node_modules/playwright/index.mjs" "$CHROME"
+          timeout 60s node tests/diag-character-mount.mjs "$PWD/node_modules/playwright/index.mjs" "$CHROME"
