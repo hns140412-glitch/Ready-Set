@@ -8,7 +8,7 @@ permissions:
 jobs:
   browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,12 +22,25 @@ jobs:
           path: ${{ runner.temp }}/ready-set-staging-source.zip
           retention-days: 1
           if-no-files-found: error
+      - name: Package Netlify deploy runtime
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/netlify-mcp-runtime"
+          npm install --prefix "$RUNNER_TEMP/netlify-mcp-runtime" --omit=dev @netlify/mcp@1.15.1
+          tar -czf "$RUNNER_TEMP/netlify-mcp-runtime.tgz" -C "$RUNNER_TEMP/netlify-mcp-runtime" .
+      - name: Upload Netlify deploy runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: netlify-mcp-runtime
+          path: ${{ runner.temp }}/netlify-mcp-runtime.tgz
+          retention-days: 1
+          if-no-files-found: error
       - name: Install Playwright package only
         run: npm install --no-save playwright@latest
       - name: Run bounded First Journey browser gates
         shell: bash
         run: |
-          echo "gate revision 10"
+          echo "gate revision 11"
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
           test -n "$CHROME"
           timeout 150s node tests/ready-first-journey-transition.mjs "$PWD/node_modules/playwright/index.mjs" "$CHROME"
