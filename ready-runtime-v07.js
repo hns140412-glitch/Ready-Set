@@ -206,30 +206,36 @@
     return null;
   }
 
-  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null }) {
-    const c = ensureContract();
-    if (!c || !session_id || session_id !== c.session_id) return false;
-    if (event_id && c.applied_event_ids?.includes(event_id)) return false;
-    const task = c.tasks.find(t => t.task_id === task_id);
-    if (!task) return false;
+  function applyInboundResult({ session_id, goal_id, task_id, lap_id, task_state, from_app, event_id = null }) {
+  const c = ensureContract();
+  if (!c || !session_id || session_id !== c.session_id) return false;
+  if (!goal_id || goal_id !== c.goal_id) return false;
+  if (event_id && c.applied_event_ids?.includes(event_id)) return false;
+  const task = c.tasks.find(t => t.task_id === task_id);
+  if (!task) return false;
+  const lap = lap_id ? (task.laps || []).find(l => l.lap_id === lap_id) : null;
+  if (!lap || lap.ended_at) return false;
+  if (c.active_lap_id && c.active_lap_id !== lap.lap_id) return false;
 
-    const normalized = normalizeInboundState(task_state);
-    c.active_app = 'ready-set';
-    c.active_task_id = task.task_id;
-    if (lap_id) c.active_lap_id = lap_id;
-    if (normalized) setTaskState(task.task_id, normalized, from_app || 'SPECIALIST');
-    if (['COMPLETED','BLOCKED'].includes(normalized)) endActiveLap('SPECIALIST_RESULT', normalized);
-    if (event_id) c.applied_event_ids = [...(c.applied_event_ids || []), event_id].slice(-200);
-    emit('APP_RETURN', { from: from_app || 'specialist', task_state: normalized || task_state || null });
-    save();
-    renderContractUI();
-    return true;
-  }
+  const normalized = normalizeInboundState(task_state);
+  if (!normalized) return false;
+  c.active_app = 'ready-set';
+  c.active_task_id = task.task_id;
+  c.active_lap_id = lap.lap_id;
+  setTaskState(task.task_id, normalized, from_app || 'SPECIALIST');
+  if (['COMPLETED','BLOCKED'].includes(normalized)) endActiveLap('SPECIALIST_RESULT', normalized);
+  if (event_id) c.applied_event_ids = [...(c.applied_event_ids || []), event_id].slice(-200);
+  emit('APP_RETURN', { from: from_app || 'specialist', task_state: normalized });
+  save();
+  renderContractUI();
+  return true;
+}
 
-  function consumeReturnQuery() {
+function consumeReturnQuery() {
     const p = new URLSearchParams(location.search);
     const args = {
       session_id: p.get('session_id'),
+      goal_id: p.get('goal_id'),
       task_id: p.get('task_id'),
       lap_id: p.get('lap_id'),
       task_state: p.get('task_state'),
@@ -251,8 +257,10 @@
       : e.type === 'HELP_NEEDED' ? 'BLOCKED'
       : e.type === 'TASK_PARTIAL' ? 'PARTIAL'
       : null;
+    if (!taskState) return;
     applyInboundResult({
       session_id: e.session_id,
+      goal_id: e.goal_id,
       task_id: e.task_id,
       lap_id: e.lap_id,
       task_state: taskState,
