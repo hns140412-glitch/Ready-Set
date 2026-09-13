@@ -1,4 +1,4 @@
-const CACHE='ready-set-v094-rev07-staging23-first-journey-parent-setup-v2-compat';
+const CACHE='ready-set-v094-rev07-staging24-foundation-planner-bridge-v1';
 const CORE=[
 './','./index.html','./styles.css','./ready-base-home-v1.css','./manifest.webmanifest','./VERSION.json',
 './ready-base-runtime-v1.js','./ready-runtime-v07.js','./ready-onboarding-identity-v1.js','./ready-onboarding-identity-v1.js?v=20260911-mood2','./ready-onboarding-identity-v2.js','./ready-onboarding-identity-v2.js?v=20260913-deferred','./ready-mood-direction-v2.js','./ready-mood-direction-v2.js?v=20260911-mood2','./ready-character-candidate-v1.js','./ready-character-candidate-v1.js?v=20260911-mood2','./ready-stage-c.js','./ready-stage-c.js?v=20260911-mood2',
