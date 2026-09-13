@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   if(window.ReadyParentSetupHubV1)return;
-  const VERSION='2026.09.13-parent-setup-hub-v1';
+  const VERSION='2026.09.13-parent-setup-hub-v1.1';
   const $=s=>document.querySelector(s);
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const today=()=>new Date().toLocaleDateString('sv-SE');
@@ -18,7 +18,7 @@
   function installStyle(){
     if($('#readyParentSetupHubStyle'))return;
     const s=document.createElement('style');s.id='readyParentSetupHubStyle';s.textContent=`
-      .rps-hub{position:relative;z-index:12;margin:12px 20px 0;padding:14px;border-radius:22px;background:rgba(255,255,255,.91);box-shadow:0 14px 34px rgba(21,85,118,.14);color:#164968}.rps-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.rps-head span{font-size:10px;font-weight:950;letter-spacing:.1em;color:#52748a}.rps-head b{display:block;font-size:17px;margin-top:4px}.rps-head small{display:block;font-size:10px;line-height:1.4;opacity:.65;margin-top:3px}.rps-steps{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.rps-step{border:0;border-radius:17px;background:#eef8ff;color:#154e72;padding:13px;text-align:left}.rps-step.homework{background:#fff5bf;color:#5d4a0c}.rps-step i{display:grid;place-items:center;width:24px;height:24px;border-radius:8px;background:#0d8ee9;color:#fff;font-style:normal;font-size:10px;font-weight:950}.rps-step.homework i{background:#e5b900;color:#332800}.rps-step b,.rps-step small{display:block}.rps-step b{font-size:13px;margin-top:8px}.rps-step small{font-size:9px;line-height:1.35;margin-top:3px;opacity:.7}.rps-status{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.rps-chip{font-size:9px;font-weight:850;padding:5px 7px;border-radius:999px;background:#f0eee7;color:#665f56}.rps-role{position:fixed;right:12px;top:max(12px,env(safe-area-inset-top));z-index:2100;border:0;border-radius:999px;padding:8px 10px;background:rgba(14,58,84,.86);color:#fff;font-size:10px;font-weight:900;backdrop-filter:blur(10px)}.rps-schedule-actions{display:flex;gap:8px;margin:0 0 12px}.rps-schedule-actions button{flex:1;border:0;border-radius:13px;padding:11px;font-weight:900;background:#1f1f1d;color:#fff}.rps-schedule-actions button.alt{background:#ffe275;color:#30280f}.rps-dialog{border:0;border-radius:24px;padding:0;width:min(92vw,520px);box-shadow:0 24px 70px rgba(0,0,0,.25)}.rps-dialog::backdrop{background:rgba(12,25,33,.48)}.rps-dialog form{padding:20px}.rps-dialog h2{margin:0 0 5px}.rps-dialog p{font-size:11px;line-height:1.45;color:#6f675b}.rps-dialog label{display:block;font-size:11px;font-weight:900;margin:10px 0}.rps-dialog input,.rps-dialog select{display:block;width:100%;box-sizing:border-box;padding:10px;margin-top:5px;border:1px solid #d8d0c2;border-radius:11px;background:#fff;font:inherit}.rps-dialog .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.rps-dialog .actions{display:flex;gap:8px;margin-top:16px}.rps-dialog .actions button{flex:1;border:0;border-radius:13px;padding:11px;font-weight:900}.rps-dialog .save{background:#0d8ee9;color:#fff}.rps-dialog .close{background:#eee9df;color:#544c42}.rps-existing{margin:10px 0;padding:10px;border-radius:14px;background:#f6f3ec}.rps-existing button{display:block;width:100%;border:0;background:transparent;text-align:left;padding:8px;border-bottom:1px solid rgba(0,0,0,.06);font-size:11px}.rps-existing button:last-child{border-bottom:0}@media(max-width:390px){.rps-steps{grid-template-columns:1fr}.rps-dialog .row{grid-template-columns:1fr}}
+      .rps-hub{position:relative;z-index:12;margin:12px 20px 0;padding:14px;border-radius:22px;background:rgba(255,255,255,.91);box-shadow:0 14px 34px rgba(21,85,118,.14);color:#164968}.rps-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.rps-head span{font-size:10px;font-weight:950;letter-spacing:.1em;color:#52748a}.rps-head b{display:block;font-size:17px;margin-top:4px}.rps-head small{display:block;font-size:10px;line-height:1.4;opacity:.65;margin-top:3px}.rps-steps{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.rps-step{border:0;border-radius:17px;background:#eef8ff;color:#154e72;padding:13px;text-align:left}.rps-step.homework{background:#fff5bf;color:#5d4a0c}.rps-step i{display:grid;place-items:center;width:24px;height:24px;border-radius:8px;background:#0d8ee9;color:#fff;font-style:normal;font-size:10px;font-weight:950}.rps-step.homework i{background:#e5b900;color:#332800}.rps-step b,.rps-step small{display:block}.rps-step b{font-size:13px;margin-top:8px}.rps-step small{font-size:9px;line-height:1.35;margin-top:3px;opacity:.7}.rps-status{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.rps-chip{font-size:9px;font-weight:850;padding:5px 7px;border-radius:999px;background:#f0eee7;color:#665f56}.rps-chip.action{border:0;background:#ffe7a3;color:#654500;cursor:pointer}.rps-role{position:fixed;right:12px;top:max(12px,env(safe-area-inset-top));z-index:2100;border:0;border-radius:999px;padding:8px 10px;background:rgba(14,58,84,.86);color:#fff;font-size:10px;font-weight:900;backdrop-filter:blur(10px)}.rps-schedule-actions{display:flex;gap:8px;margin:0 0 12px}.rps-schedule-actions button{flex:1;border:0;border-radius:13px;padding:11px;font-weight:900;background:#1f1f1d;color:#fff}.rps-schedule-actions button.alt{background:#ffe275;color:#30280f}.rps-dialog{border:0;border-radius:24px;padding:0;width:min(92vw,520px);box-shadow:0 24px 70px rgba(0,0,0,.25)}.rps-dialog::backdrop{background:rgba(12,25,33,.48)}.rps-dialog form{padding:20px}.rps-dialog h2{margin:0 0 5px}.rps-dialog p{font-size:11px;line-height:1.45;color:#6f675b}.rps-dialog label{display:block;font-size:11px;font-weight:900;margin:10px 0}.rps-dialog input,.rps-dialog select{display:block;width:100%;box-sizing:border-box;padding:10px;margin-top:5px;border:1px solid #d8d0c2;border-radius:11px;background:#fff;font:inherit}.rps-dialog .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.rps-dialog .actions{display:flex;gap:8px;margin-top:16px}.rps-dialog .actions button{flex:1;border:0;border-radius:13px;padding:11px;font-weight:900}.rps-dialog .save{background:#0d8ee9;color:#fff}.rps-dialog .close{background:#eee9df;color:#544c42}.rps-existing{margin:10px 0;padding:10px;border-radius:14px;background:#f6f3ec}.rps-existing button{display:block;width:100%;border:0;background:transparent;text-align:left;padding:8px;border-bottom:1px solid rgba(0,0,0,.06);font-size:11px}.rps-existing button:last-child{border-bottom:0}@media(max-width:390px){.rps-steps{grid-template-columns:1fr}.rps-dialog .row{grid-template-columns:1fr}}
     `;document.head.appendChild(s);
   }
   function scheduleSummary(){
@@ -26,6 +26,9 @@
   }
   function homeworkSummary(){
     try{const facts=window.ReadyAssignmentModel?.assignmentView?.()||[];return{facts:facts.filter(x=>x.lifecycle!=='ARCHIVED').length,confirmed:facts.filter(x=>x.confirmationState==='FACT_CONFIRMED'&&x.lifecycle!=='ARCHIVED').length}}catch{return{facts:0,confirmed:0}}
+  }
+  function plannerSummary(){
+    try{const s=control()?.load?.()||{};const plan=(s.plans||[]).at(-1)||null;const unresolved=plan?.unresolved||[];return{planned:plan?.candidates?.length||0,unresolved:unresolved.length,noOpportunity:unresolved.some(x=>x.reason==='NO_CONFIRMED_OPPORTUNITY')}}catch{return{planned:0,unresolved:0,noOpportunity:false}}
   }
   function goHomework(){nav('mission');setTimeout(()=>{const target=$('#rscCaptureRoot')||$('#rsfParent')||$('#assignmentIntakeRoot');target?.scrollIntoView({behavior:'smooth',block:'start'})},120)}
   function existingEvents(){
@@ -52,18 +55,21 @@
     d.showModal();
   }
   function mountRoleSwitch(){
-    const i=identity();if(i.setupMode!=='GUARDIAN_FOR_CHILD')return;
-    let b=$('#rpsRoleSwitch');if(!b){b=document.createElement('button');b.id='rpsRoleSwitch';b.className='rps-role';document.body.appendChild(b)}
+    let b=$('#rpsRoleSwitch');
+    if(!window.ReadyIdentityV1?.isReady?.()){b?.remove();return}
+    const i=identity();if(i.setupMode!=='GUARDIAN_FOR_CHILD'){b?.remove();return}
+    if(!b){b=document.createElement('button');b.id='rpsRoleSwitch';b.className='rps-role';document.body.appendChild(b)}
     b.textContent=role()==='parent'?'아이 화면으로':'보호자 준비로';b.onclick=()=>window.ReadyRoleContextV1?.switchRole?.(role()==='parent'?'child':'parent',{reload:true});
   }
   function mountParentHub(){
-    if(role()!=='parent')return;
+    if(role()!=='parent'){ $('#readyParentSetupHub')?.remove();return }
     const world=$('#worldStage .worldSky');if(!world)return;
     let hub=$('#readyParentSetupHub');if(hub&&hub.parentElement!==world)hub.remove();if(!hub){hub=document.createElement('section');hub.id='readyParentSetupHub';hub.className='rps-hub';const top=world.querySelector('.worldTop');top?.insertAdjacentElement('afterend',hub)}
-    const ss=scheduleSummary(),hs=homeworkSummary();
-    hub.innerHTML=`<div class="rps-head"><div><span>PARENT SETUP · 먼저 준비할 것</span><b>시간표와 숙제를 먼저 잡아요</b><small>확정 시간표 → 숙제 원본 FACT → Planner 날짜 배정 순서로 연결됩니다.</small></div></div><div class="rps-steps"><button type="button" class="rps-step" data-rps-schedule><i>1</i><b>시간표 확인 · 수정</b><small>학원·고정 일정과 확인된 학습 가능 구간</small></button><button type="button" class="rps-step homework" data-rps-homework><i>2</i><b>숙제 촬영 · 입력</b><small>재능 6권·영어·과학 숙제 원본 FACT</small></button></div><div class="rps-status"><span class="rps-chip">시간표 ${ss.events}개 기준</span><span class="rps-chip">숙제 FACT ${hs.facts}개</span><span class="rps-chip">확정 ${hs.confirmed}개</span></div>`;
+    const ss=scheduleSummary(),hs=homeworkSummary(),ps=plannerSummary();
+    hub.innerHTML=`<div class="rps-head"><div><span>PARENT SETUP · 먼저 준비할 것</span><b>시간표와 숙제를 먼저 잡아요</b><small>확정 시간표 → 숙제 원본 FACT → Planner 날짜 배정 순서로 연결됩니다.</small></div></div><div class="rps-steps"><button type="button" class="rps-step" data-rps-schedule><i>1</i><b>시간표 확인 · 수정</b><small>학원·고정 일정과 확인된 학습 가능 구간</small></button><button type="button" class="rps-step homework" data-rps-homework><i>2</i><b>숙제 촬영 · 입력</b><small>재능 6권·영어·과학 숙제 원본 FACT</small></button></div><div class="rps-status"><span class="rps-chip">시간표 ${ss.events}개 기준</span><span class="rps-chip">숙제 FACT ${hs.facts}개</span><span class="rps-chip">확정 ${hs.confirmed}개</span>${ps.planned?`<span class="rps-chip">배정 ${ps.planned}개</span>`:''}${ps.noOpportunity?'<button type="button" class="rps-chip action" data-rps-opportunity>학습 가능 시간 추가</button>':''}</div>`;
     hub.querySelector('[data-rps-schedule]').onclick=()=>{nav('schedule');setTimeout(()=>$('#scheduleView')?.scrollIntoView({block:'start'}),60)};
     hub.querySelector('[data-rps-homework]').onclick=goHomework;
+    hub.querySelector('[data-rps-opportunity]')?.addEventListener('click',openScheduleEditor);
     const h1=world.querySelector('.worldTop h1'),p=world.querySelector('.worldTop p');if(h1)h1.innerHTML='먼저 준비하고<br>오늘을 배정할까?';if(p)p.textContent='시간표 → 숙제 원본 → Planner';
   }
   function mountScheduleActions(){
@@ -79,6 +85,6 @@
   function render(){installStyle();mountRoleSwitch();mountParentHub();mountScheduleActions();patchLegacyParentControls();document.documentElement.dataset.readyParentSetupHub=VERSION}
   const observer=new MutationObserver(()=>requestAnimationFrame(render));observer.observe(document.documentElement,{subtree:true,childList:true});
   window.addEventListener('ready-foundation-change',render);window.addEventListener('pageshow',render);
-  window.ReadyParentSetupHubV1={version:VERSION,render,openScheduleEditor,goHomework,scheduleSummary,homeworkSummary};
+  window.ReadyParentSetupHubV1={version:VERSION,render,openScheduleEditor,goHomework,scheduleSummary,homeworkSummary,plannerSummary};
   render();
 })();
