@@ -16,6 +16,7 @@ on:
       - 'tests/ready-foundation-assignment-bridge-execution.mjs'
       - 'tests/ready-schedule-delta-planner-e2e.mjs'
       - 'tests/ready-schedule-recurring-revision-planner-e2e.mjs'
+      - 'tests/ready-planner-actual-history-replan-e2e.mjs'
       - '.github/workflows/ready-foundation-assignment-bridge-contract-test.yml'
   pull_request:
     paths:
@@ -30,6 +31,7 @@ on:
       - 'tests/ready-foundation-assignment-bridge-execution.mjs'
       - 'tests/ready-schedule-delta-planner-e2e.mjs'
       - 'tests/ready-schedule-recurring-revision-planner-e2e.mjs'
+      - 'tests/ready-planner-actual-history-replan-e2e.mjs'
       - '.github/workflows/ready-foundation-assignment-bridge-contract-test.yml'
 
 permissions:
@@ -53,3 +55,5 @@ jobs:
         run: node tests/ready-schedule-delta-planner-e2e.mjs
       - name: Recurring timetable revision to Planner E2E
         run: node tests/ready-schedule-recurring-revision-planner-e2e.mjs
+      - name: Planner actual history replanning E2E
+        run: node tests/ready-planner-actual-history-replan-e2e.mjs
