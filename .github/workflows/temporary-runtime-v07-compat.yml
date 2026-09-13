@@ -20,42 +20,25 @@ jobs:
           from pathlib import Path
           p=Path('ready-runtime-v07.js')
           s=p.read_text(encoding='utf-8')
-          old="""  const originalCompleteSession = completeSession;
-          const originalStart = document.getElementById('startBtn')?.onclick;
-          const originalNav = nav;
-
-          function patchHandlers() {
-            const start = document.getElementById('startBtn');
-            if (start && originalStart) {"""
-          new="""  const originalCompleteSession = typeof globalThis.completeSession === 'function'
-            ? globalThis.completeSession
-            : () => globalThis.ReadyBaseRuntimeV1?.complete?.();
-          const originalStart = document.getElementById('startBtn')?.onclick;
-          const originalNav = typeof globalThis.nav === 'function'
-            ? globalThis.nav
-            : name => globalThis.ReadyBaseRuntimeV1?.nav?.(name);
-
-          function patchHandlers() {
-            const start = document.getElementById('startBtn');
-            if (start && !originalStart && !start.dataset.rev07BaseBound) {
+          replacements=[
+            ("  const originalCompleteSession = completeSession;", "  const originalCompleteSession = typeof globalThis.completeSession === 'function' ? globalThis.completeSession : () => globalThis.ReadyBaseRuntimeV1?.complete?.();"),
+            ("  const originalNav = nav;", "  const originalNav = typeof globalThis.nav === 'function' ? globalThis.nav : name => globalThis.ReadyBaseRuntimeV1?.nav?.(name);"),
+            ("    nav = function patchedNav(name) {", "    if (typeof globalThis.nav === 'function') globalThis.nav = function patchedNav(name) {")
+          ]
+          for old,new in replacements:
+            if old in s: s=s.replace(old,new,1)
+            elif new not in s: raise SystemExit('missing rev07 anchor: '+old)
+          marker="    if (start && originalStart) {"
+          fallback="""    if (start && !originalStart && !start.dataset.rev07BaseBound) {
               start.dataset.rev07BaseBound='1';
               start.addEventListener('click',()=>setTimeout(()=>{
                 if (state.activeSession) { ensureContract(); renderContractUI(); }
               },0));
             }
-            if (start && originalStart) {"""
-          if old not in s and new not in s: raise SystemExit('rev07 base compatibility anchor missing')
-          s=s.replace(old,new,1)
-          old2="""    nav = function patchedNav(name) {
-              originalNav(name);
-              if (name === 'focus' && state.activeSession) setTimeout(renderContractUI, 0);
-            };"""
-          new2="""    if (typeof globalThis.nav === 'function') globalThis.nav = function patchedNav(name) {
-              originalNav(name);
-              if (name === 'focus' && state.activeSession) setTimeout(renderContractUI, 0);
-            };"""
-          if old2 not in s and new2 not in s: raise SystemExit('rev07 nav compatibility anchor missing')
-          s=s.replace(old2,new2,1)
+          """
+          if 'rev07BaseBound' not in s:
+            if marker not in s: raise SystemExit('start fallback anchor missing')
+            s=s.replace(marker,fallback+marker,1)
           s=s.replace("2026.09.10-rev07-d","2026.09.13-rev07-base-runtime-compat",1)
           p.write_text(s,encoding='utf-8')
           PY
