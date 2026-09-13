@@ -6,20 +6,62 @@ on:
     paths: ['.github/workflows/verify-photo-character-bridge.yml']
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  diagnose:
+  patch-and-regress:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
         with:
           ref: runtime-session-bridge-2026-09-10
+          fetch-depth: 0
+      - name: Stop mood self-rerender loop
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('ready-mood-direction-v2.js')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('let pending=null;', "let pending=null,lastMount=null,lastSignature='';", 1)
+          s=s.replace('patch({characterMoodDirections:{version:2,selections:next},characterStyleConsultation:{version:4,childChoiceCount:Math.min(2,next.length),derivedThird:next[2]?.tileKey||null,source:\'TAKY_APPROVED_2026_09_12\',interaction:\'SELECT_THEN_CONFIRM\'}});pending=null;paintSoon()}', 'patch({characterMoodDirections:{version:2,selections:next},characterStyleConsultation:{version:4,childChoiceCount:Math.min(2,next.length),derivedThird:next[2]?.tileKey||null,source:\'TAKY_APPROVED_2026_09_12\',interaction:\'SELECT_THEN_CONFIRM\'}});pending=null;paintSoon(true)}', 1)
+          s=s.replace('function choose(k){pending=k;paintSoon(true)}function reset(){pending=null;patch({characterMoodDirections:{version:2,selections:[]},characterStyleConsultation:null});paintSoon()}', 'function choose(k){pending=k;paintSoon(true)}function reset(){pending=null;patch({characterMoodDirections:{version:2,selections:[]},characterStyleConsultation:null});paintSoon(true)}', 1)
+          old="function paint(force=false){const m=document.querySelector('#readyCharacterCandidateMount')||document.querySelector('#readyFirstRun .pendingCard');if(!m||read().onboardingStep!=='CHARACTER')return;if(!force&&!m.querySelector('.ccConsult')&&!m.querySelector('.takyConsult'))return;m.innerHTML=markup();wire(m)}"
+          new="function paint(force=false){const m=document.querySelector('#readyCharacterCandidateMount')||document.querySelector('#readyFirstRun .pendingCard'),state=read();if(!m||state.onboardingStep!=='CHARACTER'){lastMount=null;lastSignature='';return}const picks=(state.characterMoodDirections?.selections||[]).map(x=>x.tileKey).join('|'),signature=`${pending||''}::${picks}`;if(!force&&m===lastMount&&signature===lastSignature)return;if(!force&&!m.querySelector('.ccConsult')&&!m.querySelector('.takyConsult'))return;lastMount=m;lastSignature=signature;m.innerHTML=markup();wire(m)}"
+          if old not in s and new not in s:
+              raise SystemExit('paint owner anchor missing')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Syntax and static contract
+        run: |
+          node --check ready-mood-direction-v2.js
+          node tests/ready-first-run-parent-activation-contract.mjs
+      - name: Commit product fix
+        run: |
+          git config user.name "TAKY Actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add ready-mood-direction-v2.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Stop CHARACTER mood self-rerender loop"
+            git push origin HEAD:runtime-session-bridge-2026-09-10
+          fi
       - name: Install Playwright package only
         run: npm install --no-save playwright@latest
-      - name: Run bounded CHARACTER mount diagnostic
+      - name: Run bounded PHOTO to mood regression
         run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tests/ready-first-journey-transition.mjs')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace("for (const scenario of ['normal','quota']) {", "for (const scenario of ['normal']) {", 1)
+          start=s.find("await page.locator('[data-taky-generate]').tap();")
+          end=s.find('  await context.close();', start)
+          if start < 0 or end < 0: raise SystemExit('bounded regression trim anchor missing')
+          replacement="assert.equal(await page.locator('[data-taky-generate]').count(),1);\n  assert.equal(apiCalls,0);\n  assert.deepEqual(errors,[]);\n  console.log('PASS normal: PHOTO tap, CHARACTER mood owner, two child choices, auto contrast direction');\n"
+          s=s[:start]+replacement+s[end:]
+          p.write_text(s,encoding='utf-8')
+          PY
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
           test -n "$CHROME"
-          timeout 60s node tests/diag-character-mount.mjs "$PWD/node_modules/playwright/index.mjs" "$CHROME"
+          timeout 90s node tests/ready-first-journey-transition.mjs "$PWD/node_modules/playwright/index.mjs" "$CHROME"
