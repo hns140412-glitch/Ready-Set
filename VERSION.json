@@ -2,14 +2,15 @@
   "product": "Ready & Set",
   "masterRevision": "REV_07",
   "masterFile": "Ready_Set_Ui_Master_Logic_REV_07.md",
-  "appVersion": "0.9.4-rc19",
+  "appVersion": "0.9.4-rc20",
   "schemaVersion": "5 + planner-v2-assignment-facts + schedule-authority-v1 + capture-intake-v1 + homework-analysis-v1 + role-context-v1 + first-journey-v2",
   "sessionContractVersion": "REV_07",
-  "cacheVersion": "ready-set-v094-rev07-staging22-first-journey-parent-setup-v2",
-  "releaseStatus": "STAGING_FIRST_JOURNEY_PARENT_SETUP_V2_DEVICE_VALIDATION_PENDING",
+  "cacheVersion": "ready-set-v094-rev07-staging23-first-journey-parent-setup-v2-compat",
+  "releaseStatus": "STAGING_FIRST_JOURNEY_PARENT_SETUP_V2_COMPAT_DEVICE_VALIDATION_PENDING",
   "notes": [
     "Production/main and central TAKY canonical remain unchanged",
-    "Stage-C now loads deferred-safe ready-onboarding-identity-v2.js as the actual identity owner",
+    "Deferred-safe identity v2 semantics are active even through the legacy index identity path: ready-onboarding-identity-v1.js is temporarily a byte-identical compatibility alias of identity v2 until the static boot tags are cleaned up",
+    "Stage-C also points to ready-onboarding-identity-v2.js?v=20260913-deferred as the canonical identity owner",
     "Guardian-for-child setup may defer paid character completion through explicit characterSetupState=DEFERRED_NO_COST without fabricating characterVisualId",
     "A real generated/approved character visual ID remains required for confirmed character identity; defer only satisfies bounded first-run functional readiness",
     "First Journey welcome -> guardian profile -> photo -> character consultation/defer -> explorer -> first world -> parent runtime remains the intended integrated path",
@@ -17,7 +18,8 @@
     "Parent Home prioritizes timetable confirmation/editing and homework capture/input before Planner allocation",
     "Schedule edits remain prospective/revision-preserving and missing timetable rows are never inferred as free time",
     "Homework capture/input remains source-first; AI extraction is candidate-only and requires explicit parent confirmation before FACT_CONFIRMED/Planner eligibility",
-    "PWA cache now precaches the active identity v2 owner and query-versioned boot path",
+    "PWA cache precaches both the temporary legacy identity URL and canonical identity v2 URL so installed/offline clients do not lose the first-run owner during migration",
+    "Static index/header/test references to the legacy filename remain cleanup work queued for office-PC Codex; runtime semantics are already v2 through the compatibility alias",
     "Real iPhone First Journey -> parent setup -> timetable -> homework capture -> Planner -> child-role round trip remains device-validation pending"
   ]
 }
