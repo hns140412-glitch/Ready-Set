@@ -1,7 +1,7 @@
 (() => {
 'use strict';
 if(window.ReadyIdentityV1)return;
-const VERSION='2026.09.13-onboarding-identity-v11-deferred';
+const VERSION='2026.09.13-onboarding-identity-v12-mobile-advance';
 const CORE='readyset_state',IDENTITY='readyset_identity_v1';
 const $=s=>document.querySelector(s);const read=(k,f={})=>{try{return JSON.parse(localStorage.getItem(k)||'null')||f}catch{return f}};const write=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 const blank=()=>({schemaVersion:5,status:'UNSET',onboardingStep:'MODE',setupMode:'',operator:{role:'',name:''},userId:null,legalName:'',nickname:'',familyRole:'',birthDate:'',schoolStage:'',shareNameMode:'NAME_NICKNAME',sourcePhoto:'',characterVisualId:null,characterStyle:null,characterSetupState:'NOT_STARTED',characterTimeline:[],characterRefresh:{mode:'ANNUAL_OPTIONAL',lastPromptAt:null,nextPromptAt:null},explorerId:null,explorerName:null,teamName:'',journeyTheme:null,worldPlaceName:'',seasonalEventsEnabled:true,createdAt:null,updatedAt:null});
@@ -32,5 +32,22 @@ function recover(){
  shell();mountCharacterCandidate();
 }
 window.addEventListener('pageshow',recover);
+
+// Stable mobile activation bridge: preserve the native tap, then advance after the event finishes.
+let photoAdvancePending=false;
+function delegatePhotoAdvance(event){
+ const target=event.target?.closest?.('#readyFirstRun #next');
+ if(!target||target.disabled)return;
+ const i=identity();
+ if(i.onboardingStep!=='PHOTO'||!i.sourcePhoto||photoAdvancePending)return;
+ photoAdvancePending=true;
+ setTimeout(()=>{
+   photoAdvancePending=false;
+   if(identity().onboardingStep==='PHOTO')transitionToCharacter();
+ },0);
+}
+document.addEventListener('touchend',delegatePhotoAdvance,true);
+document.addEventListener('click',delegatePhotoAdvance,true);
+
 const style=document.createElement('style');style.textContent=`#readyFirstRun{position:fixed;pointer-events:auto;isolation:isolate;inset:0;z-index:2000;background:#79cfff;color:#123f63;overflow:auto}.firstRunSky{min-height:100dvh;box-sizing:border-box;padding:max(58px,calc(env(safe-area-inset-top) + 34px)) 26px max(34px,calc(env(safe-area-inset-bottom) + 20px));background:linear-gradient(#8bd6ff,#e8f9ff 58%,#6fcce4)}.firstRunCopy span{font-size:11px;font-weight:950;letter-spacing:.14em}.firstRunCopy h1{font-size:32px;line-height:1.08;margin:10px 0}.firstRunCopy p{font-size:13px;font-weight:750;line-height:1.5;opacity:.72}.modeCards{display:grid;gap:14px;margin-top:42px}.modeCards button,.firstRunForm{border:0;background:rgba(255,255,255,.86);border-radius:26px;padding:22px;text-align:left;color:#123f63;box-shadow:0 18px 38px rgba(24,93,133,.16)}.modeCards b,.modeCards span{display:block}.modeCards b{font-size:18px}.modeCards span{font-size:12px;margin-top:7px;opacity:.65}.firstRunForm{margin-top:22px}.firstRunForm>label{display:block;font-size:12px;font-weight:900;margin-bottom:13px}.firstRunForm input,.firstRunForm select{display:block;width:100%;box-sizing:border-box;margin-top:6px;border:1px solid #d9e6ed;border-radius:14px;background:#fff;padding:13px;font-size:16px}.firstRunForm fieldset{border:0;padding:4px 0 10px}.choice{display:flex;gap:6px;font-size:12px;margin:8px 0}.choice input{width:auto;margin:0}.firstRunForm>button,.firstRunNext,.photoActions button{width:100%;border:0;border-radius:18px;background:#0d8ee9;color:#fff;padding:15px;font-size:15px;font-weight:950}.photoGuide{margin:26px 0 18px;text-align:center;background:rgba(255,255,255,.82);border-radius:26px;padding:20px}.photoPreview{width:156px;height:156px;border-radius:44px;margin:0 auto 14px;background:#f4fbff center/cover no-repeat;display:grid;place-items:center}.photoGuide b,.photoGuide small{display:block}.photoGuide small{font-size:11px;margin-top:7px;opacity:.66}.photoActions{display:flex;gap:10px}.photoActions button{flex:1;background:#fff;color:#15537b}.photoActions button:disabled{opacity:.45}.firstRunNext{margin-top:10px}.firstRunNext:disabled{opacity:.4}.firstRunBack{width:100%;border:0;background:transparent;color:#15537b;padding:14px;font-size:12px;font-weight:900}.characterCandidateMount{margin:16px 0;min-height:160px}.candidateMountBoot{background:rgba(255,255,255,.82);padding:18px;border-radius:20px}.candidateMountBoot b,.candidateMountBoot span{display:block}.candidateMountBoot span{font-size:11px;margin-top:5px;opacity:.65}`;document.head.appendChild(style);function init(){shell();document.documentElement.dataset.readyIdentity=VERSION}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();window.addEventListener('ready-character-candidate-ready',mountCharacterCandidate);window.ReadyIdentityV1={version:VERSION,get:identity,isReady,complete,displayName,shareName,patch,render:shell,recover,transitionToCharacter,mountCharacterCandidate,validate:()=>({firstRunGate:true,nativeFirstPaintRelease:true,identityMasterContract:true,visualIdRequiredForConfirmedMaster:true,deferredCharacterSupported:true,explorerRequired:true,journeyThemeRequired:true,photoIsNotVisualId:true,legalNameSeparate:true,nicknamePrimary:true,shareNamePolicy:true,familyRoleRequired:true,birthDateRequired:true,schoolStageRequired:true,characterTimeline:true,annualRefreshOptional:true,seasonalLayerContract:true,worldPlaceOptionalAfterArrival:true,profileForm:true,photoCapture:true,photoResize:true,photoSelectionFeedback:true,explicitPhotoNextStep:true,characterApprovalGate:true,guardianChildSeparation:true,stepPersistence:true,readyValidationBeforeWrite:true,readyMissingFactsReported:true,explicitCharacterCandidateMount:true,noRetryCascade:true,noEmojiPlaceholder:true})};
 })();
