@@ -10,11 +10,13 @@ on:
       - 'ready-parent-capture-intake-v1.js'
       - 'ready-stage-c.js'
       - 'ready-stage-e.js'
+      - 'ready-stage-f.js'
       - 'ready-foundation-v1.js'
       - 'ready-foundation-control-v1.js'
       - 'sw.js'
       - 'VERSION.json'
       - 'tests/ready-homework-analysis-contract.mjs'
+      - 'tests/ready-homework-analysis-parent-confirm-integration.mjs'
       - 'tests/ready-homework-parent-confirm-planner-e2e.mjs'
       - '.github/workflows/ready-homework-analysis-contract-test.yml'
   pull_request:
@@ -24,11 +26,13 @@ on:
       - 'ready-parent-capture-intake-v1.js'
       - 'ready-stage-c.js'
       - 'ready-stage-e.js'
+      - 'ready-stage-f.js'
       - 'ready-foundation-v1.js'
       - 'ready-foundation-control-v1.js'
       - 'sw.js'
       - 'VERSION.json'
       - 'tests/ready-homework-analysis-contract.mjs'
+      - 'tests/ready-homework-analysis-parent-confirm-integration.mjs'
       - 'tests/ready-homework-parent-confirm-planner-e2e.mjs'
       - '.github/workflows/ready-homework-analysis-contract-test.yml'
 
@@ -45,5 +49,7 @@ jobs:
           node-version: '22'
       - name: Homework analysis contract
         run: node tests/ready-homework-analysis-contract.mjs
+      - name: Analysis candidate to parent confirmation integration
+        run: node tests/ready-homework-analysis-parent-confirm-integration.mjs
       - name: Parent-confirmed homework to Planner E2E
         run: node tests/ready-homework-parent-confirm-planner-e2e.mjs
