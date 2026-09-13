@@ -22,8 +22,9 @@ assert.equal(legacyIdentity,identity,'legacy identity URL must execute byte-iden
 const directV2=index.includes('ready-onboarding-identity-v2.js');
 const legacyCompat=index.includes('ready-onboarding-identity-v1.js')&&legacyIdentity===identity;
 assert.ok(directV2||legacyCompat,'initial HTML boot must execute effective identity v2 semantics');
-assert.equal(version.appVersion,'0.9.4-rc20');
-assert.match(version.cacheVersion,/first-journey-parent-setup-v2-compat/);
+assert.match(version.appVersion,/^0\.9\.4-rc\d+$/,'first-run contract must accept the current RC without pinning a specific build number');
+assert.match(version.schemaVersion,/first-journey-v2/,'version schema must carry first-journey v2 semantics');
+assert.match(version.schemaVersion,/foundation-planner-bridge-v1/,'version schema must carry the Foundation Planner bridge');
 
 assert.match(identity,/characterSetupState:'NOT_STARTED'/,'identity must have explicit character setup state');
 assert.match(identity,/return !!i\.characterVisualId\|\|i\.characterSetupState==='DEFERRED_NO_COST'/,'defer may satisfy bounded onboarding readiness');
@@ -48,4 +49,4 @@ assert.match(analysis,/ANALYZED_PENDING_PARENT_CONFIRMATION/,'AI extraction must
 assert.doesNotMatch(analysis,/FACT_CONFIRMED/,'AI analysis bridge must not self-confirm facts');
 assert.match(planner,/FACT_CONFIRMED/,'Planner authority must require confirmed assignment facts somewhere in the allocation path');
 
-console.log(JSON.stringify({pass:true,contract:'ready-first-run-parent-activation-v2-effective-boot',checks:28}));
+console.log(JSON.stringify({pass:true,contract:'ready-first-run-parent-activation-v2-effective-boot',checks:30}));
