@@ -2,7 +2,7 @@
   'use strict';
   if(window.__readyJourneyLoader)return;
   window.__readyJourneyLoader=true;
-  const VERSION='2026.09.13-stage-first-journey-parent-setup-v3';
+  const VERSION='2026.09.13-stage-first-journey-parent-setup-v4-mood-owner';
   const IDENTITY='./ready-onboarding-identity-v2.js?v=20260913-deferred';
   const CANDIDATE='./ready-character-candidate-v1.js?v=20260911-mood2';
   const AFTER_IDENTITY=['./ready-role-context-v1.js','./ready-onboarding-flow-completion-v1.js','./ready-foundation-v1.js','./ready-foundation-control-v1.js','./ready-stage-c-base.js','./ready-stage-d.js','./ready-stage-e.js','./ready-stage-f.js','./ready-parent-capture-intake-v1.js','./ready-homework-analysis-bridge-v1.js','./ready-stage-g1-fix.js','./ready-stage-g14-planner-authority.js','./ready-base-native-v2.js','./ready-planner-selection-bridge-v1.js','./ready-focus-tools-v1.js','./ready-schedule-base-v1.js','./ready-world-base-v1.js','./ready-world-shell-v1.js','./ready-parent-setup-hub-v1.js','./ready-base-selftest-v1.js'];
@@ -49,8 +49,15 @@
 
   const mountCandidate=()=>{
     installReferenceStyle();
-    const mount=document.querySelector('#readyCharacterCandidateMount'),candidate=window.ReadyCharacterCandidateV1;
-    if(!mount||!candidate)return false;
+    const mount=document.querySelector('#readyCharacterCandidateMount');
+    if(!mount)return false;
+    const moodCount=safeRead().characterMoodDirections?.selections?.length||0;
+    if(moodCount<3&&window.ReadyMoodDirectionV2UI?.paint){
+      window.ReadyMoodDirectionV2UI.paint();
+      return !!mount.querySelector('.takyConsult');
+    }
+    const candidate=window.ReadyCharacterCandidateV1;
+    if(!candidate)return false;
     try{if(candidate.mount)candidate.mount(mount);else if(candidate.render)candidate.render(mount);else return false}catch(error){console.error('[Ready Candidate Mount]',error);return false}
     return mount.dataset.candidateUi===candidate.version || !!mount.querySelector('[data-mood-tile],[data-candidate-action],.ccMaking,.ccReady,.ccRefine,.ccIntro');
   };
