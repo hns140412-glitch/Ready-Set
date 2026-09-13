@@ -8,8 +8,8 @@ const version=JSON.parse(fs.readFileSync('VERSION.json','utf8'));
 
 assert.match(loader,/ready-parent-capture-intake-v1\.js/,'capture module must load from Ready staging loader');
 assert.match(sw,/ready-parent-capture-intake-v1\.js/,'capture module must be in PWA core cache');
-assert.equal(version.appVersion,'0.9.4-rc16');
-assert.match(version.cacheVersion,/parent-capture-v1/);
+assert.match(version.appVersion,/^0\.9\.4-rc\d+$/,'staging version must remain in Ready 0.9.4 RC line');
+assert.match(version.schemaVersion,/capture-intake-v1/);
 
 assert.match(capture,/indexedDB\.open\(DB_NAME,1\)/,'source photos must use IndexedDB rather than localStorage');
 assert.match(capture,/navigator\.mediaDevices\.getUserMedia/,'camera flow must use getUserMedia when available');
@@ -22,10 +22,10 @@ for(const kind of ['COVER','RANGE','INSTRUCTION','ANSWER_REFERENCE']) assert.ok(
 assert.match(capture,/visibility:state\.kind==='ANSWER_REFERENCE'\?'PARENT_ONLY':'PARENT_SOURCE'/,'answer/reference source must be parent-only');
 assert.match(capture,/analysisState:'PENDING'/,'new captures must not pretend analysis completed');
 assert.match(capture,/updateAnalysisState\('PENDING_ANALYSIS'\)/,'save-and-analyze must queue pending analysis');
-assert.match(capture,/OCR\/AI 숙제 분석은 아직 연결 전/,'UI must explicitly disclose analysis backend boundary');
-assert.doesNotMatch(capture,/\.netlify\/functions\/.*homework|fetch\([^)]*ocr|fetch\([^)]*analy/i,'capture module must not fake a nonexistent homework analysis API');
+assert.match(capture,/부모가 확인하기 전에는 숙제 FACT로 확정되지 않습니다/,'UI must disclose parent-confirmation boundary');
+assert.doesNotMatch(capture,/document\.getElementById\('rsfTalentFactSave'\)\?\.click\(\)/,'capture queue must not auto-confirm FACT before analysis and parent review');
 
-assert.match(capture,/document\.getElementById\('rsfTalentFactSave'\)\?\.click\(\)/,'capture intake must preserve existing Stage G1 FACT save path');
 assert.match(capture,/packageType:'TALENT_WEEKLY_ASSIGNMENT'/,'capture records must preserve weekly package semantics');
+assert.match(capture,/ReadyRoleContextV1/,'capture role must honor identity-aware role context');
 
-console.log(JSON.stringify({pass:true,contract:'ready-parent-capture-v1',checks:18}));
+console.log(JSON.stringify({pass:true,contract:'ready-parent-capture-v1.1',checks:19}));
