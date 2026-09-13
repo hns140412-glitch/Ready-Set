@@ -17,76 +17,46 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
+          import re
           p=Path('ready-runtime-v07.js')
           s=p.read_text()
-          old="""  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null }) {
-              const c = ensureContract();
-              if (!c || !session_id || session_id !== c.session_id) return false;
-              if (event_id && c.applied_event_ids?.includes(event_id)) return false;
-              const task = c.tasks.find(t => t.task_id === task_id);
-              if (!task) return false;
-          
-              const normalized = normalizeInboundState(task_state);
-              c.active_app = 'ready-set';
-              c.active_task_id = task.task_id;
-              if (lap_id) c.active_lap_id = lap_id;
-              if (normalized) setTaskState(task.task_id, normalized, from_app || 'SPECIALIST');
-              if (['COMPLETED','BLOCKED'].includes(normalized)) endActiveLap('SPECIALIST_RESULT', normalized);
-              if (event_id) c.applied_event_ids = [...(c.applied_event_ids || []), event_id].slice(-200);
-              emit('APP_RETURN', { from: from_app || 'specialist', task_state: normalized || task_state || null });
-              save();
-              renderContractUI();
-              return true;
-            }
-          """
-          new="""  function applyInboundResult({ session_id, goal_id, task_id, lap_id, task_state, from_app, event_id = null }) {
-              const c = ensureContract();
-              if (!c || !session_id || session_id !== c.session_id) return false;
-              if (!goal_id || goal_id !== c.goal_id) return false;
-              if (event_id && c.applied_event_ids?.includes(event_id)) return false;
-              const task = c.tasks.find(t => t.task_id === task_id);
-              if (!task) return false;
-              const lap = lap_id ? (task.laps || []).find(l => l.lap_id === lap_id) : null;
-              if (!lap || lap.ended_at) return false;
-              if (c.active_lap_id && c.active_lap_id !== lap.lap_id) return false;
-          
-              const normalized = normalizeInboundState(task_state);
-              if (!normalized) return false;
-              c.active_app = 'ready-set';
-              c.active_task_id = task.task_id;
-              c.active_lap_id = lap.lap_id;
-              setTaskState(task.task_id, normalized, from_app || 'SPECIALIST');
-              if (['COMPLETED','BLOCKED'].includes(normalized)) endActiveLap('SPECIALIST_RESULT', normalized);
-              if (event_id) c.applied_event_ids = [...(c.applied_event_ids || []), event_id].slice(-200);
-              emit('APP_RETURN', { from: from_app || 'specialist', task_state: normalized });
-              save();
-              renderContractUI();
-              return true;
-            }
-          """
-          if old not in s: raise SystemExit('applyInboundResult block not found')
-          s=s.replace(old,new)
-          old="""      session_id: p.get('session_id'),
-              task_id: p.get('task_id'),
-          """
-          new="""      session_id: p.get('session_id'),
-              goal_id: p.get('goal_id'),
-              task_id: p.get('task_id'),
-          """
-          if old not in s: raise SystemExit('query args block not found')
-          s=s.replace(old,new,1)
-          old="""    applyInboundResult({
-                session_id: e.session_id,
-                task_id: e.task_id,
-          """
-          new="""    if (!taskState) return;
-              applyInboundResult({
-                session_id: e.session_id,
-                goal_id: e.goal_id,
-                task_id: e.task_id,
-          """
-          if old not in s: raise SystemExit('learning event block not found')
-          s=s.replace(old,new,1)
+
+          pattern=r"  function applyInboundResult\(\{ session_id, task_id, lap_id, task_state, from_app, event_id = null \}\) \{.*?\n  \}\n\n  function consumeReturnQuery"
+          replacement="""  function applyInboundResult({ session_id, goal_id, task_id, lap_id, task_state, from_app, event_id = null }) {
+            const c = ensureContract();
+            if (!c || !session_id || session_id !== c.session_id) return false;
+            if (!goal_id || goal_id !== c.goal_id) return false;
+            if (event_id && c.applied_event_ids?.includes(event_id)) return false;
+            const task = c.tasks.find(t => t.task_id === task_id);
+            if (!task) return false;
+            const lap = lap_id ? (task.laps || []).find(l => l.lap_id === lap_id) : null;
+            if (!lap || lap.ended_at) return false;
+            if (c.active_lap_id && c.active_lap_id !== lap.lap_id) return false;
+
+            const normalized = normalizeInboundState(task_state);
+            if (!normalized) return false;
+            c.active_app = 'ready-set';
+            c.active_task_id = task.task_id;
+            c.active_lap_id = lap.lap_id;
+            setTaskState(task.task_id, normalized, from_app || 'SPECIALIST');
+            if (['COMPLETED','BLOCKED'].includes(normalized)) endActiveLap('SPECIALIST_RESULT', normalized);
+            if (event_id) c.applied_event_ids = [...(c.applied_event_ids || []), event_id].slice(-200);
+            emit('APP_RETURN', { from: from_app || 'specialist', task_state: normalized });
+            save();
+            renderContractUI();
+            return true;
+          }
+
+          function consumeReturnQuery"""
+          s,n=re.subn(pattern,replacement,s,flags=re.S)
+          if n!=1: raise SystemExit(f'applyInboundResult replacement count={n}')
+
+          s,n=re.subn(r"(\s+session_id: p\.get\('session_id'\),\n)(\s+task_id: p\.get\('task_id'\),)",r"\1      goal_id: p.get('goal_id'),\n\2",s,count=1)
+          if n!=1: raise SystemExit(f'query goal insertion count={n}')
+
+          s,n=re.subn(r"(\s+const taskState = e\.type === 'TASK_COMPLETED'.*?: null;\n)(\s+)applyInboundResult\(\{\n(\s+)session_id: e\.session_id,\n(\s+)task_id: e\.task_id,",r"\1\2if (!taskState) return;\n\2applyInboundResult({\n\3session_id: e.session_id,\n\3goal_id: e.goal_id,\n\4task_id: e.task_id,",s,count=1,flags=re.S)
+          if n!=1: raise SystemExit(f'learning event hardening count={n}')
+
           p.write_text(s)
       - name: Syntax check
         run: node --check ready-runtime-v07.js
