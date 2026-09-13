@@ -9,9 +9,13 @@ on:
       - 'ready-homework-analysis-bridge-v1.js'
       - 'ready-parent-capture-intake-v1.js'
       - 'ready-stage-c.js'
+      - 'ready-stage-e.js'
+      - 'ready-foundation-v1.js'
+      - 'ready-foundation-control-v1.js'
       - 'sw.js'
       - 'VERSION.json'
       - 'tests/ready-homework-analysis-contract.mjs'
+      - 'tests/ready-homework-parent-confirm-planner-e2e.mjs'
       - '.github/workflows/ready-homework-analysis-contract-test.yml'
   pull_request:
     paths:
@@ -19,9 +23,13 @@ on:
       - 'ready-homework-analysis-bridge-v1.js'
       - 'ready-parent-capture-intake-v1.js'
       - 'ready-stage-c.js'
+      - 'ready-stage-e.js'
+      - 'ready-foundation-v1.js'
+      - 'ready-foundation-control-v1.js'
       - 'sw.js'
       - 'VERSION.json'
       - 'tests/ready-homework-analysis-contract.mjs'
+      - 'tests/ready-homework-parent-confirm-planner-e2e.mjs'
       - '.github/workflows/ready-homework-analysis-contract-test.yml'
 
 permissions:
@@ -37,3 +45,5 @@ jobs:
           node-version: '22'
       - name: Homework analysis contract
         run: node tests/ready-homework-analysis-contract.mjs
+      - name: Parent-confirmed homework to Planner E2E
+        run: node tests/ready-homework-parent-confirm-planner-e2e.mjs
