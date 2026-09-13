@@ -1,0 +1,3 @@
+READY staging branch marker
+Source head: bd9e6422a656f17ff8f05c4a2dbac01f0bf6dcf2
+Purpose: trigger Netlify branch-deploy detection without touching runtime files.
