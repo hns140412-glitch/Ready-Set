@@ -1,0 +1,27 @@
+name: Verify PHOTO character bridge
+
+on:
+  push:
+    branches: [runtime-session-bridge-2026-09-10]
+    paths: ['.github/workflows/verify-photo-character-bridge.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  browser-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: runtime-session-bridge-2026-09-10
+      - name: Static first-run contract
+        run: node tests/ready-first-run-parent-activation-contract.mjs
+      - name: Install Playwright package only
+        run: npm install --no-save playwright@latest
+      - name: Run bounded mobile browser regression with system Chrome
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          test -n "$CHROME"
+          timeout 150s node tests/ready-first-journey-transition.mjs "$PWD/node_modules/playwright/index.js" "$CHROME"
