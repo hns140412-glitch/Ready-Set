@@ -46,7 +46,7 @@ const yesterday=plus(-1), tomorrow=plus(1), deadline=plus(2);
 
 const baseline={
   capturedAt:`${today}T00:00:00+09:00`,
-  rows:[{weekday:['일','월','화','수','목','금','토'][wd(today)],activity:'기본 학원',start:'16:00',end:'18:00'}]
+  rows:[{weekday:['일','월','화','수','목','금','토'][wd(deadline)],activity:'기본 학원',start:'16:00',end:'18:00'}]
 };
 C.importBaseline(baseline);
 const afterBaseline=C.load();
