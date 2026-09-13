@@ -15,6 +15,18 @@ Make the first usable Ready & Set path work end-to-end from intro through parent
 - `ready-homework-analysis-bridge-v1.js` + `/api/homework-analysis`: gated extraction candidate path.
 - `ready-schedule-base-v1.js`, `ready-foundation-v1.js`, `ready-foundation-control-v1.js`, `ready-stage-g14-planner-authority.js`: schedule/planner authority layers.
 
+## TAKY direction lock — baseline timetable
+- The currently confirmed base timetable is the authoritative baseline and is considered FIXED.
+- Do not redesign or repeatedly re-enter the whole weekly timetable during normal use.
+- Future schedule changes are recorded only as deltas against the fixed baseline:
+  - recurring/prospective change = profile revision effective from a chosen date;
+  - one-day exception = dated override;
+  - genuinely new recurring activity = add as a new effective-dated schedule entry.
+- Never overwrite historical schedule facts or past Planner actuals when a future schedule change is entered.
+- Missing timetable rows are not free-time evidence.
+- Planner recalculation after a schedule delta is prospective only and must preserve past execution evidence.
+- User-facing behavior should emphasize `기본 시간표는 확정`, and expose change/add controls only when a real change occurs.
+
 ## Work packet A — first-run completion
 1. Open a clean local browser storage state.
 2. Exercise: Guardian for child → profile → photo → character consultation.
@@ -32,17 +44,22 @@ Acceptance:
 
 ## Work packet B — timetable activation
 1. Parent home must surface timetable as step 1.
-2. Open timetable; confirm current confirmed rows render.
-3. Add one new fixed event effective today/future.
-4. Edit an existing editable event prospectively using profile revision or one-day override.
-5. Confirm missing schedule rows are never treated as free-time evidence.
-6. Confirm Planner candidates update only where schedule authority permits, without rewriting past actuals.
+2. Open timetable; confirm the fixed baseline rows render as the authoritative weekly schedule.
+3. Do NOT require whole-table re-entry as part of normal setup once the baseline is confirmed.
+4. Enter one genuine schedule change and verify it is stored as a delta, not a destructive baseline rewrite:
+   - recurring/prospective change via profile revision, or
+   - one-day change via dated override.
+5. Add a new recurring fixed event only as a new effective-dated entry when an actual new activity exists.
+6. Confirm missing schedule rows are never treated as free-time evidence.
+7. Confirm Planner candidates update only where schedule authority permits, prospectively, without rewriting past actuals.
 
 Acceptance:
-- add/edit controls are visible and usable on mobile width;
-- saved schedule survives reload;
-- current weekly/daily view updates;
-- Planner uses new schedule authority prospectively.
+- base timetable remains intact after edits;
+- change/add controls are visible and usable on mobile width;
+- saved deltas survive reload;
+- current weekly/daily view reflects effective baseline + delta result;
+- history before the effective date remains unchanged;
+- Planner uses the resulting effective schedule authority prospectively.
 
 ## Work packet C — homework activation
 1. Parent home must surface homework capture/input as step 2.
@@ -52,13 +69,14 @@ Acceptance:
 5. If homework analysis flag is disabled, the UI must say analysis is pending/locked while retaining photos.
 6. If analysis flag is enabled locally and provider key exists, extraction may prefill candidate fields only.
 7. Parent confirmation must be required before FACT confirmation.
-8. Confirmed FACT should then be eligible for Planner allocation.
+8. Confirmed FACT should then be eligible for Planner allocation using the current effective timetable (fixed baseline + any applicable delta).
 
 Acceptance:
 - no auto-click or implicit FACT confirmation from the capture queue;
 - answer/reference source stays parent-only;
 - AI extraction never becomes `FACT_CONFIRMED` without explicit parent action;
-- confirmed FACT appears in the planner pipeline.
+- confirmed FACT appears in the planner pipeline;
+- Planner allocation respects fixed baseline + effective schedule deltas.
 
 ## Work packet D — product polish after functional pass
 Only after A/B/C work:
@@ -69,14 +87,18 @@ Only after A/B/C work:
 - replace implementation jargon such as FACT/OCR/API in child-facing or ordinary parent-facing copy where it hurts usability, while retaining internal semantics in code/data.
 
 ## Tests / local evidence
-Run relevant existing contracts plus add a new first-journey/parent-setup contract if absent. Capture the actual browser behavior, not only static-string assertions.
+Run relevant existing contracts plus add or extend browser-level tests so the schedule authority rule is enforced, not merely documented.
 
 Expected minimum local evidence:
 - clean-state intro completion screenshot/state;
 - parent home showing timetable + homework entry;
-- timetable add/edit result;
+- fixed baseline timetable visible without re-entry;
+- prospective recurring schedule revision keeps historical dates unchanged;
+- one-day override affects only its target date;
+- effective schedule change survives reload;
 - homework capture retained after reload;
 - confirmed homework entering Planner candidate path;
+- Planner candidate allocation changes prospectively when schedule delta applies;
 - exact test commands + pass/fail output.
 
 ## Commit policy
