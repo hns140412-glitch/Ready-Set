@@ -13,12 +13,21 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: runtime-session-bridge-2026-09-10
+      - name: Package exact staging source
+        run: git archive --format=zip HEAD -o "$RUNNER_TEMP/ready-set-staging-source.zip"
+      - name: Upload exact staging source
+        uses: actions/upload-artifact@v4
+        with:
+          name: ready-set-staging-source
+          path: ${{ runner.temp }}/ready-set-staging-source.zip
+          retention-days: 1
+          if-no-files-found: error
       - name: Install Playwright package only
         run: npm install --no-save playwright@latest
       - name: Run bounded First Journey browser gates
         shell: bash
         run: |
-          echo "gate revision 9"
+          echo "gate revision 10"
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
           test -n "$CHROME"
           timeout 150s node tests/ready-first-journey-transition.mjs "$PWD/node_modules/playwright/index.mjs" "$CHROME"
