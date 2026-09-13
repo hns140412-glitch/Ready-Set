@@ -1,4 +1,4 @@
-name: Temporary JS syntax diagnostic
+name: Temporary browser error diagnostic
 on:
   push:
     branches: [runtime-session-bridge-2026-09-10]
@@ -6,25 +6,37 @@ on:
 permissions:
   contents: read
 jobs:
-  syntax:
+  browser-errors:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
         with:
           ref: runtime-session-bridge-2026-09-10
-      - name: Check all shipped JavaScript syntax
+      - name: Install Playwright package only
+        run: npm install --no-save playwright@latest
+      - name: Capture source locations for runtime errors
         shell: bash
         run: |
-          failed=0
-          while IFS= read -r -d '' f; do
-            case "$f" in
-              ./node_modules/*|./tests/*) continue ;;
-            esac
-            if ! out=$(node --check "$f" 2>&1); then
-              echo "JS_SYNTAX_FAIL=$f"
-              echo "$out"
-              failed=1
-            fi
-          done < <(find . -type f -name '*.js' -print0)
-          exit "$failed"
+          cat > /tmp/runtime-error-diag.mjs <<'EOF'
+          import {pathToFileURL} from 'node:url';
+          import {createServer} from `${process.cwd()}/tests/visual-qa/server.mjs`;
+          const {chromium}=await import(pathToFileURL(`${process.cwd()}/node_modules/playwright/index.mjs`).href);
+          const server=createServer(); await new Promise(r=>server.listen(4177,'127.0.0.1',r)); let browser;
+          try {
+            browser=await chromium.launch({headless:true,executablePath:process.env.CHROME,timeout:15000});
+            const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
+            await context.route('**/*',route=>{const u=new URL(route.request().url());return (u.origin!=='http://127.0.0.1:4177'||u.pathname.startsWith('/api/'))?route.abort():route.continue();});
+            const page=await context.newPage(),errors=[]; page.on('pageerror',e=>errors.push({message:e.message,stack:e.stack||''}));
+            await page.goto('http://127.0.0.1:4177/__visual/?state=onboarding-photo',{waitUntil:'load',timeout:15000}); await page.waitForTimeout(800);
+            console.log('BOOT_ERRORS='+JSON.stringify(errors));
+            await page.locator('#gal').setInputFiles({name:'fixture.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64')});
+            await page.waitForFunction(()=>!document.querySelector('#readyFirstRun #next')?.disabled,{timeout:10000}); await page.locator('#readyFirstRun #next').tap(); await page.waitForTimeout(800);
+            console.log('CHARACTER_ERRORS='+JSON.stringify(errors));
+            console.log('GLOBALS='+JSON.stringify(await page.evaluate(()=>({completeSession:typeof completeSession,playBgm:typeof playBgm,renderMission:typeof renderMission,step:window.ReadyIdentityV1?.get?.().onboardingStep||null,hasMood:!!document.querySelector('.takyConsult')}))));
+            await context.close();
+          } finally { await browser?.close(); await new Promise(r=>server.close(r)); }
+          EOF
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          test -n "$CHROME"
+          CHROME="$CHROME" timeout 70s node /tmp/runtime-error-diag.mjs
