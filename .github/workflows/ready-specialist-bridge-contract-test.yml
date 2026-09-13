@@ -1,0 +1,31 @@
+name: Ready Specialist Bridge Contract Test
+
+on:
+  push:
+    branches:
+      - runtime-session-bridge-2026-09-10
+    paths:
+      - 'ready-runtime-v07.js'
+      - 'tests/ready-specialist-bridge-contract.mjs'
+      - '.github/workflows/ready-specialist-bridge-contract-test.yml'
+  workflow_dispatch:
+
+jobs:
+  cross-app-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fetch pinned specialist preview-branch bridge sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL https://raw.githubusercontent.com/hns140412-glitch/Hide-Seek/runtime-session-bridge-2026-09-10/hide-bridge.js -o /tmp/hide-bridge.js
+          curl -fsSL https://raw.githubusercontent.com/hns140412-glitch/Hide-Seek/runtime-session-bridge-2026-09-10/index.html -o /tmp/hide-index.html
+          curl -fsSL https://raw.githubusercontent.com/hns140412-glitch/Snap-Pop/runtime-session-bridge-2026-09-10/snap-bridge.js -o /tmp/snap-bridge.js
+          curl -fsSL https://raw.githubusercontent.com/hns140412-glitch/Snap-Pop/runtime-session-bridge-2026-09-10/index.html -o /tmp/snap-index.html
+      - name: Verify Ready ↔ specialist bridge contract
+        run: node tests/ready-specialist-bridge-contract.mjs

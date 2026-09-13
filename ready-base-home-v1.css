@@ -1,0 +1,30 @@
+/* Ready & Set native Base Home — first-paint layout, no legacy presentation */
+#homeView{background:linear-gradient(180deg,#f6b097 0%,#f8c3aa 45%,#fff3e8 100%)}
+#homeView .homeMain{visibility:visible}
+#homeView .baseHero{padding:18px 0 10px}
+#homeView .baseHeroCopy .kicker{font-size:10px;letter-spacing:.16em}
+#homeView .baseHeroCopy h1{font-size:34px;line-height:1.05;margin:7px 0 10px}
+#homeView .baseHeroCopy p{margin:0;color:#665f56}
+#homeView .baseCompanion{margin-top:22px;background:rgba(255,255,255,.7);border:1px solid rgba(40,30,20,.08);border-radius:26px;padding:16px;display:grid;grid-template-columns:54px minmax(0,1fr) auto;align-items:center;gap:12px}
+#homeView .baseUser{width:54px;height:54px;border-radius:50%;background:#fff;display:grid;place-items:center;font-weight:900;overflow:hidden}
+#homeView .baseTogether{min-width:0}
+#homeView .baseTogether small,#homeView .baseTogether span{display:block;color:#766e64;font-size:11px;line-height:1.45}
+#homeView .baseTogether b{display:block;font-size:18px;line-height:1.25;margin:2px 0 3px}
+#homeView .baseCompanion .guidePortrait{width:54px;height:54px;min-width:54px}
+#homeView .baseActions{display:grid;gap:10px;margin:10px 0 22px}
+#homeView .baseActions button{width:100%;border:0;background:#fff;border-radius:20px;padding:15px 16px;text-align:left;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:12px;align-items:center;box-shadow:0 8px 22px rgba(117,64,44,.06)}
+#homeView .baseActions b{display:block;font-size:16px;line-height:1.3}
+#homeView .baseActions small{display:block;color:#756c5e;margin-top:4px;font-size:11px;line-height:1.4;grid-column:1}
+#homeView .baseActions strong{grid-column:2;grid-row:1/3;align-self:center;font-size:20px;line-height:1}
+#homeView .baseToday{padding-bottom:30px}
+#homeView #homeTodayTodoList{display:grid;gap:10px;margin-top:12px}
+#homeView .baseTask{width:100%;border:1px solid rgba(28,27,24,.1);background:#fffdf8;border-radius:18px;padding:14px;text-align:left;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+#homeView .baseTask small{display:block;color:#756c5e;margin-top:4px}
+#homeView .baseTask em{font-style:normal;font-size:10px;font-weight:900;background:#f1eee6;border-radius:999px;padding:6px 8px}
+#homeView .baseTask.completed{opacity:.65}
+#homeView .baseEmpty{min-height:76px;display:flex;flex-direction:column;justify-content:center;padding:16px;border:1px dashed rgba(28,27,24,.15);border-radius:18px;background:rgba(255,255,255,.48);font-size:13px;color:#6f685e}
+#homeView .baseEmpty small{display:block;margin-top:7px}
+/* Legacy Home presentation is deliberately absent from the native Base UI. */
+#homeView .heroBlock,#homeView .stopwatchArt,#homeView .homeGuideCard,#homeView .commandCard,#homeView .challengePanel>.categoryGrid,#homeView #homeChips{display:none!important}
+/* Time remains secondary; there is no default timer hero on Home. */
+@media (max-width:390px){#homeView .baseHeroCopy h1{font-size:31px}#homeView .baseCompanion{padding:14px;grid-template-columns:50px minmax(0,1fr) 50px}#homeView .baseUser,#homeView .baseCompanion .guidePortrait{width:50px;height:50px;min-width:50px}}

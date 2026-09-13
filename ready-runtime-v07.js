@@ -1,9 +1,32 @@
 (() => {
   'use strict';
 
-  const RUNTIME_VERSION = '2026.09.07-rev07-b';
-  const HIDE_URL = 'https://dainty-froyo-a6e427.netlify.app';
-  const SNAP_URL = 'https://cheerful-pothos-d1c3ee.netlify.app';
+  const RUNTIME_VERSION = '2026.09.10-rev07-d';
+  const DEFAULT_HIDE_URL = 'https://dainty-froyo-a6e427.netlify.app';
+  const DEFAULT_SNAP_URL = 'https://cheerful-pothos-d1c3ee.netlify.app';
+
+  function normalizeTestTarget(raw, fallback) {
+    if (!raw) return fallback;
+    try {
+      const url = new URL(raw);
+      const host = url.hostname.toLowerCase();
+      const isLocal = host === 'localhost' || host === '127.0.0.1';
+      const isQuickTunnel = host.endsWith('.trycloudflare.com');
+      const protocolOk = isLocal ? ['http:','https:'].includes(url.protocol) : url.protocol === 'https:';
+      if (!protocolOk || (!isLocal && !isQuickTunnel)) return fallback;
+      url.username = '';
+      url.password = '';
+      url.search = '';
+      url.hash = '';
+      return url.href.replace(/\/$/, '');
+    } catch {
+      return fallback;
+    }
+  }
+
+  const BOOT_PARAMS = new URLSearchParams(location.search);
+  const HIDE_URL = normalizeTestTarget(BOOT_PARAMS.get('hide_target'), DEFAULT_HIDE_URL);
+  const SNAP_URL = normalizeTestTarget(BOOT_PARAMS.get('snap_target'), DEFAULT_SNAP_URL);
   const VALID_TASK_STATES = new Set(['PENDING','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
   const TRUSTED_APP_ORIGINS = new Set([new URL(HIDE_URL).origin, new URL(SNAP_URL).origin]);
 
@@ -122,7 +145,7 @@
     const previous = task.state;
     task.state = nextState;
     task.updated_at = iso();
-    emit('TASK_STATE_CHANGED', { task_id: taskId, previous, next: nextState, source });
+    emit('TASK_STATE_CHANGED', { task_id: taskId, previous, next: nextState, source, provenance: 'SESSION_DERIVED' });
     save();
     renderContractUI();
     return true;
@@ -143,6 +166,13 @@
     return app === 'hide-seek' ? HIDE_URL : app === 'snap-pop' ? SNAP_URL : location.href;
   }
 
+  function readyReturnUrl() {
+    const url = new URL(`${location.origin}${location.pathname}`);
+    if (HIDE_URL !== DEFAULT_HIDE_URL) url.searchParams.set('hide_target', HIDE_URL);
+    if (SNAP_URL !== DEFAULT_SNAP_URL) url.searchParams.set('snap_target', SNAP_URL);
+    return url.href;
+  }
+
   function launchSpecialist(app) {
     const session = state.activeSession;
     const c = ensureContract(session);
@@ -159,8 +189,12 @@
     url.searchParams.set('goal_id', c.goal_id);
     url.searchParams.set('task_id', task.task_id);
     url.searchParams.set('lap_id', lap.lap_id);
-    url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
+    url.searchParams.set('return_target', readyReturnUrl());
     url.searchParams.set('snap_target', SNAP_URL);
+    url.searchParams.set('target_time_ms', String(session.targetMs || 0));
+    url.searchParams.set('session_start_at', String(session.startAt || 0));
+    url.searchParams.set('issue_ms', String(session.issueMs || 0));
+    if (session.pausedAt) url.searchParams.set('paused_at', String(session.pausedAt));
     url.searchParams.set('from_app', 'ready-set');
     location.assign(url.href);
   }
@@ -199,10 +233,11 @@
       task_id: p.get('task_id'),
       lap_id: p.get('lap_id'),
       task_state: p.get('task_state'),
-      from_app: p.get('from_app')
+      from_app: p.get('from_app'),
+      event_id: p.get('event_id')
     };
     if (!args.session_id || !args.task_id || !applyInboundResult(args)) return;
-    ['session_id','goal_id','task_id','lap_id','task_state','from_app'].forEach(k => p.delete(k));
+    ['session_id','goal_id','task_id','lap_id','task_state','from_app','event_id'].forEach(k => p.delete(k));
     const clean = `${location.pathname}${p.toString() ? `?${p}` : ''}${location.hash}`;
     history.replaceState(null, '', clean);
   }
@@ -425,6 +460,7 @@
 
   function boot() {
     document.documentElement.dataset.readyRuntime = RUNTIME_VERSION;
+    document.documentElement.dataset.readyTestRouting = (HIDE_URL !== DEFAULT_HIDE_URL || SNAP_URL !== DEFAULT_SNAP_URL) ? 'on' : 'off';
     injectStyles();
     patchHandlers();
     ensureWrapUp();
@@ -442,7 +478,8 @@
       launchSpecialist,
       setTaskState,
       switchTask,
-      openWrapUp
+      openWrapUp,
+      routing: () => ({ hide_url:HIDE_URL, snap_url:SNAP_URL, test_mode:HIDE_URL !== DEFAULT_HIDE_URL || SNAP_URL !== DEFAULT_SNAP_URL })
     });
   }
 
