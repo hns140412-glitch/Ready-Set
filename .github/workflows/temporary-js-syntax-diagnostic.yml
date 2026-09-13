@@ -1,0 +1,30 @@
+name: Temporary JS syntax diagnostic
+on:
+  push:
+    branches: [runtime-session-bridge-2026-09-10]
+    paths: ['.github/workflows/temporary-js-syntax-diagnostic.yml']
+permissions:
+  contents: read
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: runtime-session-bridge-2026-09-10
+      - name: Check all shipped JavaScript syntax
+        shell: bash
+        run: |
+          failed=0
+          while IFS= read -r -d '' f; do
+            case "$f" in
+              ./node_modules/*|./tests/*) continue ;;
+            esac
+            if ! out=$(node --check "$f" 2>&1); then
+              echo "JS_SYNTAX_FAIL=$f"
+              echo "$out"
+              failed=1
+            fi
+          done < <(find . -type f -name '*.js' -print0)
+          exit "$failed"
