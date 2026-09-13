@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   if(window.ReadyOnboardingFlowCompletionV1)return;
-  const VERSION='2026.09.13-first-journey-completion-v3';
+  const VERSION='2026.09.13-first-journey-completion-v4-idempotent-steps';
   const INTRO_KEY='readyset_intro_seen_v1';
   const identity=()=>window.ReadyIdentityV1?.get?.()||{};
   const patch=p=>window.ReadyIdentityV1?.patch?.(p);
@@ -76,8 +76,8 @@
     installStyle();const r=root(),i=identity();if(!r||i.status==='READY')return;
     if(i.onboardingStep==='MODE'){welcome(r);return}
     if(i.onboardingStep==='CHARACTER'){addCharacterDefer(r,i);return}
-    if(i.onboardingStep==='EXPLORER'){explorer(r,i);return}
-    if(i.onboardingStep==='THEME'){theme(r,i);return}
+    if(i.onboardingStep==='EXPLORER'){if(r.querySelector('#rofExplorerNext'))return;explorer(r,i);return}
+    if(i.onboardingStep==='THEME'){if(r.querySelector('#rofFinish'))return;theme(r,i);return}
   }
   function sync(){requestAnimationFrame(renderStep)}
   const observer=new MutationObserver(sync);observer.observe(document.documentElement,{subtree:true,childList:true});
