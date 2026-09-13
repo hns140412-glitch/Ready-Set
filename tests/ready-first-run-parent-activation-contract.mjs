@@ -36,6 +36,10 @@ assert.doesNotMatch(completion,/characterVisualId\s*:\s*['"`]DEFER/,'defer must 
 assert.match(completion,/onboardingStep:'EXPLORER'/,'defer must continue to Explorer');
 assert.match(completion,/onboardingStep:'THEME'/,'Explorer must continue to first world/theme');
 assert.match(completion,/activateIdentityRole\?\.\(\{reload:true\}\)/,'completion must activate the persisted identity role');
+assert.match(completion,/const existing=r\.querySelector\('#rofIntroStart'\)/,'intro renderer must detect an already-rendered start button');
+assert.match(completion,/if\(existing\)\{/,'intro renderer must preserve the existing DOM instead of replacing it on observer callbacks');
+assert.match(completion,/existing\.dataset\.bound/,'intro start handler must be idempotently bound');
+assert.match(completion,/button\.addEventListener\('click',startIntro\)/,'intro start must use a stable click handler');
 
 assert.match(role,/setupMode==='GUARDIAN_FOR_CHILD'\?'parent':'child'/,'guardian setup must resolve to parent runtime');
 assert.match(role,/readyset_active_role_v1/,'active parent/child role must persist');
@@ -52,4 +56,4 @@ assert.match(analysis,/ANALYZED_PENDING_PARENT_CONFIRMATION/,'AI extraction must
 assert.doesNotMatch(analysis,/FACT_CONFIRMED/,'AI analysis bridge must not self-confirm facts');
 assert.match(planner,/FACT_CONFIRMED/,'Planner authority must require confirmed assignment facts somewhere in the allocation path');
 
-console.log(JSON.stringify({pass:true,contract:'ready-first-run-parent-activation-v2-effective-boot',checks:33}));
+console.log(JSON.stringify({pass:true,contract:'ready-first-run-parent-activation-v2-effective-boot',checks:37}));
