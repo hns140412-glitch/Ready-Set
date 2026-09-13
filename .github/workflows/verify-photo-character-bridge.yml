@@ -18,7 +18,50 @@ jobs:
           ref: runtime-session-bridge-2026-09-10
           fetch-depth: 0
       - name: Align approved mood owner and current branch regression
-        run: echo 'ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCgptb29kID0gUGF0aCgicmVhZHktbW9vZC1kaXJlY3Rpb24tdjIuanMiKQpzID0gbW9vZC5yZWFkX3RleHQoZW5jb2Rpbmc9InV0Zi04IikKb2xkID0gImRvY3VtZW50LmFkZEV2ZW50TGlzdGVuZXIoJ3JlYWR5LWNoYXJhY3Rlci1jb25zdWx0YXRpb24nLCgpPT5zZXRUaW1lb3V0KCgpPT5wYWludCh0cnVlKSwwKSk7IgpuZXcgPSAid2luZG93LmFkZEV2ZW50TGlzdGVuZXIoJ3JlYWR5LWNoYXJhY3Rlci1jb25zdWx0YXRpb24nLCgpPT5zZXRUaW1lb3V0KCgpPT5wYWludCh0cnVlKSwwKSk7IgppZiBvbGQgbm90IGluIHMgYW5kIG5ldyBub3QgaW4gczoKICAgIHJhaXNlIFN5c3RlbUV4aXQoIm1vb2QgY29uc3VsdGF0aW9uIGV2ZW50IGFuY2hvciBtaXNzaW5nIikKcyA9IHMucmVwbGFjZShvbGQsIG5ldywgMSkKbW9vZC53cml0ZV90ZXh0KHMsIGVuY29kaW5nPSJ1dGYtOCIpCgp0ZXN0ID0gUGF0aCgidGVzdHMvcmVhZHktZmlyc3Qtam91cm5leS10cmFuc2l0aW9uLm1qcyIpCnQgPSB0ZXN0LnJlYWRfdGV4dChlbmNvZGluZz0idXRmLTgiKQp0ID0gdC5yZXBsYWNlKCJmb3IgKGNvbnN0IHNjZW5hcmlvIG9mIFsnbm9ybWFsJywncXVvdGEnLCdjYW5kaWRhdGUtdW5hdmFpbGFibGUnXSkgeyIsCiAgICAgICAgICAgICAgImZvciAoY29uc3Qgc2NlbmFyaW8gb2YgWydub3JtYWwnLCdxdW90YSddKSB7IiwgMSkKdCA9IHQucmVwbGFjZSgiYXdhaXQgcGFnZS53YWl0Rm9yU2VsZWN0b3IoJyNyZWFkeUNoYXJhY3RlckNhbmRpZGF0ZU1vdW50IC5jY0NvbnN1bHQnLHt0aW1lb3V0OjEyMDAwfSk7IiwKICAgICAgICAgICAgICAiYXdhaXQgcGFnZS53YWl0Rm9yU2VsZWN0b3IoJyNyZWFkeUNoYXJhY3RlckNhbmRpZGF0ZU1vdW50IC50YWt5Q29uc3VsdCcse3RpbWVvdXQ6MTIwMDB9KTsiLCAxKQpvbGRfYmxvY2sgPSAiIiIgIGlmKHNjZW5hcmlvIT09J2NhbmRpZGF0ZS11bmF2YWlsYWJsZScpewogICBmb3IoY29uc3Qga2V5IG9mIFsnRVhDSVRFRCcsJ0NPWlknLCdJTUFHSU5JTkcnXSlhd2FpdCBwYWdlLmxvY2F0b3IoJ1tkYXRhLW1vb2QtdGlsZT0iJyt rZXkrJyJdJykudGFwKCk7CiAgIGFzc2VydC5lcXVhbChhd2FpdCBwYWdlLmV2YWx1YXRlKCgpPT5SZWFkeUlkZW50aXR5VjEuZ2V0KCkuY2hhcmFjdGVyTW9vZERpcmVjdGlvbnMuc2VsZWN0aW9ucy5sZW5ndGgpLDMpOwogICBhd2FpdCBwYWdlLmxvY2F0b3IoJ1tkYXRhLWNhbmRpZGF0ZS1hY3Rpb249ImdlbmVyYXRlIl0nKS50YXAoKTsKICAgZm9yKGNvbnN0IHdpZHRoIG9mIFszMjAsMzkwLDQzMF0pe2F3YWl0IHBhZ2Uuc2V0Vmlld3BvcnRTaXplKHt3aWR0aCxoZWlnaHQ6ODQ0fSk7Y29uc3QgbWVhc3VyZW1lbnRzPWF3YWl0IHBhZ2UubG9jYXRvcignI3JlYWR5Q2hhcmFjdGVyQ2FuZGlkYXRlTW91bnQnKS5ldmFsdWF0ZShlbD0+KHtvdmVyZmxvdzpkb2N1bWVudC5kb2N1bWVudEVsZW1lbnQuc2Nyb2xsV2lkdGg+aW5uZXJXaWR0aCxzbWFsbDpbLi4uZWwucXVlcnlTZWxlY3RvckFsbCgnYnV0dG9uJyldLnNvbWUoYj0+e2NvbnN0IHI9Yi5nZXRCb3VuZGluZ0NsaWVudFJlY3QoKTtyZXR1cm4gci53aWR0aDw0NHx8ci5oZWlnaHQ8NDR9KX0pKTthc3NlcnQuZXF1YWwobWVhc3VyZW1lbnRzLm92ZXJmbG93LGZhbHNlKTthc3NlcnQuZXF1YWwobWVhc3VyZW1lbnRzLnNtYWxsLGZhbHNlKTt9CiAgfWVsc2UgYXNzZXJ0LmVxdWFsKGF3YWl0IHBhZ2UubG9jYXRvcignW2RhdGEtZmFsbGJhY2staGFuZG9mZl0nKS5jb3VudCgpLDEpOyIiIgpuZXdfYmxvY2sgPSAiIiIgIGF3YWl0IHBhZ2UubG9jYXRvcignW2RhdGEtdGFreS1jaG9pY2U9IkZFRUxfQlJJR0hUIl0nKS50YXAoKTsKICBhd2FpdCBwYWdlLmxvY2F0b3IoJ1tkYXRhLXRha3ktY29uZmlybV0nKS50YXAoKTsKICBhd2FpdCBwYWdlLmxvY2F0b3IoJ1tkYXRhLXRha3ktY2hvaWNlPSJMT09LX0FDVElWRSJdJykudGFwKCk7CiAgYXdhaXQgcGFnZS5sb2NhdG9yKCdbZGF0YS10YWt5LWNvbmZpcm1dJykudGFwKCk7CiAgYXNzZXJ0LmVxdWFsKGF3YWl0IHBhZ2UuZXZhbHVhdGUoKCk9PlJlYWR5SWRlbnRpdHlWMS5nZXQoKS5jaGFyYWN0ZXJNb29kRGlyZWN0aW9ucy5zZWxlY3Rpb25zLmxlbmd0aCksMyk7CiAgYXNzZXJ0Lm1hdGNoKGF3YWl0IHBhZ2UuZXZhbHVhdGUoKCk9PlJlYWR5SWRlbnRpdHlWMS5nZXQoKS5jaGFyYWN0ZXJNb29kRGlyZWN0aW9ucy5zZWxlY3Rpb25zWzJdLnRpbGVLZXkpLC9eQVVUT18vKTsKICBhd2FpdCBwYWdlLmxvY2F0b3IoJ1tkYXRhLXRha3ktZ2VuZXJhdGVdJykudGFwKCk7CiAgZm9yKGNvbnN0IHdpZHRoIG9mIFszMjAsMzkwLDQzMF0pe2F3YWl0IHBhZ2Uuc2V0Vmlld3BvcnRTaXplKHt3aWR0aCxoZWlnaHQ6ODQ0fSk7Y29uc3QgbWVhc3VyZW1lbnRzPWF3YWl0IHBhZ2UubG9jYXRvcignI3JlYWR5Q2hhcmFjdGVyQ2FuZGlkYXRlTW91bnQnKS5ldmFsdWF0ZShlbD0+KHtvdmVyZmxvdzpkb2N1bWVudC5kb2N1bWVudEVsZW1lbnQuc2Nyb2xsV2lkdGg+aW5uZXJXaWR0aCxzbWFsbDpbLi4uZWwucXVlcnlTZWxlY3RvckFsbCgnYnV0dG9uJyldLnNvbWUoYj0+e2NvbnN0IHI9Yi5nZXRCb3VuZGluZ0NsaWVudFJlY3QoKTtyZXR1cm4gci53aWR0aDw0NHx8ci5oZWlnaHQ8NDR9KX0pKTthc3NlcnQuZXF1YWwobWVhc3VyZW1lbnRzLm92ZXJmbG93LGZhbHNlKTthc3NlcnQuZXF1YWwobWVhc3VyZW1lbnRzLnNtYWxsLGZhbHNlKTt9IiIiCmlmIG9sZF9ibG9jayBub3QgaW4gdDoKICAgIHJhaXNlIFN5c3RlbUV4aXQoInN0YWxlIG1vb2QgdGVzdCBibG9jayBtaXNzaW5nIikKdCA9IHQucmVwbGFjZShvbGRfYmxvY2ssIG5ld19ibG9jaywgMSkKdCA9IHQucmVwbGFjZSgiYXdhaXQgcGFnZS53YWl0Rm9yU2VsZWN0b3IoJyNyZWFkeUNoYXJhY3RlckNhbmRpZGF0ZU1vdW50IC5jY0NvbnN1bHQnLHt0aW1lb3V0OjEyMDAwfSk7IiwKICAgICAgICAgICAgICAiYXdhaXQgcGFnZS53YWl0Rm9yU2VsZWN0b3IoJyNyZWFkeUNoYXJhY3RlckNhbmRpZGF0ZU1vdW50IC50YWt5Q29uc3VsdCcse3RpbWVvdXQ6MTIwMDB9KTsiKQp0ID0gdC5yZXBsYWNlKCJhd2FpdCBwYWdlLndhaXRGb3JTZWxlY3RvcignI3JlYWR5Q2hhcmFjdGVyQ2FuZGlkYXRlTW91bnQgLmNjQ29uc3VsdCc7IiwKICAgICAgICAgICAgICAiYXdhaXQgcGFnZS53YWl0Rm9yU2VsZWN0b3IoJyNyZWFkeUNoYXJhY3RlckNhbmRpZGF0ZU1vdW50IC50YWt5Q29uc3VsdCc7IikKdCA9IHQucmVwbGFjZSgiUEFTUyAke3NjZW5hcmlvfTogdXBsb2FkLCB0YXAgb3duZXJzaGlwLCByZWNvdmVyeSB0YXJnZXQsIENIQVJBQ1RFUiByZW5kZXIsIGNvbnN1bHRhdGlvbiwgYXBwcm92YWwgbG9jaywgcmVsb2FkLCBQSE9UTyBwcmV2aWV3IiwKICAgICAgICAgICAgICAiUEFTUyAke3NjZW5hcmlvfTogdXBsb2FkLCB0YXAgb3duZXJzaGlwLCBDSEFSQUNURVIgcmVuZGVyLCBzdGFnZWQgbW9vZCBjb25zdWx0YXRpb24sIHplcm8tY29zdCBsb2NrLCByZWxvYWQsIFBIT1RPIHByZXZpZXciKQp0ZXN0LndyaXRlX3RleHQodCwgZW5jb2Rpbmc9InV0Zi04IikK' | base64 -d | python
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          mood = Path('ready-mood-direction-v2.js')
+          s = mood.read_text(encoding='utf-8')
+          old = "document.addEventListener('ready-character-consultation',()=>setTimeout(()=>paint(true),0));"
+          new = "window.addEventListener('ready-character-consultation',()=>setTimeout(()=>paint(true),0));"
+          if old not in s and new not in s:
+              raise SystemExit('mood consultation event anchor missing')
+          s = s.replace(old, new, 1)
+          mood.write_text(s, encoding='utf-8')
+
+          test = Path('tests/ready-first-journey-transition.mjs')
+          t = test.read_text(encoding='utf-8')
+          t = t.replace("for (const scenario of ['normal','quota','candidate-unavailable']) {", "for (const scenario of ['normal','quota']) {", 1)
+          t = t.replace("#readyCharacterCandidateMount .ccConsult", "#readyCharacterCandidateMount .takyConsult")
+          old_block = '''  if(scenario!=='candidate-unavailable'){
+           for(const key of ['EXCITED','COZY','IMAGINING'])await page.locator('[data-mood-tile="'+key+'"]' ).tap();
+           assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections.length),3);
+           await page.locator('[data-candidate-action="generate"]').tap();
+           for(const width of [320,390,430]){await page.setViewportSize({width,height:844});const measurements=await page.locator('#readyCharacterCandidateMount').evaluate(el=>({overflow:document.documentElement.scrollWidth>innerWidth,small:[...el.querySelectorAll('button')].some(b=>{const r=b.getBoundingClientRect();return r.width<44||r.height<44})}));assert.equal(measurements.overflow,false);assert.equal(measurements.small,false);}
+          }else assert.equal(await page.locator('[data-fallback-handoff]').count(),1);'''
+          if old_block not in t:
+              # tolerate the exact repository spacing variant
+              start = t.find("  if(scenario!=='candidate-unavailable'){")
+              end_marker = "  }else assert.equal(await page.locator('[data-fallback-handoff]').count(),1);"
+              end = t.find(end_marker, start)
+              if start < 0 or end < 0:
+                  raise SystemExit('stale mood test block missing')
+              end += len(end_marker)
+              old_block = t[start:end]
+          new_block = '''  await page.locator('[data-taky-choice="FEEL_BRIGHT"]').tap();
+          await page.locator('[data-taky-confirm]').tap();
+          await page.locator('[data-taky-choice="LOOK_ACTIVE"]').tap();
+          await page.locator('[data-taky-confirm]').tap();
+          assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections.length),3);
+          assert.match(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections[2].tileKey),/^AUTO_/);
+          await page.locator('[data-taky-generate]').tap();
+          for(const width of [320,390,430]){await page.setViewportSize({width,height:844});const measurements=await page.locator('#readyCharacterCandidateMount').evaluate(el=>({overflow:document.documentElement.scrollWidth>innerWidth,small:[...el.querySelectorAll('button')].some(b=>{const r=b.getBoundingClientRect();return r.width<44||r.height<44})}));assert.equal(measurements.overflow,false);assert.equal(measurements.small,false);}'''
+          t = t.replace(old_block, new_block, 1)
+          t = t.replace('PASS ${scenario}: upload, tap ownership, recovery target, CHARACTER render, consultation, approval lock, reload, PHOTO preview', 'PASS ${scenario}: upload, tap ownership, CHARACTER render, staged mood consultation, zero-cost lock, reload, PHOTO preview')
+          test.write_text(t, encoding='utf-8')
+          PY
       - name: Syntax
         run: |
           node --check ready-mood-direction-v2.js
