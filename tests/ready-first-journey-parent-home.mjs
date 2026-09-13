@@ -41,11 +41,11 @@ try{
   await page.locator('#rofCharacterDefer').tap();
   await page.waitForSelector('#rofExplorerNext',{timeout:8000});
   assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().onboardingStep),'EXPLORER');
-  await page.locator('[data-guide="lumi"]').tap();
+  await page.locator('button[data-guide="lumi"]').tap();
   await page.locator('#rofExplorerNext').tap();
   await page.waitForSelector('#rofFinish',{timeout:8000});
   assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().onboardingStep),'THEME');
-  await page.locator('[data-theme="TODAYS_ISLAND"]').tap();
+  await page.locator('button[data-theme="TODAYS_ISLAND"]').tap();
 
   // The finish action intentionally reloads to the derived parent role. Keep the completed
   // identity instead of letting the disposable PHOTO fixture reseed on that reload.
