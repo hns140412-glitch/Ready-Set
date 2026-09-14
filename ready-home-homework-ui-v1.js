@@ -107,6 +107,19 @@
     dialog.showModal();
   }
 
+  const hasReportQuantity = report => (report.unit == null || report.unit === 'PERCENT_OF_PLAN') && Number.isFinite(report.completedQuantity) && report.completedQuantity >= 0 && report.completedQuantity <= 100;
+  const reportSourceLabel = source => ({
+    CHILD_REPORTED:'내가 기록', PARENT_REPORTED:'보호자 기록',
+    READY_SESSION:'Ready 세션 기록', READY_UI:'Ready 세션 기록', WRAP_UP:'Ready 세션 기록',
+    SPECIALIST:'Specialist 기록', 'hide-seek':'Hide & Seek 기록', 'snap-pop':'Snap & Pop 기록'
+  })[source] || (source ? `출처: ${source}` : '출처 미확정');
+  const reportResultLabel = report => {
+    if (hasReportQuantity(report)) return `${report.completedQuantity}%`;
+    const labels = {COMPLETED:'완료',PARTIAL:'일부 남음',DEFERRED:'다음에',BLOCKED:'막힘',WAITING_FOR_PARENT:'부모 도움 필요'};
+    const label = labels[report.resultState] || '결과 미확정';
+    return report.resultState === 'COMPLETED' ? label : `${label} · 남은 분량 미확정`;
+  };
+
   function renderReports() {
     const core = api();
     if (!core) return;
@@ -118,10 +131,12 @@
     if (section.parentElement !== host) host.appendChild(section);
     const tasks = core.tasks(true);
     section.innerHTML = '<h3>이미 한 숙제 · 한 일 기록</h3>' + tasks.map(task => {
-      const progress = task.learningProgress;
       const reports = task.learningReports || [];
+      const progress = task.learningProgress?.unit === 'PERCENT_OF_PLAN' &&
+        Number.isFinite(task.learningProgress.completedQuantity) && Number.isFinite(task.learningProgress.remainingQuantity) &&
+        reports.some(hasReportQuantity) ? task.learningProgress : null;
       return `<div class="readyHomeworkTask"><div><b>${escape(task.title)}</b><small>${escape(task.volume)}${progress ? ` · ${progress.completedQuantity}% 완료 · ${progress.remainingQuantity}% 남음` : ''}</small>
-        ${reports.map(report => `<small>${report.source === 'CHILD_REPORTED' ? '내가 기록' : '보호자 기록'} · ${report.completedQuantity}% · 기록 ${escape(report.reportedAt.slice(0,10))} · 한 날짜 ${escape(report.actualWorkDate || '모름')}${report.confirmedAt ? ' · 보호자 확인됨' : ''}</small>
+        ${reports.map(report => `<small>${escape(reportSourceLabel(report.source))} · ${escape(reportResultLabel(report))} · 기록 ${escape((report.reportedAt || '').slice(0,10))} · 한 날짜 ${escape(report.actualWorkDate || '모름')}${report.confirmedAt ? ' · 보호자 확인됨' : ''}</small>
           ${parent && report.source === 'CHILD_REPORTED' && !report.confirmedAt ? `<button data-confirm-task="${escape(task.task_id)}" data-report="${escape(report.reportId)}">보호자 확인</button>` : ''}`).join('')}</div>
         ${task.status !== 'COMPLETED' ? `<button data-record-task="${escape(task.task_id)}">이미 했어 · 기록</button>` : '<span>완료</span>'}</div>`;
     }).join('');

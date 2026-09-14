@@ -26,7 +26,36 @@ const service={load,assignmentFacts,
  saveOverride(o){parent();const s=save(F.override(load(),o));if(s.lastPlannerInput)service.prepare({...s.lastPlannerInput,from:today(),actualHistory:actualHistory(s.lastPlannerInput.units||[])});return s},
  support(evidence){parent();const s=load();s.conditionEvidence[today()]={requestedRest:evidence.requestedRest===true};save(s);if(s.lastPlannerInput)service.prepare({...s.lastPlannerInput,from:today(),actualHistory:actualHistory(s.lastPlannerInput.units||[])});return s},
  capture(action,payload){parent();const s=load();let b=s.batches.at(-1);if(!b||b.state==='COMMITTED'){b={id:'batch:'+Date.now(),state:'CAPTURING',items:[]};s.batches.push(b)}b=F.capture(b,action,payload);s.batches[s.batches.length-1]=b;if(b.state==='COMMITTED')s.assignments.push(...b.facts);save(s);if(b.state==='COMMITTED')setTimeout(()=>service.prepareConfirmedFacts(),0);return b},
- prepare(input){const s=load();if(input.from<today())throw Error('PAST_PLAN_WRITE_FORBIDDEN');const history=Array.isArray(input.actualHistory)?input.actualHistory:actualHistory(input.units||[]);const result=F.plan({...input,actualHistory:history,state:s,assignments:[...assignmentFacts(),...s.assignments],conditionEvidence:s.conditionEvidence});s.lastPlannerInput=JSON.parse(JSON.stringify({...input,actualHistory:history}));s.plans.push({createdAt:new Date().toISOString(),...result});save(s);const p=plannerStore();p.days=p.days||{};const protectedIds=new Set();for(const [d,day] of Object.entries(p.days)){for(const t of day.tasks||[])if(d<input.from||t.status!=='PLANNED'||t.selected||t.learningReports?.length)protectedIds.add(t.id)}for(const [d,day] of Object.entries(p.days))if(d>=input.from)day.tasks=(day.tasks||[]).filter(t=>t.authority!=='PLANNER/MAIN'||t.projection!=='TODAY_TASK'||protectedIds.has(t.id));for(const t of result.candidates){if(protectedIds.has(t.id))continue;const day=p.days[t.localDate]||(p.days[t.localDate]={localDate:t.localDate,tasks:[]});day.tasks.push(t)}localStorage.setItem('readyset_planner_v1',JSON.stringify(p));window.ReadyHomeHomeworkUIV1?.render?.();window.ReadyStageD?.renderPlanner?.();window.ReadyStageF?.render?.();return result},
+ prepare(input){
+  const s=load();if(input.from<today())throw Error('PAST_PLAN_WRITE_FORBIDDEN');
+  const history=Array.isArray(input.actualHistory)?input.actualHistory:actualHistory(input.units||[]);
+  const result=F.plan({...input,actualHistory:history,state:s,assignments:[...assignmentFacts(),...s.assignments],conditionEvidence:s.conditionEvidence});
+  const p=plannerStore();p.days=p.days||{};
+  const protectedTasks=new Map();
+  for(const [d,day] of Object.entries(p.days))for(const t of day.tasks||[]){
+   if(d<input.from||t.status!=='PLANNED'||t.selected||t.learningReports?.length)protectedTasks.set(t.id,t);
+  }
+  for(const [d,day] of Object.entries(p.days))if(d>=input.from){
+   day.tasks=(day.tasks||[]).filter(t=>t.authority!=='PLANNER/MAIN'||t.projection!=='TODAY_TASK'||protectedTasks.has(t.id));
+  }
+  const remainderStates=new Set(['PARTIAL','DEFERRED','BLOCKED','WAITING_FOR_PARENT']);
+  result.candidates=result.candidates.filter(t=>{
+   const baseId=t.id;let previous=null,revision=0;
+   // Keep each actual row intact; a new projection still owns the same source unit/assignment.
+   while(protectedTasks.has(t.id)){
+    const actual=protectedTasks.get(t.id);
+    if(!remainderStates.has(actual.status))return false;
+    previous=actual.id;t.id=`${baseId}:remainder:${++revision}`;
+   }
+   if(previous)t.remainderOfTaskId=previous;
+   const day=p.days[t.localDate]||(p.days[t.localDate]={localDate:t.localDate,tasks:[]});
+   day.tasks.push(t);return true;
+  });
+  s.lastPlannerInput=JSON.parse(JSON.stringify({...input,actualHistory:history}));
+  s.plans.push({createdAt:new Date().toISOString(),...result});
+  localStorage.setItem('readyset_planner_v1',JSON.stringify(p));save(s);
+  window.ReadyHomeHomeworkUIV1?.render?.();window.ReadyStageD?.renderPlanner?.();window.ReadyStageF?.render?.();return result
+ },
  todayTasks(){return load().plans.at(-1)?.candidates.filter(t=>t.localDate===today())||[]},actualHistory
 };
 service.prepareConfirmedFacts=()=>{const assignments=[...assignmentFacts(),...(load().assignments||[])].filter(a=>validDate(a.deadline)&&a.deadline>=today()),units=planningUnits(),dates=planningDates(assignments);if(!assignments.length||!units.length||!dates.length)return{ok:false,reason:'NO_CONFIRMED_FACT_UNITS',candidates:[],unresolved:[]};const history=actualHistory(units),result=service.prepare({from:today(),dates,units,carryOver:[],actualHistory:history});return{...result,ok:result.candidates.length>0,reason:result.candidates.length?null:(result.unresolved[0]?.reason||'NO_PLANNER_CANDIDATE'),assignmentCount:assignments.length,unitCount:units.length,actualHistoryCount:history.length}};
