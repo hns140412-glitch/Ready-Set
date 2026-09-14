@@ -1,0 +1,15 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const base=fs.readFileSync('ready-base-runtime-v1.js','utf8'),runtime=fs.readFileSync('ready-runtime-v07.js','utf8'),home=fs.readFileSync('ready-home-homework-mvp-v1.js','utf8');
+assert.match(home,/homeworkTaskMap/,'homework tasks must bind Planner ids to canonical session tasks');
+assert.match(home,/canonical_task_id/,'canonical task id must be retained');
+assert.match(base,/function readyPublishPlannerResult/,'base runtime must publish session outcomes into Planner');
+assert.match(base,/learningReports/,'session outcome must become Planner learning history');
+assert.match(base,/learningProgress/,'completed session must publish learning progress');
+assert.match(base,/completionWritesLearningHistory:true/,'runtime validation must expose result publication');
+assert.match(runtime,/function plannerBindingForCanonical/,'canonical task must resolve its Planner binding');
+assert.match(runtime,/function publishTaskResult/,'canonical task result must publish through the Planner bridge');
+assert.match(runtime,/if\(nextState!=='PENDING'\)publishTaskResult/,'all resolved task states must publish, not only session completion');
+assert.match(runtime,/setTaskState\(task\.task_id,normalized,from_app\|\|'SPECIALIST'\)/,'specialist returns must use the same canonical result path');
+assert.match(runtime,/plannerResultBridge/,'runtime contract must validate Planner result bridge presence');
+assert.match(runtime,/originalCompleteSession\(\)/,'wrap-up must still terminate through canonical Ready completion');
+console.log(JSON.stringify({pass:true,contract:'ready-daily-loop-result-planner-v1',checks:12}));

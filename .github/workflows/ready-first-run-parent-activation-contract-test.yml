@@ -1,0 +1,47 @@
+name: Ready First Run Parent Activation Contract
+
+on:
+  push:
+    branches:
+      - runtime-session-bridge-2026-09-10
+    paths:
+      - 'ready-stage-c.js'
+      - 'ready-onboarding-identity-v2.js'
+      - 'ready-onboarding-flow-completion-v1.js'
+      - 'ready-role-context-v1.js'
+      - 'ready-parent-setup-hub-v1.js'
+      - 'ready-parent-capture-intake-v1.js'
+      - 'ready-homework-analysis-bridge-v1.js'
+      - 'ready-stage-g14-planner-authority.js'
+      - 'sw.js'
+      - 'VERSION.json'
+      - 'tests/ready-first-run-parent-activation-contract.mjs'
+      - '.github/workflows/ready-first-run-parent-activation-contract-test.yml'
+  pull_request:
+    paths:
+      - 'ready-stage-c.js'
+      - 'ready-onboarding-identity-v2.js'
+      - 'ready-onboarding-flow-completion-v1.js'
+      - 'ready-role-context-v1.js'
+      - 'ready-parent-setup-hub-v1.js'
+      - 'ready-parent-capture-intake-v1.js'
+      - 'ready-homework-analysis-bridge-v1.js'
+      - 'ready-stage-g14-planner-authority.js'
+      - 'sw.js'
+      - 'VERSION.json'
+      - 'tests/ready-first-run-parent-activation-contract.mjs'
+      - '.github/workflows/ready-first-run-parent-activation-contract-test.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: First-run parent activation contract
+        run: node tests/ready-first-run-parent-activation-contract.mjs

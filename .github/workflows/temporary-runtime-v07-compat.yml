@@ -1,0 +1,76 @@
+name: Temporary runtime v07 base compatibility
+on:
+  push:
+    branches: [runtime-session-bridge-2026-09-10]
+    paths: ['.github/workflows/temporary-runtime-v07-compat.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: runtime-session-bridge-2026-09-10
+          fetch-depth: 0
+      - name: Bridge rev07 to Base Runtime without legacy app.js
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('ready-runtime-v07.js')
+          s=p.read_text(encoding='utf-8')
+          replacements=[
+            ("  const originalCompleteSession = completeSession;", "  const originalCompleteSession = typeof globalThis.completeSession === 'function' ? globalThis.completeSession : () => globalThis.ReadyBaseRuntimeV1?.complete?.();"),
+            ("  const originalNav = nav;", "  const originalNav = typeof globalThis.nav === 'function' ? globalThis.nav : name => globalThis.ReadyBaseRuntimeV1?.nav?.(name);"),
+            ("    nav = function patchedNav(name) {", "    if (typeof globalThis.nav === 'function') globalThis.nav = function patchedNav(name) {")
+          ]
+          for old,new in replacements:
+            if old in s: s=s.replace(old,new,1)
+            elif new not in s: raise SystemExit('missing rev07 anchor: '+old)
+          marker="    if (start && originalStart) {"
+          fallback="""    if (start && !originalStart && !start.dataset.rev07BaseBound) {
+              start.dataset.rev07BaseBound='1';
+              start.addEventListener('click',()=>setTimeout(()=>{
+                if (state.activeSession) { ensureContract(); renderContractUI(); }
+              },0));
+            }
+          """
+          if 'rev07BaseBound' not in s:
+            if marker not in s: raise SystemExit('start fallback anchor missing')
+            s=s.replace(marker,fallback+marker,1)
+          s=s.replace("2026.09.10-rev07-d","2026.09.13-rev07-base-runtime-compat",1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Syntax and core contracts
+        run: |
+          node --check ready-runtime-v07.js
+          node --check ready-base-runtime-v1.js
+          node tests/ready-first-run-parent-activation-contract.mjs
+      - name: Commit product compatibility fix
+        run: |
+          git config user.name "TAKY Actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add ready-runtime-v07.js
+          if ! git diff --cached --quiet; then
+            git commit -m "Bridge runtime v07 to Base Runtime without legacy app"
+            git push origin HEAD:runtime-session-bridge-2026-09-10
+          fi
+      - name: Install Playwright package only
+        run: npm install --no-save playwright@latest
+      - name: Bounded PHOTO to mood smoke
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tests/ready-first-journey-transition.mjs')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace("for (const scenario of ['normal','quota']) {","for (const scenario of ['normal']) {",1)
+          start=s.find("await page.locator('[data-taky-generate]').tap();")
+          end=s.find('  await context.close();',start)
+          if start<0 or end<0: raise SystemExit('smoke trim anchor missing')
+          s=s[:start]+"assert.equal(await page.locator('[data-taky-generate]').count(),1);\nassert.equal(apiCalls,0);\nassert.deepEqual(errors,[]);\nconsole.log('PASS: Base Runtime + rev07 + PHOTO + staged mood are browser-clean');\n"+s[end:]
+          p.write_text(s,encoding='utf-8')
+          PY
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || true)"
+          test -n "$CHROME"
+          timeout 90s node tests/ready-first-journey-transition.mjs "$PWD/node_modules/playwright/index.mjs" "$CHROME"

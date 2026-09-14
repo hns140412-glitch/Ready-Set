@@ -1,0 +1,28 @@
+name: Temporary first journey error source
+on:
+  push:
+    branches: [runtime-session-bridge-2026-09-10]
+    paths: ['.github/workflows/temporary-first-journey-error-source.yml']
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: runtime-session-bridge-2026-09-10
+      - name: Print generated inline source around browser syntax error
+        run: |
+          node <<'EOF'
+          const fs=require('fs');
+          const html=fs.readFileSync('index.html','utf8');
+          const bootstrap=fs.readFileSync('tests/visual-qa/setup.js','utf8');
+          const generated=html.replace('<head>',`<head><base href="/"><script>${bootstrap}</script>`);
+          const lines=generated.split(/\n/);
+          const line=lines[39]||'';
+          console.log('LINE40_LENGTH='+line.length);
+          console.log('LINE40_4000_4200='+line.slice(3990,4200));
+          console.log('INDEX_LINE_MATCH='+html.split(/\n/).findIndex(x=>x.includes(line.slice(4050,4100))));
+          EOF

@@ -1,0 +1,19 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const foundationSrc=fs.readFileSync('ready-foundation-v1.js','utf8');
+const controlSrc=fs.readFileSync('ready-foundation-control-v1.js','utf8');
+const store=new Map(),localStorage={getItem:k=>store.has(k)?store.get(k):null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)};
+const noop=()=>{},document={documentElement:{dataset:{readyRole:'PARENT'}},body:{},querySelector:()=>null,getElementById:()=>null};
+class MutationObserver{observe(){}} class Event{constructor(type){this.type=type}}
+const context={console,structuredClone,URL,URLSearchParams,Date,Math,JSON,localStorage,document,location:{search:'?role=parent',href:'https://ready.test/?role=parent'},history:{replaceState:noop},MutationObserver,Event,dispatchEvent:noop,addEventListener:noop,setTimeout:(fn)=>{fn();return 1},clearTimeout:noop};context.window=context;context.globalThis=context;context.ReadyRoleContextV1={current:()=> 'parent'};
+vm.createContext(context);vm.runInContext(foundationSrc,context);vm.runInContext(controlSrc,context);const C=context.ReadyFoundationControlV1;
+const today=new Date().toLocaleDateString('sv-SE'),plus=n=>{const d=new Date(`${today}T12:00:00`);d.setDate(d.getDate()+n);return d.toLocaleDateString('sv-SE')},tomorrow=plus(1),deadline=plus(2),wd=d=>new Date(`${d}T12:00:00`).getDay();
+C.saveProfile({id:'study',revision:1,state:'ACTIVE',effective_from:today,effective_to:null,provenance:{source:'PARENT_INPUT'},events:[{id:'study-today',key:'study-today',title:'오늘 학습',weekday:wd(today),start:'13:00',end:'14:00',kind:'STUDY_OPPORTUNITY',parent_editable:true,planner_movable:false,source:'LOCAL'},{id:'study-tomorrow',key:'study-tomorrow',title:'내일 학습',weekday:wd(tomorrow),start:'13:00',end:'14:00',kind:'STUDY_OPPORTUNITY',parent_editable:true,planner_movable:false,source:'LOCAL'}]});
+for(const [action,payload] of [['ADD',{id:'fact-history',path:'MANUAL',fact:{id:'fact-history',title:'수학 숙제',subject:'수학',volume:'10~12쪽',deadline,required:true,teacherInstruction:'',source:'MANUAL'}}],['ANALYZE',{}],['RESULT',{retakeIds:[]}],['COMMIT',{reviewed:true,facts:[{id:'fact-history',title:'수학 숙제',subject:'수학',volume:'10~12쪽',deadline,required:true,teacherInstruction:'',source:'MANUAL'}]}]])C.capture(action,payload);
+let p=JSON.parse(localStorage.getItem('readyset_planner_v1')),task=Object.values(p.days||{}).flatMap(d=>d.tasks||[]).find(t=>t.sourceAssignmentId==='fact-history');assert.ok(task);assert.equal(task.localDate,today);
+task.status='COMPLETED';task.selected=true;task.learningReports=[{done:true,at:new Date().toISOString()}];localStorage.setItem('readyset_planner_v1',JSON.stringify(p));
+const history=C.actualHistory(C.load().lastPlannerInput.units);assert.equal(history.length,1);assert.equal(history[0].status,'COMPLETED');
+C.saveOverride({id:'block-today',key:'block-today',date:today,event:{id:'block-today',key:'block-today',title:'오늘 일정 변경',date:today,start:'12:30',end:'14:30',kind:'FIXED',parent_editable:true,planner_movable:false,source:'LOCAL'}});
+p=JSON.parse(localStorage.getItem('readyset_planner_v1'));const completed=Object.values(p.days||{}).flatMap(d=>d.tasks||[]).filter(t=>t.sourceAssignmentId==='fact-history'&&t.status==='COMPLETED');const replanned=Object.values(p.days||{}).flatMap(d=>d.tasks||[]).filter(t=>t.sourceAssignmentId==='fact-history'&&t.authority==='PLANNER/MAIN'&&t.status==='PLANNED');assert.equal(completed.length,1,'completed execution evidence must remain');assert.equal(replanned.length,0,'completed unit must never be projected again after schedule change');
+console.log(JSON.stringify({pass:true,contract:'ready-planner-actual-history-replan-e2e-v1',completedPreserved:true,reprojectionBlocked:true}));
