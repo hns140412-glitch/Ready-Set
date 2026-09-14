@@ -25,44 +25,55 @@ Close the first authoritative Ready & Set child-result-to-Planner loop so that t
 5. Existing `ready-foundation-v1.js` semantics: `actualHistory` only treats `COMPLETED` units as completed; absence of an explicit study opportunity is not free-time evidence.
 
 ## Confirmed TAKY inspection finding 1 — non-completed history may suppress legitimate projection
-TAKY inspected the current branch before dispatch and confirmed a likely concrete failure path that Codex must reproduce before modifying code:
-
 - `ready-base-runtime-v1.js::readyPublishPlannerResult(...)` writes `PARTIAL | DEFERRED | BLOCKED | WAITING_FOR_PARENT` to the same Planner task and appends `learningReports`.
 - `ready-foundation-control-v1.js::actualHistory(...)` correctly carries non-completed tasks into history when learning reports exist.
 - `ready-foundation-v1.js::plan(...)` suppresses future projection only for history rows whose status is exactly `COMPLETED`.
-- However, `ready-foundation-control-v1.js::prepare(...)` currently adds any Planner task with `learningReports?.length` to `protectedIds`, and then skips a newly generated candidate when `protectedIds` already contains that candidate id.
+- But `ready-foundation-control-v1.js::prepare(...)` adds any Planner task with `learningReports?.length` to `protectedIds`, then skips a newly generated candidate when that id is protected.
 
-This means a `PARTIAL`/other non-completed task can be preserved as historical evidence while the same unit's prospective candidate is also blocked from being re-created, causing remaining work to disappear instead of being replanned.
+Likely effect: a non-completed historical actual is preserved while legitimate future projection of its remaining work is suppressed.
 
-Treat this as a confirmed inspection lead, not permission to patch blindly. Reproduce it with the real candidate/task identity and determine the smallest correction that preserves immutable actual evidence without suppressing legitimate future projection.
+Required reproduction: non-completed task + learning report + replan must preserve the past actual and still produce the allowed future remainder candidate.
 
 ## Confirmed TAKY inspection finding 2 — wrap-up may overwrite a non-completed task as COMPLETED
-TAKY also confirmed a second high-risk path across the real session-finalization flow:
+- `ready-runtime-v07.js::setTaskState(...)` publishes the chosen task result to the bound Planner task.
+- `ready-runtime-v07.js::finalizeSession()` then calls `originalCompleteSession()`.
+- That resolves to base `readyComplete()`.
+- `ready-base-runtime-v1.js::readyComplete()` unconditionally records `status:'COMPLETED'` and publishes `COMPLETED` for the session planner task.
 
-- `ready-runtime-v07.js::setTaskState(...)` publishes the chosen task result (`PARTIAL | DEFERRED | BLOCKED | WAITING_FOR_PARENT | COMPLETED`) to the bound Planner task.
-- `ready-runtime-v07.js::finalizeSession()` then calls `originalCompleteSession()` after all task states are resolved.
-- In the base runtime, `originalCompleteSession` resolves to the canonical `readyComplete()` implementation.
-- `ready-base-runtime-v1.js::readyComplete()` unconditionally creates a record with `status:'COMPLETED'` and calls `readyPublishPlannerResult(plannerTaskId,'COMPLETED',...)` for the session's planner task id.
+Likely effect: `PARTIAL`, `DEFERRED`, `BLOCKED`, or `WAITING_FOR_PARENT` is correctly written first, then generic session finalization can overwrite the same Planner assignment to `COMPLETED`.
 
-Therefore a user can explicitly mark the canonical task as `PARTIAL`, `DEFERRED`, `BLOCKED`, or `WAITING_FOR_PARENT` in wrap-up, have that result correctly published, and then the final generic session close can overwrite the same Planner task to `COMPLETED`.
+Required regression: finalize the real wrap-up path after each non-completed result and prove the Planner task never becomes `COMPLETED`; true completed tasks must still close as completed.
 
-This is a product-state correctness defect, not a UI-only issue. The fix must preserve session closure/history while preventing generic session completion from falsely completing a non-completed Planner assignment. Do not invent a second planner/result store.
+## Confirmed TAKY inspection finding 3 — parent result rendering currently mislabels session evidence
+`ready-home-homework-ui-v1.js::renderReports()` currently assumes learning reports are quantity reports from either `CHILD_REPORTED` or parent input:
+- it renders `report.completedQuantity + '%'` for every report;
+- it labels `CHILD_REPORTED` as `내가 기록`, and every other source as `보호자 기록`;
+- it does not render the session writer's `resultState`/provenance shape.
 
-Required regression before acceptance:
-- start a real Planner-bound Ready session;
-- set the task to `PARTIAL` (repeat for at least one of `DEFERRED/BLOCKED/WAITING_FOR_PARENT` or cover all parametrically);
-- finalize the session through the actual wrap-up path;
-- assert the Planner task remains the chosen non-completed state and is never rewritten to `COMPLETED`;
-- verify a true `COMPLETED` task still closes and remains completed.
+But `ready-base-runtime-v1.js::readyPublishPlannerResult(...)` writes session reports shaped like:
+`source: READY_SESSION/SPECIALIST/...`, `resultState`, `focusMs`, `pausedMs`, `sessionId` and no required `completedQuantity`.
+
+Likely effect on the real parent surface:
+- a session-derived PARTIAL/BLOCKED/etc. can display `undefined%`;
+- READY/Specialist session evidence can be falsely described as `보호자 기록`;
+- the parent cannot reliably distinguish confirmed assignment FACT from child/session-reported state and unresolved remainder evidence.
+
+This directly violates Issue #3 parent-facing acceptance. Fix the rendering/model semantics, not by fabricating quantity. Session result states with no reliable quantity must be shown as state/provenance evidence and unresolved remainder where applicable. Percentages are valid only when an explicit cumulative quantity report actually exists.
+
+Required regression/verification:
+- session `PARTIAL` report with no quantity renders no fake/undefined percentage;
+- source is displayed truthfully as Ready/session/specialist-derived evidence, not parent input;
+- manually entered percentage progress still renders its true percentage;
+- unresolved remainder remains explicit when quantity is unknown.
 
 ## First investigation targets
 Inspect before modifying:
-- `ready-foundation-control-v1.js` — especially `actualHistory(...)` and `prepare(...)` protection/filter logic;
+- `ready-foundation-control-v1.js` — `actualHistory(...)`, `prepare(...)`;
 - `ready-foundation-v1.js` — completed-unit semantics in `plan(...)`;
-- `ready-base-runtime-v1.js` — result publication and generic session completion behavior;
-- `ready-runtime-v07.js` — wrap-up/finalization and specialist-return result publication;
-- `ready-home-homework-mvp-v1.js` — Planner ↔ canonical task binding;
-- Planner/parent surfaces that render current and remaining state;
+- `ready-base-runtime-v1.js` — result publication and generic session completion;
+- `ready-runtime-v07.js` — wrap-up/finalization and specialist-return publication;
+- `ready-home-homework-mvp-v1.js` — Planner ↔ canonical task binding and quantity-report model;
+- `ready-home-homework-ui-v1.js` — parent/child report rendering and provenance semantics;
 - `tests/ready-daily-loop-result-planner-contract.mjs`;
 - `tests/ready-planner-actual-history-replan-e2e.mjs`;
 - `tests/ready-specialist-bridge-contract.mjs`.
@@ -70,17 +81,17 @@ Inspect before modifying:
 Do not widen scope unless the real product path proves the defect lives elsewhere.
 
 ## Required product behavior
-1. The canonical Planner task remains the same assignment identity through Ready and specialist round trips using the existing session/task ownership fields.
-2. Session finish writes one normalized result state: `COMPLETED | PARTIAL | DEFERRED | BLOCKED | WAITING_FOR_PARENT` with provenance.
-3. Generic session closure must never upgrade a non-completed task to `COMPLETED`.
+1. The canonical Planner task remains the same assignment identity through Ready and specialist round trips using existing ownership fields.
+2. Session finish writes one normalized result state: `COMPLETED | PARTIAL | DEFERRED | BLOCKED | WAITING_FOR_PARENT` with truthful provenance.
+3. Generic session closure never upgrades a non-completed task to `COMPLETED`.
 4. `COMPLETED` suppresses only genuinely completed unit(s) from future projection.
-5. `PARTIAL` preserves completed evidence and produces/retains a bounded remainder when reliable quantity evidence exists.
+5. `PARTIAL` preserves completed evidence and produces/retains bounded remainder when reliable quantity evidence exists.
 6. If quantity is unknown, keep an explicit unresolved remainder; do not invent pages, minutes, percentages, or completion quantity.
 7. `DEFERRED`, `BLOCKED`, and `WAITING_FOR_PARENT` preserve the assignment and drive only governed prospective replanning when a confirmed future study opportunity exists.
 8. Past actual history is immutable. Replanning writes prospectively only.
 9. Specialist return updates the same Planner assignment; no duplicate task/session authority.
 10. Reload preserves in-progress/result/remainder state locally. Network sync may remain out of scope for this slice.
-11. Parent-visible state distinguishes confirmed assignment fact, session/child-reported result, and unresolved evidence.
+11. Parent-visible state distinguishes confirmed assignment FACT, explicit quantity report, session/specialist-reported result, and unresolved remainder/evidence.
 
 ## Explicit non-goals
 - no new parallel Planner store;
@@ -93,40 +104,33 @@ Do not widen scope unless the real product path proves the defect lives elsewher
 - no inferred free time from missing timetable rows.
 
 ## Acceptance tests
-A. Execute one real product-path assignment from Planner into Ready and finish `COMPLETED`; after replan it does not return.
-B. Execute one real assignment as `PARTIAL`; finalizing the session does not overwrite it to `COMPLETED`, past actual remains intact, and only remaining work is projected forward.
-C. A `PARTIAL` result without reliable quantity evidence remains explicitly unresolved rather than disappearing or receiving invented quantity.
-D. `DEFERRED`, `BLOCKED`, and `WAITING_FOR_PARENT` do not become completed and do not erase remaining work, including after generic session finalization.
-E. Round trip through at least one specialist bridge preserves `session_id + goal_id + task_id + lap_id`/equivalent canonical ownership and affects the same Planner assignment.
-F. Reload after result write preserves current result/remainder locally.
-G. Parent surface visibly separates confirmed FACT, reported result, and unresolved remainder/evidence.
+A. Planner → Ready → `COMPLETED`; after replan it does not return.
+B. Planner → Ready → `PARTIAL`; finalization does not overwrite to completed, past actual remains, remaining work moves prospectively.
+C. `PARTIAL` without reliable quantity remains explicitly unresolved with no invented percentage.
+D. `DEFERRED`, `BLOCKED`, `WAITING_FOR_PARENT` do not become completed or disappear, including after finalization.
+E. Specialist round trip preserves `session_id + goal_id + task_id + lap_id`/equivalent ownership and updates the same Planner assignment.
+F. Reload preserves current result/remainder locally.
+G. Parent surface separates confirmed FACT, explicit quantity report, session/specialist result provenance, and unresolved remainder.
 H. No historical actual is rewritten after replanning.
-I. Existing relevant tests remain green; add/adjust regression tests only after the real product path is fixed.
-J. Add a regression that specifically proves a task with `learningReports` and non-`COMPLETED` status does not suppress legitimate future projection of its remaining unit.
-K. Add a regression that proves wrap-up/finalizeSession cannot rewrite a non-completed Planner result to `COMPLETED`.
+I. Existing relevant tests remain green; regression tests follow real product fixes.
+J. Non-completed task with `learningReports` does not suppress legitimate future projection.
+K. `finalizeSession` cannot rewrite a non-completed Planner result to `COMPLETED`.
+L. Session-origin report rendering never shows `undefined%` or mislabels it as parent input.
 
 ## Validation plan
-Run the smallest relevant suite first, then adjacent regressions:
+Run smallest relevant suite first, then adjacent regressions:
 - `node tests/ready-daily-loop-result-planner-contract.mjs`
 - `node tests/ready-planner-actual-history-replan-e2e.mjs`
 - `node tests/ready-specialist-bridge-contract.mjs`
-- focused new regression for non-completed learning-report replanning
-- focused new regression for wrap-up/finalization result preservation
+- focused regression for non-completed learning-report replanning
+- focused regression for wrap-up/finalization result preservation
+- focused rendering/model regression for session report provenance/no fabricated quantity
 - other directly affected existing tests as justified by changed files
 
 Also exercise the affected product path in a real browser/mobile-width runtime when available. If runtime/mobile cannot be executed, report `UNVERIFIED` rather than PASS.
 
 ## Delivery requirements
-Return:
-- actual START_REMOTE_HEAD after `git fetch`;
-- reproduced failing case(s) before fix;
-- confirmed root cause(s), not assumed diagnosis;
-- changed files and why each changed;
-- exact test commands/results;
-- runtime/mobile evidence or explicit UNVERIFIED reason;
-- unresolved product/architecture decision only if truly blocking;
-- resulting commit SHA(s);
-- requested lifecycle state: `TAKY_REVIEW`.
+Return actual START_REMOTE_HEAD, reproduced failing cases before fix, confirmed root causes, changed files, exact tests/results, runtime/mobile evidence or UNVERIFIED reason, resulting commit SHA(s), and requested lifecycle state `TAKY_REVIEW`.
 
 Do not merge to main and do not deploy production.
 
