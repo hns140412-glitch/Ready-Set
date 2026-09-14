@@ -8,6 +8,26 @@ Codex MUST NOT redefine product requirements, architecture direction, acceptance
 `CODEX_DONE != TAKY_PASS`.
 A Codex completion report is implementation evidence only. Completion is granted only after the applicable TAKY review gates pass.
 
+## Workspace bootstrap — HARD LOCK
+Canonical repository: `hns140412-glitch/Ready-Set`.
+Canonical work branch for the current track: `runtime-session-bridge-2026-09-10`.
+Canonical task contracts live under `.taky/tasks/`.
+
+Before asking the user for an absolute path, Codex MUST first establish whether the current workspace is the Ready-Set repository.
+
+Bootstrap sequence:
+1. Inspect the current working directory and Git metadata (`git rev-parse --show-toplevel`, `git remote -v`, current branch).
+2. If the current workspace is already `hns140412-glitch/Ready-Set`, run `git fetch origin` and switch/update to `runtime-session-bridge-2026-09-10` without discarding uncommitted user work.
+3. If the Ready-Set repository exists in an accessible local workspace, locate it from Git metadata/remotes rather than guessing a path, then use that checkout.
+4. If no usable checkout exists but GitHub/network access is available, obtain `hns140412-glitch/Ready-Set` from the configured `origin`, fetch the canonical work branch, and establish a checkout/worktree for that branch.
+5. Only if repository discovery/checkout is genuinely impossible because of permissions, missing credentials, unavailable network, or an inaccessible filesystem may Codex ask the user for a path or environment action. Report the exact blocker and commands/evidence already checked.
+6. After bootstrap, verify `AGENTS.md` and the requested `.taky/tasks/<TASK_ID>.md` from the live work branch before implementation.
+7. Record the actual `origin/runtime-session-bridge-2026-09-10` HEAD used to start execution. A Handoff SHA or conversationally supplied SHA is never sufficient by itself.
+
+Do not search unrelated Desktop/Downloads folders as a substitute for repository bootstrap. Do not ask the user to manually locate a task file that exists on the canonical remote branch when Codex can fetch/checkout that branch itself.
+
+Workspace bootstrap success only establishes execution context; it does not authorize implementation outside the requested task contract.
+
 ## Required task contract
 Every material implementation task MUST have an execution contract containing, at minimum:
 - task id;
