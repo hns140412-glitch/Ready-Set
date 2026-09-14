@@ -24,18 +24,30 @@ Close the first authoritative Ready & Set child-result-to-Planner loop so that t
 4. Existing product implementation; consolidate existing paths rather than introducing a parallel planner/session authority.
 5. Existing `ready-foundation-v1.js` semantics: `actualHistory` only treats `COMPLETED` units as completed; absence of an explicit study opportunity is not free-time evidence.
 
+## Confirmed TAKY inspection finding — reproduce before edit
+TAKY inspected the current branch before dispatch and confirmed a likely concrete failure path that Codex must reproduce before modifying code:
+
+- `ready-base-runtime-v1.js::readyPublishPlannerResult(...)` writes `PARTIAL | DEFERRED | BLOCKED | WAITING_FOR_PARENT` to the same Planner task and appends `learningReports`.
+- `ready-foundation-control-v1.js::actualHistory(...)` correctly carries non-completed tasks into history when learning reports exist.
+- `ready-foundation-v1.js::plan(...)` suppresses future projection only for history rows whose status is exactly `COMPLETED`.
+- However, `ready-foundation-control-v1.js::prepare(...)` currently adds any Planner task with `learningReports?.length` to `protectedIds`, and then skips a newly generated candidate when `protectedIds` already contains that candidate id.
+
+This means a `PARTIAL`/other non-completed task can be preserved as historical evidence while the same unit's prospective candidate is also blocked from being re-created, causing remaining work to disappear instead of being replanned.
+
+Treat this as a confirmed inspection lead, not permission to patch blindly. Codex must reproduce the failure with the real candidate/task identity and determine the smallest correction that preserves immutable actual evidence without suppressing legitimate future projection.
+
 ## First investigation targets
 Inspect before modifying:
-- `ready-foundation-v1.js`
-- actual-history/result publication path feeding `ReadyFoundationV1.plan(...)`
-- Ready runtime result writer
-- specialist bridges for Hide & Seek / Snap & Pop
-- Planner/parent surfaces that render current and remaining state
-- `tests/ready-daily-loop-result-planner-contract.mjs`
-- `tests/ready-planner-actual-history-replan-e2e.mjs`
-- `tests/ready-specialist-bridge-contract.mjs`
+- `ready-foundation-control-v1.js` — especially `actualHistory(...)` and `prepare(...)` protection/filter logic;
+- `ready-foundation-v1.js` — completed-unit semantics in `plan(...)`;
+- `ready-base-runtime-v1.js` — result publication and evidence shape;
+- Ready runtime specialist bridges for Hide & Seek / Snap & Pop;
+- Planner/parent surfaces that render current and remaining state;
+- `tests/ready-daily-loop-result-planner-contract.mjs`;
+- `tests/ready-planner-actual-history-replan-e2e.mjs`;
+- `tests/ready-specialist-bridge-contract.mjs`.
 
-Do not assume the historical diagnosis is correct until code inspection confirms it. In particular, verify whether any adapter converts the existence of a learning/session report into whole-unit completion or suppresses an assignment despite `PARTIAL`, `DEFERRED`, `BLOCKED`, or `WAITING_FOR_PARENT`.
+Do not widen scope unless the real product path proves the defect lives elsewhere.
 
 ## Required product behavior
 1. The canonical Planner task remains the same assignment identity through Ready and specialist round trips using the existing session/task ownership fields.
@@ -69,12 +81,14 @@ F. Reload after result write preserves current result/remainder locally.
 G. Parent surface visibly separates confirmed FACT, reported result, and unresolved remainder/evidence.
 H. No historical actual is rewritten after replanning.
 I. Existing relevant tests remain green; add/adjust regression tests only after the real product path is fixed.
+J. Add a regression that specifically proves a task with `learningReports` and non-`COMPLETED` status does not suppress legitimate future projection of its remaining unit.
 
 ## Validation plan
 Run the smallest relevant suite first, then adjacent regressions:
 - `node tests/ready-daily-loop-result-planner-contract.mjs`
 - `node tests/ready-planner-actual-history-replan-e2e.mjs`
 - `node tests/ready-specialist-bridge-contract.mjs`
+- focused new regression for non-completed learning-report replanning
 - other directly affected existing tests as justified by changed files
 
 Also exercise the affected product path in a real browser/mobile-width runtime when available. If runtime/mobile cannot be executed, report `UNVERIFIED` rather than PASS.
@@ -82,6 +96,7 @@ Also exercise the affected product path in a real browser/mobile-width runtime w
 ## Delivery requirements
 Return:
 - actual START_REMOTE_HEAD after `git fetch`;
+- reproduced failing case before fix;
 - confirmed root cause(s), not assumed diagnosis;
 - changed files and why each changed;
 - exact test commands/results;
