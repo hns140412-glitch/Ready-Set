@@ -1,7 +1,7 @@
 # Ready & Set Focus Timer Golden Canonical
 
 Status: CANONICAL VISUAL CONTRACT / HARD LOCK
-Date: 2026-09-14
+Date: 2026-09-15
 Scope: Ready & Set Focus / Time Attack timer UI
 
 ## Canonical visual references
@@ -54,10 +54,21 @@ Preserve at minimum:
 - Target Time;
 - Pause / Complete;
 - BGM/secondary status;
-- Start / Focus / Pause-Issue secondary timing data where applicable;
-- phone/tablet responsive behavior that preserves the Golden UI hierarchy rather than merely scaling the phone screenshot.
+- Start / Focus / Pause-Issue secondary timing data where applicable.
 
 Do not redesign the screen because a new treatment looks cleaner or more modern. `CHANGED` is not an automatic PASS.
+
+## Analog clock behavior — HARD LOCK
+
+The analog clock is a live clock object, not a static illustration.
+
+Current implementation semantics are preserved unless a later canonical product rule explicitly supersedes them:
+- hour/minute/second hands represent the device's current local wall-clock time;
+- hands are rendered as separate dynamic UI layers, not baked into the clock-face asset;
+- hand positions are derived from the current timestamp so background/app-switch/resume does not accumulate interval drift;
+- the lower Remaining/Target/Focus timing remains session timing and is separate from the analog wall-clock display.
+
+A production clock-face visual asset must therefore contain the face/rim/numerals/branding only; hour/minute/second hands must remain dynamic code-driven layers.
 
 ## REC conditional state — HARD LOCK
 
@@ -79,17 +90,32 @@ REC requirements:
 - color alone must not communicate completion;
 - must not destabilize the Golden clock/panel visual balance.
 
-## Responsive lock
+## Responsive lock — HARD LOCK
+
+The responsive rule is explicitly defined by the approved phone/tablet Golden reference. TAKY/Codex must not reinterpret it.
 
 Phone:
-- preserve the primary Golden hierarchy and proportions;
+- show the complete timer UI at the Golden proportions for the screen;
+- preserve the relative composition of headline, mission, clock and Dark Control Panel;
 - keep the full clock visible;
-- reduce secondary decoration/spacing/padding/typography/clock scale before considering any crop.
+- for short screens, reduce secondary decoration/spacing/padding/typography/clock scale before considering crop.
 
-Tablet:
-- preserve the same UI identity and component hierarchy;
-- use added canvas for deliberate composition/spacing/background expansion;
-- do not transform the tablet layout into an unrelated dashboard.
+Tablet / wide screen:
+- **do not rearrange the clock and timer/control panel relative to each other**;
+- **do not transform the timer UI into a left-column/right-column redesign**;
+- **keep the same UI composition and approximately the same component size as the approved timer UI**;
+- **expand the yellow/background canvas only**;
+- place the unchanged timer UI composition toward the **right side** of the expanded canvas, as shown by the approved Golden responsive board, to improve right-hand touch accessibility;
+- use the added left-side canvas for background extension/editorial decoration only;
+- any change to the relative clock/timer/panel placement is `REGRESSED` unless explicitly approved by the user.
+
+Canonical shorthand:
+
+`PHONE = same UI fitted to screen`
+
+`TABLET = same UI composition + same scale intent + background extension + right-side placement`
+
+This is a placement lock, not a design suggestion.
 
 ## Validation classification
 
@@ -109,4 +135,6 @@ Golden completion requires actual rendered screenshots at the relevant phone/tab
 
 ## Current implementation note
 
-The current branch contains partial Golden structure (Yellow Focus, full clock object, Dark Control Panel, Pause/Complete, BGM), but known drift exists in headline/copy, clock identity/details, editorial composition, mission styling, and Target-Time wording/semantics. This document records the canonical target; it does not itself modify product implementation.
+The current branch contains partial Golden structure (Yellow Focus, full clock object, Dark Control Panel, Pause/Complete, BGM), but known drift exists in headline/copy, clock identity/details, editorial composition, mission styling, and Target-Time wording/semantics. The current `app.js` also drives analog hands from `new Date()` wall-clock time; that behavior is now explicitly bound above so visual restoration does not accidentally replace it with a static image or session countdown hands.
+
+This document records the canonical target; it does not itself modify product implementation.
