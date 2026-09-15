@@ -76,6 +76,7 @@
     rec.setAttribute('aria-hidden',required?'false':'true');
     rec.setAttribute('aria-label','문장 녹음');
     rec.type='button';
+    rec.closest('.timeStrip')?.classList.toggle('recording-required',required);
     const label=rec.querySelector('span');
     const done=required&&recordingCompleted();
     if(label)label.textContent=done?'REC ✓':'REC';
@@ -131,7 +132,10 @@
         #focusView::before{width:76vmin;height:76vmin;left:-26vmin;top:18%;opacity:.18;background:repeating-conic-gradient(from -8deg,rgba(20,20,18,.55) 0 2deg,transparent 2deg 14deg);border-radius:50%}
         #focusView::after{right:5%;top:17%;width:86px;height:86px;opacity:.28;background:linear-gradient(45deg,transparent 44%,#1f1e1c 45% 55%,transparent 56%),linear-gradient(-45deg,transparent 44%,#1f1e1c 45% 55%,transparent 56%);transform:rotate(12deg) scale(.42)}
         #focusView .focusHeader,#focusView .focusMain{position:relative;z-index:1}
+        #focusView .clockHero::after{content:none!important}
         #focusView .clockBrand{position:absolute;left:50%;top:31%;transform:translateX(-50%);z-index:2;font-size:clamp(11px,3vw,15px);font-weight:950;letter-spacing:-.03em;white-space:nowrap;color:#25231f}
+        #focusView .timeStrip{grid-template-columns:1fr 1fr}
+        #focusView .timeStrip.recording-required{grid-template-columns:1fr auto 1fr}
         #focusView .recButton{min-width:52px;min-height:52px;width:52px;height:52px;touch-action:manipulation}
         #focusView .recButton.completed span{font-size:9px;letter-spacing:0}
         #focusView .recButton.completed i{box-shadow:0 0 0 3px rgba(255,255,255,.12)}
