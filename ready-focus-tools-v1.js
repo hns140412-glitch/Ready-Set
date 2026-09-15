@@ -1,20 +1,21 @@
 (() => {
   'use strict';
-  const VERSION='2026.09.15-focus-golden-v3';
+  const VERSION='2026.09.15-focus-golden-v4';
   const $=s=>document.querySelector(s);
   let mediaRecorder=null,mediaStream=null,chunks=[],currentAudio=null,recordStartedAt=0,recordTicker=null;
 
   function toast(message){const t=$('#toast');if(!t)return;t.textContent=message;t.hidden=false;clearTimeout(t._focusTm);t._focusTm=setTimeout(()=>t.hidden=true,2200)}
   function fmt(ms){const seconds=Math.max(0,Math.floor(Number(ms||0)/1000));return`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`}
+  function normalizeMissionLabel(value){return String(value||'').trim().replace(/영어\s*·\s*recording\b/ig,'영어 · 문장 녹음')}
 
   function activeMissionLabel(){
-    const mission=$('#focusMission')?.textContent?.trim();
+    const mission=normalizeMissionLabel($('#focusMission')?.textContent);
     if(mission)return mission;
     const c=window.ReadySetRev07?.contract?.();
     const task=c?.tasks?.find(t=>t.task_id===c.active_task_id);
-    if(task?.label)return String(task.label);
+    if(task?.label)return normalizeMissionLabel(task.label);
     const plannerTask=window.ReadyBaseRuntimeV1?.selectedPlannerTask?.();
-    return String(plannerTask?.title||plannerTask?.label||'');
+    return normalizeMissionLabel(plannerTask?.title||plannerTask?.label||'');
   }
 
   function taskExplicitlyNeedsRecording(){
@@ -22,8 +23,9 @@
     if(/영어\s*·\s*문장\s*녹음/.test(label))return true;
     const task=window.ReadyBaseRuntimeV1?.selectedPlannerTask?.();
     if(!task)return false;
+    const subject=String(task.subject||'');
     const flags=[task.activityType,task.activity,task.mode,task.tool,task.requiredTool,task.requiredTools,task.activities].flat().filter(Boolean).map(String).join(' ');
-    return /영어\s*·\s*문장\s*녹음/.test(flags);
+    return /영어/i.test(subject)&&/(?:문장\s*녹음|recording|record\b)/i.test(flags);
   }
 
   function sessionKey(){
@@ -49,6 +51,7 @@
   function applyGoldenCopy(){
     const focus=$('#focusView');if(!focus)return;
     const headline=focus.querySelector('.focusTitle h1');if(headline)headline.textContent='그냥! 지금 하면 돼!';
+    const mission=$('#focusMission');if(mission)mission.textContent=normalizeMissionLabel(mission.textContent);
     const targetLabel=focus.querySelector('.timeStrip>div:last-child small');if(targetLabel)targetLabel.textContent='목표 시간';
     ensureClockDetails()
   }
