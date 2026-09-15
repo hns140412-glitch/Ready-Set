@@ -1,0 +1,19 @@
+{
+  "status": "ASSET_LOCKED",
+  "authority": "TAKY",
+  "canonical_visual_source": "타임어택 집중 챌린지 UI.png#right-focus-screen",
+  "components": ["FocusShell","FocusHeader","MissionPill","AnalogClockHero","TimerControlPanel","TimeMetricPrimary","TargetMetric","FocusStatusBar","PauseCTA","CompleteCTA","PauseReasonGroup","ResumeCTA","BGMAction","ConditionalRECAction"],
+  "states": ["READY","RUNNING","PAUSED","BACKGROUND_OR_LOCKED","COMPLETION_REQUESTED"],
+  "inputs": ["missionLabel","targetTimeMs","startAt","endAt/now","accumulatedPausedIssueTime","timerState","bgmState","recordingApplicable","recordingState"],
+  "events": ["onPauseRequest","onResumeRequest","onCompletionRequest","onBgmAction","onRecordingRequest"],
+  "hard_locks": {
+    "full_analog_clock": true,
+    "forced_crop_forbidden": true,
+    "yellow_focus_shell": true,
+    "dark_subordinate_panel": true,
+    "rec_conditional_only": true,
+    "app_switch_is_pause": false,
+    "screen_lock_is_pause": false,
+    "timer_authoritative_task_completion": false
+  }
+}
