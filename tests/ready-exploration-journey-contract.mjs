@@ -20,6 +20,7 @@ const checks = [
   ['schedule refresh does not rewrite active session selection', base.includes("if(state.activeSession){const activeId=state.activeSession.plannerTaskId")],
   ['confirmed timetable exposes now/next context', schedule.includes('function scheduleContext(rows)') && schedule.includes('지금 일정') && schedule.includes('다음 일정')],
   ['authoritative session timing exported', base.includes('sessionTimes:readySessionTimes')],
+  ['active session restores after reload', base.includes('function readyRestoreActiveSession()') && base.includes("readyNav('focus');clearInterval(readyTicker)")],
   ['start and result share handlers exported', base.includes('shareMission:readyShareMission') && base.includes('shareResult:readyShareResult')],
   ['start and result share buttons bound', base.includes("$('#missionShareBtn').onclick=readyShareMission") && base.includes("$('#shareResultBtn').onclick=readyShareResult")],
   ['share is image-first when file sharing is supported', base.includes('function readyShareCardBlob') && base.includes("new File([blob],fileName,{type:'image/png'})") && base.includes('navigator.canShare({files:[file]})')],
