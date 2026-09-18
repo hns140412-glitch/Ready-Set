@@ -9,6 +9,19 @@
 
   const toast=message=>{const t=$('#toast');if(!t)return;t.textContent=message;t.hidden=false;clearTimeout(t._recordTm);t._recordTm=setTimeout(()=>t.hidden=true,2400)};
   const fmt=ms=>{const sec=Math.max(0,Math.floor(Number(ms||0)/1000));return `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`};
+  function setRecordButton(label,recording=false){const action=$('#recordAction');if(!action)return;action.className='bigRecord'+(recording?' recording':'');action.innerHTML='<i aria-hidden="true"></i><span></span>';action.querySelector('span').textContent=label;$('#waveform')?.classList.toggle('active',recording)}
+  function ensureRecordingLayout(){
+    const main=$('#recordingView .recordingMain');if(!main)return;
+    const avatar=$('#recordAvatar'),guide=$('#recordGuidePortrait'),dialogue=$('#guideDialogue');
+    let scene=$('#readyRecordingScene');
+    if(!scene){scene=document.createElement('section');scene.id='readyRecordingScene';scene.className='guideScene';main.insertBefore(scene,main.firstChild);const bubble=document.createElement('div');bubble.className='guideBubble';scene.append(avatar,bubble);bubble.append(guide,dialogue)}
+    avatar?.classList.add('userMiniAvatar');if(avatar){const name=String(state?.profile?.name||'RS').trim();avatar.textContent=name.slice(0,2).toUpperCase()||'RS';if(state?.profile?.photo){avatar.style.backgroundImage=`url(${state.profile.photo})`;avatar.style.backgroundSize='cover';avatar.textContent=''}}
+    guide?.classList.add('guideOrb','mainGuide');if(guide)guide.textContent=String(state?.guide?.name||'루미').slice(0,1);
+    let panel=$('#readyRecordingPanel');
+    if(!panel){panel=document.createElement('section');panel.id='readyRecordingPanel';panel.className='recordPanel';const first=$('#recordState');main.insertBefore(panel,first);panel.append($('#recordState'),$('#recordClock'),$('#waveform'),$('#recordAction'))}
+    $('#recordState')?.classList.add('recordState');$('#recordClock')?.classList.add('recordClock');const wave=$('#waveform');wave?.classList.add('waveform');if(wave&&!wave.children.length)wave.innerHTML='<i></i>'.repeat(17);
+    $('#reviewPanel')?.classList.add('reviewPanel');$('#formatNote')?.classList.add('muted');setRecordButton(mediaRecorder?.state==='recording'?'녹음 끝내기':'녹음 시작',mediaRecorder?.state==='recording')
+  }
   const activeContract=()=>window.ReadySetRev07?.contract?.();
   const activeTask=()=>{const c=activeContract();return c?.tasks?.find(t=>t.task_id===c.active_task_id)||null};
   const activeLabel=()=>String(activeTask()?.label||$('#focusMission')?.textContent||'').trim();
@@ -68,13 +81,13 @@
     let share=$('#shareRecordingBtn');
     if(!share){share=document.createElement('button');share.id='shareRecordingBtn';share.type='button';share.textContent='녹음 파일 전송';panel.appendChild(share)}
     const save=$('#saveRecordingBtn'),retry=$('#rerecordBtn');
-    if(save)save.textContent=currentStored?'녹음 확인':'원본 저장';if(retry)retry.textContent='다시 녹음';
+    if(save){save.textContent=currentStored?'녹음 확인':'원본 저장';save.className='btn dark'}if(retry){retry.textContent='다시 녹음';retry.className='btn outline'}share.className='btn outline';
     share.onclick=shareRecording;
   }
   function renderContext(){
     if($('#recordTimerContext'))$('#recordTimerContext').textContent=$('#remainingTime')?.textContent||'';
     if($('#guideDialogue'))$('#guideDialogue').textContent='타이머는 계속 이어져요. 문장을 읽고 녹음한 뒤 원본을 저장하거나 전송하세요.';
-    ensureReviewActions();
+    ensureRecordingLayout();ensureReviewActions();
   }
   function renderRecState(){
     const rec=$('#recBtn');if(!rec)return;
@@ -90,7 +103,7 @@
     if(!keepPreview){currentAudio=null;currentFile=null;currentStored=false;const preview=$('#audioPreview');if(preview){if(preview.src)URL.revokeObjectURL(preview.src);preview.removeAttribute('src')}if($('#reviewPanel'))$('#reviewPanel').hidden=true}
     if($('#recordClock'))$('#recordClock').textContent='00:00';
     if($('#recordState'))$('#recordState').textContent='READY';
-    const action=$('#recordAction');if(action){action.textContent='녹음 시작';action.classList.remove('recording')}
+    setRecordButton('녹음 시작',false)
   }
 
   async function finishRecording(){
@@ -101,10 +114,10 @@
     if(preview){if(preview.src)URL.revokeObjectURL(preview.src);preview.src=URL.createObjectURL(currentAudio)}
     if($('#reviewPanel'))$('#reviewPanel').hidden=false;
     if($('#recordState'))$('#recordState').textContent='REVIEW';
-    const action=$('#recordAction');if(action){action.textContent='녹음 시작';action.classList.remove('recording')}
+    setRecordButton('녹음 시작',false)
     const info=mimeInfo(currentFile.type),note=$('#formatNote');if(note)note.textContent=`원본 · .${info.ext} · ${currentFile.type||'audio'} · ${Math.max(1,Math.round(currentFile.size/1024))}KB`;
     ensureReviewActions();
-    try{await storeOriginal(currentFile);currentStored=true;toast('녹음 원본을 기기에 안전하게 보관했어요.')}catch{toast('원본 자동 보관에 실패했어요. 저장 버튼으로 다시 시도해 주세요.')}
+    try{await storeOriginal(currentFile);currentStored=true;ensureReviewActions();toast('녹음 원본을 기기에 안전하게 보관했어요.')}catch{toast('원본 자동 보관에 실패했어요. 저장 버튼으로 다시 시도해 주세요.')}
   }
 
   async function startRecording(){
@@ -120,7 +133,7 @@
       mediaRecorder.onerror=()=>{stopTicker();stopStream();toast('녹음 중 문제가 생겼어요. 다시 녹음해 주세요.')};
       mediaRecorder.start(250);recordStartedAt=Date.now();
       if($('#recordState'))$('#recordState').textContent='RECORDING';
-      const action=$('#recordAction');if(action){action.textContent='녹음 끝내기';action.classList.add('recording')}
+      setRecordButton('녹음 끝내기',true)
       recordTicker=setInterval(()=>{if($('#recordClock'))$('#recordClock').textContent=fmt(Date.now()-recordStartedAt);renderContext()},250);
     }catch(error){stopStream();toast(error?.name==='NotAllowedError'?'마이크 권한이 필요합니다.':'녹음을 시작할 수 없습니다.')}
   }
@@ -156,7 +169,7 @@
     const back=$('#recordBackBtn');if(back&&!back.dataset.recordingBound){back.dataset.recordingBound='1';back.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();returnToFocus()},true)}
     renderContext();renderRecState()
   }
-  function render(){bind();renderRecState();if($('#recordingView')?.classList.contains('active')){stopBgm();renderContext()}}
+  function render(){ensureRecordingLayout();bind();renderRecState();if($('#recordingView')?.classList.contains('active')){stopBgm();renderContext()}}
 
   window.addEventListener('pageshow',()=>setTimeout(render,0));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(render,0)});
