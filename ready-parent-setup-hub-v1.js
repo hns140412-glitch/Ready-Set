@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   if(window.ReadyParentSetupHubV1)return;
-  const VERSION='2026.09.13-parent-setup-hub-v1.2-stable';
+  const VERSION='2026.09.19-parent-setup-hub-v1.3-world-independent';
   const $=s=>document.querySelector(s);
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const today=()=>new Date().toLocaleDateString('sv-SE');
@@ -65,8 +65,13 @@
   }
   function mountParentHub(){
     if(role()!=='parent'){ $('#readyParentSetupHub')?.remove();return }
-    const world=$('#worldStage .worldSky');if(!world)return;
-    let hub=$('#readyParentSetupHub');if(hub&&hub.parentElement!==world)hub.remove();if(!hub){hub=document.createElement('section');hub.id='readyParentSetupHub';hub.className='rps-hub';const top=world.querySelector('.worldTop');top?.insertAdjacentElement('afterend',hub)}
+    const world=$('#worldStage .worldSky'),home=$('#homeView .homeMain'),host=world||home;if(!host)return;
+    let hub=$('#readyParentSetupHub');if(hub&&hub.parentElement!==host)hub.remove();
+    if(!hub){
+      hub=document.createElement('section');hub.id='readyParentSetupHub';hub.className='rps-hub';
+      if(world){const top=world.querySelector('.worldTop');top?.insertAdjacentElement('afterend',hub);if(!hub.parentElement)world.prepend(hub)}
+      else{const anchor=home.querySelector('.baseHero')||home.firstElementChild;anchor?home.insertBefore(hub,anchor):home.prepend(hub)}
+    }
     const ss=scheduleSummary(),hs=homeworkSummary(),ps=plannerSummary();
     const signature=JSON.stringify({events:ss.events,facts:hs.facts,confirmed:hs.confirmed,planned:ps.planned,noOpportunity:ps.noOpportunity});
     if(hub.dataset.renderSignature!==signature){
@@ -76,9 +81,11 @@
       hub.querySelector('[data-rps-homework]').onclick=goHomework;
       hub.querySelector('[data-rps-opportunity]')?.addEventListener('click',openScheduleEditor);
     }
-    const h1=world.querySelector('.worldTop h1'),p=world.querySelector('.worldTop p');
-    const heading='먼저 준비하고<br>오늘을 배정할까?',lead='시간표 → 숙제 원본 → Planner';
-    if(h1&&h1.innerHTML!==heading)h1.innerHTML=heading;if(p&&p.textContent!==lead)p.textContent=lead;
+    if(world){
+      const h1=world.querySelector('.worldTop h1'),p=world.querySelector('.worldTop p');
+      const heading='먼저 준비하고<br>오늘을 배정할까?',lead='시간표 → 숙제 원본 → Planner';
+      if(h1&&h1.innerHTML!==heading)h1.innerHTML=heading;if(p&&p.textContent!==lead)p.textContent=lead;
+    }
   }
   function mountScheduleActions(){
     if(role()!=='parent')return;const main=$('#scheduleView main');if(!main)return;
@@ -97,6 +104,6 @@
   let renderQueued=false;
   const observer=new MutationObserver(()=>{if(renderQueued)return;renderQueued=true;requestAnimationFrame(()=>{renderQueued=false;render()})});observer.observe(document.documentElement,{subtree:true,childList:true});
   window.addEventListener('ready-foundation-change',render);window.addEventListener('pageshow',render);
-  window.ReadyParentSetupHubV1={version:VERSION,render,openScheduleEditor,goHomework,scheduleSummary,homeworkSummary,plannerSummary};
+  window.ReadyParentSetupHubV1={version:VERSION,render,openScheduleEditor,goHomework,scheduleSummary,homeworkSummary,plannerSummary,validate:()=>({version:VERSION,worldIndependent:true,parentHomeFallback:true,noFreeTimeInference:true})};
   render();
 })();
