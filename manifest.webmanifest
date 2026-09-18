@@ -1,15 +1,25 @@
 {
-  "id":"ready-set",
-  "name":"Ready & Set",
-  "short_name":"Ready & Set",
-  "description":"준비는 가볍게. 시작은 자신 있게.",
-  "start_url":"./",
-  "scope":"./",
-  "display":"standalone",
-  "background_color":"#78cfff",
-  "theme_color":"#78cfff",
-  "icons":[
-    {"src":"./assets/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
-    {"src":"./assets/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  "id": "ready-set-staging-preview-5",
+  "name": "Ready & Set STAGING",
+  "short_name": "R&S STAGING",
+  "description": "Ready & Set device-validation staging preview.",
+  "start_url": "./?staging=preview-5",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#78cfff",
+  "theme_color": "#78cfff",
+  "icons": [
+    {
+      "src": "./assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }
