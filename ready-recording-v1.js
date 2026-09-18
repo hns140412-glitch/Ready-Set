@@ -108,7 +108,7 @@
     const sorted=[...rms].sort((a,b)=>a-b),noise=sorted[Math.floor(sorted.length*.2)]||0,gate=Math.max(.0018,noise*1.55),out=new Float32Array(length);
     let smoothGain=1,peak=0;
     for(let f=0,s=0;s<length;f++,s+=frame){
-      const desired=(rms[f]||0)<gate?.35:1,step=(desired-smoothGain)/(Math.min(frame,length-s)||1);
+      const desired=((rms[f]||0)<gate)?0.35:1,step=(desired-smoothGain)/(Math.min(frame,length-s)||1);
       for(let i=s;i<Math.min(length,s+frame);i++){
         smoothGain+=step;let v=band[i]*smoothGain,a=Math.abs(v);
         if(a>.28)v=Math.sign(v)*(.28+(a-.28)/3);
