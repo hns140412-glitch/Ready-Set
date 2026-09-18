@@ -5,7 +5,7 @@
   const VERSION='2026.09.19-recording-v4-realtime-m4a-clean';
   const DB_NAME='readyset_audio',STORE_NAME='audio';
   const $=s=>document.querySelector(s);
-  let mediaRecorder=null,originalRecorder=null,mediaStream=null,audioCtx=null,processedDestination=null,chunks=[],originalChunks=[],currentAudio=null,currentFile=null,currentOriginalFile=null,currentStored=false,currentOriginalId=null,currentCleanId=null,transferBaseName='',recordStartedAt=0,recordTicker=null,contextTicker=null;
+  let mediaRecorder=null,originalRecorder=null,mediaStream=null,audioCtx=null,processedDestination=null,chunks=[],originalChunks=[],currentAudio=null,currentFile=null,currentOriginalFile=null,currentStored=false,currentOriginalId=null,currentCleanId=null,transferBaseName='',originalCaptureMode='DIRECT',recordStartedAt=0,recordTicker=null,contextTicker=null;
 
   const toast=message=>{const t=$('#toast');if(!t)return;t.textContent=message;t.hidden=false;clearTimeout(t._recordTm);t._recordTm=setTimeout(()=>t.hidden=true,2400)};
   const fmt=ms=>{const sec=Math.max(0,Math.floor(Number(ms||0)/1000));return `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`};
@@ -82,7 +82,7 @@
     const db=await openDb(),id=`original_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
     return new Promise((resolve,reject)=>{
       const tx=db.transaction(STORE_NAME,'readwrite');
-      tx.objectStore(STORE_NAME).put({id,kind:'ORIGINAL',originalMeaning:'FIRST_ENCODED_BROWSER_CAPTURE',captureProcessing:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},name:file.name,type:file.type,size:file.size,blob:file,createdAt:Date.now(),sessionId:activeContract()?.session_id||null,taskId:activeTask()?.task_id||null});
+      tx.objectStore(STORE_NAME).put({id,kind:'ORIGINAL',originalMeaning:'FIRST_ENCODED_BROWSER_CAPTURE',captureMode:originalCaptureMode,captureProcessing:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},name:file.name,type:file.type,size:file.size,blob:file,createdAt:Date.now(),sessionId:activeContract()?.session_id||null,taskId:activeTask()?.task_id||null});
       tx.oncomplete=()=>{db.close();resolve(id)};tx.onerror=()=>{db.close();reject(tx.error)};
     });
   }
@@ -134,6 +134,20 @@
     ensureFilenameEditor();
   }
 
+  function ensureRecordingSettings(){
+    const settings=$('#settingsView .scroll');if(!settings)return;
+    let card=$('#recordingFilenameSettings');
+    if(!card){
+      card=document.createElement('section');card.id='recordingFilenameSettings';card.className='glassCard';
+      card.innerHTML='<h2>녹음 파일</h2><label class="inputBlock">기본 파일명<input id="recordingPrefixInput" maxlength="80" autocomplete="off" spellcheck="false"></label><small class="muted">전송 전에도 파일명을 다시 수정할 수 있어요. 날짜와 .m4a 확장자는 자동으로 붙어요.</small>';
+      const data=[...settings.querySelectorAll('.glassCard')].find(x=>x.querySelector('h2')?.textContent==='데이터');
+      settings.insertBefore(card,data||null);
+      const input=card.querySelector('#recordingPrefixInput');
+      input.addEventListener('change',()=>{const value=sanitizeFileBase(input.value).replace(/\s+\d{4}\s+\d{2}\s+\d{2}$/,'').trim();try{localStorage.setItem('ready_recording_prefix',value||"Judy's grammar recording")}catch{}input.value=recordingPrefix()});
+    }
+    const input=$('#recordingPrefixInput');if(input&&document.activeElement!==input)input.value=recordingPrefix();
+  }
+
   function ensureReviewActions(){
     const panel=$('#reviewPanel');if(!panel)return;['#duoMainGuide','#duoGuestGuide','#duoText','#coachVoiceBtn'].forEach(sel=>{const el=$(sel);if(el)el.hidden=true});
     let share=$('#shareRecordingBtn');
@@ -157,7 +171,7 @@
   }
 
   function resetRecording({keepPreview=false}={}){
-    stopTicker();stopStream();chunks=[];mediaRecorder=null;
+    stopTicker();stopStream();chunks=[];mediaRecorder=null;originalRecorder=null;originalCaptureMode='DIRECT';
     if(!keepPreview){currentAudio=null;currentFile=null;currentOriginalFile=null;currentStored=false;currentOriginalId=null;currentCleanId=null;transferBaseName='';originalChunks=[];const preview=$('#audioPreview');if(preview){if(preview.src)URL.revokeObjectURL(preview.src);preview.removeAttribute('src')}if($('#reviewPanel'))$('#reviewPanel').hidden=true}
     if($('#recordClock'))$('#recordClock').textContent='00:00';
     if($('#recordState'))$('#recordState').textContent='READY';
@@ -193,7 +207,7 @@
       const mime=preferredMime(),processedStream=buildProcessedStream(mediaStream);
       chunks=[];originalChunks=[];
       mediaRecorder=new MediaRecorder(processedStream,mime?{mimeType:mime}:undefined);
-      try{originalRecorder=new MediaRecorder(mediaStream,mime?{mimeType:mime}:undefined)}catch{originalRecorder=null}
+      try{originalRecorder=new MediaRecorder(mediaStream,mime?{mimeType:mime}:undefined)}catch{originalRecorder=null;originalCaptureMode='FALLBACK_TRANSFER'}
       let cleanStopped=false,originalStopped=!originalRecorder,finished=false;
       const maybeFinish=()=>{if(!finished&&cleanStopped&&originalStopped){finished=true;finishRecording()}};
       mediaRecorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
@@ -202,9 +216,11 @@
       if(originalRecorder){
         originalRecorder.ondataavailable=e=>{if(e.data?.size)originalChunks.push(e.data)};
         originalRecorder.onstop=()=>{originalStopped=true;maybeFinish()};
-        originalRecorder.onerror=()=>{originalStopped=true;maybeFinish()};
+        originalRecorder.onerror=()=>{originalCaptureMode='FALLBACK_TRANSFER';originalStopped=true;maybeFinish()};
       }
-      mediaRecorder.start(250);originalRecorder?.start(250);recordStartedAt=Date.now();
+      mediaRecorder.start(250);
+      if(originalRecorder){try{originalRecorder.start(250)}catch{originalRecorder=null;originalCaptureMode='FALLBACK_TRANSFER';originalStopped=true}}
+      recordStartedAt=Date.now();
       if($('#recordState'))$('#recordState').textContent='RECORDING';
       setRecordButton('녹음 끝내기',true)
       recordTicker=setInterval(()=>{if($('#recordClock'))$('#recordClock').textContent=fmt(Date.now()-recordStartedAt);renderContext()},250);
@@ -243,10 +259,10 @@
     const back=$('#recordBackBtn');if(back&&!back.dataset.recordingBound){back.dataset.recordingBound='1';back.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();returnToFocus()},true)}
     renderContext();renderRecState()
   }
-  function render(){ensureRecordingLayout();bind();renderRecState();if($('#recordingView')?.classList.contains('active')){stopBgm();if(!contextTicker)startContextTicker()}else stopContextTicker()}
+  function render(){ensureRecordingLayout();ensureRecordingSettings();bind();renderRecState();if($('#recordingView')?.classList.contains('active')){stopBgm();if(!contextTicker)startContextTicker()}else stopContextTicker()}
 
   window.addEventListener('pageshow',()=>setTimeout(render,0));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(render,0)});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',render,{once:true});else render();
-  window.ReadyRecordingV1=Object.freeze({version:VERSION,render,open:openRecording,save:saveRecording,share:shareRecording,validate:()=>({version:VERSION,recordingRequired:taskNeedsRecording(),recVisible:$('#recBtn')?.hidden===false,mediaRecorderSupported:!!window.MediaRecorder,fileShareSupported:!!navigator.share,originalStore:DB_NAME,originalMeaning:'FIRST_ENCODED_BROWSER_CAPTURE',browserCaptureDsp:true,realtimeClean:true,cleanPipeline:'REALTIME_LOCAL_FILTER_V1',originalAndTransferSameContainer:true,transferM4aFirst:true,editableTransferFilename:true,transferHasNoCleanSuffix:true,cloudProcessing:false,paidApi:false,timerContinuesDuringRecording:true})});
+  window.ReadyRecordingV1=Object.freeze({version:VERSION,render,open:openRecording,save:saveRecording,share:shareRecording,validate:()=>({version:VERSION,recordingRequired:taskNeedsRecording(),recVisible:$('#recBtn')?.hidden===false,mediaRecorderSupported:!!window.MediaRecorder,fileShareSupported:!!navigator.share,originalStore:DB_NAME,originalMeaning:'FIRST_ENCODED_BROWSER_CAPTURE',browserCaptureDsp:true,realtimeClean:true,cleanPipeline:'REALTIME_LOCAL_FILTER_V1',originalAndTransferSameContainer:true,transferM4aFirst:true,editableTransferFilename:true,persistentFilenamePrefix:true,originalCaptureFallback:true,transferHasNoCleanSuffix:true,cloudProcessing:false,paidApi:false,timerContinuesDuringRecording:true})});
 })();
