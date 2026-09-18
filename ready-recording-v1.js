@@ -114,12 +114,15 @@
     currentAudio=new Blob(chunks,{type});currentFile=makeFile(currentAudio);currentStored=false;
     const preview=$('#audioPreview');
     if(preview){if(preview.src)URL.revokeObjectURL(preview.src);preview.src=URL.createObjectURL(currentAudio)}
+    let storeError=false;
+    try{await storeOriginal(currentFile);currentStored=true}catch{storeError=true}
     if($('#reviewPanel'))$('#reviewPanel').hidden=false;
     if($('#recordState'))$('#recordState').textContent='REVIEW';
-    setRecordButton('녹음 시작',false)
-    const info=mimeInfo(currentFile.type),note=$('#formatNote');if(note)note.textContent=`원본 · .${info.ext} · ${currentFile.type||'audio'} · ${Math.max(1,Math.round(currentFile.size/1024))}KB`;
+    setRecordButton('녹음 시작',false);
+    const info=mimeInfo(currentFile.type),note=$('#formatNote');
+    if(note)note.textContent=`${storeError?'자동 보관 실패 · ':'원본 보관 완료 · ' }.${info.ext} · ${currentFile.type||'audio'} · ${Math.max(1,Math.round(currentFile.size/1024))}KB`;
     ensureReviewActions();
-    try{await storeOriginal(currentFile);currentStored=true;ensureReviewActions();toast('녹음 원본을 기기에 안전하게 보관했어요.')}catch{toast('원본 자동 보관에 실패했어요. 저장 버튼으로 다시 시도해 주세요.')}
+    toast(storeError?'원본 자동 보관에 실패했어요. 저장 버튼으로 다시 시도해 주세요.':'녹음 원본을 기기에 안전하게 보관했어요.');
   }
 
   async function startRecording(){
