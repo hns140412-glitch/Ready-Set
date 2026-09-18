@@ -117,9 +117,9 @@ assert.ok((await page.locator('#audioPreview').getAttribute('src'))?.startsWith(
 const stored=await page.evaluate(async()=>{
   const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('readyset_audio',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
   const rows=await new Promise((resolve,reject)=>{const tx=db.transaction('audio','readonly'),r=tx.objectStore('audio').getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
-  db.close();return rows;
+  db.close();return rows.map(x=>({kind:x.kind,name:x.name,type:x.type,size:Number(x.blob?.size||x.size||0)}));
 });
-assert.ok(stored.some(x=>x.kind==='ORIGINAL'&&x.blob?.size>0),'original recording must be persisted before confirmation');
+assert.ok(stored.some(x=>x.kind==='ORIGINAL'&&x.size>0),'original recording must be persisted before confirmation');
 
 await page.click('#saveRecordingBtn');
 await page.click('#recordBackBtn');
