@@ -70,6 +70,19 @@ try {
   assert.equal(await page.locator('#completeBtn').innerText(),'완료했어요');
   assert.notEqual(await page.locator('#remainingTime').innerText(),'--:--');
 
+  step('active-session planner lock');
+  const plannerLock=await page.evaluate(()=>{
+    const before=JSON.parse(localStorage.getItem('readyset_state')||'{}').activeSession?.id||null;
+    const result=window.ReadyPlannerSelectionBridgeV1?.bindPlannerTask?.('e2e-recording-task',false);
+    const core=JSON.parse(localStorage.getItem('readyset_state')||'{}');
+    const planner=JSON.parse(localStorage.getItem('readyset_planner_v1')||'{}');
+    const d=new Date().toLocaleDateString('sv-SE'),task=planner.days?.[d]?.tasks?.find(x=>String(x.id)==='e2e-recording-task');
+    return{result,before,after:core.activeSession?.id||null,selected:task?.selected===true};
+  });
+  assert.equal(plannerLock.result,false,'legacy planner bridge must reject selection changes during an active session');
+  assert.equal(plannerLock.after,plannerLock.before,'active session must survive rejected planner selection change');
+  assert.equal(plannerLock.selected,true,'active planner task selection must remain intact');
+
   const sec=t=>{const m=String(t).match(/(\d+):(\d+)/);return m?Number(m[1])*60+Number(m[2]):0};
   await page.waitForTimeout(1200);
   const beforePause=sec(await page.locator('#focusElapsed').innerText());
@@ -165,7 +178,7 @@ try {
     pass:true,
     contract:'ready-exploration-journey-full-app-browser-e2e',
     checks:{
-      fullStageCBoot:true,timetableSelection:true,confirmedTimer:true,pauseResume:true,
+      fullStageCBoot:true,timetableSelection:true,confirmedTimer:true,activeSessionPlannerLock:true,pauseResume:true,
       recordingRoundTrip:true,originalAudioPersisted:true,realtimeCleanAudio:true,editableRecordingFilename:true,canonicalRecordingTransfer:true,reloadRecovery:true,
       completionTruth:true,imageShareFallback:true
     }
