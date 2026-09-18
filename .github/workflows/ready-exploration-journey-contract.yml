@@ -60,4 +60,9 @@ jobs:
           python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/ready-http.log 2>&1 &
           HTTP_PID=$!
           trap 'kill $HTTP_PID || true' EXIT
+          for i in {1..20}; do
+            curl -fsS http://127.0.0.1:4173/index.html >/dev/null && break
+            sleep 0.25
+          done
+          curl -fsS http://127.0.0.1:4173/index.html >/dev/null
           node tests/ready-exploration-journey-e2e.mjs
