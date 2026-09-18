@@ -336,7 +336,7 @@
     applyFocusUI();
     bindFocusTools();
     setTimeout(()=>{applyFocusUI();bindFocusTools();},200);
-    window.ReadyStageD=Object.freeze({version:STAGE_D_VERSION,planner:()=>structuredClone(planner),renderPlanner,applyPlanToMission,validate});
+    window.ReadyStageD=Object.freeze({version:STAGE_D_VERSION,planner:()=>structuredClone(planner),renderPlanner,applyFocusUI,applyPlanToMission,validate});
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
