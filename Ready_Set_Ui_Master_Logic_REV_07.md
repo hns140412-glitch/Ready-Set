@@ -220,4 +220,22 @@ Therefore:
 
 Runtime evidence is separate. Presence of this contract does not prove that role-specific UI, dated task creation, allocation, handoff, persistence or device behavior is implemented.
 
+
+## 16. ZERO-COST / ZERO-WAIT OPTIMIZATION DEFAULT — HARD LOCK
+
+For most Ready & Set runtime features, prefer the highest practical optimization that:
+- adds no paid API / cloud-processing charge,
+- adds no material user-visible waiting time,
+- runs locally/on-device where practical,
+- preserves truthful source/original data before generating derivatives,
+- does not reduce correctness, safety, recoverability, or confirmed UI authority merely to save cost/time.
+
+Preferred order:
+`EXISTING DEVICE/BROWSER CAPABILITY → LOCAL DETERMINISTIC PROCESSING → OPTIONAL EXTERNAL PROCESSING ONLY IF SEPARATELY APPROVED`
+
+Derived/optimized output SHALL NOT overwrite its source/original. If local optimization fails, fall back to the preserved original rather than blocking the user's flow.
+
+This default applies broadly but **does not govern character generation or Guide/Explorer-team generation**. Those generation workflows are explicit exceptions and may use their separately approved generation/quality pipeline, including a different time/cost trade-off when authorized.
+
+
 END — READY & SET UI MASTER LOGIC REV_07
