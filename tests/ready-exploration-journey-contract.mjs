@@ -8,6 +8,8 @@ const stageD = fs.readFileSync(new URL('../ready-stage-d-base-v1.js', import.met
 const recording = fs.readFileSync(new URL('../ready-recording-v1.js', import.meta.url), 'utf8');
 const finishRecording = recording.slice(recording.indexOf('async function finishRecording()'), recording.indexOf('async function startRecording()'));
 const native = fs.readFileSync(new URL('../ready-base-native-v2.js', import.meta.url), 'utf8');
+const homeUI = fs.readFileSync(new URL('../ready-home-homework-ui-v1.js', import.meta.url), 'utf8');
+const stageDLoader = fs.readFileSync(new URL('../ready-stage-d.js', import.meta.url), 'utf8');
 const schedule = fs.readFileSync(new URL('../ready-schedule-base-v1.js', import.meta.url), 'utf8');
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const version = JSON.parse(fs.readFileSync(new URL('../VERSION.json', import.meta.url), 'utf8'));
@@ -17,6 +19,9 @@ const checks = [
   ['PWA cache includes active timer and recording dependencies', sw.includes("'./ready-stage-d-base-v1.js'") && sw.includes("'./ready-recording-v1.js'") && sw.includes("'./ready-stage-g13-authority-recovery.js'")],
   ['PWA cache version matches VERSION metadata', sw.includes(`const CACHE='${version.cacheVersion}';`)],
   ['history preserves outcome labels', base.includes('readyOutcomeLabel(r.status)') && !base.includes('<em>완료</em></article>')],
+  ['home task selection uses canonical planner mission bridge', homeUI.includes('ReadyBaseNativeV2?.chooseTask') && !homeUI.includes('core.createSession(task)')],
+  ['Stage C chooses one deterministic homework home presenter', stageC.includes('ReadyBaseNativeV2?.render?.();') && stageC.includes('ReadyHomeHomeworkUIV1?.render?.();')],
+  ['dynamic runtime loaders are bounded', stageC.includes('timeout = 12000') && stageC.includes('LOAD_TIMEOUT:') && stageDLoader.includes('timeout=12000') && stageDLoader.includes('LOAD_TIMEOUT:')],
   ['timetable task selection resumes at mission', native.includes('sessionStorage.getItem(PENDING_KEY)') && native.includes("nav?.('mission')") && native.includes('if(core.activeSession)')],
   ['schedule refresh does not rewrite active session selection', base.includes("if(state.activeSession){const activeId=state.activeSession.plannerTaskId")],
   ['confirmed timetable exposes now/next context', schedule.includes('function scheduleContext(rows)') && schedule.includes('지금 일정') && schedule.includes('다음 일정')],
