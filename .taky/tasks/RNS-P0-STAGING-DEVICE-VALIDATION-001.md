@@ -38,6 +38,37 @@ Netlify staging:
 - `branch = null`
 - therefore current staging deploy is NOT evidence of branch HEAD `58233891...`
 
+## Current execution progress — 2026-09-19
+Source trace path is now implemented.
+
+- staging package workflow: `.github/workflows/ready-staging-source-package.yml`
+- exact-head package run: `35398395482` — SUCCESS
+- packaged source commit: `53bbc43305d4b3bec6787eca4d00ebb14e80ca69`
+- artifact: `ready-set-staging-site` / id `10569201786`
+- artifact manifest records:
+  - branch `taky/exploration-journey-2026-09-18`
+  - source commit `53bbc43305d4b3bec6787eca4d00ebb14e80ca69`
+  - app `0.9.4-rc25`
+  - cache `ready-set-v094-rev07-staging28-runtime-hardening-v1`
+- packaged site ZIP SHA-256:
+  `46819ba476dcd59cb0299795f5d906f0173cc865de488ee16b7ff6e5f847a529`
+- downloaded artifact hash matched the workflow-produced hash.
+
+Dedicated staging deploy path is also guarded:
+
+- deploy workflow: `.github/workflows/ready-staging-deploy.yml`
+- verification run: `35398395537`
+- result: FAILURE by design / FAIL CLOSED
+- reason: repository secret `NETLIFY_AUTH_TOKEN` is not configured
+- exact runtime-tree build and Netlify deploy steps were SKIPPED
+- no new Netlify staging deploy occurred.
+
+Therefore the current execution state is:
+
+`SOURCE PACKAGE READY / STAGING DEPLOY AUTH BLOCKED / DEVICE VALIDATION NOT STARTED`
+
+This is not a source-path failure anymore. Do not recreate packaging. The unresolved item is secure authorization for publishing the already traceable exact source to the existing dedicated staging site.
+
 ## Hard locks
 - DO NOT merge to `main`.
 - DO NOT deploy production.
@@ -66,19 +97,24 @@ Netlify staging:
 ## Gate 1 — establish staging source parity
 Before any device PASS claim, publish the exact safe-branch tree to staging through a traceable path.
 
-Acceptable evidence must identify the deployed source as the same tree as START_HEAD, not merely the same app name or an old upload.
+Acceptable evidence must identify the deployed source as the same tree as the current safe-branch HEAD, not merely the same app name or an old upload.
 
-Preferred:
-1. a Git-backed staging branch deployment that records source branch/commit; or
-2. a deterministic archive/manual staging deployment produced from START_HEAD with a recorded source manifest.
+Gate 1A — source packaging: PASS.
+- deterministic exact-head package exists;
+- trace manifest exists;
+- package hash is verified.
 
-If the available Netlify path cannot consume the exact safe branch, return:
-`STAGING_SOURCE_PATH_REQUIRED`
+Gate 1B — staging publication: BLOCKED.
+- existing dedicated staging project is known and verified;
+- repository-side Netlify auth is unavailable;
+- the deploy workflow fails closed and does not attempt a stale/unauthorized deploy.
 
 Do not substitute a redeploy of the 2026-09-13 upload.
+Do not store or print an auth token in Git/history/handoff.
 
 ## Gate 2 — deployed artifact parity
 After deploy, verify at minimum:
+- `STAGING_SOURCE_MANIFEST.json` source commit = deployed safe-branch HEAD
 - `VERSION.json` = expected branch version
 - service-worker cache version = expected branch cache version
 - rejected focus module absent from active/precache path
@@ -142,14 +178,14 @@ For each defect:
 No unrelated refactor or cosmetic sweep.
 
 ## Existing automated regression baseline
-Current HEAD workflow evidence:
+Start-state evidence at `58233891...`:
 - Ready First Run Parent Activation Contract: SUCCESS
 - Ready Parent Capture Contract: SUCCESS
 - Ready Homework Analysis Contract: SUCCESS
 - Ready Foundation Assignment Bridge Contract: SUCCESS
 - Ready Exploration Journey Contract: SUCCESS
 
-These are source/CI evidence only, not device evidence.
+Current-head regressions must remain green after the staging workflow-only changes. These are source/CI evidence only, not device evidence.
 
 ## Completion conditions
 Task may move to `TAKY_REVIEW_DEVICE` only when:
@@ -164,4 +200,7 @@ Then and only then may the next transition be:
 `HUMAN_APPROVAL -> main promotion / production deploy`
 
 ## Explicit OPEN item
-The current Netlify project is presently evidenced as an upload-style deploy with no commit/branch trace. Establishing a safe exact-branch staging publication path is the first unresolved executable item.
+Securely authorize publication of the already-built exact safe-branch package to Netlify project `ready-set-staging-taky` without exposing/persisting credentials. Until that occurs:
+
+`STAGING PARITY = NOT VERIFIED`
+`DEVICE VALIDATION = NOT STARTED`
