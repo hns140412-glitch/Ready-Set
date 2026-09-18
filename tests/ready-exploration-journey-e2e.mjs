@@ -173,6 +173,20 @@ try {
   assert.equal(state.activeSession,null);
   assert.equal(state.records?.[0]?.status,'COMPLETED');
 
+  step('parent setup without world UI');
+  await page.evaluate(()=>{
+    const identity=JSON.parse(localStorage.getItem('readyset_identity_v1')||'{}');
+    identity.status='READY';identity.setupMode='GUARDIAN_FOR_CHILD';identity.operator={role:'GUARDIAN'};
+    localStorage.setItem('readyset_identity_v1',JSON.stringify(identity));
+    localStorage.setItem('readyset_active_role_v1','parent');
+  });
+  await page.goto('http://127.0.0.1:4173/?role=parent',{waitUntil:'domcontentloaded',timeout:15000});
+  await page.waitForFunction(()=>document.documentElement.dataset.readyBootState==='READY'&&window.ReadyParentSetupHubV1,{timeout:30000});
+  await page.waitForSelector('#readyParentSetupHub',{timeout:10000});
+  assert.equal(await page.locator('#worldStage').count(),0,'held world UI should remain absent');
+  assert.equal(await page.locator('#readyParentSetupHub [data-rps-schedule]').count(),1,'parent setup must expose timetable action without world UI');
+  assert.equal(await page.locator('#readyParentSetupHub [data-rps-homework]').count(),1,'parent setup must expose homework action without world UI');
+
   step('done');
   console.log(JSON.stringify({
     pass:true,
@@ -180,7 +194,7 @@ try {
     checks:{
       fullStageCBoot:true,timetableSelection:true,confirmedTimer:true,activeSessionPlannerLock:true,pauseResume:true,
       recordingRoundTrip:true,originalAudioPersisted:true,realtimeCleanAudio:true,editableRecordingFilename:true,canonicalRecordingTransfer:true,reloadRecovery:true,
-      completionTruth:true,imageShareFallback:true
+      completionTruth:true,imageShareFallback:true,parentSetupWithoutWorldUI:true
     }
   }));
 } finally {
