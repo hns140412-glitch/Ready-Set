@@ -118,7 +118,8 @@ try {
   const recordingDownloadPromise=page.waitForEvent('download',{timeout:10000});
   await page.click('#shareRecordingBtn');
   const recordingDownload=await recordingDownloadPromise;
-  assert.match(recordingDownload.suggestedFilename(),/_clean\.wav$/,'recording transfer should prefer local clean copy');
+  assert.match(recordingDownload.suggestedFilename(),/^Judy's grammar recording \d{4} \d{2} \d{2}\.(m4a|webm|ogg|wav)$/,'recording transfer must keep canonical dated name and actual format');
+  assert.ok(!recordingDownload.suggestedFilename().includes('_clean'),'internal CLEAN derivative must not replace submitted recording file');
 
   await page.click('#saveRecordingBtn');
   await page.click('#recordBackBtn');
@@ -158,7 +159,7 @@ try {
     contract:'ready-exploration-journey-full-app-browser-e2e',
     checks:{
       fullStageCBoot:true,timetableSelection:true,confirmedTimer:true,pauseResume:true,
-      recordingRoundTrip:true,originalAudioPersisted:true,localCleanAudio:true,cleanAudioTransfer:true,reloadRecovery:true,
+      recordingRoundTrip:true,originalAudioPersisted:true,localCleanAudio:true,canonicalRecordingTransfer:true,reloadRecovery:true,
       completionTruth:true,imageShareFallback:true
     }
   }));
