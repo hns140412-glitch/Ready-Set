@@ -6,6 +6,9 @@ const runtime = fs.readFileSync(new URL('../ready-runtime-v07.js', import.meta.u
 const stageC = fs.readFileSync(new URL('../ready-stage-c.js', import.meta.url), 'utf8');
 
 const checks = [
+  ['history preserves outcome labels', base.includes('readyOutcomeLabel(r.status)') && !base.includes('<em>완료</em></article>')],
+  ['timetable task selection resumes at mission', native.includes("sessionStorage.getItem(PENDING_KEY)") && native.includes("nav?.('mission')") && native.includes('if(core.activeSession)')),
+  ['confirmed timetable exposes now/next context', schedule.includes('function scheduleContext(rows)') && schedule.includes('지금 일정') && schedule.includes('다음 일정')],
   ['authoritative session timing exported', base.includes('sessionTimes:readySessionTimes')],
   ['share handler exported', base.includes('shareResult:readyShareResult')],
   ['share button bound', base.includes("$('#shareResultBtn').onclick=readyShareResult")],
