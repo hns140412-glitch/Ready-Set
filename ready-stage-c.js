@@ -3,7 +3,7 @@
   if (window.__readyJourneyLoader) return;
   window.__readyJourneyLoader = true;
 
-  const VERSION = '2026.09.18-stage-c-exploration-journey-v2';
+  const VERSION = '2026.09.18-stage-c-exploration-journey-v3';
   const IMPLEMENTATION_HOLD = true;
   const IDENTITY='./ready-onboarding-identity-v2.js?v=20260913-deferred';
   const CORE_CHAIN = [
@@ -26,13 +26,15 @@
     './ready-base-selftest-v1.js'
   ];
 
-  const load = (src, timeout = 0) => new Promise((resolve, reject) => {
+  const load = (src, timeout = 12000) => new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.src = src;
     s.async = false;
-    const timer = timeout ? setTimeout(() => reject(new Error(`LOAD_TIMEOUT:${src}`)), timeout) : null;
-    s.onload = () => { clearTimeout(timer); resolve(src); };
-    s.onerror = () => { clearTimeout(timer); reject(new Error(`LOAD_FAILED:${src}`)); };
+    let settled=false;
+    const done=(ok,error)=>{if(settled)return;settled=true;clearTimeout(timer);ok?resolve(src):reject(error)};
+    const timer=setTimeout(()=>{s.remove();done(false,new Error(`LOAD_TIMEOUT:${src}`))},timeout);
+    s.onload = () => done(true);
+    s.onerror = () => done(false,new Error(`LOAD_FAILED:${src}`));
     document.head.appendChild(s);
   });
 
