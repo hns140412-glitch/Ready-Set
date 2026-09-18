@@ -25,7 +25,6 @@
         delete core.g13PlannerTask;
         core.tasks=[];
         core.selected=[];
-        core.activeSession=null;
       }
     }
     write(PLANNER_KEY,planner);write(CORE_KEY,core);
