@@ -82,7 +82,7 @@
       #focusView .focusTitle h1{margin:0;font-size:clamp(44px,12.6vw,68px);line-height:.90;letter-spacing:-.078em;font-weight:950;color:#171717;text-shadow:0 1px 0 rgba(255,255,255,.22)}
       #focusView .missionPill{display:inline-flex;margin-top:9px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.83);color:#1f1f1f;font-weight:900;font-size:15px;box-shadow:0 4px 14px rgba(0,0,0,.08);cursor:pointer}
       #focusView .clockHero{width:min(68vw,350px);height:min(68vw,350px);margin:6px auto 10px;flex:0 1 auto;box-shadow:0 18px 34px rgba(80,48,0,.20);border-width:10px;background:radial-gradient(circle at 42% 35%,#fff 0,#fffef9 66%,#eee9df 100%)}#focusView .clockNumber{font-size:clamp(14px,4vw,20px);font-weight:950;color:#171717;z-index:2}#focusView .clockBrand{position:absolute;left:50%;top:31%;transform:translateX(-50%);font-size:clamp(10px,2.8vw,14px);font-weight:950;letter-spacing:-.04em;white-space:nowrap;color:#25231f;z-index:2}
-      #focusView .clockHero::after{content:'Ready & Set';position:absolute;left:50%;top:30%;transform:translateX(-50%);font-weight:900;font-size:clamp(12px,3.4vw,16px);white-space:nowrap;color:#252525;z-index:2}
+      #focusView .clockHero::after{content:none!important}
       #focusView #readyRev07Panel{display:none!important}
       #focusView .controlPanel{margin-top:auto;background:rgba(24,24,23,.96);box-shadow:0 10px 24px rgba(0,0,0,.16);padding:16px;border-radius:28px}
       #focusView .timeStrip{grid-template-columns:1fr 1fr}#focusView .timeStrip.recording-required{grid-template-columns:1fr auto 1fr}#focusView .timeStrip b#remainingTime{font-size:clamp(44px,13vw,64px);color:#ffe022;letter-spacing:-.04em}#focusView .recButton{width:52px;height:52px;min-width:52px;min-height:52px}
