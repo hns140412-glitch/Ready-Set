@@ -2,7 +2,7 @@
   'use strict';
   if (window.ReadyRecordingV1) return;
 
-  const VERSION='2026.09.19-recording-v2-local-clean';
+  const VERSION='2026.09.19-recording-v3-m4a-transfer';
   const DB_NAME='readyset_audio',STORE_NAME='audio';
   const $=s=>document.querySelector(s);
   let mediaRecorder=null,mediaStream=null,chunks=[],currentAudio=null,currentFile=null,currentStored=false,currentOriginalId=null,currentCleanFile=null,cleanState='IDLE',cleanPromise=null,recordGeneration=0,recordStartedAt=0,recordTicker=null,contextTicker=null;
@@ -57,9 +57,11 @@
     if(t.includes('wav'))return{ext:'wav',type:type||'audio/wav'};
     return{ext:'webm',type:type||'audio/webm'};
   }
+  function recordingPrefix(){try{return String(localStorage.getItem('ready_recording_prefix')||"Judy's grammar recording").trim()||"Judy's grammar recording"}catch{return "Judy's grammar recording"}}
+  function recordingDate(d=new Date()){return `${d.getFullYear()} ${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getDate()).padStart(2,'0')}`}
   function makeFile(blob){
-    const info=mimeInfo(blob?.type),stamp=new Date().toISOString().replace(/[:.]/g,'-');
-    return new File([blob],`Ready-Set_${stamp}.${info.ext}`,{type:info.type,lastModified:Date.now()});
+    const info=mimeInfo(blob?.type),name=`${recordingPrefix()} ${recordingDate()}.${info.ext}`;
+    return new File([blob],name,{type:info.type,lastModified:Date.now()});
   }
 
   function openDb(){
@@ -132,8 +134,9 @@
 
   function updateFormatNote(){
     const note=$('#formatNote');if(!note||!currentFile)return;
-    const info=mimeInfo(currentFile.type),base=`원본 보관 완료 · .${info.ext} · ${currentFile.type||'audio'} · ${Math.max(1,Math.round(currentFile.size/1024))}KB`;
-    note.textContent=cleanState==='PROCESSING'?`${base} · 전송용 최적화 중…`:cleanState==='READY'?`${base} · CLEAN 준비 완료`:cleanState==='FALLBACK'?`${base} · CLEAN 생략(원본 사용)`:base;
+    const info=mimeInfo(currentFile.type),format=info.ext==='m4a'?'M4A/AAC':`실제 포맷 ${info.ext.toUpperCase()}`;
+    const base=`전송 파일 · ${currentFile.name} · ${format} · ${Math.max(1,Math.round(currentFile.size/1024))}KB`;
+    note.textContent=cleanState==='PROCESSING'?`${base} · 내부 CLEAN 처리 중`:cleanState==='READY'?`${base} · 내부 CLEAN 보관 완료`:cleanState==='FALLBACK'?`${base} · 내부 CLEAN 생략`:base;
   }
 
   function startLocalClean(blob,sourceFile,sourceOriginalId,generation){
@@ -157,7 +160,7 @@
     let share=$('#shareRecordingBtn');
     if(!share){share=document.createElement('button');share.id='shareRecordingBtn';share.type='button';share.textContent='녹음 파일 전송';panel.appendChild(share)}
     const save=$('#saveRecordingBtn'),retry=$('#rerecordBtn');
-    if(save){save.textContent=currentStored?'녹음 확인':'원본 저장';save.className='btn dark'}if(retry){retry.textContent='다시 녹음';retry.className='btn outline'}share.textContent=cleanState==='READY'?'최적화본 전송':'녹음 파일 전송';share.className='btn outline';
+    if(save){save.textContent=currentStored?'녹음 확인':'원본 저장';save.className='btn dark'}if(retry){retry.textContent='다시 녹음';retry.className='btn outline'}share.textContent=currentFile&&mimeInfo(currentFile.type).ext==='m4a'?'M4A 파일 전송':'녹음 파일 전송';share.className='btn outline';
     share.onclick=shareRecording;
   }
   function renderContext(){
@@ -226,10 +229,9 @@
   async function shareRecording(){
     if(!currentFile){toast('먼저 녹음을 완료해 주세요.');return}
     try{
-      if(!currentCleanFile&&cleanPromise)await Promise.race([cleanPromise,new Promise(resolve=>setTimeout(resolve,800))]);
-      const file=currentCleanFile||currentFile,isClean=file===currentCleanFile;
-      if(navigator.share&&navigator.canShare?.({files:[file]})){await navigator.share({title:'Ready & Set 녹음',text:`${activeLabel()||'영어 녹음'}${isClean?' · 전송용 최적화본':''}`,files:[file]});return}
-      const url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast(isClean?'최적화본을 기기에 저장했어요.':'원본을 기기에 저장했어요.');
+      const file=currentFile,info=mimeInfo(file.type),label=info.ext==='m4a'?'M4A/AAC':'실제 '+info.ext.toUpperCase()+' 포맷';
+      if(navigator.share&&navigator.canShare?.({files:[file]})){await navigator.share({title:'Ready & Set 녹음',text:`${activeLabel()||'영어 녹음'} · ${label}`,files:[file]});return}
+      const url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast(`${label} 녹음 파일을 기기에 저장했어요.`);
     }catch(error){if(error?.name!=='AbortError')toast('파일 전송을 시작하지 못했습니다.')}
   }
 
@@ -255,5 +257,5 @@
   window.addEventListener('pageshow',()=>setTimeout(render,0));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(render,0)});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',render,{once:true});else render();
-  window.ReadyRecordingV1=Object.freeze({version:VERSION,render,open:openRecording,save:saveRecording,share:shareRecording,validate:()=>({version:VERSION,recordingRequired:taskNeedsRecording(),recVisible:$('#recBtn')?.hidden===false,mediaRecorderSupported:!!window.MediaRecorder,fileShareSupported:!!navigator.share,originalStore:DB_NAME,originalMeaning:'FIRST_ENCODED_BROWSER_CAPTURE',browserCaptureDsp:true,cleanState,cleanCopyGenerated:cleanState==='READY',cleanPipeline:'LOCAL_FAST_V1',cloudProcessing:false,paidApi:false,timerContinuesDuringRecording:true})});
+  window.ReadyRecordingV1=Object.freeze({version:VERSION,render,open:openRecording,save:saveRecording,share:shareRecording,validate:()=>({version:VERSION,recordingRequired:taskNeedsRecording(),recVisible:$('#recBtn')?.hidden===false,mediaRecorderSupported:!!window.MediaRecorder,fileShareSupported:!!navigator.share,originalStore:DB_NAME,originalMeaning:'FIRST_ENCODED_BROWSER_CAPTURE',browserCaptureDsp:true,cleanState,cleanCopyGenerated:cleanState==='READY',cleanPipeline:'LOCAL_FAST_V1',cleanInternalOnly:true,transferM4aFirst:true,transferUsesOriginalCapture:true,cloudProcessing:false,paidApi:false,timerContinuesDuringRecording:true})});
 })();
