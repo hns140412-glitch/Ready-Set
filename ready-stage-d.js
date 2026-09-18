@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.09.15-stage-d-homework-loader-v2-world-hold';
+  const VERSION = '2026.09.18-stage-d-homework-loader-v3-world-hold';
   const CHAIN = [
     './ready-stage-d-base-v1.js',
     './ready-home-homework-mvp-v1.js',
@@ -20,18 +20,23 @@
   function enforceImplementationHold(){
     const home=document.getElementById('homeView');
     if(!home)return;
-    home.classList.remove('worldShell');
+    if(home.classList.contains('worldShell'))home.classList.remove('worldShell');
     home.querySelector('#worldStage')?.remove();
     home.querySelectorAll('.worldLegacySection').forEach(el=>el.classList.remove('worldLegacySection'));
-    document.documentElement.dataset.readyWorldImplementation='HOLD';
+    if(document.documentElement.dataset.readyWorldImplementation!=='HOLD')document.documentElement.dataset.readyWorldImplementation='HOLD';
   }
 
-  const worldHoldObserver=new MutationObserver(()=>enforceImplementationHold());
+  let worldHoldQueued=false;
+  const worldHoldObserver=new MutationObserver(()=>{
+    if(worldHoldQueued)return;
+    worldHoldQueued=true;
+    requestAnimationFrame(()=>{worldHoldQueued=false;enforceImplementationHold()});
+  });
   const startWorldHold=()=>{
     const home=document.getElementById('homeView');
     if(!home)return;
     enforceImplementationHold();
-    worldHoldObserver.observe(home,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+    worldHoldObserver.observe(home,{childList:true,subtree:true});
   };
 
   (async () => {
