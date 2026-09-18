@@ -3,13 +3,14 @@
   if (window.__readyJourneyLoader) return;
   window.__readyJourneyLoader = true;
 
-  const VERSION = '2026.09.18-stage-c-exploration-journey-v1';
+  const VERSION = '2026.09.18-stage-c-exploration-journey-v2';
   const IMPLEMENTATION_HOLD = true;
   const CORE_CHAIN = [
     './ready-role-context-v1.js',
     './ready-foundation-v1.js',
     './ready-foundation-control-v1.js',
     './ready-stage-d.js',
+    './ready-recording-v1.js',
     './ready-stage-e.js',
     './ready-stage-f.js',
     './ready-parent-capture-intake-v1.js',
@@ -52,6 +53,7 @@
     window.ReadyBaseNativeV2?.render?.();
     window.ReadyBaseRuntimeV1?.syncSelectedTask?.();
     window.ReadyScheduleBaseV1?.render?.();
+    window.ReadyRecordingV1?.render?.();
     window.ReadyParentSetupHubV1?.render?.();
   }
 
