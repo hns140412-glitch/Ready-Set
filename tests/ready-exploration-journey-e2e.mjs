@@ -92,7 +92,8 @@ try {
   await page.waitForTimeout(1300);
   await page.click('#recordAction');
   await page.waitForFunction(()=>!document.querySelector('#reviewPanel')?.hidden,{timeout:8000});
-  assert.match(await page.locator('#formatNote').innerText(),/원본/);
+  assert.match(await page.locator('#formatNote').innerText(),/전송 파일/);
+  await page.waitForSelector('#recordFilenameInput',{timeout:5000});
   assert.ok((await page.locator('#audioPreview').getAttribute('src'))?.startsWith('blob:'),'recording preview must be a real blob');
 
   const stored=await page.evaluate(async()=>{
@@ -110,16 +111,22 @@ try {
   const audioKinds=await page.evaluate(async()=>{
     const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('readyset_audio',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
     const rows=await new Promise((resolve,reject)=>{const tx=db.transaction('audio','readonly'),r=tx.objectStore('audio').getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
-    db.close();return rows.map(x=>({kind:x.kind,name:x.name,size:Number(x.blob?.size||x.size||0),pipeline:x.pipeline||null,sourceOriginalId:x.sourceOriginalId||null}));
+    db.close();return rows.map(x=>({kind:x.kind,name:x.name,type:x.type,size:Number(x.blob?.size||x.size||0),pipeline:x.pipeline||null,sourceOriginalId:x.sourceOriginalId||null}));
   });
-  assert.ok(audioKinds.some(x=>x.kind==='ORIGINAL'&&x.size>0),'original copy must remain stored');
-  assert.ok(audioKinds.some(x=>x.kind==='CLEAN'&&x.size>0&&x.pipeline==='LOCAL_FAST_V1'&&x.sourceOriginalId),'clean copy must be separately stored and linked to original');
+  const originalStored=audioKinds.find(x=>x.kind==='ORIGINAL'&&x.size>0),cleanStored=audioKinds.find(x=>x.kind==='CLEAN'&&x.size>0);
+  assert.ok(originalStored,'original copy must remain stored');
+  assert.ok(cleanStored&&cleanStored.pipeline==='REALTIME_LOCAL_FILTER_V1'&&cleanStored.sourceOriginalId,'realtime-clean copy must be separately stored and linked to original');
+  assert.match(originalStored.name,/ original\.(m4a|webm|ogg|wav)$/,'original archive filename must carry original suffix');
+  assert.ok(!cleanStored.name.toLowerCase().includes('clean'),'transfer/clean stored filename must not append clean');
+  assert.equal(originalStored.type,cleanStored.type,'original and realtime-clean transfer should keep the same actual container/mime');
 
+  await page.fill('#recordFilenameInput',"Judy's grammar recording edited 2026 09 18");
+  assert.match(await page.locator('#formatNote').innerText(),/Judy's grammar recording edited 2026 09 18/);
   const recordingDownloadPromise=page.waitForEvent('download',{timeout:10000});
   await page.click('#shareRecordingBtn');
   const recordingDownload=await recordingDownloadPromise;
-  assert.match(recordingDownload.suggestedFilename(),/^Judy's grammar recording \d{4} \d{2} \d{2}\.(m4a|webm|ogg|wav)$/,'recording transfer must keep canonical dated name and actual format');
-  assert.ok(!recordingDownload.suggestedFilename().includes('_clean'),'internal CLEAN derivative must not replace submitted recording file');
+  assert.match(recordingDownload.suggestedFilename(),/^Judy's grammar recording edited 2026 09 18\.(m4a|webm|ogg|wav)$/,'edited recording filename must be used with the actual format');
+  assert.ok(!/clean|original/i.test(recordingDownload.suggestedFilename()),'submitted recording filename must not append clean or original');
 
   await page.click('#saveRecordingBtn');
   await page.click('#recordBackBtn');
@@ -159,7 +166,7 @@ try {
     contract:'ready-exploration-journey-full-app-browser-e2e',
     checks:{
       fullStageCBoot:true,timetableSelection:true,confirmedTimer:true,pauseResume:true,
-      recordingRoundTrip:true,originalAudioPersisted:true,localCleanAudio:true,canonicalRecordingTransfer:true,reloadRecovery:true,
+      recordingRoundTrip:true,originalAudioPersisted:true,realtimeCleanAudio:true,editableRecordingFilename:true,canonicalRecordingTransfer:true,reloadRecovery:true,
       completionTruth:true,imageShareFallback:true
     }
   }));
