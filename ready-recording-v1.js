@@ -5,7 +5,7 @@
   const VERSION='2026.09.18-recording-v1';
   const DB_NAME='readyset_audio',STORE_NAME='audio';
   const $=s=>document.querySelector(s);
-  let mediaRecorder=null,mediaStream=null,chunks=[],currentAudio=null,currentFile=null,recordStartedAt=0,recordTicker=null;
+  let mediaRecorder=null,mediaStream=null,chunks=[],currentAudio=null,currentFile=null,currentStored=false,recordStartedAt=0,recordTicker=null;
 
   const toast=message=>{const t=$('#toast');if(!t)return;t.textContent=message;t.hidden=false;clearTimeout(t._recordTm);t._recordTm=setTimeout(()=>t.hidden=true,2400)};
   const fmt=ms=>{const sec=Math.max(0,Math.floor(Number(ms||0)/1000));return `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`};
@@ -68,7 +68,7 @@
     let share=$('#shareRecordingBtn');
     if(!share){share=document.createElement('button');share.id='shareRecordingBtn';share.type='button';share.textContent='녹음 파일 전송';panel.appendChild(share)}
     const save=$('#saveRecordingBtn'),retry=$('#rerecordBtn');
-    if(save)save.textContent='원본 저장';if(retry)retry.textContent='다시 녹음';
+    if(save)save.textContent=currentStored?'녹음 확인':'원본 저장';if(retry)retry.textContent='다시 녹음';
     share.onclick=shareRecording;
   }
   function renderContext(){
@@ -87,22 +87,24 @@
 
   function resetRecording({keepPreview=false}={}){
     stopTicker();stopStream();chunks=[];mediaRecorder=null;
-    if(!keepPreview){currentAudio=null;currentFile=null;const preview=$('#audioPreview');if(preview){if(preview.src)URL.revokeObjectURL(preview.src);preview.removeAttribute('src')}if($('#reviewPanel'))$('#reviewPanel').hidden=true}
+    if(!keepPreview){currentAudio=null;currentFile=null;currentStored=false;const preview=$('#audioPreview');if(preview){if(preview.src)URL.revokeObjectURL(preview.src);preview.removeAttribute('src')}if($('#reviewPanel'))$('#reviewPanel').hidden=true}
     if($('#recordClock'))$('#recordClock').textContent='00:00';
     if($('#recordState'))$('#recordState').textContent='READY';
     const action=$('#recordAction');if(action){action.textContent='녹음 시작';action.classList.remove('recording')}
   }
 
-  function finishRecording(){
+  async function finishRecording(){
     stopTicker();stopStream();
     const type=mediaRecorder?.mimeType||chunks[0]?.type||'audio/webm';
-    currentAudio=new Blob(chunks,{type});currentFile=makeFile(currentAudio);
+    currentAudio=new Blob(chunks,{type});currentFile=makeFile(currentAudio);currentStored=false;
     const preview=$('#audioPreview');
     if(preview){if(preview.src)URL.revokeObjectURL(preview.src);preview.src=URL.createObjectURL(currentAudio)}
     if($('#reviewPanel'))$('#reviewPanel').hidden=false;
     if($('#recordState'))$('#recordState').textContent='REVIEW';
     const action=$('#recordAction');if(action){action.textContent='녹음 시작';action.classList.remove('recording')}
+    const info=mimeInfo(currentFile.type),note=$('#formatNote');if(note)note.textContent=`원본 · .${info.ext} · ${currentFile.type||'audio'} · ${Math.max(1,Math.round(currentFile.size/1024))}KB`;
     ensureReviewActions();
+    try{await storeOriginal(currentFile);currentStored=true;toast('녹음 원본을 기기에 안전하게 보관했어요.')}catch{toast('원본 자동 보관에 실패했어요. 저장 버튼으로 다시 시도해 주세요.')}
   }
 
   async function startRecording(){
@@ -125,7 +127,7 @@
 
   async function saveRecording(){
     if(!currentAudio||!currentFile){toast('먼저 녹음을 완료해 주세요.');return}
-    try{await storeOriginal(currentFile);markRecordingCompleted();toast(`원본 저장 완료 · ${currentFile.name}`)}
+    try{if(!currentStored){await storeOriginal(currentFile);currentStored=true}markRecordingCompleted();toast(`녹음 확인 완료 · ${currentFile.name}`)}
     catch{toast('녹음 원본을 저장하지 못했습니다.')}
   }
 
