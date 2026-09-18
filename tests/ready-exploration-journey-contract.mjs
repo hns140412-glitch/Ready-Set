@@ -17,6 +17,7 @@ const checks = [
   ['PWA cache version matches VERSION metadata', sw.includes(`const CACHE='${version.cacheVersion}';`)],
   ['history preserves outcome labels', base.includes('readyOutcomeLabel(r.status)') && !base.includes('<em>완료</em></article>')],
   ['timetable task selection resumes at mission', native.includes('sessionStorage.getItem(PENDING_KEY)') && native.includes("nav?.('mission')") && native.includes('if(core.activeSession)')],
+  ['schedule refresh does not rewrite active session selection', base.includes("if(state.activeSession){const activeId=state.activeSession.plannerTaskId")],
   ['confirmed timetable exposes now/next context', schedule.includes('function scheduleContext(rows)') && schedule.includes('지금 일정') && schedule.includes('다음 일정')],
   ['authoritative session timing exported', base.includes('sessionTimes:readySessionTimes')],
   ['start and result share handlers exported', base.includes('shareMission:readyShareMission') && base.includes('shareResult:readyShareResult')],
