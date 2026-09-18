@@ -2,11 +2,11 @@
   "product": "Ready & Set",
   "masterRevision": "REV_07",
   "masterFile": "Ready_Set_Ui_Master_Logic_REV_07.md",
-  "appVersion": "0.9.4-rc24",
+  "appVersion": "0.9.4-rc25",
   "schemaVersion": "5 + planner-v2-assignment-facts + schedule-authority-v1 + capture-intake-v1 + homework-analysis-v1 + role-context-v1 + first-journey-v2 + foundation-planner-bridge-v1",
   "sessionContractVersion": "REV_07",
-  "cacheVersion": "ready-set-v094-rev07-staging27-realtime-m4a-recording-v1",
-  "releaseStatus": "STAGING_REALTIME_M4A_RECORDING_DEVICE_VALIDATION_PENDING",
+  "cacheVersion": "ready-set-v094-rev07-staging28-runtime-hardening-v1",
+  "releaseStatus": "STAGING_RUNTIME_HARDENING_DEVICE_VALIDATION_PENDING",
   "notes": [
     "Production/main and central TAKY canonical remain unchanged",
     "Confirmed Ready & Set timer visual authority is preserved",
@@ -21,6 +21,12 @@
     "Filename preview shows the exact submitted filename and fixed actual extension",
     "Internal storage keeps ORIGINAL and CLEAN/transfer records linked by sourceOriginalId",
     "Zero-cost / zero-wait local optimization remains the default for most runtime features; character generation and Guide/Explorer-team generation remain explicit exceptions",
-    "Real iPhone microphone acoustics, iOS audio/mp4 dual-recorder behavior and native share sheet remain device-validation pending"
+    "Real iPhone microphone acoustics, iOS audio/mp4 dual-recorder behavior and native share sheet remain device-validation pending",
+    "PWA cache version is bumped so previously cached rejected Focus tooling and held world-shell modules are purged on activation",
+    "Duplicate session starts are locked to the existing active session and cannot reset its authoritative timestamp",
+    "App foreground/pageshow resumes rendering from timestamps without creating an implicit pause",
+    "Legacy planner selection cannot clear or replace an active learning session",
+    "Completed session publication records outcome/timing truth without fabricating 100% quantity fields",
+    "Full exploration E2E runs at 390px viewport and checks focus, recording and parent setup for horizontal overflow"
   ]
 }
