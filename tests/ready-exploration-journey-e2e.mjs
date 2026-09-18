@@ -4,6 +4,15 @@ import { chromium } from 'playwright';
 const browser=await chromium.launch({headless:true,args:['--no-proxy-server','--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream','--autoplay-policy=no-user-gesture-required']});
 const context=await browser.newContext({permissions:['microphone'],acceptDownloads:true,timezoneId:'Asia/Seoul'});
 await context.addInitScript(() => {
+  window.__plannerWrites=[];
+  const rawSet=Storage.prototype.setItem;
+  Storage.prototype.setItem=function(k,v){
+    if(k==='readyset_planner_v1'){
+      let selected=null;try{const p=JSON.parse(v);const d=p.days?.[new Date().toLocaleDateString('sv-SE')];selected=(d?.tasks||[]).map(t=>({id:t.id,selected:!!t.selected,status:t.status}))}catch{}
+      window.__plannerWrites.push({selected,stack:(new Error('planner write')).stack});
+    }
+    return rawSet.call(this,k,v);
+  };
   try{Object.defineProperty(navigator,'share',{value:undefined,configurable:true});Object.defineProperty(navigator,'canShare',{value:undefined,configurable:true})}catch{}
   const d=new Date().toLocaleDateString('sv-SE');
   localStorage.setItem('readyset_active_role_v1','child');
@@ -56,7 +65,8 @@ try {
     core:JSON.parse(localStorage.getItem('readyset_state')||'{}'),
     planner:JSON.parse(localStorage.getItem('readyset_planner_v1')||'{}'),
     toast:document.querySelector('#toast')?.textContent||'',
-    homeworkStart:document.documentElement.dataset.readyHomeworkStart||null
+    homeworkStart:document.documentElement.dataset.readyHomeworkStart||null,
+    plannerWrites:window.__plannerWrites||[]
   }));
   console.log('E2E START SNAPSHOT',JSON.stringify(startSnapshot));
   await page.waitForSelector('#focusView.active',{timeout:10000});
