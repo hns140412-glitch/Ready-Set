@@ -46,6 +46,7 @@ const checks = [
   ['recording does not pause or end timer', recording.includes('timerContinuesDuringRecording:true') && !recording.includes('readyPause(') && !recording.includes('completeSession(')],
   ['recording stops BGM while microphone is active', recording.includes('stopBgm();') && recording.includes('async function startRecording()')],
   ['recording stores original separately', recording.includes("kind:'ORIGINAL'") && recording.includes("DB_NAME='readyset_audio'")],
+  ['recording auto-preserves original before review action', recording.includes('await storeOriginal(currentFile);currentStored=true') && recording.includes("toast('녹음 원본을 기기에 안전하게 보관했어요.')")],
   ['recording preserves actual file format', recording.includes("if(t.includes('mp4')||t.includes('m4a'))") && recording.includes("if(t.includes('webm'))")],
   ['recording file transfer uses native file share', recording.includes('navigator.canShare?.({files:[currentFile]})') && recording.includes('files:[currentFile]')],
   ['recording file transfer has download fallback', recording.includes('a.download=currentFile.name')],
