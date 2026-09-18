@@ -60,7 +60,7 @@
   function recordingPrefix(){try{return String(localStorage.getItem('ready_recording_prefix')||"Judy's grammar recording").trim()||"Judy's grammar recording"}catch{return "Judy's grammar recording"}}
   function recordingDate(d=new Date()){return `${d.getFullYear()} ${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getDate()).padStart(2,'0')}`}
   function defaultTransferBase(){return `${recordingPrefix()} ${recordingDate()}`}
-  function sanitizeFileBase(value){return String(value||'').replace(/[\\/:*?"<>|\u0000-\u001f]/g,' ').replace(/\.(m4a|mp4|webm|ogg|wav)$/i,'').replace(/\s+/g,' ').trim().slice(0,120)||defaultTransferBase()}
+  function sanitizeFileBase(value){return String(value||'').replace(/[\\/:*?"<>|\u0000-\u001f]/g,' ').replace(/\.(m4a|mp4|webm|ogg|wav)$/i,'').replace(/[ _-]+(?:clean|original)$/i,'').replace(/\s+/g,' ').trim().slice(0,120)||defaultTransferBase()}
   function makeNamedFile(blob,base,{original=false}={}){
     const info=mimeInfo(blob?.type),cleanBase=sanitizeFileBase(base),name=`${cleanBase}${original?' original':''}.${info.ext}`;
     return new File([blob],name,{type:info.type,lastModified:Date.now()});
@@ -82,7 +82,7 @@
     const db=await openDb(),id=`original_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
     return new Promise((resolve,reject)=>{
       const tx=db.transaction(STORE_NAME,'readwrite');
-      tx.objectStore(STORE_NAME).put({id,kind:'ORIGINAL',originalMeaning:'FIRST_ENCODED_BROWSER_CAPTURE',captureMode:originalCaptureMode,captureProcessing:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},name:file.name,type:file.type,size:file.size,blob:file,createdAt:Date.now(),sessionId:activeContract()?.session_id||null,taskId:activeTask()?.task_id||null});
+      tx.objectStore(STORE_NAME).put({id,kind:'ORIGINAL',originalMeaning:originalCaptureMode==='DIRECT'?'FIRST_ENCODED_BROWSER_CAPTURE':'FALLBACK_TRANSFER_ARCHIVE',captureMode:originalCaptureMode,captureProcessing:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},name:file.name,type:file.type,size:file.size,blob:file,createdAt:Date.now(),sessionId:activeContract()?.session_id||null,taskId:activeTask()?.task_id||null});
       tx.oncomplete=()=>{db.close();resolve(id)};tx.onerror=()=>{db.close();reject(tx.error)};
     });
   }
