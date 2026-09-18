@@ -13,29 +13,39 @@ try {
 page.on('console',msg=>{if(msg.type()==='error')console.error('BROWSER',msg.text())});
 page.on('pageerror',err=>console.error('PAGEERROR',err.message));
 
-await page.addInitScript(() => {
-  try{Object.defineProperty(navigator,'share',{value:undefined,configurable:true});Object.defineProperty(navigator,'canShare',{value:undefined,configurable:true})}catch{}
-  const d=new Date().toLocaleDateString('sv-SE');
-  localStorage.setItem('readyset_active_role_v1','child');
-  localStorage.setItem('readyset_identity_v1',JSON.stringify({
+const today=new Date().toLocaleDateString('sv-SE');
+const seedState={
+  role:'child',
+  identity:{
     status:'READY',legalName:'테스트',nickname:'탐험가',familyRole:'CHILD',birthDate:'2015-01-01',
     schoolStage:'ELEMENTARY_5',characterVisualId:'e2e',characterSetupState:'COMPLETE',explorerId:'lumi',
     journeyTheme:'default',setupMode:'SELF'
-  }));
-  localStorage.setItem('readyset_state',JSON.stringify({
+  },
+  core:{
     schemaVersion:5,profile:{name:'테스트',photo:'',style:'editorial',shareAvatar:false},
     guide:{type:'lumi',name:'루미',voice:'warm'},selected:[],tasks:[],targetMin:null,sound:'끄기',records:[],activeSession:null
-  }));
-  localStorage.setItem('readyset_planner_v1',JSON.stringify({
-    version:1,days:{[d]:{localDate:d,tasks:[{
-      id:'e2e-recording-task',localDate:d,subject:'영어',title:'영어 · 문장 녹음',volume:'문장 1개',
+  },
+  planner:{
+    version:1,days:{[today]:{localDate:today,tasks:[{
+      id:'e2e-recording-task',localDate:today,subject:'영어',title:'영어 · 문장 녹음',volume:'문장 1개',
       status:'PLANNED',selected:false,required:true,confirmationState:'FACT_CONFIRMED'
     }]}}
-  }));
-});
+  }
+};
+
+step('seed origin');
+await bounded('seed-origin',()=>page.goto('http://127.0.0.1:4173/VERSION.json',{waitUntil:'domcontentloaded',timeout:10000}));
+await page.evaluate(seed=>{
+  localStorage.setItem('readyset_active_role_v1',seed.role);
+  localStorage.setItem('readyset_identity_v1',JSON.stringify(seed.identity));
+  localStorage.setItem('readyset_state',JSON.stringify(seed.core));
+  localStorage.setItem('readyset_planner_v1',JSON.stringify(seed.planner));
+},seedState);
+
 
 step('open');
 await bounded('goto',()=>page.goto('http://127.0.0.1:4173/?role=child',{waitUntil:'commit',timeout:10000}));
+await page.evaluate(()=>{try{Object.defineProperty(navigator,'share',{value:undefined,configurable:true});Object.defineProperty(navigator,'canShare',{value:undefined,configurable:true})}catch{}});
 await page.waitForFunction(()=>window.ReadyBaseNativeV2&&window.ReadyBaseRuntimeV1&&window.ReadyScheduleBaseV1&&window.ReadyRecordingV1,{timeout:15000});
 
 step('select timetable task');
