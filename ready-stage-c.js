@@ -3,7 +3,7 @@
   if (window.__readyJourneyLoader) return;
   window.__readyJourneyLoader = true;
 
-  const VERSION = '2026.09.15-stage-c-schedule-timer-implementation-hold-v1';
+  const VERSION = '2026.09.18-stage-c-exploration-journey-v1';
   const IMPLEMENTATION_HOLD = true;
   const CORE_CHAIN = [
     './ready-role-context-v1.js',
@@ -19,7 +19,6 @@
     './ready-stage-g14-planner-authority.js',
     './ready-base-native-v2.js',
     './ready-planner-selection-bridge-v1.js',
-    './ready-focus-tools-v1.js',
     './ready-schedule-base-v1.js',
     './ready-parent-setup-hub-v1.js',
     './ready-base-selftest-v1.js'
@@ -52,7 +51,6 @@
     window.ReadyStageG14?.render?.();
     window.ReadyBaseNativeV2?.render?.();
     window.ReadyBaseRuntimeV1?.syncSelectedTask?.();
-    window.ReadyFocusToolsV1?.render?.();
     window.ReadyScheduleBaseV1?.render?.();
     window.ReadyParentSetupHubV1?.render?.();
   }
