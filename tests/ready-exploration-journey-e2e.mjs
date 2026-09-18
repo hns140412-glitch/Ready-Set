@@ -39,10 +39,10 @@ try {
   assert.equal(await page.evaluate(()=>document.documentElement.dataset.readyBootState),'READY');
 
   step('select timetable task');
-  await page.waitForSelector('#homeTodayTodoList button.baseTask',{timeout:10000});
+  await page.waitForSelector('#homeTodayTodoList [data-quick-start]',{timeout:10000});
   await Promise.all([
     page.waitForNavigation({waitUntil:'domcontentloaded',timeout:15000}),
-    page.click('#homeTodayTodoList button.baseTask')
+    page.click('#homeTodayTodoList [data-quick-start]')
   ]);
   await page.waitForFunction(()=>document.documentElement.dataset.readyBootState==='READY'&&document.querySelector('#missionView.active'),{timeout:30000});
 
