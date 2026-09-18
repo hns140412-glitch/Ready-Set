@@ -1,0 +1,97 @@
+name: Ready Dedicated Staging Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - taky/exploration-journey-2026-09-18
+    paths:
+      - '.github/workflows/ready-staging-deploy.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      NETLIFY_SITE_ID: 63bd9a17-909b-4bac-8cb3-06437a628896
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Check staging deploy authorization
+        id: auth
+        shell: bash
+        run: |
+          if [ -n "${NETLIFY_AUTH_TOKEN:-}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "Dedicated staging deploy authorization is available."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::NETLIFY_AUTH_TOKEN is not configured in this repository; no deploy will be attempted."
+          fi
+
+      - name: Build exact staging runtime tree
+        if: steps.auth.outputs.available == 'true'
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_REF: ${{ github.ref_name }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/ready-set-netlify"
+          mkdir -p "$ROOT/site"
+          git archive --format=tar "$SOURCE_SHA" | tar -xf - -C "$ROOT/site"
+
+          rm -rf "$ROOT/site/.github" "$ROOT/site/.taky" "$ROOT/site/tests"
+
+          python - <<'PY'
+          import json, os, pathlib
+          root = pathlib.Path(os.environ["RUNNER_TEMP"]) / "ready-set-netlify" / "site"
+          version = json.loads((root / "VERSION.json").read_text(encoding="utf-8"))
+          manifest = {
+              "product": "Ready & Set",
+              "sourceRepository": "hns140412-glitch/Ready-Set",
+              "sourceBranch": os.environ["SOURCE_REF"],
+              "sourceCommit": os.environ["SOURCE_SHA"],
+              "githubRunId": os.environ["RUN_ID"],
+              "appVersion": version.get("appVersion"),
+              "cacheVersion": version.get("cacheVersion"),
+              "releaseStatus": version.get("releaseStatus"),
+              "artifactPurpose": "NON_PRODUCTION_STAGING_DEVICE_VALIDATION",
+          }
+          (root / "STAGING_SOURCE_MANIFEST.json").write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+          test -f "$ROOT/site/index.html"
+          test -f "$ROOT/site/VERSION.json"
+          test -f "$ROOT/site/STAGING_SOURCE_MANIFEST.json"
+          test -f "$ROOT/site/netlify.toml"
+
+      - name: Deploy exact tree to dedicated staging site
+        if: steps.auth.outputs.available == 'true'
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          npx --yes netlify-cli@latest deploy \
+            --dir="$RUNNER_TEMP/ready-set-netlify/site" \
+            --site="$NETLIFY_SITE_ID" \
+            --auth="$NETLIFY_AUTH_TOKEN" \
+            --prod \
+            --message="Ready staging source ${SOURCE_SHA}"
+
+      - name: Report authorization gap
+        if: steps.auth.outputs.available != 'true'
+        shell: bash
+        run: |
+          echo "STAGING_DEPLOY_AUTH_UNAVAILABLE"
