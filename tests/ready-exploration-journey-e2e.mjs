@@ -102,6 +102,24 @@ try {
   });
   assert.ok(stored.some(x=>x.kind==='ORIGINAL'&&x.size>0),'original recording must be persisted before confirmation');
 
+  await page.waitForFunction(async()=>{
+    const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('readyset_audio',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+    const rows=await new Promise((resolve,reject)=>{const tx=db.transaction('audio','readonly'),r=tx.objectStore('audio').getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+    db.close();return rows.some(x=>x.kind==='CLEAN'&&Number(x.blob?.size||x.size||0)>0);
+  },{timeout:12000});
+  const audioKinds=await page.evaluate(async()=>{
+    const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('readyset_audio',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+    const rows=await new Promise((resolve,reject)=>{const tx=db.transaction('audio','readonly'),r=tx.objectStore('audio').getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+    db.close();return rows.map(x=>({kind:x.kind,name:x.name,size:Number(x.blob?.size||x.size||0),pipeline:x.pipeline||null,sourceOriginalId:x.sourceOriginalId||null}));
+  });
+  assert.ok(audioKinds.some(x=>x.kind==='ORIGINAL'&&x.size>0),'original copy must remain stored');
+  assert.ok(audioKinds.some(x=>x.kind==='CLEAN'&&x.size>0&&x.pipeline==='LOCAL_FAST_V1'&&x.sourceOriginalId),'clean copy must be separately stored and linked to original');
+
+  const recordingDownloadPromise=page.waitForEvent('download',{timeout:10000});
+  await page.click('#shareRecordingBtn');
+  const recordingDownload=await recordingDownloadPromise;
+  assert.match(recordingDownload.suggestedFilename(),/_clean\.wav$/,'recording transfer should prefer local clean copy');
+
   await page.click('#saveRecordingBtn');
   await page.click('#recordBackBtn');
   await page.waitForSelector('#focusView.active',{timeout:5000});
@@ -140,7 +158,7 @@ try {
     contract:'ready-exploration-journey-full-app-browser-e2e',
     checks:{
       fullStageCBoot:true,timetableSelection:true,confirmedTimer:true,pauseResume:true,
-      recordingRoundTrip:true,originalAudioPersisted:true,reloadRecovery:true,
+      recordingRoundTrip:true,originalAudioPersisted:true,localCleanAudio:true,cleanAudioTransfer:true,reloadRecovery:true,
       completionTruth:true,imageShareFallback:true
     }
   }));
