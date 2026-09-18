@@ -70,6 +70,27 @@ try {
   assert.equal(await page.locator('#completeBtn').innerText(),'완료했어요');
   assert.notEqual(await page.locator('#remainingTime').innerText(),'--:--');
 
+  step('single active session lock');
+  const singleSession=await page.evaluate(()=>{
+    const before=JSON.parse(localStorage.getItem('readyset_state')||'{}').activeSession;
+    const returned=window.ReadyBaseRuntimeV1.start();
+    const after=JSON.parse(localStorage.getItem('readyset_state')||'{}').activeSession;
+    return{beforeId:before?.id,afterId:after?.id,returned,startAtBefore:before?.startAt,startAtAfter:after?.startAt};
+  });
+  assert.equal(singleSession.afterId,singleSession.beforeId,'duplicate start must not replace the active session');
+  assert.equal(singleSession.startAtAfter,singleSession.startAtBefore,'duplicate start must not reset the authoritative start timestamp');
+
+  step('app-return lifecycle');
+  const lifecycle=await page.evaluate(()=>{
+    const before=JSON.parse(localStorage.getItem('readyset_state')||'{}').activeSession;
+    window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));
+    const after=JSON.parse(localStorage.getItem('readyset_state')||'{}').activeSession;
+    return{beforeId:before?.id,afterId:after?.id,pausedBefore:before?.pausedAt??null,pausedAfter:after?.pausedAt??null,startBefore:before?.startAt,startAfter:after?.startAt};
+  });
+  assert.equal(lifecycle.afterId,lifecycle.beforeId,'app return must preserve active session identity');
+  assert.equal(lifecycle.pausedAfter,lifecycle.pausedBefore,'app return must not create an implicit pause');
+  assert.equal(lifecycle.startAfter,lifecycle.startBefore,'app return must preserve timestamp truth');
+
   step('active-session planner lock');
   const plannerLock=await page.evaluate(()=>{
     const before=JSON.parse(localStorage.getItem('readyset_state')||'{}').activeSession?.id||null;
@@ -192,7 +213,7 @@ try {
     pass:true,
     contract:'ready-exploration-journey-full-app-browser-e2e',
     checks:{
-      fullStageCBoot:true,timetableSelection:true,confirmedTimer:true,activeSessionPlannerLock:true,pauseResume:true,
+      fullStageCBoot:true,timetableSelection:true,confirmedTimer:true,singleActiveSession:true,appReturnLifecycle:true,activeSessionPlannerLock:true,pauseResume:true,
       recordingRoundTrip:true,originalAudioPersisted:true,realtimeCleanAudio:true,editableRecordingFilename:true,canonicalRecordingTransfer:true,reloadRecovery:true,
       completionTruth:true,imageShareFallback:true,parentSetupWithoutWorldUI:true
     }
