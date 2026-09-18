@@ -6,6 +6,7 @@ const runtime = fs.readFileSync(new URL('../ready-runtime-v07.js', import.meta.u
 const stageC = fs.readFileSync(new URL('../ready-stage-c.js', import.meta.url), 'utf8');
 const stageD = fs.readFileSync(new URL('../ready-stage-d-base-v1.js', import.meta.url), 'utf8');
 const recording = fs.readFileSync(new URL('../ready-recording-v1.js', import.meta.url), 'utf8');
+const finishRecording = recording.slice(recording.indexOf('async function finishRecording()'), recording.indexOf('async function startRecording()'));
 const native = fs.readFileSync(new URL('../ready-base-native-v2.js', import.meta.url), 'utf8');
 const schedule = fs.readFileSync(new URL('../ready-schedule-base-v1.js', import.meta.url), 'utf8');
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
@@ -58,7 +59,7 @@ const checks = [
   ['recording review keeps timer context live', recording.includes('function startContextTicker()') && recording.includes("#recordingView')?.classList.contains('active')")],
   ['recording stops BGM while microphone is active', recording.includes('stopBgm();') && recording.includes('async function startRecording()')],
   ['recording stores original separately', recording.includes("kind:'ORIGINAL'") && recording.includes("DB_NAME='readyset_audio'")],
-  ['recording auto-preserves original before review action', recording.includes('await storeOriginal(currentFile);currentStored=true') && recording.includes("toast('녹음 원본을 기기에 안전하게 보관했어요.')")],
+  ['recording auto-preserves original before review action', finishRecording.includes('await storeOriginal(currentFile);currentStored=true') && finishRecording.indexOf('await storeOriginal(currentFile);currentStored=true') < finishRecording.indexOf("if($('#reviewPanel'))$('#reviewPanel').hidden=false")],
   ['recording preserves actual file format', recording.includes("if(t.includes('mp4')||t.includes('m4a'))") && recording.includes("if(t.includes('webm'))")],
   ['recording file transfer uses native file share', recording.includes('navigator.canShare?.({files:[currentFile]})') && recording.includes('files:[currentFile]')],
   ['recording file transfer has download fallback', recording.includes('a.download=currentFile.name')],
