@@ -27,6 +27,7 @@ const checks = [
   ['share includes paused only when evidenced', base.includes('if(Number(r.pausedMs)>0)lines.push')],
   ['non-complete report has distinct headline', base.includes("done?'오늘의 탐험 완료':'오늘의 탐험 기록'")],
   ['result status remains explicit', base.includes("PARTIAL:'일부 남음'") && base.includes("DEFERRED:'다음에 이어서'") && base.includes("BLOCKED:'막힘'") && base.includes("WAITING_FOR_PARENT:'부모 도움 필요'")],
+  ['REV07 contract is activated from active focus rendering', base.includes('window.ReadySetRev07?.render?.()') && runtime.includes("render:()=>{if(state.activeSession){ensureContract();renderContractUI()}}")],
   ['runtime uses authoritative timing', runtime.includes('ReadyBaseRuntimeV1?.sessionTimes?.()')],
   ['paused time not hardcoded during publication', !runtime.includes('pausedMs:0,source,sessionId')],
   ['rejected focus module removed from active loader', !stageC.includes("'./ready-focus-tools-v1.js'")],
