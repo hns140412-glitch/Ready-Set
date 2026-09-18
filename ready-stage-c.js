@@ -55,6 +55,7 @@
     window.ReadyStageG11?.hydrateParentInputs?.();
     window.ReadyStageG14?.render?.();
     window.ReadyBaseNativeV2?.render?.();
+    window.ReadyHomeHomeworkUIV1?.render?.();
     window.ReadyBaseRuntimeV1?.syncSelectedTask?.();
     window.ReadyScheduleBaseV1?.render?.();
     window.ReadyRecordingV1?.render?.();
