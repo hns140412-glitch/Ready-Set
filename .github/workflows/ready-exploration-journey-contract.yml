@@ -1,0 +1,41 @@
+name: Ready Exploration Journey Contract
+
+on:
+  pull_request:
+    paths:
+      - 'ready-base-runtime-v1.js'
+      - 'ready-runtime-v07.js'
+      - 'ready-stage-c.js'
+      - 'ready-stage-d-base-v1.js'
+      - 'ready-recording-v1.js'
+      - 'ready-base-native-v2.js'
+      - 'ready-schedule-base-v1.js'
+      - 'tests/ready-exploration-journey-contract.mjs'
+      - '.github/workflows/ready-exploration-journey-contract.yml'
+  push:
+    branches:
+      - 'taky/exploration-journey-2026-09-18'
+    paths:
+      - 'ready-base-runtime-v1.js'
+      - 'ready-runtime-v07.js'
+      - 'ready-stage-c.js'
+      - 'ready-stage-d-base-v1.js'
+      - 'ready-recording-v1.js'
+      - 'ready-base-native-v2.js'
+      - 'ready-schedule-base-v1.js'
+      - 'tests/ready-exploration-journey-contract.mjs'
+      - '.github/workflows/ready-exploration-journey-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Exploration journey contract
+        run: node tests/ready-exploration-journey-contract.mjs
