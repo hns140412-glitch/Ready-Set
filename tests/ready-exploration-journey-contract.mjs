@@ -78,6 +78,8 @@ const checks = [
   ['original and clean use same selected recording container', recording.includes('originalAndTransferSameContainer:true') && recording.includes("kind:'CLEAN'") && recording.includes("kind:'ORIGINAL'")],
   ['original archive receives original suffix only', recording.includes("original?' original':''")],
   ['transfer filename is editable with fixed real extension', recording.includes('recordFilenameInput') && recording.includes('sanitizeFileBase') && recording.includes('editableTransferFilename:true')],
+  ['transfer filename strips trailing clean/original suffixes', recording.includes("replace(/[ _-]+(?:clean|original)$/i,''")],
+  ['fallback original metadata remains truthful', recording.includes("originalCaptureMode==='DIRECT'?'FIRST_ENCODED_BROWSER_CAPTURE':'FALLBACK_TRANSFER_ARCHIVE'")],
   ['persistent filename prefix setting exists', recording.includes('recordingFilenameSettings') && recording.includes("localStorage.setItem('ready_recording_prefix'") && recording.includes('persistentFilenamePrefix:true')],
   ['dual-recorder failure falls back without blocking transfer', recording.includes("originalCaptureMode='FALLBACK_TRANSFER'") && recording.includes('originalCaptureFallback:true')],
   ['realtime filter can fall back to browser DSP', recording.includes("realtimeFilterMode='BROWSER_DSP_ONLY'") && recording.includes('function makeRecorder') && recording.includes('realtimeFilterFallback:true')],
