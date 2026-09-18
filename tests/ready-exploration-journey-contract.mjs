@@ -41,6 +41,7 @@ const checks = [
   ['result status remains explicit', base.includes("PARTIAL:'일부 남음'") && base.includes("DEFERRED:'다음에 이어서'") && base.includes("BLOCKED:'막힘'") && base.includes("WAITING_FOR_PARENT:'부모 도움 필요'")],
   ['no fallback false completion', !base.includes("canonical?.state||report?.resultState||'COMPLETED'") && base.includes("tasks.every(t=>t.state==='COMPLETED')")],
   ['per-task wrap-up truth is persisted', base.includes('taskStates:tasks.map') && base.includes('r.taskStates')],
+  ['completion does not fabricate percentage quantities', !base.includes('plannedQuantity:100') && !base.includes('completedQuantity:100') && !base.includes('remainingQuantity:0')],
   ['REV07 contract is activated from active focus rendering', base.includes('window.ReadySetRev07?.render?.()') && runtime.includes("render:()=>{if(state.activeSession){ensureContract();renderContractUI()}}")],
   ['runtime uses authoritative timing', runtime.includes('ReadyBaseRuntimeV1?.sessionTimes?.()')],
   ['paused time not hardcoded during publication', !runtime.includes('pausedMs:0,source,sessionId')],
