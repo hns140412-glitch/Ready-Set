@@ -73,6 +73,8 @@ const checks = [
   ['original and clean use same selected recording container', recording.includes('originalAndTransferSameContainer:true') && recording.includes("kind:'CLEAN'") && recording.includes("kind:'ORIGINAL'")],
   ['original archive receives original suffix only', recording.includes("original?' original':''")],
   ['transfer filename is editable with fixed real extension', recording.includes('recordFilenameInput') && recording.includes('sanitizeFileBase') && recording.includes('editableTransferFilename:true')],
+  ['persistent filename prefix setting exists', recording.includes('recordingFilenameSettings') && recording.includes("localStorage.setItem('ready_recording_prefix'") && recording.includes('persistentFilenamePrefix:true')],
+  ['dual-recorder failure falls back without blocking transfer', recording.includes("originalCaptureMode='FALLBACK_TRANSFER'") && recording.includes('originalCaptureFallback:true')],
   ['recording module has no cloud processing dependency', !recording.includes('fetch(') && !recording.includes('XMLHttpRequest')],
   ['recording auto-preserves original before review action', finishRecording.includes('await storeOriginal(currentOriginalFile);currentStored=true') && finishRecording.indexOf('await storeOriginal(currentOriginalFile);currentStored=true') < finishRecording.indexOf("if($('#reviewPanel'))$('#reviewPanel').hidden=false")],
   ['recording preserves actual file format', recording.includes("if(t.includes('mp4')||t.includes('m4a'))") && recording.includes("if(t.includes('webm'))")],
