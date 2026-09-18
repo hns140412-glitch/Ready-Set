@@ -1,0 +1,7 @@
+Ready-Set GitHub upload verification
+Date: 2026-09-18
+Purpose: Verify an authenticated alternative to the local Git push failure.
+Local Git push: FAIL (sh.exe signal pipe Win32 error 5; unable to get password from user).
+Transport used for this file: connected GitHub Git Data API.
+Scope: Dedicated verification branch; no product code changes.
+Base commit: 3378128c1e4d8056c6a1f08078cf8788c6053298
