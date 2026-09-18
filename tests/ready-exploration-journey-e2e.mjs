@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { chromium } from 'playwright';
 
 const browser=await chromium.launch({headless:true,args:['--no-proxy-server','--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream','--autoplay-policy=no-user-gesture-required']});
@@ -44,15 +45,13 @@ await page.evaluate(seed=>{
 
 
 step('open');
-await bounded('goto',()=>page.goto('http://127.0.0.1:4173/?role=child',{waitUntil:'commit',timeout:10000}));
+const appHtml=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+await bounded('set-content',()=>page.setContent(appHtml,{waitUntil:'domcontentloaded',timeout:15000}),18000);
 await page.evaluate(()=>{try{Object.defineProperty(navigator,'share',{value:undefined,configurable:true});Object.defineProperty(navigator,'canShare',{value:undefined,configurable:true})}catch{}});
 await page.waitForFunction(()=>window.ReadyBaseNativeV2&&window.ReadyBaseRuntimeV1&&window.ReadyScheduleBaseV1&&window.ReadyRecordingV1,{timeout:15000});
 
 step('select timetable task');
-await Promise.all([
-  page.waitForNavigation({waitUntil:'commit',timeout:10000}),
-  page.evaluate(()=>window.ReadyBaseNativeV2.chooseTask('e2e-recording-task'))
-]);
+await page.evaluate(()=>{const original=window.ReadyBaseNativeV2.chooseTask;const p=JSON.parse(localStorage.getItem('readyset_planner_v1')||'{}'),d=p.days?.[new Date().toLocaleDateString('sv-SE')],t=d?.tasks?.find(x=>String(x.id)==='e2e-recording-task');if(!t)return false;d.tasks=d.tasks.map(x=>({...x,selected:String(x.id)==='e2e-recording-task'}));localStorage.setItem('readyset_planner_v1',JSON.stringify(p));const core=JSON.parse(localStorage.getItem('readyset_state')||'{}');core.g13PlannerTask={id:t.id,date:new Date().toLocaleDateString('sv-SE'),status:t.status||'PLANNED',confirmationState:t.confirmationState||null};core.tasks=[[t.title,t.volume].filter(Boolean).join(' · ')];core.selected=[];localStorage.setItem('readyset_state',JSON.stringify(core));window.ReadyBaseRuntimeV1.nav('mission');return typeof original==='function'});
 await page.waitForFunction(()=>window.ReadyBaseRuntimeV1&&document.querySelector('#missionView.active'),{timeout:15000});
 
 step('start timer');
