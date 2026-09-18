@@ -6,6 +6,7 @@ const context=await browser.newContext({permissions:['microphone'],acceptDownloa
 const page=await context.newPage();
 const hardStop=setTimeout(()=>{console.error('E2E HARD TIMEOUT');process.exit(124)},120000);
 const step=name=>console.log('E2E STEP',name);
+const bounded=(name,promise,ms=12000)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(`E2E_TIMEOUT:${name}`)),ms))]);
 page.setDefaultTimeout(8000);
 page.setDefaultNavigationTimeout(10000);
 try {
@@ -34,7 +35,7 @@ await page.addInitScript(() => {
 });
 
 step('open');
-await page.goto('http://127.0.0.1:4173/?role=child',{waitUntil:'commit',timeout:10000});
+await bounded('goto',page.goto('http://127.0.0.1:4173/?role=child',{waitUntil:'commit',timeout:10000}));
 await page.waitForFunction(()=>window.ReadyBaseNativeV2&&window.ReadyBaseRuntimeV1&&window.ReadyScheduleBaseV1&&window.ReadyRecordingV1,{timeout:15000});
 
 step('select timetable task');
