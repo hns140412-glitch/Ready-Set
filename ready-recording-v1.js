@@ -79,7 +79,7 @@
   }
 
   function ensureReviewActions(){
-    const panel=$('#reviewPanel');if(!panel)return;
+    const panel=$('#reviewPanel');if(!panel)return;['#duoMainGuide','#duoGuestGuide','#duoText','#coachVoiceBtn'].forEach(sel=>{const el=$(sel);if(el)el.hidden=true});
     let share=$('#shareRecordingBtn');
     if(!share){share=document.createElement('button');share.id='shareRecordingBtn';share.type='button';share.textContent='녹음 파일 전송';panel.appendChild(share)}
     const save=$('#saveRecordingBtn'),retry=$('#rerecordBtn');
