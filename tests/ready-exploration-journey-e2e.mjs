@@ -34,12 +34,12 @@ await page.addInitScript(() => {
 });
 
 step('open');
-await page.goto('http://127.0.0.1:4173/?role=child',{waitUntil:'domcontentloaded'});
+await page.goto('http://127.0.0.1:4173/?role=child',{waitUntil:'commit',timeout:10000});
 await page.waitForFunction(()=>window.ReadyBaseNativeV2&&window.ReadyBaseRuntimeV1&&window.ReadyScheduleBaseV1&&window.ReadyRecordingV1,{timeout:15000});
 
 step('select timetable task');
 await Promise.all([
-  page.waitForNavigation({waitUntil:'domcontentloaded'}),
+  page.waitForNavigation({waitUntil:'commit',timeout:10000}),
   page.evaluate(()=>window.ReadyBaseNativeV2.chooseTask('e2e-recording-task'))
 ]);
 await page.waitForFunction(()=>window.ReadyBaseRuntimeV1&&document.querySelector('#missionView.active'),{timeout:15000});
