@@ -8,6 +8,7 @@ const stageD = fs.readFileSync(new URL('../ready-stage-d-base-v1.js', import.met
 const recording = fs.readFileSync(new URL('../ready-recording-v1.js', import.meta.url), 'utf8');
 const finishRecording = recording.slice(recording.indexOf('async function finishRecording()'), recording.indexOf('async function startRecording()'));
 const native = fs.readFileSync(new URL('../ready-base-native-v2.js', import.meta.url), 'utf8');
+const selectionBridge = fs.readFileSync(new URL('../ready-planner-selection-bridge-v1.js', import.meta.url), 'utf8');
 const homeUI = fs.readFileSync(new URL('../ready-home-homework-ui-v1.js', import.meta.url), 'utf8');
 const stageDLoader = fs.readFileSync(new URL('../ready-stage-d.js', import.meta.url), 'utf8');
 const schedule = fs.readFileSync(new URL('../ready-schedule-base-v1.js', import.meta.url), 'utf8');
@@ -24,6 +25,7 @@ const checks = [
   ['dynamic runtime loaders are bounded', stageC.includes('timeout = 12000') && stageC.includes('LOAD_TIMEOUT:') && stageDLoader.includes('timeout=12000') && stageDLoader.includes('LOAD_TIMEOUT:')],
   ['timetable task selection resumes at mission', native.includes('sessionStorage.getItem(PENDING_KEY)') && native.includes("nav?.('mission')") && native.includes('if(core.activeSession)')],
   ['schedule refresh does not rewrite active session selection', base.includes("if(state.activeSession){const activeId=state.activeSession.plannerTaskId")],
+  ['legacy planner bridge cannot clear active session', selectionBridge.includes("if(core.activeSession){window.ReadyBaseRuntimeV1?.nav?.('focus');return false}") && !selectionBridge.includes('core.activeSession=null')],
   ['confirmed timetable exposes now/next context', schedule.includes('function scheduleContext(rows)') && schedule.includes('지금 일정') && schedule.includes('다음 일정')],
   ['authoritative session timing exported', base.includes('sessionTimes:readySessionTimes')],
   ['active session restores after reload', base.includes('function readyRestoreActiveSession()') && base.includes("readyNav('focus');clearInterval(readyTicker)")],
