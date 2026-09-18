@@ -4,15 +4,6 @@ import { chromium } from 'playwright';
 const browser=await chromium.launch({headless:true,args:['--no-proxy-server','--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream','--autoplay-policy=no-user-gesture-required']});
 const context=await browser.newContext({permissions:['microphone'],acceptDownloads:true,timezoneId:'Asia/Seoul'});
 await context.addInitScript(() => {
-  window.__plannerWrites=[];
-  const rawSet=Storage.prototype.setItem;
-  Storage.prototype.setItem=function(k,v){
-    if(k==='readyset_planner_v1'){
-      let selected=null;try{const p=JSON.parse(v);const d=p.days?.[new Date().toLocaleDateString('sv-SE')];selected=(d?.tasks||[]).map(t=>({id:t.id,selected:!!t.selected,status:t.status}))}catch{}
-      window.__plannerWrites.push({selected,stack:(new Error('planner write')).stack});
-    }
-    return rawSet.call(this,k,v);
-  };
   try{Object.defineProperty(navigator,'share',{value:undefined,configurable:true});Object.defineProperty(navigator,'canShare',{value:undefined,configurable:true})}catch{}
   if(sessionStorage.getItem('__readyE2ESeeded')) return;
   sessionStorage.setItem('__readyE2ESeeded','1');
