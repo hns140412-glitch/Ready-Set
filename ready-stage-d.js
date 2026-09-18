@@ -8,12 +8,15 @@
     './ready-home-homework-ui-v1.js'
   ];
 
-  const load = src => new Promise((resolve, reject) => {
+  const load = (src,timeout=12000) => new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = src;
     script.async = false;
-    script.onload = () => resolve(src);
-    script.onerror = () => reject(new Error(`LOAD_FAILED:${src}`));
+    let settled=false;
+    const done=(ok,error)=>{if(settled)return;settled=true;clearTimeout(timer);ok?resolve(src):reject(error)};
+    const timer=setTimeout(()=>{script.remove();done(false,new Error(`LOAD_TIMEOUT:${src}`))},timeout);
+    script.onload = () => done(true);
+    script.onerror = () => done(false,new Error(`LOAD_FAILED:${src}`));
     document.head.appendChild(script);
   });
 
