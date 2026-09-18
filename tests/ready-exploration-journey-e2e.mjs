@@ -49,6 +49,16 @@ try {
   step('start timer');
   await page.click('button[data-minutes="10"]');
   await page.click('#startBtn');
+  await page.waitForTimeout(500);
+  const startSnapshot=await page.evaluate(()=>({
+    activeViews:[...document.querySelectorAll('.view.active')].map(x=>x.id),
+    selectedPlanner:window.ReadyBaseRuntimeV1?.selectedPlannerTask?.()||null,
+    core:JSON.parse(localStorage.getItem('readyset_state')||'{}'),
+    planner:JSON.parse(localStorage.getItem('readyset_planner_v1')||'{}'),
+    toast:document.querySelector('#toast')?.textContent||'',
+    homeworkStart:document.documentElement.dataset.readyHomeworkStart||null
+  }));
+  console.log('E2E START SNAPSHOT',JSON.stringify(startSnapshot));
   await page.waitForSelector('#focusView.active',{timeout:10000});
 
   assert.equal((await page.locator('#focusView .focusTitle h1').innerText()).replace(/\s+/g,' ').trim(),'그냥! 지금 하면 돼!');
