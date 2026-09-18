@@ -4,6 +4,8 @@ import { chromium } from 'playwright';
 const browser=await chromium.launch({headless:true,args:['--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream','--autoplay-policy=no-user-gesture-required']});
 const context=await browser.newContext({permissions:['microphone'],acceptDownloads:true});
 const page=await context.newPage();
+const hardStop=setTimeout(()=>{console.error('E2E HARD TIMEOUT');process.exit(124)},120000);
+const step=name=>console.log('E2E STEP',name);
 page.setDefaultTimeout(8000);
 page.setDefaultNavigationTimeout(10000);
 try {
@@ -11,6 +13,7 @@ page.on('console',msg=>{if(msg.type()==='error')console.error('BROWSER',msg.text
 page.on('pageerror',err=>console.error('PAGEERROR',err.message));
 
 await page.addInitScript(() => {
+  try{Object.defineProperty(navigator,'share',{value:undefined,configurable:true});Object.defineProperty(navigator,'canShare',{value:undefined,configurable:true})}catch{}
   const d=new Date().toLocaleDateString('sv-SE');
   localStorage.setItem('readyset_active_role_v1','child');
   localStorage.setItem('readyset_identity_v1',JSON.stringify({
@@ -30,15 +33,18 @@ await page.addInitScript(() => {
   }));
 });
 
+step('open');
 await page.goto('http://127.0.0.1:4173/?role=child',{waitUntil:'domcontentloaded'});
 await page.waitForFunction(()=>window.ReadyBaseNativeV2&&window.ReadyBaseRuntimeV1&&window.ReadyScheduleBaseV1&&window.ReadyRecordingV1,{timeout:15000});
 
+step('select timetable task');
 await Promise.all([
   page.waitForNavigation({waitUntil:'domcontentloaded'}),
   page.evaluate(()=>window.ReadyBaseNativeV2.chooseTask('e2e-recording-task'))
 ]);
 await page.waitForFunction(()=>window.ReadyBaseRuntimeV1&&document.querySelector('#missionView.active'),{timeout:15000});
 
+step('start timer');
 await page.click('button[data-minutes="10"]');
 await page.click('#startBtn');
 await page.waitForSelector('#focusView.active',{timeout:10000});
@@ -61,6 +67,7 @@ await page.click('#pauseBtn');
 await page.waitForTimeout(1200);
 assert.ok(sec(await page.locator('#focusElapsed').innerText())>=beforePause+1,'focus time must resume');
 
+step('recording');
 await page.waitForSelector('#recBtn:not([hidden])',{timeout:5000});
 const focusBeforeRecording=sec(await page.locator('#focusElapsed').innerText());
 await page.click('#recBtn');
@@ -87,6 +94,7 @@ await page.waitForTimeout(500);
 const focusAfterRecording=sec(await page.locator('#focusElapsed').innerText());
 assert.ok(focusAfterRecording>=focusBeforeRecording+1,'timer must continue through recording round trip');
 
+step('wrap up');
 await page.click('#completeBtn');
 await page.waitForFunction(()=>document.querySelector('#readyRev07Wrap')&&!document.querySelector('#readyRev07Wrap').hidden,{timeout:5000});
 await page.click('[data-wrap-state="COMPLETED"]');
@@ -94,6 +102,7 @@ await page.click('#rev07ConfirmEnd');
 await page.waitForSelector('#resultView.active',{timeout:5000});
 assert.match(await page.locator('#resultTasks').innerText(),/완료/);
 
+step('share fallback');
 const downloadPromise=page.waitForEvent('download',{timeout:10000});
 await page.click('#shareResultBtn');
 const download=await downloadPromise;
@@ -103,6 +112,7 @@ const state=await page.evaluate(()=>JSON.parse(localStorage.getItem('readyset_st
 assert.equal(state.activeSession,null);
 assert.equal(state.records?.[0]?.status,'COMPLETED');
 
+step('done');
 console.log(JSON.stringify({
   pass:true,
   contract:'ready-exploration-journey-browser-e2e',
@@ -112,5 +122,6 @@ console.log(JSON.stringify({
   }
 }));
 } finally {
-  await browser.close().catch(()=>{});
+  clearTimeout(hardStop);
+  await Promise.race([browser.close().catch(()=>{}),new Promise(resolve=>setTimeout(resolve,5000))]);
 }
