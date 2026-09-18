@@ -4,6 +4,10 @@ import assert from 'node:assert/strict';
 const base = fs.readFileSync(new URL('../ready-base-runtime-v1.js', import.meta.url), 'utf8');
 const runtime = fs.readFileSync(new URL('../ready-runtime-v07.js', import.meta.url), 'utf8');
 const stageC = fs.readFileSync(new URL('../ready-stage-c.js', import.meta.url), 'utf8');
+const stageD = fs.readFileSync(new URL('../ready-stage-d-base-v1.js', import.meta.url), 'utf8');
+const recording = fs.readFileSync(new URL('../ready-recording-v1.js', import.meta.url), 'utf8');
+const native = fs.readFileSync(new URL('../ready-base-native-v2.js', import.meta.url), 'utf8');
+const schedule = fs.readFileSync(new URL('../ready-schedule-base-v1.js', import.meta.url), 'utf8');
 
 const checks = [
   ['history preserves outcome labels', base.includes('readyOutcomeLabel(r.status)') && !base.includes('<em>완료</em></article>')],
@@ -29,7 +33,21 @@ const checks = [
   ['sound button is bound', base.includes("$('#focusSoundBtn').onclick=readyCycleSound")],
   ['BGM play is no longer a no-op', base.includes("globalThis.playBgm=()=>readyApplySound({play:true})")],
   ['session start requests BGM playback', base.includes("readyNav('focus');readyApplySound({play:true})")],
-  ['session completion stops BGM', base.includes("bgm.pause();bgm.currentTime=0")]
+  ['session completion stops BGM', base.includes('readyStopSound();readyNav(\'result\')')],
+  ['clock hands are live without legacy app.js', base.includes('function readyUpdateClock()') && base.includes("second.style.transform")],
+  ['confirmed timer headline preserved', stageD.includes("h1.innerHTML = '그냥!<br>지금 하면 돼!'")],
+  ['confirmed timer has full 1-12 clock', stageD.includes('for(let n=1;n<=12;n++)') && stageD.includes("brand.textContent='Ready & Set'")],
+  ['confirmed target label preserved', stageD.includes("targetLabel.textContent='목표 시간'")],
+  ['confirmed timer keeps dark lower panel', stageD.includes("#focusView .controlPanel{margin-top:auto;background:rgba(24,24,23,.96)")],
+  ['old rejected Focus tooling remains unloaded', !stageC.includes("'./ready-focus-tools-v1.js'")],
+  ['standalone recording module is loaded', stageC.includes("'./ready-recording-v1.js'") && stageC.includes('ReadyRecordingV1?.render?.()')],
+  ['recording does not pause/end timer', recording.includes('timerContinuesDuringRecording:true') && !recording.includes('readyPause(')],
+  ['recording stops BGM while microphone is active', recording.includes('stopBgm();') && recording.includes('startRecording')],
+  ['recording stores original separately', recording.includes("kind:'ORIGINAL'") && recording.includes("DB_NAME='readyset_audio'")],
+  ['recording preserves actual file format', recording.includes("if(t.includes('mp4')||t.includes('m4a'))") && recording.includes("if(t.includes('webm'))")],
+  ['recording file transfer uses native file share', recording.includes('navigator.canShare?.({files:[currentFile]})') && recording.includes('files:[currentFile]')],
+  ['recording file transfer has download fallback', recording.includes('a.download=currentFile.name')],
+  ['clean analysis copy is not fabricated', recording.includes('cleanCopyGenerated:false')]
 ];
 
 for (const [name, ok] of checks) {
