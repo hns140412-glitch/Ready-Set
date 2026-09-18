@@ -32,7 +32,7 @@ jobs:
             echo "Dedicated staging deploy authorization is available."
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::NETLIFY_AUTH_TOKEN is not configured in this repository; no deploy will be attempted."
+            echo "::error::NETLIFY_AUTH_TOKEN is not configured in this repository; no staging deploy was attempted."
           fi
 
       - name: Build exact staging runtime tree
@@ -90,8 +90,9 @@ jobs:
             --prod \
             --message="Ready staging source ${SOURCE_SHA}"
 
-      - name: Report authorization gap
+      - name: Fail closed when staging authorization is unavailable
         if: steps.auth.outputs.available != 'true'
         shell: bash
         run: |
           echo "STAGING_DEPLOY_AUTH_UNAVAILABLE"
+          exit 1
