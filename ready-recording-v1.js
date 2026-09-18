@@ -2,10 +2,10 @@
   'use strict';
   if (window.ReadyRecordingV1) return;
 
-  const VERSION='2026.09.18-recording-v1';
+  const VERSION='2026.09.19-recording-v2-local-clean';
   const DB_NAME='readyset_audio',STORE_NAME='audio';
   const $=s=>document.querySelector(s);
-  let mediaRecorder=null,mediaStream=null,chunks=[],currentAudio=null,currentFile=null,currentStored=false,recordStartedAt=0,recordTicker=null,contextTicker=null;
+  let mediaRecorder=null,mediaStream=null,chunks=[],currentAudio=null,currentFile=null,currentStored=false,currentOriginalId=null,currentCleanFile=null,cleanState='IDLE',cleanPromise=null,recordGeneration=0,recordStartedAt=0,recordTicker=null,contextTicker=null;
 
   const toast=message=>{const t=$('#toast');if(!t)return;t.textContent=message;t.hidden=false;clearTimeout(t._recordTm);t._recordTm=setTimeout(()=>t.hidden=true,2400)};
   const fmt=ms=>{const sec=Math.max(0,Math.floor(Number(ms||0)/1000));return `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`};
@@ -70,12 +70,86 @@
     });
   }
   async function storeOriginal(file){
-    const db=await openDb();
+    const db=await openDb(),id=`original_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
     return new Promise((resolve,reject)=>{
       const tx=db.transaction(STORE_NAME,'readwrite');
-      tx.objectStore(STORE_NAME).put({id:`original_${Date.now()}`,kind:'ORIGINAL',name:file.name,type:file.type,size:file.size,blob:file,createdAt:Date.now(),sessionId:activeContract()?.session_id||null,taskId:activeTask()?.task_id||null});
-      tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error)};
+      tx.objectStore(STORE_NAME).put({id,kind:'ORIGINAL',originalMeaning:'FIRST_ENCODED_BROWSER_CAPTURE',captureProcessing:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},name:file.name,type:file.type,size:file.size,blob:file,createdAt:Date.now(),sessionId:activeContract()?.session_id||null,taskId:activeTask()?.task_id||null});
+      tx.oncomplete=()=>{db.close();resolve(id)};tx.onerror=()=>{db.close();reject(tx.error)};
     });
+  }
+  async function storeClean(file,sourceOriginalId){
+    const db=await openDb(),id=`clean_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(STORE_NAME,'readwrite');
+      tx.objectStore(STORE_NAME).put({id,kind:'CLEAN',sourceOriginalId:sourceOriginalId||null,pipeline:'LOCAL_FAST_V1',processing:{cloud:false,paidApi:false,highPassHz:80,lowPassHz:12000,adaptiveGate:true,mildCompression:true,peakNormalize:true,mono:true,format:'PCM16_WAV'},name:file.name,type:file.type,size:file.size,blob:file,createdAt:Date.now(),sessionId:activeContract()?.session_id||null,taskId:activeTask()?.task_id||null});
+      tx.oncomplete=()=>{db.close();resolve(id)};tx.onerror=()=>{db.close();reject(tx.error)};
+    });
+  }
+
+  function encodePcm16Wav(samples,sampleRate){
+    const buffer=new ArrayBuffer(44+samples.length*2),view=new DataView(buffer);
+    const write=(offset,text)=>{for(let i=0;i<text.length;i++)view.setUint8(offset+i,text.charCodeAt(i))};
+    write(0,'RIFF');view.setUint32(4,36+samples.length*2,true);write(8,'WAVE');write(12,'fmt ');
+    view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,sampleRate,true);
+    view.setUint32(28,sampleRate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);write(36,'data');view.setUint32(40,samples.length*2,true);
+    let offset=44;for(let i=0;i<samples.length;i++,offset+=2){const s=Math.max(-1,Math.min(1,samples[i]));view.setInt16(offset,s<0?s*0x8000:s*0x7fff,true)}
+    return new Blob([buffer],{type:'audio/wav'});
+  }
+
+  function cleanVoiceSamples(audioBuffer){
+    const rate=audioBuffer.sampleRate,length=audioBuffer.length,channels=Math.max(1,audioBuffer.numberOfChannels),mono=new Float32Array(length);
+    for(let ch=0;ch<channels;ch++){const src=audioBuffer.getChannelData(ch);for(let i=0;i<length;i++)mono[i]+=src[i]/channels}
+    const high=new Float32Array(length),hpRc=1/(2*Math.PI*80),dt=1/rate,hpA=hpRc/(hpRc+dt);
+    let px=0,py=0;for(let i=0;i<length;i++){const x=mono[i],y=hpA*(py+x-px);high[i]=y;px=x;py=y}
+    const cutoff=Math.min(12000,rate*.45),lpRc=1/(2*Math.PI*cutoff),lpA=dt/(lpRc+dt),band=new Float32Array(length);
+    let low=0;for(let i=0;i<length;i++){low+=lpA*(high[i]-low);band[i]=low}
+    const frame=Math.max(64,Math.floor(rate*.02)),rms=[];
+    for(let s=0;s<length;s+=frame){let sum=0,n=Math.min(frame,length-s);for(let i=0;i<n;i++){const v=band[s+i];sum+=v*v}rms.push(Math.sqrt(sum/Math.max(1,n)))}
+    const sorted=[...rms].sort((a,b)=>a-b),noise=sorted[Math.floor(sorted.length*.2)]||0,gate=Math.max(.0018,noise*1.55),out=new Float32Array(length);
+    let smoothGain=1,peak=0;
+    for(let f=0,s=0;s<length;f++,s+=frame){
+      const desired=(rms[f]||0)<gate?.35:1,step=(desired-smoothGain)/(Math.min(frame,length-s)||1);
+      for(let i=s;i<Math.min(length,s+frame);i++){
+        smoothGain+=step;let v=band[i]*smoothGain,a=Math.abs(v);
+        if(a>.28)v=Math.sign(v)*(.28+(a-.28)/3);
+        out[i]=v;peak=Math.max(peak,Math.abs(v));
+      }
+    }
+    const normalize=peak>0?Math.min(1.5,.88/peak):1,fade=Math.min(Math.floor(rate*.006),Math.floor(length/2));
+    for(let i=0;i<length;i++){let g=normalize;if(i<fade)g*=i/Math.max(1,fade);if(i>=length-fade)g*=(length-1-i)/Math.max(1,fade);out[i]*=Math.max(0,g)}
+    return out;
+  }
+
+  async function makeCleanCopy(blob,sourceFile){
+    const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)throw new Error('AUDIO_CONTEXT_UNAVAILABLE');
+    const ctx=new Ctx();
+    try{
+      const data=await blob.arrayBuffer(),decoded=await ctx.decodeAudioData(data.slice(0)),clean=cleanVoiceSamples(decoded),wav=encodePcm16Wav(clean,decoded.sampleRate);
+      const base=String(sourceFile?.name||'Ready-Set_recording').replace(/\.[^.]+$/,'');
+      return new File([wav],`${base}_clean.wav`,{type:'audio/wav',lastModified:Date.now()});
+    }finally{try{await ctx.close?.()}catch{}}
+  }
+
+  function updateFormatNote(){
+    const note=$('#formatNote');if(!note||!currentFile)return;
+    const info=mimeInfo(currentFile.type),base=`원본 보관 완료 · .${info.ext} · ${currentFile.type||'audio'} · ${Math.max(1,Math.round(currentFile.size/1024))}KB`;
+    note.textContent=cleanState==='PROCESSING'?`${base} · 전송용 최적화 중…`:cleanState==='READY'?`${base} · CLEAN 준비 완료`:cleanState==='FALLBACK'?`${base} · CLEAN 생략(원본 사용)`:base;
+  }
+
+  function startLocalClean(blob,sourceFile,sourceOriginalId,generation){
+    cleanState='PROCESSING';currentCleanFile=null;updateFormatNote();
+    const promise=(async()=>{
+      try{
+        const file=await makeCleanCopy(blob,sourceFile);await storeClean(file,sourceOriginalId);
+        if(generation===recordGeneration){currentCleanFile=file;cleanState='READY';updateFormatNote();ensureReviewActions()}
+        return file;
+      }catch(error){
+        if(generation===recordGeneration){cleanState='FALLBACK';updateFormatNote();ensureReviewActions()}
+        return null;
+      }
+    })();
+    if(generation===recordGeneration)cleanPromise=promise;
+    return promise;
   }
 
   function ensureReviewActions(){
@@ -83,7 +157,7 @@
     let share=$('#shareRecordingBtn');
     if(!share){share=document.createElement('button');share.id='shareRecordingBtn';share.type='button';share.textContent='녹음 파일 전송';panel.appendChild(share)}
     const save=$('#saveRecordingBtn'),retry=$('#rerecordBtn');
-    if(save){save.textContent=currentStored?'녹음 확인':'원본 저장';save.className='btn dark'}if(retry){retry.textContent='다시 녹음';retry.className='btn outline'}share.className='btn outline';
+    if(save){save.textContent=currentStored?'녹음 확인':'원본 저장';save.className='btn dark'}if(retry){retry.textContent='다시 녹음';retry.className='btn outline'}share.textContent=cleanState==='READY'?'최적화본 전송':'녹음 파일 전송';share.className='btn outline';
     share.onclick=shareRecording;
   }
   function renderContext(){
@@ -102,7 +176,7 @@
 
   function resetRecording({keepPreview=false}={}){
     stopTicker();stopStream();chunks=[];mediaRecorder=null;
-    if(!keepPreview){currentAudio=null;currentFile=null;currentStored=false;const preview=$('#audioPreview');if(preview){if(preview.src)URL.revokeObjectURL(preview.src);preview.removeAttribute('src')}if($('#reviewPanel'))$('#reviewPanel').hidden=true}
+    if(!keepPreview){recordGeneration++;currentAudio=null;currentFile=null;currentStored=false;currentOriginalId=null;currentCleanFile=null;cleanState='IDLE';cleanPromise=null;const preview=$('#audioPreview');if(preview){if(preview.src)URL.revokeObjectURL(preview.src);preview.removeAttribute('src')}if($('#reviewPanel'))$('#reviewPanel').hidden=true}
     if($('#recordClock'))$('#recordClock').textContent='00:00';
     if($('#recordState'))$('#recordState').textContent='READY';
     setRecordButton('녹음 시작',false)
@@ -110,19 +184,19 @@
 
   async function finishRecording(){
     stopTicker();stopStream();
-    const type=mediaRecorder?.mimeType||chunks[0]?.type||'audio/webm';
-    currentAudio=new Blob(chunks,{type});currentFile=makeFile(currentAudio);currentStored=false;
+    const generation=recordGeneration,type=mediaRecorder?.mimeType||chunks[0]?.type||'audio/webm';
+    currentAudio=new Blob(chunks,{type});currentFile=makeFile(currentAudio);currentStored=false;currentCleanFile=null;cleanState='IDLE';cleanPromise=null;
     const preview=$('#audioPreview');
     if(preview){if(preview.src)URL.revokeObjectURL(preview.src);preview.src=URL.createObjectURL(currentAudio)}
     let storeError=false;
-    try{await storeOriginal(currentFile);currentStored=true}catch{storeError=true}
+    try{currentOriginalId=await storeOriginal(currentFile);currentStored=true}catch{storeError=true}
     if($('#reviewPanel'))$('#reviewPanel').hidden=false;
     if($('#recordState'))$('#recordState').textContent='REVIEW';
     setRecordButton('녹음 시작',false);
-    const info=mimeInfo(currentFile.type),note=$('#formatNote');
-    if(note)note.textContent=`${storeError?'자동 보관 실패 · ':'원본 보관 완료 · ' }.${info.ext} · ${currentFile.type||'audio'} · ${Math.max(1,Math.round(currentFile.size/1024))}KB`;
     ensureReviewActions();
-    toast(storeError?'원본 자동 보관에 실패했어요. 저장 버튼으로 다시 시도해 주세요.':'녹음 원본을 기기에 안전하게 보관했어요.');
+    if(!storeError)startLocalClean(currentAudio,currentFile,currentOriginalId,generation);
+    else{cleanState='FALLBACK';updateFormatNote()}
+    toast(storeError?'원본 자동 보관에 실패했어요. 저장 버튼으로 다시 시도해 주세요.':'원본 보관 완료 · 전송용 음성을 기기에서 최적화해요.');
   }
 
   async function startRecording(){
@@ -152,8 +226,10 @@
   async function shareRecording(){
     if(!currentFile){toast('먼저 녹음을 완료해 주세요.');return}
     try{
-      if(navigator.share&&navigator.canShare?.({files:[currentFile]})){await navigator.share({title:'Ready & Set 녹음',text:activeLabel()||'영어 녹음',files:[currentFile]});return}
-      const url=URL.createObjectURL(currentFile),a=document.createElement('a');a.href=url;a.download=currentFile.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('기기에 파일을 저장했어요. 공유 앱에서 첨부할 수 있어요.');
+      if(!currentCleanFile&&cleanPromise)await Promise.race([cleanPromise,new Promise(resolve=>setTimeout(resolve,800))]);
+      const file=currentCleanFile||currentFile,isClean=file===currentCleanFile;
+      if(navigator.share&&navigator.canShare?.({files:[file]})){await navigator.share({title:'Ready & Set 녹음',text:`${activeLabel()||'영어 녹음'}${isClean?' · 전송용 최적화본':''}`,files:[file]});return}
+      const url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast(isClean?'최적화본을 기기에 저장했어요.':'원본을 기기에 저장했어요.');
     }catch(error){if(error?.name!=='AbortError')toast('파일 전송을 시작하지 못했습니다.')}
   }
 
@@ -179,5 +255,5 @@
   window.addEventListener('pageshow',()=>setTimeout(render,0));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(render,0)});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',render,{once:true});else render();
-  window.ReadyRecordingV1=Object.freeze({version:VERSION,render,open:openRecording,save:saveRecording,share:shareRecording,validate:()=>({version:VERSION,recordingRequired:taskNeedsRecording(),recVisible:$('#recBtn')?.hidden===false,mediaRecorderSupported:!!window.MediaRecorder,fileShareSupported:!!navigator.share,originalStore:DB_NAME,cleanCopyGenerated:false,timerContinuesDuringRecording:true})});
+  window.ReadyRecordingV1=Object.freeze({version:VERSION,render,open:openRecording,save:saveRecording,share:shareRecording,validate:()=>({version:VERSION,recordingRequired:taskNeedsRecording(),recVisible:$('#recBtn')?.hidden===false,mediaRecorderSupported:!!window.MediaRecorder,fileShareSupported:!!navigator.share,originalStore:DB_NAME,originalMeaning:'FIRST_ENCODED_BROWSER_CAPTURE',browserCaptureDsp:true,cleanState,cleanCopyGenerated:cleanState==='READY',cleanPipeline:'LOCAL_FAST_V1',cloudProcessing:false,paidApi:false,timerContinuesDuringRecording:true})});
 })();
