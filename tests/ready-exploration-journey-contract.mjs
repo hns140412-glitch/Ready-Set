@@ -29,6 +29,8 @@ const checks = [
   ['confirmed timetable exposes now/next context', schedule.includes('function scheduleContext(rows)') && schedule.includes('지금 일정') && schedule.includes('다음 일정')],
   ['authoritative session timing exported', base.includes('sessionTimes:readySessionTimes')],
   ['active session restores after reload', base.includes('function readyRestoreActiveSession()') && base.includes("readyNav('focus');clearInterval(readyTicker)")],
+  ['duplicate start preserves one active session', base.includes("if(state.activeSession){readyNav('focus');readyRestoreActiveSession();return state.activeSession.id}")],
+  ['app return resumes timestamp-based rendering without creating pause', base.includes('function readyResumeFromLifecycle()') && base.includes("document.visibilityState==='visible'") && base.includes("window.addEventListener('pageshow'") && !base.includes("visibilitychange',readyPause")],
   ['start and result share handlers exported', base.includes('shareMission:readyShareMission') && base.includes('shareResult:readyShareResult')],
   ['start and result share buttons bound', base.includes("$('#missionShareBtn').onclick=readyShareMission") && base.includes("$('#shareResultBtn').onclick=readyShareResult")],
   ['share is image-first when file sharing is supported', base.includes('function readyShareCardBlob') && base.includes("new File([blob],fileName,{type:'image/png'})") && base.includes('navigator.canShare({files:[file]})')],
