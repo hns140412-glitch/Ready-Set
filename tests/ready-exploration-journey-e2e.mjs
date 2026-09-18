@@ -156,8 +156,10 @@ try {
   assert.ok(!cleanStored.name.toLowerCase().includes('clean'),'transfer/clean stored filename must not append clean');
   assert.equal(originalStored.type,cleanStored.type,'original and realtime-clean transfer should keep the same actual container/mime');
 
-  await page.fill('#recordFilenameInput',"Judy's grammar recording edited 2026 09 18");
+  await page.fill('#recordFilenameInput',"Judy's grammar recording edited 2026 09 18 clean");
+  await page.locator('#recordFilenameInput').blur();
   assert.match(await page.locator('#formatNote').innerText(),/Judy's grammar recording edited 2026 09 18/);
+  assert.doesNotMatch(await page.locator('#formatNote').innerText(),/ clean\.(m4a|webm|ogg|wav)/i);
   const recordingDownloadPromise=page.waitForEvent('download',{timeout:10000});
   await page.click('#shareRecordingBtn');
   const recordingDownload=await recordingDownloadPromise;
