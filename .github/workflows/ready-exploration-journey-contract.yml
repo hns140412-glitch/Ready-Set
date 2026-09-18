@@ -14,6 +14,9 @@ on:
       - 'ready-base-native-v2.js'
       - 'ready-planner-selection-bridge-v1.js'
       - 'ready-schedule-base-v1.js'
+      - 'VERSION.json'
+      - 'sw.js'
+      - 'ready-parent-setup-hub-v1.js'
       - 'tests/ready-exploration-journey-contract.mjs'
       - 'tests/ready-exploration-journey-e2e.mjs'
       - '.github/workflows/ready-exploration-journey-contract.yml'
@@ -57,6 +60,8 @@ jobs:
           node --check ready-base-native-v2.js
           node --check ready-planner-selection-bridge-v1.js
           node --check ready-schedule-base-v1.js
+          node --check ready-parent-setup-hub-v1.js
+          node --check sw.js
       - name: Exploration journey contract
         run: node tests/ready-exploration-journey-contract.mjs
       - name: Install browser test runtime
