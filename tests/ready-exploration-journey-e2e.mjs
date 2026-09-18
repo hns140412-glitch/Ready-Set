@@ -48,6 +48,30 @@ step('open');
 const appHtml=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8').replace(/<script src="\.\/ready-stage-c\.js\?v=[^"]+"><\/script>/,'');
 await bounded('set-content',()=>page.setContent(appHtml,{waitUntil:'domcontentloaded',timeout:15000}),18000);
 await page.evaluate(()=>{try{Object.defineProperty(navigator,'share',{value:undefined,configurable:true});Object.defineProperty(navigator,'canShare',{value:undefined,configurable:true})}catch{}});
+const manualChain=[
+  'ready-role-context-v1.js',
+  'ready-foundation-v1.js',
+  'ready-foundation-control-v1.js',
+  'ready-stage-d.js',
+  'ready-recording-v1.js',
+  'ready-stage-e.js',
+  'ready-stage-f.js',
+  'ready-parent-capture-intake-v1.js',
+  'ready-homework-analysis-bridge-v1.js',
+  'ready-stage-g1-fix.js',
+  'ready-stage-g13-authority-recovery.js',
+  'ready-stage-g14-planner-authority.js',
+  'ready-base-native-v2.js',
+  'ready-planner-selection-bridge-v1.js',
+  'ready-schedule-base-v1.js',
+  'ready-parent-setup-hub-v1.js',
+  'ready-base-selftest-v1.js'
+];
+for(const file of manualChain){
+  step('load '+file);
+  await bounded('load:'+file,()=>page.addScriptTag({url:'http://127.0.0.1:4173/'+file}),8000);
+  step('loaded '+file);
+}
 await page.waitForFunction(()=>window.ReadyBaseNativeV2&&window.ReadyBaseRuntimeV1&&window.ReadyScheduleBaseV1&&window.ReadyRecordingV1,{timeout:15000});
 
 step('select timetable task');
