@@ -72,7 +72,7 @@ const checks = [
   ['recording auto-preserves original before review action', finishRecording.includes('await storeOriginal(currentFile);currentStored=true') && finishRecording.indexOf('await storeOriginal(currentFile);currentStored=true') < finishRecording.indexOf("if($('#reviewPanel'))$('#reviewPanel').hidden=false")],
   ['recording preserves actual file format', recording.includes("if(t.includes('mp4')||t.includes('m4a'))") && recording.includes("if(t.includes('webm'))")],
   ['recording file transfer uses native file share', recording.includes('navigator.canShare?.({files:[file]})') && recording.includes('files:[file]')],
-  ['recording file transfer has download fallback', recording.includes('a.download=currentFile.name')],
+  ['recording file transfer has download fallback', recording.includes('a.download=file.name')],
   ['clean analysis copy truth is dynamic', recording.includes("cleanCopyGenerated:cleanState==='READY'") && recording.includes("cleanPipeline:'LOCAL_FAST_V1'")]
 ];
 
