@@ -65,18 +65,20 @@ const checks = [
   ['recording stops BGM while microphone is active', recording.includes('stopBgm();') && recording.includes('async function startRecording()')],
   ['recording stores original separately', recording.includes("kind:'ORIGINAL'") && recording.includes("DB_NAME='readyset_audio'")],
   ['browser capture DSP enabled', recording.includes('echoCancellation:true') && recording.includes('noiseSuppression:true') && recording.includes('autoGainControl:true')],
-  ['zero-cost local clean pipeline exists', recording.includes("pipeline:'LOCAL_FAST_V1'") && recording.includes("cloud:false") && recording.includes("paidApi:false") && recording.includes('function cleanVoiceSamples') && recording.includes('function encodePcm16Wav')],
+  ['zero-cost realtime clean pipeline exists', recording.includes("pipeline:'REALTIME_LOCAL_FILTER_V1'") && recording.includes("cloud:false") && recording.includes("paidApi:false") && recording.includes('createBiquadFilter') && recording.includes('createDynamicsCompressor') && recording.includes('createMediaStreamDestination')],
   ['clean copy stored separately from original', recording.includes("kind:'CLEAN'") && recording.includes('sourceOriginalId') && recording.includes("originalMeaning:'FIRST_ENCODED_BROWSER_CAPTURE'" )],
-  ['recording transfer keeps original capture as submitted file', recording.includes('const file=currentFile') && !recording.includes('const file=currentCleanFile||currentFile')],
+  ['recording transfer uses realtime-clean recording without clean suffix', recording.includes('const file=transferFile()||currentFile') && recording.includes('transferHasNoCleanSuffix:true')],
   ['recording filename follows dated grammar contract', recording.includes("Judy's grammar recording") && recording.includes('function recordingDate') && recording.includes("padStart(2,'0')")],
   ['M4A is the first-choice capture and transfer format', recording.indexOf("'audio/mp4;codecs=mp4a.40.2'") < recording.indexOf("'audio/webm;codecs=opus'") && recording.includes("info.ext==='m4a'?'M4A/AAC'" )],
-  ['local CLEAN remains internal-only derivative', recording.includes('cleanInternalOnly:true') && recording.includes("kind:'CLEAN'")],
+  ['original and clean use same selected recording container', recording.includes('originalAndTransferSameContainer:true') && recording.includes("kind:'CLEAN'") && recording.includes("kind:'ORIGINAL'")],
+  ['original archive receives original suffix only', recording.includes("original?' original':''")],
+  ['transfer filename is editable with fixed real extension', recording.includes('recordFilenameInput') && recording.includes('sanitizeFileBase') && recording.includes('editableTransferFilename:true')],
   ['recording module has no cloud processing dependency', !recording.includes('fetch(') && !recording.includes('XMLHttpRequest')],
-  ['recording auto-preserves original before review action', finishRecording.includes('await storeOriginal(currentFile);currentStored=true') && finishRecording.indexOf('await storeOriginal(currentFile);currentStored=true') < finishRecording.indexOf("if($('#reviewPanel'))$('#reviewPanel').hidden=false")],
+  ['recording auto-preserves original before review action', finishRecording.includes('await storeOriginal(currentOriginalFile);currentStored=true') && finishRecording.indexOf('await storeOriginal(currentOriginalFile);currentStored=true') < finishRecording.indexOf("if($('#reviewPanel'))$('#reviewPanel').hidden=false")],
   ['recording preserves actual file format', recording.includes("if(t.includes('mp4')||t.includes('m4a'))") && recording.includes("if(t.includes('webm'))")],
   ['recording file transfer uses native file share', recording.includes('navigator.canShare?.({files:[file]})') && recording.includes('files:[file]')],
   ['recording file transfer has download fallback', recording.includes('a.download=file.name')],
-  ['clean analysis copy truth is dynamic', recording.includes("cleanCopyGenerated:cleanState==='READY'") && recording.includes("cleanPipeline:'LOCAL_FAST_V1'")]
+  ['realtime clean transfer truth is exported', recording.includes('realtimeClean:true') && recording.includes("cleanPipeline:'REALTIME_LOCAL_FILTER_V1'") && recording.includes('transferM4aFirst:true')]
 ];
 
 for (const [name, ok] of checks) {
