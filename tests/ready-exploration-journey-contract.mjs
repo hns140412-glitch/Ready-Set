@@ -17,7 +17,12 @@ const checks = [
   ['paused time not hardcoded during publication', !runtime.includes("pausedMs:0,source,sessionId")],
   ['rejected focus module removed from active loader', !stageC.includes("'./ready-focus-tools-v1.js'")],
   ['rejected focus renderer removed from core render', !stageC.includes('ReadyFocusToolsV1?.render?.()')],
-  ['session end does not force completed state', runtime.includes("currentTask(c)?.state||'PENDING'")]
+  ['session end does not force completed state', runtime.includes("currentTask(c)?.state||'PENDING'")],
+  ['BGM sources are wired', base.includes("./assets/bgm-piano.wav") && base.includes("./assets/bgm-lofi.wav") && base.includes("./assets/bgm-nature.wav") && base.includes("./assets/bgm-water.wav") && base.includes("./assets/focus-bgm.wav")],
+  ['sound button is bound', base.includes("$('#focusSoundBtn').onclick=readyCycleSound")],
+  ['BGM play is no longer a no-op', base.includes("globalThis.playBgm=()=>readyApplySound({play:true})")],
+  ['session start requests BGM playback', base.includes("readyNav('focus');readyApplySound({play:true})")],
+  ['session completion stops BGM', base.includes("bgm.pause();bgm.currentTime=0")]
 ];
 
 for (const [name, ok] of checks) {
