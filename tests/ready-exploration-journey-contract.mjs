@@ -46,7 +46,7 @@ const checks = [
   ['standalone recording module is loaded', stageC.includes("'./ready-recording-v1.js'") && stageC.includes('ReadyRecordingV1?.render?.()')],
   ['session end does not force completed state', runtime.includes("currentTask(c)?.state||'PENDING'")],
   ['Essential YouTube BGM is wired', base.includes("name:'Essential'") && base.includes("videoId:'h2sHEe_xnmU'") && base.includes('PLKRZTF1Q1uwYFbRwQzrySyGXYJVXqcUVu')],
-  ['lofi YouTube BGM is wired', base.includes("videoId:'d9EdCgS1X_c'")],
+  ['no noisy lofi option remains', !base.includes("name:'로파이'") && !base.includes("videoId:'d9EdCgS1X_c'")],
   ['YouTube BGM uses embedded playback', base.includes('readyYoutubeFrame') && base.includes('youtube.com/embed/') && base.includes('autoplay=1')],
   ['quiet metronome option exists', base.includes("name:'메트로놈'") && base.includes('readyStartMetronome') && base.includes('osc.frequency.value=720')],
   ['nature and water local sounds remain', base.includes('./assets/bgm-nature.wav') && base.includes('./assets/bgm-water.wav')],
