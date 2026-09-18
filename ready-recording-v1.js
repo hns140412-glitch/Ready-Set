@@ -139,7 +139,7 @@
     let card=$('#recordingFilenameSettings');
     if(!card){
       card=document.createElement('section');card.id='recordingFilenameSettings';card.className='glassCard';
-      card.innerHTML='<h2>녹음 파일</h2><label class="inputBlock">기본 파일명<input id="recordingPrefixInput" maxlength="80" autocomplete="off" spellcheck="false"></label><small class="muted">전송 전에도 파일명을 다시 수정할 수 있어요. 날짜와 .m4a 확장자는 자동으로 붙어요.</small>';
+      card.innerHTML='<h2>녹음 파일</h2><label class="inputBlock">기본 파일명<input id="recordingPrefixInput" maxlength="80" autocomplete="off" spellcheck="false"></label><small class="muted">전송 전에도 파일명을 다시 수정할 수 있어요. 날짜는 자동으로 붙고, 확장자는 M4A/AAC를 우선 사용해요.</small>';
       const data=[...settings.querySelectorAll('.glassCard')].find(x=>x.querySelector('h2')?.textContent==='데이터');
       settings.insertBefore(card,data||null);
       const input=card.querySelector('#recordingPrefixInput');
