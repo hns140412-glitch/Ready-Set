@@ -25,6 +25,7 @@ on:
       - 'ready-base-native-v2.js'
       - 'ready-schedule-base-v1.js'
       - 'tests/ready-exploration-journey-contract.mjs'
+      - 'tests/ready-exploration-journey-e2e.mjs'
       - '.github/workflows/ready-exploration-journey-contract.yml'
 
 permissions:
