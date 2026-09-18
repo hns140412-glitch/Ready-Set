@@ -5,7 +5,7 @@
   const VERSION='2026.09.19-recording-v4-realtime-m4a-clean';
   const DB_NAME='readyset_audio',STORE_NAME='audio';
   const $=s=>document.querySelector(s);
-  let mediaRecorder=null,originalRecorder=null,mediaStream=null,audioCtx=null,processedDestination=null,chunks=[],originalChunks=[],currentAudio=null,currentFile=null,currentOriginalFile=null,currentStored=false,currentOriginalId=null,currentCleanId=null,transferBaseName='',originalCaptureMode='DIRECT',recordStartedAt=0,recordTicker=null,contextTicker=null;
+  let mediaRecorder=null,originalRecorder=null,mediaStream=null,audioCtx=null,processedDestination=null,chunks=[],originalChunks=[],currentAudio=null,currentFile=null,currentOriginalFile=null,currentStored=false,currentOriginalId=null,currentCleanId=null,transferBaseName='',originalCaptureMode='DIRECT',realtimeFilterMode='WEB_AUDIO',recordStartedAt=0,recordTicker=null,contextTicker=null;
 
   const toast=message=>{const t=$('#toast');if(!t)return;t.textContent=message;t.hidden=false;clearTimeout(t._recordTm);t._recordTm=setTimeout(()=>t.hidden=true,2400)};
   const fmt=ms=>{const sec=Math.max(0,Math.floor(Number(ms||0)/1000));return `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`};
@@ -101,16 +101,22 @@
   }
   function buildProcessedStream(stream){
     const Ctx=window.AudioContext||window.webkitAudioContext;
-    if(!Ctx)return stream;
-    audioCtx=new Ctx();
-    const src=audioCtx.createMediaStreamSource(stream),hp=audioCtx.createBiquadFilter(),lp=audioCtx.createBiquadFilter(),comp=audioCtx.createDynamicsCompressor(),dest=audioCtx.createMediaStreamDestination();
-    hp.type='highpass';hp.frequency.value=80;hp.Q.value=.65;
-    lp.type='lowpass';lp.frequency.value=Math.min(12000,(audioCtx.sampleRate||48000)*.45);lp.Q.value=.55;
-    comp.threshold.value=-18;comp.knee.value=14;comp.ratio.value=2.2;comp.attack.value=.008;comp.release.value=.18;
-    src.connect(hp).connect(lp).connect(comp).connect(dest);
-    processedDestination=dest;
-    audioCtx.resume?.();
-    return dest.stream;
+    if(!Ctx){realtimeFilterMode='BROWSER_DSP_ONLY';return stream}
+    try{
+      audioCtx=new Ctx();
+      const src=audioCtx.createMediaStreamSource(stream),hp=audioCtx.createBiquadFilter(),lp=audioCtx.createBiquadFilter(),comp=audioCtx.createDynamicsCompressor(),dest=audioCtx.createMediaStreamDestination();
+      hp.type='highpass';hp.frequency.value=80;hp.Q.value=.65;
+      lp.type='lowpass';lp.frequency.value=Math.min(12000,(audioCtx.sampleRate||48000)*.45);lp.Q.value=.55;
+      comp.threshold.value=-18;comp.knee.value=14;comp.ratio.value=2.2;comp.attack.value=.008;comp.release.value=.18;
+      src.connect(hp).connect(lp).connect(comp).connect(dest);
+      processedDestination=dest;realtimeFilterMode='WEB_AUDIO';
+      audioCtx.resume?.();
+      return dest.stream;
+    }catch{realtimeFilterMode='BROWSER_DSP_ONLY';return stream}
+  }
+  function makeRecorder(stream,mime){
+    try{return new MediaRecorder(stream,mime?{mimeType:mime}:undefined)}
+    catch{try{return new MediaRecorder(stream)}catch{return null}}
   }
   function ensureFilenameEditor(){
     const panel=$('#reviewPanel');if(!panel||!currentFile)return;
@@ -171,7 +177,7 @@
   }
 
   function resetRecording({keepPreview=false}={}){
-    stopTicker();stopStream();chunks=[];mediaRecorder=null;originalRecorder=null;originalCaptureMode='DIRECT';
+    stopTicker();stopStream();chunks=[];mediaRecorder=null;originalRecorder=null;originalCaptureMode='DIRECT';realtimeFilterMode='WEB_AUDIO';
     if(!keepPreview){currentAudio=null;currentFile=null;currentOriginalFile=null;currentStored=false;currentOriginalId=null;currentCleanId=null;transferBaseName='';originalChunks=[];const preview=$('#audioPreview');if(preview){if(preview.src)URL.revokeObjectURL(preview.src);preview.removeAttribute('src')}if($('#reviewPanel'))$('#reviewPanel').hidden=true}
     if($('#recordClock'))$('#recordClock').textContent='00:00';
     if($('#recordState'))$('#recordState').textContent='READY';
@@ -206,8 +212,10 @@
       mediaStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
       const mime=preferredMime(),processedStream=buildProcessedStream(mediaStream);
       chunks=[];originalChunks=[];
-      mediaRecorder=new MediaRecorder(processedStream,mime?{mimeType:mime}:undefined);
-      try{originalRecorder=new MediaRecorder(mediaStream,mime?{mimeType:mime}:undefined)}catch{originalRecorder=null;originalCaptureMode='FALLBACK_TRANSFER'}
+      mediaRecorder=makeRecorder(processedStream,mime);
+      if(!mediaRecorder){realtimeFilterMode='BROWSER_DSP_ONLY';mediaRecorder=makeRecorder(mediaStream,mime)}
+      if(!mediaRecorder)throw new Error('MEDIA_RECORDER_CREATE_FAILED');
+      originalRecorder=makeRecorder(mediaStream,mime);if(!originalRecorder)originalCaptureMode='FALLBACK_TRANSFER'
       let cleanStopped=false,originalStopped=!originalRecorder,finished=false;
       const maybeFinish=()=>{if(!finished&&cleanStopped&&originalStopped){finished=true;finishRecording()}};
       mediaRecorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
@@ -264,5 +272,5 @@
   window.addEventListener('pageshow',()=>setTimeout(render,0));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(render,0)});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',render,{once:true});else render();
-  window.ReadyRecordingV1=Object.freeze({version:VERSION,render,open:openRecording,save:saveRecording,share:shareRecording,validate:()=>({version:VERSION,recordingRequired:taskNeedsRecording(),recVisible:$('#recBtn')?.hidden===false,mediaRecorderSupported:!!window.MediaRecorder,fileShareSupported:!!navigator.share,originalStore:DB_NAME,originalMeaning:'FIRST_ENCODED_BROWSER_CAPTURE',browserCaptureDsp:true,realtimeClean:true,cleanPipeline:'REALTIME_LOCAL_FILTER_V1',originalAndTransferSameContainer:true,transferM4aFirst:true,editableTransferFilename:true,persistentFilenamePrefix:true,originalCaptureFallback:true,transferHasNoCleanSuffix:true,cloudProcessing:false,paidApi:false,timerContinuesDuringRecording:true})});
+  window.ReadyRecordingV1=Object.freeze({version:VERSION,render,open:openRecording,save:saveRecording,share:shareRecording,validate:()=>({version:VERSION,recordingRequired:taskNeedsRecording(),recVisible:$('#recBtn')?.hidden===false,mediaRecorderSupported:!!window.MediaRecorder,fileShareSupported:!!navigator.share,originalStore:DB_NAME,originalMeaning:'FIRST_ENCODED_BROWSER_CAPTURE',browserCaptureDsp:true,realtimeClean:true,cleanPipeline:'REALTIME_LOCAL_FILTER_V1',originalAndTransferSameContainer:true,transferM4aFirst:true,editableTransferFilename:true,persistentFilenamePrefix:true,originalCaptureFallback:true,realtimeFilterFallback:true,filterMode:realtimeFilterMode,transferHasNoCleanSuffix:true,cloudProcessing:false,paidApi:false,timerContinuesDuringRecording:true})});
 })();
