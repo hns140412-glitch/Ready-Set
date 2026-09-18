@@ -14,6 +14,8 @@ await context.addInitScript(() => {
     return rawSet.call(this,k,v);
   };
   try{Object.defineProperty(navigator,'share',{value:undefined,configurable:true});Object.defineProperty(navigator,'canShare',{value:undefined,configurable:true})}catch{}
+  if(sessionStorage.getItem('__readyE2ESeeded')) return;
+  sessionStorage.setItem('__readyE2ESeeded','1');
   const d=new Date().toLocaleDateString('sv-SE');
   localStorage.setItem('readyset_active_role_v1','child');
   localStorage.setItem('readyset_identity_v1',JSON.stringify({
@@ -65,8 +67,7 @@ try {
     core:JSON.parse(localStorage.getItem('readyset_state')||'{}'),
     planner:JSON.parse(localStorage.getItem('readyset_planner_v1')||'{}'),
     toast:document.querySelector('#toast')?.textContent||'',
-    homeworkStart:document.documentElement.dataset.readyHomeworkStart||null,
-    plannerWrites:window.__plannerWrites||[]
+    homeworkStart:document.documentElement.dataset.readyHomeworkStart||null
   }));
   console.log('E2E START SNAPSHOT',JSON.stringify(startSnapshot));
   await page.waitForSelector('#focusView.active',{timeout:10000});
