@@ -5,20 +5,6 @@ on:
   push:
     branches:
       - taky/exploration-journey-2026-09-18
-    paths:
-      - '.github/workflows/ready-staging-source-package.yml'
-      - 'VERSION.json'
-      - 'index.html'
-      - 'manifest.webmanifest'
-      - 'sw.js'
-      - 'styles.css'
-      - 'assets/**'
-      - 'ready-*.js'
-      - 'netlify/**'
-      - 'netlify.toml'
-      - 'tests/ready-exploration-journey-contract.mjs'
-      - 'tests/ready-exploration-journey-e2e.mjs'
-      - 'tests/ready-first-run-parent-activation-contract.mjs'
 
 permissions:
   contents: read
