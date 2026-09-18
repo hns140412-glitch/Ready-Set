@@ -45,7 +45,7 @@ await page.evaluate(seed=>{
 
 
 step('open');
-const appHtml=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const appHtml=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8').replace(/<script src="\.\/ready-stage-c\.js\?v=[^"]+"><\/script>/,'');
 await bounded('set-content',()=>page.setContent(appHtml,{waitUntil:'domcontentloaded',timeout:15000}),18000);
 await page.evaluate(()=>{try{Object.defineProperty(navigator,'share',{value:undefined,configurable:true});Object.defineProperty(navigator,'canShare',{value:undefined,configurable:true})}catch{}});
 await page.waitForFunction(()=>window.ReadyBaseNativeV2&&window.ReadyBaseRuntimeV1&&window.ReadyScheduleBaseV1&&window.ReadyRecordingV1,{timeout:15000});
