@@ -50,10 +50,14 @@ assert.match(hub,/ReadyStageG14\?\.reconcile/,'schedule changes must reconcile P
 assert.ok(hub.includes('window.ReadyIdentityV1?.isReady?.()')&&hub.includes('b?.remove()'),'role switch must stay hidden until first-run identity is actually ready');
 assert.match(hub,/NO_CONFIRMED_OPPORTUNITY/,'parent hub must inspect the explicit no-opportunity planner blocker');
 assert.match(hub,/학습 가능 시간 추가/,'parent hub must offer a direct action when confirmed study opportunity is missing');
+assert.match(hub,/const world=\$\('#worldStage \.worldSky'\),home=\$\('#homeView \.homeMain'\),host=world\|\|home/,'parent setup hub must survive world UI hold by falling back to the confirmed home surface');
+assert.match(hub,/worldIndependent:true/,'parent setup hub must declare world-independent runtime behavior');
+assert.doesNotMatch(sw,/ready-focus-tools-v1\.js/,'PWA cache must not precache rejected Focus tooling');
+assert.doesNotMatch(sw,/ready-world-shell-v1\.js/,'PWA cache must not precache held world shell tooling');
 
 assert.match(capture,/PENDING_ANALYSIS/,'captured homework must remain pending until analysis/confirmation');
 assert.match(analysis,/ANALYZED_PENDING_PARENT_CONFIRMATION/,'AI extraction must remain candidate-only');
 assert.doesNotMatch(analysis,/FACT_CONFIRMED/,'AI analysis bridge must not self-confirm facts');
 assert.match(planner,/FACT_CONFIRMED/,'Planner authority must require confirmed assignment facts somewhere in the allocation path');
 
-console.log(JSON.stringify({pass:true,contract:'ready-first-run-parent-activation-v2-effective-boot',checks:37}));
+console.log(JSON.stringify({pass:true,contract:'ready-first-run-parent-activation-v2-effective-boot',checks:41}));
