@@ -4,6 +4,9 @@ import { chromium } from 'playwright';
 const browser=await chromium.launch({headless:true,args:['--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream','--autoplay-policy=no-user-gesture-required']});
 const context=await browser.newContext({permissions:['microphone'],acceptDownloads:true});
 const page=await context.newPage();
+page.setDefaultTimeout(8000);
+page.setDefaultNavigationTimeout(10000);
+try {
 page.on('console',msg=>{if(msg.type()==='error')console.error('BROWSER',msg.text())});
 page.on('pageerror',err=>console.error('PAGEERROR',err.message));
 
@@ -108,4 +111,6 @@ console.log(JSON.stringify({
     completionTruth:true,imageShareFallback:true
   }
 }));
-await browser.close();
+} finally {
+  await browser.close().catch(()=>{});
+}
