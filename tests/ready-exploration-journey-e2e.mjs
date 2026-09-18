@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
 const browser=await chromium.launch({headless:true,args:['--no-proxy-server','--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream','--autoplay-policy=no-user-gesture-required']});
-const context=await browser.newContext({permissions:['microphone'],acceptDownloads:true,timezoneId:'Asia/Seoul'});
+const context=await browser.newContext({permissions:['microphone'],acceptDownloads:true,timezoneId:'Asia/Seoul',viewport:{width:390,height:844},deviceScaleFactor:3});
 await context.addInitScript(() => {
   try{Object.defineProperty(navigator,'share',{value:undefined,configurable:true});Object.defineProperty(navigator,'canShare',{value:undefined,configurable:true})}catch{}
   if(sessionStorage.getItem('__readyE2ESeeded')) return;
@@ -69,6 +69,7 @@ try {
   assert.equal(await page.locator('#focusView .timeStrip>div:last-child small').innerText(),'목표 시간');
   assert.equal(await page.locator('#completeBtn').innerText(),'완료했어요');
   assert.notEqual(await page.locator('#remainingTime').innerText(),'--:--');
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true,'390px focus UI must not overflow horizontally');
 
   step('single active session lock');
   const singleSession=await page.evaluate(()=>{
@@ -121,6 +122,7 @@ try {
   const focusBeforeRecording=sec(await page.locator('#focusElapsed').innerText());
   await page.click('#recBtn');
   await page.waitForSelector('#recordingView.active',{timeout:5000});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true,'390px recording UI must not overflow horizontally');
   await page.click('#recordAction');
   await page.waitForFunction(()=>document.querySelector('#recordState')?.textContent==='RECORDING',{timeout:5000});
   await page.waitForTimeout(1300);
@@ -204,6 +206,7 @@ try {
   await page.goto('http://127.0.0.1:4173/?role=parent',{waitUntil:'domcontentloaded',timeout:15000});
   await page.waitForFunction(()=>document.documentElement.dataset.readyBootState==='READY'&&window.ReadyParentSetupHubV1,{timeout:30000});
   await page.waitForSelector('#readyParentSetupHub',{timeout:10000});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true,'390px parent setup UI must not overflow horizontally');
   assert.equal(await page.locator('#worldStage').count(),0,'held world UI should remain absent');
   assert.equal(await page.locator('#readyParentSetupHub [data-rps-schedule]').count(),1,'parent setup must expose timetable action without world UI');
   assert.equal(await page.locator('#readyParentSetupHub [data-rps-homework]').count(),1,'parent setup must expose homework action without world UI');
@@ -213,7 +216,7 @@ try {
     pass:true,
     contract:'ready-exploration-journey-full-app-browser-e2e',
     checks:{
-      fullStageCBoot:true,timetableSelection:true,confirmedTimer:true,singleActiveSession:true,appReturnLifecycle:true,activeSessionPlannerLock:true,pauseResume:true,
+      fullStageCBoot:true,mobile390Smoke:true,timetableSelection:true,confirmedTimer:true,singleActiveSession:true,appReturnLifecycle:true,activeSessionPlannerLock:true,pauseResume:true,
       recordingRoundTrip:true,originalAudioPersisted:true,realtimeCleanAudio:true,editableRecordingFilename:true,canonicalRecordingTransfer:true,reloadRecovery:true,
       completionTruth:true,imageShareFallback:true,parentSetupWithoutWorldUI:true
     }
