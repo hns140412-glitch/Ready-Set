@@ -37,5 +37,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: JavaScript syntax checks
+        run: |
+          node --check ready-base-runtime-v1.js
+          node --check ready-runtime-v07.js
+          node --check ready-stage-c.js
+          node --check ready-stage-d-base-v1.js
+          node --check ready-recording-v1.js
+          node --check ready-base-native-v2.js
+          node --check ready-schedule-base-v1.js
       - name: Exploration journey contract
         run: node tests/ready-exploration-journey-contract.mjs
