@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.09.11-ready-home-homework-ui-v1.1';
+  const VERSION = '2026.09.18-ready-home-homework-ui-v1.2';
 
   const escape = value => String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
   const api = () => window.ReadyHomeHomeworkMVPV1 || null;
@@ -34,15 +34,17 @@
   }
 
   function startTask(task) {
-    const core = api();
-    if (!core || !task) return;
+    if (!task) return false;
+    const plannerId=task.planner_id||task.task_id;
     try {
-      core.createSession(task);
-      document.documentElement.dataset.readyHomeworkStart = 'ACTIVE';
-      go('focus');
+      if (!window.ReadyBaseNativeV2?.chooseTask) throw new Error('CANONICAL_PLANNER_SELECTION_REQUIRED');
+      const selected=window.ReadyBaseNativeV2.chooseTask(plannerId);
+      document.documentElement.dataset.readyHomeworkStart = selected===false ? 'BLOCKED' : 'MISSION_SELECTED';
+      return selected;
     } catch (error) {
       console.error('[Ready Homework Start]', error);
       document.documentElement.dataset.readyHomeworkStart = `ERROR:${error.message || 'UNKNOWN'}`;
+      return false;
     }
   }
 
