@@ -5,6 +5,7 @@
 
   const VERSION = '2026.09.18-stage-c-exploration-journey-v2';
   const IMPLEMENTATION_HOLD = true;
+  const IDENTITY='./ready-onboarding-identity-v2.js?v=20260913-deferred';
   const CORE_CHAIN = [
     './ready-role-context-v1.js',
     './ready-foundation-v1.js',
@@ -42,6 +43,7 @@
     document.getElementById('homeView')?.classList.remove('worldShell');
     document.querySelectorAll('.worldLegacySection').forEach(el => el.classList.remove('worldLegacySection'));
     document.documentElement.dataset.readyIdentityImplementation = IMPLEMENTATION_HOLD ? 'HOLD' : 'ACTIVE';
+    document.documentElement.dataset.readyIdentityCanonical = IDENTITY;
     document.documentElement.dataset.readyWorldImplementation = IMPLEMENTATION_HOLD ? 'HOLD' : 'ACTIVE';
   }
 
