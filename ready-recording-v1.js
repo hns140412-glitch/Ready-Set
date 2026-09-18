@@ -5,7 +5,7 @@
   const VERSION='2026.09.18-recording-v1';
   const DB_NAME='readyset_audio',STORE_NAME='audio';
   const $=s=>document.querySelector(s);
-  let mediaRecorder=null,mediaStream=null,chunks=[],currentAudio=null,currentFile=null,currentStored=false,recordStartedAt=0,recordTicker=null;
+  let mediaRecorder=null,mediaStream=null,chunks=[],currentAudio=null,currentFile=null,currentStored=false,recordStartedAt=0,recordTicker=null,contextTicker=null;
 
   const toast=message=>{const t=$('#toast');if(!t)return;t.textContent=message;t.hidden=false;clearTimeout(t._recordTm);t._recordTm=setTimeout(()=>t.hidden=true,2400)};
   const fmt=ms=>{const sec=Math.max(0,Math.floor(Number(ms||0)/1000));return `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`};
@@ -44,6 +44,8 @@
 
   function stopStream(){mediaStream?.getTracks?.().forEach(track=>track.stop());mediaStream=null}
   function stopTicker(){clearInterval(recordTicker);recordTicker=null}
+  function stopContextTicker(){clearInterval(contextTicker);contextTicker=null}
+  function startContextTicker(){stopContextTicker();renderContext();contextTicker=setInterval(()=>{if($('#recordingView')?.classList.contains('active'))renderContext();else stopContextTicker()},500)}
   function stopBgm(){window.ReadyBaseRuntimeV1?.stopSound?.()}
   function resumeBgm(){if(state?.activeSession)window.ReadyBaseRuntimeV1?.applySound?.({play:true})}
 
@@ -154,11 +156,11 @@
 
   function openRecording(){
     if(!taskNeedsRecording())return;
-    stopBgm();renderContext();resetRecording();window.ReadyBaseRuntimeV1?.nav?.('recording');
+    stopBgm();resetRecording();window.ReadyBaseRuntimeV1?.nav?.('recording');startContextTicker();
   }
   function returnToFocus(){
     if(mediaRecorder?.state==='recording'){toast('녹음을 먼저 끝내주세요.');return false}
-    resetRecording();window.ReadyBaseRuntimeV1?.nav?.('focus');resumeBgm();setTimeout(render,0);return true;
+    stopContextTicker();resetRecording();window.ReadyBaseRuntimeV1?.nav?.('focus');resumeBgm();setTimeout(render,0);return true;
   }
 
   function bind(){
@@ -169,7 +171,7 @@
     const back=$('#recordBackBtn');if(back&&!back.dataset.recordingBound){back.dataset.recordingBound='1';back.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();returnToFocus()},true)}
     renderContext();renderRecState()
   }
-  function render(){ensureRecordingLayout();bind();renderRecState();if($('#recordingView')?.classList.contains('active')){stopBgm();renderContext()}}
+  function render(){ensureRecordingLayout();bind();renderRecState();if($('#recordingView')?.classList.contains('active')){stopBgm();if(!contextTicker)startContextTicker()}else stopContextTicker()}
 
   window.addEventListener('pageshow',()=>setTimeout(render,0));
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(render,0)});
