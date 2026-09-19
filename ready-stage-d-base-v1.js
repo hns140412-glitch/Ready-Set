@@ -1,9 +1,10 @@
 (() => {
   'use strict';
 
-  const STAGE_D_VERSION = '2026.09.08-stage-d1';
+  const STAGE_D_VERSION = '2026.09.19-stage-d-todays-island-v3';
   const STORE_KEY = 'readyset_planner_v1';
   const TODAY_SEED_DATE = '2026-09-08';
+  const ROLE = new URLSearchParams(location.search).get('role')==='parent'?'PARENT':'CHILD';
   const TALENT_BASELINES = {
     '연산': {min:8,max:12,load:'낮음~보통'},
     '한자': {min:8,max:12,load:'낮음~보통'},
@@ -70,22 +71,22 @@
     style.id = 'readyStageDStyle';
     style.textContent = `
       :root{--rs-yellow:#ffd51f;--rs-ink:#1e1e1c;--rs-soft:#fff8ed}
-      #focusView{min-height:100dvh;overflow:hidden;background:linear-gradient(180deg,#ffd920 0%,#ffc515 100%)}
+      #focusView{min-height:100dvh;overflow:hidden;background:radial-gradient(circle at 50% 18%,rgba(255,255,255,.30),transparent 24%),repeating-conic-gradient(from -10deg at 50% 26%,rgba(255,255,255,.15) 0 2deg,transparent 2deg 14deg),linear-gradient(180deg,#ffdc20 0%,#ffc515 100%)}
       #focusView .focusHeader{padding-top:max(14px,env(safe-area-inset-top));min-height:54px;display:flex;justify-content:flex-end;align-items:center}
       #focusView .focusBadge{display:none!important}
       #focusView .focusHeaderTools{width:100%;display:flex;justify-content:flex-end;align-items:center}
-      #focusView .focusGuideMini{opacity:.20;transform:scale(.78);transform-origin:right center}
+      #focusView .focusGuideMini{display:none!important}
       #focusView .iconButton{width:52px;height:52px;border-radius:50%;background:#1f1f1f;color:#ffd51f;font-size:25px;box-shadow:0 8px 18px rgba(0,0,0,.18)}
-      #focusView .focusMain{padding-top:0;padding-bottom:max(12px,env(safe-area-inset-bottom));display:flex;flex-direction:column;min-height:calc(100dvh - max(68px,env(safe-area-inset-top)))}
+      #focusView .focusMain{padding-top:0;padding-bottom:max(12px,env(safe-area-inset-bottom));display:flex;flex-direction:column;min-height:calc(100dvh - max(68px,env(safe-area-inset-top)));position:relative}#focusView .focusMain::before,#focusView .focusMain::after{position:absolute;z-index:0;white-space:pre-line;font-size:clamp(12px,3.3vw,17px);line-height:1.28;font-weight:900;color:#2b240f;opacity:.78;transform:rotate(-8deg);pointer-events:none}#focusView .focusMain::before{content:'오늘도\A 너는 충분히\A 멋져!';left:2px;top:14%}#focusView .focusMain::after{content:'집중하는\A 지금이\A 멋진 너야!';right:0;top:18%;transform:rotate(7deg);text-align:right}#focusView .focusTitle,#focusView .clockHero,#focusView .controlPanel{position:relative;z-index:1}
       #focusView .focusTitle{margin:0 auto 6px;text-align:center;flex:0 0 auto}
       #focusView .focusTitle>span{display:none}
-      #focusView .focusTitle h1{margin:0;font-size:clamp(42px,12vw,66px);line-height:.95;letter-spacing:-.075em;font-weight:950;color:#171717}
+      #focusView .focusTitle h1{margin:0;font-size:clamp(44px,12.6vw,68px);line-height:.90;letter-spacing:-.078em;font-weight:950;color:#171717;text-shadow:0 1px 0 rgba(255,255,255,.22)}
       #focusView .missionPill{display:inline-flex;margin-top:9px;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.83);color:#1f1f1f;font-weight:900;font-size:15px;box-shadow:0 4px 14px rgba(0,0,0,.08);cursor:pointer}
-      #focusView .clockHero{width:min(68vw,350px);height:min(68vw,350px);margin:6px auto 10px;flex:0 1 auto;box-shadow:0 18px 34px rgba(80,48,0,.20);border-width:10px}
-      #focusView .clockHero::after{content:'Ready & Set';position:absolute;left:50%;top:30%;transform:translateX(-50%);font-weight:900;font-size:clamp(12px,3.4vw,16px);white-space:nowrap;color:#252525;z-index:2}
+      #focusView .clockHero{width:min(68vw,350px);height:min(68vw,350px);margin:6px auto 10px;flex:0 1 auto;box-shadow:0 18px 34px rgba(80,48,0,.20);border-width:10px;background:radial-gradient(circle at 42% 35%,#fff 0,#fffef9 66%,#eee9df 100%)}#focusView .clockNumber{font-size:clamp(14px,4vw,20px);font-weight:950;color:#171717;z-index:2}#focusView .clockBrand{position:absolute;left:50%;top:31%;transform:translateX(-50%);font-size:clamp(10px,2.8vw,14px);font-weight:950;letter-spacing:-.04em;white-space:nowrap;color:#25231f;z-index:2}
+      #focusView .clockHero::after{content:none!important}
       #focusView #readyRev07Panel{display:none!important}
       #focusView .controlPanel{margin-top:auto;background:rgba(24,24,23,.96);box-shadow:0 10px 24px rgba(0,0,0,.16);padding:16px;border-radius:28px}
-      #focusView .timeStrip b#remainingTime{font-size:clamp(44px,13vw,64px);color:#ffe022;letter-spacing:-.04em}
+      #focusView .timeStrip{grid-template-columns:1fr 1fr}#focusView .timeStrip.recording-required{grid-template-columns:1fr auto 1fr}#focusView .timeStrip b#remainingTime{font-size:clamp(44px,13vw,64px);color:#ffe022;letter-spacing:-.04em}#focusView .recButton{width:52px;height:52px;min-width:52px;min-height:52px}
       #focusView .timeStrip>div:last-child{text-align:right;opacity:.88}
       #focusView .focusMeta{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;align-items:center;padding:11px 12px;background:#2b2b29;border-radius:16px;color:#fff;font-size:13px}
       #focusView .focusMeta #focusTaskMeta{display:flex;align-items:center;gap:7px;padding-right:10px;border-right:1px solid rgba(255,255,255,.14);min-width:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -105,7 +106,7 @@
       .planner-list{display:grid;gap:9px}.planner-task{border:1px solid rgba(0,0,0,.10);border-radius:18px;padding:12px;background:#fff}.planner-task.on{outline:2px solid #e7bf19}.planner-task-top{display:flex;align-items:flex-start;gap:9px}.planner-task-top input[type=checkbox]{width:20px;height:20px;margin-top:3px}.planner-task-main{flex:1;min-width:0}.planner-task-title{font-weight:900}.planner-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}.planner-tags span{padding:4px 7px;border-radius:999px;background:#f4f0e7;font-size:11px;font-weight:800;color:#615a50}.planner-grid{display:grid;grid-template-columns:1.25fr .9fr .75fr;gap:7px;margin-top:9px}.planner-grid label{font-size:10px;font-weight:800;color:#777}.planner-grid input,.planner-grid select{width:100%;box-sizing:border-box;margin-top:3px;border:1px solid #ddd1bd;border-radius:10px;background:#fff;padding:9px 8px;font-size:12px}.planner-note{font-size:11px;color:#866f42;margin-top:7px;line-height:1.35}.planner-actions{display:flex;gap:8px;margin-top:12px;position:sticky;bottom:0}.planner-actions button{flex:1;border:0;border-radius:14px;padding:12px 10px;font-weight:900}.planner-actions .primary{background:#1f1f1d;color:#fff}.planner-actions .secondary{background:#ffe278;color:#28220f}
       .talent-panel{margin-top:12px;border-top:1px dashed rgba(0,0,0,.15);padding-top:12px}.talent-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;border:0;background:#fff1ad;border-radius:14px;padding:11px 12px;font-weight:900}.talent-grid{display:grid;gap:7px;margin-top:8px}.talent-row{display:grid;grid-template-columns:1fr 1.1fr .75fr;gap:7px;align-items:center;background:rgba(255,255,255,.72);padding:8px;border-radius:12px}.talent-row b{font-size:12px}.talent-row small{display:block;font-size:10px;color:#71644c}.talent-row input{width:100%;box-sizing:border-box;padding:8px;border:1px solid #decfae;border-radius:9px}.talent-row input[type=number]{text-align:center}
       .focus-tools{position:fixed;inset:0;z-index:10010;background:rgba(10,10,10,.42);display:flex;align-items:flex-end}.focus-tools[hidden]{display:none}.focus-tools-sheet{width:100%;max-height:65vh;overflow:auto;border-radius:28px 28px 0 0;background:#fffaf1;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}.focus-tools-sheet h3{margin:0 0 10px}.focus-tool-apps{display:flex;gap:8px;margin-bottom:10px}.focus-tool-apps button,.focus-tool-task{border:0;border-radius:14px;padding:11px;font-weight:900}.focus-tool-apps button{flex:1;background:#222;color:#fff}.focus-tool-task{width:100%;display:flex;justify-content:space-between;background:#f1ecdf;margin-top:6px;text-align:left}.focus-tools-close{width:100%;margin-top:12px;border:0;border-radius:14px;padding:12px;background:#e6ded0;font-weight:900}
-      @media(max-height:760px){#focusView .focusTitle h1{font-size:42px}#focusView .clockHero{width:min(54vh,300px);height:min(54vh,300px)}#focusView .controlPanel{padding:12px}.focusActions button{min-height:50px!important}}
+      @media(max-height:760px){#focusView .focusTitle h1{font-size:42px}#focusView .clockHero{width:min(54vh,300px);height:min(54vh,300px)}#focusView .controlPanel{padding:12px}.focusActions button{min-height:50px!important}}@media(min-width:760px){#focusView .focusHeader,#focusView .focusMain{width:min(760px,calc(100% - 48px));margin-left:auto;margin-right:auto}#focusView .focusTitle h1{font-size:66px}#focusView .clockHero{width:min(46vh,330px);height:min(46vh,330px)}#focusView .controlPanel{width:min(680px,100%);box-sizing:border-box;margin-left:auto;margin-right:auto}#focusView .focusMain::before{left:7%;top:18%}#focusView .focusMain::after{right:7%;top:22%}}
     `;
     document.head.appendChild(style);
   }
@@ -117,14 +118,27 @@
     return [...(state.activeSession?.selected || []), ...(state.activeSession?.tasks || [])][0] || '오늘의 과제';
   }
 
+  function ensureClockDetails(){
+    const clock=document.querySelector('#focusView .clockHero');if(!clock)return;
+    for(let n=1;n<=12;n++){
+      if(clock.querySelector('.clockNumber.n'+n))continue;
+      const el=document.createElement('span');el.className='clockNumber n'+n;el.textContent=String(n);el.setAttribute('aria-hidden','true');clock.appendChild(el);
+    }
+    let brand=clock.querySelector('.clockBrand');
+    if(!brand){brand=document.createElement('span');brand.className='clockBrand';brand.textContent='Ready & Set';brand.setAttribute('aria-hidden','true');clock.appendChild(brand)}
+  }
+
   function applyFocusUI(){
     const focus = document.getElementById('focusView');
     if (!focus) return;
     const h1 = focus.querySelector('.focusTitle h1');
-    if (h1) h1.textContent = '그냥! 지금 하면 돼!';
+    if (h1) h1.innerHTML = '그냥!<br>지금 하면 돼!';
+    ensureClockDetails();
     const task = activeTaskLabel();
     const mission = document.getElementById('focusMission');
     if (mission) { mission.textContent = task; mission.title = '과제 전환 · 학습 도구'; }
+    const targetLabel=focus.querySelector('.timeStrip>div:last-child small');
+    if(targetLabel)targetLabel.textContent='목표 시간';
     let taskMeta = document.getElementById('focusTaskMeta');
     const meta = focus.querySelector('.focusMeta');
     if (meta && !taskMeta) {
@@ -134,7 +148,11 @@
     }
     if (taskMeta) taskMeta.textContent = task;
     const stats = focus.querySelectorAll('.miniStats span');
-    if (stats[2] && stats[2].childNodes[0]) stats[2].childNodes[0].nodeValue = 'ISSUE ';
+    if (stats[0] && stats[0].childNodes[0]) stats[0].childNodes[0].nodeValue = '시작 시간 ';
+    if (stats[1] && stats[1].childNodes[0]) stats[1].childNodes[0].nodeValue = '집중 시간 ';
+    if (stats[2] && stats[2].childNodes[0]) stats[2].childNodes[0].nodeValue = 'ISSUE 시간 ';
+    window.ReadyBaseRuntimeV1?.updateClock?.();
+    window.ReadyRecordingV1?.render?.();
   }
 
   function ensureFocusTools(){
@@ -189,17 +207,35 @@
     return card;
   }
 
+  function explorationPinHTML(task){
+    const done=task.status==='COMPLETED';
+    const detail=[task.subject,task.volume||task.unitLabel,task.deadline?`마감 ${task.deadline}`:null].filter(Boolean).join(' · ');
+    if(ROLE==='PARENT')return `<article class="planner-task exploration-pin ${done?'completed':''}" data-plan-id="${escape(task.id)}"><div class="planner-task-main"><div class="planner-task-title">${escape(task.title||task.subject||'오늘의 할 일')}</div><div class="planner-note">${escape(detail||task.status||'PLANNED')}</div></div></article>`;
+    return `<label class="planner-task exploration-pin ${task.selected?'on':''} ${done?'completed':''}" data-plan-id="${escape(task.id)}"><div class="planner-task-top"><input class="plan-select exploration-pin-select" data-rsf-select="${escape(task.id)}" type="checkbox" ${task.selected?'checked':''} ${done?'disabled':''} aria-label="오늘의 섬 탐험 핀 선택"><div class="planner-task-main"><div class="planner-task-title">${escape(task.title||task.subject||'오늘의 할 일')}</div><div class="planner-note">${escape(detail||'Planner가 준비한 오늘 할 일')}</div></div></div></label>`;
+  }
+
   function renderPlanner(){
     const plan=dayPlan();
     const card=ensurePlannerCard();
     if(!card) return;
     const date=new Date(`${plan.localDate}T12:00:00`);
     const koDate=new Intl.DateTimeFormat('ko-KR',{month:'numeric',day:'numeric',weekday:'short'}).format(date);
-    card.innerHTML=`<div class="planner-head"><div><small>TODAY PLAN · 실제 숙제 배포</small><h2>오늘 할 일</h2></div><span class="planner-date">${escape(koDate)}</span></div>
+    if(window.ReadyFoundationV1?.enabled){
+      const selectable=(plan.tasks||[]).filter(t=>t.status!=='COMPLETED');
+      const selected=selectable.filter(t=>t.selected);
+      card.dataset.explorationSource='PLANNER_TODAY_TODO';
+      card.innerHTML=`<div class="planner-head"><div><small>TODAY'S ISLAND · PLANNER</small><h2>${ROLE==='PARENT'?'오늘의 탐험 현황':'오늘의 섬 탐험 핀'}</h2></div><span class="planner-date">${escape(koDate)}</span></div>
+        ${plan.scheduleNote?`<div class="planner-schedule">${escape(plan.scheduleNote)}</div>`:''}
+        <p class="planner-note">${ROLE==='PARENT'?'Planner가 만든 실제 오늘 할 일을 확인해요.':'Planner가 준비한 실제 오늘 할 일 중 이번 탐험에서 이어갈 핀을 하나 이상 골라요.'}</p>
+        <div class="planner-list">${(plan.tasks||[]).map(explorationPinHTML).join('') || '<div class="baseEmpty">오늘 Planner가 만든 탐험 핀이 아직 없어요.</div>'}</div>
+        ${ROLE==='CHILD'&&selectable.length?`<div class="planner-note" id="explorationSelectionCount">선택 ${selected.length}개 · 한 탐험 안에서 하나씩 이어서 진행해요.</div>`:''}`;
+      return;
+    }
+    card.innerHTML=`<div class="planner-head"><div><small>LEGACY PLAN · MIGRATION ONLY</small><h2>오늘 할 일</h2></div><span class="planner-date">${escape(koDate)}</span></div>
       ${plan.scheduleNote?`<div class="planner-schedule">${escape(plan.scheduleNote)}</div>`:''}
       <div class="planner-list">${plan.tasks.map(planTaskHTML).join('') || '<p>오늘 등록된 숙제가 없어요.</p>'}</div>
-      <div class="planner-actions"><button class="secondary" data-plan-action="add">+ 숙제 추가</button><button class="primary" data-plan-action="apply">선택 과제 배포</button></div>
-      <div class="talent-panel"><button class="talent-toggle" data-plan-action="talent-toggle"><span>재능 6과목 · 오늘 선생님 배포 입력</span><span>⌄</span></button><div id="talentRows" class="talent-grid" hidden>${Object.entries(TALENT_BASELINES).map(([name,b])=>`<div class="talent-row" data-talent="${escape(name)}"><div><b>${escape(name)}</b><small>${b.load} · ${b.min}~${b.max}분/기준단위</small></div><input class="talent-volume" placeholder="분량 입력"><input class="talent-min" type="number" min="1" max="120" placeholder="분"></div>`).join('')}<button class="primary" data-plan-action="talent-create">입력한 재능 숙제 생성</button></div></div>`;
+      <div class="planner-actions"><button class="secondary" data-plan-action="add">+ 숙제 추가</button><button class="primary" data-plan-action="apply">선택 과제 적용</button></div>
+      <div class="talent-panel"><button class="talent-toggle" data-plan-action="talent-toggle"><span>재능 입력 · 레거시</span><span>⌄</span></button><div id="talentRows" class="talent-grid" hidden>${Object.entries(TALENT_BASELINES).map(([name,b])=>`<div class="talent-row" data-talent="${escape(name)}"><div><b>${escape(name)}</b><small>${b.load} · ${b.min}~${b.max}분/기준단위</small></div><input class="talent-volume" placeholder="분량 입력"><input class="talent-min" type="number" min="1" max="120" placeholder="분"></div>`).join('')}<button class="primary" data-plan-action="talent-create">입력한 재능 숙제 생성</button></div></div>`;
   }
 
   function taskFromElement(el){ return dayPlan().tasks.find(t=>t.id===el.dataset.planId); }
@@ -299,12 +335,12 @@
     return {
       version:STAGE_D_VERSION,
       plannerStore:!!localStorage.getItem(STORE_KEY),
-      plannerCard:!!document.getElementById('todayPlannerCard'),
-      focusHeadline:document.querySelector('#focusView .focusTitle h1')?.textContent==='그냥! 지금 하면 돼!',
+      plannerCard:!!document.getElementById('todayPlannerCard'),todaysIslandPins:document.getElementById('todayPlannerCard')?.dataset.explorationSource==='PLANNER_TODAY_TODO',
+      focusHeadline:document.querySelector('#focusView .focusTitle h1')?.textContent?.replace(/\s+/g,' ')==='그냥! 지금 하면 돼!',clockNumerals:document.querySelectorAll('#focusView .clockHero .clockNumber').length===12,clockBrand:document.querySelector('#focusView .clockBrand')?.textContent==='Ready & Set',targetLabel:document.querySelector('#focusView .timeStrip>div:last-child small')?.textContent==='목표 시간',
       bgmSingleControl:!!document.getElementById('focusSoundBtn') && getComputedStyle(document.getElementById('changeBgm')).display==='none',
       rev07:window.ReadySetRev07?.validate?.()||null,
       safeAreaRule:'CSS_ENV_SAFE_AREA',
-      previewOnly:true
+      visualAuthority:'CONFIRMED_TIMER_UI'
     };
   }
 
@@ -319,7 +355,7 @@
     applyFocusUI();
     bindFocusTools();
     setTimeout(()=>{applyFocusUI();bindFocusTools();},200);
-    window.ReadyStageD=Object.freeze({version:STAGE_D_VERSION,planner:()=>structuredClone(planner),renderPlanner,applyPlanToMission,validate});
+    window.ReadyStageD=Object.freeze({version:STAGE_D_VERSION,planner:()=>structuredClone(planner),renderPlanner,applyFocusUI,applyPlanToMission,validate});
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();

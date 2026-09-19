@@ -1,0 +1,288 @@
+import assert from 'node:assert/strict';
+import { chromium } from 'playwright';
+
+const browser=await chromium.launch({headless:true,args:['--no-proxy-server','--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream','--autoplay-policy=no-user-gesture-required']});
+const context=await browser.newContext({permissions:['microphone'],acceptDownloads:true,timezoneId:'Asia/Seoul',viewport:{width:390,height:844},deviceScaleFactor:3});
+await context.addInitScript(() => {
+  try{Object.defineProperty(navigator,'share',{value:undefined,configurable:true});Object.defineProperty(navigator,'canShare',{value:undefined,configurable:true})}catch{}
+  if(sessionStorage.getItem('__readyE2ESeeded')) return;
+  sessionStorage.setItem('__readyE2ESeeded','1');
+  const d=new Date().toLocaleDateString('sv-SE');
+  localStorage.setItem('readyset_active_role_v1','child');
+  localStorage.setItem('readyset_identity_v1',JSON.stringify({
+    status:'READY',legalName:'테스트',nickname:'탐험가',familyRole:'CHILD',birthDate:'2015-01-01',
+    schoolStage:'ELEMENTARY_5',characterVisualId:'e2e',characterSetupState:'COMPLETE',explorerId:'lumi',
+    journeyTheme:'default',setupMode:'SELF'
+  }));
+  localStorage.setItem('readyset_state',JSON.stringify({
+    schemaVersion:5,profile:{name:'테스트',photo:'',style:'editorial',shareAvatar:false},
+    guide:{type:'lumi',name:'루미',voice:'warm'},selected:[],tasks:[],targetMin:null,sound:'끄기',records:[],activeSession:null
+  }));
+  localStorage.setItem('readyset_planner_v1',JSON.stringify({
+    version:1,days:{[d]:{localDate:d,tasks:[{
+      id:'e2e-recording-task',localDate:d,subject:'영어',title:'영어 · 문장 녹음',volume:'문장 1개',
+      status:'PLANNED',selected:false,required:true,confirmationState:'FACT_CONFIRMED'
+    },{
+      id:'e2e-math-task',localDate:d,subject:'수학',title:'수학 · 문제 풀이',volume:'2문제',
+      status:'PLANNED',selected:false,required:true,confirmationState:'FACT_CONFIRMED'
+    }]}}
+  }));
+});
+const page=await context.newPage();
+const hardStop=setTimeout(()=>{console.error('E2E HARD TIMEOUT');process.exit(124)},120000);
+const step=name=>console.log('E2E STEP',name);
+const bounded=(name,fn,ms=20000)=>Promise.race([Promise.resolve().then(fn),new Promise((_,reject)=>setTimeout(()=>reject(new Error(`E2E_TIMEOUT:${name}`)),ms))]);
+page.setDefaultTimeout(10000);
+page.setDefaultNavigationTimeout(15000);
+try {
+  page.on('console',msg=>{if(msg.type()==='error')console.error('BROWSER',msg.text())});
+  page.on('pageerror',err=>console.error('PAGEERROR',err.message));
+
+  step('full app boot');
+  await bounded('app-boot',()=>page.goto('http://127.0.0.1:4173/?role=child',{waitUntil:'domcontentloaded',timeout:15000}),20000);
+  await page.waitForFunction(()=>document.documentElement.dataset.readyBootState==='READY'&&window.ReadyBaseNativeV2&&window.ReadyBaseRuntimeV1&&window.ReadyScheduleBaseV1&&window.ReadyRecordingV1,{timeout:30000});
+  assert.equal(await page.evaluate(()=>document.documentElement.dataset.readyBootState),'READY');
+
+  step('select timetable task');
+  await page.waitForSelector('#homeTodayTodoList [data-quick-start]',{timeout:10000});
+  await Promise.all([
+    page.waitForNavigation({waitUntil:'domcontentloaded',timeout:15000}),
+    page.click('#homeTodayTodoList [data-quick-start]')
+  ]);
+  await page.waitForFunction(()=>document.documentElement.dataset.readyBootState==='READY'&&document.querySelector('#missionView.active'),{timeout:30000});
+
+  step('multi-select second exploration pin');
+  const secondSelected=await page.evaluate(()=>{
+    const ok=window.ReadyPlannerSelectionBridgeV1?.bindPlannerTask?.('e2e-math-task',true);
+    window.ReadyBaseRuntimeV1?.renderMission?.();
+    const planner=JSON.parse(localStorage.getItem('readyset_planner_v1')||'{}');
+    const d=new Date().toLocaleDateString('sv-SE');
+    return {ok,selected:(planner.days?.[d]?.tasks||[]).filter(t=>t.selected).map(t=>t.id)};
+  });
+  assert.equal(secondSelected.ok,true,'second Planner TODO must be selectable in the same exploration');
+  assert.deepEqual(new Set(secondSelected.selected),new Set(['e2e-recording-task','e2e-math-task']),'selection must preserve both exploration pins');
+
+  step('start timer');
+  await page.click('button[data-minutes="10"]');
+  await page.click('#startBtn');
+  await page.waitForTimeout(500);
+  const startSnapshot=await page.evaluate(()=>({
+    activeViews:[...document.querySelectorAll('.view.active')].map(x=>x.id),
+    selectedPlanner:window.ReadyBaseRuntimeV1?.selectedPlannerTask?.()||null,
+    core:JSON.parse(localStorage.getItem('readyset_state')||'{}'),
+    planner:JSON.parse(localStorage.getItem('readyset_planner_v1')||'{}'),
+    toast:document.querySelector('#toast')?.textContent||'',
+    homeworkStart:document.documentElement.dataset.readyHomeworkStart||null
+  }));
+  console.log('E2E START SNAPSHOT',JSON.stringify(startSnapshot));
+  await page.waitForSelector('#focusView.active',{timeout:10000});
+
+  step('multi-task session binding');
+  await page.waitForFunction(()=>window.ReadySetRev07?.contract?.()?.tasks?.length===2,{timeout:10000});
+  const multiBinding=await page.evaluate(()=>{
+    const core=JSON.parse(localStorage.getItem('readyset_state')||'{}');
+    const contract=window.ReadySetRev07?.contract?.();
+    return {
+      sessionId:core.activeSession?.id||null,
+      plannerTaskIds:core.activeSession?.plannerTaskIds||[],
+      sessionLabels:core.activeSession?.tasks||[],
+      contractTasks:contract?.tasks?.map(t=>({id:t.task_id,label:t.label,planner_id:t.planner_id}))||[],
+      map:core.activeSession?.homeworkTaskMap||[]
+    };
+  });
+  assert.deepEqual(new Set(multiBinding.plannerTaskIds),new Set(['e2e-recording-task','e2e-math-task']),'one session must bind both Planner TODO identities');
+  assert.equal(multiBinding.sessionLabels.length,2,'one exploration session must carry both task labels');
+  assert.equal(multiBinding.contractTasks.length,2,'REV07 must materialize two task contracts');
+  assert.equal(multiBinding.map.length,2,'each canonical task must map back to one Planner TODO');
+  assert.deepEqual(new Set(multiBinding.contractTasks.map(t=>t.planner_id)),new Set(['e2e-recording-task','e2e-math-task']),'REV07 task identities must preserve Planner provenance');
+
+  assert.equal((await page.locator('#focusView .focusTitle h1').innerText()).replace(/\s+/g,' ').trim(),'그냥! 지금 하면 돼!');
+  assert.equal(await page.locator('#focusView .clockHero .clockNumber').count(),12);
+  assert.equal(await page.locator('#focusView .clockBrand').innerText(),'Ready & Set');
+  assert.equal(await page.locator('#focusView .timeStrip>div:last-child small').innerText(),'목표 시간');
+  assert.equal(await page.locator('#completeBtn').innerText(),'완료했어요');
+  assert.notEqual(await page.locator('#remainingTime').innerText(),'--:--');
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true,'390px focus UI must not overflow horizontally');
+
+  step('single active session lock');
+  const singleSession=await page.evaluate(()=>{
+    const before=JSON.parse(localStorage.getItem('readyset_state')||'{}').activeSession;
+    const returned=window.ReadyBaseRuntimeV1.start();
+    const after=JSON.parse(localStorage.getItem('readyset_state')||'{}').activeSession;
+    return{beforeId:before?.id,afterId:after?.id,returned,startAtBefore:before?.startAt,startAtAfter:after?.startAt};
+  });
+  assert.equal(singleSession.afterId,singleSession.beforeId,'duplicate start must not replace the active session');
+  assert.equal(singleSession.startAtAfter,singleSession.startAtBefore,'duplicate start must not reset the authoritative start timestamp');
+
+  step('app-return lifecycle');
+  const lifecycle=await page.evaluate(()=>{
+    const before=JSON.parse(localStorage.getItem('readyset_state')||'{}').activeSession;
+    window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));
+    const after=JSON.parse(localStorage.getItem('readyset_state')||'{}').activeSession;
+    return{beforeId:before?.id,afterId:after?.id,pausedBefore:before?.pausedAt??null,pausedAfter:after?.pausedAt??null,startBefore:before?.startAt,startAfter:after?.startAt};
+  });
+  assert.equal(lifecycle.afterId,lifecycle.beforeId,'app return must preserve active session identity');
+  assert.equal(lifecycle.pausedAfter,lifecycle.pausedBefore,'app return must not create an implicit pause');
+  assert.equal(lifecycle.startAfter,lifecycle.startBefore,'app return must preserve timestamp truth');
+
+  step('active-session planner lock');
+  const plannerLock=await page.evaluate(()=>{
+    const before=JSON.parse(localStorage.getItem('readyset_state')||'{}').activeSession?.id||null;
+    const result=window.ReadyPlannerSelectionBridgeV1?.bindPlannerTask?.('e2e-recording-task',false);
+    const core=JSON.parse(localStorage.getItem('readyset_state')||'{}');
+    const planner=JSON.parse(localStorage.getItem('readyset_planner_v1')||'{}');
+    const d=new Date().toLocaleDateString('sv-SE'),task=planner.days?.[d]?.tasks?.find(x=>String(x.id)==='e2e-recording-task');
+    return{result,before,after:core.activeSession?.id||null,selected:task?.selected===true};
+  });
+  assert.equal(plannerLock.result,false,'legacy planner bridge must reject selection changes during an active session');
+  assert.equal(plannerLock.after,plannerLock.before,'active session must survive rejected planner selection change');
+  assert.equal(plannerLock.selected,true,'active planner task selection must remain intact');
+
+  const sec=t=>{const m=String(t).match(/(\d+):(\d+)/);return m?Number(m[1])*60+Number(m[2]):0};
+  await page.waitForTimeout(1200);
+  const beforePause=sec(await page.locator('#focusElapsed').innerText());
+  await page.click('#pauseBtn');
+  await page.waitForTimeout(1400);
+  const duringPause=sec(await page.locator('#focusElapsed').innerText());
+  assert.ok(Math.abs(duringPause-beforePause)<=1,'focus time must freeze while explicitly paused');
+  assert.ok(sec(await page.locator('#issueElapsed').innerText())>=1,'issue time must grow during explicit pause');
+  await page.click('#pauseBtn');
+  await page.waitForTimeout(1200);
+  assert.ok(sec(await page.locator('#focusElapsed').innerText())>=beforePause+1,'focus time must resume');
+
+  step('recording');
+  await page.waitForSelector('#recBtn:not([hidden])',{timeout:5000});
+  const focusBeforeRecording=sec(await page.locator('#focusElapsed').innerText());
+  await page.click('#recBtn');
+  await page.waitForSelector('#recordingView.active',{timeout:5000});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true,'390px recording UI must not overflow horizontally');
+  await page.click('#recordAction');
+  await page.waitForFunction(()=>document.querySelector('#recordState')?.textContent==='RECORDING',{timeout:5000});
+  await page.waitForTimeout(1300);
+  await page.click('#recordAction');
+  await page.waitForFunction(()=>!document.querySelector('#reviewPanel')?.hidden,{timeout:8000});
+  assert.match(await page.locator('#formatNote').innerText(),/전송 파일/);
+  await page.waitForSelector('#recordFilenameInput',{timeout:5000});
+  assert.ok((await page.locator('#audioPreview').getAttribute('src'))?.startsWith('blob:'),'recording preview must be a real blob');
+
+  const stored=await page.evaluate(async()=>{
+    const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('readyset_audio',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+    const rows=await new Promise((resolve,reject)=>{const tx=db.transaction('audio','readonly'),r=tx.objectStore('audio').getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+    db.close();return rows.map(x=>({kind:x.kind,name:x.name,type:x.type,size:Number(x.blob?.size||x.size||0)}));
+  });
+  assert.ok(stored.some(x=>x.kind==='ORIGINAL'&&x.size>0),'original recording must be persisted before confirmation');
+
+  await page.waitForFunction(async()=>{
+    const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('readyset_audio',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+    const rows=await new Promise((resolve,reject)=>{const tx=db.transaction('audio','readonly'),r=tx.objectStore('audio').getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+    db.close();return rows.some(x=>x.kind==='CLEAN'&&Number(x.blob?.size||x.size||0)>0);
+  },{timeout:12000});
+  const audioKinds=await page.evaluate(async()=>{
+    const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('readyset_audio',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+    const rows=await new Promise((resolve,reject)=>{const tx=db.transaction('audio','readonly'),r=tx.objectStore('audio').getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
+    db.close();return rows.map(x=>({kind:x.kind,name:x.name,type:x.type,size:Number(x.blob?.size||x.size||0),pipeline:x.pipeline||null,sourceOriginalId:x.sourceOriginalId||null}));
+  });
+  const originalStored=audioKinds.find(x=>x.kind==='ORIGINAL'&&x.size>0),cleanStored=audioKinds.find(x=>x.kind==='CLEAN'&&x.size>0);
+  assert.ok(originalStored,'original copy must remain stored');
+  assert.ok(cleanStored&&cleanStored.pipeline==='REALTIME_LOCAL_FILTER_V1'&&cleanStored.sourceOriginalId,'realtime-clean copy must be separately stored and linked to original');
+  assert.match(originalStored.name,/ original\.(m4a|webm|ogg|wav)$/,'original archive filename must carry original suffix');
+  assert.ok(!cleanStored.name.toLowerCase().includes('clean'),'transfer/clean stored filename must not append clean');
+  assert.equal(originalStored.type,cleanStored.type,'original and realtime-clean transfer should keep the same actual container/mime');
+
+  await page.fill('#recordFilenameInput',"Judy's grammar recording edited 2026 09 18 clean");
+  await page.locator('#recordFilenameInput').blur();
+  assert.match(await page.locator('#formatNote').innerText(),/Judy's grammar recording edited 2026 09 18/);
+  assert.doesNotMatch(await page.locator('#formatNote').innerText(),/ clean\.(m4a|webm|ogg|wav)/i);
+  const recordingDownloadPromise=page.waitForEvent('download',{timeout:10000});
+  await page.click('#shareRecordingBtn');
+  const recordingDownload=await recordingDownloadPromise;
+  assert.match(recordingDownload.suggestedFilename(),/^Judy's grammar recording edited 2026 09 18\.(m4a|webm|ogg|wav)$/,'edited recording filename must be used with the actual format');
+  assert.ok(!/clean|original/i.test(recordingDownload.suggestedFilename()),'submitted recording filename must not append clean or original');
+
+  await page.click('#saveRecordingBtn');
+  await page.click('#recordBackBtn');
+  await page.waitForSelector('#focusView.active',{timeout:5000});
+  await page.waitForTimeout(500);
+  const focusAfterRecording=sec(await page.locator('#focusElapsed').innerText());
+  assert.ok(focusAfterRecording>=focusBeforeRecording+1,'timer must continue through recording round trip');
+
+  step('switch task within same exploration');
+  const switchSnapshot=await page.evaluate(()=>{
+    const before=JSON.parse(localStorage.getItem('readyset_state')||'{}').activeSession;
+    const contract=window.ReadySetRev07?.contract?.();
+    const second=contract?.tasks?.find(t=>t.planner_id==='e2e-math-task');
+    if(second)window.ReadySetRev07?.switchTask?.(second.task_id);
+    const after=JSON.parse(localStorage.getItem('readyset_state')||'{}').activeSession;
+    const next=window.ReadySetRev07?.contract?.();
+    return {beforeId:before?.id,afterId:after?.id,secondId:second?.task_id,activeTaskId:next?.active_task_id,activeLapId:next?.active_lap_id};
+  });
+  assert.equal(switchSnapshot.afterId,switchSnapshot.beforeId,'task change must stay inside the same exploration session');
+  assert.equal(switchSnapshot.activeTaskId,switchSnapshot.secondId,'second Planner TODO must become the active task');
+  assert.ok(switchSnapshot.activeLapId,'task change must open the next lap');
+
+  step('reload recovery');
+  const beforeReload=sec(await page.locator('#focusElapsed').innerText());
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.documentElement.dataset.readyBootState==='READY'&&document.querySelector('#focusView.active'),{timeout:30000});
+  await page.waitForTimeout(800);
+  assert.ok(sec(await page.locator('#focusElapsed').innerText())>=beforeReload,'active timer must restore after reload');
+
+  step('wrap up');
+  await page.click('#completeBtn');
+  await page.waitForFunction(()=>document.querySelector('#readyRev07Wrap')&&!document.querySelector('#readyRev07Wrap').hidden,{timeout:5000});
+  const wrapTaskIds=await page.evaluate(()=>window.ReadySetRev07?.contract?.()?.tasks?.map(t=>t.task_id)||[]);
+  assert.equal(wrapTaskIds.length,2,'wrap-up must contain both exploration tasks');
+  for(const taskId of wrapTaskIds){
+    await page.click(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`);
+  }
+  await page.click('#rev07ConfirmEnd');
+  await page.waitForSelector('#resultView.active',{timeout:5000});
+  assert.match(await page.locator('#resultTasks').innerText(),/완료/);
+
+  step('share fallback');
+  const downloadPromise=page.waitForEvent('download',{timeout:10000});
+  await page.click('#shareResultBtn');
+  const download=await downloadPromise;
+  assert.match(download.suggestedFilename(),/^ready-set-report-.*\.png$/);
+
+  const state=await page.evaluate(()=>JSON.parse(localStorage.getItem('readyset_state')||'{}'));
+  assert.equal(state.activeSession,null);
+  assert.equal(state.records?.[0]?.status,'COMPLETED');
+  assert.equal(state.records?.[0]?.taskStates?.length,2,'exploration record must preserve both task outcomes');
+  const finalPlanner=await page.evaluate(()=>{
+    const p=JSON.parse(localStorage.getItem('readyset_planner_v1')||'{}');
+    const d=new Date().toLocaleDateString('sv-SE');
+    return (p.days?.[d]?.tasks||[]).map(t=>({id:t.id,status:t.status,selected:t.selected}));
+  });
+  assert.equal(finalPlanner.find(t=>t.id==='e2e-recording-task')?.status,'COMPLETED','recording Planner TODO result must be published');
+  assert.equal(finalPlanner.find(t=>t.id==='e2e-math-task')?.status,'COMPLETED','both Planner TODO results must be published');
+
+  step('parent setup without world UI');
+  await page.evaluate(()=>{
+    const identity=JSON.parse(localStorage.getItem('readyset_identity_v1')||'{}');
+    identity.status='READY';identity.setupMode='GUARDIAN_FOR_CHILD';identity.operator={role:'GUARDIAN'};
+    localStorage.setItem('readyset_identity_v1',JSON.stringify(identity));
+    localStorage.setItem('readyset_active_role_v1','parent');
+  });
+  await page.goto('http://127.0.0.1:4173/?role=parent',{waitUntil:'domcontentloaded',timeout:15000});
+  await page.waitForFunction(()=>document.documentElement.dataset.readyBootState==='READY'&&window.ReadyParentSetupHubV1,{timeout:30000});
+  await page.waitForSelector('#readyParentSetupHub',{timeout:10000});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true,'390px parent setup UI must not overflow horizontally');
+  assert.equal(await page.locator('#worldStage').count(),0,'held world UI should remain absent');
+  assert.equal(await page.locator('#readyParentSetupHub [data-rps-schedule]').count(),1,'parent setup must expose timetable action without world UI');
+  assert.equal(await page.locator('#readyParentSetupHub [data-rps-homework]').count(),1,'parent setup must expose homework action without world UI');
+
+  step('done');
+  console.log(JSON.stringify({
+    pass:true,
+    contract:'ready-exploration-journey-full-app-browser-e2e',
+    checks:{
+      fullStageCBoot:true,mobile390Smoke:true,timetableSelection:true,confirmedTimer:true,singleActiveSession:true,appReturnLifecycle:true,activeSessionPlannerLock:true,pauseResume:true,
+      recordingRoundTrip:true,originalAudioPersisted:true,realtimeCleanAudio:true,editableRecordingFilename:true,canonicalRecordingTransfer:true,reloadRecovery:true,
+      completionTruth:true,imageShareFallback:true,parentSetupWithoutWorldUI:true
+    }
+  }));
+} finally {
+  clearTimeout(hardStop);
+  await Promise.race([browser.close().catch(()=>{}),new Promise(resolve=>setTimeout(resolve,5000))]);
+}

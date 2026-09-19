@@ -3,13 +3,15 @@
   if (window.__readyJourneyLoader) return;
   window.__readyJourneyLoader = true;
 
-  const VERSION = '2026.09.15-stage-c-schedule-timer-implementation-hold-v1';
+  const VERSION = '2026.09.18-stage-c-exploration-journey-v3';
   const IMPLEMENTATION_HOLD = true;
+  const IDENTITY='./ready-onboarding-identity-v2.js?v=20260913-deferred';
   const CORE_CHAIN = [
     './ready-role-context-v1.js',
     './ready-foundation-v1.js',
     './ready-foundation-control-v1.js',
     './ready-stage-d.js',
+    './ready-recording-v1.js',
     './ready-stage-e.js',
     './ready-stage-f.js',
     './ready-parent-capture-intake-v1.js',
@@ -19,19 +21,20 @@
     './ready-stage-g14-planner-authority.js',
     './ready-base-native-v2.js',
     './ready-planner-selection-bridge-v1.js',
-    './ready-focus-tools-v1.js',
     './ready-schedule-base-v1.js',
     './ready-parent-setup-hub-v1.js',
     './ready-base-selftest-v1.js'
   ];
 
-  const load = (src, timeout = 0) => new Promise((resolve, reject) => {
+  const load = (src, timeout = 12000) => new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.src = src;
     s.async = false;
-    const timer = timeout ? setTimeout(() => reject(new Error(`LOAD_TIMEOUT:${src}`)), timeout) : null;
-    s.onload = () => { clearTimeout(timer); resolve(src); };
-    s.onerror = () => { clearTimeout(timer); reject(new Error(`LOAD_FAILED:${src}`)); };
+    let settled=false;
+    const done=(ok,error)=>{if(settled)return;settled=true;clearTimeout(timer);ok?resolve(src):reject(error)};
+    const timer=setTimeout(()=>{s.remove();done(false,new Error(`LOAD_TIMEOUT:${src}`))},timeout);
+    s.onload = () => done(true);
+    s.onerror = () => done(false,new Error(`LOAD_FAILED:${src}`));
     document.head.appendChild(s);
   });
 
@@ -42,6 +45,7 @@
     document.getElementById('homeView')?.classList.remove('worldShell');
     document.querySelectorAll('.worldLegacySection').forEach(el => el.classList.remove('worldLegacySection'));
     document.documentElement.dataset.readyIdentityImplementation = IMPLEMENTATION_HOLD ? 'HOLD' : 'ACTIVE';
+    document.documentElement.dataset.readyIdentityCanonical = IDENTITY;
     document.documentElement.dataset.readyWorldImplementation = IMPLEMENTATION_HOLD ? 'HOLD' : 'ACTIVE';
   }
 
@@ -51,9 +55,10 @@
     window.ReadyStageG11?.hydrateParentInputs?.();
     window.ReadyStageG14?.render?.();
     window.ReadyBaseNativeV2?.render?.();
+    window.ReadyHomeHomeworkUIV1?.render?.();
     window.ReadyBaseRuntimeV1?.syncSelectedTask?.();
-    window.ReadyFocusToolsV1?.render?.();
     window.ReadyScheduleBaseV1?.render?.();
+    window.ReadyRecordingV1?.render?.();
     window.ReadyParentSetupHubV1?.render?.();
   }
 

@@ -1,0 +1,81 @@
+name: Ready Exploration Journey Contract
+
+on:
+  pull_request:
+    paths:
+      - 'ready-base-runtime-v1.js'
+      - 'ready-runtime-v07.js'
+      - 'ready-stage-c.js'
+      - 'ready-stage-d-base-v1.js'
+      - 'ready-stage-f.js'
+      - 'ready-stage-e.js'
+      - 'ready-stage-d.js'
+      - 'ready-recording-v1.js'
+      - 'ready-base-native-v2.js'
+      - 'ready-planner-selection-bridge-v1.js'
+      - 'ready-schedule-base-v1.js'
+      - 'VERSION.json'
+      - 'sw.js'
+      - 'ready-parent-setup-hub-v1.js'
+      - 'tests/ready-exploration-journey-contract.mjs'
+      - 'tests/ready-exploration-journey-e2e.mjs'
+      - '.github/workflows/ready-exploration-journey-contract.yml'
+  push:
+    branches:
+      - 'taky/exploration-journey-2026-09-18'
+    paths:
+      - 'ready-base-runtime-v1.js'
+      - 'ready-runtime-v07.js'
+      - 'ready-stage-c.js'
+      - 'ready-stage-d-base-v1.js'
+      - 'ready-recording-v1.js'
+      - 'ready-base-native-v2.js'
+      - 'ready-schedule-base-v1.js'
+      - 'tests/ready-exploration-journey-contract.mjs'
+      - 'tests/ready-exploration-journey-e2e.mjs'
+      - '.github/workflows/ready-exploration-journey-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: JavaScript syntax checks
+        run: |
+          node --check ready-base-runtime-v1.js
+          node --check ready-runtime-v07.js
+          node --check ready-stage-c.js
+          node --check ready-stage-d-base-v1.js
+          node --check ready-stage-d.js
+          node --check ready-stage-e.js
+          node --check ready-stage-f.js
+          node --check ready-recording-v1.js
+          node --check ready-base-native-v2.js
+          node --check ready-planner-selection-bridge-v1.js
+          node --check ready-schedule-base-v1.js
+          node --check ready-parent-setup-hub-v1.js
+          node --check sw.js
+      - name: Exploration journey contract
+        run: node tests/ready-exploration-journey-contract.mjs
+      - name: Install browser test runtime
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Browser E2E
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/ready-http.log 2>&1 &
+          HTTP_PID=$!
+          trap 'kill $HTTP_PID || true' EXIT
+          for i in {1..20}; do
+            curl -fsS http://127.0.0.1:4173/index.html >/dev/null && break
+            sleep 0.25
+          done
+          curl -fsS http://127.0.0.1:4173/index.html >/dev/null
+          node tests/ready-exploration-journey-e2e.mjs

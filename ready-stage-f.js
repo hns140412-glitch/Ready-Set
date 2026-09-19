@@ -1,11 +1,12 @@
 (() => {
   'use strict';
-  const VERSION='2026.09.08-stage-g1-intake-semantics';
+  const VERSION='2026.09.18-stage-g1-intake-semantics-loopfix';
   const ROLE=new URLSearchParams(location.search).get('role')==='parent'?'PARENT':'CHILD';
   const model=()=>window.ReadyAssignmentModel;
   const today=()=>new Date().toLocaleDateString('sv-SE');
   const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const toast=msg=>window.toast?window.toast(msg):alert(msg);
+  const setText=(el,value)=>{if(el&&el.textContent!==value)el.textContent=value};
 
   function styles(){
     if(document.getElementById('readyStageFStyle'))return;
@@ -18,13 +19,13 @@
   function ensureRoleMarker(){
     const top=document.querySelector('#homeView .topbar');if(!top)return;
     let m=document.getElementById('rsfRoleMarker');if(!m){m=document.createElement('span');m.id='rsfRoleMarker';top.insertBefore(m,top.lastElementChild||null)}
-    m.className=`rsf-role-home ${ROLE==='PARENT'?'parent':''}`;m.textContent=ROLE==='PARENT'?'부모 모드':'아이 모드';
+    const cls=`rsf-role-home ${ROLE==='PARENT'?'parent':''}`;if(m.className!==cls)m.className=cls;setText(m,ROLE==='PARENT'?'부모 모드':'아이 모드');
   }
   function explorerTerms(){
     if(ROLE!=='CHILD')return;
     const map=new Map([['타임어택 작전 설정','오늘의 탐험 준비'],['오늘 목표 정하기','오늘 탐험 정하기'],['작전 기록실','탐험 기록'],['작전 일지','탐험 일지'],['오늘의 작전 미리보기','오늘의 탐험 미리보기'],['작전 공유하기','가족에게 응원 요청'],['타임어택 START','탐험 시작'],['오늘의 작전 보고서','오늘의 탐험 기록'],['오늘의 작전','오늘의 탐험'],['오늘 작전, 내가 옆에서 같이 봐줄게.','오늘 탐험, 내가 옆에서 같이 봐줄게.']]);
     document.querySelectorAll('body *').forEach(el=>{if(el.children.length)return;const t=(el.textContent||'').trim();if(map.has(t))el.textContent=map.get(t)});
-    const share=document.getElementById('missionShareBtn');if(share)share.textContent='가족에게 응원 요청 (선택)';
+    const share=document.getElementById('missionShareBtn');setText(share,'가족에게 응원 요청 (선택)');
   }
   function hideLegacyChildSetup(){
     if(ROLE!=='CHILD')return;
@@ -34,9 +35,9 @@
     const share=document.getElementById('preShareBtn');if(share)share.style.display='none';
     const buttons=[...document.querySelectorAll('#homeView .commandCard > button')];
     const candidates=buttons.filter(btn=>/오늘 숙제 배포|오늘 목표 정하기|오늘 탐험 정하기|숙제 입력 · 확인/.test(btn.querySelector('b')?.textContent||''));
-    if(candidates.length){const primary=candidates[0],b=primary.querySelector('b'),s=primary.querySelector('small');if(ROLE==='PARENT'){if(b)b.textContent='숙제 입력 · 확인';if(s)s.textContent='숙제 원본 FACT 촬영·입력·확인'}else{if(b)b.textContent='오늘 탐험 정하기';if(s)s.textContent='Planner가 준비한 오늘 할 일에서 선택'}candidates.slice(1).forEach(x=>x.style.display='none');if(!primary.dataset.nav)primary.dataset.nav='mission'}
-    document.querySelectorAll('#homeView [data-nav="mission"]').forEach((btn,i)=>{if(candidates.includes(btn)&&btn!==candidates[0])return;if(!candidates.length||btn===candidates[0])return;if(i>0)btn.style.display='none'});
-    if(ROLE==='PARENT'){const history=[...buttons].find(btn=>(btn.querySelector('b')?.textContent||'').includes('기록실'));if(history){const b=history.querySelector('b'),s=history.querySelector('small');if(b)b.textContent='학습 기록';if(s)s.textContent='아이의 진행과 완료 기록 보기'}}
+    if(candidates.length){const primary=candidates[0],b=primary.querySelector('b'),s=primary.querySelector('small');if(ROLE==='PARENT'){setText(b,'숙제 입력 · 확인');setText(s,'숙제 원본 FACT 촬영·입력·확인')}else{setText(b,'오늘 탐험 정하기');setText(s,'Planner가 준비한 오늘 할 일에서 선택')}candidates.slice(1).forEach(x=>{if(x.style.display!=='none')x.style.display='none'});if(!primary.dataset.nav)primary.dataset.nav='mission'}
+    document.querySelectorAll('#homeView [data-nav="mission"]').forEach((btn,i)=>{if(candidates.includes(btn)&&btn!==candidates[0])return;if(!candidates.length||btn===candidates[0])return;if(i>0&&btn.style.display!=='none')btn.style.display='none'});
+    if(ROLE==='PARENT'){const history=[...buttons].find(btn=>(btn.querySelector('b')?.textContent||'').includes('기록실'));if(history){const b=history.querySelector('b'),s=history.querySelector('small');setText(b,'학습 기록');setText(s,'아이의 진행과 완료 기록 보기')}}
   }
   function syncPlannerSelection(){window.ReadyStageD?.renderPlanner?.();setTimeout(()=>document.querySelector('#todayPlannerCard [data-plan-action="apply"]')?.click(),0)}
   function factStateLabel(f){return f.confirmationState==='FACT_CONFIRMED'?'확인됨':f.confirmationState==='CONFIRMATION_REQUIRED'?'확인 필요':'입력 중'}
