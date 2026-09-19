@@ -27,6 +27,36 @@ jobs:
             echo "available=false" >> "$GITHUB_OUTPUT"
           fi
 
+  credential_blocked:
+    needs: credential_gate
+    if: needs.credential_gate.outputs.available != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Mark queue blocked by missing executor credential
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh issue list --state open --limit 100 --json number,title,comments > /tmp/taky-open.json
+          python - <<'PY' > /tmp/missing-credential-issues.txt
+          import json
+          from pathlib import Path
+          data=json.loads(Path('/tmp/taky-open.json').read_text())
+          marker='<!-- TAKY_CODEX_CREDENTIAL_BLOCKED -->'
+          for issue in data:
+              if not str(issue.get('title','')).startswith('[TAKY EXECUTOR QUEUE]'):
+                  continue
+              if any(marker in str((c or {}).get('body') or '') for c in issue.get('comments') or []):
+                  continue
+              print(issue['number'])
+          PY
+          while IFS= read -r ISSUE_NUMBER; do
+            [ -z "$ISSUE_NUMBER" ] && continue
+            gh issue comment "$ISSUE_NUMBER" --body $'<!-- TAKY_CODEX_CREDENTIAL_BLOCKED -->\n**TAKY Codex worker blocked:** repository Actions secret `OPENAI_API_KEY` is not configured. No executor run was started and no task state was fabricated.'
+          done < /tmp/missing-credential-issues.txt
+
   prepare:
     needs: credential_gate
     if: needs.credential_gate.outputs.available == 'true'
@@ -107,7 +137,6 @@ jobs:
           name: taky-task-context-${{ github.run_id }}
           path: .taky
       - name: Run Codex implementation
-        id: run_codex
         uses: openai/codex-action@v1
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
@@ -162,13 +191,33 @@ jobs:
         with:
           name: taky-codex-work-${{ github.run_id }}
           path: .taky
-      - name: Apply exact Codex patch
+      - name: Apply exact Codex patch and revalidate
         id: apply
         shell: bash
         run: |
-          set -euo pipefail
+          set -u
           if [ -s .taky/codex.patch ]; then
-            git apply --index .taky/codex.patch
+            if ! git apply --index .taky/codex.patch; then
+              python - <<'PY'
+              import json
+              from pathlib import Path
+              Path('.taky/materialized-validation.json').write_text(json.dumps({
+                'pass': False,
+                'changed_files': [],
+                'scope_deviations': [],
+                'validation_results': {
+                  'diff_scope': {'status':'FAIL','evidence':'Codex patch could not be applied cleanly to verified base.'},
+                  'build': {'status':'NOT_APPLICABLE','evidence':'Patch application failed before build validation.'},
+                  'relevant_tests': {'status':'NOT_RUN','evidence':'Patch application failed.'},
+                  'regression': {'status':'NOT_RUN','evidence':'Patch application failed.'}
+                },
+                'unresolved_risks':[{'severity':'BLOCKING','detail':'PATCH_APPLY_FAILED'}]
+              }, indent=2)+'\n')
+              PY
+              echo "validation_pass=false" >> "$GITHUB_OUTPUT"
+              echo "materialization_risk=PATCH_APPLY_FAILED" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
           fi
           git diff --cached --name-only > .taky/materialized-files.txt
           set +e
@@ -178,7 +227,12 @@ jobs:
             --output .taky/materialized-validation.json
           rc=$?
           set -e
-          if [ "$rc" -eq 0 ]; then echo "validation_pass=true" >> "$GITHUB_OUTPUT"; else echo "validation_pass=false" >> "$GITHUB_OUTPUT"; fi
+          if [ "$rc" -eq 0 ]; then
+            echo "validation_pass=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "validation_pass=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "materialization_risk=" >> "$GITHUB_OUTPUT"
       - name: Commit bounded work and open PR
         id: pr
         if: steps.apply.outputs.validation_pass == 'true'
@@ -187,25 +241,42 @@ jobs:
           TASK_ID: ${{ needs.prepare.outputs.task_id }}
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
           safe_task="$(printf '%s' "$TASK_ID" | tr -cs 'A-Za-z0-9._-' '-')"
           branch="codex/taky-${safe_task}-${GITHUB_RUN_ID}"
           git switch -c "$branch"
           git config user.name "TAKY Codex Worker"
           git config user.email "actions@users.noreply.github.com"
-          git commit -m "Codex: ${TASK_ID}"
-          git push origin "HEAD:${branch}"
-          pr_url="$(gh pr create --base main --head "$branch" --title "[TAKY/Codex] ${TASK_ID}" --body "Automated bounded implementation from TAKY queue. Human approval is required before merge. Source queue issue: #${{ needs.prepare.outputs.issue_number }}")"
-          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+          if ! git commit -m "Codex: ${TASK_ID}" > .taky/commit.log 2>&1; then
+            echo "materialization_risk=COMMIT_FAILED" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           echo "commit_ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          if ! git push origin "HEAD:${branch}" > .taky/push.log 2>&1; then
+            echo "materialization_risk=GIT_PUSH_FAILED_CHECK_ACTIONS_WORKFLOW_WRITE_PERMISSION" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          set +e
+          pr_url="$(gh pr create --base main --head "$branch" --title "[TAKY/Codex] ${TASK_ID}" --body "Automated bounded implementation from TAKY queue. Human approval is required before merge. Source queue issue: #${{ needs.prepare.outputs.issue_number }}" 2> .taky/pr-create.log)"
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ] || [ -z "$pr_url" ]; then
+            echo "materialization_risk=PR_CREATE_FAILED_CHECK_ACTIONS_PULL_REQUEST_PERMISSION" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+          echo "materialization_risk=" >> "$GITHUB_OUTPUT"
       - name: Build executor result
         env:
           CONTRACT_HASH: ${{ needs.prepare.outputs.contract_hash }}
           COMMIT_REF: ${{ steps.pr.outputs.commit_ref }}
           PR_URL: ${{ steps.pr.outputs.pr_url }}
+          APPLY_RISK: ${{ steps.apply.outputs.materialization_risk }}
+          PR_RISK: ${{ steps.pr.outputs.materialization_risk }}
         shell: bash
         run: |
           if [ -z "${COMMIT_REF:-}" ]; then COMMIT_REF="WORKTREE_ONLY:${GITHUB_RUN_ID}"; fi
+          MATERIALIZATION_RISK="${APPLY_RISK:-${PR_RISK:-}}"
           python .github/scripts/taky_codex_queue.py result \
             --task .taky/task.json \
             --contract-hash "$CONTRACT_HASH" \
@@ -213,6 +284,7 @@ jobs:
             --validation .taky/materialized-validation.json \
             --commit-ref "$COMMIT_REF" \
             --pr-url "${PR_URL:-}" \
+            --materialization-risk "$MATERIALIZATION_RISK" \
             --output .taky/result.json
           jq -r '.comment_body' .taky/result.json > .taky/result-comment.md
       - name: Post executor result to queue
