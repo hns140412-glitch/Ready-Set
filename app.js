@@ -620,13 +620,6 @@ function renderPlanner(){
 }
 
 
-function setWeekdayButtons(days=[]){
-  const set=new Set(days.map(Number));
-  document.querySelectorAll('#templateWeekdays [data-weekday]').forEach(b=>b.classList.toggle('on',set.has(Number(b.dataset.weekday))));
-}
-function selectedWeekdays(){
-  return [...document.querySelectorAll('#templateWeekdays [data-weekday].on')].map(b=>Number(b.dataset.weekday));
-}
 function clearScheduleForm(){
   $('#scheduleId').value='';
   $('#scheduleTitle').value='';
@@ -635,15 +628,6 @@ function clearScheduleForm(){
   $('#scheduleStart').value='';
   $('#scheduleEnd').value='';
   $('#scheduleMovable').checked=false;
-}
-function clearTemplateForm(){
-  $('#templateId').value='';
-  $('#templateTitle').value='';
-  $('#templateSubject').value='';
-  $('#templateMinutes').value='20';
-  $('#templateDeadline').value='';
-  $('#templateRequiredToday').checked=false;
-  setWeekdayButtons([]);
 }
 function renderPlannerAdmin(){
   const snap=plannerSnapshot();
