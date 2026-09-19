@@ -63,9 +63,9 @@ test('mobile product quality gate: core touch targets are usable and primary con
   ];
   for(const [view,sel] of critical){
     await page.evaluate(v=>document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.dataset.view===v)),view);
-    const loc=page.locator(sel).filter({visible:true}).first();
-    await expect(page.locator(sel),sel+' missing').toHaveCount(1);
-    const box=await page.locator(sel).first().boundingBox();
+    const loc=page.locator(`.view.active ${sel}`).first();
+    await expect(loc,sel+' missing in '+view).toHaveCount(1);
+    const box=await loc.boundingBox();
     expect(box,sel+' has no visible box in '+view).toBeTruthy();
     expect(Math.min(box.width,box.height),sel+' touch target too small').toBeGreaterThanOrEqual(36);
   }
