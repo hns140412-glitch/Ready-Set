@@ -71,7 +71,7 @@ function migrate(x){
     guide:{...initial.guide,...x.guide}
   };
 }
-function save(){localStorage.setItem('readyset_state',JSON.stringify(state))}
+function save(){const payload=JSON.stringify(state);localStorage.setItem('readyset_state',payload);window.ReadySetLocalFirst?.capture?.('app_state',payload).catch?.(()=>{})}
 function toast(msg){
   const t=$('#toast'); if(!t)return;
   t.textContent=msg;t.hidden=false;
