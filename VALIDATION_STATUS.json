@@ -1,5 +1,5 @@
 {
-  "status_version": "2026-09-19.2",
+  "status_version": "2026-09-20.1",
   "product": "Ready & Set",
   "live_version_source": "VERSION.json",
   "current_master_revision": "REV_07",
@@ -12,8 +12,8 @@
       "allowed_use": "HISTORICAL_REGRESSION_REFERENCE_ONLY"
     },
     "exact_main_runtime_evidence": {
-      "main_sha": "56c31ac1d3870164b33526de732cbf1a8bafe45c",
-      "github_actions_run_id": 35451711804,
+      "main_sha": "f5fd4c2dfff953a1fce567f0762c71981acacb1f",
+      "github_actions_run_id": 35472619346,
       "exact_main_ci": "PASS",
       "chromium_runtime": "PASS",
       "mobile_quality_gate": {
@@ -37,7 +37,25 @@
         "evidence_type": "CI_SCREENSHOT_AUDIT",
         "device_equivalence": "NOT_A_PHYSICAL_DEVICE"
       },
-      "pwa_offline_runtime": "PASS_IN_CHROMIUM"
+      "pwa_offline_runtime": "PASS_IN_CHROMIUM",
+      "sync_adapter_contract": {
+        "status": "PASS",
+        "version": "0.1.0",
+        "contract": "HTTP_JSON_V1",
+        "verified_states": [
+          "LOCAL_ONLY",
+          "CONNECTED",
+          "ERROR"
+        ],
+        "verified_behaviors": [
+          "idempotency key",
+          "HTTP health check",
+          "conflict 409 mapping",
+          "Outbox flush integration",
+          "unconfigured adapter keeps Outbox pending without retry mutation"
+        ],
+        "backend_connection": "NOT_CONFIGURED_IN_PRODUCTION"
+      }
     }
   },
   "current_release_claim": {
@@ -59,7 +77,8 @@
     "Service Worker control + offline reload in Chromium",
     "390x844 mobile overflow/runtime/touch-target integrity gate",
     "Dead navigation and unreferenced action-button integrity gate",
-    "CI screenshot visual audit with Profile/Settings polish"
+    "CI screenshot visual audit with Profile/Settings polish",
+    "HTTP sync adapter contract with truthful LOCAL_ONLY / CONNECTED / ERROR states"
   ],
   "known_open_items": [
     {
@@ -85,8 +104,8 @@
     {
       "id": "SYNC-REMOTE-001",
       "status": "OPEN",
-      "issue": "Remote sync adapter is not connected.",
-      "current_scope": "Local IndexedDB + Outbox + retry/conflict mechanics are implemented; full cloud synchronization must not be claimed."
+      "issue": "Remote sync adapter contract is implemented and runtime-verified, but no production cloud backend endpoint is configured.",
+      "current_scope": "HTTP_JSON_V1 adapter + health/send/idempotency/conflict mapping + Local-first Outbox integration are implemented and CI/runtime verified. Without a configured endpoint the app explicitly remains LOCAL_ONLY; full cloud synchronization must not be claimed."
     }
   ],
   "rules": [
@@ -97,5 +116,5 @@
     "A Netlify upload with commit_ref=null must not be treated as proof that current main is deployed.",
     "Device/production claims require representative runtime evidence."
   ],
-  "next_action": "Publish the exact-main verified deploy artifact to ready-set-staging-taky with provenance preserved, run production browser QA, then execute representative physical iPhone/PWA validation without using the product owner as an iterative debugger."
+  "next_action": "Publish the exact-main verified deploy artifact to ready-set-staging-taky with provenance preserved; configure and validate a real sync backend endpoint; then run production browser QA and representative physical iPhone/PWA validation without using the product owner as an iterative debugger."
 }
