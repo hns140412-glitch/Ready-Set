@@ -93,3 +93,26 @@ test('mobile product quality gate: planner/admin data survives reload and remain
   expect(snap.schedule_commitments.some(x=>x.commitment_id==='quality_schedule')).toBeTruthy();
   expect(snap.homework_templates.some(x=>x.template_id==='quality_template')).toBeTruthy();
 });
+
+test('product integrity gate: navigation targets exist and unique action buttons are wired in app runtime', async ({page})=>{
+  await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
+  const audit=await page.evaluate(async()=>{
+    const appSource=await fetch('./app.js').then(r=>r.text());
+    const navButtons=[...document.querySelectorAll('[data-nav]')];
+    const missingNav=navButtons
+      .map(b=>b.dataset.nav)
+      .filter((v,i,a)=>a.indexOf(v)===i)
+      .filter(v=>!document.querySelector(`.view[data-view="${CSS.escape(v)}"]`));
+
+    const genericAttrs=['data-nav','data-category','data-minutes','data-close-sheet','data-close-sound','data-sheet-sound','data-pause-reason','data-close-pause','data-style','data-guide-type','data-guide-voice','data-sound','data-planner-tab','data-planner-date','data-edit-schedule','data-edit-template','data-weekday'];
+    const uniqueButtons=[...document.querySelectorAll('button[id]')].filter(b=>!genericAttrs.some(a=>b.hasAttribute(a)));
+    const unreferenced=uniqueButtons
+      .map(b=>b.id)
+      .filter(id=>!appSource.includes(`#${id}`) && !appSource.includes(`getElementById('${id}')`) && !appSource.includes(`getElementById("${id}")`));
+    return {missingNav,unreferenced,totalUnique:uniqueButtons.length,totalNav:navButtons.length};
+  });
+  expect(audit.missingNav,'dead data-nav targets').toEqual([]);
+  expect(audit.unreferenced,'button IDs with no app.js wiring/reference').toEqual([]);
+  expect(audit.totalUnique).toBeGreaterThan(10);
+  expect(audit.totalNav).toBeGreaterThan(5);
+});
