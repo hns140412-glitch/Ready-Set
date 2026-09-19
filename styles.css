@@ -62,3 +62,18 @@
 
 /* Sync status */
 .syncStatusCard{display:grid;gap:10px}.syncStatusHead{display:flex;align-items:end;justify-content:space-between;gap:12px}.syncStatusHead small{display:block;font-size:8px;font-weight:950;letter-spacing:.12em;color:#a06c57}.syncStatusHead h2{margin-top:3px!important}.syncStatusHead>span{flex:0 0 auto;border-radius:999px;padding:7px 10px;background:#f1ece7;color:#6f625b;font-size:9px;font-weight:900}.syncStatusHead>span[data-state="CONNECTED"]{background:#e8f4eb;color:#39724a}.syncStatusHead>span[data-state="ERROR"]{background:#fff0ec;color:#a5483b}.syncMeta{display:grid;grid-template-columns:1fr 1fr;gap:7px}.syncMeta span{padding:10px 11px;border-radius:13px;background:#fff7f1;font-size:9px;color:#806b60}.syncMeta b{float:right;color:#2b2521;font-size:11px}.syncStatusCard #checkSyncBtn{width:100%}
+
+
+/* Accessibility visibility and motion safety */
+:where(button,a,input,select,textarea,[tabindex]):focus-visible{
+  outline:3px solid currentColor;
+  outline-offset:3px;
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    scroll-behavior:auto!important;
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+}
