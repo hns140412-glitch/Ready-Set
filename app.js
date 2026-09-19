@@ -591,7 +591,7 @@ function renderPlanner(){
   const snap=plannerSnapshot(), start=weekStart(new Date(plannerSelectedDate+'T12:00:00'));
   const strip=$('#plannerWeekStrip'), detail=$('#plannerWeekDetail');
   if(!strip||!detail)return;
-  $('[data-planner-tab]').forEach(b=>b.classList.toggle('on',b.dataset.plannerTab===plannerTab));
+  document.querySelectorAll('[data-planner-tab]').forEach(b=>b.classList.toggle('on',b.dataset.plannerTab===plannerTab));
   $('#plannerWeekPanel').hidden=plannerTab!=='week';
   $('#plannerDayPanel').hidden=plannerTab!=='day';
   const weekDates=Array.from({length:7},(_,i)=>addDays(start,i));
