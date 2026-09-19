@@ -374,6 +374,20 @@
       return renderWrapUp();
     }
     endActiveLap('SESSION_END', currentTask(c)?.state || 'PENDING');
+    if (window.ReadySetPlanner) {
+      for (const task of c.tasks) {
+        if (!task.planner_todo_id) continue;
+        const actualMs = (task.laps || []).reduce((sum, lap) => sum + (Number.isFinite(lap.elapsed_ms) ? lap.elapsed_ms : 0), 0);
+        window.ReadySetPlanner.recordSessionOutcome({
+          todo_id: task.planner_todo_id,
+          ready_state: task.state,
+          actual_ms: actualMs,
+          session_id: c.session_id,
+          task_id: task.task_id,
+          at: iso()
+        });
+      }
+    }
     c.session_state = 'ENDED';
     c.ended_at = iso();
     c.active_app = 'ready-set';
