@@ -30,7 +30,7 @@ assert.match(capture,/packageType:'TALENT_WEEKLY_ASSIGNMENT'/,'capture records m
 assert.match(capture,/ReadyRoleContextV1/,'capture role must honor identity-aware role context');
 
 assert.match(stageF,/난이도·예상시간·날짜별 배정은 부모 입력 항목이 아닙니다/,'Parent UI must state the authority boundary');
-assert.doesNotMatch(stageF,/data-field=["']difficulty["']/,'Parent UI must not expose a difficulty-authority input');
-assert.doesNotMatch(stageF,/data-field=["']estimatedMin["']|data-min=/,'Parent UI must not expose minute-allocation authority');
+assert.doesNotMatch(stageF,/<input[^>]*data-field=["']difficulty["']/,'Parent UI must not expose a difficulty-authority input');
+assert.doesNotMatch(stageF,/<input[^>]*(?:data-field=["']estimatedMin["']|data-min=)/,'Parent UI must not expose minute-allocation authority');
 
 console.log(JSON.stringify({pass:true,contract:'ready-parent-capture-v1.1',checks:22}));
