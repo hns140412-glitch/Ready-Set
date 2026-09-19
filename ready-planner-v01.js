@@ -110,6 +110,57 @@
       });
     }
 
+    function materializeDate(dateInput){
+      const date=cleanText(dateInput)||dateKey();
+      return mutate(s=>{
+        const dow=parseLocal(date,'12:00').getDay();
+        const created=[],updated=[],skipped=[];
+        const templates=s.homework_templates
+          .filter(t=>!t.confirmation_state||t.confirmation_state==='CONFIRMED')
+          .filter(t=>!t.deadline_date||date<=t.deadline_date)
+          .filter(t=>t.required_today===true||!t.preferred_days?.length||t.preferred_days.includes(dow))
+          .sort((a,b)=>{
+            if(!!a.required_today!==!!b.required_today)return a.required_today?-1:1;
+            const ad=a.deadline_date||'9999-12-31',bd=b.deadline_date||'9999-12-31';
+            if(ad!==bd)return ad.localeCompare(bd);
+            if(a.allocation_priority!==b.allocation_priority)return a.allocation_priority-b.allocation_priority;
+            return a.title.localeCompare(b.title,'ko');
+          });
+
+        for(const t of templates){
+          let todo=s.dated_todos.find(x=>x.date===date&&x.template_id===t.template_id&&x.state!=='COMPLETED');
+          if(todo){
+            const changed=todo.label!==t.title||todo.estimated_minutes!==t.estimated_minutes;
+            if(changed){
+              todo.label=t.title;
+              todo.estimated_minutes=t.estimated_minutes;
+              todo.updated_at=new Date().toISOString();
+              todo.provenance={...(todo.provenance||{}),kind:'TEMPLATE_MATERIALIZATION',template_updated_at:t.updated_at};
+              updated.push(todo.todo_id);
+            }else skipped.push(todo.todo_id);
+            continue;
+          }
+          todo={
+            todo_id:makeId('todo'),
+            date,
+            label:t.title,
+            template_id:t.template_id,
+            source:'PLANNER_TEMPLATE',
+            source_actor:'PLANNER_MAIN',
+            provenance:{kind:'TEMPLATE_MATERIALIZATION',template_updated_at:t.updated_at},
+            order:s.dated_todos.filter(x=>x.date===date).length,
+            state:'PLANNED',
+            estimated_minutes:t.estimated_minutes,
+            created_at:new Date().toISOString(),
+            updated_at:new Date().toISOString()
+          };
+          s.dated_todos.push(todo);
+          created.push(todo.todo_id);
+        }
+        return {ok:true,date,eligible_templates:templates.length,created,updated,skipped};
+      });
+    }
+
     function upsertDatedTodo(input={}){
       const label=cleanText(input.label); if(!label) throw new Error('label required');
       return mutate(s=>{
@@ -510,6 +561,7 @@
       todayProjection,
       upsertScheduleCommitment,
       upsertHomeworkTemplate,
+      materializeDate,
       upsertDatedTodo,
       linkOrCreateTodayItems,
       recordTaskState,
