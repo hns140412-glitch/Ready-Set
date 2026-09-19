@@ -136,7 +136,7 @@
       const sourceActor=cleanText(options.source_actor)||'READY_USER';
       const uniq=[...new Set((labels||[]).map(cleanText).filter(Boolean))];
       return mutate(s=>uniq.map((label,order)=>{
-        let todo=s.dated_todos.find(x=>x.date===date&&x.label===label&&x.source===source&&x.state!=='COMPLETED');
+        let todo=s.dated_todos.find(x=>x.date===date&&x.label===label&&x.state!=='COMPLETED');
         if(!todo){
           todo={
             todo_id:makeId('todo'),
@@ -335,6 +335,17 @@
         .sort((a,b)=>(a.order??999)-(b.order??999)||a.label.localeCompare(b.label,'ko'));
     }
 
+    function todayProjection(date=dateKey()){
+      return today(date).map(x=>({
+        todo_id:x.todo_id,
+        label:x.label,
+        state:x.state,
+        source:x.source,
+        estimated_minutes:Number.isFinite(x.estimated_minutes)?x.estimated_minutes:null,
+        planner_owned:x.source==='PLANNER_ALLOCATION'
+      }));
+    }
+
     function validate(){
       const s=load(),issues=[];
       const todoIds=new Set();
@@ -353,6 +364,7 @@
       snapshot:()=>load(),
       validate,
       today,
+      todayProjection,
       upsertScheduleCommitment,
       upsertHomeworkTemplate,
       upsertDatedTodo,

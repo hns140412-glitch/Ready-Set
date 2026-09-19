@@ -34,6 +34,7 @@ def validate(task, changed_files):
             "function nav(",
             "function renderFocus(",
             "function completeSession(",
+            "function renderPlannerToday(",
             "function startRecording(",
             "function speakGuide(",
             "navigator.serviceWorker.register('./sw.js')",
@@ -45,6 +46,7 @@ def validate(task, changed_files):
             "progress_events",
             "linkOrCreateTodayItems",
             "recordTaskState",
+            "todayProjection",
         ],
         "ready-runtime-v07.js":[
             "const originalCompleteSession = completeSession",

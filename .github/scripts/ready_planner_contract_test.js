@@ -132,6 +132,18 @@ const committed=planner.commitAllocation(
 assert.strictEqual(committed.ok,true);
 assert.strictEqual(committed.created.length,2);
 assert.strictEqual(planner.today('2026-09-20').length,2);
+assert.strictEqual(planner.todayProjection('2026-09-20').length,2);
+assert(planner.todayProjection('2026-09-20').every(x=>x.planner_owned===true));
+
+// Ready execution intake must reuse Planner-created dated TODO instead of creating a duplicate.
+const executionReuse=planner.linkOrCreateTodayItems(['영어 단어 복습'],{
+  date:'2026-09-20',
+  source:'READY_MANUAL',
+  source_actor:'READY_USER'
+});
+assert.strictEqual(executionReuse[0].todo_id,committed.created.find(x=>x.label==='영어 단어 복습').todo_id);
+assert.strictEqual(planner.today('2026-09-20').length,2);
+
 
 const science=planner.upsertHomeworkTemplate({
   title:'과학 숙제',
