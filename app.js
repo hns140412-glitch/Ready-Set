@@ -86,11 +86,14 @@ function nav(name){
   if(name==='recording')renderRecordingContext();
   if(name==='history')renderHistory();
   if(name==='calendar')renderCalendar();
+  if(name==='planner')renderPlanner();
   if(name==='profile')renderProfile();
   if(name==='settings')renderSettings();
   if(name==='result')renderResult();
 }
-$$('[data-nav]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.nav)));
+document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.nav)));
+document.addEventListener('click',e=>{const tab=e.target.closest('[data-planner-tab]');if(tab){plannerTab=tab.dataset.plannerTab;renderPlanner();return}const day=e.target.closest('[data-planner-date]');if(day){plannerSelectedDate=day.dataset.plannerDate;renderPlanner();}});
+document.getElementById('plannerTodayJump')?.addEventListener('click',()=>{plannerSelectedDate=localDateKey();plannerTab='day';renderPlanner();});
 
 function initials(){return (state.profile.name||'RS').trim().slice(0,2).toUpperCase()}
 function styleFilter(s){
@@ -556,6 +559,63 @@ function renderCalendar(){
     root.appendChild(x);
   });
   if(!root.children.length)root.innerHTML='<div class="historyItem"><b>이번 달 작전 기록이 없어요.</b></div>';
+}
+
+
+function localDateKey(d=new Date()){
+  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function addDays(base,n){const d=new Date(base);d.setDate(d.getDate()+n);return d}
+function weekStart(base=new Date()){
+  const d=new Date(base); const dow=d.getDay(); const delta=dow===0?-6:1-dow; d.setDate(d.getDate()+delta); d.setHours(12,0,0,0); return d;
+}
+function plannerSnapshot(){return window.ReadySetPlanner?.snapshot?.()||{dated_todos:[],schedule_commitments:[],carry_over_queue:[]}}
+let plannerSelectedDate=localDateKey();
+let plannerTab='week';
+function plannerItemsForDate(date,snap=plannerSnapshot()){
+  const todos=(snap.dated_todos||[]).filter(x=>x.date===date).map(x=>({
+    kind:'TODO',label:x.label,state:x.state||'PLANNED',minutes:x.estimated_minutes||null,order:x.order??999,
+    meta:x.source==='PLANNER_ALLOCATION'?'플래너':'직접 추가'
+  }));
+  const commitments=(snap.schedule_commitments||[]).filter(x=>String(x.start_at||'').slice(0,10)===date).map(x=>({
+    kind:'SCHEDULE',label:x.title,state:'FIXED',minutes:null,order:-1,
+    time:String(x.start_at||'').slice(11,16),meta:'고정 일정'
+  }));
+  return [...commitments,...todos].sort((a,b)=>(a.order??999)-(b.order??999));
+}
+function plannerStateLabel(v){
+  return ({PLANNED:'예정',IN_PROGRESS:'진행',COMPLETED:'완료',PARTIAL:'일부 남음',DEFERRED:'다음에',WAITING_FOR_PARENT:'부모 도움',BLOCKED:'막힘',FIXED:'고정'})[v]||v;
+}
+function renderPlanner(){
+  const snap=plannerSnapshot(), start=weekStart(new Date(plannerSelectedDate+'T12:00:00'));
+  const strip=$('#plannerWeekStrip'), detail=$('#plannerWeekDetail');
+  if(!strip||!detail)return;
+  document.querySelectorAll('[data-planner-tab]').forEach(b=>b.classList.toggle('on',b.dataset.plannerTab===plannerTab));
+  $('#plannerWeekPanel').hidden=plannerTab!=='week';
+  $('#plannerDayPanel').hidden=plannerTab!=='day';
+  const weekDates=Array.from({length:7},(_,i)=>addDays(start,i));
+  strip.innerHTML='';
+  const names=['월','화','수','목','금','토','일'];
+  weekDates.forEach((d,i)=>{
+    const key=localDateKey(d),items=plannerItemsForDate(key,snap);
+    const btn=document.createElement('button');
+    btn.type='button';btn.className='plannerDayChip'+(key===plannerSelectedDate?' on':'');
+    btn.dataset.plannerDate=key;
+    btn.innerHTML=`<small>${names[i]}</small><b>${d.getDate()}</b><span>${items.length?items.length+'개':'·'}</span>`;
+    strip.appendChild(btn);
+  });
+  const selectedItems=plannerItemsForDate(plannerSelectedDate,snap);
+  detail.innerHTML=selectedItems.length?selectedItems.map(x=>`
+    <article class="plannerWeekItem ${x.kind==='SCHEDULE'?'fixed':''}">
+      <span class="plannerDot"></span><div><b>${escapeHtml(x.label)}</b><small>${x.time?x.time+' · ':''}${x.meta}${x.minutes?' · '+x.minutes+'분':''}</small></div><em>${plannerStateLabel(x.state)}</em>
+    </article>`).join(''):`<div class="plannerEmpty"><b>비어 있는 날이에요.</b><small>필요한 탐험만 가볍게 추가해요.</small></div>`;
+  const day=$('#plannerDayTimeline'); day.innerHTML=selectedItems.length?selectedItems.map((x,i)=>`
+    <article class="plannerRouteItem"><i>${String(i+1).padStart(2,'0')}</i><div><small>${x.kind==='SCHEDULE'?'FIXED ROUTE':'MISSION'}</small><b>${escapeHtml(x.label)}</b><span>${x.time?x.time+' · ':''}${x.minutes?x.minutes+'분 · ':''}${plannerStateLabel(x.state)}</span></div></article>`).join(''):`<div class="plannerEmpty tall"><b>오늘 예정된 탐험이 없어요.</b><small>Mission에서 오늘 할 일을 골라 시작할 수 있어요.</small></div>`;
+  const dd=new Date(plannerSelectedDate+'T12:00:00');
+  $('#plannerDayTitle').textContent=`${dd.getMonth()+1}월 ${dd.getDate()}일 탐험`;
+  $('#plannerDayCount').textContent=`${selectedItems.length}개`;
+  $('#plannerHeroTitle').textContent=plannerTab==='week'?'이번 주 탐험 지도':'오늘의 탐험 루트';
 }
 
 function renderProfile(){
