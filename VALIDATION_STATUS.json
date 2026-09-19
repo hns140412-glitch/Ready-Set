@@ -81,7 +81,7 @@
     },
     {
       "pr": 31,
-      "state": "KEEP_DRAFT_REBASE_REVALIDATE",
+      "state": "CLOSED_SUPERSEDED_BY_PR_34",
       "topic": "Browser accessibility semantics"
     },
     {
@@ -127,11 +127,6 @@
       "issue": "Human-confirmed adaptive estimate loop exists only as an old-base draft and must be rebased/revalidated before consideration."
     },
     {
-      "id": "ACCESSIBILITY-001",
-      "status": "OPEN_DRAFT_PR_31",
-      "issue": "Accessibility semantics work exists only as an old-base draft and must be rebased/revalidated."
-    },
-    {
       "id": "REMOTE-BACKEND-001",
       "status": "OPEN_DRAFT_PR_32",
       "issue": "Remote sync backend work exists only as an old-base draft and must be rebased/revalidated."
@@ -143,7 +138,15 @@
     "Old-base draft PRs must be rebased and revalidated against canonical main before merge consideration.",
     "Superseded authority paths must not be restored to make stale tests pass."
   ],
-  "next_action": "Close superseded PR #29; retain PRs #30/#31/#32 as draft rebase/revalidate candidates. Then select the next product gap deliberately, with physical-device validation required before DEVICE_VERIFIED and production provenance required before PRODUCTION_VERIFIED.",
+  "next_action": "Prepare representative physical iPhone Safari / installed-PWA validation from current main. Do not claim DEVICE_VERIFIED until that evidence exists. PR #30 adaptive planner and PR #32 remote backend remain old-base drafts requiring deliberate rebase/revalidation.",
   "canonical_runtime_sha": "3334510e2403202160d28d2dc68cfaa0ef1435c7",
-  "main_head_policy": "Resolve live main HEAD before every future implementation/deploy claim; validation metadata commits may advance HEAD without changing runtime code."
+  "main_head_policy": "Resolve live main HEAD before every future implementation/deploy claim; validation metadata commits may advance HEAD without changing runtime code.",
+  "accessibility": {
+    "status": "MERGED_RUNTIME_VERIFIED",
+    "merged_pr": 34,
+    "runtime_sha": "b1ff033356b408f8e1c616c1de70402321bd93c8",
+    "runtime_run_id": 35476723973,
+    "playwright_total": "27/27 PASS",
+    "device_equivalence": "NOT_A_PHYSICAL_DEVICE"
+  }
 }
