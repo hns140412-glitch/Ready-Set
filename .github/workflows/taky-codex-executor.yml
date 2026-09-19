@@ -37,6 +37,7 @@ jobs:
       - name: Mark queue blocked by missing executor credential
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
           gh issue list --state open --limit 100 --json number,title,comments > /tmp/taky-open.json
