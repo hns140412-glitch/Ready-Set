@@ -26,7 +26,9 @@
     homework_templates:[],
     dated_todos:[],
     progress_events:[],
-    allocation_runs:[]
+    allocation_runs:[],
+    execution_observations:[],
+    carry_over_queue:[]
   });
 
   const cleanText=x=>String(x??'').trim();
@@ -47,7 +49,9 @@
       homework_templates:Array.isArray(x.homework_templates)?x.homework_templates:[],
       dated_todos:Array.isArray(x.dated_todos)?x.dated_todos:[],
       progress_events:Array.isArray(x.progress_events)?x.progress_events:[],
-      allocation_runs:Array.isArray(x.allocation_runs)?x.allocation_runs:[]
+      allocation_runs:Array.isArray(x.allocation_runs)?x.allocation_runs:[],
+      execution_observations:Array.isArray(x.execution_observations)?x.execution_observations:[],
+      carry_over_queue:Array.isArray(x.carry_over_queue)?x.carry_over_queue:[]
     };
   }
 
@@ -220,12 +224,16 @@
         const existingOpen=new Set(
           s.dated_todos.filter(x=>x.date===date&&x.state!=='COMPLETED').map(x=>x.template_id).filter(Boolean)
         );
+        const openCarry=s.carry_over_queue.filter(x=>x.status==='OPEN');
+        const carryByTemplate=new Map(openCarry.filter(x=>x.template_id).map(x=>[x.template_id,x]));
         const candidates=s.homework_templates
-          .filter(t=>eligibleTemplate(t,date))
+          .filter(t=>eligibleTemplate(t,date) || carryByTemplate.has(t.template_id))
           .filter(t=>!existingOpen.has(t.template_id))
           .filter(t=>Number.isFinite(t.estimated_minutes) && t.estimated_minutes>0)
           .sort((a,b)=>{
             if(!!a.required_today!==!!b.required_today)return a.required_today?-1:1;
+            const ac=carryByTemplate.has(a.template_id),bc=carryByTemplate.has(b.template_id);
+            if(ac!==bc)return ac?-1:1;
             const ad=a.deadline_date||'9999-12-31',bd=b.deadline_date||'9999-12-31';
             if(ad!==bd)return ad.localeCompare(bd);
             if(a.allocation_priority!==b.allocation_priority)return a.allocation_priority-b.allocation_priority;
@@ -235,20 +243,34 @@
         const proposals=[];
         let used=0;
         for(const t of candidates){
+          const carry=carryByTemplate.get(t.template_id)||null;
+          if(carry?.resolution_required){
+            proposals.push({
+              template_id:t.template_id,label:t.title,estimated_minutes:t.estimated_minutes,
+              decision:'HOLD',reason:'CARRY_OVER_REQUIRES_RESOLUTION',
+              deadline_date:t.deadline_date||null,carry_over_id:carry.carry_over_id
+            });
+            continue;
+          }
+          const evidence=recentEstimateEvidence(t.template_id);
           const est=t.estimated_minutes;
           if(!t.required_today && used+est>maxMinutes)continue;
           if(t.required_today && used+est>maxMinutes){
             proposals.push({
               template_id:t.template_id,label:t.title,estimated_minutes:est,
               decision:'REQUIRES_REPLAN',reason:'REQUIRED_TASK_EXCEEDS_CURRENT_CAPACITY',
-              deadline_date:t.deadline_date||null
+              deadline_date:t.deadline_date||null,
+              carry_over_id:carry?.carry_over_id||null,
+              estimate_evidence:evidence
             });
             continue;
           }
           proposals.push({
             template_id:t.template_id,label:t.title,estimated_minutes:est,
             decision:'PROPOSE',reason:t.required_today?'REQUIRED_TODAY':'FITS_CONFIRMED_CAPACITY',
-            deadline_date:t.deadline_date||null
+            deadline_date:t.deadline_date||null,
+            carry_over_id:carry?.carry_over_id||null,
+            estimate_evidence:evidence
           });
           used+=est;
         }
@@ -299,10 +321,131 @@
             };
             s.dated_todos.push(todo);
           }
-          created.push({todo_id:todo.todo_id,label:todo.label,template_id:todo.template_id});
+          if(p.carry_over_id){
+            const carry=s.carry_over_queue.find(x=>x.carry_over_id===p.carry_over_id);
+            if(carry&&carry.status==='OPEN'){
+              carry.status='RESCHEDULED';
+              carry.rescheduled_todo_id=todo.todo_id;
+              carry.rescheduled_to=run.date;
+              carry.updated_at=new Date().toISOString();
+            }
+          }
+          created.push({todo_id:todo.todo_id,label:todo.label,template_id:todo.template_id,carry_over_id:p.carry_over_id||null});
         }
         return {ok:true,created};
       });
+    }
+
+
+    function recordSessionOutcome(input={}){
+      const todoId=cleanText(input.todo_id); if(!todoId) return {ok:false,reason:'TODO_ID_REQUIRED'};
+      const readyState=cleanText(input.ready_state);
+      const mapped=READY_TO_TODO[readyState]||readyState;
+      if(!TODO_STATES.has(mapped)) return {ok:false,reason:'INVALID_READY_STATE'};
+      const actualMs=Number.isFinite(input.actual_ms)?Math.max(0,input.actual_ms):0;
+      const actualMinutes=Math.round(actualMs/60000);
+      return mutate(s=>{
+        const todo=s.dated_todos.find(x=>x.todo_id===todoId);
+        if(!todo)return {ok:false,reason:'TODO_NOT_FOUND'};
+        todo.state=mapped;
+        todo.actual_minutes=actualMinutes;
+        todo.updated_at=new Date().toISOString();
+
+        const observationKey=[cleanText(input.session_id),cleanText(input.task_id),todoId].join('|');
+        let obs=s.execution_observations.find(x=>x.observation_key===observationKey);
+        if(!obs){
+          obs={
+            observation_id:makeId('observation'),
+            observation_key:observationKey,
+            todo_id:todoId,
+            template_id:todo.template_id||null,
+            planned_minutes:Number.isFinite(todo.estimated_minutes)?todo.estimated_minutes:null,
+            actual_minutes:actualMinutes,
+            ready_state:readyState,
+            session_id:cleanText(input.session_id)||null,
+            task_id:cleanText(input.task_id)||null,
+            source:'READY_SESSION',
+            at:input.at||new Date().toISOString()
+          };
+          s.execution_observations.push(obs);
+          s.execution_observations=s.execution_observations.slice(-500);
+        }
+
+        const carryEligible=['PARTIAL','DEFERRED'].includes(mapped);
+        const carryNeedsResolution=['BLOCKED','WAITING_FOR_PARENT'].includes(mapped);
+        const existing=s.carry_over_queue.find(x=>x.source_todo_id===todoId&&x.status==='OPEN');
+        if((carryEligible||carryNeedsResolution)&&!existing){
+          s.carry_over_queue.push({
+            carry_over_id:makeId('carry'),
+            source_todo_id:todoId,
+            template_id:todo.template_id||null,
+            label:todo.label,
+            from_date:todo.date,
+            state:mapped,
+            status:'OPEN',
+            allocation_ready:carryEligible,
+            resolution_required:carryNeedsResolution,
+            planned_minutes:Number.isFinite(todo.estimated_minutes)?todo.estimated_minutes:null,
+            actual_minutes:actualMinutes,
+            created_at:new Date().toISOString()
+          });
+        }
+        if(mapped==='COMPLETED'){
+          s.carry_over_queue.forEach(x=>{
+            if(x.source_todo_id===todoId&&x.status==='OPEN'){
+              x.status='RESOLVED';
+              x.resolved_at=new Date().toISOString();
+            }
+          });
+        }
+        return {ok:true,todo_id:todoId,state:mapped,actual_minutes:actualMinutes,carry_over_created:!!((carryEligible||carryNeedsResolution)&&!existing)};
+      });
+    }
+
+    function carryOverCandidates(){
+      return load().carry_over_queue.filter(x=>x.status==='OPEN').map(x=>({...x}));
+    }
+
+    function resolveCarryOver(carryOverId,input={}){
+      const id=cleanText(carryOverId); if(!id)return {ok:false,reason:'CARRY_OVER_ID_REQUIRED'};
+      return mutate(s=>{
+        const carry=s.carry_over_queue.find(x=>x.carry_over_id===id&&x.status==='OPEN');
+        if(!carry)return {ok:false,reason:'CARRY_OVER_NOT_FOUND'};
+        const resolution=cleanText(input.resolution)||'READY_FOR_REPLAN';
+        if(resolution==='READY_FOR_REPLAN'){
+          carry.resolution_required=false;
+          carry.allocation_ready=true;
+          carry.resolution='READY_FOR_REPLAN';
+          carry.resolved_by=cleanText(input.actor)||'HUMAN_CONFIRMATION';
+          carry.updated_at=new Date().toISOString();
+          return {ok:true,carry_over_id:id,status:'OPEN',allocation_ready:true};
+        }
+        if(resolution==='CANCEL'){
+          carry.status='CANCELLED';
+          carry.resolution='CANCEL';
+          carry.resolved_by=cleanText(input.actor)||'HUMAN_CONFIRMATION';
+          carry.resolved_at=new Date().toISOString();
+          return {ok:true,carry_over_id:id,status:'CANCELLED',allocation_ready:false};
+        }
+        return {ok:false,reason:'INVALID_CARRY_OVER_RESOLUTION'};
+      });
+    }
+
+    function recentEstimateEvidence(templateId,limit=5){
+      const rows=load().execution_observations
+        .filter(x=>x.template_id===templateId&&Number.isFinite(x.actual_minutes)&&x.actual_minutes>0)
+        .slice(-Math.max(1,limit));
+      if(!rows.length)return null;
+      const vals=rows.map(x=>x.actual_minutes).sort((a,b)=>a-b);
+      const mid=Math.floor(vals.length/2);
+      const median=vals.length%2?vals[mid]:Math.round((vals[mid-1]+vals[mid])/2);
+      return {
+        template_id:templateId,
+        sample_count:vals.length,
+        median_actual_minutes:median,
+        values:vals,
+        authority:'OBSERVATION_ONLY'
+      };
     }
 
     function recordTaskState(input={}){
@@ -371,7 +514,11 @@
       linkOrCreateTodayItems,
       recordTaskState,
       allocateToday,
-      commitAllocation
+      commitAllocation,
+      recordSessionOutcome,
+      carryOverCandidates,
+      resolveCarryOver,
+      recentEstimateEvidence
     };
   }
 
