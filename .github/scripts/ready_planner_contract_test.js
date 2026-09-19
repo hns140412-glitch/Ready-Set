@@ -11,7 +11,10 @@ const pkg=domain.upsertTalentPackage({actor:'PARENT',source_date:'2026-09-20',de
 for(const assignmentId of pkg.fact_ids)domain.confirmFact(assignmentId,{actor:'PARENT'});
 let state=domain.load(),interpreted=learning.interpretInto(state,pkg.fact_ids[0]);domain.save(state);
 const run=planner.allocateLearningUnits({assignment_id:pkg.fact_ids[0],domain_state:state,candidate_dates:['2026-09-20','2026-09-21','2026-09-27']});
-assert.strictEqual(run.ok,true);assert.strictEqual(run.primary_basis,'LEARNING_UNIT_ACTIVITY_LOAD');assert.strictEqual(run.proposals[0].date!=='2026-09-27',true);
+assert.strictEqual(run.ok,true);
+assert.strictEqual(run.primary_basis,'LEARNING_UNIT_ACTIVITY_LOAD');
+assert.strictEqual(run.proposals[0].date,'2026-09-20','confirmed Schedule Commitment must influence date choice');
+assert.strictEqual(run.proposals[0].date!=='2026-09-27',true);
 const committed=planner.commitLearningAllocation(run.allocation_run_id);assert.strictEqual(committed.created.length,1);
 const todo=committed.created[0];for(const key of ['assignment_id','analysis_id','learning_unit_id','template_id','allocation_run_id','todo_id'])assert(todo[key],key);
 assert.strictEqual(todo.estimated_minutes,null);
