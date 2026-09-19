@@ -91,7 +91,7 @@ function nav(name){
   if(name==='settings')renderSettings();
   if(name==='result')renderResult();
 }
-$('[data-nav]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.nav)));
+document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.nav)));
 document.addEventListener('click',e=>{const tab=e.target.closest('[data-planner-tab]');if(tab){plannerTab=tab.dataset.plannerTab;renderPlanner();return}const day=e.target.closest('[data-planner-date]');if(day){plannerSelectedDate=day.dataset.plannerDate;renderPlanner();}});
 document.getElementById('plannerTodayJump')?.addEventListener('click',()=>{plannerSelectedDate=localDateKey();plannerTab='day';renderPlanner();});
 
