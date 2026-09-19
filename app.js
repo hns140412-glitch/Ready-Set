@@ -85,12 +85,15 @@ function nav(name){
   if(name==='focus')renderFocus();
   if(name==='recording')renderRecordingContext();
   if(name==='history')renderHistory();
-  if(name==='calendar')renderCalendar();\n  if(name==='planner')renderPlanner();
+  if(name==='calendar')renderCalendar();
+  if(name==='planner')renderPlanner();
   if(name==='profile')renderProfile();
   if(name==='settings')renderSettings();
   if(name==='result')renderResult();
 }
-$('[data-nav]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.nav)));\ndocument.addEventListener('click',e=>{const tab=e.target.closest('[data-planner-tab]');if(tab){plannerTab=tab.dataset.plannerTab;renderPlanner();return}const day=e.target.closest('[data-planner-date]');if(day){plannerSelectedDate=day.dataset.plannerDate;renderPlanner();}});\ndocument.getElementById('plannerTodayJump')?.addEventListener('click',()=>{plannerSelectedDate=localDateKey();plannerTab='day';renderPlanner();});
+$('[data-nav]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.nav)));
+document.addEventListener('click',e=>{const tab=e.target.closest('[data-planner-tab]');if(tab){plannerTab=tab.dataset.plannerTab;renderPlanner();return}const day=e.target.closest('[data-planner-date]');if(day){plannerSelectedDate=day.dataset.plannerDate;renderPlanner();}});
+document.getElementById('plannerTodayJump')?.addEventListener('click',()=>{plannerSelectedDate=localDateKey();plannerTab='day';renderPlanner();});
 
 function initials(){return (state.profile.name||'RS').trim().slice(0,2).toUpperCase()}
 function styleFilter(s){
@@ -614,7 +617,8 @@ function renderPlanner(){
   $('#plannerDayCount').textContent=`${selectedItems.length}개`;
   $('#plannerHeroTitle').textContent=plannerTab==='week'?'이번 주 탐험 지도':'오늘의 탐험 루트';
 }
-\nfunction renderProfile(){
+
+function renderProfile(){
   const img=$('#profileImage'),ph=$('#profilePlaceholder');
   $('#profileName').value=state.profile.name;
   $('#shareAvatarOptIn').checked=!!state.profile.shareAvatar;
