@@ -78,7 +78,7 @@
     <main class="safe scroll plannerMain">
       <section class="plannerHero">
         <div><small>READY & SET · PLANNER</small><h2 id="plannerHeroTitle">이번 주 탐험 지도</h2><p id="plannerHeroCopy">해야 할 일과 고정 일정을 가볍게 확인해요.</p></div>
-        <button class="plannerTodayJump" id="plannerTodayJump">오늘</button>
+        <div class="plannerHeroActions"><button class="plannerTodayJump" id="plannerTodayJump">오늘</button><button class="plannerAdminJump" data-nav="planner-admin">관리</button></div>
       </section>
       <div class="plannerTabs" role="tablist" aria-label="플래너 보기">
         <button class="on" data-planner-tab="week" role="tab">주간</button>
@@ -92,6 +92,49 @@
         <div class="plannerDayHead"><div><small>TODAY ROUTE</small><h2 id="plannerDayTitle">오늘의 탐험</h2></div><span id="plannerDayCount">0개</span></div>
         <div id="plannerDayTimeline" class="plannerDayTimeline"></div>
         <button class="btn dark" data-nav="mission">오늘 작전 고르기</button>
+      </section>
+    </main>
+  </section>
+
+
+  <section class="view cream plannerAdminView" id="plannerAdminView" data-view="planner-admin">
+    <header class="safe pageHeader"><button data-nav="planner" aria-label="뒤로">←</button><div><span class="kicker">PARENT / ADMIN</span><h1>탐험 일정 관리</h1></div><span></span></header>
+    <main class="safe scroll plannerAdminMain">
+      <section class="glassCard adminCard">
+        <div class="adminSectionHead"><div><small>FIXED SCHEDULE</small><h2>고정 일정</h2></div><button class="miniAction" id="scheduleClearBtn">새 일정</button></div>
+        <input id="scheduleId" type="hidden">
+        <label class="inputBlock">일정명<input id="scheduleTitle" placeholder="예) 영어학원"></label>
+        <div class="adminGrid two">
+          <label class="inputBlock">분류<input id="scheduleCategory" placeholder="예) 영어"></label>
+          <label class="inputBlock">날짜<input id="scheduleDate" type="date"></label>
+        </div>
+        <div class="adminGrid two">
+          <label class="inputBlock">시작<input id="scheduleStart" type="time"></label>
+          <label class="inputBlock">종료<input id="scheduleEnd" type="time"></label>
+        </div>
+        <label class="adminToggle"><input id="scheduleMovable" type="checkbox"><span><b>플래너가 이동 가능</b><small>기본은 고정 일정으로 유지합니다.</small></span></label>
+        <button class="btn dark" id="saveScheduleBtn">고정 일정 저장</button>
+        <div id="scheduleAdminList" class="adminList"></div>
+      </section>
+
+      <section class="glassCard adminCard">
+        <div class="adminSectionHead"><div><small>HOMEWORK TEMPLATE</small><h2>숙제 템플릿</h2></div><button class="miniAction" id="templateClearBtn">새 템플릿</button></div>
+        <input id="templateId" type="hidden">
+        <label class="inputBlock">숙제명<input id="templateTitle" placeholder="예) 영어 단어 복습"></label>
+        <div class="adminGrid two">
+          <label class="inputBlock">과목<input id="templateSubject" placeholder="예) 영어"></label>
+          <label class="inputBlock">예상 시간(분)<input id="templateMinutes" type="number" min="1" max="240" value="20"></label>
+        </div>
+        <label class="inputBlock">마감일<input id="templateDeadline" type="date"></label>
+        <div class="weekdayEditor">
+          <small>선호 요일</small>
+          <div id="templateWeekdays" class="weekdayButtons">
+            <button type="button" data-weekday="1">월</button><button type="button" data-weekday="2">화</button><button type="button" data-weekday="3">수</button><button type="button" data-weekday="4">목</button><button type="button" data-weekday="5">금</button><button type="button" data-weekday="6">토</button><button type="button" data-weekday="0">일</button>
+          </div>
+        </div>
+        <label class="adminToggle"><input id="templateRequiredToday" type="checkbox"><span><b>오늘 반드시 수행</b><small>시간이 부족하면 자동 축소하지 않고 재계획 대상으로 표시합니다.</small></span></label>
+        <button class="btn dark" id="saveTemplateBtn">숙제 템플릿 저장</button>
+        <div id="templateAdminList" class="adminList"></div>
       </section>
     </main>
   </section>
