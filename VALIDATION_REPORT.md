@@ -1,3 +1,10 @@
+> [!WARNING]
+> **HISTORICAL EVIDENCE ONLY — STALE FOR CURRENT RELEASE CLAIMS**
+>
+> This report validates **REV_06 / App 0.9.2**. Current `VERSION.json` is **REV_07 / 0.9.3-rc1**.
+> Do not use the PASS counts below as proof of current REV_07 release status.
+> Current evidence freshness is tracked in `VALIDATION_STATUS.json`.
+
 # Ready & Set REV_06 PWA Validation Report — App 0.9.2
 
 ## Release State

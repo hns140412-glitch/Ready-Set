@@ -1,0 +1,27 @@
+{
+  "status_version": "2026-09-19.1",
+  "product": "Ready & Set",
+  "live_version_source": "VERSION.json",
+  "current_master_revision": "REV_07",
+  "current_app_version": "0.9.3-rc1",
+  "evidence_freshness": {
+    "VALIDATION_REPORT.md": {
+      "covers_master_revision": "REV_06",
+      "covers_app_version": "0.9.2",
+      "freshness": "STALE_FOR_CURRENT_RELEASE_CLAIMS",
+      "allowed_use": "HISTORICAL_REGRESSION_REFERENCE_ONLY"
+    }
+  },
+  "current_release_claim": {
+    "state": "DEVICE_VALIDATION_PENDING",
+    "static_current_validation": "NOT_YET_REGENERATED_FOR_REV_07",
+    "production_pass": false
+  },
+  "rules": [
+    "A validation artifact may support only the version/revision it actually covers.",
+    "Older PASS evidence must not be promoted to the current release without regeneration or explicit inheritance proof.",
+    "VERSION.json and current implementation state outrank stale validation-report labels for freshness.",
+    "Device/production claims require representative runtime evidence."
+  ],
+  "next_action": "Regenerate current REV_07 validation evidence against the live main implementation and preserve old REV_06 report as historical evidence."
+}
