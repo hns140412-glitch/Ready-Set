@@ -1,6 +1,8 @@
 name: TAKY Codex Executor
 
 on:
+  issues:
+    types: [opened, edited, reopened]
   schedule:
     - cron: '*/15 * * * *'
   workflow_dispatch:
