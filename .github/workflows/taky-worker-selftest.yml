@@ -59,6 +59,14 @@ jobs:
           PY
       - name: Verify trusted Ready validation profile
         run: python .github/scripts/taky_ready_validation.py --task /tmp/task.json --changed-files /tmp/changed.txt --output /tmp/validation.json
+      - name: Verify restored Ready runtime anchors
+        run: |
+          grep -q "function nav(" app.js
+          grep -q "function completeSession(" app.js
+          grep -q "function startRecording(" app.js
+          grep -q "function speakGuide(" app.js
+          grep -q "window.ReadySetRev07" ready-runtime-v07.js
+          test "$(wc -c < app.js)" -ge 20000
       - name: Verify validation rejects out-of-scope materialization
         run: |
           printf "app.js\nstyles.css\n" > /tmp/bad-changed.txt
