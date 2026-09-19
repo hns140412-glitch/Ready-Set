@@ -283,10 +283,16 @@ $$('[data-sheet-sound]').forEach(b=>b.onclick=async()=>{
 $('#startBtn').onclick=async()=>{
   if(!state.selected.length&&!state.tasks.length){toast('먼저 오늘의 과제를 선택해 주세요.');return}
   const now=Date.now();
+  const plannerLabels=[...state.selected,...state.tasks];
+  const plannerLinks=window.ReadySetPlanner?.linkOrCreateTodayItems(plannerLabels,{
+    source:'READY_MANUAL',
+    source_actor:'READY_USER'
+  })||[];
   state.activeSession={
     id:`s_${now}`,startAt:now,targetMs:state.targetMin*60000,
     pausedAt:null,issueMs:0,completed:false,
     selected:[...state.selected],tasks:[...state.tasks],
+    plannerLinks,
     sound:state.sound,recordingDone:false
   };
   save();
