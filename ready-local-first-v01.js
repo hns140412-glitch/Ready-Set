@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const DB_NAME='readyset_local_v1', DB_VERSION=1;
+  const DB_NAME='readyset_local_v1', DB_VERSION=1;\n  const SCOPE_KEYS={planner:'readyset_planner_v1',app_state:'readyset_state'};
   let dbPromise=null;
   const now=()=>new Date().toISOString();
   const hash=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(16)};
@@ -22,7 +22,7 @@
     return dbPromise;
   }
 
-  async function capture(scope,payload){
+  async function capture(scope,payload,options={}){
     const db=await openDb();
     const text=typeof payload==='string'?payload:JSON.stringify(payload);
     const digest=hash(text), updated_at=now(), id='evt_'+scope+'_'+digest;
@@ -30,7 +30,7 @@
     tx.objectStore('snapshots').put({scope,payload:text,digest,updated_at});
     const outbox=tx.objectStore('outbox');
     const existing=await request(outbox.get(id));
-    if(!existing) outbox.put({
+    if(options.enqueue!==false && !existing) outbox.put({
       id,scope,digest,payload:text,status:'PENDING',attempts:0,
       next_retry_at:null,created_at:updated_at,updated_at
     });
@@ -48,7 +48,57 @@
     return new Promise((resolve,reject)=>{tx.oncomplete=()=>resolve(row);tx.onerror=()=>reject(tx.error)});
   }
 
-  async function flush(){
+  
+  async function get(store,id){
+    const db=await openDb(); const tx=db.transaction(store,'readonly');
+    return request(tx.objectStore(store).get(id));
+  }
+
+  async function recoverMissingScopes(){
+    const rows=await all('snapshots');
+    let recovered=0;
+    for(const row of rows){
+      const key=SCOPE_KEYS[row.scope];
+      if(!key) continue;
+      if(localStorage.getItem(key)==null && row.payload!=null){
+        localStorage.setItem(key,row.payload);
+        recovered++;
+      }
+    }
+    return {ok:true,recovered,reload_required:recovered>0};
+  }
+
+  async function resolveConflict(conflictId,resolution){
+    const conflict=await get('conflicts',conflictId);
+    if(!conflict || conflict.status!=='OPEN') return {ok:false,reason:'CONFLICT_NOT_FOUND'};
+    const outbox=await get('outbox',conflict.outbox_id);
+    if(!outbox) return {ok:false,reason:'OUTBOX_NOT_FOUND'};
+    if(resolution==='KEEP_LOCAL'){
+      outbox.status='PENDING';
+      outbox.attempts=0;
+      outbox.next_retry_at=null;
+      outbox.updated_at=now();
+      await put('outbox',outbox);
+    } else if(resolution==='ACCEPT_REMOTE'){
+      const key=SCOPE_KEYS[conflict.scope];
+      const remote=typeof conflict.remote_payload==='string'
+        ? conflict.remote_payload
+        : JSON.stringify(conflict.remote_payload??null);
+      if(key) localStorage.setItem(key,remote);
+      await capture(conflict.scope,remote,{enqueue:false});
+      outbox.status='SUPERSEDED';
+      outbox.updated_at=now();
+      await put('outbox',outbox);
+    } else {
+      return {ok:false,reason:'INVALID_RESOLUTION'};
+    }
+    conflict.status='RESOLVED';
+    conflict.resolution=resolution;
+    conflict.resolved_at=now();
+    await put('conflicts',conflict);
+    return {ok:true,resolution,reload_required:resolution==='ACCEPT_REMOTE'};
+  }
+\n  async function flush(){
     const adapter=window.ReadySetSyncAdapter;
     const rows=(await all('outbox')).filter(x=>['PENDING','RETRY'].includes(x.status) && (!x.next_retry_at || x.next_retry_at<=now()));
     if(!adapter?.send) return {ok:false,reason:'NO_SYNC_ADAPTER',pending:rows.length};
@@ -74,13 +124,13 @@
 
   window.addEventListener('online',()=>flush().catch(()=>{}));
   window.ReadySetLocalFirst=Object.freeze({
-    version:'0.1.0',
-    mode:'INDEXEDDB_SIDECAR_WITH_OUTBOX',
-    capture:(scope,payload)=>capture(scope,payload),
+    version:'0.2.0',
+    mode:'INDEXEDDB_RECOVERY_WITH_OUTBOX',
+    capture:(scope,payload)=>capture(scope,payload),\n    recoverMissingScopes,\n    resolveConflict,
     outbox:()=>all('outbox'),
     conflicts:()=>all('conflicts'),
     snapshots:()=>all('snapshots'),
     flush
   });
-  openDb().catch(()=>{});
+  openDb().then(recoverMissingScopes).then(result=>{\n    if(result.reload_required && !sessionStorage.getItem('readyset_recovery_reload')){\n      sessionStorage.setItem('readyset_recovery_reload','1');\n      location.reload();\n    } else {\n      sessionStorage.removeItem('readyset_recovery_reload');\n    }\n  }).catch(()=>{});
 })();
