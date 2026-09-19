@@ -30,6 +30,7 @@ const initial={
   guestHistory:[],
   selected:[],
   tasks:[],
+  selectedTodoIds:[],
   targetMin:25,
   sound:'집중 피아노',
   records:[],
@@ -59,6 +60,7 @@ function migrate(x){
     x.records=x.records||[];
     x.selected=x.selected||[];
     x.tasks=x.tasks||[];
+    x.selectedTodoIds=Array.isArray(x.selectedTodoIds)?x.selectedTodoIds:[];
     x.targetMin=x.targetMin||25;
     if(x.sound==='자연음')x.sound='자연 숲';
     x.sound=x.sound||'집중 피아노';
@@ -173,18 +175,16 @@ function renderPlannerToday(){
   section.hidden=!items.length;
   root.innerHTML='';
   for(const item of items){
-    const selected=state.tasks.includes(item.label)||state.selected.includes(item.label);
+    const selected=state.selectedTodoIds.includes(item.todo_id);
     const b=document.createElement('button');
     b.type='button';
     b.className='plannerTodayItem'+(selected?' on':'');
     b.dataset.todoId=item.todo_id;
     b.innerHTML=`<span><b>${escapeHtml(item.label)}</b><small>${item.planner_owned?'플래너 제안':'오늘 할 일'}${item.estimated_minutes?` · 약 ${item.estimated_minutes}분`:''}</small></span><strong>${selected?'선택됨':'담기'}</strong>`;
     b.onclick=()=>{
-      if(state.tasks.includes(item.label)){
-        state.tasks=state.tasks.filter(x=>x!==item.label);
-      }else if(!state.selected.includes(item.label)){
-        state.tasks.push(item.label);
-      }
+      state.selectedTodoIds=selected
+        ? state.selectedTodoIds.filter(x=>x!==item.todo_id)
+        : [...state.selectedTodoIds,item.todo_id];
       save();
       renderMission();
     };
@@ -196,24 +196,26 @@ function renderMission(){
   renderChips($('#missionChips'));
   renderPlannerToday();
   const tl=$('#taskList');tl.innerHTML='';
-  state.tasks.forEach((t,i)=>{
+  const chosen=(window.ReadySetPlanner?.todayProjection?.()||[]).filter(x=>state.selectedTodoIds.includes(x.todo_id));
+  chosen.forEach((t)=>{
     const row=document.createElement('div');
     row.className='taskRow';
-    row.innerHTML=`<span>${escapeHtml(t)}</span><button aria-label="삭제">×</button>`;
-    row.querySelector('button').onclick=()=>{state.tasks.splice(i,1);save();renderMission()};
+    row.innerHTML=`<span>${escapeHtml(t.label)}</span><button aria-label="삭제">×</button>`;
+    row.querySelector('button').onclick=()=>{state.selectedTodoIds=state.selectedTodoIds.filter(x=>x!==t.todo_id);save();renderMission()};
     tl.appendChild(row);
   });
   $$('[data-minutes]').forEach(b=>b.classList.toggle('on',String(state.targetMin)===b.dataset.minutes));
   $('#customMinutes').value=state.targetMin;
   $('#soundName').textContent=state.sound;
-  const labels=[...state.selected,...state.tasks];
+  const labels=chosen.map(x=>x.label);
   $('#missionPreviewText').textContent=`${labels.length?labels.join(' · '):'과제를 선택해 주세요'} · ${state.targetMin}분`;
 }
 $('#addTaskBtn').onclick=()=>{
   const v=$('#taskInput').value.trim();
   if(!v)return;
-  state.tasks.push(v);$('#taskInput').value='';
-  save();renderMission();
+  window.ReadyAssignments?.addEventFact?.({actor:'CHILD',title:v,provenance:{kind:'CHILD_INPUT',surface:'MISSION'}});
+  $('#taskInput').value='';
+  toast('새 숙제 FACT를 기록했어요. 확인과 Planner 배정 후 TODAY에 나타납니다.');
 };
 let voiceRecognition=null;
 $('#voiceTaskBtn').onclick=()=>{
@@ -313,17 +315,15 @@ $$('[data-sheet-sound]').forEach(b=>b.onclick=async()=>{
 });
 
 $('#startBtn').onclick=async()=>{
-  if(!state.selected.length&&!state.tasks.length){toast('먼저 오늘의 과제를 선택해 주세요.');return}
+  if(!state.selectedTodoIds.length){toast('먼저 Planner가 준비한 오늘의 탐험을 선택해 주세요.');return}
   const now=Date.now();
-  const plannerLabels=[...state.selected,...state.tasks];
-  const plannerLinks=window.ReadySetPlanner?.linkOrCreateTodayItems(plannerLabels,{
-    source:'READY_MANUAL',
-    source_actor:'READY_USER'
-  })||[];
+  const plannerLinks=window.ReadySetPlanner?.linkTodayItems(state.selectedTodoIds)||[];
+  if(!plannerLinks.length){toast('선택한 Planner TODO를 찾을 수 없어요. TODAY를 다시 확인해 주세요.');return}
+  const labels=plannerLinks.map(x=>x.label);
   state.activeSession={
     id:`s_${now}`,startAt:now,targetMs:state.targetMin*60000,
     pausedAt:null,issueMs:0,completed:false,
-    selected:[...state.selected],tasks:[...state.tasks],
+    selected:[],tasks:labels,
     plannerLinks,
     sound:state.sound,recordingDone:false
   };
@@ -620,13 +620,6 @@ function renderPlanner(){
 }
 
 
-function setWeekdayButtons(days=[]){
-  const set=new Set(days.map(Number));
-  document.querySelectorAll('#templateWeekdays [data-weekday]').forEach(b=>b.classList.toggle('on',set.has(Number(b.dataset.weekday))));
-}
-function selectedWeekdays(){
-  return [...document.querySelectorAll('#templateWeekdays [data-weekday].on')].map(b=>Number(b.dataset.weekday));
-}
 function clearScheduleForm(){
   $('#scheduleId').value='';
   $('#scheduleTitle').value='';
@@ -636,20 +629,10 @@ function clearScheduleForm(){
   $('#scheduleEnd').value='';
   $('#scheduleMovable').checked=false;
 }
-function clearTemplateForm(){
-  $('#templateId').value='';
-  $('#templateTitle').value='';
-  $('#templateSubject').value='';
-  $('#templateMinutes').value='20';
-  $('#templateDeadline').value='';
-  $('#templateRequiredToday').checked=false;
-  setWeekdayButtons([]);
-}
 function renderPlannerAdmin(){
   const snap=plannerSnapshot();
   const scheduleRoot=$('#scheduleAdminList');
-  const templateRoot=$('#templateAdminList');
-  if(!scheduleRoot||!templateRoot)return;
+  if(!scheduleRoot)return;
 
   scheduleRoot.innerHTML=(snap.schedule_commitments||[]).length
     ? [...snap.schedule_commitments].sort((a,b)=>String(a.start_at||'').localeCompare(String(b.start_at||''))).map(x=>`
@@ -658,14 +641,8 @@ function renderPlannerAdmin(){
       </button>`).join('')
     : '<div class="plannerEmpty"><b>등록된 고정 일정이 없어요.</b><small>학원·피아노·태권도처럼 움직이지 않는 일정을 먼저 넣어요.</small></div>';
 
-  templateRoot.innerHTML=(snap.homework_templates||[]).length
-    ? [...snap.homework_templates].sort((a,b)=>(a.allocation_priority??100)-(b.allocation_priority??100)||a.title.localeCompare(b.title,'ko')).map(x=>`
-      <button class="adminListItem" type="button" data-edit-template="${x.template_id}">
-        <span><b>${escapeHtml(x.title)}</b><small>${escapeHtml(x.subject||'과목 없음')} · ${x.estimated_minutes??'-'}분${x.required_today?' · 오늘 필수':''}</small></span><strong>수정</strong>
-      </button>`).join('')
-    : '<div class="plannerEmpty"><b>등록된 숙제 템플릿이 없어요.</b><small>반복되는 숙제를 템플릿으로 등록하면 Planner가 TODAY 후보를 만들 수 있어요.</small></div>';
-
   if(!$('#scheduleDate').value) $('#scheduleDate').value=localDateKey();
+  renderParentIntake();
 }
 function editSchedule(id){
   const x=plannerSnapshot().schedule_commitments.find(v=>v.commitment_id===id); if(!x)return;
@@ -677,24 +654,9 @@ function editSchedule(id){
   $('#scheduleEnd').value=String(x.end_at||'').slice(11,16);
   $('#scheduleMovable').checked=!!x.planner_movable;
 }
-function editTemplate(id){
-  const x=plannerSnapshot().homework_templates.find(v=>v.template_id===id); if(!x)return;
-  $('#templateId').value=x.template_id;
-  $('#templateTitle').value=x.title||'';
-  $('#templateSubject').value=x.subject||'';
-  $('#templateMinutes').value=Number.isFinite(x.estimated_minutes)?x.estimated_minutes:20;
-  $('#templateDeadline').value=x.deadline_date||'';
-  $('#templateRequiredToday').checked=!!x.required_today;
-  setWeekdayButtons(x.preferred_days||[]);
-}
 document.getElementById('scheduleClearBtn')?.addEventListener('click',clearScheduleForm);
-document.getElementById('templateClearBtn')?.addEventListener('click',clearTemplateForm);
-document.getElementById('templateWeekdays')?.addEventListener('click',e=>{
-  const b=e.target.closest('[data-weekday]'); if(!b)return; b.classList.toggle('on');
-});
 document.addEventListener('click',e=>{
   const s=e.target.closest('[data-edit-schedule]'); if(s){editSchedule(s.dataset.editSchedule);return;}
-  const t=e.target.closest('[data-edit-template]'); if(t){editTemplate(t.dataset.editTemplate);}
 });
 document.getElementById('saveScheduleBtn')?.addEventListener('click',()=>{
   const title=$('#scheduleTitle').value.trim(), date=$('#scheduleDate').value, start=$('#scheduleStart').value, end=$('#scheduleEnd').value;
@@ -714,23 +676,36 @@ document.getElementById('saveScheduleBtn')?.addEventListener('click',()=>{
   toast('고정 일정을 저장했어요.');
   renderPlannerAdmin(); renderPlanner();
 });
-document.getElementById('saveTemplateBtn')?.addEventListener('click',()=>{
-  const title=$('#templateTitle').value.trim(), mins=Math.max(1,Math.min(240,Number($('#templateMinutes').value)||20));
-  if(!title){toast('숙제명을 입력해 주세요.');return;}
-  window.ReadySetPlanner.upsertHomeworkTemplate({
-    template_id:$('#templateId').value||undefined,
-    title,
-    subject:$('#templateSubject').value.trim()||null,
-    deadline_date:$('#templateDeadline').value||null,
-    estimated_minutes:mins,
-    allocation_priority:100,
-    required_today:$('#templateRequiredToday').checked,
-    preferred_days:selectedWeekdays(),
-    confirmation_state:'CONFIRMED',
-    provenance:{kind:'PARENT_ADMIN_UI'}
-  });
-  toast('숙제 템플릿을 저장했어요.');
-  renderPlannerAdmin();
+const TALENT_BOOKS=['연산','한자','국어','사회','수학','생각하는 피자'];
+function parsePrints(value=''){
+  const out={};for(const token of String(value).split(',')){const [day,...rest]=token.split(':');if(day?.trim()&&rest.join(':').trim())out[day.trim().toUpperCase()]=rest.join(':').trim()}return out;
+}
+function renderParentIntake(){
+  const root=$('#talentBookFacts');if(root&&!root.children.length)root.innerHTML=TALENT_BOOKS.map(subject=>`
+    <div class="adminGrid two" data-talent-book="${subject}">
+      <label class="inputBlock">${subject} 범위<input data-range placeholder="숙제 범위"></label>
+      <label class="inputBlock">${subject} 교사 지시<input data-instruction placeholder="지시사항"></label>
+      <input data-answer type="hidden" value="">
+    </div>`).join('');
+  const status=$('#assignmentFactStatus'),projection=window.ReadyAssignments?.project?.('PARENT');
+  if(status&&projection)status.innerHTML=projection.facts.slice(-12).reverse().map(f=>`<div class="adminListItem"><span><b>${escapeHtml(f.book_subject||f.subject)}</b><small>${escapeHtml(f.confirmation_state)} · ${escapeHtml(f.analysis_state)}</small></span></div>`).join('');
+  if($('#talentSourceDate')&&!$('#talentSourceDate').value)$('#talentSourceDate').value=localDateKey();
+}
+document.getElementById('saveTalentFactsBtn')?.addEventListener('click',()=>{
+  const source=$('#talentSourceDate').value,deadline=$('#talentDeadline').value;
+  if(!source||!deadline){toast('받은 날과 다음 화요일 경계를 확인해 주세요.');return}
+  const books=[...document.querySelectorAll('[data-talent-book]')].map(row=>({subject:row.dataset.talentBook,source_range:row.querySelector('[data-range]').value.trim(),teacher_instruction:row.querySelector('[data-instruction]').value.trim(),artifact_refs:[],answer_reference_ids:row.querySelector('[data-answer]').value?[row.querySelector('[data-answer]').value]:[]}));
+  if(books.some(x=>!x.source_range)){toast('재능 6권의 숙제 범위를 모두 입력해 주세요.');return}
+  const pkg=window.ReadyAssignments.upsertTalentPackage({actor:'PARENT',source_date:source,deadline_boundary:deadline,books,provenance:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}});
+  for(const assignmentId of pkg.fact_ids)window.ReadyAssignments.confirmFact(assignmentId,{actor:'PARENT'});
+  toast('재능 6권 FACT를 확인 저장했어요. 아직 DATED TODO는 만들지 않았습니다.');renderParentIntake();
+});
+document.getElementById('saveEnglishFactBtn')?.addEventListener('click',()=>{
+  const name=$('#englishWorkbook').value.trim(),range=$('#englishRange').value.trim();if(!name||!range){toast('문제집과 숙제 범위를 확인해 주세요.');return}
+  const ref=window.ReadyAssignments.upsertWorkbookRef({name,subject:'영어',provenance:{kind:'PARENT_INPUT'}});
+  const fact=window.ReadyAssignments.upsertEnglishAssignment({actor:'PARENT',workbook_ref_id:ref.workbook_ref_id,source_date:localDateKey(),source_range:range,weekday_prints:parsePrints($('#englishPrints').value),components:{vocabulary:$('#englishVocabulary').value.trim(),listening:$('#englishListening').value.trim(),recording:$('#englishRecording').value.trim(),writing:$('#englishWriting').value.trim()},teacher_instruction:$('#englishInstruction').value.trim(),next_academy:$('#englishNextAcademy').value,provenance:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}});
+  window.ReadyAssignments.confirmFact(fact.assignment_id,{actor:'PARENT'});
+  toast(fact.deadline_state==='NEXT_ACADEMY_UNVERIFIED'?'영어 FACT 저장 · 다음 학원 일정 확인 전 분석/배정 보류':'영어 FACT를 확인 저장했어요.');renderParentIntake();
 });
 
 function renderProfile(){

@@ -117,24 +117,32 @@
         <div id="scheduleAdminList" class="adminList"></div>
       </section>
 
-      <section class="glassCard adminCard">
-        <div class="adminSectionHead"><div><small>HOMEWORK TEMPLATE</small><h2>숙제 템플릿</h2></div><button class="miniAction" id="templateClearBtn">새 템플릿</button></div>
-        <input id="templateId" type="hidden">
-        <label class="inputBlock">숙제명<input id="templateTitle" placeholder="예) 영어 단어 복습"></label>
+      <section class="glassCard adminCard" id="parentHomeworkIntake">
+        <div class="adminSectionHead"><div><small>ASSIGNMENT FACT</small><h2>숙제 입력 · 확인</h2></div><span>Parent</span></div>
+        <p class="muted">숙제 원본 사실만 입력합니다. 난이도·시간·요일별 배정은 Learning Master와 Planner가 처리합니다.</p>
+        <div class="adminSectionHead"><div><small>TALENT WEEKLY</small><h2>재능 6권</h2></div></div>
         <div class="adminGrid two">
-          <label class="inputBlock">과목<input id="templateSubject" placeholder="예) 영어"></label>
-          <label class="inputBlock">예상 시간(분)<input id="templateMinutes" type="number" min="1" max="240" value="20"></label>
+          <label class="inputBlock">받은 날<input id="talentSourceDate" type="date"></label>
+          <label class="inputBlock">다음 화요일(마감/주기 경계)<input id="talentDeadline" type="date"></label>
         </div>
-        <label class="inputBlock">마감일<input id="templateDeadline" type="date"></label>
-        <div class="weekdayEditor">
-          <small>선호 요일</small>
-          <div id="templateWeekdays" class="weekdayButtons">
-            <button type="button" data-weekday="1">월</button><button type="button" data-weekday="2">화</button><button type="button" data-weekday="3">수</button><button type="button" data-weekday="4">목</button><button type="button" data-weekday="5">금</button><button type="button" data-weekday="6">토</button><button type="button" data-weekday="0">일</button>
-          </div>
+        <div id="talentBookFacts" class="adminList"></div>
+        <button class="btn dark" id="saveTalentFactsBtn">6권 FACT 저장 · 확인</button>
+        <div class="adminSectionHead"><div><small>ENGLISH CYCLE</small><h2>영어 숙제</h2></div></div>
+        <label class="inputBlock">문제집<input id="englishWorkbook" placeholder="예) English Workbook A"></label>
+        <div class="adminGrid two">
+          <label class="inputBlock">숙제 범위<input id="englishRange" placeholder="예) p.32~41"></label>
+          <label class="inputBlock">다음 학원 일정<input id="englishNextAcademy" type="date"></label>
         </div>
-        <label class="adminToggle"><input id="templateRequiredToday" type="checkbox"><span><b>오늘 반드시 수행</b><small>시간이 부족하면 자동 축소하지 않고 재계획 대상으로 표시합니다.</small></span></label>
-        <button class="btn dark" id="saveTemplateBtn">숙제 템플릿 저장</button>
-        <div id="templateAdminList" class="adminList"></div>
+        <div class="adminGrid two">
+          <label class="inputBlock">요일별 프린트<input id="englishPrints" placeholder="예) MON:1장, WED:2장"></label>
+          <label class="inputBlock">단어<input id="englishVocabulary" placeholder="예) Unit 3"></label>
+          <label class="inputBlock">듣기<input id="englishListening" placeholder="예) Track 4"></label>
+          <label class="inputBlock">녹음<input id="englishRecording" placeholder="예) Sentence 2"></label>
+          <label class="inputBlock">쓰기<input id="englishWriting" placeholder="예) Paragraph 1"></label>
+          <label class="inputBlock">교사 지시<input id="englishInstruction" placeholder="기타 지시"></label>
+        </div>
+        <button class="btn dark" id="saveEnglishFactBtn">영어 FACT 저장 · 확인</button>
+        <div id="assignmentFactStatus" class="adminList"></div>
       </section>
     </main>
   </section>
@@ -163,7 +171,10 @@
 </div>
 <script src="./ready-sync-adapter-v01.js"></script>
 <script src="./ready-local-first-v01.js"></script>
+<script src="./ready-assignment-domain-v2.js"></script>
+<script src="./ready-learning-master-v01.js"></script>
 <script src="./ready-planner-v01.js"></script>
+<script src="./ready-integration-v1.js"></script>
 <script src="./app.js"></script>
 <script src="./ready-runtime-v07.js"></script>
 </body>

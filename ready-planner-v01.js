@@ -38,6 +38,7 @@
     return `${y}-${m}-${day}`;
   };
   const makeId=(prefix)=>`${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+  const addDays=(date,n)=>{const d=new Date(date+'T12:00:00');d.setDate(d.getDate()+n);return dateKey(d)};
 
   function normalize(raw){
     const x=raw&&typeof raw==='object'?raw:{};
@@ -112,6 +113,8 @@
 
     function upsertDatedTodo(input={}){
       const label=cleanText(input.label); if(!label) throw new Error('label required');
+      const requestedSource=cleanText(input.source)||'PLANNER';
+      if(/^READY|^PARENT/.test(requestedSource))throw new Error('DATED TODO authority belongs to Planner');
       return mutate(s=>{
         const id=cleanText(input.todo_id)||makeId('todo');
         const state=TODO_STATES.has(input.state)?input.state:'PLANNED';
@@ -120,7 +123,11 @@
           date:cleanText(input.date)||dateKey(),
           label,
           template_id:cleanText(input.template_id)||null,
-          source:cleanText(input.source)||'PLANNER',
+          assignment_id:cleanText(input.assignment_id)||null,
+          analysis_id:cleanText(input.analysis_id)||null,
+          learning_unit_id:cleanText(input.learning_unit_id)||null,
+          allocation_run_id:cleanText(input.allocation_run_id)||null,
+          source:requestedSource,
           source_actor:cleanText(input.source_actor)||null,
           provenance:input.provenance||null,
           order:Number.isFinite(input.order)?input.order:999,
@@ -134,25 +141,93 @@
       });
     }
 
-    function linkOrCreateTodayItems(labels=[],options={}){
+    function linkTodayItems(todoIds=[],options={}){
       const date=cleanText(options.date)||dateKey();
-      const source=cleanText(options.source)||'READY_MANUAL';
-      const sourceActor=cleanText(options.source_actor)||'READY_USER';
-      const uniq=[...new Set((labels||[]).map(cleanText).filter(Boolean))];
-      return mutate(s=>uniq.map((label,order)=>{
-        let todo=s.dated_todos.find(x=>x.date===date&&x.label===label&&x.state!=='COMPLETED');
-        if(!todo){
-          todo={
-            todo_id:makeId('todo'),
-            date,label,template_id:null,source,source_actor:sourceActor,
-            provenance:{kind:'READY_EXECUTION_INTAKE'},
-            order,state:'PLANNED',
-            created_at:new Date().toISOString(),updated_at:new Date().toISOString()
-          };
-          s.dated_todos.push(todo);
-        }
-        return {todo_id:todo.todo_id,label:todo.label,date:todo.date,source:todo.source};
+      const ids=new Set((todoIds||[]).map(cleanText).filter(Boolean));
+      return load().dated_todos.filter(x=>ids.has(x.todo_id)&&x.date===date&&x.state!=='COMPLETED').map(x=>({
+        todo_id:x.todo_id,label:x.label,date:x.date,source:x.source,
+        assignment_id:x.assignment_id,analysis_id:x.analysis_id,learning_unit_id:x.learning_unit_id,
+        template_id:x.template_id,allocation_run_id:x.allocation_run_id
       }));
+    }
+    function linkOrCreateTodayItems(values=[],options={}){
+      const s=load(),date=cleanText(options.date)||dateKey();
+      const ids=(values||[]).map(v=>typeof v==='object'?v.todo_id:v).filter(v=>s.dated_todos.some(x=>x.todo_id===v));
+      return linkTodayItems(ids,{date});
+    }
+
+    function allocationDates(fact,input={}){
+      if(Array.isArray(input.candidate_dates)&&input.candidate_dates.length)return [...new Set(input.candidate_dates.map(cleanText).filter(Boolean))].filter(d=>!fact.deadline_boundary||d<fact.deadline_boundary);
+      const start=cleanText(input.start_date)||dateKey(),end=cleanText(fact.deadline_boundary);
+      if(!end)return [];
+      const out=[];for(let d=start;d<end;d=addDays(d,1))out.push(d);return out;
+    }
+    function allocateLearningUnits(input={}){
+      const assignmentId=cleanText(input.assignment_id);if(!assignmentId)return {ok:false,reason:'ASSIGNMENT_ID_REQUIRED'};
+      const domain=input.domain_state||globalThis.ReadyAssignments?.load?.();
+      const fact=domain?.assignmentFacts?.[assignmentId];
+      if(!fact)return {ok:false,reason:'ASSIGNMENT_FACT_NOT_FOUND'};
+      if(fact.confirmation_state!=='FACT_CONFIRMED')return {ok:false,reason:'FACT_NOT_CONFIRMED'};
+      if(fact.deadline_state==='NEXT_ACADEMY_UNVERIFIED')return {ok:false,reason:'NEXT_ACADEMY_UNVERIFIED'};
+      if(fact.analysis_state!=='INTERPRETED'||!fact.current_analysis_id)return {ok:false,reason:'LEARNING_MASTER_REQUIRED'};
+      const analysis=domain.analyses?.[fact.current_analysis_id];
+      const units=(analysis?.learning_unit_ids||[]).map(id=>domain.learningUnits?.[id]).filter(x=>x?.state==='INTERPRETED');
+      if(!units.length)return {ok:false,reason:'NO_INTERPRETED_LEARNING_UNITS'};
+      const dates=allocationDates(fact,input);if(!dates.length)return {ok:false,reason:'NO_ALLOCATION_WINDOW'};
+      return mutate(s=>{
+        const runId=makeId('allocation_v2');
+        const loadByDate=Object.fromEntries(dates.map(d=>[d,(s.dated_todos||[]).filter(t=>t.date===d&&t.state!=='COMPLETED').map(t=>t.cognitive_load_profile||[])]));
+        const scheduleByDate=Object.fromEntries(dates.map(d=>[d,(s.schedule_commitments||[]).filter(x=>x.confirmed!==false&&x.start_at&&x.end_at&&String(x.start_at).slice(0,10)===d&&String(x.end_at).slice(0,10)===d)]));
+        const proposals=[];
+        for(const unit of units){
+          const existing=s.dated_todos.find(t=>t.learning_unit_id===unit.learning_unit_id&&t.state!=='COMPLETED');
+          if(existing){proposals.push({decision:'REUSE',date:existing.date,todo_id:existing.todo_id,learning_unit_id:unit.learning_unit_id});continue}
+          const tags=unit.cognitive_load_profile||[];
+          const date=[...dates].sort((a,b)=>{
+            const score=d=>{
+              const taskLoads=loadByDate[d]||[];
+              const commitments=scheduleByDate[d]||[];
+              const commitmentMinutes=commitments.reduce((sum,x)=>{
+                const start=parseLocal(d,String(x.start_at).slice(11,16));
+                const end=parseLocal(d,String(x.end_at).slice(11,16));
+                return sum+Math.max(0,minutes(end-start));
+              },0);
+              return taskLoads.length*10
+                + taskLoads.flat().filter(x=>tags.includes(x)).length*20
+                + commitments.length*15
+                + Math.min(30,Math.floor(commitmentMinutes/30));
+            };
+            return score(a)-score(b)||a.localeCompare(b);
+          })[0];
+          loadByDate[date].push(tags);
+          const templateId=`template_${unit.learning_unit_id}`;
+          const template={template_id:templateId,title:`${unit.subject} · ${unit.source_range||unit.concept_skill_target}`,subject:unit.subject,assignment_cycle:fact.assignment_cycle,learning_units:[unit.learning_unit_id],provenance:{kind:'LEARNING_MASTER_OUTPUT',assignment_id:assignmentId,analysis_id:analysis.analysis_id},confirmation_state:'CONFIRMED',deadline_date:fact.deadline_boundary||null,estimated_minutes:null,allocation_priority:100,required_today:false,preferred_days:[],updated_at:new Date().toISOString()};
+          const ti=s.homework_templates.findIndex(x=>x.template_id===templateId);if(ti>=0)s.homework_templates[ti]=template;else s.homework_templates.push(template);
+          proposals.push({decision:'PROPOSE',date,label:template.title,assignment_id:assignmentId,analysis_id:analysis.analysis_id,learning_unit_id:unit.learning_unit_id,template_id:templateId,activity_types:unit.activity_types,cognitive_load_profile:unit.cognitive_load_profile,prerequisite:unit.prerequisite});
+        }
+        const run={allocation_run_id:runId,version:'PLANNER_V2',assignment_id:assignmentId,analysis_id:analysis.analysis_id,primary_basis:'LEARNING_UNIT_ACTIVITY_LOAD',minutes_role:'SECONDARY_SAFETY_ONLY',proposals,created_at:new Date().toISOString()};
+        s.allocation_runs.push(run);return {ok:true,...run};
+      });
+    }
+    function commitLearningAllocation(runId){
+      return mutate(s=>{const run=s.allocation_runs.find(x=>x.allocation_run_id===runId&&x.version==='PLANNER_V2');if(!run)return {ok:false,reason:'ALLOCATION_RUN_NOT_FOUND'};
+        const created=[];
+        for(const p of run.proposals.filter(x=>x.decision==='PROPOSE')){
+          let todo=s.dated_todos.find(x=>x.learning_unit_id===p.learning_unit_id&&x.state!=='COMPLETED');
+          if(!todo){todo={todo_id:makeId('todo'),date:p.date,label:p.label,assignment_id:p.assignment_id,analysis_id:p.analysis_id,learning_unit_id:p.learning_unit_id,template_id:p.template_id,allocation_run_id:runId,activity_types:p.activity_types,cognitive_load_profile:p.cognitive_load_profile,source:'PLANNER_V2_ALLOCATION',source_actor:'PLANNER_MAIN',provenance:{assignment_id:p.assignment_id,analysis_id:p.analysis_id,learning_unit_id:p.learning_unit_id,allocation_run_id:runId},order:created.length,state:'PLANNED',estimated_minutes:null,created_at:new Date().toISOString(),updated_at:new Date().toISOString()};s.dated_todos.push(todo)}
+          created.push({...todo});
+        }
+        return {ok:true,created};
+      });
+    }
+    function replanCarryOver(input={}){
+      const carryId=cleanText(input.carry_over_id),date=cleanText(input.date);if(!carryId||!date)return {ok:false,reason:'CARRY_AND_DATE_REQUIRED'};
+      return mutate(s=>{const carry=s.carry_over_queue.find(x=>x.carry_over_id===carryId&&x.status==='OPEN');if(!carry)return {ok:false,reason:'CARRY_OVER_NOT_FOUND'};
+        if(carry.resolution_required)return {ok:false,reason:'CARRY_OVER_REQUIRES_RESOLUTION'};
+        const source=s.dated_todos.find(x=>x.todo_id===carry.source_todo_id);if(!source)return {ok:false,reason:'SOURCE_TODO_NOT_FOUND'};
+        const todo={...source,todo_id:makeId('todo'),date,state:'PLANNED',source:'PLANNER_V2_CARRY_OVER',source_actor:'PLANNER_MAIN',provenance:{...(source.provenance||{}),carry_over_id:carryId,source_todo_id:source.todo_id},created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+        s.dated_todos.push(todo);carry.status='RESCHEDULED';carry.rescheduled_todo_id=todo.todo_id;carry.rescheduled_to=date;carry.updated_at=new Date().toISOString();return {ok:true,todo:{...todo}};
+      });
     }
 
 
@@ -359,6 +434,10 @@
             observation_key:observationKey,
             todo_id:todoId,
             template_id:todo.template_id||null,
+            assignment_id:todo.assignment_id||null,
+            analysis_id:todo.analysis_id||null,
+            learning_unit_id:todo.learning_unit_id||null,
+            allocation_run_id:todo.allocation_run_id||null,
             planned_minutes:Number.isFinite(todo.estimated_minutes)?todo.estimated_minutes:null,
             actual_minutes:actualMinutes,
             ready_state:readyState,
@@ -379,6 +458,10 @@
             carry_over_id:makeId('carry'),
             source_todo_id:todoId,
             template_id:todo.template_id||null,
+            assignment_id:todo.assignment_id||null,
+            analysis_id:todo.analysis_id||null,
+            learning_unit_id:todo.learning_unit_id||null,
+            allocation_run_id:todo.allocation_run_id||null,
             label:todo.label,
             from_date:todo.date,
             state:mapped,
@@ -460,6 +543,11 @@
             event_id:makeId('progress'),
             event_key:eventKey,
             todo_id:todoId,
+            assignment_id:todo.assignment_id||null,
+            analysis_id:todo.analysis_id||null,
+            learning_unit_id:todo.learning_unit_id||null,
+            template_id:todo.template_id||null,
+            allocation_run_id:todo.allocation_run_id||null,
             session_id:cleanText(input.session_id)||null,
             task_id:cleanText(input.task_id)||null,
             state:mapped,
@@ -481,6 +569,11 @@
     function todayProjection(date=dateKey()){
       return today(date).map(x=>({
         todo_id:x.todo_id,
+        assignment_id:x.assignment_id||null,
+        analysis_id:x.analysis_id||null,
+        learning_unit_id:x.learning_unit_id||null,
+        template_id:x.template_id||null,
+        allocation_run_id:x.allocation_run_id||null,
         label:x.label,
         state:x.state,
         source:x.source,
@@ -511,7 +604,11 @@
       upsertScheduleCommitment,
       upsertHomeworkTemplate,
       upsertDatedTodo,
+      linkTodayItems,
       linkOrCreateTodayItems,
+      allocateLearningUnits,
+      commitLearningAllocation,
+      replanCarryOver,
       recordTaskState,
       allocateToday,
       commitAllocation,
