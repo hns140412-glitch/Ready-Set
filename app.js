@@ -161,8 +161,36 @@ function openCategory(cat){
 $$('[data-category]').forEach(b=>b.addEventListener('click',()=>openCategory(b.dataset.category)));
 $$('[data-close-sheet]').forEach(b=>b.addEventListener('click',()=>$('#categorySheet').hidden=true));
 
+function renderPlannerToday(){
+  const root=$('#plannerTodayList');
+  const section=$('#plannerTodaySection');
+  if(!root||!section)return;
+  const items=window.ReadySetPlanner?.todayProjection?.()||[];
+  section.hidden=!items.length;
+  root.innerHTML='';
+  for(const item of items){
+    const selected=state.tasks.includes(item.label)||state.selected.includes(item.label);
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='plannerTodayItem'+(selected?' on':'');
+    b.dataset.todoId=item.todo_id;
+    b.innerHTML=`<span><b>${escapeHtml(item.label)}</b><small>${item.planner_owned?'플래너 제안':'오늘 할 일'}${item.estimated_minutes?` · 약 ${item.estimated_minutes}분`:''}</small></span><strong>${selected?'선택됨':'담기'}</strong>`;
+    b.onclick=()=>{
+      if(state.tasks.includes(item.label)){
+        state.tasks=state.tasks.filter(x=>x!==item.label);
+      }else if(!state.selected.includes(item.label)){
+        state.tasks.push(item.label);
+      }
+      save();
+      renderMission();
+    };
+    root.appendChild(b);
+  }
+}
+
 function renderMission(){
   renderChips($('#missionChips'));
+  renderPlannerToday();
   const tl=$('#taskList');tl.innerHTML='';
   state.tasks.forEach((t,i)=>{
     const row=document.createElement('div');
