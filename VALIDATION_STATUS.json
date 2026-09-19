@@ -1,9 +1,11 @@
 {
-  "status_version": "2026-09-20.1",
+  "status_version": "2026-09-20.2",
   "product": "Ready & Set",
   "live_version_source": "VERSION.json",
   "current_master_revision": "REV_07",
   "current_app_version": "0.9.3-rc1",
+  "canonical_main_sha": "3334510e2403202160d28d2dc68cfaa0ef1435c7",
+  "canonical_integration_pr": 33,
   "evidence_freshness": {
     "VALIDATION_REPORT.md": {
       "covers_master_revision": "REV_06",
@@ -12,8 +14,9 @@
       "allowed_use": "HISTORICAL_REGRESSION_REFERENCE_ONLY"
     },
     "exact_main_runtime_evidence": {
-      "main_sha": "f5fd4c2dfff953a1fce567f0762c71981acacb1f",
-      "github_actions_run_id": 35472619346,
+      "main_sha": "3334510e2403202160d28d2dc68cfaa0ef1435c7",
+      "github_actions_runtime_run_id": 35476028903,
+      "github_actions_worker_selftest_run_id": 35476029044,
       "exact_main_ci": "PASS",
       "chromium_runtime": "PASS",
       "mobile_quality_gate": {
@@ -22,99 +25,124 @@
         "environment": "CHROMIUM_EMULATED_MOBILE",
         "device_equivalence": "NOT_A_PHYSICAL_DEVICE"
       },
-      "visual_audit": {
-        "status": "PASS_AFTER_PROFILE_SETTINGS_POLISH",
-        "surfaces": [
-          "Home",
-          "Mission",
-          "Planner WEEK",
-          "Planner DAY",
-          "Planner Admin",
-          "Profile",
-          "Settings",
-          "Focus"
-        ],
-        "evidence_type": "CI_SCREENSHOT_AUDIT",
-        "device_equivalence": "NOT_A_PHYSICAL_DEVICE"
-      },
       "pwa_offline_runtime": "PASS_IN_CHROMIUM",
-      "sync_adapter_contract": {
-        "status": "PASS",
-        "version": "0.1.0",
-        "contract": "HTTP_JSON_V1",
-        "verified_states": [
-          "LOCAL_ONLY",
-          "CONNECTED",
-          "ERROR"
-        ],
-        "verified_behaviors": [
-          "idempotency key",
-          "HTTP health check",
-          "conflict 409 mapping",
-          "Outbox flush integration",
-          "unconfigured adapter keeps Outbox pending without retry mutation"
-        ],
-        "backend_connection": "NOT_CONFIGURED_IN_PRODUCTION"
-      }
+      "integrated_authority_chain": "PASS",
+      "identity_chain": "PASS",
+      "planner_v2_schedule_commitment_awareness": "PASS",
+      "local_first_assignments_recovery": "PASS",
+      "parent_only_answer_projection": "PASS",
+      "talent_6_book_fact_intake": "PASS",
+      "english_fact_conflict_blocking": "PASS"
     }
   },
   "current_release_claim": {
-    "state": "DEVICE_AND_PRODUCTION_VALIDATION_PENDING",
+    "state": "MAIN_MERGED_DEVICE_AND_PRODUCTION_VALIDATION_PENDING",
     "coded": true,
     "ci_verified": true,
     "runtime_verified": true,
+    "main_merged": true,
     "device_verified": false,
     "production_verified": false,
     "production_pass": false
   },
   "verified_runtime_scope": [
+    "Assignment Fact -> Learning Master -> Learning Unit -> Planner V2 -> DATED TODO -> TODAY -> Mission -> Focus -> Result -> Progress/Carry-over",
+    "Full identity chain: assignment_id -> analysis_id -> learning_unit_id -> todo_id -> session/task -> progress/observation/carry",
+    "Talent six-book FACT intake",
+    "English FACT intake with conflict blocking and NEXT_ACADEMY_UNVERIFIED hold",
+    "PARENT_ONLY answer reference exclusion from Child projection",
+    "Local-first assignments IndexedDB recovery after localStorage loss",
+    "Planner V2 schedule/deadline/activity-load aware allocation contract",
+    "Planner-only DATED TODO authority",
     "TODAY -> Mission -> Focus -> Wrap-up -> Result -> carry-over",
-    "Local-first IndexedDB snapshot + Outbox",
-    "IndexedDB recovery after localStorage loss",
-    "Conflict handling: KEEP_LOCAL / ACCEPT_REMOTE",
     "WEEK / DAY Planner",
-    "Parent/Admin Schedule + Homework Template editing",
     "Service Worker control + offline reload in Chromium",
-    "390x844 mobile overflow/runtime/touch-target integrity gate",
-    "Dead navigation and unreferenced action-button integrity gate",
-    "CI screenshot visual audit with Profile/Settings polish",
-    "HTTP sync adapter contract with truthful LOCAL_ONLY / CONNECTED / ERROR states"
+    "390x844 mobile Chromium quality gate",
+    "HTTP sync adapter contract remains LOCAL_ONLY unless backend is configured"
+  ],
+  "superseded": [
+    "Parent estimated_minutes allocation authority",
+    "Parent preferred_days allocation authority",
+    "Parent required_today allocation authority",
+    "Ready direct DATED TODO creation fallback",
+    "FACT -> Planner bypass of Learning Master",
+    "page/minutes as primary learning split",
+    "PR #29 homework-template materialization path"
+  ],
+  "open_pr_disposition": [
+    {
+      "pr": 29,
+      "state": "SUPERSEDED_CLOSE",
+      "reason": "Conflicts with Planner-only DATED TODO authority and current main integration."
+    },
+    {
+      "pr": 30,
+      "state": "KEEP_DRAFT_REBASE_REVALIDATE",
+      "topic": "Human-confirmed Adaptive Planner estimate loop"
+    },
+    {
+      "pr": 31,
+      "state": "KEEP_DRAFT_REBASE_REVALIDATE",
+      "topic": "Browser accessibility semantics"
+    },
+    {
+      "pr": 32,
+      "state": "KEEP_DRAFT_REBASE_REVALIDATE",
+      "topic": "Persistent remote sync backend"
+    }
   ],
   "known_open_items": [
     {
-      "id": "PROD-NETLIFY-001",
-      "status": "OPEN",
-      "issue": "Verified exact-main deploy artifact has not been published to the Netlify production context.",
-      "evidence": "Current Netlify site ready-set-staging-taky is an older upload deploy with commit_ref=null; exact-main provenance cannot be established.",
-      "attempted_action": "Netlify connector provided an npx @netlify/mcp deploy command, but the execution environment could not resolve registry.npmjs.org (EAI_AGAIN). Existing Netlify deployment was not modified."
-    },
-    {
       "id": "DEVICE-IOS-001",
       "status": "OPEN",
-      "issue": "Representative physical iPhone Safari / installed-PWA validation has not been executed.",
-      "required_scope": [
-        "install/home-screen launch",
-        "background/foreground return",
-        "offline/reconnect",
-        "cache update",
-        "touch/viewport/safe-area",
-        "native share/microphone where applicable"
-      ]
+      "issue": "Representative physical iPhone Safari / installed-PWA validation has not been executed."
+    },
+    {
+      "id": "PROD-NETLIFY-001",
+      "status": "OPEN",
+      "issue": "Current main 3334510e... has not been provenance-verified in Netlify production."
     },
     {
       "id": "SYNC-REMOTE-001",
       "status": "OPEN",
-      "issue": "Remote sync adapter contract is implemented and runtime-verified, but no production cloud backend endpoint is configured.",
-      "current_scope": "HTTP_JSON_V1 adapter + health/send/idempotency/conflict mapping + Local-first Outbox integration are implemented and CI/runtime verified. Without a configured endpoint the app explicitly remains LOCAL_ONLY; full cloud synchronization must not be claimed."
+      "issue": "Remote sync adapter contract is implemented, but current main has no validated production cloud backend."
+    },
+    {
+      "id": "AUTH-FAMILY-001",
+      "status": "OPEN",
+      "issue": "Full family authentication / real Parent-Child identity separation is not implemented."
+    },
+    {
+      "id": "LEARNING-MASTER-DEEP-001",
+      "status": "OPEN",
+      "issue": "Learning Master V0.1 contract is runtime-integrated, but deep subject-specific decomposition remains partial where source evidence is insufficient."
+    },
+    {
+      "id": "CAPTURE-OCR-001",
+      "status": "OPEN",
+      "issue": "Parent capture FACT intake exists, but production-grade camera/OCR/classification quality is not yet validated."
+    },
+    {
+      "id": "ADAPTIVE-PLANNER-001",
+      "status": "OPEN_DRAFT_PR_30",
+      "issue": "Human-confirmed adaptive estimate loop exists only as an old-base draft and must be rebased/revalidated before consideration."
+    },
+    {
+      "id": "ACCESSIBILITY-001",
+      "status": "OPEN_DRAFT_PR_31",
+      "issue": "Accessibility semantics work exists only as an old-base draft and must be rebased/revalidated."
+    },
+    {
+      "id": "REMOTE-BACKEND-001",
+      "status": "OPEN_DRAFT_PR_32",
+      "issue": "Remote sync backend work exists only as an old-base draft and must be rebased/revalidated."
     }
   ],
   "rules": [
-    "A validation artifact may support only the version/revision and environment it actually covers.",
-    "Older PASS evidence must not be promoted to the current release without regeneration or explicit inheritance proof.",
-    "CODED, CI_VERIFIED, RUNTIME_VERIFIED, DEVICE_VERIFIED, and PRODUCTION_VERIFIED are separate states.",
-    "Emulated-mobile Chromium evidence must not be promoted to physical-device evidence.",
-    "A Netlify upload with commit_ref=null must not be treated as proof that current main is deployed.",
-    "Device/production claims require representative runtime evidence."
+    "CODED, CI_VERIFIED, RUNTIME_VERIFIED, DEVICE_VERIFIED and PRODUCTION_VERIFIED are separate states.",
+    "Emulated mobile Chromium evidence must not be promoted to physical-device evidence.",
+    "Old-base draft PRs must be rebased and revalidated against canonical main before merge consideration.",
+    "Superseded authority paths must not be restored to make stale tests pass."
   ],
-  "next_action": "Publish the exact-main verified deploy artifact to ready-set-staging-taky with provenance preserved; configure and validate a real sync backend endpoint; then run production browser QA and representative physical iPhone/PWA validation without using the product owner as an iterative debugger."
+  "next_action": "Close superseded PR #29; retain PRs #30/#31/#32 as draft rebase/revalidate candidates. Then select the next product gap deliberately, with physical-device validation required before DEVICE_VERIFIED and production provenance required before PRODUCTION_VERIFIED."
 }
