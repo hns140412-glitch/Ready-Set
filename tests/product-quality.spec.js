@@ -48,24 +48,25 @@ test('mobile product quality gate: critical views fit viewport and navigation is
 test('mobile product quality gate: core touch targets are usable and primary controls are wired', async ({page})=>{
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
   const critical=[
-    '[data-nav="mission"]',
-    '[data-nav="planner"]',
-    '#preShareBtn',
-    '#startBtn',
-    '#pauseBtn',
-    '#completeBtn',
-    '#plannerTodayJump',
-    '[data-nav="planner-admin"]',
-    '#saveScheduleBtn',
-    '#saveTemplateBtn',
-    '#saveProfileBtn',
-    '#exportDataBtn'
+    ['home','[data-nav="mission"]'],
+    ['home','[data-nav="planner"]'],
+    ['home','#preShareBtn'],
+    ['mission','#startBtn'],
+    ['focus','#pauseBtn'],
+    ['focus','#completeBtn'],
+    ['planner','#plannerTodayJump'],
+    ['planner','[data-nav="planner-admin"]'],
+    ['planner-admin','#saveScheduleBtn'],
+    ['planner-admin','#saveTemplateBtn'],
+    ['profile','#saveProfileBtn'],
+    ['settings','#exportDataBtn']
   ];
-  for(const sel of critical){
-    const loc=page.locator(sel).first();
-    await expect(loc,sel+' missing').toHaveCount(1);
-    const box=await loc.boundingBox();
-    expect(box,sel+' has no box').toBeTruthy();
+  for(const [view,sel] of critical){
+    await page.evaluate(v=>document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.dataset.view===v)),view);
+    const loc=page.locator(sel).filter({visible:true}).first();
+    await expect(page.locator(sel),sel+' missing').toHaveCount(1);
+    const box=await page.locator(sel).first().boundingBox();
+    expect(box,sel+' has no visible box in '+view).toBeTruthy();
     expect(Math.min(box.width,box.height),sel+' touch target too small').toBeGreaterThanOrEqual(36);
   }
 });
@@ -91,5 +92,4 @@ test('mobile product quality gate: planner/admin data survives reload and remain
   const snap=await page.evaluate(()=>window.ReadySetPlanner.snapshot());
   expect(snap.schedule_commitments.some(x=>x.commitment_id==='quality_schedule')).toBeTruthy();
   expect(snap.homework_templates.some(x=>x.template_id==='quality_template')).toBeTruthy();
-  expect(window).toBeDefined();
 });
