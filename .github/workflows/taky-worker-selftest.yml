@@ -67,3 +67,15 @@ jobs:
             exit 1
           fi
           grep -q "styles.css" /tmp/bad-validation.json
+      - name: Verify GitHub materialization blockers propagate into result evidence
+        run: |
+          python - <<'PY'
+          import importlib.util, json, pathlib
+          p=pathlib.Path('.github/scripts/taky_codex_queue.py')
+          spec=importlib.util.spec_from_file_location('q',p); q=importlib.util.module_from_spec(spec); spec.loader.exec_module(q)
+          task=json.loads(pathlib.Path('/tmp/task.json').read_text())
+          validation=json.loads(pathlib.Path('/tmp/validation.json').read_text())
+          out=q.build_result(task,'fixturehash','implemented bounded change',validation,'local-commit','', 'PR_CREATE_FAILED_CHECK_ACTIONS_PULL_REQUEST_PERMISSION')
+          risks=out['result']['completion_report']['unresolved_risks']
+          assert any(x.get('severity')=='BLOCKING' and 'PR_CREATE_FAILED' in x.get('detail','') for x in risks), risks
+          PY
