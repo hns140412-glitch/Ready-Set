@@ -23,3 +23,38 @@
 
 /* Planner admin */
 .plannerHeroActions{display:flex;gap:7px}.plannerAdminJump{border:1px solid rgba(42,35,31,.12);border-radius:16px;padding:11px 14px;background:#fff;color:#2a231f;font-weight:900}.plannerAdminMain{padding-bottom:46px}.adminCard{display:grid;gap:12px;margin-bottom:14px}.adminSectionHead{display:flex;align-items:end;justify-content:space-between;gap:12px}.adminSectionHead small{font-size:10px;font-weight:900;letter-spacing:.12em;opacity:.55}.adminSectionHead h2{margin:4px 0 0}.miniAction{border:0;border-radius:999px;padding:8px 11px;background:#f3eee9;font-weight:900}.adminGrid.two{display:grid;grid-template-columns:1fr 1fr;gap:9px}.adminToggle{display:flex;gap:10px;align-items:flex-start;padding:12px;border-radius:16px;background:rgba(255,255,255,.62)}.adminToggle input{margin-top:3px}.adminToggle b,.adminToggle small{display:block}.adminToggle small{margin-top:3px;font-size:11px;color:#81756d}.weekdayEditor>small{display:block;margin-bottom:7px;font-size:11px;font-weight:900;color:#6f655e}.weekdayButtons{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.weekdayButtons button{border:0;border-radius:12px;padding:9px 0;background:#f3eee9;font-weight:900}.weekdayButtons button.on{background:#2a231f;color:#fff}.adminList{display:grid;gap:7px;margin-top:2px}.adminListItem{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;border:1px solid rgba(42,35,31,.07);border-radius:16px;padding:12px 13px;background:rgba(255,255,255,.75)}.adminListItem b,.adminListItem small{display:block}.adminListItem small{margin-top:3px;color:#81756d;font-size:11px}.adminListItem strong{font-size:11px;padding:6px 8px;border-radius:999px;background:#f3eee9}
+
+
+/* Product polish pass · Profile + Settings */
+.profileCard{padding:20px}.profileCard h2{font-size:17px;letter-spacing:-.025em;margin:2px 0 10px}.profileCard>.muted{font-size:10px;line-height:1.55;margin:12px 0;color:#8b7469}
+.avatarPreviewWrap{margin-bottom:18px}.avatarPreviewWrap img,.profilePlaceholder{width:148px;height:148px;border-radius:38px}
+.photoActions{gap:10px;margin:12px 0 20px}.photoActions .btn{min-height:50px;border-radius:15px;font-size:11px}
+.styleGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0 12px}
+.styleGrid button{min-height:112px;border:1px solid #e1cfc4;background:rgba(255,255,255,.92);border-radius:18px;padding:12px 10px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;overflow:hidden}
+.styleGrid button.on{border:2px solid #e06d48;background:#fff1e8;box-shadow:0 7px 16px rgba(150,80,53,.08)}
+.styleGrid button b{display:block;width:100%;font-size:11px;line-height:1.25;white-space:normal;overflow-wrap:anywhere;margin-top:2px}
+.styleGrid button small{display:block;width:100%;font-size:9px;line-height:1.35;color:#8b7469;margin-top:4px;white-space:normal}
+.styleSample{width:48px;height:48px;margin:0 auto 8px;border-radius:15px}.styleSample.storybook{filter:saturate(.72) sepia(.16) brightness(1.04)}
+.shareAvatarToggle{display:grid;grid-template-columns:24px 1fr;gap:10px;align-items:start;margin:14px 0 12px;padding:13px 14px;border-radius:17px;background:#fff7f1;border:1px solid #ead8cc}
+.shareAvatarToggle input{width:19px;height:19px;margin:2px 0 0}.shareAvatarToggle b{display:block;font-size:12px;line-height:1.35}.shareAvatarToggle small{display:block;margin-top:4px;font-size:9px;line-height:1.45;color:#8b7469}
+#saveProfileBtn{width:100%;margin-top:4px}
+
+#settingsView .glassCard{padding:18px;border-radius:22px;margin-bottom:12px;overflow:visible}
+#settingsView .glassCard>h2{font-size:17px;letter-spacing:-.025em}
+.guideSetting{display:grid;grid-template-columns:58px 1fr;gap:12px;align-items:center;margin:12px 0 13px;padding:12px;border-radius:17px;background:#fff7f1;border:1px solid #ead9ce}
+.guideSetting .guidePortrait{width:58px;height:58px;border-radius:18px}.guideSetting b{display:block;font-size:14px}.guideSetting small{display:block;margin-top:4px;font-size:9px;line-height:1.4;color:#866f64}
+.guideChoiceGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.guideChoiceGrid button{min-height:108px;border:1px solid #e1d2c8;background:#fff;border-radius:17px;padding:9px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.guideChoiceGrid button.on{border-color:#d66e4d;background:#fff0e7;box-shadow:0 6px 14px rgba(143,77,53,.08)}
+.guideChoiceGrid .guidePortrait{width:50px;height:50px;border-radius:16px;margin-bottom:7px}.guideChoiceGrid b{font-size:11px}.guideChoiceGrid small{font-size:8px;color:#8d786d;margin-top:3px}
+.nameTools{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end;margin-top:4px}.nameTools .inputBlock{min-width:0}.nameTools .compactBtn{min-width:92px}
+.compactBtn{min-height:44px;border-radius:13px;padding:0 13px;font-size:10px;white-space:nowrap}
+.nameSuggestions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 14px}.nameSuggestions button{border:1px solid #e0d0c6;background:#fff;border-radius:999px;padding:8px 11px;font-size:9px;font-weight:850;color:#5c4940}.nameSuggestions button:hover{background:#fff4ec}
+.subSettingTitle{font-size:14px!important;margin:15px 0 8px!important}
+.voiceChoiceGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:9px}.voiceChoiceGrid button{min-height:44px;border:1px solid #e0d0c6;background:#fff;border-radius:13px;padding:9px;font-size:10px;font-weight:850;color:#4e4039}.voiceChoiceGrid button.on{background:#282421;color:#fff;border-color:#282421}
+#voicePreviewBtn{width:100%}
+.soundSettingsGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:11px}.soundSettingsGrid button{min-height:44px;border:1px solid #e0d0c6;background:#fff;border-radius:13px;padding:9px 6px;font-size:10px;font-weight:850;color:#4e4039}.soundSettingsGrid button.on{background:#282421;color:#fff;border-color:#282421}
+#settingsView .glassCard>.muted{font-size:10px;line-height:1.5;margin:6px 0 10px}
+#settingsView #exportDataBtn{width:100%;margin-top:10px}.dangerText{display:block;width:100%;min-height:44px;margin-top:8px;border:0;border-radius:13px;background:#fff1ee;color:#ad4438;font-size:10px;font-weight:850}
+#settingsView main>p.muted{padding:0 4px 24px;font-size:8px;line-height:1.45;color:#9a857a}
+@media (max-width:350px){.styleGrid{grid-template-columns:1fr}.guideChoiceGrid{grid-template-columns:1fr 1fr}.soundSettingsGrid{grid-template-columns:1fr 1fr}.nameTools{grid-template-columns:1fr}.nameTools .compactBtn{width:100%}}
