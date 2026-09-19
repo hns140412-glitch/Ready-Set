@@ -175,14 +175,28 @@
       if(!units.length)return {ok:false,reason:'NO_INTERPRETED_LEARNING_UNITS'};
       const dates=allocationDates(fact,input);if(!dates.length)return {ok:false,reason:'NO_ALLOCATION_WINDOW'};
       return mutate(s=>{
-        const runId=makeId('allocation_v2'),loadByDate=Object.fromEntries(dates.map(d=>[d,(s.dated_todos||[]).filter(t=>t.date===d&&t.state!=='COMPLETED').map(t=>t.cognitive_load_profile||[])]));
+        const runId=makeId('allocation_v2');
+        const loadByDate=Object.fromEntries(dates.map(d=>[d,(s.dated_todos||[]).filter(t=>t.date===d&&t.state!=='COMPLETED').map(t=>t.cognitive_load_profile||[])]));
+        const scheduleByDate=Object.fromEntries(dates.map(d=>[d,(s.schedule_commitments||[]).filter(x=>x.confirmed!==false&&x.start_at&&x.end_at&&String(x.start_at).slice(0,10)===d&&String(x.end_at).slice(0,10)===d)]));
         const proposals=[];
         for(const unit of units){
           const existing=s.dated_todos.find(t=>t.learning_unit_id===unit.learning_unit_id&&t.state!=='COMPLETED');
           if(existing){proposals.push({decision:'REUSE',date:existing.date,todo_id:existing.todo_id,learning_unit_id:unit.learning_unit_id});continue}
           const tags=unit.cognitive_load_profile||[];
           const date=[...dates].sort((a,b)=>{
-            const score=d=>(loadByDate[d]||[]).length*10+(loadByDate[d]||[]).flat().filter(x=>tags.includes(x)).length*20;
+            const score=d=>{
+              const taskLoads=loadByDate[d]||[];
+              const commitments=scheduleByDate[d]||[];
+              const commitmentMinutes=commitments.reduce((sum,x)=>{
+                const start=parseLocal(d,String(x.start_at).slice(11,16));
+                const end=parseLocal(d,String(x.end_at).slice(11,16));
+                return sum+Math.max(0,minutes(end-start));
+              },0);
+              return taskLoads.length*10
+                + taskLoads.flat().filter(x=>tags.includes(x)).length*20
+                + commitments.length*15
+                + Math.min(30,Math.floor(commitmentMinutes/30));
+            };
             return score(a)-score(b)||a.localeCompare(b);
           })[0];
           loadByDate[date].push(tags);
