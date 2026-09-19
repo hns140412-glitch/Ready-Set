@@ -259,6 +259,109 @@ const afterResolve=planner.allocateToday({
 });
 assert.strictEqual(afterResolve.proposals.find(x=>x.template_id===blockedTemplate.template_id).decision,'PROPOSE');
 
+
+// Adaptive Planner must never mutate estimates from observations alone.
+// It may propose from bounded evidence, but a human confirmation is required to apply it.
+const adaptiveTemplate=planner.upsertHomeworkTemplate({
+  title:'적응형 수학 연산',
+  subject:'수학',
+  estimated_minutes:20,
+  allocation_priority:50,
+  provenance:{source:'FIXTURE'}
+});
+for(const [i,mins] of [30,35,40].entries()){
+  const todo=planner.upsertDatedTodo({
+    date:`2026-09-${23+i}`,
+    label:'적응형 수학 연산',
+    template_id:adaptiveTemplate.template_id,
+    source:'PLANNER_ALLOCATION',
+    source_actor:'PLANNER_MAIN',
+    estimated_minutes:20
+  });
+  const outcome=planner.recordSessionOutcome({
+    todo_id:todo.todo_id,
+    ready_state:'COMPLETED',
+    actual_ms:mins*60*1000,
+    session_id:`adaptive-session-${i}`,
+    task_id:`adaptive-task-${i}`
+  });
+  assert.strictEqual(outcome.ok,true);
+}
+assert.strictEqual(
+  planner.snapshot().homework_templates.find(x=>x.template_id===adaptiveTemplate.template_id).estimated_minutes,
+  20
+);
+
+const adaptiveProposal=planner.proposeEstimateAdjustment(adaptiveTemplate.template_id,{
+  min_samples:3,
+  min_delta_minutes:5
+});
+assert.strictEqual(adaptiveProposal.ok,true);
+assert.strictEqual(adaptiveProposal.proposal.status,'PENDING');
+assert.strictEqual(adaptiveProposal.proposal.current_estimated_minutes,20);
+assert.strictEqual(adaptiveProposal.proposal.proposed_estimated_minutes,35);
+assert.strictEqual(adaptiveProposal.proposal.authority,'HUMAN_CONFIRMATION_REQUIRED');
+assert.strictEqual(planner.pendingEstimateAdjustments().length,1);
+
+// A repeated proposal before decision must be idempotent.
+const adaptiveProposalAgain=planner.proposeEstimateAdjustment(adaptiveTemplate.template_id,{
+  min_samples:3,
+  min_delta_minutes:5
+});
+assert.strictEqual(adaptiveProposalAgain.ok,true);
+assert.strictEqual(adaptiveProposalAgain.reused,true);
+assert.strictEqual(adaptiveProposalAgain.proposal.proposal_id,adaptiveProposal.proposal.proposal_id);
+
+// Human confirmation applies the estimate.
+const confirmedAdaptive=planner.decideEstimateAdjustment(adaptiveProposal.proposal.proposal_id,{
+  decision:'CONFIRM',
+  actor:'PARENT'
+});
+assert.strictEqual(confirmedAdaptive.ok,true);
+assert.strictEqual(confirmedAdaptive.proposal.status,'CONFIRMED');
+assert.strictEqual(confirmedAdaptive.template.estimated_minutes,35);
+assert.strictEqual(planner.pendingEstimateAdjustments().length,0);
+
+// Rejection must preserve the current estimate.
+const rejectTemplate=planner.upsertHomeworkTemplate({
+  title:'거절 검증 독서',
+  subject:'국어',
+  estimated_minutes:10,
+  allocation_priority:60,
+  provenance:{source:'FIXTURE'}
+});
+for(const [i,mins] of [20,25,30].entries()){
+  const todo=planner.upsertDatedTodo({
+    date:`2026-09-${26+i}`,
+    label:'거절 검증 독서',
+    template_id:rejectTemplate.template_id,
+    source:'PLANNER_ALLOCATION',
+    source_actor:'PLANNER_MAIN',
+    estimated_minutes:10
+  });
+  planner.recordSessionOutcome({
+    todo_id:todo.todo_id,
+    ready_state:'COMPLETED',
+    actual_ms:mins*60*1000,
+    session_id:`reject-session-${i}`,
+    task_id:`reject-task-${i}`
+  });
+}
+const rejectProposal=planner.proposeEstimateAdjustment(rejectTemplate.template_id,{
+  min_samples:3,
+  min_delta_minutes:5
+});
+assert.strictEqual(rejectProposal.ok,true);
+assert.strictEqual(rejectProposal.proposal.proposed_estimated_minutes,25);
+const rejectedAdaptive=planner.decideEstimateAdjustment(rejectProposal.proposal.proposal_id,{
+  decision:'REJECT',
+  actor:'PARENT',
+  note:'이번 주만 예외적으로 오래 걸림'
+});
+assert.strictEqual(rejectedAdaptive.ok,true);
+assert.strictEqual(rejectedAdaptive.proposal.status,'REJECTED');
+assert.strictEqual(rejectedAdaptive.template.estimated_minutes,10);
+
 const snap=planner.snapshot();
 assert.strictEqual(snap.progress_events.length,1);
 assert.strictEqual(snap.storage_backend,'LOCALSTORAGE_COMPATIBILITY_SCAFFOLD');
@@ -271,5 +374,6 @@ console.log(JSON.stringify({
   dated_todos:snap.dated_todos.length,
   progress_events:snap.progress_events.length,
   execution_observations:snap.execution_observations.length,
-  carry_over_queue:snap.carry_over_queue.length
+  carry_over_queue:snap.carry_over_queue.length,
+  adaptive_estimate_proposals:snap.adaptive_estimate_proposals.length
 }));
