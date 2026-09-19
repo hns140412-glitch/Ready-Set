@@ -53,7 +53,8 @@ test('parent/admin editor creates and edits fixed schedule + homework template',
   expect(template.required_today).toBeTruthy();
   expect(template.preferred_days.sort()).toEqual([1,3]);
 
-  await page.locator('[data-nav="planner"]').first().click();
+  await page.locator('#plannerAdminView [data-nav="planner"]').click();
+  await expect(page.locator('#plannerView')).toHaveClass(/active/);
   await expect(page.locator('#plannerWeekDetail')).toContainText('영어학원');
 
   await expect.poll(async () => page.evaluate(async () => {
