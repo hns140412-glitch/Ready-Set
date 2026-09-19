@@ -1,9 +1,10 @@
 (() => {
   'use strict';
 
-  const STAGE_D_VERSION = '2026.09.18-stage-d-confirmed-timer-v2';
+  const STAGE_D_VERSION = '2026.09.19-stage-d-todays-island-v3';
   const STORE_KEY = 'readyset_planner_v1';
   const TODAY_SEED_DATE = '2026-09-08';
+  const ROLE = new URLSearchParams(location.search).get('role')==='parent'?'PARENT':'CHILD';
   const TALENT_BASELINES = {
     '연산': {min:8,max:12,load:'낮음~보통'},
     '한자': {min:8,max:12,load:'낮음~보통'},
@@ -206,17 +207,35 @@
     return card;
   }
 
+  function explorationPinHTML(task){
+    const done=task.status==='COMPLETED';
+    const detail=[task.subject,task.volume||task.unitLabel,task.deadline?\`마감 \${task.deadline}\`:null].filter(Boolean).join(' · ');
+    if(ROLE==='PARENT')return \`<article class="planner-task exploration-pin \${done?'completed':''}" data-plan-id="\${escape(task.id)}"><div class="planner-task-main"><div class="planner-task-title">\${escape(task.title||task.subject||'오늘의 할 일')}</div><div class="planner-note">\${escape(detail||task.status||'PLANNED')}</div></div></article>\`;
+    return \`<label class="planner-task exploration-pin \${task.selected?'on':''} \${done?'completed':''}" data-plan-id="\${escape(task.id)}"><div class="planner-task-top"><input class="plan-select exploration-pin-select" data-rsf-select="\${escape(task.id)}" type="checkbox" \${task.selected?'checked':''} \${done?'disabled':''} aria-label="오늘의 섬 탐험 핀 선택"><div class="planner-task-main"><div class="planner-task-title">\${escape(task.title||task.subject||'오늘의 할 일')}</div><div class="planner-note">\${escape(detail||'Planner가 준비한 오늘 할 일')}</div></div></div></label>\`;
+  }
+
   function renderPlanner(){
     const plan=dayPlan();
     const card=ensurePlannerCard();
     if(!card) return;
     const date=new Date(`${plan.localDate}T12:00:00`);
     const koDate=new Intl.DateTimeFormat('ko-KR',{month:'numeric',day:'numeric',weekday:'short'}).format(date);
-    card.innerHTML=`<div class="planner-head"><div><small>TODAY PLAN · 실제 숙제 배포</small><h2>오늘 할 일</h2></div><span class="planner-date">${escape(koDate)}</span></div>
+    if(window.ReadyFoundationV1?.enabled){
+      const selectable=(plan.tasks||[]).filter(t=>t.status!=='COMPLETED');
+      const selected=selectable.filter(t=>t.selected);
+      card.dataset.explorationSource='PLANNER_TODAY_TODO';
+      card.innerHTML=`<div class="planner-head"><div><small>TODAY'S ISLAND · PLANNER</small><h2>${ROLE==='PARENT'?'오늘의 탐험 현황':'오늘의 섬 탐험 핀'}</h2></div><span class="planner-date">${escape(koDate)}</span></div>
+        ${plan.scheduleNote?`<div class="planner-schedule">${escape(plan.scheduleNote)}</div>`:''}
+        <p class="planner-note">${ROLE==='PARENT'?'Planner가 만든 실제 오늘 할 일을 확인해요.':'Planner가 준비한 실제 오늘 할 일 중 이번 탐험에서 이어갈 핀을 하나 이상 골라요.'}</p>
+        <div class="planner-list">${(plan.tasks||[]).map(explorationPinHTML).join('') || '<div class="baseEmpty">오늘 Planner가 만든 탐험 핀이 아직 없어요.</div>'}</div>
+        ${ROLE==='CHILD'&&selectable.length?`<div class="planner-note" id="explorationSelectionCount">선택 ${selected.length}개 · 한 탐험 안에서 하나씩 이어서 진행해요.</div>`:''}`;
+      return;
+    }
+    card.innerHTML=`<div class="planner-head"><div><small>LEGACY PLAN · MIGRATION ONLY</small><h2>오늘 할 일</h2></div><span class="planner-date">${escape(koDate)}</span></div>
       ${plan.scheduleNote?`<div class="planner-schedule">${escape(plan.scheduleNote)}</div>`:''}
       <div class="planner-list">${plan.tasks.map(planTaskHTML).join('') || '<p>오늘 등록된 숙제가 없어요.</p>'}</div>
-      <div class="planner-actions"><button class="secondary" data-plan-action="add">+ 숙제 추가</button><button class="primary" data-plan-action="apply">선택 과제 배포</button></div>
-      <div class="talent-panel"><button class="talent-toggle" data-plan-action="talent-toggle"><span>재능 6과목 · 오늘 선생님 배포 입력</span><span>⌄</span></button><div id="talentRows" class="talent-grid" hidden>${Object.entries(TALENT_BASELINES).map(([name,b])=>`<div class="talent-row" data-talent="${escape(name)}"><div><b>${escape(name)}</b><small>${b.load} · ${b.min}~${b.max}분/기준단위</small></div><input class="talent-volume" placeholder="분량 입력"><input class="talent-min" type="number" min="1" max="120" placeholder="분"></div>`).join('')}<button class="primary" data-plan-action="talent-create">입력한 재능 숙제 생성</button></div></div>`;
+      <div class="planner-actions"><button class="secondary" data-plan-action="add">+ 숙제 추가</button><button class="primary" data-plan-action="apply">선택 과제 적용</button></div>
+      <div class="talent-panel"><button class="talent-toggle" data-plan-action="talent-toggle"><span>재능 입력 · 레거시</span><span>⌄</span></button><div id="talentRows" class="talent-grid" hidden>${Object.entries(TALENT_BASELINES).map(([name,b])=>`<div class="talent-row" data-talent="${escape(name)}"><div><b>${escape(name)}</b><small>${b.load} · ${b.min}~${b.max}분/기준단위</small></div><input class="talent-volume" placeholder="분량 입력"><input class="talent-min" type="number" min="1" max="120" placeholder="분"></div>`).join('')}<button class="primary" data-plan-action="talent-create">입력한 재능 숙제 생성</button></div></div>`;
   }
 
   function taskFromElement(el){ return dayPlan().tasks.find(t=>t.id===el.dataset.planId); }
@@ -316,7 +335,7 @@
     return {
       version:STAGE_D_VERSION,
       plannerStore:!!localStorage.getItem(STORE_KEY),
-      plannerCard:!!document.getElementById('todayPlannerCard'),
+      plannerCard:!!document.getElementById('todayPlannerCard'),todaysIslandPins:document.getElementById('todayPlannerCard')?.dataset.explorationSource==='PLANNER_TODAY_TODO',
       focusHeadline:document.querySelector('#focusView .focusTitle h1')?.textContent?.replace(/\s+/g,' ')==='그냥! 지금 하면 돼!',clockNumerals:document.querySelectorAll('#focusView .clockHero .clockNumber').length===12,clockBrand:document.querySelector('#focusView .clockBrand')?.textContent==='Ready & Set',targetLabel:document.querySelector('#focusView .timeStrip>div:last-child small')?.textContent==='목표 시간',
       bgmSingleControl:!!document.getElementById('focusSoundBtn') && getComputedStyle(document.getElementById('changeBgm')).display==='none',
       rev07:window.ReadySetRev07?.validate?.()||null,
