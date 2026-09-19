@@ -29,13 +29,43 @@ def validate(task, changed_files):
         ok,msg=run_node_check(p); syntax_ok=syntax_ok and ok; syntax.append({"file":p,"pass":ok,"output":msg[-2000:]})
     vr["relevant_tests"]={"status":"PASS" if syntax_ok else "FAIL","evidence":json.dumps(syntax,ensure_ascii=False)}
     missing=[p for p in CORE if not Path(p).exists()]
-    regression_ok=syntax_ok and not missing
-    vr["regression"]={"status":"PASS" if regression_ok else "FAIL","evidence":f"core_missing={missing}; core_js_syntax={syntax_ok}"}
+    runtime_required={
+        "app.js":[
+            "function nav(",
+            "function renderFocus(",
+            "function completeSession(",
+            "function startRecording(",
+            "function speakGuide(",
+            "navigator.serviceWorker.register('./sw.js')",
+        ],
+        "ready-runtime-v07.js":[
+            "const originalCompleteSession = completeSession",
+            "const originalNav = nav",
+            "window.ReadySetRev07",
+        ],
+    }
+    runtime_missing={}
+    for path, needles in runtime_required.items():
+        if not Path(path).exists():
+            runtime_missing[path]=needles
+            continue
+        src=Path(path).read_text(encoding="utf-8")
+        absent=[needle for needle in needles if needle not in src]
+        if absent:
+            runtime_missing[path]=absent
+    app_size=Path("app.js").stat().st_size if Path("app.js").exists() else 0
+    runtime_ok=not runtime_missing and app_size >= 20000
+    regression_ok=syntax_ok and not missing and runtime_ok
+    vr["regression"]={
+        "status":"PASS" if regression_ok else "FAIL",
+        "evidence":f"core_missing={missing}; core_js_syntax={syntax_ok}; runtime_missing={runtime_missing}; app_js_bytes={app_size}"
+    }
     overall=vr["diff_scope"]["status"]=="PASS" and syntax_ok and regression_ok
     risks=[]
     if deviations: risks.append({"severity":"BLOCKING","detail":f"Out-of-scope changes: {deviations}"})
     if not syntax_ok: risks.append({"severity":"HIGH","detail":"JavaScript syntax validation failed."})
     if missing: risks.append({"severity":"HIGH","detail":f"Core files missing: {missing}"})
+    if not runtime_ok: risks.append({"severity":"BLOCKING","detail":f"Ready runtime contract missing or truncated: {runtime_missing}; app.js bytes={app_size}"})
     return {"pass":overall,"profile":"READY_SET_STATIC_V1","changed_files":changed,"scope_deviations":deviations,"validation_results":vr,"unresolved_risks":risks}
 
 def main():
