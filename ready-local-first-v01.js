@@ -104,6 +104,8 @@
     const adapter=window.ReadySetSyncAdapter;
     const rows=(await all('outbox')).filter(x=>['PENDING','RETRY'].includes(x.status) && (!x.next_retry_at || x.next_retry_at<=now()));
     if(!adapter?.send) return {ok:false,reason:'NO_SYNC_ADAPTER',pending:rows.length};
+    const adapterStatus=adapter.status?.();
+    if(adapterStatus && (!adapterStatus.configured || !adapterStatus.enabled)) return {ok:false,reason:'SYNC_NOT_CONFIGURED',pending:rows.length};
     let sent=0,conflicts=0;
     for(const row of rows){
       try{

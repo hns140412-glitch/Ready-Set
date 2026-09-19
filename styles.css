@@ -58,3 +58,7 @@
 #settingsView #exportDataBtn{width:100%;margin-top:10px}.dangerText{display:block;width:100%;min-height:44px;margin-top:8px;border:0;border-radius:13px;background:#fff1ee;color:#ad4438;font-size:10px;font-weight:850}
 #settingsView main>p.muted{padding:0 4px 24px;font-size:8px;line-height:1.45;color:#9a857a}
 @media (max-width:350px){.styleGrid{grid-template-columns:1fr}.guideChoiceGrid{grid-template-columns:1fr 1fr}.soundSettingsGrid{grid-template-columns:1fr 1fr}.nameTools{grid-template-columns:1fr}.nameTools .compactBtn{width:100%}}
+
+
+/* Sync status */
+.syncStatusCard{display:grid;gap:10px}.syncStatusHead{display:flex;align-items:end;justify-content:space-between;gap:12px}.syncStatusHead small{display:block;font-size:8px;font-weight:950;letter-spacing:.12em;color:#a06c57}.syncStatusHead h2{margin-top:3px!important}.syncStatusHead>span{flex:0 0 auto;border-radius:999px;padding:7px 10px;background:#f1ece7;color:#6f625b;font-size:9px;font-weight:900}.syncStatusHead>span[data-state="CONNECTED"]{background:#e8f4eb;color:#39724a}.syncStatusHead>span[data-state="ERROR"]{background:#fff0ec;color:#a5483b}.syncMeta{display:grid;grid-template-columns:1fr 1fr;gap:7px}.syncMeta span{padding:10px 11px;border-radius:13px;background:#fff7f1;font-size:9px;color:#806b60}.syncMeta b{float:right;color:#2b2521;font-size:11px}.syncStatusCard #checkSyncBtn{width:100%}

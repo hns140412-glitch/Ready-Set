@@ -762,6 +762,45 @@ $('#saveProfileBtn').onclick=()=>{
   save();toast('프로필을 저장했어요.');renderHome();
 };
 
+
+async function renderSyncStatus(){
+  const adapter=window.ReadySetSyncAdapter;
+  const local=window.ReadySetLocalFirst;
+  if(!adapter||!local)return;
+  const s=adapter.status();
+  const [outbox,conflicts]=await Promise.all([local.outbox(),local.conflicts()]);
+  const pending=outbox.filter(x=>!['SENT','SUPERSEDED'].includes(x.status)).length;
+  const openConflicts=conflicts.filter(x=>x.status==='OPEN').length;
+  const badge=$('#syncStateBadge'),text=$('#syncStatusText');
+  if(badge){
+    badge.textContent=s.state==='CONNECTED'?'클라우드 연결':s.state==='ERROR'?'연결 오류':'로컬 저장';
+    badge.dataset.state=s.state;
+  }
+  if(text){
+    text.textContent=s.state==='CONNECTED'
+      ? '클라우드 동기화 서버와 연결되어 Outbox를 전송할 수 있습니다.'
+      : s.state==='ERROR'
+        ? '클라우드 연결에 문제가 있어 로컬 저장을 유지하고 있습니다. 데이터는 지워지지 않습니다.'
+        : '현재 이 기기에 안전하게 저장 중이에요. 클라우드 동기화는 아직 연결되지 않았습니다.';
+  }
+  if($('#syncPendingCount'))$('#syncPendingCount').textContent=String(pending);
+  if($('#syncConflictCount'))$('#syncConflictCount').textContent=String(openConflicts);
+}
+window.addEventListener('readyset-sync-status',()=>renderSyncStatus().catch(()=>{}));
+document.getElementById('checkSyncBtn')?.addEventListener('click',async()=>{
+  const s=window.ReadySetSyncAdapter?.status();
+  if(!s?.configured||!s?.enabled){
+    toast('클라우드 동기화는 아직 연결되지 않았어요. 로컬 저장은 정상입니다.');
+    await renderSyncStatus(); return;
+  }
+  const h=await window.ReadySetSyncAdapter.health();
+  if(h.ok){
+    const f=await window.ReadySetLocalFirst.flush();
+    toast(`동기화 연결 확인 · 전송 ${f.sent||0}건`);
+  }else toast('클라우드 연결을 확인하지 못했어요. 로컬 저장을 유지합니다.');
+  await renderSyncStatus();
+});
+
 function renderSettings(){
   $('#guideNameInput').value=state.guide.name;
   $('#guideNameLabel').textContent=state.guide.name;
@@ -771,6 +810,7 @@ function renderSettings(){
   $$('[data-guide-voice]').forEach(b=>b.classList.toggle('on',b.dataset.guideVoice===state.guide.voice));
   renderNameSuggestions(false);
   $$('[data-sound]').forEach(b=>b.classList.toggle('on',b.dataset.sound===state.sound));
+  renderSyncStatus().catch(()=>{});
 }
 $('#guideNameInput').onchange=e=>{
   state.guide.name=e.target.value.trim()||guideData().defaultName;
