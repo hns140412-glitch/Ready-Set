@@ -5,10 +5,290 @@ on:
     - cron: '*/15 * * * *'
   workflow_dispatch:
 
-permissions: {}
+concurrency:
+  group: ready-set-taky-codex-executor
+  cancel-in-progress: false
 
 jobs:
-  probe:
+  credential_gate:
     runs-on: ubuntu-latest
+    permissions: {}
+    outputs:
+      available: ${{ steps.check.outputs.available }}
     steps:
-      - run: echo "TAKY Codex executor workflow syntax probe"
+      - id: check
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        shell: bash
+        run: |
+          if [ -n "${OPENAI_API_KEY:-}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  credential_blocked:
+    needs: credential_gate
+    if: needs.credential_gate.outputs.available != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Mark queue blocked by missing executor credential
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh issue list --state open --limit 100 --json number,title,comments > /tmp/taky-open.json
+          python - <<'PY' > /tmp/missing-credential-issues.txt
+          import json
+          from pathlib import Path
+          data=json.loads(Path('/tmp/taky-open.json').read_text())
+          marker='<!-- TAKY_CODEX_CREDENTIAL_BLOCKED -->'
+          for issue in data:
+              if not str(issue.get('title','')).startswith('[TAKY EXECUTOR QUEUE]'):
+                  continue
+              if any(marker in str((c or {}).get('body') or '') for c in issue.get('comments') or []):
+                  continue
+              print(issue['number'])
+          PY
+          while IFS= read -r ISSUE_NUMBER; do
+            [ -z "$ISSUE_NUMBER" ] && continue
+            gh issue comment "$ISSUE_NUMBER" --body $'<!-- TAKY_CODEX_CREDENTIAL_BLOCKED -->\n**TAKY Codex worker blocked:** repository Actions secret `OPENAI_API_KEY` is not configured. No executor run was started and no task state was fabricated.'
+          done < /tmp/missing-credential-issues.txt
+
+  prepare:
+    needs: credential_gate
+    if: needs.credential_gate.outputs.available == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    outputs:
+      has_task: ${{ steps.meta.outputs.has_task }}
+      issue_number: ${{ steps.meta.outputs.issue_number }}
+      task_id: ${{ steps.meta.outputs.task_id }}
+      base_sha: ${{ steps.meta.outputs.base_sha }}
+      contract_hash: ${{ steps.meta.outputs.contract_hash }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read open local TAKY queue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue list --state open --limit 100 --json number,title,body,comments > /tmp/taky-issues.json
+      - name: Prepare one verified task
+        run: |
+          mkdir -p /tmp/taky-context
+          python .github/scripts/taky_codex_queue.py prepare \
+            --issues /tmp/taky-issues.json \
+            --repo "$GITHUB_REPOSITORY" \
+            --base-head "$(git rev-parse HEAD)" \
+            --run-id "$GITHUB_RUN_ID" \
+            --out-dir /tmp/taky-context
+      - id: meta
+        name: Export task metadata
+        run: |
+          echo "has_task=$(jq -r '.has_task // false' /tmp/taky-context/prepare.json)" >> "$GITHUB_OUTPUT"
+          echo "issue_number=$(jq -r '.issue_number // empty' /tmp/taky-context/prepare.json)" >> "$GITHUB_OUTPUT"
+          echo "task_id=$(jq -r '.task_id // empty' /tmp/taky-context/prepare.json)" >> "$GITHUB_OUTPUT"
+          echo "base_sha=$(jq -r '.base_sha // empty' /tmp/taky-context/prepare.json)" >> "$GITHUB_OUTPUT"
+          echo "contract_hash=$(jq -r '.contract_hash // empty' /tmp/taky-context/prepare.json)" >> "$GITHUB_OUTPUT"
+      - name: Post executor receipt
+        if: steps.meta.outputs.has_task == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ steps.meta.outputs.issue_number }}
+        run: gh issue comment "$ISSUE_NUMBER" --body-file /tmp/taky-context/receipt.md
+      - name: Upload verified task context
+        if: steps.meta.outputs.has_task == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: taky-task-context-${{ github.run_id }}
+          path: |
+            /tmp/taky-context/task.json
+            /tmp/taky-context/prompt.md
+          if-no-files-found: error
+          retention-days: 1
+
+  codex:
+    needs: [credential_gate, prepare]
+    if: needs.credential_gate.outputs.available == 'true' && needs.prepare.outputs.has_task == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.prepare.outputs.base_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: taky-task-context-${{ github.run_id }}
+          path: .taky
+      - name: Run Codex implementation
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: .taky/prompt.md
+          output-file: .taky/codex-output.md
+          sandbox: workspace-write
+          codex-args: '["--ephemeral"]'
+      - name: Capture patch and trusted validation
+        shell: bash
+        run: |
+          git diff --binary -- . ':!.taky' > .taky/codex.patch
+          git diff --name-only -- . ':!.taky' > .taky/changed-files.txt
+          set +e
+          python .github/scripts/taky_ready_validation.py \
+            --task .taky/task.json \
+            --changed-files .taky/changed-files.txt \
+            --output .taky/validation.json
+          echo "$?" > .taky/validation-exit.txt
+          set -e
+      - name: Upload Codex work product
+        uses: actions/upload-artifact@v4
+        with:
+          name: taky-codex-work-${{ github.run_id }}
+          path: |
+            .taky/task.json
+            .taky/prompt.md
+            .taky/codex-output.md
+            .taky/codex.patch
+            .taky/changed-files.txt
+            .taky/validation.json
+            .taky/validation-exit.txt
+          if-no-files-found: error
+          retention-days: 1
+
+  materialize:
+    needs: [prepare, codex]
+    if: always() && needs.prepare.outputs.has_task == 'true' && needs.codex.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.prepare.outputs.base_sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: taky-codex-work-${{ github.run_id }}
+          path: .taky
+      - name: Apply exact Codex patch and revalidate
+        id: apply
+        shell: bash
+        run: |
+          set -u
+          if [ -s .taky/codex.patch ]; then
+            if ! git apply --index .taky/codex.patch; then
+              python - <<'PY'
+              import json
+              from pathlib import Path
+              Path('.taky/materialized-validation.json').write_text(json.dumps({
+                'pass': False,
+                'changed_files': [],
+                'scope_deviations': [],
+                'validation_results': {
+                  'diff_scope': {'status':'FAIL','evidence':'Codex patch could not be applied cleanly to verified base.'},
+                  'build': {'status':'NOT_APPLICABLE','evidence':'Patch application failed before build validation.'},
+                  'relevant_tests': {'status':'NOT_RUN','evidence':'Patch application failed.'},
+                  'regression': {'status':'NOT_RUN','evidence':'Patch application failed.'}
+                },
+                'unresolved_risks':[{'severity':'BLOCKING','detail':'PATCH_APPLY_FAILED'}]
+              }, indent=2)+'\n')
+              PY
+              echo "validation_pass=false" >> "$GITHUB_OUTPUT"
+              echo "materialization_risk=PATCH_APPLY_FAILED" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          git diff --cached --name-only > .taky/materialized-files.txt
+          set +e
+          python .github/scripts/taky_ready_validation.py \
+            --task .taky/task.json \
+            --changed-files .taky/materialized-files.txt \
+            --output .taky/materialized-validation.json
+          rc=$?
+          set -e
+          if [ "$rc" -eq 0 ]; then
+            echo "validation_pass=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "validation_pass=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "materialization_risk=" >> "$GITHUB_OUTPUT"
+      - name: Commit bounded work and open PR
+        id: pr
+        if: steps.apply.outputs.validation_pass == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TASK_ID: ${{ needs.prepare.outputs.task_id }}
+        shell: bash
+        run: |
+          set -uo pipefail
+          safe_task="$(printf '%s' "$TASK_ID" | tr -cs 'A-Za-z0-9._-' '-')"
+          branch="codex/taky-${safe_task}-${GITHUB_RUN_ID}"
+          git switch -c "$branch"
+          git config user.name "TAKY Codex Worker"
+          git config user.email "actions@users.noreply.github.com"
+          if ! git commit -m "Codex: ${TASK_ID}" > .taky/commit.log 2>&1; then
+            echo "materialization_risk=COMMIT_FAILED" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "commit_ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          if ! git push origin "HEAD:${branch}" > .taky/push.log 2>&1; then
+            echo "materialization_risk=GIT_PUSH_FAILED_CHECK_ACTIONS_WORKFLOW_WRITE_PERMISSION" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          set +e
+          pr_url="$(gh pr create --base main --head "$branch" --title "[TAKY/Codex] ${TASK_ID}" --body "Automated bounded implementation from TAKY queue. Human approval is required before merge. Source queue issue: #${{ needs.prepare.outputs.issue_number }}" 2> .taky/pr-create.log)"
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ] || [ -z "$pr_url" ]; then
+            echo "materialization_risk=PR_CREATE_FAILED_CHECK_ACTIONS_PULL_REQUEST_PERMISSION" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+          echo "materialization_risk=" >> "$GITHUB_OUTPUT"
+      - name: Build executor result
+        env:
+          CONTRACT_HASH: ${{ needs.prepare.outputs.contract_hash }}
+          COMMIT_REF: ${{ steps.pr.outputs.commit_ref }}
+          PR_URL: ${{ steps.pr.outputs.pr_url }}
+          APPLY_RISK: ${{ steps.apply.outputs.materialization_risk }}
+          PR_RISK: ${{ steps.pr.outputs.materialization_risk }}
+        shell: bash
+        run: |
+          if [ -z "${COMMIT_REF:-}" ]; then COMMIT_REF="WORKTREE_ONLY:${GITHUB_RUN_ID}"; fi
+          MATERIALIZATION_RISK="${APPLY_RISK:-${PR_RISK:-}}"
+          python .github/scripts/taky_codex_queue.py result \
+            --task .taky/task.json \
+            --contract-hash "$CONTRACT_HASH" \
+            --codex-output .taky/codex-output.md \
+            --validation .taky/materialized-validation.json \
+            --commit-ref "$COMMIT_REF" \
+            --pr-url "${PR_URL:-}" \
+            --materialization-risk "$MATERIALIZATION_RISK" \
+            --output .taky/result.json
+          jq -r '.comment_body' .taky/result.json > .taky/result-comment.md
+      - name: Post executor result to queue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ needs.prepare.outputs.issue_number }}
+        run: gh issue comment "$ISSUE_NUMBER" --body-file .taky/result-comment.md
