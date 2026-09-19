@@ -1,5 +1,5 @@
 {
-  "status_version": "2026-09-19.1",
+  "status_version": "2026-09-19.2",
   "product": "Ready & Set",
   "live_version_source": "VERSION.json",
   "current_master_revision": "REV_07",
@@ -10,18 +10,92 @@
       "covers_app_version": "0.9.2",
       "freshness": "STALE_FOR_CURRENT_RELEASE_CLAIMS",
       "allowed_use": "HISTORICAL_REGRESSION_REFERENCE_ONLY"
+    },
+    "exact_main_runtime_evidence": {
+      "main_sha": "56c31ac1d3870164b33526de732cbf1a8bafe45c",
+      "github_actions_run_id": 35451711804,
+      "exact_main_ci": "PASS",
+      "chromium_runtime": "PASS",
+      "mobile_quality_gate": {
+        "status": "PASS",
+        "viewport": "390x844",
+        "environment": "CHROMIUM_EMULATED_MOBILE",
+        "device_equivalence": "NOT_A_PHYSICAL_DEVICE"
+      },
+      "visual_audit": {
+        "status": "PASS_AFTER_PROFILE_SETTINGS_POLISH",
+        "surfaces": [
+          "Home",
+          "Mission",
+          "Planner WEEK",
+          "Planner DAY",
+          "Planner Admin",
+          "Profile",
+          "Settings",
+          "Focus"
+        ],
+        "evidence_type": "CI_SCREENSHOT_AUDIT",
+        "device_equivalence": "NOT_A_PHYSICAL_DEVICE"
+      },
+      "pwa_offline_runtime": "PASS_IN_CHROMIUM"
     }
   },
   "current_release_claim": {
-    "state": "DEVICE_VALIDATION_PENDING",
-    "static_current_validation": "NOT_YET_REGENERATED_FOR_REV_07",
+    "state": "DEVICE_AND_PRODUCTION_VALIDATION_PENDING",
+    "coded": true,
+    "ci_verified": true,
+    "runtime_verified": true,
+    "device_verified": false,
+    "production_verified": false,
     "production_pass": false
   },
+  "verified_runtime_scope": [
+    "TODAY -> Mission -> Focus -> Wrap-up -> Result -> carry-over",
+    "Local-first IndexedDB snapshot + Outbox",
+    "IndexedDB recovery after localStorage loss",
+    "Conflict handling: KEEP_LOCAL / ACCEPT_REMOTE",
+    "WEEK / DAY Planner",
+    "Parent/Admin Schedule + Homework Template editing",
+    "Service Worker control + offline reload in Chromium",
+    "390x844 mobile overflow/runtime/touch-target integrity gate",
+    "Dead navigation and unreferenced action-button integrity gate",
+    "CI screenshot visual audit with Profile/Settings polish"
+  ],
+  "known_open_items": [
+    {
+      "id": "PROD-NETLIFY-001",
+      "status": "OPEN",
+      "issue": "Verified exact-main deploy artifact has not been published to the Netlify production context.",
+      "evidence": "Current Netlify site ready-set-staging-taky is an older upload deploy with commit_ref=null; exact-main provenance cannot be established.",
+      "attempted_action": "Netlify connector provided an npx @netlify/mcp deploy command, but the execution environment could not resolve registry.npmjs.org (EAI_AGAIN). Existing Netlify deployment was not modified."
+    },
+    {
+      "id": "DEVICE-IOS-001",
+      "status": "OPEN",
+      "issue": "Representative physical iPhone Safari / installed-PWA validation has not been executed.",
+      "required_scope": [
+        "install/home-screen launch",
+        "background/foreground return",
+        "offline/reconnect",
+        "cache update",
+        "touch/viewport/safe-area",
+        "native share/microphone where applicable"
+      ]
+    },
+    {
+      "id": "SYNC-REMOTE-001",
+      "status": "OPEN",
+      "issue": "Remote sync adapter is not connected.",
+      "current_scope": "Local IndexedDB + Outbox + retry/conflict mechanics are implemented; full cloud synchronization must not be claimed."
+    }
+  ],
   "rules": [
-    "A validation artifact may support only the version/revision it actually covers.",
+    "A validation artifact may support only the version/revision and environment it actually covers.",
     "Older PASS evidence must not be promoted to the current release without regeneration or explicit inheritance proof.",
-    "VERSION.json and current implementation state outrank stale validation-report labels for freshness.",
+    "CODED, CI_VERIFIED, RUNTIME_VERIFIED, DEVICE_VERIFIED, and PRODUCTION_VERIFIED are separate states.",
+    "Emulated-mobile Chromium evidence must not be promoted to physical-device evidence.",
+    "A Netlify upload with commit_ref=null must not be treated as proof that current main is deployed.",
     "Device/production claims require representative runtime evidence."
   ],
-  "next_action": "Regenerate current REV_07 validation evidence against the live main implementation and preserve old REV_06 report as historical evidence."
+  "next_action": "Publish the exact-main verified deploy artifact to ready-set-staging-taky with provenance preserved, run production browser QA, then execute representative physical iPhone/PWA validation without using the product owner as an iterative debugger."
 }
