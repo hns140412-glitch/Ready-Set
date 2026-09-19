@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - taky/runtime-e2e-0131929
+  pull_request:
+    branches:
+      - main
 
 jobs:
   chromium-runtime:
