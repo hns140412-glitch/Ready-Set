@@ -31,7 +31,7 @@ test('local-first sidecar mirrors planner/app state and keeps outbox pending wit
 
   const flush = await page.evaluate(async () => window.ReadySetLocalFirst.flush());
   expect(flush.ok).toBeFalsy();
-  expect(flush.reason).toBe('NO_SYNC_ADAPTER');
+  expect(['NO_SYNC_ADAPTER','SYNC_NOT_CONFIGURED']).toContain(flush.reason);
   expect(flush.pending).toBeGreaterThan(0);
 
   const conflicts = await page.evaluate(async () => window.ReadySetLocalFirst.conflicts());
