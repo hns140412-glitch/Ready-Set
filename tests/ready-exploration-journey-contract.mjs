@@ -16,6 +16,10 @@ const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const version = JSON.parse(fs.readFileSync(new URL('../VERSION.json', import.meta.url), 'utf8'));
 
 const checks = [
+  ['Planner selection preserves multiple exploration pins', !native.includes("selected:String(x.id)===String(id)") && !selectionBridge.includes("selected:String(t.id)===String(id)") && native.includes('data-exploration-pin')],
+  ['base runtime binds all selected Planner TODOs into one exploration session', base.includes('function readySelectedPlannerTasks()') && base.includes('plannerTaskIds') && base.includes('tasks:labels')],
+  ['REV07 binds each canonical task to its Planner TODO identity', runtime.includes('planner_id') && runtime.includes('homeworkTaskMap') && runtime.includes('canonical_task_id')],
+  ['Today island exploration entry is first-class', native.includes('오늘의 섬') && native.includes('탐험 핀') && native.includes('data-exploration-pin')],
   ['PWA service worker is registered by active runtime', base.includes("navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'})")],
   ['PWA cache includes active timer and recording dependencies', sw.includes("'./ready-stage-d-base-v1.js'") && sw.includes("'./ready-recording-v1.js'") && sw.includes("'./ready-stage-g13-authority-recovery.js'")],
   ['PWA cache version matches VERSION metadata', sw.includes(`const CACHE='${version.cacheVersion}';`)],
