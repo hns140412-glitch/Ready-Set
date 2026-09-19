@@ -3,6 +3,7 @@ name: Ready Runtime E2E
 on:
   push:
     branches:
+      - main
       - taky/runtime-e2e-0131929
   pull_request:
     branches:
@@ -34,4 +35,16 @@ jobs:
           name: ready-set-ui-audit
           path: ui-audit/*.png
           if-no-files-found: warn
+          retention-days: 3
+      - name: Package verified deploy source
+        if: success()
+        run: |
+          git archive --format=zip --output=/tmp/ready-set-deploy-source.zip HEAD
+      - name: Upload verified deploy source
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ready-set-deploy-source
+          path: /tmp/ready-set-deploy-source.zip
+          if-no-files-found: error
           retention-days: 3
