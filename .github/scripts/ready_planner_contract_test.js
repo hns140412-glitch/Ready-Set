@@ -133,13 +133,22 @@ assert.strictEqual(committed.ok,true);
 assert.strictEqual(committed.created.length,2);
 assert.strictEqual(planner.today('2026-09-20').length,2);
 
+const science=planner.upsertHomeworkTemplate({
+  title:'과학 숙제',
+  subject:'과학',
+  estimated_minutes:20,
+  deadline_date:'2026-09-21',
+  allocation_priority:5,
+  required_today:true,
+  provenance:{source:'FIXTURE'}
+});
 const tight=planner.allocateToday({
   date:'2026-09-21',
   candidate_windows:[{start:'20:30',end:'21:00'}],
   max_minutes:10
 });
 assert.strictEqual(tight.ok,true);
-const requiredOverflow=tight.proposals.find(x=>x.template_id===vocab.template_id);
+const requiredOverflow=tight.proposals.find(x=>x.template_id===science.template_id);
 assert(requiredOverflow);
 assert.strictEqual(requiredOverflow.decision,'REQUIRES_REPLAN');
 
