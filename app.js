@@ -87,6 +87,7 @@ function nav(name){
   if(name==='history')renderHistory();
   if(name==='calendar')renderCalendar();
   if(name==='planner')renderPlanner();
+  if(name==='planner-admin')renderPlannerAdmin();
   if(name==='profile')renderProfile();
   if(name==='settings')renderSettings();
   if(name==='result')renderResult();
@@ -617,6 +618,120 @@ function renderPlanner(){
   $('#plannerDayCount').textContent=`${selectedItems.length}개`;
   $('#plannerHeroTitle').textContent=plannerTab==='week'?'이번 주 탐험 지도':'오늘의 탐험 루트';
 }
+
+
+function setWeekdayButtons(days=[]){
+  const set=new Set(days.map(Number));
+  document.querySelectorAll('#templateWeekdays [data-weekday]').forEach(b=>b.classList.toggle('on',set.has(Number(b.dataset.weekday))));
+}
+function selectedWeekdays(){
+  return [...document.querySelectorAll('#templateWeekdays [data-weekday].on')].map(b=>Number(b.dataset.weekday));
+}
+function clearScheduleForm(){
+  $('#scheduleId').value='';
+  $('#scheduleTitle').value='';
+  $('#scheduleCategory').value='';
+  $('#scheduleDate').value=localDateKey();
+  $('#scheduleStart').value='';
+  $('#scheduleEnd').value='';
+  $('#scheduleMovable').checked=false;
+}
+function clearTemplateForm(){
+  $('#templateId').value='';
+  $('#templateTitle').value='';
+  $('#templateSubject').value='';
+  $('#templateMinutes').value='20';
+  $('#templateDeadline').value='';
+  $('#templateRequiredToday').checked=false;
+  setWeekdayButtons([]);
+}
+function renderPlannerAdmin(){
+  const snap=plannerSnapshot();
+  const scheduleRoot=$('#scheduleAdminList');
+  const templateRoot=$('#templateAdminList');
+  if(!scheduleRoot||!templateRoot)return;
+
+  scheduleRoot.innerHTML=(snap.schedule_commitments||[]).length
+    ? [...snap.schedule_commitments].sort((a,b)=>String(a.start_at||'').localeCompare(String(b.start_at||''))).map(x=>`
+      <button class="adminListItem" type="button" data-edit-schedule="${x.commitment_id}">
+        <span><b>${escapeHtml(x.title)}</b><small>${String(x.start_at||'').slice(0,16).replace('T',' ')} → ${String(x.end_at||'').slice(11,16)} · ${escapeHtml(x.category||'OTHER')}</small></span><strong>수정</strong>
+      </button>`).join('')
+    : '<div class="plannerEmpty"><b>등록된 고정 일정이 없어요.</b><small>학원·피아노·태권도처럼 움직이지 않는 일정을 먼저 넣어요.</small></div>';
+
+  templateRoot.innerHTML=(snap.homework_templates||[]).length
+    ? [...snap.homework_templates].sort((a,b)=>(a.allocation_priority??100)-(b.allocation_priority??100)||a.title.localeCompare(b.title,'ko')).map(x=>`
+      <button class="adminListItem" type="button" data-edit-template="${x.template_id}">
+        <span><b>${escapeHtml(x.title)}</b><small>${escapeHtml(x.subject||'과목 없음')} · ${x.estimated_minutes??'-'}분${x.required_today?' · 오늘 필수':''}</small></span><strong>수정</strong>
+      </button>`).join('')
+    : '<div class="plannerEmpty"><b>등록된 숙제 템플릿이 없어요.</b><small>반복되는 숙제를 템플릿으로 등록하면 Planner가 TODAY 후보를 만들 수 있어요.</small></div>';
+
+  if(!$('#scheduleDate').value) $('#scheduleDate').value=localDateKey();
+}
+function editSchedule(id){
+  const x=plannerSnapshot().schedule_commitments.find(v=>v.commitment_id===id); if(!x)return;
+  $('#scheduleId').value=x.commitment_id;
+  $('#scheduleTitle').value=x.title||'';
+  $('#scheduleCategory').value=x.category||'';
+  $('#scheduleDate').value=String(x.start_at||'').slice(0,10);
+  $('#scheduleStart').value=String(x.start_at||'').slice(11,16);
+  $('#scheduleEnd').value=String(x.end_at||'').slice(11,16);
+  $('#scheduleMovable').checked=!!x.planner_movable;
+}
+function editTemplate(id){
+  const x=plannerSnapshot().homework_templates.find(v=>v.template_id===id); if(!x)return;
+  $('#templateId').value=x.template_id;
+  $('#templateTitle').value=x.title||'';
+  $('#templateSubject').value=x.subject||'';
+  $('#templateMinutes').value=Number.isFinite(x.estimated_minutes)?x.estimated_minutes:20;
+  $('#templateDeadline').value=x.deadline_date||'';
+  $('#templateRequiredToday').checked=!!x.required_today;
+  setWeekdayButtons(x.preferred_days||[]);
+}
+document.getElementById('scheduleClearBtn')?.addEventListener('click',clearScheduleForm);
+document.getElementById('templateClearBtn')?.addEventListener('click',clearTemplateForm);
+document.getElementById('templateWeekdays')?.addEventListener('click',e=>{
+  const b=e.target.closest('[data-weekday]'); if(!b)return; b.classList.toggle('on');
+});
+document.addEventListener('click',e=>{
+  const s=e.target.closest('[data-edit-schedule]'); if(s){editSchedule(s.dataset.editSchedule);return;}
+  const t=e.target.closest('[data-edit-template]'); if(t){editTemplate(t.dataset.editTemplate);}
+});
+document.getElementById('saveScheduleBtn')?.addEventListener('click',()=>{
+  const title=$('#scheduleTitle').value.trim(), date=$('#scheduleDate').value, start=$('#scheduleStart').value, end=$('#scheduleEnd').value;
+  if(!title||!date||!start||!end){toast('일정명·날짜·시작·종료 시간을 확인해 주세요.');return;}
+  if(end<=start){toast('종료 시간은 시작 시간보다 늦어야 해요.');return;}
+  window.ReadySetPlanner.upsertScheduleCommitment({
+    commitment_id:$('#scheduleId').value||undefined,
+    title,
+    category:$('#scheduleCategory').value.trim()||'OTHER',
+    start_at:`${date}T${start}:00`,
+    end_at:`${date}T${end}:00`,
+    confirmed:true,
+    planner_movable:$('#scheduleMovable').checked,
+    parent_editable:true,
+    source:'PARENT_ADMIN_UI'
+  });
+  toast('고정 일정을 저장했어요.');
+  renderPlannerAdmin(); renderPlanner();
+});
+document.getElementById('saveTemplateBtn')?.addEventListener('click',()=>{
+  const title=$('#templateTitle').value.trim(), mins=Math.max(1,Math.min(240,Number($('#templateMinutes').value)||20));
+  if(!title){toast('숙제명을 입력해 주세요.');return;}
+  window.ReadySetPlanner.upsertHomeworkTemplate({
+    template_id:$('#templateId').value||undefined,
+    title,
+    subject:$('#templateSubject').value.trim()||null,
+    deadline_date:$('#templateDeadline').value||null,
+    estimated_minutes:mins,
+    allocation_priority:100,
+    required_today:$('#templateRequiredToday').checked,
+    preferred_days:selectedWeekdays(),
+    confirmation_state:'CONFIRMED',
+    provenance:{kind:'PARENT_ADMIN_UI'}
+  });
+  toast('숙제 템플릿을 저장했어요.');
+  renderPlannerAdmin();
+});
 
 function renderProfile(){
   const img=$('#profileImage'),ph=$('#profilePlaceholder');
