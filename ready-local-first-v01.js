@@ -1,6 +1,7 @@
 (() => {
   'use strict';
-  const DB_NAME='readyset_local_v1', DB_VERSION=1;\n  const SCOPE_KEYS={planner:'readyset_planner_v1',app_state:'readyset_state'};
+  const DB_NAME='readyset_local_v1', DB_VERSION=1;
+  const SCOPE_KEYS={planner:'readyset_planner_v1',app_state:'readyset_state'};
   let dbPromise=null;
   const now=()=>new Date().toISOString();
   const hash=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(16)};
@@ -98,7 +99,8 @@
     await put('conflicts',conflict);
     return {ok:true,resolution,reload_required:resolution==='ACCEPT_REMOTE'};
   }
-\n  async function flush(){
+
+  async function flush(){
     const adapter=window.ReadySetSyncAdapter;
     const rows=(await all('outbox')).filter(x=>['PENDING','RETRY'].includes(x.status) && (!x.next_retry_at || x.next_retry_at<=now()));
     if(!adapter?.send) return {ok:false,reason:'NO_SYNC_ADAPTER',pending:rows.length};
@@ -126,11 +128,20 @@
   window.ReadySetLocalFirst=Object.freeze({
     version:'0.2.0',
     mode:'INDEXEDDB_RECOVERY_WITH_OUTBOX',
-    capture:(scope,payload)=>capture(scope,payload),\n    recoverMissingScopes,\n    resolveConflict,
+    capture:(scope,payload)=>capture(scope,payload),
+    recoverMissingScopes,
+    resolveConflict,
     outbox:()=>all('outbox'),
     conflicts:()=>all('conflicts'),
     snapshots:()=>all('snapshots'),
     flush
   });
-  openDb().then(recoverMissingScopes).then(result=>{\n    if(result.reload_required && !sessionStorage.getItem('readyset_recovery_reload')){\n      sessionStorage.setItem('readyset_recovery_reload','1');\n      location.reload();\n    } else {\n      sessionStorage.removeItem('readyset_recovery_reload');\n    }\n  }).catch(()=>{});
+  openDb().then(recoverMissingScopes).then(result=>{
+    if(result.reload_required && !sessionStorage.getItem('readyset_recovery_reload')){
+      sessionStorage.setItem('readyset_recovery_reload','1');
+      location.reload();
+    } else {
+      sessionStorage.removeItem('readyset_recovery_reload');
+    }
+  }).catch(()=>{});
 })();
