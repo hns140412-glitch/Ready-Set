@@ -59,7 +59,7 @@
     function load(){
       try{return normalize(JSON.parse(storage.getItem(STORAGE_KEY)||'null'))}catch{return blank()}
     }
-    function save(s){storage.setItem(STORAGE_KEY,JSON.stringify(normalize(s)))}
+    function save(s){const payload=JSON.stringify(normalize(s));storage.setItem(STORAGE_KEY,payload);globalThis.ReadySetLocalFirst?.capture?.('planner',payload).catch?.(()=>{})}
     function mutate(fn){const s=load();const out=fn(s);save(s);return out}
 
     function upsertScheduleCommitment(input={}){

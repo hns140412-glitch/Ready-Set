@@ -26,4 +26,4 @@ jobs:
           python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/readyset-http.log 2>&1 &
           echo $! > /tmp/readyset-http.pid
       - name: Run runtime flow
-        run: npx playwright test tests/runtime-flow.spec.js --reporter=line
+        run: npx playwright test tests/*.spec.js --reporter=line
