@@ -209,9 +209,9 @@
 
   function explorationPinHTML(task){
     const done=task.status==='COMPLETED';
-    const detail=[task.subject,task.volume||task.unitLabel,task.deadline?\`마감 \${task.deadline}\`:null].filter(Boolean).join(' · ');
-    if(ROLE==='PARENT')return \`<article class="planner-task exploration-pin \${done?'completed':''}" data-plan-id="\${escape(task.id)}"><div class="planner-task-main"><div class="planner-task-title">\${escape(task.title||task.subject||'오늘의 할 일')}</div><div class="planner-note">\${escape(detail||task.status||'PLANNED')}</div></div></article>\`;
-    return \`<label class="planner-task exploration-pin \${task.selected?'on':''} \${done?'completed':''}" data-plan-id="\${escape(task.id)}"><div class="planner-task-top"><input class="plan-select exploration-pin-select" data-rsf-select="\${escape(task.id)}" type="checkbox" \${task.selected?'checked':''} \${done?'disabled':''} aria-label="오늘의 섬 탐험 핀 선택"><div class="planner-task-main"><div class="planner-task-title">\${escape(task.title||task.subject||'오늘의 할 일')}</div><div class="planner-note">\${escape(detail||'Planner가 준비한 오늘 할 일')}</div></div></div></label>\`;
+    const detail=[task.subject,task.volume||task.unitLabel,task.deadline?`마감 ${task.deadline}`:null].filter(Boolean).join(' · ');
+    if(ROLE==='PARENT')return `<article class="planner-task exploration-pin ${done?'completed':''}" data-plan-id="${escape(task.id)}"><div class="planner-task-main"><div class="planner-task-title">${escape(task.title||task.subject||'오늘의 할 일')}</div><div class="planner-note">${escape(detail||task.status||'PLANNED')}</div></div></article>`;
+    return `<label class="planner-task exploration-pin ${task.selected?'on':''} ${done?'completed':''}" data-plan-id="${escape(task.id)}"><div class="planner-task-top"><input class="plan-select exploration-pin-select" data-rsf-select="${escape(task.id)}" type="checkbox" ${task.selected?'checked':''} ${done?'disabled':''} aria-label="오늘의 섬 탐험 핀 선택"><div class="planner-task-main"><div class="planner-task-title">${escape(task.title||task.subject||'오늘의 할 일')}</div><div class="planner-note">${escape(detail||'Planner가 준비한 오늘 할 일')}</div></div></div></label>`;
   }
 
   function renderPlanner(){
