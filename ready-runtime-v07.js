@@ -44,10 +44,12 @@
   function ensureContract(session = state.activeSession) {
     if (!session) return null;
     if (!session.rev07) {
+      const plannerByLabel = new Map((session.plannerLinks || []).map(x => [x.label, x.todo_id]));
       const tasks = taskLabels(session).map((label, index) => ({
         task_id: `task_${session.id || Date.now()}_${index + 1}`,
         label,
         state: 'PENDING',
+        planner_todo_id: plannerByLabel.get(label) || null,
         suggested_app: suggestedApp(label),
         laps: []
       }));
@@ -123,6 +125,15 @@
     task.state = nextState;
     task.updated_at = iso();
     emit('TASK_STATE_CHANGED', { task_id: taskId, previous, next: nextState, source });
+    if (task.planner_todo_id && window.ReadySetPlanner) {
+      window.ReadySetPlanner.recordTaskState({
+        todo_id: task.planner_todo_id,
+        ready_state: nextState,
+        session_id: c.session_id,
+        task_id: task.task_id,
+        at: iso()
+      });
+    }
     save();
     renderContractUI();
     return true;
