@@ -4,7 +4,7 @@ test('local-first sidecar mirrors planner/app state and keeps outbox pending wit
   await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
 
   const version = await page.evaluate(() => window.ReadySetLocalFirst?.version || null);
-  expect(version).toBe('0.1.0');
+  expect(version).toBe('0.2.0');
 
   await page.evaluate(() => {
     window.ReadySetPlanner.upsertDatedTodo({
