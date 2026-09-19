@@ -1,0 +1,69 @@
+name: TAKY Codex Worker Self-Test
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/taky-codex-executor.yml'
+      - '.github/workflows/taky-worker-selftest.yml'
+      - '.github/scripts/taky_codex_queue.py'
+      - '.github/scripts/taky_ready_validation.py'
+  push:
+    paths:
+      - '.github/workflows/taky-codex-executor.yml'
+      - '.github/workflows/taky-worker-selftest.yml'
+      - '.github/scripts/taky_codex_queue.py'
+      - '.github/scripts/taky_ready_validation.py'
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile worker scripts
+        run: |
+          python -m py_compile .github/scripts/taky_codex_queue.py
+          python -m py_compile .github/scripts/taky_ready_validation.py
+      - name: Verify queue integrity and profile binding
+        run: |
+          python - <<'PY'
+          import importlib.util, json, pathlib
+          p=pathlib.Path('.github/scripts/taky_codex_queue.py')
+          spec=importlib.util.spec_from_file_location('q',p); q=importlib.util.module_from_spec(spec); spec.loader.exec_module(q)
+          base='base-sha-fixture'
+          task={
+            'task_id':'SELFTEST-001','project':'Ready & Set','repository':'hns140412-glitch/Ready-Set','base_branch':'main','verified_base_head':base,
+            'objective':'bounded selftest','working_model':{'protected_state':['unrelated behavior']},
+            'change_scope':{'allowed':['app.js'],'forbidden':['unrelated_refactor','silent_requirement_change','direct_production_deploy']},
+            'acceptance_tests':['bounded behavior implemented'],
+            'acceptance_checks':[{'criterion':'bounded behavior implemented','mode':'PROFILE_CHECK'}],
+            'validation':{'required':['diff_scope','build','relevant_tests','regression'],'profile':'READY_SET_STATIC_V1','mobile_runtime_required':False},
+            'executor_automation':{'profile':'READY_SET_CODEX_V1','target_repository_local':True}
+          }
+          env={'envelope_version':'2026-09-19.1','task_id':task['task_id'],'provider':'CODEX','transport':'GITHUB_ISSUE_QUEUE','dispatch_status':'DISPATCH_READY','task_contract_sha256':q.digest(task),'task_contract':task}
+          issue={'number':1,'title':'[TAKY EXECUTOR QUEUE] SELFTEST-001 -> CODEX','body':q.BEGIN_DISPATCH+'\n'+json.dumps(env)+'\n'+q.END_DISPATCH,'comments':[]}
+          out=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'fixture-run')
+          assert out['has_task'] is True, out
+          assert 'Do not commit, push, merge, deploy' in out['prompt']
+          bad=json.loads(json.dumps(env)); bad['task_contract']['repository']='other/repo'; bad['task_contract_sha256']=q.digest(bad['task_contract'])
+          issue['body']=q.BEGIN_DISPATCH+'\n'+json.dumps(bad)+'\n'+q.END_DISPATCH
+          blocked=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'fixture-run')
+          assert blocked['has_task'] is False and 'TARGET_REPOSITORY_MISMATCH' in blocked['blocked'][0]['detected'], blocked
+          pathlib.Path("/tmp/task.json").write_text(json.dumps(task))
+          pathlib.Path("/tmp/changed.txt").write_text("app.js\n")
+          PY
+      - name: Verify trusted Ready validation profile
+        run: python .github/scripts/taky_ready_validation.py --task /tmp/task.json --changed-files /tmp/changed.txt --output /tmp/validation.json
+      - name: Verify validation rejects out-of-scope materialization
+        run: |
+          printf "app.js\nstyles.css\n" > /tmp/bad-changed.txt
+          if python .github/scripts/taky_ready_validation.py --task /tmp/task.json --changed-files /tmp/bad-changed.txt --output /tmp/bad-validation.json; then
+            echo "Expected scope violation to fail"
+            exit 1
+          fi
+          grep -q "styles.css" /tmp/bad-validation.json
