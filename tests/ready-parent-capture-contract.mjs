@@ -5,6 +5,7 @@ const capture=fs.readFileSync('ready-parent-capture-intake-v1.js','utf8');
 const loader=fs.readFileSync('ready-stage-c.js','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
 const version=JSON.parse(fs.readFileSync('VERSION.json','utf8'));
+const stageF=fs.readFileSync('ready-stage-f.js','utf8');
 
 assert.match(loader,/ready-parent-capture-intake-v1\.js/,'capture module must load from Ready staging loader');
 assert.match(sw,/ready-parent-capture-intake-v1\.js/,'capture module must be in PWA core cache');
@@ -28,4 +29,8 @@ assert.doesNotMatch(capture,/document\.getElementById\('rsfTalentFactSave'\)\?\.
 assert.match(capture,/packageType:'TALENT_WEEKLY_ASSIGNMENT'/,'capture records must preserve weekly package semantics');
 assert.match(capture,/ReadyRoleContextV1/,'capture role must honor identity-aware role context');
 
-console.log(JSON.stringify({pass:true,contract:'ready-parent-capture-v1.1',checks:19}));
+assert.match(stageF,/난이도·예상시간·날짜별 배정은 부모 입력 항목이 아닙니다/,'Parent UI must state the authority boundary');
+assert.doesNotMatch(stageF,/data-field=["']difficulty["']/,'Parent UI must not expose a difficulty-authority input');
+assert.doesNotMatch(stageF,/data-field=["']estimatedMin["']|data-min=/,'Parent UI must not expose minute-allocation authority');
+
+console.log(JSON.stringify({pass:true,contract:'ready-parent-capture-v1.1',checks:22}));
