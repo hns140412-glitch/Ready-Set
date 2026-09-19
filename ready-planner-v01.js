@@ -227,11 +227,13 @@
         const openCarry=s.carry_over_queue.filter(x=>x.status==='OPEN');
         const carryByTemplate=new Map(openCarry.filter(x=>x.template_id).map(x=>[x.template_id,x]));
         const candidates=s.homework_templates
-          .filter(t=>eligibleTemplate(t,date))
+          .filter(t=>eligibleTemplate(t,date) || carryByTemplate.has(t.template_id))
           .filter(t=>!existingOpen.has(t.template_id))
           .filter(t=>Number.isFinite(t.estimated_minutes) && t.estimated_minutes>0)
           .sort((a,b)=>{
             if(!!a.required_today!==!!b.required_today)return a.required_today?-1:1;
+            const ac=carryByTemplate.has(a.template_id),bc=carryByTemplate.has(b.template_id);
+            if(ac!==bc)return ac?-1:1;
             const ad=a.deadline_date||'9999-12-31',bd=b.deadline_date||'9999-12-31';
             if(ad!==bd)return ad.localeCompare(bd);
             if(a.allocation_priority!==b.allocation_priority)return a.allocation_priority-b.allocation_priority;
@@ -404,6 +406,31 @@
       return load().carry_over_queue.filter(x=>x.status==='OPEN').map(x=>({...x}));
     }
 
+    function resolveCarryOver(carryOverId,input={}){
+      const id=cleanText(carryOverId); if(!id)return {ok:false,reason:'CARRY_OVER_ID_REQUIRED'};
+      return mutate(s=>{
+        const carry=s.carry_over_queue.find(x=>x.carry_over_id===id&&x.status==='OPEN');
+        if(!carry)return {ok:false,reason:'CARRY_OVER_NOT_FOUND'};
+        const resolution=cleanText(input.resolution)||'READY_FOR_REPLAN';
+        if(resolution==='READY_FOR_REPLAN'){
+          carry.resolution_required=false;
+          carry.allocation_ready=true;
+          carry.resolution='READY_FOR_REPLAN';
+          carry.resolved_by=cleanText(input.actor)||'HUMAN_CONFIRMATION';
+          carry.updated_at=new Date().toISOString();
+          return {ok:true,carry_over_id:id,status:'OPEN',allocation_ready:true};
+        }
+        if(resolution==='CANCEL'){
+          carry.status='CANCELLED';
+          carry.resolution='CANCEL';
+          carry.resolved_by=cleanText(input.actor)||'HUMAN_CONFIRMATION';
+          carry.resolved_at=new Date().toISOString();
+          return {ok:true,carry_over_id:id,status:'CANCELLED',allocation_ready:false};
+        }
+        return {ok:false,reason:'INVALID_CARRY_OVER_RESOLUTION'};
+      });
+    }
+
     function recentEstimateEvidence(templateId,limit=5){
       const rows=load().execution_observations
         .filter(x=>x.template_id===templateId&&Number.isFinite(x.actual_minutes)&&x.actual_minutes>0)
@@ -490,6 +517,7 @@
       commitAllocation,
       recordSessionOutcome,
       carryOverCandidates,
+      resolveCarryOver,
       recentEstimateEvidence
     };
   }
