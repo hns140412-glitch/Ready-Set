@@ -41,7 +41,7 @@ test('accessibility: stateful controls announce pressed state and toast is a pol
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
   await page.locator('[data-nav="mission"]').first().click();
 
-  const category=page.locator('[data-category="영어"]').first();
+  const category=page.locator('#missionView [data-category="영어"]').first();
   await expect(category).toHaveAttribute('aria-pressed','false');
   await category.click();
   await expect(category).toHaveAttribute('aria-pressed','true');
