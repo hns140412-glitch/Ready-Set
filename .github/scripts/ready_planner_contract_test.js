@@ -168,6 +168,97 @@ const noWindow=planner.allocateToday({date:'2026-09-21',candidate_windows:[]});
 assert.strictEqual(noWindow.ok,false);
 assert.strictEqual(noWindow.reason,'NO_CANDIDATE_WINDOWS');
 
+
+const carryTemplate=planner.upsertHomeworkTemplate({
+  title:'사회 정리',
+  subject:'사회',
+  estimated_minutes:25,
+  deadline_date:'2026-09-20',
+  allocation_priority:15,
+  provenance:{source:'FIXTURE'}
+});
+const carryTodo=planner.upsertDatedTodo({
+  date:'2026-09-20',
+  label:'사회 정리',
+  template_id:carryTemplate.template_id,
+  source:'PLANNER_ALLOCATION',
+  source_actor:'PLANNER_MAIN',
+  estimated_minutes:25
+});
+const carryOutcome=planner.recordSessionOutcome({
+  todo_id:carryTodo.todo_id,
+  ready_state:'PARTIAL',
+  actual_ms:38*60*1000,
+  session_id:'session-carry',
+  task_id:'task-carry',
+  at:'2026-09-20T21:00:00+09:00'
+});
+assert.strictEqual(carryOutcome.ok,true);
+assert.strictEqual(carryOutcome.actual_minutes,38);
+assert.strictEqual(planner.carryOverCandidates().length,1);
+const evidence=planner.recentEstimateEvidence(carryTemplate.template_id);
+assert.strictEqual(evidence.sample_count,1);
+assert.strictEqual(evidence.median_actual_minutes,38);
+assert.strictEqual(evidence.authority,'OBSERVATION_ONLY');
+
+const carryPlan=planner.allocateToday({
+  date:'2026-09-21',
+  candidate_windows:[{start:'19:00',end:'20:00'}],
+  max_minutes:40
+});
+const carryProposal=carryPlan.proposals.find(x=>x.template_id===carryTemplate.template_id);
+assert(carryProposal);
+assert.strictEqual(carryProposal.decision,'PROPOSE');
+assert.strictEqual(carryProposal.estimated_minutes,25);
+assert.strictEqual(carryProposal.estimate_evidence.median_actual_minutes,38);
+const carryCommit=planner.commitAllocation(carryPlan.allocation_run_id,[carryTemplate.template_id]);
+assert.strictEqual(carryCommit.created.length,1);
+assert(carryCommit.created[0].carry_over_id);
+
+const blockedTemplate=planner.upsertHomeworkTemplate({
+  title:'수학 질문 확인',
+  subject:'수학',
+  estimated_minutes:15,
+  deadline_date:'2026-09-22',
+  allocation_priority:3,
+  provenance:{source:'FIXTURE'}
+});
+const blockedTodo=planner.upsertDatedTodo({
+  date:'2026-09-21',
+  label:'수학 질문 확인',
+  template_id:blockedTemplate.template_id,
+  source:'PLANNER_ALLOCATION',
+  source_actor:'PLANNER_MAIN',
+  estimated_minutes:15
+});
+planner.recordSessionOutcome({
+  todo_id:blockedTodo.todo_id,
+  ready_state:'WAITING_FOR_PARENT',
+  actual_ms:10*60*1000,
+  session_id:'session-blocked',
+  task_id:'task-blocked'
+});
+const holdPlan=planner.allocateToday({
+  date:'2026-09-22',
+  candidate_windows:[{start:'19:00',end:'20:00'}],
+  max_minutes:40
+});
+const hold=holdPlan.proposals.find(x=>x.template_id===blockedTemplate.template_id);
+assert(hold);
+assert.strictEqual(hold.decision,'HOLD');
+assert.strictEqual(hold.reason,'CARRY_OVER_REQUIRES_RESOLUTION');
+
+const blockedCarry=planner.carryOverCandidates().find(x=>x.template_id===blockedTemplate.template_id);
+assert(blockedCarry);
+const resolved=planner.resolveCarryOver(blockedCarry.carry_over_id,{resolution:'READY_FOR_REPLAN',actor:'PARENT'});
+assert.strictEqual(resolved.ok,true);
+const afterResolve=planner.allocateToday({
+  date:'2026-09-22',
+  candidate_windows:[{start:'19:00',end:'20:00'}],
+  max_minutes:40
+});
+assert.strictEqual(afterResolve.proposals.find(x=>x.template_id===blockedTemplate.template_id).decision,'PROPOSE');
+
 const snap=planner.snapshot();
 assert.strictEqual(snap.progress_events.length,1);
 assert.strictEqual(snap.storage_backend,'LOCALSTORAGE_COMPATIBILITY_SCAFFOLD');
@@ -178,5 +269,7 @@ console.log(JSON.stringify({
   schedule_commitments:snap.schedule_commitments.length,
   homework_templates:snap.homework_templates.length,
   dated_todos:snap.dated_todos.length,
-  progress_events:snap.progress_events.length
+  progress_events:snap.progress_events.length,
+  execution_observations:snap.execution_observations.length,
+  carry_over_queue:snap.carry_over_queue.length
 }));
