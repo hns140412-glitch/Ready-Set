@@ -27,7 +27,7 @@
       </section>
       <section class="commandCard">
         <button data-nav="mission"><span><b>오늘 목표 정하기</b><small>과제와 목표 시간을 정해요</small></span><strong>→</strong></button>
-        <button id="preShareBtn"><span><b>작전 개시 전, 응원 요청!</b><small>가족에게 오늘의 목표 공유</small></span><strong>↗</strong></button>
+        <button data-nav="planner"><span><b>탐험 일정 보기</b><small>이번 주와 오늘 계획을 한눈에</small></span><strong>→</strong></button>\n        <button id="preShareBtn"><span><b>작전 개시 전, 응원 요청!</b><small>가족에게 오늘의 목표 공유</small></span><strong>↗</strong></button>
         <button data-nav="history"><span><b>작전 기록실</b><small>완료한 작전과 기록 보기</small></span><strong>→</strong></button>
       </section>
       <section class="challengePanel"><div class="sectionTitle"><div><span>오늘의 작전</span><h2>어떤 과제에 도전할까요?</h2></div><button class="linkBtn" data-nav="mission">자세히</button></div>
@@ -71,6 +71,29 @@
 
   <section class="view cream" id="historyView" data-view="history"><header class="safe pageHeader"><button data-nav="home">←</button><div><span class="kicker">MISSION LOG</span><h1>작전 기록실</h1></div><span></span></header><main class="safe scroll"><div id="historyList" class="historyList"></div></main></section>
   <section class="view cream" id="calendarView" data-view="calendar"><header class="safe pageHeader"><button data-nav="home">←</button><div><span class="kicker">MISSION JOURNAL</span><h1>작전 일지</h1></div><span></span></header><main class="safe scroll"><section class="glassCard"><h2>이번 달 기록</h2><div id="calendarList" class="historyList"></div></section><p class="muted">Google Calendar 연동은 외부 OAuth 구성이 필요한 Online Enhancement입니다. 로컬 기록은 오프라인에서도 유지됩니다.</p></main></section>
+
+  <section class="view cream plannerView" id="plannerView" data-view="planner">
+    <header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">EXPLORATION PLANNER</span><h1>탐험 일정</h1></div><span></span></header>
+    <main class="safe scroll plannerMain">
+      <section class="plannerHero">
+        <div><small>READY & SET · PLANNER</small><h2 id="plannerHeroTitle">이번 주 탐험 지도</h2><p id="plannerHeroCopy">해야 할 일과 고정 일정을 가볍게 확인해요.</p></div>
+        <button class="plannerTodayJump" id="plannerTodayJump">오늘</button>
+      </section>
+      <div class="plannerTabs" role="tablist" aria-label="플래너 보기">
+        <button class="on" data-planner-tab="week" role="tab">주간</button>
+        <button data-planner-tab="day" role="tab">일간</button>
+      </div>
+      <section id="plannerWeekPanel" class="plannerPanel">
+        <div id="plannerWeekStrip" class="plannerWeekStrip"></div>
+        <div id="plannerWeekDetail" class="plannerWeekDetail"></div>
+      </section>
+      <section id="plannerDayPanel" class="plannerPanel" hidden>
+        <div class="plannerDayHead"><div><small>TODAY ROUTE</small><h2 id="plannerDayTitle">오늘의 탐험</h2></div><span id="plannerDayCount">0개</span></div>
+        <div id="plannerDayTimeline" class="plannerDayTimeline"></div>
+        <button class="btn dark" data-nav="mission">오늘 작전 고르기</button>
+      </section>
+    </main>
+  </section>
 
   <section class="view peach" id="profileView" data-view="profile"><header class="safe pageHeader"><button data-nav="home">←</button><div><span class="kicker">MY READY PROFILE</span><h1>내 캐릭터</h1></div><span></span></header><main class="safe scroll"><section class="profileCard"><div class="avatarPreviewWrap"><img id="profileImage" alt="프로필 미리보기" hidden><div id="profilePlaceholder" class="profilePlaceholder">RS</div></div><label class="inputBlock">이름<input id="profileName" placeholder="이름 또는 별명"></label><div class="photoActions"><label class="btn outline">사진 찍기<input id="cameraInput" type="file" accept="image/*" capture="user" hidden></label><label class="btn outline">사진 선택<input id="galleryInput" type="file" accept="image/*" hidden></label></div><h2>일러스트 스타일 선택</h2><div class="styleGrid" id="styleGrid"><button data-style="editorial" class="on"><span class="styleSample editorial"></span><b>Signature 2.5D</b><small>기본 추천</small></button><button data-style="storybook"><span class="styleSample storybook"></span><b>Soft Storybook</b><small>따뜻한 페인팅</small></button><button data-style="graphic"><span class="styleSample graphic"></span><b>Clean Graphic</b><small>선명한 캐릭터</small></button><button data-style="natural"><span class="styleSample natural"></span><b>Natural Soft</b><small>원본에 가깝게</small></button></div><p class="muted">현재 정적 PWA에서는 로컬 미리보기 스타일만 제공합니다. 생성형 2.5D 재렌더링은 API 키를 브라우저에 노출하지 않도록 서버 연동 계층으로 분리해야 합니다.</p><label class="shareAvatarToggle"><input type="checkbox" id="shareAvatarOptIn"><span><b>공유 카드에 내 캐릭터 포함</b><small>기본은 OFF · 켜면 선택한 프로필 이미지를 공유 카드에 사용합니다.</small></span></label>
 <button class="btn dark" id="saveProfileBtn">프로필 저장</button></section></main></section>
