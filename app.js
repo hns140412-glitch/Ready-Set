@@ -809,7 +809,7 @@ function renderSettings(){
   $$('[data-guide-type]').forEach(b=>b.classList.toggle('on',b.dataset.guideType===state.guide.type));
   $$('[data-guide-voice]').forEach(b=>b.classList.toggle('on',b.dataset.guideVoice===state.guide.voice));
   renderNameSuggestions(false);
-  $('[data-sound]').forEach(b=>b.classList.toggle('on',b.dataset.sound===state.sound));
+  $$('[data-sound]').forEach(b=>b.classList.toggle('on',b.dataset.sound===state.sound));
   renderSyncStatus().catch(()=>{});
 }
 $('#guideNameInput').onchange=e=>{
