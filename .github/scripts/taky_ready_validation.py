@@ -47,11 +47,17 @@ def validate(task, changed_files):
             "linkOrCreateTodayItems",
             "recordTaskState",
             "todayProjection",
+            "recordSessionOutcome",
+            "carryOverCandidates",
+            "resolveCarryOver",
+            "recentEstimateEvidence",
         ],
         "ready-runtime-v07.js":[
             "const originalCompleteSession = completeSession",
             "const originalNav = nav",
             "planner_todo_id",
+            "recordSessionOutcome",
+            "actualMs",
             "window.ReadySetRev07",
         ],
     }
