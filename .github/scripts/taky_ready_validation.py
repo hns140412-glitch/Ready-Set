@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse, fnmatch, json, subprocess
 from pathlib import Path
 
-CORE=["index.html","styles.css","app.js","ready-runtime-v07.js","config.js","sw.js","manifest.webmanifest"]
+CORE=["index.html","styles.css","ready-planner-v01.js","app.js","ready-runtime-v07.js","config.js","sw.js","manifest.webmanifest"]
 
 def allowed(path, rules):
     return any(path==r or path.startswith(r.rstrip("/")+"/") or fnmatch.fnmatch(path,r) for r in rules)
@@ -38,9 +38,18 @@ def validate(task, changed_files):
             "function speakGuide(",
             "navigator.serviceWorker.register('./sw.js')",
         ],
+        "ready-planner-v01.js":[
+            "schedule_commitments",
+            "homework_templates",
+            "dated_todos",
+            "progress_events",
+            "linkOrCreateTodayItems",
+            "recordTaskState",
+        ],
         "ready-runtime-v07.js":[
             "const originalCompleteSession = completeSession",
             "const originalNav = nav",
+            "planner_todo_id",
             "window.ReadySetRev07",
         ],
     }
