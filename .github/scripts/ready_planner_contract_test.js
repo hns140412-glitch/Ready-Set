@@ -203,8 +203,8 @@ assert.strictEqual(evidence.authority,'OBSERVATION_ONLY');
 
 const carryPlan=planner.allocateToday({
   date:'2026-09-21',
-  candidate_windows:[{start:'19:00',end:'20:00'}],
-  max_minutes:40
+  candidate_windows:[{start:'18:00',end:'20:00'}],
+  max_minutes:90
 });
 const carryProposal=carryPlan.proposals.find(x=>x.template_id===carryTemplate.template_id);
 assert(carryProposal);
