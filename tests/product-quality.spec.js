@@ -97,7 +97,8 @@ test('mobile product quality gate: planner/admin data survives reload and remain
 test('product integrity gate: navigation targets exist and unique action buttons are wired in app runtime', async ({page})=>{
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
   const audit=await page.evaluate(async()=>{
-    const appSource=await fetch('./app.js').then(r=>r.text());
+    const [appSource,runtimeSource]=await Promise.all([fetch('./app.js').then(r=>r.text()),fetch('./ready-runtime-v07.js').then(r=>r.text())]);
+    const wiringSource=appSource+'\n'+runtimeSource;
     const navButtons=[...document.querySelectorAll('[data-nav]')];
     const missingNav=navButtons
       .map(b=>b.dataset.nav)
@@ -108,7 +109,7 @@ test('product integrity gate: navigation targets exist and unique action buttons
     const uniqueButtons=[...document.querySelectorAll('button[id]')].filter(b=>!genericAttrs.some(a=>b.hasAttribute(a)));
     const unreferenced=uniqueButtons
       .map(b=>b.id)
-      .filter(id=>!appSource.includes(`#${id}`) && !appSource.includes(`getElementById('${id}')`) && !appSource.includes(`getElementById("${id}")`));
+      .filter(id=>!wiringSource.includes(`#${id}`) && !wiringSource.includes(`getElementById('${id}')`) && !wiringSource.includes(`getElementById("${id}")`));
     return {missingNav,unreferenced,totalUnique:uniqueButtons.length,totalNav:navButtons.length};
   });
   expect(audit.missingNav,'dead data-nav targets').toEqual([]);
