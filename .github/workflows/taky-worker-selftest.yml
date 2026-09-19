@@ -7,12 +7,24 @@ on:
       - '.github/workflows/taky-worker-selftest.yml'
       - '.github/scripts/taky_codex_queue.py'
       - '.github/scripts/taky_ready_validation.py'
+      - '.github/scripts/ready_planner_contract_test.js'
+      - 'ready-planner-v01.js'
+      - 'ready-runtime-v07.js'
+      - 'app.js'
+      - 'index.html'
+      - 'sw.js'
   push:
     paths:
       - '.github/workflows/taky-codex-executor.yml'
       - '.github/workflows/taky-worker-selftest.yml'
       - '.github/scripts/taky_codex_queue.py'
       - '.github/scripts/taky_ready_validation.py'
+      - '.github/scripts/ready_planner_contract_test.js'
+      - 'ready-planner-v01.js'
+      - 'ready-runtime-v07.js'
+      - 'app.js'
+      - 'index.html'
+      - 'sw.js'
 
 permissions:
   contents: read
@@ -29,6 +41,11 @@ jobs:
         run: |
           python -m py_compile .github/scripts/taky_codex_queue.py
           python -m py_compile .github/scripts/taky_ready_validation.py
+          node --check ready-planner-v01.js
+          node --check app.js
+          node --check ready-runtime-v07.js
+      - name: Verify Planner entity/runtime contract
+        run: node .github/scripts/ready_planner_contract_test.js
       - name: Verify queue integrity and profile binding
         run: |
           python - <<'PY'
