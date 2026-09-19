@@ -111,7 +111,7 @@ def prepare(issues, repo, base_head, run_id):
         }
     return {"has_task":False,"blocked":blocked}
 
-def build_result(task, contract_hash, codex_output, validation, commit_ref, pr_url):
+def build_result(task, contract_hash, codex_output, validation, commit_ref, pr_url, materialization_risk=""):
     overall=bool(validation.get("pass"))
     acceptance=[]
     for item in task.get("acceptance_checks") or [{"criterion":x,"mode":"EVIDENCE_ONLY"} for x in task.get("acceptance_tests",[])]:
@@ -125,6 +125,9 @@ def build_result(task, contract_hash, codex_output, validation, commit_ref, pr_u
             status="FAIL" if not overall else "UNVERIFIED"; evidence="Trusted profile or executor evidence incomplete."
         acceptance.append({"criterion":criterion,"status":status,"evidence":evidence})
     mobile_required=bool((task.get("validation") or {}).get("mobile_runtime_required"))
+    risks=list(validation.get("unresolved_risks",[]))
+    if materialization_risk:
+        risks.append({"severity":"BLOCKING","detail":materialization_risk})
     report={
         "task_id":task.get("task_id"),
         "root_cause_or_rationale":codex_output.strip()[:12000] or "Codex returned no final rationale.",
@@ -136,7 +139,7 @@ def build_result(task, contract_hash, codex_output, validation, commit_ref, pr_u
             "status":"UNVERIFIED" if mobile_required else "NOT_APPLICABLE",
             "evidence":"Requires representative device/PWA evidence." if mobile_required else "Task contract does not require mobile runtime evidence."
         },
-        "unresolved_risks":validation.get("unresolved_risks",[]),
+        "unresolved_risks":risks,
         "commit_ref":commit_ref,
         "pr_url":pr_url,
         "requested_transition":"CODEX_DONE"
@@ -148,7 +151,7 @@ def build_result(task, contract_hash, codex_output, validation, commit_ref, pr_u
 def main():
     ap=argparse.ArgumentParser(); sub=ap.add_subparsers(dest="cmd",required=True)
     p=sub.add_parser("prepare"); p.add_argument("--issues",type=Path,required=True); p.add_argument("--repo",required=True); p.add_argument("--base-head",required=True); p.add_argument("--run-id",required=True); p.add_argument("--out-dir",type=Path,required=True)
-    q=sub.add_parser("result"); q.add_argument("--task",type=Path,required=True); q.add_argument("--contract-hash",required=True); q.add_argument("--codex-output",type=Path,required=True); q.add_argument("--validation",type=Path,required=True); q.add_argument("--commit-ref",required=True); q.add_argument("--pr-url",default=""); q.add_argument("--output",type=Path,required=True)
+    q=sub.add_parser("result"); q.add_argument("--task",type=Path,required=True); q.add_argument("--contract-hash",required=True); q.add_argument("--codex-output",type=Path,required=True); q.add_argument("--validation",type=Path,required=True); q.add_argument("--commit-ref",required=True); q.add_argument("--pr-url",default=""); q.add_argument("--materialization-risk",default=""); q.add_argument("--output",type=Path,required=True)
     args=ap.parse_args()
     if args.cmd=="prepare":
         issues=json.loads(args.issues.read_text(encoding="utf-8")); out=prepare(issues,args.repo,args.base_head,args.run_id); args.out_dir.mkdir(parents=True,exist_ok=True)
@@ -159,7 +162,7 @@ def main():
             (args.out_dir/"receipt.md").write_text(out["receipt_body"],encoding="utf-8")
     else:
         task=json.loads(args.task.read_text(encoding="utf-8")); validation=json.loads(args.validation.read_text(encoding="utf-8")); codex=args.codex_output.read_text(encoding="utf-8") if args.codex_output.exists() else ""
-        out=build_result(task,args.contract_hash,codex,validation,args.commit_ref,args.pr_url); args.output.write_text(json.dumps(out,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+        out=build_result(task,args.contract_hash,codex,validation,args.commit_ref,args.pr_url,args.materialization_risk); args.output.write_text(json.dumps(out,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     return 0
 
 if __name__=="__main__": raise SystemExit(main())
