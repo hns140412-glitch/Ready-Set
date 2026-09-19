@@ -31,22 +31,25 @@ test('PWA service worker controls app and supports offline reload with local sta
 
   await expect.poll(async () => page.evaluate(async () => {
     const rows=await window.ReadySetLocalFirst.snapshots();
-    return rows.some(x=>x.scope==='app_state' && x.payload.includes('오프라인 복구 검증'));
+    return rows.some(x=>x.scope==='assignments' && x.payload.includes('오프라인 복구 검증'));
   })).toBeTruthy();
 
   await context.setOffline(true);
   await page.reload({ waitUntil:'domcontentloaded' });
   await expect(page.locator('#homeView')).toBeVisible();
 
-  const restored=await page.evaluate(() => JSON.parse(localStorage.getItem('readyset_state')||'{}').tasks || []);
+  const restored=await page.evaluate(() => Object.values(window.ReadyAssignments.load().assignmentFacts).map(x=>x.claims?.at(-1)?.value?.title));
   expect(restored).toContain('오프라인 복구 검증');
+  // SUPERSEDED_BY_CURRENT_TRUTH: manual child input persists as Assignment Fact, not a Ready-created task.
 
   const offlineAssets=await page.evaluate(() => ({
     runtime:!!window.ReadySetRev07,
     planner:!!window.ReadySetPlanner,
-    localFirst:!!window.ReadySetLocalFirst
+    localFirst:!!window.ReadySetLocalFirst,
+    assignments:!!window.ReadyAssignments,
+    learningMaster:!!window.ReadyLearningMasterV01
   }));
-  expect(offlineAssets).toEqual({runtime:true,planner:true,localFirst:true});
+  expect(offlineAssets).toEqual({runtime:true,planner:true,localFirst:true,assignments:true,learningMaster:true});
 
   await context.setOffline(false);
 });

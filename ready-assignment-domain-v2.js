@@ -1,7 +1,10 @@
 (function(root,factory){
   const api=factory();
   if(typeof module!=='undefined'&&module.exports) module.exports=api;
-  if(root) root.ReadyAssignmentDomainV2=api;
+  if(root){
+    root.ReadyAssignmentDomainV2=api;
+    if(root.localStorage) root.ReadyAssignments=api.createDomain(root.localStorage);
+  }
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
   const VERSION='0.1.0';
@@ -12,7 +15,7 @@
   const clean=v=>String(v??'').trim();
   const id=p=>p+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
   const clone=v=>JSON.parse(JSON.stringify(v));
-  const blank=()=>({schema_version:2,assignmentFacts:{},assignmentPackages:{},workbookRefs:{},analyses:{},learningUnits:{}});
+  const blank=()=>({schema_version:2,assignmentFacts:{},assignmentPackages:{},workbookRefs:{},artifacts:{},analyses:{},learningUnits:{}});
 
   function normalize(raw){
     const x=raw&&typeof raw==='object'?raw:{};
@@ -20,6 +23,7 @@
       assignmentFacts:x.assignmentFacts&&typeof x.assignmentFacts==='object'?x.assignmentFacts:{},
       assignmentPackages:x.assignmentPackages&&typeof x.assignmentPackages==='object'?x.assignmentPackages:{},
       workbookRefs:x.workbookRefs&&typeof x.workbookRefs==='object'?x.workbookRefs:{},
+      artifacts:x.artifacts&&typeof x.artifacts==='object'?x.artifacts:{},
       analyses:x.analyses&&typeof x.analyses==='object'?x.analyses:{},
       learningUnits:x.learningUnits&&typeof x.learningUnits==='object'?x.learningUnits:{}
     };
@@ -42,10 +46,25 @@
       return signatures.size>1;
     }
     function addClaim(s,fact,actor,value,provenance){
+      for(const previous of fact.claims||[]){
+        if(previous.actor===clean(actor)&&previous.status==='ACTIVE')previous.status='SUPERSEDED';
+      }
       const claim={claim_id:id('claim'),actor:clean(actor)||'UNKNOWN',value:clone(value),provenance:provenance||null,captured_at:now(),status:'ACTIVE'};
       fact.claims=Array.isArray(fact.claims)?fact.claims:[];fact.claims.push(claim);
       fact.confirmation_state=claimsConflict(fact.claims)?'CONFIRMATION_REQUIRED':'INPUT_CAPTURED';
       fact.updated_at=now();return claim;
+    }
+    function registerArtifacts(s,assignmentId,items=[],kind='SOURCE',visibility='FAMILY'){
+      return items.map(item=>{
+        const source=typeof item==='object'?item:{artifact_id:clean(item)};
+        const artifactId=clean(source.artifact_id)||id('artifact');
+        s.artifacts[artifactId]={
+          artifact_id:artifactId,assignment_id:assignmentId,kind:source.kind||kind,
+          visibility:source.visibility||visibility,source:source.source||null,
+          captured_at:source.captured_at||now()
+        };
+        return artifactId;
+      });
     }
     function confirmFact(assignmentId,input={}){
       return mutate(s=>{const f=s.assignmentFacts[assignmentId];if(!f)throw new Error('fact not found');
@@ -66,7 +85,9 @@
         for(const subject of TALENT_BOOKS){const b=byName.get(subject),assignmentId=clean(b.assignment_id)||id('assignment');
           const f=s.assignmentFacts[assignmentId]||{assignment_id:assignmentId,claims:[],created_at:now()};
           Object.assign(f,{package_id:packageId,source_type:'TALENT_BOOK_ASSIGNMENT',subject:'재능',book_subject:subject,source_actor:clean(input.actor)||'PARENT',assignment_cycle:'TALENT_WEEKLY',source_date:sourceDate,deadline_boundary:deadline,lifecycle:'ACTIVE',analysis_state:'NOT_ANALYZED'});
-          addClaim(s,f,input.actor||'PARENT',{source_range:clean(b.source_range),teacher_instruction:clean(b.teacher_instruction),artifact_refs:Array.isArray(b.artifact_refs)?clone(b.artifact_refs):[],answer_reference_ids:Array.isArray(b.answer_reference_ids)?clone(b.answer_reference_ids):[]},input.provenance||{kind:'PARENT_INPUT'});
+          const artifactRefs=registerArtifacts(s,assignmentId,Array.isArray(b.artifact_refs)?b.artifact_refs:[],'SOURCE','FAMILY');
+          const answerRefs=registerArtifacts(s,assignmentId,Array.isArray(b.answer_reference_ids)?b.answer_reference_ids:[],'ANSWER_REFERENCE','PARENT_ONLY');
+          addClaim(s,f,input.actor||'PARENT',{source_range:clean(b.source_range),teacher_instruction:clean(b.teacher_instruction),artifact_refs:artifactRefs,answer_reference_ids:answerRefs},input.provenance||{kind:'PARENT_INPUT'});
           s.assignmentFacts[assignmentId]=f;factIds.push(assignmentId);
         }
         const pkg={package_id:packageId,source_type:'TALENT_WEEKLY_ASSIGNMENT',source_date:sourceDate,deadline_boundary:deadline,fact_ids:factIds,cycle_boundary_kind:'DEADLINE_NEXT_CYCLE_NOT_ALLOCATION_SLOT',created_at:now(),updated_at:now()};
@@ -82,7 +103,29 @@
         s.assignmentFacts[assignmentId]=f;return clone(f);
       });
     }
-    return {version:VERSION,load,save,upsertWorkbookRef,upsertTalentPackage,upsertEnglishAssignment,confirmFact};
+    function addEventFact(input={}){
+      const title=clean(input.title);if(!title)throw new Error('event title required');
+      return mutate(s=>{const assignmentId=clean(input.assignment_id)||id('assignment');
+        const f={assignment_id:assignmentId,source_type:'SCHOOL_EVENT',subject:clean(input.subject)||'학교',source_actor:clean(input.actor)||'CHILD',assignment_cycle:'AD_HOC',claims:[],created_at:now(),lifecycle:'ACTIVE',analysis_state:'NOT_ANALYZED'};
+        addClaim(s,f,input.actor||'CHILD',{title,source_range:clean(input.source_range),teacher_instruction:clean(input.teacher_instruction),deadline_boundary:clean(input.deadline_boundary)||null},input.provenance||{kind:'CHILD_INPUT'});
+        s.assignmentFacts[assignmentId]=f;return clone(f);
+      });
+    }
+    function project(role='CHILD'){
+      const s=load(),parent=String(role).toUpperCase()==='PARENT';
+      const visibleArtifacts=Object.fromEntries(Object.entries(s.artifacts).filter(([,a])=>parent||a.visibility!=='PARENT_ONLY'));
+      const facts=Object.values(s.assignmentFacts).map(f=>{
+        const row=clone(f);
+        for(const claim of row.claims||[]){
+          if(!parent&&claim.value?.answer_reference_ids)claim.value.answer_reference_ids=[];
+          if(claim.value?.artifact_refs)claim.value.artifact_refs=claim.value.artifact_refs.filter(x=>visibleArtifacts[x]);
+        }
+        if(!parent)delete row.answer_reference_ids;
+        return row;
+      });
+      return {role:parent?'PARENT':'CHILD',facts,packages:Object.values(s.assignmentPackages).map(clone),workbookRefs:Object.values(s.workbookRefs).map(clone),artifacts:Object.values(visibleArtifacts).map(clone)};
+    }
+    return {version:VERSION,load,save,upsertWorkbookRef,upsertTalentPackage,upsertEnglishAssignment,addEventFact,confirmFact,project};
   }
   return {version:VERSION,STORAGE_KEY,TALENT_BOOKS,createDomain,normalize};
 });

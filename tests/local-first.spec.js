@@ -23,11 +23,12 @@ test('local-first sidecar mirrors planner/app state and keeps outbox pending wit
   await expect.poll(async () => page.evaluate(async () => {
     const rows = await window.ReadySetLocalFirst.snapshots();
     return rows.map(x => x.scope).sort();
-  })).toEqual(['app_state','planner']);
+  })).toEqual(['assignments','planner']);
 
   const outbox = await page.evaluate(async () => window.ReadySetLocalFirst.outbox());
   expect(outbox.some(x => x.scope === 'planner' && x.status === 'PENDING')).toBeTruthy();
-  expect(outbox.some(x => x.scope === 'app_state' && x.status === 'PENDING')).toBeTruthy();
+  expect(outbox.some(x => x.scope === 'assignments' && x.status === 'PENDING')).toBeTruthy();
+  // SUPERSEDED_BY_CURRENT_TRUTH: manual child input is an Assignment Fact, not Ready app_state task creation.
 
   const flush = await page.evaluate(async () => window.ReadySetLocalFirst.flush());
   expect(flush.ok).toBeFalsy();

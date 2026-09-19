@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - taky/runtime-e2e-0131929
+      - taky/ready-integration-v01
   pull_request:
     branches:
       - main

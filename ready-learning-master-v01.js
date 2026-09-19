@@ -84,5 +84,19 @@
     fact.analysis_state='INTERPRETED';fact.current_analysis_id=result.analysis.analysis_id;fact.updated_at=now();
     return clone(result);
   }
-  return {version:VERSION,PROFILE,interpretFact,interpretInto};
+  function interpretConfirmed(assignmentId,input={}){
+    const domain=globalThis.ReadyAssignments;
+    if(!domain)throw new Error('ReadyAssignments runtime required');
+    const state=domain.load(),result=interpretInto(state,assignmentId,input);domain.save(state);return result;
+  }
+  function interpretAllConfirmed(input={}){
+    const domain=globalThis.ReadyAssignments;
+    if(!domain)throw new Error('ReadyAssignments runtime required');
+    const state=domain.load(),results=[];
+    for(const fact of Object.values(state.assignmentFacts)){
+      if(fact.confirmation_state==='FACT_CONFIRMED'&&fact.analysis_state!=='INTERPRETED')results.push(interpretInto(state,fact.assignment_id,input));
+    }
+    domain.save(state);return results;
+  }
+  return {version:VERSION,PROFILE,interpretFact,interpretInto,interpretConfirmed,interpretAllConfirmed};
 });

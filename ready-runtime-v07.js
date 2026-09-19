@@ -44,13 +44,18 @@
   function ensureContract(session = state.activeSession) {
     if (!session) return null;
     if (!session.rev07) {
-      const plannerByLabel = new Map((session.plannerLinks || []).map(x => [x.label, x.todo_id]));
-      const tasks = taskLabels(session).map((label, index) => ({
+      const linked=(session.plannerLinks||[]);
+      const tasks = linked.map((link, index) => ({
         task_id: `task_${session.id || Date.now()}_${index + 1}`,
-        label,
+        label:link.label,
         state: 'PENDING',
-        planner_todo_id: plannerByLabel.get(label) || null,
-        suggested_app: suggestedApp(label),
+        planner_todo_id: link.todo_id,
+        assignment_id:link.assignment_id||null,
+        analysis_id:link.analysis_id||null,
+        learning_unit_id:link.learning_unit_id||null,
+        template_id:link.template_id||null,
+        allocation_run_id:link.allocation_run_id||null,
+        suggested_app: suggestedApp(link.label),
         laps: []
       }));
       session.rev07 = {

@@ -76,17 +76,12 @@ test('TODAY -> Mission -> Focus -> Wrap-up -> Result -> carry-over -> replan', a
     const m = String(now.getMonth()+1).padStart(2,'0');
     const d = String(now.getDate()).padStart(2,'0');
     const next = `${y}-${m}-${d}`;
-    const plan = p.allocateToday({
-      date: next,
-      candidate_windows:[{start:'18:00',end:'20:00'}],
-      max_minutes:90
-    });
-    const proposal = plan.proposals.find(x => x.carry_over_id);
-    const commit = proposal ? p.commitAllocation(plan.allocation_run_id,[proposal.template_id]) : null;
-    return { plan, proposal, commit, snap:p.snapshot() };
+    const carry=p.carryOverCandidates().find(x=>x.source_todo_id==='e2e_today_1');
+    const commit=carry?p.replanCarryOver({carry_over_id:carry.carry_over_id,date:next}):null;
+    return { carry, commit, snap:p.snapshot() };
   });
-  expect(replanned.plan.ok).toBeTruthy();
-  // A manual/planner item without template_id may not be reallocatable as a template.
-  // The required runtime closure is carry-over queue creation and preservation.
-  expect(replanned.snap.carry_over_queue.some(x => x.source_todo_id === 'e2e_today_1')).toBeTruthy();
+  expect(replanned.carry).toBeTruthy();
+  expect(replanned.commit.ok).toBeTruthy();
+  expect(replanned.commit.todo.source).toBe('PLANNER_V2_CARRY_OVER');
+  // SUPERSEDED_BY_CURRENT_TRUTH: replan no longer uses minute-fit allocateToday().
 });

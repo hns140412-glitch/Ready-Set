@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const DB_NAME='readyset_local_v1', DB_VERSION=1;
-  const SCOPE_KEYS={planner:'readyset_planner_v1',app_state:'readyset_state'};
+  const SCOPE_KEYS={planner:'readyset_planner_v1',app_state:'readyset_state',assignments:'readyset_assignments_v2'};
   let dbPromise=null;
   const now=()=>new Date().toISOString();
   const hash=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(16)};

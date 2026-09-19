@@ -57,7 +57,7 @@ test('mobile product quality gate: core touch targets are usable and primary con
     ['planner','#plannerTodayJump'],
     ['planner','[data-nav="planner-admin"]'],
     ['planner-admin','#saveScheduleBtn'],
-    ['planner-admin','#saveTemplateBtn'],
+    ['planner-admin','#saveTalentFactsBtn'],
     ['profile','#saveProfileBtn'],
     ['settings','#exportDataBtn']
   ];
