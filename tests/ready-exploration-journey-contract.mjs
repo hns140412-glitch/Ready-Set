@@ -19,7 +19,7 @@ const version = JSON.parse(fs.readFileSync(new URL('../VERSION.json', import.met
 const checks = [
   ['Planner selection preserves multiple exploration pins', !native.includes("selected:String(x.id)===String(id)") && !selectionBridge.includes("selected:String(t.id)===String(id)") && native.includes('data-exploration-pin')],
   ['base runtime binds all selected Planner TODOs into one exploration session', base.includes('function readySelectedPlannerTasks()') && base.includes('plannerTaskIds:ids') && base.includes('tasks:labels') && base.includes('ids.forEach(id=>readySetPlannerStatus')],
-  ['REV07 binds each canonical task to its Planner TODO identity', runtime.includes('plannerIds=session.plannerTaskIds') && runtime.includes('homeworkTaskMap=tasks.map') && runtime.includes('canonical_task_id')],
+  ['REV07 binds each canonical task to its Planner TODO identity', runtime.includes('planner_id:plannerIds[index]||null') && runtime.includes('homeworkTaskMap=tasks.map') && runtime.includes('canonical_task_id')],
   ['Today island exploration entry is first-class', native.includes('오늘의 섬') && native.includes('탐험 핀') && native.includes('data-exploration-pin') && stageD.includes("TODAY'S ISLAND · PLANNER") && stageD.includes('data-rsf-select')],
   ['G13 preserves the selected task set without clearing active session', g13.includes('const chosen=(day.tasks||[]).filter') && g13.includes('s.g13PlannerTasks=chosen.map') && !g13.includes('s.activeSession=null')],
   ['Foundation path does not expose legacy allocation controls', stageD.includes("if(window.ReadyFoundationV1?.enabled)") && stageD.includes("card.dataset.explorationSource='PLANNER_TODAY_TODO'") && stageD.includes('오늘의 섬 탐험 핀')],
