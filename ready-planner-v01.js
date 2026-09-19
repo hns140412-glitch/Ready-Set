@@ -169,8 +169,14 @@
     function commitmentIntervals(state,date){
       return state.schedule_commitments
         .filter(x=>x.confirmed!==false && x.start_at && x.end_at)
-        .map(x=>({start:new Date(x.start_at),end:new Date(x.end_at),commitment_id:x.commitment_id,title:x.title}))
-        .filter(x=>x.end>x.start && dateKey(x.start)===date);
+        .filter(x=>String(x.start_at).slice(0,10)===date && String(x.end_at).slice(0,10)===date)
+        .map(x=>({
+          start:parseLocal(date,String(x.start_at).slice(11,16)),
+          end:parseLocal(date,String(x.end_at).slice(11,16)),
+          commitment_id:x.commitment_id,
+          title:x.title
+        }))
+        .filter(x=>x.end>x.start);
     }
 
     function subtractIntervals(base,blocks){
