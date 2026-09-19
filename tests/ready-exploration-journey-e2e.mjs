@@ -22,6 +22,9 @@ await context.addInitScript(() => {
     version:1,days:{[d]:{localDate:d,tasks:[{
       id:'e2e-recording-task',localDate:d,subject:'영어',title:'영어 · 문장 녹음',volume:'문장 1개',
       status:'PLANNED',selected:false,required:true,confirmationState:'FACT_CONFIRMED'
+    },{
+      id:'e2e-math-task',localDate:d,subject:'수학',title:'수학 · 문제 풀이',volume:'2문제',
+      status:'PLANNED',selected:false,required:true,confirmationState:'FACT_CONFIRMED'
     }]}}
   }));
 });
@@ -48,6 +51,17 @@ try {
   ]);
   await page.waitForFunction(()=>document.documentElement.dataset.readyBootState==='READY'&&document.querySelector('#missionView.active'),{timeout:30000});
 
+  step('multi-select second exploration pin');
+  const secondSelected=await page.evaluate(()=>{
+    const ok=window.ReadyPlannerSelectionBridgeV1?.bindPlannerTask?.('e2e-math-task',true);
+    window.ReadyBaseRuntimeV1?.renderMission?.();
+    const planner=JSON.parse(localStorage.getItem('readyset_planner_v1')||'{}');
+    const d=new Date().toLocaleDateString('sv-SE');
+    return {ok,selected:(planner.days?.[d]?.tasks||[]).filter(t=>t.selected).map(t=>t.id)};
+  });
+  assert.equal(secondSelected.ok,true,'second Planner TODO must be selectable in the same exploration');
+  assert.deepEqual(new Set(secondSelected.selected),new Set(['e2e-recording-task','e2e-math-task']),'selection must preserve both exploration pins');
+
   step('start timer');
   await page.click('button[data-minutes="10"]');
   await page.click('#startBtn');
@@ -62,6 +76,25 @@ try {
   }));
   console.log('E2E START SNAPSHOT',JSON.stringify(startSnapshot));
   await page.waitForSelector('#focusView.active',{timeout:10000});
+
+  step('multi-task session binding');
+  await page.waitForFunction(()=>window.ReadySetRev07?.contract?.()?.tasks?.length===2,{timeout:10000});
+  const multiBinding=await page.evaluate(()=>{
+    const core=JSON.parse(localStorage.getItem('readyset_state')||'{}');
+    const contract=window.ReadySetRev07?.contract?.();
+    return {
+      sessionId:core.activeSession?.id||null,
+      plannerTaskIds:core.activeSession?.plannerTaskIds||[],
+      sessionLabels:core.activeSession?.tasks||[],
+      contractTasks:contract?.tasks?.map(t=>({id:t.task_id,label:t.label,planner_id:t.planner_id}))||[],
+      map:core.activeSession?.homeworkTaskMap||[]
+    };
+  });
+  assert.deepEqual(new Set(multiBinding.plannerTaskIds),new Set(['e2e-recording-task','e2e-math-task']),'one session must bind both Planner TODO identities');
+  assert.equal(multiBinding.sessionLabels.length,2,'one exploration session must carry both task labels');
+  assert.equal(multiBinding.contractTasks.length,2,'REV07 must materialize two task contracts');
+  assert.equal(multiBinding.map.length,2,'each canonical task must map back to one Planner TODO');
+  assert.deepEqual(new Set(multiBinding.contractTasks.map(t=>t.planner_id)),new Set(['e2e-recording-task','e2e-math-task']),'REV07 task identities must preserve Planner provenance');
 
   assert.equal((await page.locator('#focusView .focusTitle h1').innerText()).replace(/\s+/g,' ').trim(),'그냥! 지금 하면 돼!');
   assert.equal(await page.locator('#focusView .clockHero .clockNumber').count(),12);
@@ -173,6 +206,20 @@ try {
   const focusAfterRecording=sec(await page.locator('#focusElapsed').innerText());
   assert.ok(focusAfterRecording>=focusBeforeRecording+1,'timer must continue through recording round trip');
 
+  step('switch task within same exploration');
+  const switchSnapshot=await page.evaluate(()=>{
+    const before=JSON.parse(localStorage.getItem('readyset_state')||'{}').activeSession;
+    const contract=window.ReadySetRev07?.contract?.();
+    const second=contract?.tasks?.find(t=>t.planner_id==='e2e-math-task');
+    if(second)window.ReadySetRev07?.switchTask?.(second.task_id);
+    const after=JSON.parse(localStorage.getItem('readyset_state')||'{}').activeSession;
+    const next=window.ReadySetRev07?.contract?.();
+    return {beforeId:before?.id,afterId:after?.id,secondId:second?.task_id,activeTaskId:next?.active_task_id,activeLapId:next?.active_lap_id};
+  });
+  assert.equal(switchSnapshot.afterId,switchSnapshot.beforeId,'task change must stay inside the same exploration session');
+  assert.equal(switchSnapshot.activeTaskId,switchSnapshot.secondId,'second Planner TODO must become the active task');
+  assert.ok(switchSnapshot.activeLapId,'task change must open the next lap');
+
   step('reload recovery');
   const beforeReload=sec(await page.locator('#focusElapsed').innerText());
   await page.reload({waitUntil:'domcontentloaded'});
@@ -183,7 +230,11 @@ try {
   step('wrap up');
   await page.click('#completeBtn');
   await page.waitForFunction(()=>document.querySelector('#readyRev07Wrap')&&!document.querySelector('#readyRev07Wrap').hidden,{timeout:5000});
-  await page.click('[data-wrap-state="COMPLETED"]');
+  const wrapTaskIds=await page.evaluate(()=>window.ReadySetRev07?.contract?.()?.tasks?.map(t=>t.task_id)||[]);
+  assert.equal(wrapTaskIds.length,2,'wrap-up must contain both exploration tasks');
+  for(const taskId of wrapTaskIds){
+    await page.click(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`);
+  }
   await page.click('#rev07ConfirmEnd');
   await page.waitForSelector('#resultView.active',{timeout:5000});
   assert.match(await page.locator('#resultTasks').innerText(),/완료/);
@@ -197,6 +248,14 @@ try {
   const state=await page.evaluate(()=>JSON.parse(localStorage.getItem('readyset_state')||'{}'));
   assert.equal(state.activeSession,null);
   assert.equal(state.records?.[0]?.status,'COMPLETED');
+  assert.equal(state.records?.[0]?.taskStates?.length,2,'exploration record must preserve both task outcomes');
+  const finalPlanner=await page.evaluate(()=>{
+    const p=JSON.parse(localStorage.getItem('readyset_planner_v1')||'{}');
+    const d=new Date().toLocaleDateString('sv-SE');
+    return (p.days?.[d]?.tasks||[]).map(t=>({id:t.id,status:t.status,selected:t.selected}));
+  });
+  assert.equal(finalPlanner.find(t=>t.id==='e2e-recording-task')?.status,'COMPLETED','recording Planner TODO result must be published');
+  assert.equal(finalPlanner.find(t=>t.id==='e2e-math-task')?.status,'COMPLETED','both Planner TODO results must be published');
 
   step('parent setup without world UI');
   await page.evaluate(()=>{
