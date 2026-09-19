@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 const control=fs.readFileSync('ready-foundation-control-v1.js','utf8');
 const foundation=fs.readFileSync('ready-foundation-v1.js','utf8');
+const stageE=fs.readFileSync('ready-stage-e.js','utf8');
 
 assert.match(control,/confirmationState==='FACT_CONFIRMED'/,'only confirmed legacy facts may enter Foundation assignment authority');
 assert.match(control,/cycleBoundarySources=new Set\(\['TALENT_BOOK_ASSIGNMENT','ENGLISH_ACADEMY_PACKAGE','SCIENCE_ACADEMY_HOMEWORK'\]\)/,'academy/week cycle boundary sources must be explicit');
@@ -23,4 +24,9 @@ assert.match(foundation,/kind==='STUDY_OPPORTUNITY'/,'Planner capacity must come
 assert.match(foundation,/absence of events never implies capacity/,'missing timetable rows must never imply free capacity');
 assert.match(foundation,/candidateOnly:true/,'Foundation plan output must remain candidate projection until its governed publication path');
 
-console.log(JSON.stringify({pass:true,contract:'ready-foundation-assignment-bridge-v2',checks:17}));
+assert.match(stageE,/nextTuesdayNormalSlot:false/,'legacy NEXT_TUE may be detected but must not be an active normal allocation slot');
+assert.match(stageE,/minuteCapacityAuthority:false/,'minute capacity must not become Planner authority');
+assert.match(stageE,/estimatedMin:null/,'active Talent/English dated tasks must not invent parent/minute estimates');
+assert.doesNotMatch(stageE,/slot\s*:\s*['"]NEXT_TUE['"]/,'active allocation must not create a NEXT_TUE slot');
+
+console.log(JSON.stringify({pass:true,contract:'ready-foundation-assignment-bridge-v2',checks:21}));
