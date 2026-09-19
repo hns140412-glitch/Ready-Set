@@ -165,7 +165,12 @@ function openCategory(cat){
 $$('[data-category]').forEach(b=>b.addEventListener('click',()=>openCategory(b.dataset.category)));
 $$('[data-close-sheet]').forEach(b=>b.addEventListener('click',()=>$('#categorySheet').hidden=true));
 
+function ensureTodayPlannerTodos(){
+  return window.ReadySetPlanner?.materializeDate?.(localDateKey())||null;
+}
+
 function renderPlannerToday(){
+  ensureTodayPlannerTodos();
   const root=$('#plannerTodayList');
   const section=$('#plannerTodaySection');
   if(!root||!section)return;
@@ -589,6 +594,7 @@ function plannerStateLabel(v){
   return ({PLANNED:'예정',IN_PROGRESS:'진행',COMPLETED:'완료',PARTIAL:'일부 남음',DEFERRED:'다음에',WAITING_FOR_PARENT:'부모 도움',BLOCKED:'막힘',FIXED:'고정'})[v]||v;
 }
 function renderPlanner(){
+  ensureTodayPlannerTodos();
   const snap=plannerSnapshot(), start=weekStart(new Date(plannerSelectedDate+'T12:00:00'));
   const strip=$('#plannerWeekStrip'), detail=$('#plannerWeekDetail');
   if(!strip||!detail)return;
@@ -717,7 +723,7 @@ document.getElementById('saveScheduleBtn')?.addEventListener('click',()=>{
 document.getElementById('saveTemplateBtn')?.addEventListener('click',()=>{
   const title=$('#templateTitle').value.trim(), mins=Math.max(1,Math.min(240,Number($('#templateMinutes').value)||20));
   if(!title){toast('숙제명을 입력해 주세요.');return;}
-  window.ReadySetPlanner.upsertHomeworkTemplate({
+  const template=window.ReadySetPlanner.upsertHomeworkTemplate({
     template_id:$('#templateId').value||undefined,
     title,
     subject:$('#templateSubject').value.trim()||null,
@@ -729,8 +735,9 @@ document.getElementById('saveTemplateBtn')?.addEventListener('click',()=>{
     confirmation_state:'CONFIRMED',
     provenance:{kind:'PARENT_ADMIN_UI'}
   });
-  toast('숙제 템플릿을 저장했어요.');
-  renderPlannerAdmin();
+  const materialized=window.ReadySetPlanner.materializeDate(localDateKey());
+  toast(materialized.created.length?'숙제 템플릿을 저장하고 오늘 할 일에 추가했어요.':'숙제 템플릿을 저장했어요.');
+  renderPlannerAdmin(); renderPlanner(); renderMission();
 });
 
 function renderProfile(){
@@ -965,6 +972,7 @@ window.addEventListener('visibilitychange',()=>{
   if(!document.hidden&&state.activeSession)renderFocus();
 });
 window.addEventListener('load',()=>{
+  ensureTodayPlannerTodos();
   renderHome();renderSettings();
   if(state.activeSession&&$('#focusView')?.classList.contains('active'))renderFocus();
   if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
