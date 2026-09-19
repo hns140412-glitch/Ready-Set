@@ -22,7 +22,7 @@ exports.handler=async function(event){
   const { getStore } = await import('@netlify/blobs');
   const blobs=getStore({name:'ready-set-sync-v1',consistency:'strong'});
   const service=createSyncService({
-    get:key=>blobs.get(key,{type:'text',consistency:'strong'}),
+    get:key=>blobs.get(key,{consistency:'strong'}),
     set:(key,value)=>blobs.set(key,value)
   });
 
