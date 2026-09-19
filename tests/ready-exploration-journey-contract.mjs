@@ -9,6 +9,7 @@ const recording = fs.readFileSync(new URL('../ready-recording-v1.js', import.met
 const finishRecording = recording.slice(recording.indexOf('async function finishRecording()'), recording.indexOf('async function startRecording()'));
 const native = fs.readFileSync(new URL('../ready-base-native-v2.js', import.meta.url), 'utf8');
 const selectionBridge = fs.readFileSync(new URL('../ready-planner-selection-bridge-v1.js', import.meta.url), 'utf8');
+const g13 = fs.readFileSync(new URL('../ready-stage-g13-authority-recovery.js', import.meta.url), 'utf8');
 const homeUI = fs.readFileSync(new URL('../ready-home-homework-ui-v1.js', import.meta.url), 'utf8');
 const stageDLoader = fs.readFileSync(new URL('../ready-stage-d.js', import.meta.url), 'utf8');
 const schedule = fs.readFileSync(new URL('../ready-schedule-base-v1.js', import.meta.url), 'utf8');
@@ -17,9 +18,11 @@ const version = JSON.parse(fs.readFileSync(new URL('../VERSION.json', import.met
 
 const checks = [
   ['Planner selection preserves multiple exploration pins', !native.includes("selected:String(x.id)===String(id)") && !selectionBridge.includes("selected:String(t.id)===String(id)") && native.includes('data-exploration-pin')],
-  ['base runtime binds all selected Planner TODOs into one exploration session', base.includes('function readySelectedPlannerTasks()') && base.includes('plannerTaskIds') && base.includes('tasks:labels')],
-  ['REV07 binds each canonical task to its Planner TODO identity', runtime.includes('planner_id') && runtime.includes('homeworkTaskMap') && runtime.includes('canonical_task_id')],
-  ['Today island exploration entry is first-class', native.includes('오늘의 섬') && native.includes('탐험 핀') && native.includes('data-exploration-pin')],
+  ['base runtime binds all selected Planner TODOs into one exploration session', base.includes('function readySelectedPlannerTasks()') && base.includes('plannerTaskIds:ids') && base.includes('tasks:labels') && base.includes('ids.forEach(id=>readySetPlannerStatus')],
+  ['REV07 binds each canonical task to its Planner TODO identity', runtime.includes('plannerIds=session.plannerTaskIds') && runtime.includes('homeworkTaskMap=tasks.map') && runtime.includes('canonical_task_id')],
+  ['Today island exploration entry is first-class', native.includes('오늘의 섬') && native.includes('탐험 핀') && native.includes('data-exploration-pin') && stageD.includes("TODAY'S ISLAND · PLANNER") && stageD.includes('data-rsf-select')],
+  ['G13 preserves the selected task set without clearing active session', g13.includes('const chosen=(day.tasks||[]).filter') && g13.includes('s.g13PlannerTasks=chosen.map') && !g13.includes('s.activeSession=null')],
+  ['Foundation path does not expose legacy allocation controls', stageD.includes("if(window.ReadyFoundationV1?.enabled)") && stageD.includes("card.dataset.explorationSource='PLANNER_TODAY_TODO'") && stageD.includes('오늘의 섬 탐험 핀')],
   ['PWA service worker is registered by active runtime', base.includes("navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'})")],
   ['PWA cache includes active timer and recording dependencies', sw.includes("'./ready-stage-d-base-v1.js'") && sw.includes("'./ready-recording-v1.js'") && sw.includes("'./ready-stage-g13-authority-recovery.js'")],
   ['PWA cache version matches VERSION metadata', sw.includes(`const CACHE='${version.cacheVersion}';`)],
@@ -28,8 +31,8 @@ const checks = [
   ['Stage C chooses one deterministic homework home presenter', stageC.includes('ReadyBaseNativeV2?.render?.();') && stageC.includes('ReadyHomeHomeworkUIV1?.render?.();')],
   ['dynamic runtime loaders are bounded', stageC.includes('timeout = 12000') && stageC.includes('LOAD_TIMEOUT:') && stageDLoader.includes('timeout=12000') && stageDLoader.includes('LOAD_TIMEOUT:')],
   ['timetable task selection resumes at mission', native.includes('sessionStorage.getItem(PENDING_KEY)') && native.includes("nav?.('mission')") && native.includes('if(core.activeSession)')],
-  ['schedule refresh does not rewrite active session selection', base.includes("if(state.activeSession){const activeId=state.activeSession.plannerTaskId")],
-  ['legacy planner bridge cannot clear active session', selectionBridge.includes("if(core.activeSession){window.ReadyBaseRuntimeV1?.nav?.('focus');return false}") && !selectionBridge.includes('core.activeSession=null')],
+  ['schedule refresh does not rewrite active session selection', base.includes('if(state.activeSession)return readySelectedPlannerTasks();')],
+  ['legacy planner bridge cannot clear active session', selectionBridge.includes("if(core.activeSession){window.ReadyBaseRuntimeV1?.nav?.('focus');return false}") && !selectionBridge.includes('core.activeSession=null') && !g13.includes('s.activeSession=null')],
   ['confirmed timetable exposes now/next context', schedule.includes('function scheduleContext(rows)') && schedule.includes('지금 일정') && schedule.includes('다음 일정')],
   ['authoritative session timing exported', base.includes('sessionTimes:readySessionTimes')],
   ['active session restores after reload', base.includes('function readyRestoreActiveSession()') && base.includes("readyNav('focus');clearInterval(readyTicker)")],
