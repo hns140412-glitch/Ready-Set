@@ -25,7 +25,8 @@
     schedule_commitments:[],
     homework_templates:[],
     dated_todos:[],
-    progress_events:[]
+    progress_events:[],
+    allocation_runs:[]
   });
 
   const cleanText=x=>String(x??'').trim();
@@ -45,7 +46,8 @@
       schedule_commitments:Array.isArray(x.schedule_commitments)?x.schedule_commitments:[],
       homework_templates:Array.isArray(x.homework_templates)?x.homework_templates:[],
       dated_todos:Array.isArray(x.dated_todos)?x.dated_todos:[],
-      progress_events:Array.isArray(x.progress_events)?x.progress_events:[]
+      progress_events:Array.isArray(x.progress_events)?x.progress_events:[],
+      allocation_runs:Array.isArray(x.allocation_runs)?x.allocation_runs:[]
     };
   }
 
@@ -91,6 +93,11 @@
           learning_units:Array.isArray(input.learning_units)?input.learning_units:[],
           provenance:input.provenance||null,
           confirmation_state:cleanText(input.confirmation_state)||'CONFIRMED',
+          deadline_date:cleanText(input.deadline_date)||null,
+          estimated_minutes:Number.isFinite(input.estimated_minutes)?Math.max(0,input.estimated_minutes):null,
+          allocation_priority:Number.isFinite(input.allocation_priority)?input.allocation_priority:100,
+          required_today:input.required_today===true,
+          preferred_days:Array.isArray(input.preferred_days)?input.preferred_days.map(Number).filter(x=>x>=0&&x<=6):[],
           updated_at:new Date().toISOString()
         };
         const i=s.homework_templates.findIndex(x=>x.template_id===id);
@@ -142,6 +149,154 @@
         }
         return {todo_id:todo.todo_id,label:todo.label,date:todo.date,source:todo.source};
       }));
+    }
+
+
+    function parseLocal(date,time){
+      const [y,m,d]=String(date).split('-').map(Number);
+      const [hh,mm]=String(time||'00:00').split(':').map(Number);
+      return new Date(y,m-1,d,hh||0,mm||0,0,0);
+    }
+
+    function clampWindows(date,windows=[]){
+      return (windows||[]).map(w=>{
+        const start=parseLocal(date,w.start);
+        const end=parseLocal(date,w.end);
+        return {start,end,start_text:w.start,end_text:w.end};
+      }).filter(w=>w.end>w.start);
+    }
+
+    function commitmentIntervals(state,date){
+      return state.schedule_commitments
+        .filter(x=>x.confirmed!==false && x.start_at && x.end_at)
+        .map(x=>({start:new Date(x.start_at),end:new Date(x.end_at),commitment_id:x.commitment_id,title:x.title}))
+        .filter(x=>x.end>x.start && dateKey(x.start)===date);
+    }
+
+    function subtractIntervals(base,blocks){
+      let parts=[base];
+      for(const block of blocks){
+        const next=[];
+        for(const p of parts){
+          if(block.end<=p.start || block.start>=p.end){next.push(p);continue}
+          if(block.start>p.start)next.push({...p,end:block.start});
+          if(block.end<p.end)next.push({...p,start:block.end});
+        }
+        parts=next;
+      }
+      return parts.filter(p=>p.end>p.start);
+    }
+
+    function minutes(ms){return Math.max(0,Math.floor(ms/60000));}
+
+    function eligibleTemplate(template,date){
+      if(template.confirmation_state && template.confirmation_state!=='CONFIRMED')return false;
+      if(template.deadline_date && date>template.deadline_date)return false;
+      const dow=parseLocal(date,'12:00').getDay();
+      if(template.preferred_days?.length && !template.preferred_days.includes(dow) && !template.required_today)return false;
+      return true;
+    }
+
+    function allocateToday(input={}){
+      const date=cleanText(input.date)||dateKey();
+      const candidateWindows=clampWindows(date,input.candidate_windows||[]);
+      if(!candidateWindows.length){
+        return {ok:false,reason:'NO_CANDIDATE_WINDOWS',date,proposals:[],available_minutes:0};
+      }
+      return mutate(s=>{
+        const commitments=commitmentIntervals(s,date);
+        const open=candidateWindows.flatMap(w=>subtractIntervals(w,commitments));
+        const availableMinutes=open.reduce((sum,w)=>sum+minutes(w.end-w.start),0);
+        const maxMinutes=Number.isFinite(input.max_minutes)
+          ? Math.max(0,Math.min(input.max_minutes,availableMinutes))
+          : availableMinutes;
+
+        const existingOpen=new Set(
+          s.dated_todos.filter(x=>x.date===date&&x.state!=='COMPLETED').map(x=>x.template_id).filter(Boolean)
+        );
+        const candidates=s.homework_templates
+          .filter(t=>eligibleTemplate(t,date))
+          .filter(t=>!existingOpen.has(t.template_id))
+          .filter(t=>Number.isFinite(t.estimated_minutes) && t.estimated_minutes>0)
+          .sort((a,b)=>{
+            if(!!a.required_today!==!!b.required_today)return a.required_today?-1:1;
+            const ad=a.deadline_date||'9999-12-31',bd=b.deadline_date||'9999-12-31';
+            if(ad!==bd)return ad.localeCompare(bd);
+            if(a.allocation_priority!==b.allocation_priority)return a.allocation_priority-b.allocation_priority;
+            return a.title.localeCompare(b.title,'ko');
+          });
+
+        const proposals=[];
+        let used=0;
+        for(const t of candidates){
+          const est=t.estimated_minutes;
+          if(!t.required_today && used+est>maxMinutes)continue;
+          if(t.required_today && used+est>maxMinutes){
+            proposals.push({
+              template_id:t.template_id,label:t.title,estimated_minutes:est,
+              decision:'REQUIRES_REPLAN',reason:'REQUIRED_TASK_EXCEEDS_CURRENT_CAPACITY',
+              deadline_date:t.deadline_date||null
+            });
+            continue;
+          }
+          proposals.push({
+            template_id:t.template_id,label:t.title,estimated_minutes:est,
+            decision:'PROPOSE',reason:t.required_today?'REQUIRED_TODAY':'FITS_CONFIRMED_CAPACITY',
+            deadline_date:t.deadline_date||null
+          });
+          used+=est;
+        }
+
+        const run={
+          allocation_run_id:makeId('allocation'),
+          date,
+          source:'READY_PLANNER_V01',
+          candidate_windows:(input.candidate_windows||[]),
+          available_minutes:availableMinutes,
+          max_minutes:maxMinutes,
+          proposed_minutes:used,
+          proposals,
+          condition_evidence:input.condition_evidence||null,
+          created_at:new Date().toISOString()
+        };
+        s.allocation_runs.push(run);
+        s.allocation_runs=s.allocation_runs.slice(-100);
+        return {ok:true,...run,open_windows:open.map(w=>({
+          start:w.start.toISOString(),end:w.end.toISOString(),minutes:minutes(w.end-w.start)
+        }))};
+      });
+    }
+
+    function commitAllocation(runId,templateIds=[]){
+      const ids=new Set(templateIds);
+      return mutate(s=>{
+        const run=s.allocation_runs.find(x=>x.allocation_run_id===runId);
+        if(!run)return {ok:false,reason:'ALLOCATION_RUN_NOT_FOUND',created:[]};
+        const created=[];
+        for(const p of run.proposals){
+          if(p.decision!=='PROPOSE'||!ids.has(p.template_id))continue;
+          let todo=s.dated_todos.find(x=>x.date===run.date&&x.template_id===p.template_id&&x.state!=='COMPLETED');
+          if(!todo){
+            todo={
+              todo_id:makeId('todo'),
+              date:run.date,
+              label:p.label,
+              template_id:p.template_id,
+              source:'PLANNER_ALLOCATION',
+              source_actor:'PLANNER_MAIN',
+              provenance:{allocation_run_id:runId},
+              order:created.length,
+              state:'PLANNED',
+              estimated_minutes:p.estimated_minutes,
+              created_at:new Date().toISOString(),
+              updated_at:new Date().toISOString()
+            };
+            s.dated_todos.push(todo);
+          }
+          created.push({todo_id:todo.todo_id,label:todo.label,template_id:todo.template_id});
+        }
+        return {ok:true,created};
+      });
     }
 
     function recordTaskState(input={}){
@@ -196,7 +351,9 @@
       upsertHomeworkTemplate,
       upsertDatedTodo,
       linkOrCreateTodayItems,
-      recordTaskState
+      recordTaskState,
+      allocateToday,
+      commitAllocation
     };
   }
 
