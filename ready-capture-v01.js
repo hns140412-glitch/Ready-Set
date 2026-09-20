@@ -11,6 +11,42 @@
   const now=()=>new Date().toISOString();
   const id=p=>p+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
   const clean=v=>String(v??'').trim();
+  const clone=v=>JSON.parse(JSON.stringify(v));
+  function draftId(sessionId,groupKey,index,runNo){
+    return 'review_'+String(sessionId||'capture')+'_'+String(runNo||1)+'_'+String(index)+'_'+String(groupKey||'group').replace(/[^a-zA-Z0-9가-힣]+/g,'_');
+  }
+  function decorateAnalysisResult(session,result,manifest=[]){
+    if(!result?.ok||!Array.isArray(result.drafts))return result||null;
+    const runNo=Number(session.analysis_run_no||0)+1;
+    const receivedAt=result.received_at||now();
+    const drafts=result.drafts.map((draft,index)=>({
+      ...draft,
+      review_draft_id:draft.review_draft_id||draftId(session.capture_session_id,draft.group_key,index,runNo),
+      draft_version:1,
+      review_state:'UNREVIEWED',
+      original_extraction:clone(draft),
+      reviewed_value:null,
+      review_events:[{event:'DRAFT_CREATED',at:receivedAt,actor:'ANALYSIS_ADAPTER'}]
+    }));
+    const evidence=new Set(drafts.flatMap(d=>Array.isArray(d.evidence_item_ids)?d.evidence_item_ids:[]));
+    const capture_item_dispositions=(Array.isArray(manifest)?manifest:[]).map(item=>({
+      capture_item_id:item.capture_item_id,
+      group_key:item.group_key,
+      capture_kind:item.kind,
+      disposition:item.kind==='ANSWER_REFERENCE'
+        ?'IGNORED_WITH_REASON'
+        :evidence.has(item.capture_item_id)?'LINKED_TO_REVIEW_DRAFT':'UNRESOLVED',
+      reason:item.kind==='ANSWER_REFERENCE'
+        ?'ANSWER_REFERENCE_EXCLUDED_FROM_OCR'
+        :evidence.has(item.capture_item_id)?null:'NO_DRAFT_EVIDENCE_LINK'
+    }));
+    return {
+      ...result,
+      analysis_run_no:runNo,
+      drafts,
+      capture_item_dispositions
+    };
+  }
 
   function openDb(){
     return new Promise((resolve,reject)=>{
@@ -98,6 +134,8 @@
       current_kind:clean(input.kind)||'RANGE',
       analysis_state:'NOT_REQUESTED',
       analysis_adapter:null,
+      analysis_run_no:0,
+      analysis_history:[],
       created_at:now(),
       updated_at:now(),
       completed_at:null
@@ -226,7 +264,7 @@
   }
 
   async function requestAnalysis(){
-    const session=await activeSession();
+    const session=(await activeSession())||(await latestSession());
     if(!session)return {ok:false,reason:'NO_CAPTURE_SESSION'};
     const items=await listItems(session.capture_session_id);
     if(!items.length)return {ok:false,reason:'NO_CAPTURE_ITEMS'};
@@ -265,11 +303,75 @@
       size:x.size
     }));
     const result=await adapter.analyze({session:next,manifest,getBlob:async itemId=>(await getItem(itemId))?.blob||null});
-    const done={...next,analysis_state:result?.ok?'ANALYSIS_COMPLETE':'ANALYSIS_FAILED',analysis_result:result||null,updated_at:now()};
+    const priorHistory=Array.isArray(session.analysis_history)?session.analysis_history:[];
+    const previous=session.analysis_result?.ok?{
+      analysis_run_no:session.analysis_result.analysis_run_no||session.analysis_run_no||1,
+      archived_at:now(),
+      result:clone(session.analysis_result)
+    }:null;
+    const decorated=decorateAnalysisResult(session,result,manifest);
+    const done={
+      ...next,
+      analysis_run_no:result?.ok?Number(session.analysis_run_no||0)+1:Number(session.analysis_run_no||0),
+      analysis_history:previous?[...priorHistory,previous]:priorHistory,
+      analysis_state:result?.ok?'ANALYSIS_COMPLETE':'ANALYSIS_FAILED',
+      analysis_result:decorated||result||null,
+      updated_at:now()
+    };
     await put(SESSION_STORE,done);
     if(result?.ok) localStorage.removeItem(ACTIVE_SESSION_KEY);
     else localStorage.setItem(ACTIVE_SESSION_KEY,done.capture_session_id);
     return {ok:!!result?.ok,capture_session_id:done.capture_session_id,analysis_state:done.analysis_state,result};
+  }
+
+  async function updateReviewDraft(draftId,input={}){
+    const session=(await activeSession())||(await latestSession());
+    if(!session?.analysis_result?.drafts)return {ok:false,reason:'NO_REVIEW_DRAFT'};
+    const drafts=session.analysis_result.drafts.map(d=>clone(d));
+    const idx=drafts.findIndex(d=>d.review_draft_id===draftId);
+    if(idx<0)return {ok:false,reason:'REVIEW_DRAFT_NOT_FOUND'};
+    const draft=drafts[idx];
+    const reviewedValue=clone(input.reviewed_value||{});
+    draft.reviewed_value=reviewedValue;
+    draft.draft_version=Number(draft.draft_version||1)+1;
+    draft.review_state=clean(input.review_state)||'PARENT_REVIEWED';
+    draft.review_events=Array.isArray(draft.review_events)?draft.review_events:[];
+    draft.review_events.push({
+      event:clean(input.event)||'PARENT_REVIEWED',
+      actor:clean(input.actor)||'PARENT',
+      at:now(),
+      fields:Array.isArray(input.fields)?input.fields.map(clean).filter(Boolean):[]
+    });
+    drafts[idx]=draft;
+    const next={...session,analysis_result:{...session.analysis_result,drafts},updated_at:now()};
+    await put(SESSION_STORE,next);
+    return {ok:true,draft:clone(draft),session:clone(next)};
+  }
+
+  async function reviewProvenanceForGroup(groupKey){
+    const session=(await activeSession())||(await latestSession());
+    const drafts=Array.isArray(session?.analysis_result?.drafts)?session.analysis_result.drafts:[];
+    const rows=drafts.filter(d=>d.group_key===groupKey);
+    if(!rows.length)return null;
+    return {
+      kind:'CAPTURE_REVIEW',
+      capture_session_id:session.capture_session_id,
+      analysis_run_no:session.analysis_result.analysis_run_no||session.analysis_run_no||null,
+      analysis_adapter:session.analysis_adapter||null,
+      provider:session.analysis_result.provider||null,
+      model:session.analysis_result.model||null,
+      capture_item_dispositions:clone(session.analysis_result.capture_item_dispositions||[]).filter(x=>x.group_key===groupKey),
+      review_drafts:rows.map(d=>({
+        review_draft_id:d.review_draft_id,
+        draft_version:d.draft_version,
+        review_state:d.review_state,
+        confidence:d.confidence,
+        evidence_item_ids:clone(d.evidence_item_ids||[]),
+        original_extraction:clone(d.original_extraction||{}),
+        reviewed_value:clone(d.reviewed_value||{}),
+        review_events:clone(d.review_events||[])
+      }))
+    };
   }
 
   async function groupSummaryForSession(sessionId){
@@ -313,6 +415,8 @@
     artifactDescriptor,
     artifactsForGroup,
     groupSummary,
-    requestAnalysis
+    requestAnalysis,
+    updateReviewDraft,
+    reviewProvenanceForGroup
   });
 })();
