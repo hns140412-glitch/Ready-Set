@@ -438,8 +438,13 @@
     const start = document.getElementById('startBtn');
     if (start && originalStart) {
       start.onclick = async function patchedStart(event) {
-        await originalStart.call(this, event);
+        const pending = originalStart.call(this, event);
         if (state.activeSession) {
+          ensureContract();
+          renderContractUI();
+        }
+        await pending;
+        if (state.activeSession && !state.activeSession.rev07) {
           ensureContract();
           renderContractUI();
         }
