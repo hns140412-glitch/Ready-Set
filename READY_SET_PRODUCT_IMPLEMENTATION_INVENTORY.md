@@ -27,20 +27,20 @@ A feature is not FUNCTIONAL merely because one underlying contract, module, or h
 | RSP-003 | Parent assignment capture | PARTIAL | structured input and domain models exist; full everyday capture UX is not complete. |
 | RSP-004 | Child ad-hoc homework input | PARTIAL | input → parent-confirm contract exists; polished parent review workflow remains incomplete. |
 | RSP-005 | FACT confirmation / correction | PARTIAL | core authority path exists; complete correction/exception UX is not finished. |
-| RSP-006 | Continuous camera capture | SKELETON | capture session/IndexedDB structures exist; production-quality repeated mobile shooting flow is not complete. |
-| RSP-007 | Temporary capture preservation | PARTIAL | IndexedDB capture preservation exists; recovery UX and device interruption behavior are not complete. |
-| RSP-008 | Batch Save & Analyze OCR | PARTIAL | analysis adapter / draft pipeline exists; actual end-user batch experience is incomplete. |
+| RSP-006 | Continuous camera capture | PARTIAL | mobile camera file-input capture supports repeated shots, immediate IndexedDB Blob temp-save, preview/delete and continued capture; custom camera UX/device interruption quality is not complete. |
+| RSP-007 | Temporary capture preservation | PARTIAL | IndexedDB Blob temp-save, active capture session and preserved originals exist; interruption/recovery UX and physical-device behavior remain unverified. |
+| RSP-008 | Batch Save & Analyze OCR | PARTIAL | Save and Analyze locks the capture session and sends preserved manifest/blobs through the analysis adapter into review drafts; production OCR quality and full mobile UX remain incomplete. |
 | RSP-009 | OCR review / correction / confidence UX | PARTIAL | review drafts, confidence and evidence linkage exist; complete mobile review UI is incomplete. |
 | RSP-010 | OCR retake / image quality handling | NOT_IMPLEMENTED | no complete product flow verified for blur/crop/retake/quality recovery. |
 | RSP-011 | Source → evidence → FACT lineage | PARTIAL | lineage contracts exist; full capture UX closure is incomplete. |
 | RSP-012 | Talent six-book intake | PARTIAL | six-book domain flow exists; ordinary weekly parent workflow still needs productization. |
 | RSP-013 | English academy package intake | PARTIAL | workbook/components/deadline model exists; recurring academy-life workflow incomplete. |
 | RSP-014 | Learning Master core decomposition | PARTIAL | subject profiles, Learning Unit generation, load/recovery metadata exist. |
-| RSP-015 | Grade/semester/unit curriculum mapping | PARTIAL | matcher/reference framework exists; multiple official mappings remain unresolved. |
-| RSP-016 | Korean subject learning intelligence | SKELETON | generic read-understand-respond profile; detailed grade/unit strategy incomplete. |
-| RSP-017 | Math learning intelligence | SKELETON | concept/apply/error profile exists; detailed unit-specific strategy incomplete. |
-| RSP-018 | Science learning intelligence | SKELETON | observe/evidence/explain profile exists; official grade/unit binding incomplete. |
-| RSP-019 | Social studies learning intelligence | SKELETON | concept-linkage profile exists; official source/unit binding incomplete. |
+| RSP-015 | Grade/semester/unit curriculum mapping | PARTIAL | official registry and Unit Mapping Evidence are materially populated for Korean/Social/Math/Science 5–6 band; English unit mapping remains an explicit GAP and textbook-specific matching stays evidence-gated. |
+| RSP-016 | Korean subject learning intelligence | PARTIAL | subject profile + official standard/unit evidence exist; detailed assignment-specific teaching strategy remains incomplete. |
+| RSP-017 | Math learning intelligence | PARTIAL | concept/apply/error profile + official standard/unit evidence exist; detailed assignment-specific strategy and adaptation remain incomplete. |
+| RSP-018 | Science learning intelligence | PARTIAL | dedicated science profile + official standard/unit evidence exist; deep assignment-specific pedagogy remains incomplete. |
+| RSP-019 | Social studies learning intelligence | PARTIAL | dedicated concept-linkage profile + official standard/unit evidence exist; deep assignment-specific pedagogy remains incomplete. |
 | RSP-020 | English learning intelligence | PARTIAL | vocabulary/listening/recording/writing profiles exist; academy-specific adaptive loop incomplete. |
 | RSP-021 | Hanja / calculation learning intelligence | PARTIAL | recall/fluency profiles exist; detailed progression and outcome tuning incomplete. |
 | RSP-022 | Piano learning intelligence | SKELETON | section-practice/record/compare model exists; difficulty/content database not bound. |
