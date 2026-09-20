@@ -45,7 +45,18 @@ test('P3 Hide Memory Summary returns into Ready Planner, TODAY, and Learning Mas
     ]
   };
 
-  const returned=await page.evaluate(({handoff,summary})=>{
+  const specialistReport={
+    explorationMissionId:'mission-hide-001',
+    explorationMissionTitle:'9월 21일 단어 탐험',
+    inputActorRole:'CHILD',
+    validWordCount:12,
+    trailMastery:64,
+    learningPhase:'weak',
+    finalSeekAttemptCount:7,
+    seekAgainRemainingCount:2
+  };
+
+  const returned=await page.evaluate(({handoff,summary,specialistReport})=>{
     const p=new URLSearchParams();
     p.set('session_id',handoff.session_id);
     p.set('goal_id',handoff.goal_id);
@@ -55,6 +66,7 @@ test('P3 Hide Memory Summary returns into Ready Planner, TODAY, and Learning Mas
     p.set('from_app','hide-seek');
     p.set('event_id','hide-memory-event-1');
     p.set('memory_summary',JSON.stringify(summary));
+    p.set('specialist_report',JSON.stringify(specialistReport));
     history.replaceState(null,'',location.pathname+'?'+p.toString());
     window.ReadySetRev07.consumeReturnQuery();
 
@@ -72,11 +84,19 @@ test('P3 Hide Memory Summary returns into Ready Planner, TODAY, and Learning Mas
       signal,
       task
     };
-  },{handoff:setup.handoff,summary});
+  },{handoff:setup.handoff,summary,specialistReport});
 
   expect(returned.url).not.toContain('memory_summary=');
   expect(returned.observations).toHaveLength(1);
   expect(returned.observations[0].authority).toBe('SPECIALIST_MEMORY_ADVISORY_ONLY');
+  expect(returned.observations[0].exploration_mission_id).toBe('mission-hide-001');
+  expect(returned.observations[0].input_actor_role).toBe('CHILD');
+  expect(returned.observations[0].specialist_progress.valid_word_count).toBe(12);
+  expect(returned.observations[0].specialist_progress.trail_mastery).toBe(64);
+  expect(returned.todo.exploration_mission_id).toBe('mission-hide-001');
+  expect(returned.todo.specialist_input_actor_role).toBe('CHILD');
+  expect(returned.task.exploration_mission_id).toBe('mission-hide-001');
+  expect(returned.task.input_actor_role).toBe('CHILD');
   expect(returned.todo.memory_followup_advisory).toBeTruthy();
   expect(returned.today.memory_followup_advisory).toBeTruthy();
   expect(returned.today.specialist_memory_summary.needsUnassistedRecallCount).toBe(1);
@@ -114,8 +134,9 @@ test('P3 Hide Memory Summary returns into Ready Planner, TODAY, and Learning Mas
     task_state:'PARTIAL',
     from_app:'hide-seek',
     event_id:'hide-memory-event-1',
-    memory_summary:summary
-  }),{handoff:setup.handoff,summary});
+    memory_summary:summary,
+    specialist_report:specialistReport
+  }),{handoff:setup.handoff,summary,specialistReport});
   expect(duplicate).toBeFalsy();
 
   const count=await page.evaluate(()=>window.ReadySetPlanner.snapshot().specialist_memory_observations.length);
