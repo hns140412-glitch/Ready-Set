@@ -3,6 +3,7 @@ name: Ready Integration CI
 on:
   push:
     branches:
+      - main
       - taky/ready-integration-v01
   pull_request:
     branches:
