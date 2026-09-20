@@ -282,7 +282,7 @@ $('#voiceTaskBtn').onclick=()=>{
   voiceRecognition.onend=()=>{$('#voiceTaskBtn').classList.remove('listening');voiceRecognition=null;if($('#voiceHint').textContent.startsWith('듣고'))$('#voiceHint').textContent='텍스트로 입력하거나 마이크를 눌러 말할 수 있어요.'};
   try{voiceRecognition.start()}catch{$('#voiceTaskBtn').classList.remove('listening');voiceRecognition=null}
 };
-$$$('[data-minutes]').forEach(b=>b.onclick=()=>{
+$$('[data-minutes]').forEach(b=>b.onclick=()=>{
   if(b.dataset.minutes==='custom'){$('#customTimeWrap').hidden=false;return}
   $('#customTimeWrap').hidden=true;
   state.targetMin=+b.dataset.minutes;save();renderMission();
@@ -356,12 +356,12 @@ $$('[data-close-sound]').forEach(b=>b.onclick=()=>{
   $('#soundSheet').hidden=true;
   if(!state.activeSession)pauseBgm();
 });
-$$$('[data-sheet-sound]').forEach(b=>b.onclick=async()=>{
+$$('[data-sheet-sound]').forEach(b=>b.onclick=async()=>{
   const sound=b.dataset.sheetSound;
   state.sound=sound;
   if(state.activeSession)state.activeSession.sound=sound;
   save();
-  $$$('[data-sheet-sound]').forEach(x=>x.classList.toggle('on',x===b));
+  $$('[data-sheet-sound]').forEach(x=>x.classList.toggle('on',x===b));
   $('#soundName').textContent=sound;
   renderSettings();
   if(sound==='OFF')pauseBgm();
