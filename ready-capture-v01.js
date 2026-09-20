@@ -388,6 +388,12 @@
     return clone(session?.fact_links?.[groupKey]||null);
   }
 
+  async function lastClosedFactLinkForGroup(groupKey){
+    const latest=await latestSession();
+    if(!latest||latest.status!=='FACT_LINKED')return null;
+    return clone(latest.fact_links?.[groupKey]||null);
+  }
+
   async function recordFactLink(groupKey,input={}){
     const session=await currentReviewSession();
     if(!session)return {ok:false,reason:'NO_CAPTURE_SESSION'};
@@ -399,6 +405,8 @@
       package_id:clean(input.package_id)||current.package_id||null,
       workbook_ref_id:clean(input.workbook_ref_id)||current.workbook_ref_id||null,
       fact_confirmation_state:clean(input.fact_confirmation_state)||current.fact_confirmation_state||null,
+      payload_signature:clean(input.payload_signature)||current.payload_signature||null,
+      capture_session_id:session.capture_session_id,
       linked_at:current.linked_at||now(),
       updated_at:now()
     };
@@ -517,6 +525,7 @@
     updateReviewDraft,
     reviewProvenanceForGroup,
     factLinkForGroup,
+    lastClosedFactLinkForGroup,
     recordFactLink,
     finalizeFactLinkage,
     resolveCaptureItemDisposition,
