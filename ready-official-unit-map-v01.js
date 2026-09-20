@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.2.0';
+  const VERSION='0.2.1';
   const DATASET={
     authority:'GYEONGGI_PROVINCIAL_OFFICE_OF_EDUCATION',
     source_id:'GOE_2026_EVAL',
