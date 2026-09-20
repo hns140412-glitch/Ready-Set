@@ -23,6 +23,12 @@ async function assertNoHorizontalOverflow(page,selector){
 test.use({ viewport:{width:390,height:844}, isMobile:true, hasTouch:true });
 
 test('mobile product quality gate: critical views fit viewport and navigation is live', async ({page})=>{
+  await page.addInitScript(() => {
+    window.__READY_AUTH_BOOTSTRAP__={
+      authenticated:true,family_id:'TEST_FAMILY',member_id:'TEST_PARENT',role:'PARENT',
+      session_id:'TEST_SESSION',expires_at:'2099-01-01T00:00:00.000Z',source:'TEST_ONLY'
+    };
+  });
   const errors=[];
   page.on('pageerror',e=>errors.push(String(e.message||e)));
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
@@ -46,6 +52,12 @@ test('mobile product quality gate: critical views fit viewport and navigation is
 });
 
 test('mobile product quality gate: core touch targets are usable and primary controls are wired', async ({page})=>{
+  await page.addInitScript(() => {
+    window.__READY_AUTH_BOOTSTRAP__={
+      authenticated:true,family_id:'TEST_FAMILY',member_id:'TEST_PARENT',role:'PARENT',
+      session_id:'TEST_SESSION',expires_at:'2099-01-01T00:00:00.000Z',source:'TEST_ONLY'
+    };
+  });
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
   const critical=[
     ['home','[data-nav="mission"]'],
