@@ -1062,6 +1062,7 @@
       replanCarryOver,
       replanReadyCarryOvers,
       recordTaskState,
+      sessionRuntimeStatus,
       allocateToday,
       commitAllocation,
       recordSessionOutcome,
