@@ -237,9 +237,17 @@
     };
   }
 
+  async function currentReviewSession(){
+    const active=await activeSession();
+    if(active)return active;
+    const latest=await latestSession();
+    if(!latest||latest.status==='FACT_LINKED')return null;
+    return latest;
+  }
+
   async function resolveSession(sessionId){
     if(clean(sessionId))return getByKey(SESSION_STORE,clean(sessionId));
-    return (await activeSession())||(await latestSession());
+    return currentReviewSession();
   }
 
   async function artifactsForGroup(groupKey,sessionId){
@@ -265,7 +273,7 @@
   }
 
   async function requestAnalysis(){
-    const session=(await activeSession())||(await latestSession());
+    const session=await currentReviewSession();
     if(!session)return {ok:false,reason:'NO_CAPTURE_SESSION'};
     const items=await listItems(session.capture_session_id);
     if(!items.length)return {ok:false,reason:'NO_CAPTURE_ITEMS'};
@@ -326,7 +334,7 @@
   }
 
   async function updateReviewDraft(draftId,input={}){
-    const session=(await activeSession())||(await latestSession());
+    const session=await currentReviewSession();
     if(!session?.analysis_result?.drafts)return {ok:false,reason:'NO_REVIEW_DRAFT'};
     const drafts=session.analysis_result.drafts.map(d=>clone(d));
     const idx=drafts.findIndex(d=>d.review_draft_id===draftId);
@@ -350,7 +358,7 @@
   }
 
   async function reviewProvenanceForGroup(groupKey){
-    const session=(await activeSession())||(await latestSession());
+    const session=await currentReviewSession();
     const drafts=Array.isArray(session?.analysis_result?.drafts)?session.analysis_result.drafts:[];
     const rows=drafts.filter(d=>d.group_key===groupKey);
     if(!rows.length)return null;
@@ -376,12 +384,12 @@
   }
 
   async function factLinkForGroup(groupKey){
-    const session=(await activeSession())||(await latestSession());
+    const session=await currentReviewSession();
     return clone(session?.fact_links?.[groupKey]||null);
   }
 
   async function recordFactLink(groupKey,input={}){
-    const session=(await activeSession())||(await latestSession());
+    const session=await currentReviewSession();
     if(!session)return {ok:false,reason:'NO_CAPTURE_SESSION'};
     const links=clone(session.fact_links||{});
     const current=links[groupKey]||{};
@@ -394,13 +402,25 @@
       linked_at:current.linked_at||now(),
       updated_at:now()
     };
-    const next={...session,fact_links:links,updated_at:now()};
+    const items=await listItems(session.capture_session_id);
+    const requiredGroups=[...new Set(items.map(x=>x.group_key).filter(Boolean))];
+    const allLinked=requiredGroups.length>0&&requiredGroups.every(key=>links[key]?.assignment_id);
+    const next={
+      ...session,
+      fact_links:links,
+      status:allLinked?'FACT_LINKED':session.status,
+      fact_linked_at:allLinked?(session.fact_linked_at||now()):(session.fact_linked_at||null),
+      updated_at:now()
+    };
     await put(SESSION_STORE,next);
-    return {ok:true,link:clone(links[groupKey]),session:clone(next)};
+    if(allLinked&&localStorage.getItem(ACTIVE_SESSION_KEY)===session.capture_session_id){
+      localStorage.removeItem(ACTIVE_SESSION_KEY);
+    }
+    return {ok:true,link:clone(links[groupKey]),session:clone(next),all_linked:allLinked};
   }
 
   async function resolveCaptureItemDisposition(itemId,input={}){
-    const session=(await activeSession())||(await latestSession());
+    const session=await currentReviewSession();
     if(!session?.analysis_result)return {ok:false,reason:'NO_ANALYSIS_RESULT'};
     const dispositions=clone(session.analysis_result.capture_item_dispositions||[]);
     const idx=dispositions.findIndex(x=>x.capture_item_id===itemId);
@@ -436,7 +456,7 @@
   }
 
   async function reviewClosureForGroup(groupKey){
-    const session=(await activeSession())||(await latestSession());
+    const session=await currentReviewSession();
     const rows=clone(session?.analysis_result?.capture_item_dispositions||[]).filter(x=>x.group_key===groupKey);
     const unresolved=rows.filter(x=>x.disposition==='UNRESOLVED');
     return {
@@ -480,6 +500,7 @@
     createSession,
     activeSession,
     latestSession,
+    currentReviewSession,
     setCaptureTarget,
     addFiles,
     listItems,
