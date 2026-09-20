@@ -154,7 +154,15 @@
       return load().dated_todos.filter(x=>ids.has(x.todo_id)&&x.date===date&&x.state!=='COMPLETED').map(x=>({
         todo_id:x.todo_id,label:x.label,date:x.date,source:x.source,
         assignment_id:x.assignment_id,analysis_id:x.analysis_id,learning_unit_id:x.learning_unit_id,
-        template_id:x.template_id,allocation_run_id:x.allocation_run_id
+        template_id:x.template_id,allocation_run_id:x.allocation_run_id,
+        activity_types:Array.isArray(x.activity_types)?x.activity_types:[],
+        activity_sequence:Array.isArray(x.activity_sequence)?x.activity_sequence:[],
+        cognitive_load_profile:Array.isArray(x.cognitive_load_profile)?x.cognitive_load_profile:[],
+        activity_load_score:Number.isFinite(x.activity_load_score)?x.activity_load_score:null,
+        difficulty:Number.isFinite(x.difficulty)?x.difficulty:null,
+        recovery_need:x.recovery_need||null,
+        review_policy:x.review_policy||null,
+        parent_help_dependency:x.parent_help_dependency||null
       }));
     }
     function linkOrCreateTodayItems(values=[],options={}){
