@@ -798,11 +798,12 @@ async function recordCaptureReview(groupKey,reviewedValue,event='PARENT_REVIEWED
   return api.reviewProvenanceForGroup?.(groupKey)||null;
 }
 async function renderCaptureReview(session){
-  const section=$('#captureReviewSection'),root=$('#captureReviewDrafts');
+  const section=$('#captureReviewSection'),root=$('#captureReviewDrafts'),reanalyze=$('#captureReanalyzeBtn');
   if(!section||!root)return;
   const drafts=session?.analysis_state==='ANALYSIS_COMPLETE'&&Array.isArray(session.analysis_result?.drafts)
     ?session.analysis_result.drafts:[];
   section.hidden=!drafts.length;
+  if(reanalyze)reanalyze.hidden=!drafts.length;
   if(!drafts.length){root.innerHTML='';return}
   const history=Array.isArray(session.analysis_history)?session.analysis_history:[];
   root.innerHTML=(history.length?`<div class="adminListItem"><span><b>분석 이력</b><small>이전 분석 ${history.length}회 보존 · 현재 실행 #${session.analysis_result?.analysis_run_no||session.analysis_run_no||1}</small></span><strong>HISTORY</strong></div>`:'')+drafts.map((draft,index)=>{
@@ -997,7 +998,7 @@ document.getElementById('saveTalentFactsBtn')?.addEventListener('click',async()=
       source_range:row.querySelector('[data-range]').value.trim(),
       teacher_instruction:row.querySelector('[data-instruction]').value.trim()
     };
-    const reviewProvenance=await recordCaptureReview('TALENT:'+subject,reviewedValue,'FACT_CONFIRMED');
+    const reviewProvenance=await recordCaptureReview('TALENT:'+subject,reviewedValue,'PARENT_REVIEWED');
     books.push({
       subject,
       ...reviewedValue,
@@ -1033,7 +1034,7 @@ document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=
   };
   const englishReviewRows=[];
   for(const groupKey of ['ENGLISH:WORKBOOK','ENGLISH:PRINT','ENGLISH:OTHER']){
-    const p=await recordCaptureReview(groupKey,englishReviewedValue,'FACT_CONFIRMED');
+    const p=await recordCaptureReview(groupKey,englishReviewedValue,'PARENT_REVIEWED');
     if(p)englishReviewRows.push(p);
   }
   const fact=window.ReadyAssignments.upsertEnglishAssignment({
