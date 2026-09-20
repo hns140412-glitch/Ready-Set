@@ -21,3 +21,14 @@ jobs:
         run: node .github/scripts/ready_planner_contract_test.js
       - name: Assignment and Learning Master contract
         run: node .github/scripts/ready_learning_master_contract_test.js
+
+  learning-master-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Learning Master and official mapping contract
+        run: node .github/scripts/ready_learning_master_contract_test.js
