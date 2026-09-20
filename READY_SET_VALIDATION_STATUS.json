@@ -37,10 +37,25 @@
     "R7_EXACT_MAIN_VERIFICATION": "COMPLETE"
   },
   "current_open_product_gates": [
+    "WHOLE_PRODUCT_REQUIREMENT_RECOVERY",
+    "REAL_RECURRING_TIMETABLE",
+    "WEEK_TIME_AXIS_UI",
+    "DAY_TIME_AXIS_UI",
+    "TIMETABLE_EXCEPTIONS_AND_MAKEUP",
+    "PLANNER_TIMETABLE_AWARE_ALLOCATION",
+    "PLANNER_AUTOMATIC_REPLAN",
+    "OCR_CONTINUOUS_CAPTURE_UX",
+    "OCR_RETAKE_AND_QUALITY_RECOVERY",
+    "OCR_REVIEW_CORRECTION_UX",
+    "LEARNING_ENGINE_GRADE_UNIT_MAPPING",
+    "LEARNING_ENGINE_SUBJECT_DEPTH",
+    "PARENT_MANAGEMENT_UX",
+    "TODAY_END_TO_END_PRODUCT_FLOW",
+    "REAL_SYNC_AND_FAMILY_ONBOARDING",
     "DEVICE_VERIFICATION",
     "PRODUCTION_VERIFICATION"
   ],
-  "release_state": "FROZEN_MULTI_REPO_CANDIDATE_DEVICE_GATE_PENDING",
+  "release_state": "ACTIVE_IMPLEMENTATION_PRODUCT_COMPLETENESS_REASSESSMENT",
   "deployment_policy": {
     "branch_first": true,
     "netlify_not_debug_surface": true,
@@ -54,9 +69,9 @@
   },
   "external_resource_gate": {
     "policy": "LOCAL_BRANCH_TO_CI_RUNTIME_TO_ONE_FROZEN_CANDIDATE_TO_EXTERNAL",
-    "candidate_sha_frozen": true,
+    "candidate_sha_frozen": false,
     "external_deploy_allowed": false,
-    "reason": "Exact multi-repo candidate tuple is frozen after branch/CI/runtime closure. External deployment remains disallowed until explicit HUMAN APPROVAL / user direction for the one deliberate device-validation deployment.",
+    "reason": "Previous frozen tuple represented selected subsystem/runtime closure only. Whole-product completeness reassessment found material timetable, Planner, OCR, Learning Engine, Parent UX and sync gaps; release candidate freeze is revoked until those product features are functional.",
     "default_external_call_budget": 1,
     "user_as_debugger": false
   },
@@ -78,8 +93,8 @@
     },
     "p1_planner_reality_engine": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
     "review_snapshot_frozen": true,
-    "deployment_candidate_frozen": true,
-    "next_unresolved_gate": "P6_DEVICE_VERIFICATION",
+    "deployment_candidate_frozen": false,
+    "next_unresolved_gate": "WHOLE_PRODUCT_IMPLEMENTATION_REBUILD",
     "hosting_called_during_review": false
   },
   "p2_child_fact_confirmation_closure": {
@@ -304,7 +319,7 @@
     "note": "P5 exact candidate is closed, but branch head later advanced for P3c; do not transfer P5 validation to that newer SHA."
   },
   "frozen_candidate_tuple": {
-    "frozen": true,
+    "frozen": false,
     "frozen_at_basis": "POST_P1_P5_AND_P3C_BRANCH_RUNTIME_CLOSURE",
     "ready": {
       "repo": "hns140412-glitch/Ready-Set",
@@ -327,7 +342,16 @@
       "hide_validate": "#134 PASS"
     },
     "external_deploy_allowed": false,
-    "next_gate": "P6_DEVICE_VERIFICATION_WITH_EXPLICIT_HUMAN_APPROVAL",
-    "netlify_calls_during_renewal": 0
+    "next_gate": "WHOLE_PRODUCT_IMPLEMENTATION_REBUILD",
+    "netlify_calls_during_renewal": 0,
+    "status": "REVOKED_AS_RELEASE_CANDIDATE",
+    "reason": "Selected subsystem tuple remains useful as historical exact-SHA evidence, but it is not a whole-product release/device candidate."
+  },
+  "product_completeness": {
+    "authority_file": "READY_SET_PRODUCT_IMPLEMENTATION_INVENTORY.md",
+    "numeric_percent_status": "UNRESOLVED_PENDING_WEIGHTED_REQUIREMENT_RECOVERY",
+    "device_gate_status": "BLOCKED_BY_MATERIAL_PRODUCT_GAPS",
+    "production_gate_status": "BLOCKED",
+    "correction": "Subsystem CLOSED / CI PASS / Runtime PASS must not be interpreted as whole-product completion."
   }
 }
