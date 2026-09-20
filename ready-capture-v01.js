@@ -136,6 +136,7 @@
       analysis_adapter:null,
       analysis_run_no:0,
       analysis_history:[],
+      fact_links:{},
       created_at:now(),
       updated_at:now(),
       completed_at:null
@@ -374,6 +375,30 @@
     };
   }
 
+  async function factLinkForGroup(groupKey){
+    const session=(await activeSession())||(await latestSession());
+    return clone(session?.fact_links?.[groupKey]||null);
+  }
+
+  async function recordFactLink(groupKey,input={}){
+    const session=(await activeSession())||(await latestSession());
+    if(!session)return {ok:false,reason:'NO_CAPTURE_SESSION'};
+    const links=clone(session.fact_links||{});
+    const current=links[groupKey]||{};
+    links[groupKey]={
+      ...current,
+      assignment_id:clean(input.assignment_id)||current.assignment_id||null,
+      package_id:clean(input.package_id)||current.package_id||null,
+      workbook_ref_id:clean(input.workbook_ref_id)||current.workbook_ref_id||null,
+      fact_confirmation_state:clean(input.fact_confirmation_state)||current.fact_confirmation_state||null,
+      linked_at:current.linked_at||now(),
+      updated_at:now()
+    };
+    const next={...session,fact_links:links,updated_at:now()};
+    await put(SESSION_STORE,next);
+    return {ok:true,link:clone(links[groupKey]),session:clone(next)};
+  }
+
   async function resolveCaptureItemDisposition(itemId,input={}){
     const session=(await activeSession())||(await latestSession());
     if(!session?.analysis_result)return {ok:false,reason:'NO_ANALYSIS_RESULT'};
@@ -467,6 +492,8 @@
     requestAnalysis,
     updateReviewDraft,
     reviewProvenanceForGroup,
+    factLinkForGroup,
+    recordFactLink,
     resolveCaptureItemDisposition,
     reviewClosureForGroup
   });
