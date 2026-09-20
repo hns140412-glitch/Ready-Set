@@ -626,6 +626,8 @@
         if(!todo)return {ok:false,reason:'TODO_NOT_FOUND'};
         todo.state=mapped;
         todo.actual_minutes=actualMinutes;
+        todo.active_session_id=null;
+        todo.active_task_id=null;
         todo.updated_at=new Date().toISOString();
 
         const eventAt=input.at||new Date().toISOString();
@@ -950,7 +952,16 @@
       const mapped=READY_TO_TODO[requested]||(TODO_STATES.has(requested)?requested:null); if(!mapped) return null;
       return mutate(s=>{
         const todo=s.dated_todos.find(x=>x.todo_id===todoId); if(!todo) return null;
-        todo.state=mapped; todo.updated_at=new Date().toISOString();
+        todo.state=mapped;
+        if(mapped==='IN_PROGRESS'){
+          todo.active_session_id=cleanText(input.session_id)||null;
+          todo.active_task_id=cleanText(input.task_id)||null;
+          todo.started_at=input.at||new Date().toISOString();
+        }else{
+          todo.active_session_id=null;
+          todo.active_task_id=null;
+        }
+        todo.updated_at=new Date().toISOString();
         const eventKey=[input.session_id,input.task_id,todoId,mapped].map(cleanText).join('|');
         if(!s.progress_events.some(x=>x.event_key===eventKey)){
           s.progress_events.push({
@@ -972,6 +983,18 @@
         }
         return {todo_id:todo.todo_id,state:todo.state};
       });
+    }
+
+    function sessionRuntimeStatus(sessionId){
+      const id=cleanText(sessionId);
+      if(!id)return {session_id:null,in_progress:[],linked:[]};
+      const s=load();
+      const linked=s.dated_todos.filter(x=>x.active_session_id===id);
+      return {
+        session_id:id,
+        in_progress:linked.filter(x=>x.state==='IN_PROGRESS').map(x=>({...x})),
+        linked:linked.map(x=>({...x}))
+      };
     }
 
     function today(date=dateKey()){
@@ -1039,6 +1062,7 @@
       replanCarryOver,
       replanReadyCarryOvers,
       recordTaskState,
+      sessionRuntimeStatus,
       allocateToday,
       commitAllocation,
       recordSessionOutcome,
