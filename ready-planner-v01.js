@@ -152,7 +152,8 @@
     function linkTodayItems(todoIds=[],options={}){
       const date=cleanText(options.date)||dateKey();
       const ids=new Set((todoIds||[]).map(cleanText).filter(Boolean));
-      return load().dated_todos.filter(x=>ids.has(x.todo_id)&&x.date===date&&isOpenTodo(x)).map(x=>({
+      const allowedStates=new Set(Array.isArray(options.allowed_states)&&options.allowed_states.length?options.allowed_states:['PLANNED']);
+      return load().dated_todos.filter(x=>ids.has(x.todo_id)&&x.date===date&&allowedStates.has(x.state)).map(x=>({
         todo_id:x.todo_id,label:x.label,date:x.date,source:x.source,
         assignment_id:x.assignment_id,analysis_id:x.analysis_id,learning_unit_id:x.learning_unit_id,
         template_id:x.template_id,allocation_run_id:x.allocation_run_id,
@@ -624,6 +625,13 @@
       return mutate(s=>{
         const todo=s.dated_todos.find(x=>x.todo_id===todoId);
         if(!todo)return {ok:false,reason:'TODO_NOT_FOUND'};
+        const sessionId=cleanText(input.session_id)||null;
+        if(todo.active_session_id&&sessionId&&todo.active_session_id!==sessionId){
+          return {ok:false,reason:'SESSION_OWNERSHIP_CONFLICT',todo_id:todoId,active_session_id:todo.active_session_id};
+        }
+        if(todo.state!=='IN_PROGRESS'&&!['PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].includes(todo.state)){
+          return {ok:false,reason:'TODO_NOT_FINISHABLE',todo_id:todoId,state:todo.state};
+        }
         todo.state=mapped;
         todo.actual_minutes=actualMinutes;
         todo.active_session_id=null;
@@ -952,12 +960,23 @@
       const mapped=READY_TO_TODO[requested]||(TODO_STATES.has(requested)?requested:null); if(!mapped) return null;
       return mutate(s=>{
         const todo=s.dated_todos.find(x=>x.todo_id===todoId); if(!todo) return null;
-        todo.state=mapped;
+        const sessionId=cleanText(input.session_id)||null;
         if(mapped==='IN_PROGRESS'){
-          todo.active_session_id=cleanText(input.session_id)||null;
+          if(todo.state==='IN_PROGRESS'&&todo.active_session_id&&todo.active_session_id!==sessionId){
+            return {ok:false,reason:'SESSION_OWNERSHIP_CONFLICT',todo_id:todoId,active_session_id:todo.active_session_id};
+          }
+          if(todo.state!=='PLANNED'&&todo.state!=='IN_PROGRESS'){
+            return {ok:false,reason:'TODO_NOT_STARTABLE',todo_id:todoId,state:todo.state};
+          }
+          todo.state='IN_PROGRESS';
+          todo.active_session_id=sessionId;
           todo.active_task_id=cleanText(input.task_id)||null;
-          todo.started_at=input.at||new Date().toISOString();
+          todo.started_at=todo.started_at||input.at||new Date().toISOString();
         }else{
+          if(todo.active_session_id&&sessionId&&todo.active_session_id!==sessionId){
+            return {ok:false,reason:'SESSION_OWNERSHIP_CONFLICT',todo_id:todoId,active_session_id:todo.active_session_id};
+          }
+          todo.state=mapped;
           todo.active_session_id=null;
           todo.active_task_id=null;
         }

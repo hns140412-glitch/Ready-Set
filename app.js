@@ -197,14 +197,17 @@ function renderPlannerToday(){
   section.hidden=!items.length;
   root.innerHTML='';
   for(const item of items){
-    const selected=state.selectedTodoIds.includes(item.todo_id);
+    const startable=item.state==='PLANNED';
+    const selected=startable&&state.selectedTodoIds.includes(item.todo_id);
     const b=document.createElement('button');
     b.type='button';
     b.className='plannerTodayItem'+(selected?' on':'');
     b.dataset.todoId=item.todo_id;
+    b.disabled=!startable;
     const steps=learningSequenceText(item);
-    b.innerHTML=`<span><b>${escapeHtml(item.label)}</b><small>${item.planner_owned?'플래너 제안':'오늘 할 일'}${steps?` · ${escapeHtml(steps)}`:''}</small></span><strong>${selected?'선택됨':'담기'}</strong>`;
-    b.onclick=()=>{
+    const stateNote=startable?(selected?'선택됨':'담기'):(item.state==='IN_PROGRESS'?'진행 중':'선택 불가');
+    b.innerHTML=`<span><b>${escapeHtml(item.label)}</b><small>${item.planner_owned?'플래너 제안':'오늘 할 일'}${steps?` · ${escapeHtml(steps)}`:''}</small></span><strong>${stateNote}</strong>`;
+    if(startable)b.onclick=()=>{
       state.selectedTodoIds=selected
         ? state.selectedTodoIds.filter(x=>x!==item.todo_id)
         : [...state.selectedTodoIds,item.todo_id];
@@ -219,7 +222,7 @@ function renderMission(){
   renderChips($('#missionChips'));
   renderPlannerToday();
   const tl=$('#taskList');tl.innerHTML='';
-  const chosen=(window.ReadySetPlanner?.todayProjection?.()||[]).filter(x=>state.selectedTodoIds.includes(x.todo_id));
+  const chosen=(window.ReadySetPlanner?.todayProjection?.()||[]).filter(x=>x.state==='PLANNED'&&state.selectedTodoIds.includes(x.todo_id));
   chosen.forEach((t)=>{
     const row=document.createElement('div');
     row.className='taskRow';
@@ -339,26 +342,43 @@ $$('[data-sheet-sound]').forEach(b=>b.onclick=async()=>{
 });
 
 $('#startBtn').onclick=async()=>{
+  if(state.activeSession){toast('이미 진행 중인 작전이 있어요. 먼저 진행 중인 작전으로 돌아가 주세요.');nav('focus');return}
   if(!state.selectedTodoIds.length){toast('먼저 Planner가 준비한 오늘의 탐험을 선택해 주세요.');return}
   const now=Date.now();
-  const plannerLinks=window.ReadySetPlanner?.linkTodayItems(state.selectedTodoIds)||[];
-  if(!plannerLinks.length){toast('선택한 Planner TODO를 찾을 수 없어요. TODAY를 다시 확인해 주세요.');return}
+  const plannerLinks=window.ReadySetPlanner?.linkTodayItems(state.selectedTodoIds,{allowed_states:['PLANNED']})||[];
+  if(!plannerLinks.length){toast('지금 시작할 수 있는 Planner TODO가 없어요. TODAY를 다시 확인해 주세요.');return}
   const labels=plannerLinks.map(x=>x.label);
   const sessionId=`s_${now}`;
+  const started=[];
   for(const link of plannerLinks){
-    window.ReadySetPlanner?.recordTaskState?.({
+    const result=window.ReadySetPlanner?.recordTaskState?.({
       todo_id:link.todo_id,
       ready_state:'IN_PROGRESS',
       session_id:sessionId,
       task_id:link.learning_unit_id||link.todo_id,
       at:new Date(now).toISOString()
     });
+    if(result?.state==='IN_PROGRESS')started.push(link);
+  }
+  if(started.length!==plannerLinks.length){
+    for(const link of started){
+      window.ReadySetPlanner?.recordTaskState?.({
+        todo_id:link.todo_id,
+        ready_state:'PLANNED',
+        session_id:sessionId,
+        task_id:link.learning_unit_id||link.todo_id,
+        at:new Date(now).toISOString()
+      });
+    }
+    toast('다른 세션에서 이미 진행 중인 할 일이 있어 시작하지 않았어요.');
+    renderMission();
+    return;
   }
   state.activeSession={
     id:sessionId,startAt:now,targetMs:state.targetMin*60000,
     pausedAt:null,issueMs:0,completed:false,
     selected:[],tasks:labels,
-    plannerLinks,
+    plannerLinks:started,
     sound:state.sound,recordingDone:false
   };
   save();
@@ -1601,7 +1621,7 @@ function reconcileReadyRuntimeState(){
   const snap=plannerSnapshot();
   const todayKey=localDateKey();
   const openToday=new Set((snap.dated_todos||[])
-    .filter(x=>x.date===todayKey&&!['COMPLETED','SUPERSEDED'].includes(x.state))
+    .filter(x=>x.date===todayKey&&x.state==='PLANNED')
     .map(x=>x.todo_id));
   const beforeSelected=state.selectedTodoIds.length;
   state.selectedTodoIds=state.selectedTodoIds.filter(id=>openToday.has(id));
