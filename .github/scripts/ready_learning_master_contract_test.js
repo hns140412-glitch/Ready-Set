@@ -244,3 +244,21 @@ assert.strictEqual(seasonBound.official_standard_code,'6과13-03');
 
 const futureScienceBound=standardMatcher.match('과학',{teacher_instruction:'미래 사회 문제를 조사하고 과학이 기여할 방법을 토의'});
 assert.strictEqual(futureScienceBound.official_standard_code,'6과16-01');
+
+assert.strictEqual(officialRegistry.COVERAGE['사회'].status,'PARTIAL_VERIFIED_SOURCE_CODE_AMBIGUITY');
+assert.strictEqual(officialRegistry.COVERAGE['사회'].verified_record_count,26);
+assert.strictEqual(officialRegistry.COVERAGE['사회'].expected_total,27);
+assert(officialRegistry.COVERAGE['사회'].gaps.includes('SOURCE_TABLE_SECOND_6사09_ROW_DUPLICATES_CODE_6사09-01'));
+assert.strictEqual(officialRegistry.list('사회').length,26);
+assert.strictEqual(officialRegistry.findByCode('6사07-01').domain,'역사');
+assert.strictEqual(officialRegistry.findByCode('6사08-02').domain,'일반사회');
+assert.strictEqual(officialRegistry.findByCode('6사10-02').domain,'지리');
+
+const reunificationBound=standardMatcher.match('사회',{teacher_instruction:'분단으로 나타난 문제와 평화 통일을 위해 할 수 있는 일을 탐색'});
+assert.strictEqual(reunificationBound.official_standard_code,'6사07-01');
+
+const separationOfPowersBound=standardMatcher.match('사회',{teacher_instruction:'국회 행정부 법원이 하는 일과 권력 분립 이유를 탐색'});
+assert.strictEqual(separationOfPowersBound.official_standard_code,'6사08-02');
+
+const worldClimateBound=standardMatcher.match('사회',{teacher_instruction:'세계의 다양한 기후와 기후 환경이 인간생활에 미치는 관계를 탐구'});
+assert.strictEqual(worldClimateBound.official_standard_code,'6사10-02');
