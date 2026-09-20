@@ -1608,9 +1608,23 @@ function reconcileReadyRuntimeState(){
 
   let resumed=false;
   if(state.activeSession?.id){
-    const status=window.ReadySetPlanner?.sessionRuntimeStatus?.(state.activeSession.id)||null;
+    let status=window.ReadySetPlanner?.sessionRuntimeStatus?.(state.activeSession.id)||null;
     const sessionIds=new Set((state.activeSession.plannerLinks||[]).map(x=>x.todo_id).filter(Boolean));
-    const inProgress=(status?.in_progress||[]).filter(x=>sessionIds.has(x.todo_id));
+    let inProgress=(status?.in_progress||[]).filter(x=>sessionIds.has(x.todo_id));
+    if(!inProgress.length&&sessionIds.size){
+      const legacyInProgress=(snap.dated_todos||[]).filter(x=>sessionIds.has(x.todo_id)&&x.state==='IN_PROGRESS');
+      for(const todo of legacyInProgress){
+        window.ReadySetPlanner?.recordTaskState?.({
+          todo_id:todo.todo_id,
+          ready_state:'IN_PROGRESS',
+          session_id:state.activeSession.id,
+          task_id:todo.learning_unit_id||todo.todo_id,
+          at:todo.started_at||new Date(state.activeSession.startAt||Date.now()).toISOString()
+        });
+      }
+      status=window.ReadySetPlanner?.sessionRuntimeStatus?.(state.activeSession.id)||null;
+      inProgress=(status?.in_progress||[]).filter(x=>sessionIds.has(x.todo_id));
+    }
     if(inProgress.length){
       resumed=true;
       const liveById=new Map(inProgress.map(x=>[x.todo_id,x]));
