@@ -1051,10 +1051,29 @@ document.getElementById('saveTalentFactsBtn')?.addEventListener('click',async()=
       return;
     }
   }
-  const pkg=window.ReadyAssignments.upsertTalentPackage({actor:'PARENT',source_date:source,deadline_boundary:deadline,books,provenance:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}});
+  const talentLinks={};
+  for(const subject of TALENT_BOOKS){
+    talentLinks[subject]=await window.ReadyCaptureV01?.factLinkForGroup?.('TALENT:'+subject);
+  }
+  const existingPackageId=Object.values(talentLinks).map(x=>x?.package_id).find(Boolean)||undefined;
+  const pkg=window.ReadyAssignments.upsertTalentPackage({
+    actor:'PARENT',
+    package_id:existingPackageId,
+    source_date:source,
+    deadline_boundary:deadline,
+    books:books.map(b=>({...b,assignment_id:talentLinks[b.subject]?.assignment_id||undefined})),
+    provenance:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}
+  });
   let todoCount=0,held=0;
-  for(const assignmentId of pkg.fact_ids){
+  for(let i=0;i<pkg.fact_ids.length;i++){
+    const assignmentId=pkg.fact_ids[i];
+    const subject=TALENT_BOOKS[i];
     window.ReadyAssignments.confirmFact(assignmentId,{actor:'PARENT'});
+    await window.ReadyCaptureV01?.recordFactLink?.('TALENT:'+subject,{
+      assignment_id:assignmentId,
+      package_id:pkg.package_id,
+      fact_confirmation_state:'FACT_CONFIRMED'
+    });
     const processed=window.ReadyIntegrationV1?.processAssignment?.(assignmentId,{start_date:localDateKey()});
     if(processed?.ok)todoCount+=(processed.todos||[]).length;else held++;
   }
@@ -1064,7 +1083,13 @@ document.getElementById('saveTalentFactsBtn')?.addEventListener('click',async()=
 document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=>{
   if(!requireParentUi())return;
   const name=$('#englishWorkbook').value.trim(),range=$('#englishRange').value.trim();if(!name||!range){toast('문제집과 숙제 범위를 확인해 주세요.');return}
-  const ref=window.ReadyAssignments.upsertWorkbookRef({name,subject:'영어',provenance:{kind:'PARENT_INPUT'}});
+  const existingEnglishLink=await window.ReadyCaptureV01?.factLinkForGroup?.('ENGLISH:WORKBOOK');
+  const ref=window.ReadyAssignments.upsertWorkbookRef({
+    workbook_ref_id:existingEnglishLink?.workbook_ref_id||undefined,
+    name,
+    subject:'영어',
+    provenance:{kind:'PARENT_INPUT'}
+  });
   const englishGroups=await Promise.all(['ENGLISH:WORKBOOK','ENGLISH:PRINT','ENGLISH:OTHER'].map(capturedRefs));
   const englishSource=englishGroups.flatMap(x=>x.source);
   const englishAnswers=englishGroups.flatMap(x=>x.answers);
@@ -1088,7 +1113,7 @@ document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=
     }
   }
   const fact=window.ReadyAssignments.upsertEnglishAssignment({
-    actor:'PARENT',workbook_ref_id:ref.workbook_ref_id,source_date:localDateKey(),source_range:range,
+    actor:'PARENT',assignment_id:existingEnglishLink?.assignment_id||undefined,workbook_ref_id:ref.workbook_ref_id,source_date:localDateKey(),source_range:range,
     weekday_prints:parsePrints($('#englishPrints').value),
     components:{vocabulary:$('#englishVocabulary').value.trim(),listening:$('#englishListening').value.trim(),recording:$('#englishRecording').value.trim(),writing:$('#englishWriting').value.trim()},
     teacher_instruction:$('#englishInstruction').value.trim(),
@@ -1100,6 +1125,16 @@ document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=
       :{kind:'PARENT_INPUT',surface:'PARENT_INTAKE',capture_linked:englishSource.length+englishAnswers.length>0}
   });
   window.ReadyAssignments.confirmFact(fact.assignment_id,{actor:'PARENT'});
+  for(const groupKey of ['ENGLISH:WORKBOOK','ENGLISH:PRINT','ENGLISH:OTHER']){
+    const refs=await capturedRefs(groupKey);
+    if(refs.source.length||refs.answers.length){
+      await window.ReadyCaptureV01?.recordFactLink?.(groupKey,{
+        assignment_id:fact.assignment_id,
+        workbook_ref_id:ref.workbook_ref_id,
+        fact_confirmation_state:'FACT_CONFIRMED'
+      });
+    }
+  }
   const processed=window.ReadyIntegrationV1?.processAssignment?.(fact.assignment_id,{start_date:localDateKey()});
   if(fact.deadline_state==='NEXT_ACADEMY_UNVERIFIED'||processed?.reason==='NEXT_ACADEMY_UNVERIFIED'){
     toast('영어 FACT 저장 · 다음 학원 일정 확인 전 분석/배정 보류');
