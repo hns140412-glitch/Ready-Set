@@ -5,7 +5,12 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.2.0';
+  const VERSION='0.3.0';
+  const referenceApi=()=>{
+    if(typeof globalThis!=='undefined'&&globalThis.ReadyLearningReferenceV01)return globalThis.ReadyLearningReferenceV01;
+    if(typeof require==='function'){try{return require('./ready-learning-reference-v01.js')}catch{}}
+    return null;
+  };
   const PROFILE={
     '연산':{
       activity_types:['REPETITIVE_CALCULATION','SELF_CHECK'],
@@ -66,6 +71,30 @@
       parent_help_dependency:'UNRESOLVED',
       split_policy:{kind:'ITEM',max_span:6},
       default_goal:'개념 이해 후 적용과 오류 수정'
+    },
+    '과학':{
+      activity_types:['OBSERVATION','QUESTION','EVIDENCE','EXPLANATION'],
+      activity_sequence:['OBSERVE','QUESTION','CONNECT_EVIDENCE','EXPLAIN'],
+      cognitive_load:['CAUSAL_REASONING','EVIDENCE_INTEGRATION'],
+      default_boundary:'CONCEPT_EVIDENCE_CLUSTER',
+      base_difficulty:4,
+      activity_load_score:4,
+      recovery_need:'MEDIUM',
+      parent_help_dependency:'UNRESOLVED',
+      split_policy:{kind:'ITEM',max_span:6},
+      default_goal:'관찰과 근거를 연결해 과학 개념을 설명'
+    },
+    '피아노':{
+      activity_types:['SCORE_READING','SECTION_PRACTICE','PERFORMANCE','SELF_REVIEW'],
+      activity_sequence:['READ_SCORE','PRACTICE_SECTION','PERFORM_RECORD','COMPARE','NEXT_ACTION'],
+      cognitive_load:['MOTOR_COORDINATION','AUDITORY_MONITORING','EXPRESSIVE_CONTROL'],
+      default_boundary:'MUSICAL_SECTION',
+      base_difficulty:4,
+      activity_load_score:5,
+      recovery_need:'HIGH',
+      parent_help_dependency:'LOW',
+      split_policy:{kind:'NONE',max_span:null},
+      default_goal:'악보 이해-구간 연습-연주 비교-다음 행동으로 연결'
     },
     '생각하는 피자':{
       activity_types:['REASONING','EXPLORATION','EXPLANATION'],
@@ -218,7 +247,8 @@
   }
 
   function unitBase(fact,analysis,kind,index,extra={}){
-    const profile=PROFILE[kind]||PROFILE[fact.book_subject]||PROFILE.WORKBOOK_RANGE;
+    const subjectKey=fact.book_subject||fact.subject;
+    const profile=(kind==='WORKBOOK_RANGE'&&PROFILE[subjectKey])?PROFILE[subjectKey]:(PROFILE[kind]||PROFILE[subjectKey]||PROFILE.WORKBOOK_RANGE);
     const desc=extra.range_descriptor||rangeDescriptor(extra.source_range??fact.source_range);
     const unresolved=[...(extra.unresolved_flags||[])];
     if(!clean(fact.teacher_instruction)&&!extra.concept_skill_target)unresolved.push('CONCEPT_TARGET_INFERRED_FROM_SUBJECT_PROFILE');
@@ -253,7 +283,11 @@
         engine:'READY_LEARNING_MASTER',
         version:VERSION,
         assignment_id:fact.assignment_id,
-        source_claim_ids:(fact.claims||[]).filter(x=>x.status!=='SUPERSEDED').map(x=>x.claim_id)
+        source_claim_ids:(fact.claims||[]).filter(x=>x.status!=='SUPERSEDED').map(x=>x.claim_id),
+        learning_reference:(()=>{
+          const ref=referenceApi()?.resolve?.(subjectKey);
+          return ref?{status:ref.status,reference_classes:ref.reference_classes,method:ref.method,evidence_refs:ref.evidence_refs}:null;
+        })()
       },
       confidence:extra.confidence??(clean(fact.teacher_instruction)?0.78:0.62),
       unresolved_flags:[...new Set(unresolved)],
@@ -327,7 +361,12 @@
     analysis.minutes_role='OBSERVATION_ONLY';
     analysis.load_model='SUBJECT_ACTIVITY_DIFFICULTY_RECOVERY';
     analysis.subject_profile=fact.book_subject||fact.subject||null;
-    analysis.unresolved_flags=[...new Set(units.flatMap(x=>x.unresolved_flags||[]))];
+    const ref=referenceApi()?.resolve?.(analysis.subject_profile);
+    analysis.learning_reference=ref||{subject:analysis.subject_profile,status:'REFERENCE_GAP',reference_classes:['ASSIGNMENT_FACT'],method:'SOURCE_FACT_ONLY',evidence_refs:[],unresolved:['REFERENCE_REGISTRY_UNAVAILABLE']};
+    analysis.unresolved_flags=[...new Set([
+      ...units.flatMap(x=>x.unresolved_flags||[]),
+      ...(analysis.learning_reference.unresolved||[])
+    ])];
     return {analysis,learning_units:units};
   }
 
