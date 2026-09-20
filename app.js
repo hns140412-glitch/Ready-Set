@@ -468,7 +468,7 @@ $$('[data-pause-reason]').forEach(b=>b.onclick=()=>{
 $$('[data-close-pause]').forEach(b=>b.onclick=()=>$('#pauseSheet').hidden=true);
 $('#resumeFromSheetBtn').onclick=resumePausedSession;
 $('#completeBtn').onclick=()=>{$('#outcomeModal').hidden=false};
-function completeSession(outcomeState='COMPLETED'){
+function completeSession(outcomeState='COMPLETED',options={}){
   const s=state.activeSession;if(!s)return;
   pauseBgm();
   if(s.pausedAt){s.issueMs+=Date.now()-s.pausedAt;s.pausedAt=null}
@@ -477,20 +477,22 @@ function completeSession(outcomeState='COMPLETED'){
   const links=Array.isArray(s.plannerLinks)?s.plannerLinks.filter(x=>x?.todo_id):[];
   const taskCount=Math.max(1,links.length);
   const attributedMs=links.length?Math.floor(t.focus/taskCount):0;
-  const plannerOutcomes=[];
-  for(const link of links){
-    const outcome=window.ReadySetPlanner?.recordSessionOutcome?.({
-      todo_id:link.todo_id,
-      ready_state:outcomeState,
-      actual_ms:attributedMs,
-      session_total_actual_ms:t.focus,
-      session_task_count:taskCount,
-      time_attribution:links.length>1?'EQUAL_SHARE_SESSION_OBSERVATION':'DIRECT_TASK_OBSERVATION',
-      session_id:s.id,
-      task_id:link.learning_unit_id||link.todo_id,
-      at:new Date(s.endAt).toISOString()
-    });
-    if(outcome)plannerOutcomes.push(outcome);
+  const plannerOutcomes=Array.isArray(options.plannerOutcomes)?options.plannerOutcomes:[];
+  if(!Array.isArray(options.plannerOutcomes)){
+    for(const link of links){
+      const outcome=window.ReadySetPlanner?.recordSessionOutcome?.({
+        todo_id:link.todo_id,
+        ready_state:outcomeState,
+        actual_ms:attributedMs,
+        session_total_actual_ms:t.focus,
+        session_task_count:taskCount,
+        time_attribution:links.length>1?'EQUAL_SHARE_SESSION_OBSERVATION':'DIRECT_TASK_OBSERVATION',
+        session_id:s.id,
+        task_id:link.learning_unit_id||link.todo_id,
+        at:new Date(s.endAt).toISOString()
+      });
+      if(outcome)plannerOutcomes.push(outcome);
+    }
   }
   const endedTodoIds=new Set(plannerOutcomes.filter(x=>x?.ok).map(x=>x.todo_id));
   if(endedTodoIds.size)state.selectedTodoIds=state.selectedTodoIds.filter(id=>!endedTodoIds.has(id));
