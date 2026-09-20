@@ -138,7 +138,7 @@
     "Old-base draft PRs must be rebased and revalidated against canonical main before merge consideration.",
     "Superseded authority paths must not be restored to make stale tests pass."
   ],
-  "next_action": "Establish an exact-provenance staging deploy for runtime SHA 76857bd8..., enable Netlify Identity on ready-set-staging-taky, promote the initial trusted Parent account, then verify live login/session/family-link/sync roundtrip before DEVICE_VERIFIED.",
+  "next_action": "Continue implementation work. Suggested next code scope: production-grade capture pipeline (multi-shot temporary capture -> batch classification/OCR adapter contract -> FACT review) while preserving current authority chain.",
   "canonical_runtime_sha": "76857bd8d22eec48b19c9d703c6e1441dae3c51e",
   "main_head_policy": "Resolve live main HEAD before every future implementation/deploy claim; validation metadata commits may advance HEAD without changing runtime code.",
   "accessibility": {
@@ -240,5 +240,23 @@
       "drive_file_id": "17l3CfjQSfBdF3rKId-auaWV04bZURVkg",
       "drive_file_name": "READY_SET_DEPLOY_SOURCE_76857bd8.zip"
     }
+  },
+  "current_code_sha": "c3ed0d801fd8202602ddc209cc08a6539440954b",
+  "learning_master_v02": {
+    "status": "CODED_MAIN_MERGED_RUNTIME_REVERIFY_DEFERRED_BY_USER_DIRECTION",
+    "merged_pr": 39,
+    "code_sha": "c3ed0d801fd8202602ddc209cc08a6539440954b",
+    "implementation": [
+      "subject-specific Talent and English learning profiles",
+      "activity_sequence / difficulty / load / recovery / review metadata",
+      "page ranges retained as source facts rather than primary split units",
+      "deterministic splitting only for explicit item/problem ranges",
+      "Planner V2 consumes load and recovery metadata",
+      "Learning Master metadata preserved through DATED TODO -> TODAY -> Ready session -> Focus",
+      "Parent FACT save invokes Learning Master and Planner allocation",
+      "Parent/Admin analysis summary",
+      "Child execution sequence guidance"
+    ],
+    "verification_note": "No additional full regression loop was run after PR #39 because the user explicitly requested implementation focus over repeated testing."
   }
 }
