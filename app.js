@@ -141,18 +141,32 @@ function applyGuide(el,type=state.guide.type){
 }
 function guideData(type=state.guide.type){return GUIDE_TYPES[type]||GUIDE_TYPES.lumi}
 
+function currentPlannerMissionItems(){
+  const today=window.ReadySetPlanner?.todayProjection?.()||[];
+  const selected=today.filter(x=>x.state==='PLANNED'&&state.selectedTodoIds.includes(x.todo_id));
+  return selected.length?selected:today.filter(x=>x.state==='PLANNED');
+}
+function currentMissionLabels(){
+  return currentPlannerMissionItems().map(x=>x.label).filter(Boolean);
+}
 function renderHome(){
   applyAvatar($('#homeAvatar'));
   $('#heroTime').textContent=fmt(state.targetMin*60000);
   renderChips($('#homeChips'));
   applyGuide($('#homeGuidePortrait'));
   $('#homeGuideName').textContent=state.guide.name;
-  $('#homeGuideLine').textContent=guideData().home;
+  const labels=currentMissionLabels();
+  $('#homeGuideLine').textContent=state.activeSession
+    ? '진행 중인 탐험이 있어요. 이어서 가볼까요?'
+    : labels.length
+      ? `오늘 Planner가 준비한 탐험 ${labels.length}개가 있어요.`
+      : guideData().home;
 }
 function renderChips(root){
   if(!root)return;
   root.innerHTML='';
-  state.selected.forEach(x=>{const s=document.createElement('span');s.textContent=x;root.appendChild(s)});
+  const labels=currentMissionLabels().slice(0,6);
+  labels.forEach(x=>{const s=document.createElement('span');s.textContent=x;root.appendChild(s)});
 }
 
 let sheetCategory='';
@@ -1578,7 +1592,7 @@ async function shareCard(kind='result'){
   x.fillStyle='#2b2521';x.font='700 29px sans-serif';
   wrapText(x,kind==='result'?sc.line:`${state.guide.name}: 응원 한 스푼만 부탁해요!`,585,455,290,38);
 
-  const text=kind==='result'?[...(r?.selected||[]),...(r?.tasks||[])].join(' · '):[...state.selected,...state.tasks].join(' · ');
+  const text=kind==='result'?[...(r?.selected||[]),...(r?.tasks||[])].join(' · '):currentMissionLabels().join(' · ');
   x.fillStyle='#2a231f';x.font='700 32px sans-serif';wrapText(x,text||'오늘의 작전',120,925,820,46);
   x.font='900 48px sans-serif';
   if(kind==='result'&&r)x.fillText(`목표 ${fmt(r.targetMs)}   집중 ${fmt(r.focusMs)}`,120,1110);
@@ -1717,7 +1731,7 @@ async function renderCompactShareCard(kind='result'){
   x.fillStyle='rgba(255,255,255,.92)';roundRect(x,28,24,238,54,27);x.fill();x.fillStyle='#102d55';x.font='900 27px sans-serif';x.textAlign='left';x.fillText('Ready & Set',55,60);
   x.fillStyle='#0a3265';x.font='900 46px sans-serif';x.fillText(copy.title,40,145);x.font='700 23px sans-serif';x.fillText(copy.sub,42,182);
   await drawAvatar(x,theme==='sail'?300:245,theme==='sail'?325:285,58);
-  const tasks=kind==='result'?[...(r?.selected||[]),...(r?.tasks||[])]:[...(state.selected||[]),...(state.tasks||[])];
+  const tasks=kind==='result'?[...(r?.selected||[]),...(r?.tasks||[])]:currentMissionLabels();
   const profile=kind==='result'?resultOutcomeProfile(r||{}):null;
   const total=Math.max(1,tasks.length),done=kind==='result'&&profile?.done?total:0,focus=kind==='result'&&r?fmt(r.focusMs||0):'00:00',stars=kind==='result'&&profile?.done?Math.max(1,Math.min(30,done*5)):0;
   x.fillStyle='#fff';roundRect(x,0,430,900,170,0);x.fill();x.strokeStyle='#e5edf5';x.lineWidth=2;x.beginPath();x.moveTo(0,430);x.lineTo(900,430);x.stroke();
