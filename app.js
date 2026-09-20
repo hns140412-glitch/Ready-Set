@@ -605,7 +605,19 @@ $('[data-outcome-state]').forEach(b=>b.onclick=()=>{
 $('[data-close-outcome]').forEach(b=>b.onclick=()=>{$('#outcomeModal').hidden=true});
 
 function resultSource(){return state.lastResult||state.records[0]||null}
+function resultOutcomeProfile(r={}){
+  const state=r.outcomeState||'COMPLETED';
+  return ({
+    COMPLETED:{state,label:'완료',historyLabel:'작전 완료',shareTitle:'오늘의 탐험 완료',shareText:'Ready & Set · 오늘의 탐험 완료!',done:true},
+    PARTIAL:{state,label:'일부 남음',historyLabel:'일부 남음',shareTitle:'오늘은 여기까지',shareText:'Ready & Set · 오늘은 여기까지 했어요.',headline:'여기까지 했어요.',line:'남은 건 Planner가 이어서 정리해둘게.',done:false},
+    DEFERRED:{state,label:'다음에',historyLabel:'다음에 이어서',shareTitle:'다음 탐험으로 이어가요',shareText:'Ready & Set · 다음 탐험으로 이어가요.',headline:'오늘은 여기까지.',line:'다음 탐험으로 넘겨둘게.',done:false},
+    WAITING_FOR_PARENT:{state,label:'부모 도움',historyLabel:'부모 도움 필요',shareTitle:'도움이 필요한 탐험',shareText:'Ready & Set · 도움이 필요한 지점을 남겼어요.',headline:'도움이 필요해요.',line:'부모님 확인이 필요한 일로 표시했어요.',done:false},
+    BLOCKED:{state,label:'막힘',historyLabel:'막힘',shareTitle:'막힌 지점을 찾았어요',shareText:'Ready & Set · 해결이 필요한 지점을 찾았어요.',headline:'막힌 지점 발견.',line:'그냥 넘기지 않고 해결이 필요한 일로 남겼어요.',done:false}
+  })[state]||{state:'COMPLETED',label:'완료',historyLabel:'작전 완료',shareTitle:'오늘의 탐험 완료',shareText:'Ready & Set · 오늘의 탐험 완료!',done:true};
+}
 function resultSceneFor(r){
+  const profile=resultOutcomeProfile(r);
+  if(!profile.done)return{headline:profile.headline,line:profile.line,label:'결과'};
   const delta=r.deltaMs;
   if(delta<=-120000)return{headline:'엣헴~! 오늘 좀 했습니다.',line:'잠깐… 시계보다 먼저 왔는데?',label:'TIME SAVE'};
   if(Math.abs(delta)<=60000)return{headline:'오? 계산대로인데?',line:'시계랑 거의 동시에 들어왔어요.',label:'차이'};
@@ -620,12 +632,7 @@ function renderResult(){
   const guest=$('#resultGuestPortrait');
   if(r.recordingDone&&r.guestType){guest.hidden=false;applyGuide(guest,r.guestType);guest.classList.add('guest')}else guest.hidden=true;
   const sc=resultSceneFor(r);
-  const outcomeCopy={
-    PARTIAL:{headline:'여기까지 했어요.',line:'남은 건 Planner가 이어서 정리해둘게.'},
-    DEFERRED:{headline:'오늘은 여기까지.',line:'다음 탐험으로 넘겨둘게.'},
-    WAITING_FOR_PARENT:{headline:'도움이 필요해요.',line:'부모님 확인이 필요한 일로 표시했어요.'},
-    BLOCKED:{headline:'막힌 지점 발견.',line:'그냥 넘기지 않고 해결이 필요한 일로 남겼어요.'}
-  }[r.outcomeState]||sc;
+  const outcomeCopy=sc;
   $('#resultHeadline').textContent=outcomeCopy.headline;
   $('#resultLine').textContent=outcomeCopy.line;
   $('#resultTasks').textContent=[...r.selected,...r.tasks].join(' · ');
@@ -647,7 +654,8 @@ function renderCalendar(){
   const root=$('#calendarList');root.innerHTML='';
   state.records.slice(0,31).forEach(r=>{
     const x=document.createElement('article');x.className='historyItem';
-    x.innerHTML=`<header><b>${new Date(r.endAt).toLocaleDateString('ko-KR')}</b><small>작전 완료</small></header><p>${escapeHtml([...r.selected,...r.tasks].join(' · '))}</p>`;
+    const profile=resultOutcomeProfile(r);
+    x.innerHTML=`<header><b>${new Date(r.endAt).toLocaleDateString('ko-KR')}</b><small>${escapeHtml(profile.historyLabel)}</small></header><p>${escapeHtml([...r.selected,...r.tasks].join(' · '))}</p>`;
     root.appendChild(x);
   });
   if(!root.children.length)root.innerHTML='<div class="historyItem"><b>이번 달 작전 기록이 없어요.</b></div>';
