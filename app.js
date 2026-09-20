@@ -41,6 +41,10 @@ const initial={
 let state=load();
 let mediaRecorder=null,mediaStream=null,chunks=[],recordStartedAt=0,recordTicker=null,currentAudio=null;
 let previewTimer=null,currentGuestType='pico';
+let plannerSelectedDate=null;
+let plannerTab='week';
+const TALENT_BOOKS=['연산','한자','국어','사회','수학','생각하는 피자'];
+const GUIDE_NAME_POOL=['루미','피코','모리','토리','모모','아루','리프','피즈','코코','라온','누리','보리'];
 
 function load(){
   try{
@@ -249,7 +253,11 @@ function renderMission(){
     row.querySelector('button').onclick=()=>{state.selectedTodoIds=state.selectedTodoIds.filter(x=>x!==t.todo_id);save();renderMission()};
     tl.appendChild(row);
   });
-  $$('[data-minutes]').forEach(b=>b.classList.toggle('on',String(state.targetMin)===b.dataset.minutes));
+  $$('[data-minutes]').forEach(b=>{
+    const active=String(state.targetMin)===b.dataset.minutes;
+    b.classList.toggle('on',active);
+    b.setAttribute('aria-pressed',active?'true':'false');
+  });
   $('#customMinutes').value=state.targetMin;
   $('#soundName').textContent=state.sound;
   const labels=chosen.map(x=>x.label);
@@ -332,8 +340,14 @@ function updateBgmStatus(custom=''){
   el.textContent=`${s.sound} · ${bgm()?.paused?'일시정지':'재생 중'}`;
 }
 function openSound(){
-  const sh=$('#soundSheet');sh.hidden=false;
-  $$('[data-sheet-sound]').forEach(b=>b.classList.toggle('on',b.dataset.sheetSound===state.sound));
+  const sh=$('#soundSheet');
+  $$('[data-sheet-sound]').forEach(b=>{
+    const active=b.dataset.sheetSound===state.sound;
+    b.classList.toggle('on',active);
+    b.setAttribute('aria-pressed',active?'true':'false');
+  });
+  sh.hidden=false;
+  queueMicrotask(()=>{(sh.querySelector('[data-sheet-sound].on')||sh.querySelector('[data-close-sound],[data-sheet-sound]'))?.focus({preventScroll:true})});
 }
 $('#soundBtn').onclick=openSound;
 $('#focusSoundBtn').onclick=openSound;
@@ -633,12 +647,12 @@ function storeAudio(blob,name,type){
   });
 }
 
-$('[data-outcome-state]').forEach(b=>b.onclick=()=>{
+$$('[data-outcome-state]').forEach(b=>b.onclick=()=>{
   const stateValue=b.dataset.outcomeState;
   $('#outcomeModal').hidden=true;
   completeSession(stateValue);
 });
-$('[data-close-outcome]').forEach(b=>b.onclick=()=>{$('#outcomeModal').hidden=true});
+$$('[data-close-outcome]').forEach(b=>b.onclick=()=>{$('#outcomeModal').hidden=true});
 
 function resultSource(){return state.lastResult||null}
 function resultOutcomeProfile(r={}){
@@ -710,8 +724,7 @@ function weekStart(base=new Date()){
   const d=new Date(base); const dow=d.getDay(); const delta=dow===0?-6:1-dow; d.setDate(d.getDate()+delta); d.setHours(12,0,0,0); return d;
 }
 function plannerSnapshot(){return window.ReadySetPlanner?.snapshot?.()||{dated_todos:[],schedule_commitments:[],carry_over_queue:[]}}
-let plannerSelectedDate=localDateKey();
-let plannerTab='week';
+plannerSelectedDate=plannerSelectedDate||localDateKey();
 function plannerItemsForDate(date,snap=plannerSnapshot()){
   const todos=(snap.dated_todos||[]).filter(x=>x.date===date).map(x=>({
     kind:'TODO',label:x.label,state:x.state||'PLANNED',minutes:x.estimated_minutes||null,order:x.order??999,
@@ -727,13 +740,19 @@ function plannerStateLabel(v){
   return ({PLANNED:'예정',IN_PROGRESS:'진행',COMPLETED:'완료',PARTIAL:'일부 남음',DEFERRED:'다음에',WAITING_FOR_PARENT:'부모 도움',BLOCKED:'막힘',FIXED:'고정'})[v]||v;
 }
 function renderPlanner(){
+  plannerSelectedDate=plannerSelectedDate||localDateKey();
   window.ReadySetPlanner?.replanReadyCarryOvers?.({date:localDateKey()});
   const adminJump=document.querySelector('.plannerAdminJump');
   if(adminJump)adminJump.hidden=!window.ReadyFamilySession?.isParent?.();
   const snap=plannerSnapshot(), start=weekStart(new Date(plannerSelectedDate+'T12:00:00'));
   const strip=$('#plannerWeekStrip'), detail=$('#plannerWeekDetail');
   if(!strip||!detail)return;
-  document.querySelectorAll('[data-planner-tab]').forEach(b=>b.classList.toggle('on',b.dataset.plannerTab===plannerTab));
+  document.querySelectorAll('[data-planner-tab]').forEach(b=>{
+    const active=b.dataset.plannerTab===plannerTab;
+    b.classList.toggle('on',active);
+    b.setAttribute('aria-selected',active?'true':'false');
+    b.setAttribute('tabindex',active?'0':'-1');
+  });
   $('#plannerWeekPanel').hidden=plannerTab!=='week';
   $('#plannerDayPanel').hidden=plannerTab!=='day';
   const weekDates=Array.from({length:7},(_,i)=>addDays(start,i));
@@ -861,7 +880,6 @@ document.getElementById('saveScheduleBtn')?.addEventListener('click',()=>{
   toast('고정 일정을 저장했어요.');
   renderPlannerAdmin(); renderPlanner();
 });
-const TALENT_BOOKS=['연산','한자','국어','사회','수학','생각하는 피자'];
 function parsePrints(value=''){
   const out={};for(const token of String(value).split(',')){const [day,...rest]=token.split(':');if(day?.trim()&&rest.join(':').trim())out[day.trim().toUpperCase()]=rest.join(':').trim()}return out;
 }
@@ -1523,7 +1541,6 @@ $$('[data-guide-type]').forEach(b=>b.onclick=()=>{
   if(!state.guide.name||state.guide.name===prevDefault)state.guide.name=guideData(type).defaultName;
   save();renderSettings();renderHome();toast(`${state.guide.name}와 함께할게요.`);
 });
-const GUIDE_NAME_POOL=['루미','피코','모리','토리','모모','아루','리프','피즈','코코','라온','누리','보리'];
 function renderNameSuggestions(reroll=true){
   const root=$('#nameSuggestions');if(!root)return;if(!reroll&&root.children.length)return;
   const names=[guideData().defaultName,...GUIDE_NAME_POOL.filter(n=>n!==guideData().defaultName)].sort(()=>Math.random()-.5).slice(0,5);

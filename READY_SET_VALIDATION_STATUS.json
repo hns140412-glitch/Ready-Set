@@ -1,28 +1,36 @@
 {
-  "status_version":"READY_C2S_REWRITE_01",
-  "product":"Ready & Set",
-  "evidence_policy":"Validation belongs to an exact code SHA; product/version labels alone never imply validation.",
-  "current_main_sha_at_r0":"8ce88c23a07af9e6cccb2145f5634e463adc7841",
-  "current_main":{
-    "coded":true,
-    "ci_verified":false,
-    "runtime_verified":false,
-    "device_verified":false,
-    "production_verified":false,
-    "reason":"Exact-main Ready Runtime E2E and TAKY Codex Worker Self-Test are failing."
+  "status_version": "READY_C2S_REWRITE_01",
+  "product": "Ready & Set",
+  "evidence_policy": "Validation belongs to an exact code SHA; product/version labels alone never imply validation.",
+  "current_main_sha_at_r0": "c82109651609440d2e9e08486f2ef5a042a68e46",
+  "current_main": {
+    "coded": true,
+    "ci_verified": false,
+    "runtime_verified": false,
+    "device_verified": false,
+    "production_verified": false,
+    "reason": "PR #70 targeted per-task session-end behavior is verified, but exact-main Ready Runtime E2E and TAKY Codex Worker Self-Test remain failing; global CI/runtime verification is false."
   },
-  "historical_verified_evidence":{
-    "status":"HISTORICAL_REFERENCE_ONLY"
+  "historical_verified_evidence": {
+    "status": "HISTORICAL_REFERENCE_ONLY"
   },
-  "rewrite_gates":{
-    "R0_CANONICAL_SKELETON":"COMPLETE",
-    "R1_SINGLE_SESSION_ENGINE":"NOT_STARTED",
-    "R2_PRODUCT_LANGUAGE_AUTHORITY":"NOT_STARTED",
-    "R3_VERSION_BUILD_VALIDATION_UNIFICATION":"NOT_STARTED",
-    "R4_CHILD_FACT_CONFIRMATION_PATH":"NOT_STARTED",
-    "R5_PLANNER_FREE_WINDOW":"NOT_STARTED",
-    "R6_LEGACY_AUTHORITY_ARCHIVE":"NOT_STARTED",
-    "R7_EXACT_MAIN_VERIFICATION":"NOT_STARTED"
+  "rewrite_gates": {
+    "R0_CANONICAL_SKELETON": "COMPLETE",
+    "R1_SINGLE_SESSION_ENGINE": "PARTIAL_IMPLEMENTED_TARGETED_VERIFIED_PR70",
+    "R2_PRODUCT_LANGUAGE_AUTHORITY": "NOT_STARTED",
+    "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "NOT_STARTED",
+    "R4_CHILD_FACT_CONFIRMATION_PATH": "NOT_STARTED",
+    "R5_PLANNER_FREE_WINDOW": "NOT_STARTED",
+    "R6_LEGACY_AUTHORITY_ARCHIVE": "NOT_STARTED",
+    "R7_EXACT_MAIN_VERIFICATION": "IN_PROGRESS_FAILURE_CLASSIFICATION"
   },
-  "release_state":"REWRITE_IN_PROGRESS_NOT_RELEASE_VERIFIED"
+  "release_state": "REWRITE_IN_PROGRESS_NOT_RELEASE_VERIFIED",
+  "latest_targeted_evidence": {
+    "sha": "c82109651609440d2e9e08486f2ef5a042a68e46",
+    "pr": 70,
+    "scope": "per-task session-end single authority",
+    "result": "TARGETED_BEHAVIOR_VERIFIED",
+    "global_ci_verified": false,
+    "global_runtime_verified": false
+  }
 }

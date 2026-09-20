@@ -53,10 +53,10 @@ def validate(task, changed_files):
             "recentEstimateEvidence",
         ],
         "ready-runtime-v07.js":[
-            "const originalCompleteSession = completeSession",
             "const originalNav = nav",
             "planner_todo_id",
             "recordSessionOutcome",
+            "completeSessionFromTaskOutcomes(taskOutcomes)",
             "actualMs",
             "window.ReadySetRev07",
         ],

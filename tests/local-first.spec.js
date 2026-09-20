@@ -23,7 +23,7 @@ test('local-first sidecar mirrors planner/app state and keeps outbox pending wit
   await expect.poll(async () => page.evaluate(async () => {
     const rows = await window.ReadySetLocalFirst.snapshots();
     return rows.map(x => x.scope).sort();
-  })).toEqual(['assignments','planner']);
+  })).toEqual(['app_state','assignments','planner']);
 
   const outbox = await page.evaluate(async () => window.ReadySetLocalFirst.outbox());
   expect(outbox.some(x => x.scope === 'planner' && x.status === 'PENDING')).toBeTruthy();

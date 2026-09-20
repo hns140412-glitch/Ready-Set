@@ -39,12 +39,20 @@ for(const [i,mins] of [30,35,40].entries()){
     source:'PLANNER_V2_ALLOCATION',
     source_actor:'PLANNER_MAIN'
   });
+  const sessionId=`adaptive-session-${i}`,taskId=`adaptive-task-${i}`;
+  const started=planner.recordTaskState({
+    todo_id:todo.todo_id,
+    ready_state:'IN_PROGRESS',
+    session_id:sessionId,
+    task_id:taskId
+  });
+  assert.strictEqual(started.state,'IN_PROGRESS');
   const outcome=planner.recordSessionOutcome({
     todo_id:todo.todo_id,
     ready_state:'COMPLETED',
     actual_ms:mins*60*1000,
-    session_id:`adaptive-session-${i}`,
-    task_id:`adaptive-task-${i}`
+    session_id:sessionId,
+    task_id:taskId
   });
   assert.strictEqual(outcome.ok,true);
 }
@@ -95,12 +103,20 @@ for(const [i,mins] of [20,25,30].entries()){
     source:'PLANNER_V2_ALLOCATION',
     source_actor:'PLANNER_MAIN'
   });
+  const sessionId=`reject-session-${i}`,taskId=`reject-task-${i}`;
+  const started=planner.recordTaskState({
+    todo_id:todo.todo_id,
+    ready_state:'IN_PROGRESS',
+    session_id:sessionId,
+    task_id:taskId
+  });
+  assert.strictEqual(started.state,'IN_PROGRESS');
   planner.recordSessionOutcome({
     todo_id:todo.todo_id,
     ready_state:'COMPLETED',
     actual_ms:mins*60*1000,
-    session_id:`reject-session-${i}`,
-    task_id:`reject-task-${i}`
+    session_id:sessionId,
+    task_id:taskId
   });
 }
 const rejectProposal=planner.proposeEstimateAdjustment(rejectTemplate.template_id,{
