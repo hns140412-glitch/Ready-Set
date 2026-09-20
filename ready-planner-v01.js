@@ -59,7 +59,7 @@
   }
 
   function createPlanner(storage){
-    const isOpenTodo=t=>t&&isOpenTodo(t)&&t.state!=='SUPERSEDED';
+    const isOpenTodo=t=>t&&t.state!=='COMPLETED'&&t.state!=='SUPERSEDED';
     function load(){
       try{return normalize(JSON.parse(storage.getItem(STORAGE_KEY)||'null'))}catch{return blank()}
     }
