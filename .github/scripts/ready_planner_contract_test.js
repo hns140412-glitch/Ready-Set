@@ -39,6 +39,7 @@ for(const [i,mins] of [30,35,40].entries()){
     source:'PLANNER_V2_ALLOCATION',
     source_actor:'PLANNER_MAIN'
   });
+  planner.recordTaskState({todo_id:todo.todo_id,ready_state:'IN_PROGRESS',session_id:`adaptive-session-${i}`,task_id:`adaptive-task-${i}`});
   const outcome=planner.recordSessionOutcome({
     todo_id:todo.todo_id,
     ready_state:'COMPLETED',
@@ -95,6 +96,7 @@ for(const [i,mins] of [20,25,30].entries()){
     source:'PLANNER_V2_ALLOCATION',
     source_actor:'PLANNER_MAIN'
   });
+  planner.recordTaskState({todo_id:todo.todo_id,ready_state:'IN_PROGRESS',session_id:`reject-session-${i}`,task_id:`reject-task-${i}`});
   planner.recordSessionOutcome({
     todo_id:todo.todo_id,
     ready_state:'COMPLETED',
