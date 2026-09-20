@@ -27,7 +27,7 @@ Disposition set: PRESERVE / MERGE / SUPERSEDE / ARCHIVE / OPEN / CLOSED / OWNERS
 | RDY-C2S-019 | REV_06/07 active-version authority | SUPERSEDE | semantic canonical docs + Version Registry |
 | RDY-C2S-020 | 0.9.3 / feature cache / REV mismatch | OPEN | R3 cleanup |
 | RDY-C2S-021 | Planner real availability windows + buffers | CLOSED | PR #73 candidate: CODED + CI_VERIFIED + RUNTIME_VERIFIED; main promotion pending |
-| RDY-C2S-022 | child ad-hoc FACT → Parent confirmation generic path | OPEN | R4 implementation |
+| RDY-C2S-022 | child ad-hoc FACT → Parent confirmation generic path | CLOSED | PR #73 candidate: CODED + CI_VERIFIED + RUNTIME_VERIFIED; Child direct confirmation blocked; main promotion pending |
 | RDY-C2S-023 | shared expedition-member personality/lifecycle/rules authority | OWNERSHIP_TRANSFER | Snap & Pop upstream authority; Ready consumes projection only |
 | RDY-C2S-024 | exploration WEEK/DAY/TODAY | PRESERVE | UI/product renewal |
 | RDY-C2S-025 | Base Camp naming/island identity | OPEN | product-language/UI consolidation |
@@ -71,9 +71,22 @@ Implemented semantics were based on:
 school / academy / travel / meals / preparation / rest / safety buffer / fixed events,
 then allocate learning units without converting free time into mandatory study volume.
 
-### P2 — Child FACT confirmation closure
-Complete:
+### P2 — Child FACT confirmation closure — CANDIDATE CLOSED
+Candidate HEAD `60bc3ba2fea851f1951866111f2561d17339e08f`.
+
+Evidence:
+- Integration CI #136 PASS
+- Worker Self-Test #338 PASS
+- Runtime E2E #222 PASS, 46/46
+- Child direct confirmation is blocked with `PARENT_CONFIRMATION_REQUIRED`
+- Parent review may correct subject / assignment range / deadline boundary before confirmation
+- confirmed FACT flows through Learning Master → Planner → TODAY with assignment / analysis / learning-unit / todo identity preserved
+- P1 Planner reality-engine regression tests remained PASS and P1 was not reworked
+
+Closed flow:
 CHILD INPUT → PARENT REVIEW/CONFIRM → FACT → LEARNING MASTER → PLANNER → TODAY.
+
+Main promotion remains pending; this does not imply DEVICE/PRODUCTION verification or frozen deployment candidate.
 
 ### P3 — cross-app execution continuity
 Close Ready → Hide & Seek / Snap & Pop → Ready roundtrip while preserving:
