@@ -52,3 +52,17 @@ const piano=learning.interpretFact({assignment_id:'piano_1',source_type:'SCHOOL_
 assert(piano.learning_units[0].activity_types.includes('PERFORMANCE'));
 assert.strictEqual(piano.analysis.learning_reference.method,'SCORE_UNDERSTAND_SECTION_PRACTICE_RECORD_COMPARE_NEXT_ACTION');
 assert.strictEqual(reference.resolve('미등록과목').status,'REFERENCE_GAP');
+
+const subjectMaster=require('../../ready-subject-master-v01.js');
+const gradeBandMath=subjectMaster.resolve('수학',{source_range:'1~10',teacher_instruction:'분수 계산'});
+assert.strictEqual(gradeBandMath.grade_band,'ELEMENTARY_5_6');
+assert(gradeBandMath.domains.includes('수와 연산'));
+assert.strictEqual(gradeBandMath.status,'SUBJECT_MASTER_CONTEXT_READY');
+const koreanRef=reference.resolve('국어',{source_range:'3~5',teacher_instruction:'근거를 찾아 요약'});
+assert(koreanRef.subject_master.domains.includes('읽기'));
+assert(koreanRef.evidence_refs.some(x=>x.includes('1eStKtnFuxAwjMIuK2UcaqElMdxNkMEoX')));
+const scienceRef=reference.resolve('과학',{source_range:'1~6',teacher_instruction:'관찰 결과 설명'});
+assert(scienceRef.subject_master.domains.includes('운동과 에너지'));
+const pianoRef=reference.resolve('피아노',{source_range:'24~27마디',teacher_instruction:'오른손 연습 후 녹음'});
+assert.strictEqual(pianoRef.subject_master.grade_band,'LEARNER_LEVEL_BASED');
+assert(pianoRef.subject_master.domains.includes('녹음 비교'));
