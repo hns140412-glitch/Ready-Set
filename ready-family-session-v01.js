@@ -43,7 +43,7 @@
       expires_at:input.expires_at||null,
       source:String(input.source||'AUTH_BOOTSTRAP')
     };
-    if(authenticated&&(!familyId||!memberId||!sessionId||!validRole||!token)) return null;
+    if(authenticated&&(!familyId||!memberId||!sessionId||!validRole)) return null;
     if(isExpired(candidate)) return null;
     return candidate;
   }
