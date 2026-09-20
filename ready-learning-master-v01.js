@@ -285,7 +285,12 @@
         assignment_id:fact.assignment_id,
         source_claim_ids:(fact.claims||[]).filter(x=>x.status!=='SUPERSEDED').map(x=>x.claim_id),
         learning_reference:(()=>{
-          const ref=referenceApi()?.resolve?.(subjectKey);
+          const ref=referenceApi()?.resolve?.(subjectKey,{
+            workbook_name:fact.workbook_name||fact.workbook_ref_id||null,
+            source_range:extra.source_range??fact.source_range??null,
+            teacher_instruction:fact.teacher_instruction||null,
+            unit_name:extra.concept_skill_target||null
+          });
           return ref?{status:ref.status,reference_classes:ref.reference_classes,method:ref.method,evidence_refs:ref.evidence_refs}:null;
         })()
       },
@@ -361,7 +366,12 @@
     analysis.minutes_role='OBSERVATION_ONLY';
     analysis.load_model='SUBJECT_ACTIVITY_DIFFICULTY_RECOVERY';
     analysis.subject_profile=fact.book_subject||fact.subject||null;
-    const ref=referenceApi()?.resolve?.(analysis.subject_profile);
+    const ref=referenceApi()?.resolve?.(analysis.subject_profile,{
+      workbook_name:fact.workbook_name||fact.workbook_ref_id||null,
+      source_range:fact.source_range||null,
+      teacher_instruction:fact.teacher_instruction||null,
+      unit_name:null
+    });
     analysis.learning_reference=ref||{subject:analysis.subject_profile,status:'REFERENCE_GAP',reference_classes:['ASSIGNMENT_FACT'],method:'SOURCE_FACT_ONLY',evidence_refs:[],unresolved:['REFERENCE_REGISTRY_UNAVAILABLE']};
     analysis.unresolved_flags=[...new Set([
       ...units.flatMap(x=>x.unresolved_flags||[]),
