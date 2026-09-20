@@ -341,8 +341,8 @@
     if (!c) return;
     const unresolved = c.tasks.filter(t => t.state === 'PENDING');
     document.getElementById('rev07GuideLine').textContent = unresolved.length
-      ? `${state.guide?.name || '길잡이'}: ${unresolved.map(t => t.label).join(', ')} 상태만 짧게 알려줘.`
-      : `${state.guide?.name || '길잡이'}: 좋아. 빠진 상태 없이 정리됐어.`;
+      ? `${state.guide?.name || '탐험대원'}: ${unresolved.map(t => t.label).join(', ')} 상태만 짧게 알려줘.`
+      : `${state.guide?.name || '탐험대원'}: 좋아. 빠진 상태 없이 정리됐어.`;
     document.getElementById('rev07WrapTasks').innerHTML = c.tasks.map(t => `
       <div class="rev07-wrap-task"><b>${escapeHtml(t.label)} · ${labelState(t.state)}</b><div class="rev07-state-grid">
       ${['COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].map(s => `<button class="${t.state===s?'on':''}" data-wrap-state="${s}" data-task-id="${t.task_id}">${labelState(s)}</button>`).join('')}
