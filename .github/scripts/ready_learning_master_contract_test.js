@@ -324,3 +324,41 @@ assert.strictEqual(mathDualMap.selected.semester,2);
 
 const unsupportedEnglishUnit=unitMap.evaluate('6영01-01',{grade:5,semester:1,unit_name:'임의 단원'});
 assert.strictEqual(unsupportedEnglishUnit.status,'UNIT_MAPPING_EVIDENCE_GAP');
+
+const contextDomain=domainCore.createDomain(new MemoryStorage());
+const contextFact=contextDomain.addEventFact({
+  assignment_id:'pipeline_unit_context_fact',
+  actor:'PARENT',
+  title:'과학 지층과 화석 숙제',
+  subject:'과학',
+  source_range:'교과서 18~25쪽',
+  teacher_instruction:'지층의 특징과 형성 과정을 모형으로 표현',
+  grade:5,
+  semester:1,
+  unit_name:'1. 지층과 화석'
+});
+contextDomain.confirmFact(contextFact.assignment_id,{actor:'PARENT'});
+let contextState=contextDomain.load();
+assert.strictEqual(contextState.assignmentFacts.pipeline_unit_context_fact.grade,5);
+assert.strictEqual(contextState.assignmentFacts.pipeline_unit_context_fact.semester,1);
+assert.strictEqual(contextState.assignmentFacts.pipeline_unit_context_fact.unit_name,'1. 지층과 화석');
+const contextInterpreted=learning.interpretInto(contextState,contextFact.assignment_id);
+assert.strictEqual(contextInterpreted.analysis.learning_reference.standard_match.official_standard_code,'6과01-01');
+assert.strictEqual(contextInterpreted.analysis.learning_reference.standard_match.unit_mapping_evidence.status,'UNIT_MAPPING_CONTEXT_MATCHED');
+assert.strictEqual(contextInterpreted.analysis.learning_reference.standard_match.unit_mapping_evidence.selected.grade,5);
+assert.strictEqual(contextInterpreted.analysis.learning_reference.standard_match.unit_mapping_evidence.selected.semester,1);
+assert.strictEqual(contextInterpreted.analysis.learning_reference.standard_match.unit_mapping_evidence.selected.unit_no,1);
+
+const noContextDomain=domainCore.createDomain(new MemoryStorage());
+const noContextFact=noContextDomain.addEventFact({
+  assignment_id:'pipeline_unit_context_gap',
+  actor:'PARENT',
+  title:'과학 지층과 화석 숙제',
+  subject:'과학',
+  teacher_instruction:'지층의 특징과 형성 과정을 모형으로 표현'
+});
+noContextDomain.confirmFact(noContextFact.assignment_id,{actor:'PARENT'});
+let noContextState=noContextDomain.load();
+const noContextInterpreted=learning.interpretInto(noContextState,noContextFact.assignment_id);
+assert.strictEqual(noContextInterpreted.analysis.learning_reference.standard_match.official_standard_code,'6과01-01');
+assert.strictEqual(noContextInterpreted.analysis.learning_reference.standard_match.unit_mapping_evidence.status,'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED');
