@@ -136,6 +136,7 @@
       analysis_adapter:null,
       analysis_run_no:0,
       analysis_history:[],
+      fact_links:{},
       created_at:now(),
       updated_at:now(),
       completed_at:null
@@ -236,9 +237,17 @@
     };
   }
 
+  async function currentReviewSession(){
+    const active=await activeSession();
+    if(active)return active;
+    const latest=await latestSession();
+    if(!latest||latest.status==='FACT_LINKED')return null;
+    return latest;
+  }
+
   async function resolveSession(sessionId){
     if(clean(sessionId))return getByKey(SESSION_STORE,clean(sessionId));
-    return (await activeSession())||(await latestSession());
+    return currentReviewSession();
   }
 
   async function artifactsForGroup(groupKey,sessionId){
@@ -264,7 +273,7 @@
   }
 
   async function requestAnalysis(){
-    const session=(await activeSession())||(await latestSession());
+    const session=await currentReviewSession();
     if(!session)return {ok:false,reason:'NO_CAPTURE_SESSION'};
     const items=await listItems(session.capture_session_id);
     if(!items.length)return {ok:false,reason:'NO_CAPTURE_ITEMS'};
@@ -325,7 +334,7 @@
   }
 
   async function updateReviewDraft(draftId,input={}){
-    const session=(await activeSession())||(await latestSession());
+    const session=await currentReviewSession();
     if(!session?.analysis_result?.drafts)return {ok:false,reason:'NO_REVIEW_DRAFT'};
     const drafts=session.analysis_result.drafts.map(d=>clone(d));
     const idx=drafts.findIndex(d=>d.review_draft_id===draftId);
@@ -349,7 +358,7 @@
   }
 
   async function reviewProvenanceForGroup(groupKey){
-    const session=(await activeSession())||(await latestSession());
+    const session=await currentReviewSession();
     const drafts=Array.isArray(session?.analysis_result?.drafts)?session.analysis_result.drafts:[];
     const rows=drafts.filter(d=>d.group_key===groupKey);
     if(!rows.length)return null;
@@ -374,8 +383,55 @@
     };
   }
 
+  async function factLinkForGroup(groupKey){
+    const session=await currentReviewSession();
+    return clone(session?.fact_links?.[groupKey]||null);
+  }
+
+  async function lastClosedFactLinkForGroup(groupKey){
+    const latest=await latestSession();
+    if(!latest||latest.status!=='FACT_LINKED')return null;
+    return clone(latest.fact_links?.[groupKey]||null);
+  }
+
+  async function recordFactLink(groupKey,input={}){
+    const session=await currentReviewSession();
+    if(!session)return {ok:false,reason:'NO_CAPTURE_SESSION'};
+    const links=clone(session.fact_links||{});
+    const current=links[groupKey]||{};
+    links[groupKey]={
+      ...current,
+      assignment_id:clean(input.assignment_id)||current.assignment_id||null,
+      package_id:clean(input.package_id)||current.package_id||null,
+      workbook_ref_id:clean(input.workbook_ref_id)||current.workbook_ref_id||null,
+      fact_confirmation_state:clean(input.fact_confirmation_state)||current.fact_confirmation_state||null,
+      payload_signature:clean(input.payload_signature)||current.payload_signature||null,
+      capture_session_id:session.capture_session_id,
+      linked_at:current.linked_at||now(),
+      updated_at:now()
+    };
+    const next={...session,fact_links:links,updated_at:now()};
+    await put(SESSION_STORE,next);
+    return {ok:true,link:clone(links[groupKey]),session:clone(next)};
+  }
+
+  async function finalizeFactLinkage(){
+    const session=await currentReviewSession();
+    if(!session)return {ok:false,reason:'NO_CAPTURE_SESSION'};
+    const items=await listItems(session.capture_session_id);
+    const requiredGroups=[...new Set(items.map(x=>x.group_key).filter(Boolean))];
+    const links=clone(session.fact_links||{});
+    const missing_groups=requiredGroups.filter(key=>!links[key]?.assignment_id);
+    if(missing_groups.length)return {ok:false,reason:'FACT_LINKS_INCOMPLETE',missing_groups};
+    const next={...session,status:'FACT_LINKED',fact_linked_at:session.fact_linked_at||now(),updated_at:now()};
+    await put(SESSION_STORE,next);
+    if(localStorage.getItem(ACTIVE_SESSION_KEY)===session.capture_session_id)localStorage.removeItem(ACTIVE_SESSION_KEY);
+    return {ok:true,session:clone(next)};
+
+  }
+
   async function resolveCaptureItemDisposition(itemId,input={}){
-    const session=(await activeSession())||(await latestSession());
+    const session=await currentReviewSession();
     if(!session?.analysis_result)return {ok:false,reason:'NO_ANALYSIS_RESULT'};
     const dispositions=clone(session.analysis_result.capture_item_dispositions||[]);
     const idx=dispositions.findIndex(x=>x.capture_item_id===itemId);
@@ -411,7 +467,7 @@
   }
 
   async function reviewClosureForGroup(groupKey){
-    const session=(await activeSession())||(await latestSession());
+    const session=await currentReviewSession();
     const rows=clone(session?.analysis_result?.capture_item_dispositions||[]).filter(x=>x.group_key===groupKey);
     const unresolved=rows.filter(x=>x.disposition==='UNRESOLVED');
     return {
@@ -455,6 +511,7 @@
     createSession,
     activeSession,
     latestSession,
+    currentReviewSession,
     setCaptureTarget,
     addFiles,
     listItems,
@@ -467,6 +524,10 @@
     requestAnalysis,
     updateReviewDraft,
     reviewProvenanceForGroup,
+    factLinkForGroup,
+    lastClosedFactLinkForGroup,
+    recordFactLink,
+    finalizeFactLinkage,
     resolveCaptureItemDisposition,
     reviewClosureForGroup
   });

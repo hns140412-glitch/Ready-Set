@@ -712,6 +712,14 @@ const TALENT_BOOKS=['연산','한자','국어','사회','수학','생각하는 �
 function parsePrints(value=''){
   const out={};for(const token of String(value).split(',')){const [day,...rest]=token.split(':');if(day?.trim()&&rest.join(':').trim())out[day.trim().toUpperCase()]=rest.join(':').trim()}return out;
 }
+function stableFactSignature(value){
+  const sortObject=v=>{
+    if(Array.isArray(v))return v.map(sortObject);
+    if(v&&typeof v==='object')return Object.fromEntries(Object.keys(v).sort().map(k=>[k,sortObject(v[k])]));
+    return v;
+  };
+  return JSON.stringify(sortObject(value));
+}
 
 let capturePreviewUrls=[];
 function clearCapturePreviewUrls(){
@@ -784,7 +792,7 @@ async function applyCaptureDraft(draft){
 async function recordCaptureReview(groupKey,reviewedValue,event='PARENT_REVIEWED'){
   const api=window.ReadyCaptureV01;
   if(!api?.updateReviewDraft)return null;
-  const session=(await api.activeSession?.())||(await api.latestSession?.());
+  const session=await api.currentReviewSession?.();
   const drafts=Array.isArray(session?.analysis_result?.drafts)?session.analysis_result.drafts:[];
   const draft=[...drafts].reverse().find(x=>x.group_key===groupKey);
   if(!draft?.review_draft_id)return null;
@@ -848,7 +856,7 @@ async function renderCaptureIntake(){
   if(!api||!summaryRoot||!previewRoot)return;
 
   clearCapturePreviewUrls();
-  const session=(await api.activeSession())||(await api.latestSession());
+  const session=await api.currentReviewSession?.();
   if(!session){
     badge.textContent='임시저장';
     status.textContent='촬영하면 자동으로 임시저장됩니다.';
@@ -1051,20 +1059,95 @@ document.getElementById('saveTalentFactsBtn')?.addEventListener('click',async()=
       return;
     }
   }
-  const pkg=window.ReadyAssignments.upsertTalentPackage({actor:'PARENT',source_date:source,deadline_boundary:deadline,books,provenance:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}});
+  const talentLinks={};
+  const talentSignatures={};
+  for(const book of books){
+    talentLinks[book.subject]=await window.ReadyCaptureV01?.factLinkForGroup?.('TALENT:'+book.subject);
+    talentSignatures[book.subject]=stableFactSignature({
+      source_date:source,
+      deadline_boundary:deadline,
+      source_range:book.source_range,
+      teacher_instruction:book.teacher_instruction
+    });
+  }
+  const activeLinkedSubjects=TALENT_BOOKS.filter(subject=>talentLinks[subject]?.assignment_id);
+  const closedTalentLinks={};
+  if(activeLinkedSubjects.length===0){
+    for(const subject of TALENT_BOOKS){
+      closedTalentLinks[subject]=await window.ReadyCaptureV01?.lastClosedFactLinkForGroup?.('TALENT:'+subject);
+    }
+    const closedSubjects=TALENT_BOOKS.filter(subject=>closedTalentLinks[subject]?.assignment_id);
+    if(closedSubjects.length===TALENT_BOOKS.length&&closedSubjects.every(subject=>closedTalentLinks[subject]?.payload_signature===talentSignatures[subject])){
+      toast('같은 재능 FACT가 이미 저장·확정되어 있어 중복 생성하지 않았어요.');
+      return;
+    }
+  }
+  const existingPackageId=Object.values(talentLinks).map(x=>x?.package_id).find(Boolean)||undefined;
+  const pkg=window.ReadyAssignments.upsertTalentPackage({
+    actor:'PARENT',
+    package_id:existingPackageId,
+    source_date:source,
+    deadline_boundary:deadline,
+    books:books.map(b=>({...b,assignment_id:talentLinks[b.subject]?.assignment_id||undefined})),
+    provenance:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}
+  });
   let todoCount=0,held=0;
-  for(const assignmentId of pkg.fact_ids){
+  for(let i=0;i<pkg.fact_ids.length;i++){
+    const assignmentId=pkg.fact_ids[i];
+    const subject=TALENT_BOOKS[i];
     window.ReadyAssignments.confirmFact(assignmentId,{actor:'PARENT'});
+    await window.ReadyCaptureV01?.recordFactLink?.('TALENT:'+subject,{
+      assignment_id:assignmentId,
+      package_id:pkg.package_id,
+      fact_confirmation_state:'FACT_CONFIRMED',
+      payload_signature:talentSignatures[subject]
+    });
     const processed=window.ReadyIntegrationV1?.processAssignment?.(assignmentId,{start_date:localDateKey()});
     if(processed?.ok)todoCount+=(processed.todos||[]).length;else held++;
   }
+  await window.ReadyCaptureV01?.finalizeFactLinkage?.();
   toast(`재능 6권 분석 완료 · Planner가 ${todoCount}개 탐험을 배정했어요${held?` · 보류 ${held}건`:''}.`);
   renderParentIntake();renderPlanner();renderMission();
 });
 document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=>{
   if(!requireParentUi())return;
   const name=$('#englishWorkbook').value.trim(),range=$('#englishRange').value.trim();if(!name||!range){toast('문제집과 숙제 범위를 확인해 주세요.');return}
-  const ref=window.ReadyAssignments.upsertWorkbookRef({name,subject:'영어',provenance:{kind:'PARENT_INPUT'}});
+  const englishGroupKeys=['ENGLISH:WORKBOOK','ENGLISH:PRINT','ENGLISH:OTHER'];
+  const existingEnglishLinks=await Promise.all(
+    englishGroupKeys.map(groupKey=>window.ReadyCaptureV01?.factLinkForGroup?.(groupKey))
+  );
+  const existingEnglishLink=existingEnglishLinks.find(x=>x?.assignment_id||x?.workbook_ref_id)||null;
+  const englishSignature=stableFactSignature({
+    source_date:localDateKey(),
+    workbook_name:name,
+    source_range:range,
+    next_academy:$('#englishNextAcademy').value,
+    weekday_prints:parsePrints($('#englishPrints').value),
+    components:{
+      vocabulary:$('#englishVocabulary').value.trim(),
+      listening:$('#englishListening').value.trim(),
+      recording:$('#englishRecording').value.trim(),
+      writing:$('#englishWriting').value.trim()
+    },
+    teacher_instruction:$('#englishInstruction').value.trim()
+  });
+  const activeEnglishLinks=existingEnglishLinks.filter(x=>x?.assignment_id||x?.workbook_ref_id);
+  if(!activeEnglishLinks.length){
+    const closedEnglishLinks=await Promise.all(
+      englishGroupKeys.map(groupKey=>window.ReadyCaptureV01?.lastClosedFactLinkForGroup?.(groupKey))
+    );
+    const linkedClosed=closedEnglishLinks.filter(x=>x?.assignment_id);
+    if(linkedClosed.length&&linkedClosed.every(x=>x.assignment_id===linkedClosed[0].assignment_id&&x.payload_signature===englishSignature)){
+      toast('같은 영어 FACT가 이미 저장·확정되어 있어 중복 생성하지 않았어요.');
+      return;
+    }
+  }
+  const ref=window.ReadyAssignments.upsertWorkbookRef({
+    workbook_ref_id:existingEnglishLink?.workbook_ref_id||undefined,
+    name,
+    subject:'영어',
+    provenance:{kind:'PARENT_INPUT'}
+  });
   const englishGroups=await Promise.all(['ENGLISH:WORKBOOK','ENGLISH:PRINT','ENGLISH:OTHER'].map(capturedRefs));
   const englishSource=englishGroups.flatMap(x=>x.source);
   const englishAnswers=englishGroups.flatMap(x=>x.answers);
@@ -1088,7 +1171,7 @@ document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=
     }
   }
   const fact=window.ReadyAssignments.upsertEnglishAssignment({
-    actor:'PARENT',workbook_ref_id:ref.workbook_ref_id,source_date:localDateKey(),source_range:range,
+    actor:'PARENT',assignment_id:existingEnglishLink?.assignment_id||undefined,workbook_ref_id:ref.workbook_ref_id,source_date:localDateKey(),source_range:range,
     weekday_prints:parsePrints($('#englishPrints').value),
     components:{vocabulary:$('#englishVocabulary').value.trim(),listening:$('#englishListening').value.trim(),recording:$('#englishRecording').value.trim(),writing:$('#englishWriting').value.trim()},
     teacher_instruction:$('#englishInstruction').value.trim(),
@@ -1100,6 +1183,18 @@ document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=
       :{kind:'PARENT_INPUT',surface:'PARENT_INTAKE',capture_linked:englishSource.length+englishAnswers.length>0}
   });
   window.ReadyAssignments.confirmFact(fact.assignment_id,{actor:'PARENT'});
+  for(const groupKey of ['ENGLISH:WORKBOOK','ENGLISH:PRINT','ENGLISH:OTHER']){
+    const refs=await capturedRefs(groupKey);
+    if(refs.source.length||refs.answers.length){
+      await window.ReadyCaptureV01?.recordFactLink?.(groupKey,{
+        assignment_id:fact.assignment_id,
+        workbook_ref_id:ref.workbook_ref_id,
+        fact_confirmation_state:'FACT_CONFIRMED',
+        payload_signature:englishSignature
+      });
+    }
+  }
+  await window.ReadyCaptureV01?.finalizeFactLinkage?.();
   const processed=window.ReadyIntegrationV1?.processAssignment?.(fact.assignment_id,{start_date:localDateKey()});
   if(fact.deadline_state==='NEXT_ACADEMY_UNVERIFIED'||processed?.reason==='NEXT_ACADEMY_UNVERIFIED'){
     toast('영어 FACT 저장 · 다음 학원 일정 확인 전 분석/배정 보류');
