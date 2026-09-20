@@ -90,3 +90,17 @@ test('Netlify Identity server functions use modern Identity verification pattern
   expect(session).toContain("getUser");
   expect(sync).not.toContain("READY_SYNC_AUTH_TOKEN");
 });
+
+
+test('Identity signup event assigns CHILD by default and never self-elects PARENT', async ()=>{
+  const identity=await import('../netlify/functions/identity.mjs');
+  const result=identity.default.userSignup({
+    user:{id:'new_user',email:'new@example.test',appMetadata:{}}
+  });
+  expect(result.user.appMetadata.roles).toEqual(['CHILD']);
+
+  const existingParent=identity.default.userSignup({
+    user:{id:'parent_user',email:'parent@example.test',appMetadata:{roles:['PARENT']}}
+  });
+  expect(existingParent.user.appMetadata.roles).toEqual(['PARENT']);
+});
