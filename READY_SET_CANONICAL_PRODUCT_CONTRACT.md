@@ -62,6 +62,12 @@ Shared expedition-member rules are external authority; Ready consumes them.
 ## Validation labels
 CODED / CI_VERIFIED / RUNTIME_VERIFIED / DEVICE_VERIFIED / PRODUCTION_VERIFIED are independent.
 
+## Deployment / device verification budget
+Implementation verification is branch-first.
+GitHub Actions / deterministic Runtime checks are the default closure path before hosting.
+Netlify is not a debugging surface and must not be consumed for routine intermediate checks.
+A physical-device verification deployment is a deliberate final gate for an exact candidate SHA, not a development loop.
+
 ## Rewrite closure
 UNMAPPED_MATERIAL=0 and SILENT_LOSS=0 within recovered scope.
 Reverse Reconstruction Test must reproduce intended Ready behavior without requiring historical REV documents.
