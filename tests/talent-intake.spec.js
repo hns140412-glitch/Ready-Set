@@ -1,5 +1,16 @@
 const {test,expect}=require('@playwright/test');
 test('Parent Talent intake creates six confirmed facts and zero TODOs',async({page})=>{
+  await page.addInitScript(() => {
+    window.__READY_AUTH_BOOTSTRAP__={
+      authenticated:true,
+      family_id:'TEST_FAMILY',
+      member_id:'TEST_PARENT',
+      role:'PARENT',
+      session_id:'TEST_SESSION',
+      expires_at:'2099-01-01T00:00:00.000Z',
+      source:'TEST_ONLY'
+    };
+  });
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
   await page.locator('[data-nav="planner"]').first().click();
   await page.locator('[data-nav="planner-admin"]').click();
