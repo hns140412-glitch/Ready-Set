@@ -8,7 +8,7 @@
   'use strict';
 
   const STORAGE_KEY='readyset_planner_v1';
-  const SCHEMA_VERSION=1;
+  const SCHEMA_VERSION=2;
   const TODO_STATES=new Set(['PLANNED','IN_PROGRESS','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED','SUPERSEDED']);
   const READY_TO_TODO={
     PENDING:'PLANNED',
@@ -23,6 +23,7 @@
     schema_version:SCHEMA_VERSION,
     storage_backend:'LOCALSTORAGE_COMPATIBILITY_SCAFFOLD',
     schedule_commitments:[],
+    availability_profiles:[],
     homework_templates:[],
     dated_todos:[],
     progress_events:[],
@@ -48,6 +49,7 @@
       ...x,
       schema_version:SCHEMA_VERSION,
       schedule_commitments:Array.isArray(x.schedule_commitments)?x.schedule_commitments:[],
+      availability_profiles:Array.isArray(x.availability_profiles)?x.availability_profiles:[],
       homework_templates:Array.isArray(x.homework_templates)?x.homework_templates:[],
       dated_todos:Array.isArray(x.dated_todos)?x.dated_todos:[],
       progress_events:Array.isArray(x.progress_events)?x.progress_events:[],
@@ -84,6 +86,8 @@
           confirmed:input.confirmed!==false,
           planner_movable:!!input.planner_movable,
           parent_editable:input.parent_editable!==false,
+          buffer_before_minutes:Number.isFinite(input.buffer_before_minutes)?Math.max(0,input.buffer_before_minutes):0,
+          buffer_after_minutes:Number.isFinite(input.buffer_after_minutes)?Math.max(0,input.buffer_after_minutes):0,
           source:cleanText(input.source)||'READY_LOCAL',
           updated_at:new Date().toISOString()
         };
@@ -91,6 +95,70 @@
         if(i>=0)s.schedule_commitments[i]=item;else s.schedule_commitments.push(item);
         return item;
       });
+    }
+
+    function upsertAvailabilityProfile(input={}){
+      const profileId=cleanText(input.profile_id)||'default';
+      const windows=input.weekday_windows&&typeof input.weekday_windows==='object'?input.weekday_windows:{};
+      const normalizedWindows={};
+      for(const [dow,rows] of Object.entries(windows)){
+        const key=String(Number(dow));
+        if(!Array.isArray(rows))continue;
+        normalizedWindows[key]=rows.map(w=>({start:cleanText(w.start),end:cleanText(w.end)})).filter(w=>/^\d{2}:\d{2}$/.test(w.start)&&/^\d{2}:\d{2}$/.test(w.end));
+      }
+      return mutate(s=>{
+        const item={
+          profile_id:profileId,
+          label:cleanText(input.label)||'기본 생활 가용시간',
+          effective_from:cleanText(input.effective_from)||null,
+          effective_to:cleanText(input.effective_to)||null,
+          weekday_windows:normalizedWindows,
+          confirmed:input.confirmed!==false,
+          source:cleanText(input.source)||'PARENT_SCHEDULE_PROFILE',
+          updated_at:new Date().toISOString()
+        };
+        const i=s.availability_profiles.findIndex(x=>x.profile_id===profileId);
+        if(i>=0)s.availability_profiles[i]=item;else s.availability_profiles.push(item);
+        return item;
+      });
+    }
+
+    function activeAvailabilityProfile(state,date,profileId=null){
+      const explicit=cleanText(profileId);
+      const rows=(state.availability_profiles||[]).filter(x=>x.confirmed!==false)
+        .filter(x=>(!x.effective_from||date>=x.effective_from)&&(!x.effective_to||date<=x.effective_to));
+      if(explicit)return rows.find(x=>x.profile_id===explicit)||null;
+      return rows.sort((a,b)=>String(b.effective_from||'').localeCompare(String(a.effective_from||'')))[0]||null;
+    }
+
+    function baseAvailabilityWindows(state,date,options={}){
+      const explicit=Array.isArray(options.candidate_windows)?options.candidate_windows:null;
+      if(explicit&&explicit.length)return {source:'EXPLICIT_CANDIDATE_WINDOWS',windows:clampWindows(date,explicit),profile_id:null};
+      const profile=activeAvailabilityProfile(state,date,options.profile_id);
+      if(!profile)return {source:'UNCONFIGURED',windows:[],profile_id:null};
+      const dow=String(parseLocal(date,'12:00').getDay());
+      const windows=clampWindows(date,profile.weekday_windows?.[dow]||[]);
+      return {source:'AVAILABILITY_PROFILE',windows,profile_id:profile.profile_id};
+    }
+
+    function expandedCommitmentIntervals(state,date){
+      return commitmentIntervals(state,date).map(x=>({
+        ...x,
+        start:new Date(x.start.getTime()-Math.max(0,Number(x.buffer_before_minutes)||0)*60000),
+        end:new Date(x.end.getTime()+Math.max(0,Number(x.buffer_after_minutes)||0)*60000)
+      }));
+    }
+
+    function deriveAvailability(state,date,options={}){
+      const base=baseAvailabilityWindows(state,date,options);
+      if(!base.windows.length)return {date,source:base.source,profile_id:base.profile_id,configured:base.source!=='UNCONFIGURED',open_windows:[],available_minutes:0};
+      const blocks=expandedCommitmentIntervals(state,date);
+      const open=base.windows.flatMap(w=>subtractIntervals(w,blocks));
+      return {
+        date,source:base.source,profile_id:base.profile_id,configured:true,
+        open_windows:open,
+        available_minutes:open.reduce((sum,w)=>sum+minutes(w.end-w.start),0)
+      };
     }
 
     function upsertHomeworkTemplate(input={}){
@@ -269,6 +337,13 @@
             recovery_need:t.recovery_need||'MEDIUM'
           }))]));
         const scheduleByDate=Object.fromEntries(dates.map(d=>[d,(s.schedule_commitments||[]).filter(x=>x.confirmed!==false&&x.start_at&&x.end_at&&String(x.start_at).slice(0,10)===d&&String(x.end_at).slice(0,10)===d)]));
+        const availabilityByDate=Object.fromEntries(dates.map(d=>[d,deriveAvailability(s,d,{
+          candidate_windows:input.candidate_windows_by_date?.[d]||null,
+          profile_id:input.availability_profile_id||null
+        })]));
+        const configuredDates=dates.filter(d=>availabilityByDate[d]?.configured);
+        const executableDates=configuredDates.length?dates.filter(d=>(availabilityByDate[d]?.open_windows||[]).length>0):dates;
+        if(!executableDates.length)return {ok:false,reason:'NO_EXECUTABLE_AVAILABILITY_WINDOW',assignment_id:assignmentId,dates,availability_by_date:Object.fromEntries(dates.map(d=>[d,{source:availabilityByDate[d].source,available_minutes:availabilityByDate[d].available_minutes,open_window_count:availabilityByDate[d].open_windows.length}]))};
         const proposals=[];
         for(const unit of units){
           const existing=s.dated_todos.find(t=>t.learning_unit_id===unit.learning_unit_id&&isOpenTodo(t));
@@ -278,7 +353,7 @@
           const unitScore=Number.isFinite(unitLoad.score)?unitLoad.score:3;
           const unitDifficulty=Number.isFinite(unitLoad.difficulty)?unitLoad.difficulty:3;
           const unitRecovery=unitLoad.recovery_need||'MEDIUM';
-          const date=[...dates].sort((a,b)=>{
+          const date=[...executableDates].sort((a,b)=>{
             const score=d=>{
               const taskLoads=loadByDate[d]||[];
               const commitments=scheduleByDate[d]||[];
@@ -312,7 +387,11 @@
                 + (unitScore>=5&&commitmentMinutes>=120?20:0)
                 + schedulePressure;
             };
-            return score(a)-score(b)||a.localeCompare(b);
+            const primary=score(a)-score(b);
+            if(primary!==0)return primary;
+            const aa=availabilityByDate[a]?.available_minutes??-1;
+            const bb=availabilityByDate[b]?.available_minutes??-1;
+            return bb-aa||a.localeCompare(b);
           })[0];
           loadByDate[date].push({tags,score:unitScore,difficulty:unitDifficulty,recovery_need:unitRecovery});
           const templateId=`template_${unit.learning_unit_id}`;
@@ -341,7 +420,7 @@
             })
           });
         }
-        const run={allocation_run_id:runId,version:'PLANNER_V2',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:Number(fact.fact_revision)||1,primary_basis:'LEARNING_UNIT_ACTIVITY_LOAD',minutes_role:'SECONDARY_SAFETY_ONLY',proposals,created_at:new Date().toISOString()};
+        const run={allocation_run_id:runId,version:'PLANNER_V2',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:Number(fact.fact_revision)||1,primary_basis:'LEARNING_UNIT_ACTIVITY_LOAD',minutes_role:'SECONDARY_SAFETY_ONLY',availability_role:'EXECUTABILITY_GATE_NOT_VOLUME_AUTHORITY',availability_by_date:Object.fromEntries(dates.map(d=>[d,{source:availabilityByDate[d].source,profile_id:availabilityByDate[d].profile_id,available_minutes:availabilityByDate[d].available_minutes,open_window_count:availabilityByDate[d].open_windows.length}])),proposals,created_at:new Date().toISOString()};
         s.allocation_runs.push(run);return {ok:true,...run};
       });
     }
@@ -456,7 +535,9 @@
           start:parseLocal(date,String(x.start_at).slice(11,16)),
           end:parseLocal(date,String(x.end_at).slice(11,16)),
           commitment_id:x.commitment_id,
-          title:x.title
+          title:x.title,
+          buffer_before_minutes:Number(x.buffer_before_minutes)||0,
+          buffer_after_minutes:Number(x.buffer_after_minutes)||0
         }))
         .filter(x=>x.end>x.start);
     }
@@ -487,14 +568,13 @@
 
     function allocateToday(input={}){
       const date=cleanText(input.date)||dateKey();
-      const candidateWindows=clampWindows(date,input.candidate_windows||[]);
-      if(!candidateWindows.length){
-        return {ok:false,reason:'NO_CANDIDATE_WINDOWS',date,proposals:[],available_minutes:0};
-      }
       return mutate(s=>{
-        const commitments=commitmentIntervals(s,date);
-        const open=candidateWindows.flatMap(w=>subtractIntervals(w,commitments));
-        const availableMinutes=open.reduce((sum,w)=>sum+minutes(w.end-w.start),0);
+        const availability=deriveAvailability(s,date,{candidate_windows:input.candidate_windows||null,profile_id:input.availability_profile_id||null});
+        if(!availability.configured){
+          return {ok:false,reason:'NO_AVAILABILITY_PROFILE_OR_WINDOWS',date,proposals:[],available_minutes:0};
+        }
+        const open=availability.open_windows;
+        const availableMinutes=availability.available_minutes;
         const maxMinutes=Number.isFinite(input.max_minutes)
           ? Math.max(0,Math.min(input.max_minutes,availableMinutes))
           : availableMinutes;
@@ -558,6 +638,8 @@
           date,
           source:'READY_PLANNER_V01',
           candidate_windows:(input.candidate_windows||[]),
+          availability_source:availability.source,
+          availability_profile_id:availability.profile_id,
           available_minutes:availableMinutes,
           max_minutes:maxMinutes,
           proposed_minutes:used,
@@ -1071,6 +1153,8 @@
       today,
       todayProjection,
       upsertScheduleCommitment,
+      upsertAvailabilityProfile,
+      deriveAvailability:(date,options={})=>deriveAvailability(load(),cleanText(date)||dateKey(),options),
       upsertHomeworkTemplate,
       upsertDatedTodo,
       linkTodayItems,
