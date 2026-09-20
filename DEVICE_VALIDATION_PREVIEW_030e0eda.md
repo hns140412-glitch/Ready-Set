@@ -6,3 +6,4 @@
 - purpose: trigger Git-backed Netlify Deploy Preview for physical-device validation
 - product_code_changed: NO
 - production_merge_intent: NO
+- preview_trigger_revision: 2
