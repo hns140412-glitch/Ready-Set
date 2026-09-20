@@ -3,6 +3,7 @@
 
   const VERSION='0.2.0';
   const ROLES=new Set(['CHILD','PARENT']);
+  let sessionRevision=0;
   let session={
     state:'ANONYMOUS_LOCAL',
     authenticated:false,
@@ -49,17 +50,25 @@
     const next=normalize(input);
     if(!next||!next.authenticated) return {ok:false,reason:'INVALID_AUTH_BOOTSTRAP'};
     session=next;
+    sessionRevision+=1;
     window.dispatchEvent(new CustomEvent('readyset-family-session',{detail:publicSession()}));
     return {ok:true,session:publicSession()};
   }
 
   async function hydrate(){
+    const startedRevision=sessionRevision;
     try{
       const res=await fetch('/api/auth/session',{method:'GET',headers:{Accept:'application/json'},cache:'no-store',credentials:'same-origin'});
       const body=await res.json().catch(()=>({}));
+      if(sessionRevision!==startedRevision){
+        return {ok:true,reason:'HYDRATE_SUPERSEDED_BY_NEWER_SESSION',session:publicSession()};
+      }
       if(!res.ok||!body?.session){clear();return {ok:false,reason:body?.reason||('AUTH_SESSION_HTTP_'+res.status),session:publicSession()};}
       return applyBootstrap({...body.session,source:'NETLIFY_IDENTITY_SESSION'});
     }catch(error){
+      if(sessionRevision!==startedRevision){
+        return {ok:true,reason:'HYDRATE_SUPERSEDED_BY_NEWER_SESSION',session:publicSession()};
+      }
       return {ok:false,reason:String(error?.message||error),session:publicSession()};
     }
   }
@@ -102,6 +111,7 @@
       state:'ANONYMOUS_LOCAL',authenticated:false,family_id:null,member_id:null,role:'CHILD',
       session_id:null,issued_at:null,expires_at:null,source:'LOCAL_DEFAULT'
     };
+    sessionRevision+=1;
     window.dispatchEvent(new CustomEvent('readyset-family-session',{detail:publicSession()}));
     return publicSession();
   }
