@@ -10,7 +10,7 @@ const categories={
 };
 
 const GUIDE_TYPES={
-  lumi:{defaultName:'루미',personality:'포근하고 위트 있는 탐험대원',home:'오늘 작전, 내가 옆에서 같이 봐줄게.',intro:'오늘도 천천히 시작해보자. 준비되면 바로 들어가자!'},
+  lumi:{defaultName:'루미',personality:'포근하고 위트 있는 탐험대원',home:'오늘 탐험, 내가 옆에서 같이 가줄게.',intro:'오늘도 천천히 시작해보자. 준비되면 바로 들어가자!'},
   pico:{defaultName:'피코',personality:'밝고 장난기 있는 탐험대원',home:'준비 끝? 그럼 오늘 시계가 조금 긴장하겠는데?',intro:'좋아! 오늘도 가볍게 시작해서 끝까지 가보자!'},
   mori:{defaultName:'모리',personality:'차분하고 든든한 탐험대원',home:'서두르지 않아도 괜찮아. 정한 만큼 같이 가보자.',intro:'호흡 한번 정리하고, 네 속도로 시작해보자.'}
 };
@@ -386,7 +386,7 @@ $$('[data-sheet-sound]').forEach(b=>b.onclick=async()=>{
 });
 
 $('#startBtn').onclick=async()=>{
-  if(state.activeSession){toast('이미 진행 중인 작전이 있어요. 먼저 진행 중인 작전으로 돌아가 주세요.');nav('focus');return}
+  if(state.activeSession){toast('이미 진행 중인 탐험이 있어요. 먼저 진행 중인 탐험으로 돌아가 주세요.');nav('focus');return}
   if(!state.selectedTodoIds.length){toast('먼저 Planner가 준비한 오늘의 탐험을 선택해 주세요.');return}
   const now=Date.now();
   const plannerLinks=window.ReadySetPlanner?.linkTodayItems(state.selectedTodoIds,{allowed_states:['PLANNED']})||[];
@@ -449,7 +449,7 @@ function renderFocus(){
   const s=state.activeSession;
   if(!s){if($('#focusView')?.classList.contains('active'))nav('mission');return}
   const labels=[...s.selected,...s.tasks];
-  $('#focusMission').textContent=labels.join(' · ')||'오늘의 작전';
+  $('#focusMission').textContent=labels.join(' · ')||'오늘의 탐험';
   const focusSteps=[...new Set((s.plannerLinks||[]).flatMap(x=>Array.isArray(x.activity_sequence)?x.activity_sequence:[]))];
   if($('#focusLearningGuide'))$('#focusLearningGuide').textContent=focusSteps.length
     ? focusSteps.map(learningStepLabel).join(' → ')
@@ -467,7 +467,7 @@ function tickFocus(){
   $('#remainingTime').textContent=t.remaining>=0?fmt(t.remaining):`+${fmt(-t.remaining)}`;
   $('#focusElapsed').textContent=fmt(t.focus);
   $('#issueElapsed').textContent=fmt(t.issue);
-  $('#pauseBtn').textContent=s.pausedAt?'다시, 작전 속으로':'잠깐 멈춤';
+  $('#pauseBtn').textContent=s.pausedAt?'다시, 탐험 속으로':'잠깐 멈춤';
   const d=new Date();
   $('#secondHand').style.transform=`rotate(${d.getSeconds()*6}deg)`;
   $('#minuteHand').style.transform=`rotate(${d.getMinutes()*6+d.getSeconds()*.1}deg)`;
@@ -670,13 +670,13 @@ function resultSource(){return state.lastResult||null}
 function resultOutcomeProfile(r={}){
   const state=r.outcomeState||'COMPLETED';
   return ({
-    COMPLETED:{state,label:'완료',historyLabel:'작전 완료',shareTitle:'오늘의 탐험 완료',shareText:'Ready & Set · 오늘의 탐험 완료!',done:true},
+    COMPLETED:{state,label:'완료',historyLabel:'탐험 완료',shareTitle:'오늘의 탐험 완료',shareText:'Ready & Set · 오늘의 탐험 완료!',done:true},
     PARTIAL:{state,label:'일부 남음',historyLabel:'일부 남음',shareTitle:'오늘은 여기까지',shareText:'Ready & Set · 오늘은 여기까지 했어요.',headline:'여기까지 했어요.',line:'남은 건 Planner가 이어서 정리해둘게.',done:false},
     DEFERRED:{state,label:'다음에',historyLabel:'다음에 이어서',shareTitle:'다음 탐험으로 이어가요',shareText:'Ready & Set · 다음 탐험으로 이어가요.',headline:'오늘은 여기까지.',line:'다음 탐험으로 넘겨둘게.',done:false},
     WAITING_FOR_PARENT:{state,label:'부모 도움',historyLabel:'부모 도움 필요',shareTitle:'도움이 필요한 탐험',shareText:'Ready & Set · 도움이 필요한 지점을 남겼어요.',headline:'도움이 필요해요.',line:'부모님 확인이 필요한 일로 표시했어요.',done:false},
     BLOCKED:{state,label:'막힘',historyLabel:'막힘',shareTitle:'막힌 지점을 찾았어요',shareText:'Ready & Set · 해결이 필요한 지점을 찾았어요.',headline:'막힌 지점 발견.',line:'그냥 넘기지 않고 해결이 필요한 일로 남겼어요.',done:false},
     MIXED:{state,label:'과제별 결과',historyLabel:'과제별 결과',shareTitle:'오늘 탐험을 정리했어요',shareText:'Ready & Set · 오늘 탐험 결과를 과제별로 정리했어요.',headline:'오늘 탐험을 정리했어요.',line:'과제마다 끝난 상태를 그대로 기록했어요.',done:false}
-  })[state]||{state:'COMPLETED',label:'완료',historyLabel:'작전 완료',shareTitle:'오늘의 탐험 완료',shareText:'Ready & Set · 오늘의 탐험 완료!',done:true};
+  })[state]||{state:'COMPLETED',label:'완료',historyLabel:'탐험 완료',shareTitle:'오늘의 탐험 완료',shareText:'Ready & Set · 오늘의 탐험 완료!',done:true};
 }
 function resultSceneFor(r){
   const profile=resultOutcomeProfile(r);
@@ -684,9 +684,9 @@ function resultSceneFor(r){
   const delta=r.deltaMs;
   if(delta<=-120000)return{headline:'엣헴~! 오늘 좀 했습니다.',line:'잠깐… 시계보다 먼저 왔는데?',label:'TIME SAVE'};
   if(Math.abs(delta)<=60000)return{headline:'오? 계산대로인데?',line:'시계랑 거의 동시에 들어왔어요.',label:'차이'};
-  if(delta>0)return{headline:'무사 귀환!',line:'헤헤… 조금 늦었습니다. 그래도 작전 완료!',label:'차이'};
+  if(delta>0)return{headline:'무사 귀환!',line:'헤헤… 조금 늦었습니다. 그래도 탐험 완료!',label:'차이'};
   if(r.issueMs>120000)return{headline:'오늘은 사건이 좀 많았습니다.',line:'그래도 다시 돌아와서 끝냈네.',label:'차이'};
-  return{headline:'작전 완료!',line:'오늘도 끝까지 잘 돌아왔어요.',label:'차이'};
+  return{headline:'탐험 완료!',line:'오늘도 끝까지 잘 돌아왔어요.',label:'차이'};
 }
 function renderResult(){
   const r=resultSource();
@@ -723,7 +723,7 @@ function renderCalendar(){
     x.innerHTML=`<header><b>${new Date(r.endAt).toLocaleDateString('ko-KR')}</b><small>${escapeHtml(profile.historyLabel)}</small></header><p>${escapeHtml([...r.selected,...r.tasks].join(' · '))}</p>`;
     root.appendChild(x);
   });
-  if(!root.children.length)root.innerHTML='<div class="historyItem"><b>이번 달 작전 기록이 없어요.</b></div>';
+  if(!root.children.length)root.innerHTML='<div class="historyItem"><b>이번 달 탐험 기록이 없어요.</b></div>';
 }
 
 
@@ -1596,7 +1596,7 @@ function speakGuide(text){
   speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';
   const cfg={warm:{rate:.92,pitch:1.02},bright:{rate:1.04,pitch:1.12},calm:{rate:.86,pitch:.94},playful:{rate:1.08,pitch:1.18}}[state.guide.voice]||{rate:.95,pitch:1};u.rate=cfg.rate;u.pitch=cfg.pitch;u.volume=.92;speechSynthesis.speak(u);return true;
 }
-$('#voicePreviewBtn').onclick=()=>speakGuide(`${state.guide.name}야. 오늘 작전도 네 옆에서 같이 갈게.`);
+$('#voicePreviewBtn').onclick=()=>speakGuide(`${state.guide.name}야. 오늘 탐험도 네 옆에서 같이 갈게.`);
 $('#coachVoiceBtn').onclick=()=>speakGuide($('#duoText').textContent||'오늘 녹음을 끝까지 잘 마쳤어.');
 
 $$('[data-sound]').forEach(b=>b.onclick=async()=>{
@@ -1660,7 +1660,7 @@ async function shareCard(kind='result'){
   x.font='900 54px sans-serif';x.fillText('Ready & Set',120,160);
   const sc=r?resultSceneFor(r):null;
   x.font='900 68px sans-serif';
-  wrapText(x,kind==='result'?sc.headline:'작전 개시 전, 응원 요청!',120,260,820,82);
+  wrapText(x,kind==='result'?sc.headline:'탐험 시작 전, 응원 요청!',120,260,820,82);
 
   await drawAvatar(x,300,620,150);
   const expression=r&&r.deltaMs<=-120000?'wow':'smile';
@@ -1672,19 +1672,19 @@ async function shareCard(kind='result'){
   wrapText(x,kind==='result'?sc.line:`${state.guide.name}: 응원 한 스푼만 부탁해요!`,585,455,290,38);
 
   const text=kind==='result'?[...(r?.selected||[]),...(r?.tasks||[])].join(' · '):currentMissionLabels().join(' · ');
-  x.fillStyle='#2a231f';x.font='700 32px sans-serif';wrapText(x,text||'오늘의 작전',120,925,820,46);
+  x.fillStyle='#2a231f';x.font='700 32px sans-serif';wrapText(x,text||'오늘의 탐험',120,925,820,46);
   x.font='900 48px sans-serif';
   if(kind==='result'&&r)x.fillText(`목표 ${fmt(r.targetMs)}   집중 ${fmt(r.focusMs)}`,120,1110);
   else x.fillText(`목표 ${state.targetMin}:00`,120,1110);
   x.font='700 29px sans-serif';x.fillStyle='#7c665c';
-  x.fillText(kind==='result'?'오늘 우리에게 이런 일이 있었다.':'곧 작전 들어갑니다.',120,1180);
+  x.fillText(kind==='result'?'오늘 우리에게 이런 일이 있었다.':'곧 탐험을 시작합니다.',120,1180);
 
   const blob=await new Promise(res=>c.toBlob(res,'image/png'));
   const file=new File([blob],`Ready_Set_${kind}_${Date.now()}.png`,{type:'image/png'});
   try{
     if(navigator.canShare?.({files:[file]})){
       const shareProfile=kind==='result'?resultOutcomeProfile(r||{}):null;
-      await navigator.share({files:[file],text:kind==='result'?shareProfile.shareText:'Ready & Set 작전 시작!'});return;
+      await navigator.share({files:[file],text:kind==='result'?shareProfile.shareText:'Ready & Set 탐험 시작!'});return;
     }
     const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=file.name;a.click();
     setTimeout(()=>URL.revokeObjectURL(url),1000);toast('공유 카드를 이미지로 저장했어요.');
