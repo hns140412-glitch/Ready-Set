@@ -1597,9 +1597,39 @@ function escapeHtml(s){
 window.addEventListener('visibilitychange',()=>{
   if(!document.hidden&&state.activeSession)renderFocus();
 });
+function reconcileReadyRuntimeState(){
+  const snap=plannerSnapshot();
+  const todayKey=localDateKey();
+  const openToday=new Set((snap.dated_todos||[])
+    .filter(x=>x.date===todayKey&&!['COMPLETED','SUPERSEDED'].includes(x.state))
+    .map(x=>x.todo_id));
+  const beforeSelected=state.selectedTodoIds.length;
+  state.selectedTodoIds=state.selectedTodoIds.filter(id=>openToday.has(id));
+
+  let resumed=false;
+  if(state.activeSession?.id){
+    const status=window.ReadySetPlanner?.sessionRuntimeStatus?.(state.activeSession.id)||null;
+    const sessionIds=new Set((state.activeSession.plannerLinks||[]).map(x=>x.todo_id).filter(Boolean));
+    const inProgress=(status?.in_progress||[]).filter(x=>sessionIds.has(x.todo_id));
+    if(inProgress.length){
+      resumed=true;
+      const liveById=new Map(inProgress.map(x=>[x.todo_id,x]));
+      state.activeSession.plannerLinks=(state.activeSession.plannerLinks||[])
+        .filter(x=>liveById.has(x.todo_id))
+        .map(x=>({...x,state:'IN_PROGRESS'}));
+    }else{
+      state.activeSession=null;
+    }
+  }
+
+  if(beforeSelected!==state.selectedTodoIds.length||!state.activeSession||resumed)save();
+  return {resumed};
+}
+
 window.addEventListener('load',()=>{
   renderHome();renderSettings();
-  if(state.activeSession&&$('#focusView')?.classList.contains('active'))renderFocus();
+  const recovery=reconcileReadyRuntimeState();
+  if(recovery.resumed)nav('focus');
   if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 });
 
