@@ -107,10 +107,27 @@
     };
   }
 
+  function reviewAndProcessChildFact(assignmentId,input={}){
+    if(!window.ReadyAssignments||!window.ReadySetPlanner||!window.ReadyLearningMasterV01)return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
+    const state=window.ReadyAssignments.load(),fact=state.assignmentFacts?.[assignmentId];
+    if(!fact)return {ok:false,reason:'ASSIGNMENT_FACT_NOT_FOUND'};
+    if(fact.source_actor!=='CHILD')return {ok:false,reason:'CHILD_FACT_REQUIRED'};
+    try{
+      window.ReadyAssignments.confirmFact(assignmentId,{
+        actor:'PARENT',
+        reviewed_value:input.reviewed_value||{},
+        provenance:input.provenance||{kind:'PARENT_REVIEW',surface:'PARENT_INTAKE'}
+      });
+    }catch(error){
+      return {ok:false,reason:error?.message||'PARENT_CONFIRMATION_FAILED'};
+    }
+    return processAssignment(assignmentId,input);
+  }
+
   function processConfirmed(input={}){
     const state=window.ReadyAssignments?.load?.();if(!state)return [];
     return Object.values(state.assignmentFacts).filter(f=>f.confirmation_state==='FACT_CONFIRMED').map(f=>processAssignment(f.assignment_id,input));
   }
-  window.ReadyIntegrationV1={version:VERSION,processAssignment,processConfirmed,reviewEscalatedCarryOver};
+  window.ReadyIntegrationV1={version:VERSION,processAssignment,processConfirmed,reviewAndProcessChildFact,reviewEscalatedCarryOver};
   document.documentElement.dataset.readyIntegration=VERSION;
 })();

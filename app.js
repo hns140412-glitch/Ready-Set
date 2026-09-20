@@ -266,7 +266,7 @@ function renderMission(){
 $('#addTaskBtn').onclick=()=>{
   const v=$('#taskInput').value.trim();
   if(!v)return;
-  window.ReadyAssignments?.addEventFact?.({actor:'CHILD',title:v,provenance:{kind:'CHILD_INPUT',surface:'MISSION'}});
+  window.ReadyAssignments?.upsertChildAssignmentFact?.({actor:'CHILD',title:v,subject:'학교',source_range:v,source_date:localDateKey(),provenance:{kind:'CHILD_INPUT',surface:'MISSION'}});
   $('#taskInput').value='';
   toast('새 숙제 FACT를 기록했어요. 확인과 Planner 배정 후 TODAY에 나타납니다.');
 };
@@ -1181,7 +1181,16 @@ function renderParentIntake(){
       <input data-answer type="hidden" value="">
     </div>`).join('');
   const status=$('#assignmentFactStatus'),projection=window.ReadyAssignments?.project?.('PARENT');
-  if(status&&projection)status.innerHTML=projection.facts.slice(-12).reverse().map(f=>`<div class="adminListItem"><span><b>${escapeHtml(f.book_subject||f.subject)}</b><small>${escapeHtml(f.confirmation_state)} · ${escapeHtml(f.analysis_state)}</small></span></div>`).join('');
+  if(status&&projection){
+    const tomorrow=(()=>{const d=new Date();d.setDate(d.getDate()+1);return d.toLocaleDateString('sv-SE')})();
+    const pending=projection.facts.filter(f=>f.source_actor==='CHILD'&&f.confirmation_state!=='FACT_CONFIRMED').slice(-8).reverse();
+    const recent=projection.facts.filter(f=>!pending.some(p=>p.assignment_id===f.assignment_id)).slice(-8).reverse();
+    const valueOf=f=>(f.claims||[]).filter(c=>c.status!=='SUPERSEDED').at(-1)?.value||{};
+    status.innerHTML=[
+      ...pending.map(f=>{const v=valueOf(f);return `<div class="adminListItem childFactReview" data-child-fact-row="${escapeHtml(f.assignment_id)}"><span><b>CHILD 확인 요청 · ${escapeHtml(v.title||f.subject||'숙제')}</b><small>아이 입력 → Parent 확인 후에만 Learning Master/Planner로 전달됩니다.</small></span><label class="inputBlock">과목<input data-child-review-subject value="${escapeHtml(v.subject||f.subject||'학교')}"></label><label class="inputBlock">숙제 내용<input data-child-review-range value="${escapeHtml(v.source_range||v.title||'')}"></label><label class="inputBlock">마감 경계<input data-child-review-deadline type="date" value="${escapeHtml(v.deadline_boundary||tomorrow)}"></label><button class="miniAction" data-confirm-child-fact="${escapeHtml(f.assignment_id)}">확인 · Planner 전달</button></div>`;}),
+      ...recent.map(f=>`<div class="adminListItem"><span><b>${escapeHtml(f.book_subject||f.subject)}</b><small>${escapeHtml(f.confirmation_state)} · ${escapeHtml(f.analysis_state)}</small></span></div>`)
+    ].join('');
+  }
 
   const lmRoot=$('#learningMasterSummary');
   const domain=window.ReadyAssignments?.load?.();
@@ -1201,6 +1210,28 @@ function renderParentIntake(){
   if($('#talentSourceDate')&&!$('#talentSourceDate').value)$('#talentSourceDate').value=localDateKey();
   renderCaptureIntake().catch(()=>{});
 }
+document.getElementById('assignmentFactStatus')?.addEventListener('click',e=>{
+  const button=e.target.closest('[data-confirm-child-fact]');if(!button)return;
+  if(!requireParentUi())return;
+  const row=button.closest('[data-child-fact-row]');
+  const assignmentId=button.dataset.confirmChildFact;
+  const subject=row?.querySelector('[data-child-review-subject]')?.value.trim()||'학교';
+  const sourceRange=row?.querySelector('[data-child-review-range]')?.value.trim()||'';
+  const deadline=row?.querySelector('[data-child-review-deadline]')?.value||'';
+  if(!sourceRange||!deadline){toast('숙제 내용과 마감 경계를 확인해 주세요.');return;}
+  const processed=window.ReadyIntegrationV1?.reviewAndProcessChildFact?.(assignmentId,{
+    start_date:localDateKey(),
+    reviewed_value:{subject,source_range:sourceRange,deadline_boundary:deadline},
+    provenance:{kind:'PARENT_REVIEW',surface:'PARENT_INTAKE'}
+  });
+  if(processed?.ok){
+    toast('Parent 확인 완료 · Learning Master → Planner → TODAY로 연결했어요.');
+    renderParentIntake();renderPlanner();renderMission();
+  }else{
+    toast(`확인 처리 보류 · ${processed?.reason||'원인을 확인하지 못했어요.'}`);
+  }
+});
+
 document.getElementById('saveTalentFactsBtn')?.addEventListener('click',async()=>{
   if(!requireParentUi())return;
   const source=$('#talentSourceDate').value,deadline=$('#talentDeadline').value;

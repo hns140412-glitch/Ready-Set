@@ -7,7 +7,7 @@
   }
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
-  const VERSION='0.1.0';
+  const VERSION='0.2.0';
   const STORAGE_KEY='readyset_assignments_v2';
   const TALENT_BOOKS=['연산','한자','국어','사회','수학','생각하는 피자'];
   const CONFIRMED='FACT_CONFIRMED';
@@ -110,14 +110,24 @@
       });
     }
     function confirmFact(assignmentId,input={}){
-      const actorGuard=requireBrowserActor(input.actor);if(!actorGuard.ok)throw new Error(actorGuard.reason);
+      if(clean(input.actor).toUpperCase()!=='PARENT')throw new Error('PARENT_CONFIRMATION_REQUIRED');
+      const actorGuard=requireBrowserActor('PARENT');if(!actorGuard.ok)throw new Error(actorGuard.reason);
       return mutate(s=>{const f=s.assignmentFacts[assignmentId];if(!f)throw new Error('fact not found');
-        if(claimsConflict(f.claims||[])&&!input.accepted_claim_id)throw new Error('conflict resolution required');
-        if(input.accepted_claim_id){
-          for(const c of f.claims||[])c.status=c.claim_id===input.accepted_claim_id?'ACCEPTED':'SUPERSEDED';
-          const accepted=(f.claims||[]).find(c=>c.status==='ACCEPTED');if(accepted)Object.assign(f,clone(accepted.value));
-        }else{const last=(f.claims||[]).at(-1);if(last)Object.assign(f,clone(last.value));}
-        f.confirmation_state=CONFIRMED;f.confirmed_by=clean(input.actor)||'PARENT';f.confirmed_at=now();f.analysis_state='READY_FOR_INTERPRETATION';f.updated_at=now();return clone(f);
+        if(input.reviewed_value&&typeof input.reviewed_value==='object'){
+          const latest=(f.claims||[]).filter(c=>c.status!=='SUPERSEDED').at(-1)?.value||{};
+          const reviewed={...clone(latest),...clone(input.reviewed_value)};
+          const parentClaim=addClaim(s,f,'PARENT',reviewed,input.provenance||{kind:'PARENT_REVIEW'});
+          for(const c of f.claims||[])c.status=c.claim_id===parentClaim.claim_id?'ACCEPTED':'SUPERSEDED';
+          Object.assign(f,clone(reviewed));
+        }else{
+          if(claimsConflict(f.claims||[])&&!input.accepted_claim_id)throw new Error('conflict resolution required');
+          if(input.accepted_claim_id){
+            for(const c of f.claims||[])c.status=c.claim_id===input.accepted_claim_id?'ACCEPTED':'SUPERSEDED';
+            const accepted=(f.claims||[]).find(c=>c.status==='ACCEPTED');if(accepted)Object.assign(f,clone(accepted.value));
+          }else{const last=(f.claims||[]).at(-1);if(last)Object.assign(f,clone(last.value));}
+        }
+        if(f.source_type==='GENERIC_CHILD_ASSIGNMENT'&&!clean(f.deadline_boundary))throw new Error('DEADLINE_BOUNDARY_REQUIRED');
+        f.confirmation_state=CONFIRMED;f.confirmed_by='PARENT';f.confirmed_at=now();f.analysis_state='READY_FOR_INTERPRETATION';f.updated_at=now();return clone(f);
       });
     }
     function upsertTalentPackage(input={}){
@@ -154,6 +164,36 @@
         const answerRefs=registerArtifacts(s,assignmentId,Array.isArray(input.answer_reference_ids)?input.answer_reference_ids:[],'ANSWER_REFERENCE','PARENT_ONLY');
         addClaim(s,f,input.actor||'UNKNOWN',{source_range:clean(input.source_range),weekday_prints:clone(input.weekday_prints||{}),components:clone(input.components||{}),teacher_instruction:clean(input.teacher_instruction),...learningContext(input),artifact_refs:artifactRefs,answer_reference_ids:answerRefs},input.provenance||{kind:(input.actor==='CHILD'?'CHILD_INPUT':'PARENT_INPUT')});
         s.assignmentFacts[assignmentId]=f;return clone(f);
+      });
+    }
+    function upsertChildAssignmentFact(input={}){
+      if(clean(input.actor).toUpperCase()!=='CHILD')throw new Error('CHILD_CAPTURE_REQUIRED');
+      const actorGuard=requireBrowserActor('CHILD');if(!actorGuard.ok)throw new Error(actorGuard.reason);
+      const title=clean(input.title);if(!title)throw new Error('assignment title required');
+      return mutate(s=>{
+        const assignmentId=clean(input.assignment_id)||id('assignment');
+        const existing=s.assignmentFacts[assignmentId]||null;
+        const f=existing||{assignment_id:assignmentId,claims:[],created_at:now(),fact_revision:1,planner_revision_pending:false};
+        if(existing)supersedeCurrentInterpretation(s,f,'CHILD_FACT_UPDATED');
+        Object.assign(f,{
+          source_type:'GENERIC_CHILD_ASSIGNMENT',
+          subject:clean(input.subject)||'학교',
+          source_actor:'CHILD',
+          assignment_cycle:'AD_HOC',
+          source_date:clean(input.source_date)||now().slice(0,10),
+          lifecycle:'ACTIVE',
+          analysis_state:'NOT_ANALYZED'
+        });
+        addClaim(s,f,'CHILD',{
+          title,
+          subject:clean(input.subject)||f.subject||'학교',
+          source_range:clean(input.source_range)||title,
+          teacher_instruction:clean(input.teacher_instruction),
+          deadline_boundary:clean(input.deadline_boundary)||null,
+          ...learningContext(input)
+        },input.provenance||{kind:'CHILD_INPUT'});
+        s.assignmentFacts[assignmentId]=f;
+        return clone(f);
       });
     }
     function addEventFact(input={}){
@@ -195,7 +235,7 @@
       });
       return {role:parent?'PARENT':'CHILD',facts,packages:Object.values(s.assignmentPackages).map(clone),workbookRefs:Object.values(s.workbookRefs).map(clone),artifacts:Object.values(visibleArtifacts).map(clone)};
     }
-    return {version:VERSION,load,save,upsertWorkbookRef,upsertTalentPackage,upsertEnglishAssignment,addEventFact,confirmFact,markRevisionPropagationComplete,project};
+    return {version:VERSION,load,save,upsertWorkbookRef,upsertTalentPackage,upsertEnglishAssignment,upsertChildAssignmentFact,addEventFact,confirmFact,markRevisionPropagationComplete,project};
   }
   return {version:VERSION,STORAGE_KEY,TALENT_BOOKS,createDomain,normalize};
 });
