@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const RUNTIME_VERSION = '2026.09.07-rev07-b';
+  const RUNTIME_VERSION = '2026.09.20-p3-continuity-v1';
   const HIDE_URL = 'https://dainty-froyo-a6e427.netlify.app';
   const SNAP_URL = 'https://cheerful-pothos-d1c3ee.netlify.app';
   const VALID_TASK_STATES = new Set(['PENDING','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
@@ -159,26 +159,41 @@
     return app === 'hide-seek' ? HIDE_URL : app === 'snap-pop' ? SNAP_URL : location.href;
   }
 
-  function launchSpecialist(app) {
+  function buildSpecialistHandoff(app) {
     const session = state.activeSession;
     const c = ensureContract(session);
     const task = currentTask(c);
     const lap = currentLap(c) || (task ? startLap(task, 'SPECIALIST_ROUTE', session) : null);
-    if (!session || !c || !task || !lap || !['hide-seek','snap-pop'].includes(app)) return;
-
-    c.active_app = app;
-    emit('APP_SWITCH', { from: 'ready-set', to: app, lap_ended: false });
-    save();
-
+    if (!session || !c || !task || !lap || !['hide-seek','snap-pop'].includes(app)) return null;
+    const returnTarget = `${location.origin}${location.pathname}`;
     const url = new URL(appUrl(app));
     url.searchParams.set('session_id', c.session_id);
     url.searchParams.set('goal_id', c.goal_id);
     url.searchParams.set('task_id', task.task_id);
     url.searchParams.set('lap_id', lap.lap_id);
-    url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
+    url.searchParams.set('return_target', returnTarget);
     url.searchParams.set('snap_target', SNAP_URL);
     url.searchParams.set('from_app', 'ready-set');
-    location.assign(url.href);
+    return {
+      app,
+      url: url.href,
+      return_target: returnTarget,
+      session_id: c.session_id,
+      goal_id: c.goal_id,
+      task_id: task.task_id,
+      lap_id: lap.lap_id,
+      lap_started_ms: lap.started_ms
+    };
+  }
+
+  function launchSpecialist(app) {
+    const handoff = buildSpecialistHandoff(app);
+    if (!handoff) return;
+    const c = ensureContract();
+    c.active_app = app;
+    emit('APP_SWITCH', { from: 'ready-set', to: app, lap_ended: false });
+    save();
+    location.assign(handoff.url);
   }
 
   function normalizeInboundState(raw) {
@@ -188,9 +203,10 @@
     return null;
   }
 
-  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null }) {
+  function applyInboundResult({ session_id, goal_id = null, task_id, lap_id, task_state, from_app, event_id = null }) {
     const c = ensureContract();
     if (!c || !session_id || session_id !== c.session_id) return false;
+    if (goal_id && goal_id !== c.goal_id) return false;
     if (event_id && c.applied_event_ids?.includes(event_id)) return false;
     const task = c.tasks.find(t => t.task_id === task_id);
     if (!task) return false;
@@ -212,6 +228,7 @@
     const p = new URLSearchParams(location.search);
     const args = {
       session_id: p.get('session_id'),
+      goal_id: p.get('goal_id'),
       task_id: p.get('task_id'),
       lap_id: p.get('lap_id'),
       task_state: p.get('task_state'),
@@ -234,6 +251,7 @@
       : null;
     applyInboundResult({
       session_id: e.session_id,
+      goal_id: e.goal_id,
       task_id: e.task_id,
       lap_id: e.lap_id,
       task_state: taskState,
@@ -486,6 +504,8 @@
       contract: () => state.activeSession?.rev07 ? structuredClone(state.activeSession.rev07) : null,
       validate: validateContract,
       launchSpecialist,
+      buildSpecialistHandoff,
+      applyInboundResult,
       setTaskState,
       switchTask,
       openWrapUp
