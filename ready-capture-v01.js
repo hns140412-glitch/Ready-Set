@@ -198,15 +198,20 @@
     };
   }
 
-  async function artifactsForGroup(groupKey){
-    const session=await activeSession();
+  async function resolveSession(sessionId){
+    if(clean(sessionId))return getByKey(SESSION_STORE,clean(sessionId));
+    return (await activeSession())||(await latestSession());
+  }
+
+  async function artifactsForGroup(groupKey,sessionId){
+    const session=await resolveSession(sessionId);
     if(!session)return [];
     const items=(await listItems(session.capture_session_id)).filter(x=>x.group_key===groupKey);
     return items.map(artifactDescriptor);
   }
 
-  async function groupSummary(){
-    const session=await activeSession();
+  async function groupSummary(sessionId){
+    const session=await resolveSession(sessionId);
     if(!session)return [];
     const items=await listItems(session.capture_session_id);
     const map=new Map();
