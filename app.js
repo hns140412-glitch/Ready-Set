@@ -344,8 +344,18 @@ $('#startBtn').onclick=async()=>{
   const plannerLinks=window.ReadySetPlanner?.linkTodayItems(state.selectedTodoIds)||[];
   if(!plannerLinks.length){toast('선택한 Planner TODO를 찾을 수 없어요. TODAY를 다시 확인해 주세요.');return}
   const labels=plannerLinks.map(x=>x.label);
+  const sessionId=`s_${now}`;
+  for(const link of plannerLinks){
+    window.ReadySetPlanner?.recordTaskState?.({
+      todo_id:link.todo_id,
+      ready_state:'IN_PROGRESS',
+      session_id:sessionId,
+      task_id:link.learning_unit_id||link.todo_id,
+      at:new Date(now).toISOString()
+    });
+  }
   state.activeSession={
-    id:`s_${now}`,startAt:now,targetMs:state.targetMin*60000,
+    id:sessionId,startAt:now,targetMs:state.targetMin*60000,
     pausedAt:null,issueMs:0,completed:false,
     selected:[],tasks:labels,
     plannerLinks,
