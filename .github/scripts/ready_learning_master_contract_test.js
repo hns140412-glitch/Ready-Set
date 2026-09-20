@@ -128,7 +128,7 @@ assert(standardMatcher.OFFICIAL_STANDARD_DATASET.source_refs.includes('MOE_NOTIC
 
 const officialRegistry=require('../../ready-official-standard-registry-v01.js');
 
-assert.strictEqual(officialRegistry.DATASET.coverage_status,'PARTIAL_VERIFIED');
+assert.strictEqual(officialRegistry.DATASET.coverage_status,'MIXED_VERIFIED');
 assert.strictEqual(officialRegistry.findByCode('6수04-01').subject,'수학');
 assert.strictEqual(officialRegistry.findByCode('6과01-03').domain,'지구와 우주');
 assert.strictEqual(officialRegistry.findByCode('6영01-08').domain,'이해');
