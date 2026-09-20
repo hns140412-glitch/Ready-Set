@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.1.0';
+  const VERSION='0.2.0';
   const DATASET={
     curriculum:'2022_REVISED_KOREA_NATIONAL_CURRICULUM',
     school_level:'ELEMENTARY',
@@ -13,8 +13,16 @@
     current_framework_notice:'NCEC_NOTICE_2026_1',
     subject_curriculum_notice:'MOE_NOTICE_2022_33',
     text_policy:'PARAPHRASED_INDEX_WITH_OFFICIAL_SOURCE_POINTER',
-    coverage_status:'PARTIAL_VERIFIED',
+    coverage_status:'MIXED_VERIFIED',
     no_guessing:true
+  };
+
+  const COVERAGE={
+    '국어':{status:'PARTIAL_VERIFIED',verified_record_count:7,expected_total:null,verified_domains:['듣기·말하기','읽기','쓰기','매체'],gaps:['문법','문학','remaining standards']},
+    '수학':{status:'PARTIAL_VERIFIED',verified_record_count:1,expected_total:null,verified_domains:['자료와 가능성'],gaps:['수와 연산','변화와 관계','도형과 측정','remaining standards']},
+    '사회':{status:'PARTIAL_VERIFIED',verified_record_count:2,expected_total:null,verified_domains:['지리','일반사회'],gaps:['역사','remaining standards']},
+    '과학':{status:'PARTIAL_VERIFIED',verified_record_count:4,expected_total:null,verified_domains:['지구와 우주','과학과 사회'],gaps:['운동과 에너지','물질','생명','remaining standards']},
+    '영어':{status:'VERIFIED_FULL_SUBJECT_COVERAGE',verified_record_count:20,expected_total:20,verified_domains:['이해','표현'],gaps:[]}
   };
 
   const SOURCES={
@@ -69,13 +77,28 @@
     {code:'6과01-01',subject:'과학',domain:'지구와 우주',semantic_summary:'지층 특징과 형성 과정을 모형으로 표현하기',keywords:['지층','형성','모형','지질'],source:'GOE_SCIENCE_56'},
     {code:'6과01-02',subject:'과학',domain:'지구와 우주',semantic_summary:'퇴적암을 알고 알갱이 크기에 따라 분류하기',keywords:['퇴적암','이암','사암','역암','분류'],source:'GOE_SCIENCE_56'},
     {code:'6과01-03',subject:'과학',domain:'지구와 우주',semantic_summary:'화석 생성과 과거 생물·환경을 추리해 가치 이해하기',keywords:['화석','생성','과거 생물','환경','추리'],source:'GOE_SCIENCE_56'},
+    {code:'6과05-03',subject:'과학',domain:'과학과 사회',semantic_summary:'지속가능한 삶과 관련된 혼합물 분리 과학기술 사례 조사·공유',keywords:['지속가능','혼합물','분리','과학기술','장치','조사','공유'],source:'GOE_SCIENCE_56'},
 
     {code:'6영01-01',subject:'영어',domain:'이해',semantic_summary:'단어·어구·문장의 강세·리듬·억양 식별',keywords:['강세','리듬','억양','듣기'],source:'GOE_ENGLISH_56'},
     {code:'6영01-03',subject:'영어',domain:'이해',semantic_summary:'간단한 단어·어구·문장의 의미 이해',keywords:['단어','어구','문장','의미','이해'],source:'GOE_ENGLISH_56'},
     {code:'6영01-04',subject:'영어',domain:'이해',semantic_summary:'일상생활 담화·글의 세부 정보 파악',keywords:['세부 정보','담화','글','일상생활'],source:'GOE_ENGLISH_56'},
     {code:'6영01-05',subject:'영어',domain:'이해',semantic_summary:'일상생활 담화·글의 중심 내용 파악',keywords:['중심 내용','담화','글','일상생활'],source:'GOE_ENGLISH_56'},
     {code:'6영01-07',subject:'영어',domain:'이해',semantic_summary:'적절한 전략으로 일상생활 담화·글 듣기·읽기',keywords:['전략','듣기','읽기','담화','글'],source:'GOE_ENGLISH_56'},
-    {code:'6영01-08',subject:'영어',domain:'이해',semantic_summary:'다양한 매체의 담화·글을 흥미와 자신감을 갖고 듣거나 읽기',keywords:['매체','흥미','자신감','듣기','읽기'],source:'GOE_ENGLISH_56'}
+    {code:'6영01-08',subject:'영어',domain:'이해',semantic_summary:'다양한 매체의 담화·글을 흥미와 자신감을 갖고 듣거나 읽기',keywords:['매체','흥미','자신감','듣기','읽기'],source:'GOE_ENGLISH_56'},
+    {code:'6영01-02',subject:'영어',domain:'이해',semantic_summary:'단어·어구·문장을 강세·리듬·억양에 맞게 소리 내어 읽기',keywords:['소리 내어 읽기','강세','리듬','억양'],source:'GOE_ENGLISH_56'},
+    {code:'6영01-06',subject:'영어',domain:'이해',semantic_summary:'담화나 글에서 일이나 사건의 순서를 파악하기',keywords:['사건','순서','담화','글','파악'],source:'GOE_ENGLISH_56'},
+    {code:'6영01-09',subject:'영어',domain:'이해',semantic_summary:'시·노래·이야기를 공감하며 듣거나 읽기',keywords:['시','노래','이야기','공감','듣기','읽기'],source:'GOE_ENGLISH_56'},
+    {code:'6영01-10',subject:'영어',domain:'이해',semantic_summary:'일상생활 주제나 문화 관련 담화·글을 포용적으로 이해하기',keywords:['문화','포용','일상생활','담화','글'],source:'GOE_ENGLISH_56'},
+    {code:'6영02-01',subject:'영어',domain:'표현',semantic_summary:'단어·어구·문장을 강세·리듬·억양에 맞게 말하기',keywords:['말하기','강세','리듬','억양'],source:'GOE_ENGLISH_56'},
+    {code:'6영02-02',subject:'영어',domain:'표현',semantic_summary:'실물·그림·동작을 보고 단어·어구·문장으로 말하거나 쓰기',keywords:['실물','그림','동작','말하기','쓰기'],source:'GOE_ENGLISH_56'},
+    {code:'6영02-03',subject:'영어',domain:'표현',semantic_summary:'알파벳 대소문자와 문장 부호를 문장에서 바르게 사용하기',keywords:['알파벳','대소문자','문장 부호','문장'],source:'GOE_ENGLISH_56'},
+    {code:'6영02-04',subject:'영어',domain:'표현',semantic_summary:'주변 사람이나 사물을 간단한 문장으로 소개·묘사하기',keywords:['소개','묘사','사람','사물','문장'],source:'GOE_ENGLISH_56'},
+    {code:'6영02-05',subject:'영어',domain:'표현',semantic_summary:'장소·위치·행동 순서나 방법을 간단한 문장으로 설명하기',keywords:['장소','위치','순서','방법','설명'],source:'GOE_ENGLISH_56'},
+    {code:'6영02-06',subject:'영어',domain:'표현',semantic_summary:'감정·의견·경험·계획을 간단한 문장으로 표현하기',keywords:['감정','의견','경험','계획','표현'],source:'GOE_ENGLISH_56'},
+    {code:'6영02-07',subject:'영어',domain:'표현',semantic_summary:'일상생활 담화·글의 세부 정보를 간단한 문장으로 묻고 답하기',keywords:['세부 정보','묻기','답하기','일상생활','문장'],source:'GOE_ENGLISH_56'},
+    {code:'6영02-08',subject:'영어',domain:'표현',semantic_summary:'예시문을 참고해 목적에 맞는 간단한 글 쓰기',keywords:['예시문','목적','글쓰기','쓰기'],source:'GOE_ENGLISH_56'},
+    {code:'6영02-09',subject:'영어',domain:'표현',semantic_summary:'적절한 매체와 전략을 활용해 창의적으로 의미를 표현하기',keywords:['매체','전략','창의','표현'],source:'GOE_ENGLISH_56'},
+    {code:'6영02-10',subject:'영어',domain:'표현',semantic_summary:'의사소통 활동에 흥미와 자신감을 갖고 협력적으로 참여하기',keywords:['의사소통','흥미','자신감','협력','참여'],source:'GOE_ENGLISH_56'}
   ];
 
   const clean=v=>String(v??'').trim();
@@ -111,5 +134,5 @@
     };
   }
 
-  return {version:VERSION,DATASET,SOURCES,RECORDS,findByCode,list,match};
+  return {version:VERSION,DATASET,COVERAGE,SOURCES,RECORDS,findByCode,list,match};
 });
