@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION='2026.09.20-cross-revision-signal-v1';
+  const VERSION='2026.09.20-specialist-memory-v1';
   function processAssignment(assignmentId,input={}){
     if(!window.ReadyAssignments||!window.ReadyLearningMasterV01||!window.ReadySetPlanner)return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
     let state=window.ReadyAssignments.load(),fact=state.assignmentFacts[assignmentId];
@@ -33,9 +33,14 @@
         activity_types:profile?.activity_types||[],
         allow_subject_generalization:true
       })||null;
+      const specialistMemorySignal=window.ReadySetPlanner.specialistMemorySignal?.(
+        assignmentId,
+        {current_revision:Number(fact.fact_revision)||1}
+      )||null;
       window.ReadyLearningMasterV01.interpretConfirmed(assignmentId,{
         actor:'LEARNING_MASTER_RUNTIME',
-        learning_signal:learningSignal
+        learning_signal:learningSignal,
+        specialist_memory_signal:specialistMemorySignal
       });
       state=window.ReadyAssignments.load();fact=state.assignmentFacts[assignmentId];
     }
@@ -62,6 +67,7 @@
       allocation_run_id:allocation.allocation_run_id,
       availability_role:allocation.availability_role||null,
       availability_by_date:allocation.availability_by_date||null,
+      specialist_memory_signal:window.ReadySetPlanner.specialistMemorySignal?.(assignmentId,{current_revision:Number(fact.fact_revision)||1})||null,
       todos:committed.created||[],
       revision_impact:revisionImpact
     };
