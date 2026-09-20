@@ -712,6 +712,14 @@ const TALENT_BOOKS=['연산','한자','국어','사회','수학','생각하는 �
 function parsePrints(value=''){
   const out={};for(const token of String(value).split(',')){const [day,...rest]=token.split(':');if(day?.trim()&&rest.join(':').trim())out[day.trim().toUpperCase()]=rest.join(':').trim()}return out;
 }
+function stableFactSignature(value){
+  const sortObject=v=>{
+    if(Array.isArray(v))return v.map(sortObject);
+    if(v&&typeof v==='object')return Object.fromEntries(Object.keys(v).sort().map(k=>[k,sortObject(v[k])]));
+    return v;
+  };
+  return JSON.stringify(sortObject(value));
+}
 
 let capturePreviewUrls=[];
 function clearCapturePreviewUrls(){
@@ -1052,8 +1060,22 @@ document.getElementById('saveTalentFactsBtn')?.addEventListener('click',async()=
     }
   }
   const talentLinks={};
-  for(const subject of TALENT_BOOKS){
-    talentLinks[subject]=await window.ReadyCaptureV01?.factLinkForGroup?.('TALENT:'+subject);
+  const talentSignatures={};
+  for(const book of books){
+    talentLinks[book.subject]=await window.ReadyCaptureV01?.factLinkForGroup?.('TALENT:'+book.subject);
+    talentSignatures[book.subject]=stableFactSignature({
+      source_date:source,
+      deadline_boundary:deadline,
+      source_range:book.source_range,
+      teacher_instruction:book.teacher_instruction,
+      artifact_ids:(book.artifact_refs||[]).map(x=>x.artifact_id),
+      answer_ids:(book.answer_reference_ids||[]).map(x=>x.artifact_id)
+    });
+  }
+  const linkedSubjects=TALENT_BOOKS.filter(subject=>talentLinks[subject]?.assignment_id);
+  if(linkedSubjects.length===TALENT_BOOKS.length&&linkedSubjects.every(subject=>talentLinks[subject]?.payload_signature===talentSignatures[subject])){
+    toast('같은 촬영 세션의 재능 FACT가 이미 저장·확정되어 있어 중복 생성하지 않았어요.');
+    return;
   }
   const existingPackageId=Object.values(talentLinks).map(x=>x?.package_id).find(Boolean)||undefined;
   const pkg=window.ReadyAssignments.upsertTalentPackage({
@@ -1072,21 +1094,42 @@ document.getElementById('saveTalentFactsBtn')?.addEventListener('click',async()=
     await window.ReadyCaptureV01?.recordFactLink?.('TALENT:'+subject,{
       assignment_id:assignmentId,
       package_id:pkg.package_id,
-      fact_confirmation_state:'FACT_CONFIRMED'
+      fact_confirmation_state:'FACT_CONFIRMED',
+      payload_signature:talentSignatures[subject]
     });
     const processed=window.ReadyIntegrationV1?.processAssignment?.(assignmentId,{start_date:localDateKey()});
     if(processed?.ok)todoCount+=(processed.todos||[]).length;else held++;
   }
+  await window.ReadyCaptureV01?.finalizeFactLinkage?.();
   toast(`재능 6권 분석 완료 · Planner가 ${todoCount}개 탐험을 배정했어요${held?` · 보류 ${held}건`:''}.`);
   renderParentIntake();renderPlanner();renderMission();
 });
 document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=>{
   if(!requireParentUi())return;
   const name=$('#englishWorkbook').value.trim(),range=$('#englishRange').value.trim();if(!name||!range){toast('문제집과 숙제 범위를 확인해 주세요.');return}
+  const englishGroupKeys=['ENGLISH:WORKBOOK','ENGLISH:PRINT','ENGLISH:OTHER'];
   const existingEnglishLinks=await Promise.all(
-    ['ENGLISH:WORKBOOK','ENGLISH:PRINT','ENGLISH:OTHER'].map(groupKey=>window.ReadyCaptureV01?.factLinkForGroup?.(groupKey))
+    englishGroupKeys.map(groupKey=>window.ReadyCaptureV01?.factLinkForGroup?.(groupKey))
   );
   const existingEnglishLink=existingEnglishLinks.find(x=>x?.assignment_id||x?.workbook_ref_id)||null;
+  const englishSignature=stableFactSignature({
+    workbook_name:name,
+    source_range:range,
+    next_academy:$('#englishNextAcademy').value,
+    weekday_prints:parsePrints($('#englishPrints').value),
+    components:{
+      vocabulary:$('#englishVocabulary').value.trim(),
+      listening:$('#englishListening').value.trim(),
+      recording:$('#englishRecording').value.trim(),
+      writing:$('#englishWriting').value.trim()
+    },
+    teacher_instruction:$('#englishInstruction').value.trim()
+  });
+  const linkedEnglish=existingEnglishLinks.filter(Boolean);
+  if(linkedEnglish.length&&linkedEnglish.every(x=>x.assignment_id===existingEnglishLink?.assignment_id&&x.payload_signature===englishSignature)){
+    toast('같은 촬영 세션의 영어 FACT가 이미 저장·확정되어 있어 중복 생성하지 않았어요.');
+    return;
+  }
   const ref=window.ReadyAssignments.upsertWorkbookRef({
     workbook_ref_id:existingEnglishLink?.workbook_ref_id||undefined,
     name,
@@ -1134,10 +1177,12 @@ document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=
       await window.ReadyCaptureV01?.recordFactLink?.(groupKey,{
         assignment_id:fact.assignment_id,
         workbook_ref_id:ref.workbook_ref_id,
-        fact_confirmation_state:'FACT_CONFIRMED'
+        fact_confirmation_state:'FACT_CONFIRMED',
+        payload_signature:englishSignature
       });
     }
   }
+  await window.ReadyCaptureV01?.finalizeFactLinkage?.();
   const processed=window.ReadyIntegrationV1?.processAssignment?.(fact.assignment_id,{start_date:localDateKey()});
   if(fact.deadline_state==='NEXT_ACADEMY_UNVERIFIED'||processed?.reason==='NEXT_ACADEMY_UNVERIFIED'){
     toast('영어 FACT 저장 · 다음 학원 일정 확인 전 분석/배정 보류');
