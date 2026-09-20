@@ -13,7 +13,7 @@
     current_framework_notice:'NCEC_NOTICE_2026_1',
     subject_curriculum_notice:'MOE_NOTICE_2022_33',
     text_policy:'PARAPHRASED_INDEX_WITH_OFFICIAL_SOURCE_POINTER',
-    coverage_status:'MIXED_VERIFIED',
+    coverage_status:'VERIFIED_FULL_CORE_SUBJECT_COVERAGE',
     no_guessing:true
   };
 
