@@ -132,7 +132,7 @@ Authority boundary:
 
 Main promotion remains pending; DEVICE/PRODUCTION verification remains NOT RUN.
 
-### P3c — Family Capture/OCR domain sharing — BRANCH CANDIDATE
+### P3c — Family Capture/OCR domain sharing — CANDIDATE CLOSED
 Family capture analysis transport is shared through `/api/capture/analyze`.
 
 Domains:
@@ -202,3 +202,23 @@ Verify actual production deploy provenance, Identity/cloud roundtrip, PWA behavi
 
 `SNAP & POP EXPEDITION RULE OWNER != READY PROJECT OWNER`.
 Ready consumes the shared expedition projection; it does not fork a competing rule set.
+
+
+### Frozen candidate tuple — READY FOR P6 GATE
+The exact multi-repo candidate is frozen as:
+
+- Ready & Set: `110f58fb1f98500f89a45e1c1bc25be1039a87cc`
+- Hide & Seek: `7b8decf45151f736245f3b3c54ee2b81bfdc83ae`
+- Snap & Pop: `0e2b5bee094045dc03656ab22b4bed630d4d670f`
+
+Validation basis:
+- Ready Integration CI #172 PASS
+- Ready Worker #388 PASS
+- Ready Runtime E2E #258 PASS, 54/54
+- Hide Validate #134 PASS
+
+This freezes code identity only.
+`FROZEN_CANDIDATE != DEVICE_VERIFIED != PRODUCTION_VERIFIED`.
+
+External deployment remains blocked until explicit HUMAN APPROVAL / user direction.
+No Netlify/hosting call was used during P1–P5/P3c implementation or closure.
