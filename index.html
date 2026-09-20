@@ -239,6 +239,23 @@
   <button data-sheet-sound="OFF"><span>OFF</span><b>무음</b><small>BGM 없이 집중</small><i>—</i></button>
 </div><button class="btn dark" data-close-sound>선택 완료</button></div></div>
   <div class="sheet" id="pauseSheet" role="dialog" aria-modal="true" aria-label="멈춤 이유 선택" hidden><div class="sheetBackdrop" data-close-pause></div><div class="sheetCard safe"><div class="sheetHandle"></div><div class="sheetHeader"><div><span class="kicker">PAUSE REASON</span><h2>잠깐! 작전 정지</h2></div><button data-close-pause aria-label="닫기">×</button></div><p class="muted">멈춘 이유를 골라도 되고, 바로 다시 시작해도 돼요.</p><div class="pauseReasonGrid"><button data-pause-reason="화장실">화장실</button><button data-pause-reason="물/간식">물/간식</button><button data-pause-reason="도움 필요">도움 필요</button><button data-pause-reason="준비물 찾기">준비물 찾기</button><button data-pause-reason="컨디션 조절">컨디션 조절</button><button data-pause-reason="기타">기타</button></div><button class="btn dark" id="resumeFromSheetBtn">다시, 작전 속으로</button></div></div>
+  <div class="modal" id="outcomeModal" role="dialog" aria-modal="true" aria-labelledby="outcomeTitle" hidden>
+    <div class="modalBackdrop" data-close-outcome></div>
+    <div class="modalCard">
+      <span class="kicker">MISSION RESULT</span>
+      <h2 id="outcomeTitle">오늘 작전은 어떻게 됐나요?</h2>
+      <p>가장 가까운 상태 하나만 골라주세요. 남은 일은 Planner가 이어서 정리해요.</p>
+      <div class="stackActions">
+        <button class="btn dark" data-outcome-state="COMPLETED">다 했어요</button>
+        <button class="btn outline" data-outcome-state="PARTIAL">일부 남았어요</button>
+        <button class="btn outline" data-outcome-state="DEFERRED">다음에 할래요</button>
+        <button class="btn outline" data-outcome-state="WAITING_FOR_PARENT">부모님 도움이 필요해요</button>
+        <button class="btn outline" data-outcome-state="BLOCKED">막혀서 못 했어요</button>
+      </div>
+      <button class="linkBtn" data-close-outcome>계속하기</button>
+    </div>
+  </div>
+
   <div class="modal" id="recIntro" role="dialog" aria-modal="true" aria-labelledby="recIntroTitle" hidden><div class="modalBackdrop"></div><div class="modalCard"><div class="guidePortrait" id="recIntroGuide"></div><span class="kicker">SPECIAL EVENT</span><h2 id="recIntroTitle">영어 녹음 작전</h2><p>이번엔 영어 문장 녹음이네. 준비됐으면 바로 들어가자!</p><button class="btn dark" id="goRecordBtn">녹음하러 가기</button><button class="linkBtn" id="cancelRecordBtn">다음에 할래</button></div></div>
   <audio id="bgmPlayer" loop preload="auto"></audio><div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 </div>

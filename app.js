@@ -427,8 +427,8 @@ $$('[data-pause-reason]').forEach(b=>b.onclick=()=>{
 });
 $$('[data-close-pause]').forEach(b=>b.onclick=()=>$('#pauseSheet').hidden=true);
 $('#resumeFromSheetBtn').onclick=resumePausedSession;
-$('#completeBtn').onclick=()=>completeSession();
-function completeSession(){
+$('#completeBtn').onclick=()=>{$('#outcomeModal').hidden=false};
+function completeSession(outcomeState='COMPLETED'){
   const s=state.activeSession;if(!s)return;
   pauseBgm();
   if(s.pausedAt){s.issueMs+=Date.now()-s.pausedAt;s.pausedAt=null}
@@ -441,7 +441,7 @@ function completeSession(){
   for(const link of links){
     const outcome=window.ReadySetPlanner?.recordSessionOutcome?.({
       todo_id:link.todo_id,
-      ready_state:'COMPLETED',
+      ready_state:outcomeState,
       actual_ms:attributedMs,
       session_total_actual_ms:t.focus,
       session_task_count:taskCount,
@@ -452,9 +452,9 @@ function completeSession(){
     });
     if(outcome)plannerOutcomes.push(outcome);
   }
-  const completedTodoIds=new Set(plannerOutcomes.filter(x=>x?.ok&&x.state==='COMPLETED').map(x=>x.todo_id));
-  if(completedTodoIds.size)state.selectedTodoIds=state.selectedTodoIds.filter(id=>!completedTodoIds.has(id));
-  const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs,plannerOutcomes};
+  const endedTodoIds=new Set(plannerOutcomes.filter(x=>x?.ok).map(x=>x.todo_id));
+  if(endedTodoIds.size)state.selectedTodoIds=state.selectedTodoIds.filter(id=>!endedTodoIds.has(id));
+  const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs,outcomeState,plannerOutcomes};
   state.records.unshift(rec);state.records=state.records.slice(0,200);
   state.activeSession=null;state.lastResult=rec;save();nav('result');
 }
@@ -577,6 +577,13 @@ function storeAudio(blob,name,type){
   });
 }
 
+$('[data-outcome-state]').forEach(b=>b.onclick=()=>{
+  const stateValue=b.dataset.outcomeState;
+  $('#outcomeModal').hidden=true;
+  completeSession(stateValue);
+});
+$('[data-close-outcome]').forEach(b=>b.onclick=()=>{$('#outcomeModal').hidden=true});
+
 function resultSource(){return state.lastResult||state.records[0]||null}
 function resultSceneFor(r){
   const delta=r.deltaMs;
@@ -593,8 +600,14 @@ function renderResult(){
   const guest=$('#resultGuestPortrait');
   if(r.recordingDone&&r.guestType){guest.hidden=false;applyGuide(guest,r.guestType);guest.classList.add('guest')}else guest.hidden=true;
   const sc=resultSceneFor(r);
-  $('#resultHeadline').textContent=sc.headline;
-  $('#resultLine').textContent=sc.line;
+  const outcomeCopy={
+    PARTIAL:{headline:'여기까지 했어요.',line:'남은 건 Planner가 이어서 정리해둘게.'},
+    DEFERRED:{headline:'오늘은 여기까지.',line:'다음 탐험으로 넘겨둘게.'},
+    WAITING_FOR_PARENT:{headline:'도움이 필요해요.',line:'부모님 확인이 필요한 일로 표시했어요.'},
+    BLOCKED:{headline:'막힌 지점 발견.',line:'그냥 넘기지 않고 해결이 필요한 일로 남겼어요.'}
+  }[r.outcomeState]||sc;
+  $('#resultHeadline').textContent=outcomeCopy.headline;
+  $('#resultLine').textContent=outcomeCopy.line;
   $('#resultTasks').textContent=[...r.selected,...r.tasks].join(' · ');
   $('#resultTarget').textContent=fmt(r.targetMs);
   $('#resultFocus').textContent=fmt(r.focusMs);
