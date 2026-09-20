@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION='2026.09.20-fact-revision-v1';
+  const VERSION='2026.09.20-cross-revision-signal-v1';
   function processAssignment(assignmentId,input={}){
     if(!window.ReadyAssignments||!window.ReadyLearningMasterV01||!window.ReadySetPlanner)return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
     let state=window.ReadyAssignments.load(),fact=state.assignmentFacts[assignmentId];
@@ -24,7 +24,18 @@
       }
     }
     if(fact.analysis_state!=='INTERPRETED'){
-      window.ReadyLearningMasterV01.interpretConfirmed(assignmentId,{actor:'LEARNING_MASTER_RUNTIME'});
+      const subject=fact.book_subject||fact.subject||null;
+      const profile=window.ReadyLearningMasterV01.PROFILE?.[subject]||null;
+      const learningSignal=window.ReadySetPlanner.crossRevisionLearningSignal?.({
+        assignment_id:assignmentId,
+        subject,
+        current_revision:Number(fact.fact_revision)||1,
+        activity_types:profile?.activity_types||[]
+      })||null;
+      window.ReadyLearningMasterV01.interpretConfirmed(assignmentId,{
+        actor:'LEARNING_MASTER_RUNTIME',
+        learning_signal:learningSignal
+      });
       state=window.ReadyAssignments.load();fact=state.assignmentFacts[assignmentId];
     }
     const allocation=window.ReadySetPlanner.allocateLearningUnits({assignment_id:assignmentId,domain_state:state,start_date:input.start_date,candidate_dates:input.candidate_dates});
