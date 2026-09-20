@@ -806,7 +806,23 @@ async function renderCaptureReview(session){
   if(reanalyze)reanalyze.hidden=!drafts.length;
   if(!drafts.length){root.innerHTML='';return}
   const history=Array.isArray(session.analysis_history)?session.analysis_history:[];
-  root.innerHTML=(history.length?`<div class="adminListItem"><span><b>분석 이력</b><small>이전 분석 ${history.length}회 보존 · 현재 실행 #${session.analysis_result?.analysis_run_no||session.analysis_run_no||1}</small></span><strong>HISTORY</strong></div>`:'')+drafts.map((draft,index)=>{
+  const dispositions=Array.isArray(session.analysis_result?.capture_item_dispositions)?session.analysis_result.capture_item_dispositions:[];
+  const unresolved=dispositions.filter(x=>x.disposition==='UNRESOLVED');
+  const unresolvedHtml=unresolved.length?`<div class="captureReviewClosure">
+    <div class="adminSectionHead"><div><small>NO SILENT LOSS</small><h2>미해결 촬영 원본 ${unresolved.length}건</h2></div><span>Parent 처리 필요</span></div>
+    ${unresolved.map(row=>{
+      const sameGroupDrafts=drafts.map((d,i)=>({d,i})).filter(x=>x.d.group_key===row.group_key);
+      const firstDraft=sameGroupDrafts[0]?.d;
+      return `<div class="adminListItem" data-unresolved-capture="${escapeHtml(row.capture_item_id)}">
+        <span><b>${escapeHtml(captureDraftLabel(row.group_key))}</b><small>${escapeHtml(row.capture_kind)} · 분석 결과에 근거 연결이 없습니다.</small></span>
+        <span class="captureDispositionActions">
+          ${firstDraft?`<button type="button" class="miniAction" data-link-capture-item="${escapeHtml(row.capture_item_id)}" data-review-draft-id="${escapeHtml(firstDraft.review_draft_id)}">현재 초안에 연결</button>`:''}
+          <button type="button" class="miniAction" data-ignore-capture-item="${escapeHtml(row.capture_item_id)}">분석 제외</button>
+        </span>
+      </div>`;
+    }).join('')}
+  </div>`:'';
+  root.innerHTML=(history.length?`<div class="adminListItem"><span><b>분석 이력</b><small>이전 분석 ${history.length}회 보존 · 현재 실행 #${session.analysis_result?.analysis_run_no||session.analysis_run_no||1}</small></span><strong>HISTORY</strong></div>`:'')+unresolvedHtml+drafts.map((draft,index)=>{
     const warnings=captureDraftWarnings(draft);
     const detail=[
       draft.source_range?`범위 ${draft.source_range}`:'',
@@ -906,6 +922,26 @@ document.getElementById('captureKindSelect')?.addEventListener('change',async()=
   await window.ReadyCaptureV01?.setCaptureTarget?.($('#captureGroupSelect').value,$('#captureKindSelect').value);
 });
 document.addEventListener('click',async e=>{
+  const linkItem=e.target.closest('[data-link-capture-item]');
+  if(linkItem){
+    const result=await window.ReadyCaptureV01?.resolveCaptureItemDisposition?.(linkItem.dataset.linkCaptureItem,{
+      disposition:'LINKED_TO_REVIEW_DRAFT',
+      review_draft_id:linkItem.dataset.reviewDraftId
+    });
+    toast(result?.ok?'촬영 원본을 현재 검토 초안에 연결했어요.':'촬영 원본 연결을 완료하지 못했습니다.');
+    await renderCaptureIntake();
+    return;
+  }
+  const ignoreItem=e.target.closest('[data-ignore-capture-item]');
+  if(ignoreItem){
+    const result=await window.ReadyCaptureV01?.resolveCaptureItemDisposition?.(ignoreItem.dataset.ignoreCaptureItem,{
+      disposition:'IGNORED_WITH_REASON',
+      reason:'PARENT_MARKED_NOT_ASSIGNMENT_SOURCE'
+    });
+    toast(result?.ok?'숙제 FACT에 사용하지 않는 원본으로 기록했어요.':'분석 제외 처리를 완료하지 못했습니다.');
+    await renderCaptureIntake();
+    return;
+  }
   const apply=e.target.closest('[data-apply-capture-draft]');
   if(apply){
     const drafts=$('#captureReviewDrafts')?._drafts||[];
@@ -1008,6 +1044,13 @@ document.getElementById('saveTalentFactsBtn')?.addEventListener('click',async()=
     });
   }
   if(books.some(x=>!x.source_range)){toast('재능 6권의 숙제 범위를 모두 입력해 주세요.');return}
+  for(const subject of TALENT_BOOKS){
+    const closure=await window.ReadyCaptureV01?.reviewClosureForGroup?.('TALENT:'+subject);
+    if(closure&&closure.unresolved_count>0){
+      toast(`${subject} 촬영 원본 ${closure.unresolved_count}건을 먼저 연결하거나 분석 제외로 처리해 주세요.`);
+      return;
+    }
+  }
   const pkg=window.ReadyAssignments.upsertTalentPackage({actor:'PARENT',source_date:source,deadline_boundary:deadline,books,provenance:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}});
   let todoCount=0,held=0;
   for(const assignmentId of pkg.fact_ids){
@@ -1036,6 +1079,13 @@ document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=
   for(const groupKey of ['ENGLISH:WORKBOOK','ENGLISH:PRINT','ENGLISH:OTHER']){
     const p=await recordCaptureReview(groupKey,englishReviewedValue,'PARENT_REVIEWED');
     if(p)englishReviewRows.push(p);
+  }
+  for(const groupKey of ['ENGLISH:WORKBOOK','ENGLISH:PRINT','ENGLISH:OTHER']){
+    const closure=await window.ReadyCaptureV01?.reviewClosureForGroup?.(groupKey);
+    if(closure&&closure.unresolved_count>0){
+      toast(`영어 촬영 원본 ${closure.unresolved_count}건을 먼저 연결하거나 분석 제외로 처리해 주세요.`);
+      return;
+    }
   }
   const fact=window.ReadyAssignments.upsertEnglishAssignment({
     actor:'PARENT',workbook_ref_id:ref.workbook_ref_id,source_date:localDateKey(),source_range:range,

@@ -374,6 +374,55 @@
     };
   }
 
+  async function resolveCaptureItemDisposition(itemId,input={}){
+    const session=(await activeSession())||(await latestSession());
+    if(!session?.analysis_result)return {ok:false,reason:'NO_ANALYSIS_RESULT'};
+    const dispositions=clone(session.analysis_result.capture_item_dispositions||[]);
+    const idx=dispositions.findIndex(x=>x.capture_item_id===itemId);
+    if(idx<0)return {ok:false,reason:'CAPTURE_ITEM_DISPOSITION_NOT_FOUND'};
+    const disposition=clean(input.disposition);
+    if(!['LINKED_TO_REVIEW_DRAFT','IGNORED_WITH_REASON'].includes(disposition)){
+      return {ok:false,reason:'INVALID_DISPOSITION'};
+    }
+    const row={...dispositions[idx]};
+    row.disposition=disposition;
+    row.reason=disposition==='IGNORED_WITH_REASON'
+      ?(clean(input.reason)||'PARENT_MARKED_NOT_ASSIGNMENT_SOURCE')
+      :null;
+    row.review_draft_id=clean(input.review_draft_id)||row.review_draft_id||null;
+    row.resolved_by='PARENT';
+    row.resolved_at=now();
+    dispositions[idx]=row;
+
+    let drafts=clone(session.analysis_result.drafts||[]);
+    if(disposition==='LINKED_TO_REVIEW_DRAFT'){
+      const targetId=row.review_draft_id;
+      const target=drafts.find(d=>d.review_draft_id===targetId);
+      if(!target)return {ok:false,reason:'REVIEW_DRAFT_REQUIRED'};
+      target.evidence_item_ids=Array.isArray(target.evidence_item_ids)?target.evidence_item_ids:[];
+      if(!target.evidence_item_ids.includes(itemId))target.evidence_item_ids.push(itemId);
+      target.review_events=Array.isArray(target.review_events)?target.review_events:[];
+      target.review_events.push({event:'CAPTURE_ITEM_LINKED',actor:'PARENT',at:now(),capture_item_id:itemId});
+    }
+
+    const next={...session,analysis_result:{...session.analysis_result,capture_item_dispositions:dispositions,drafts},updated_at:now()};
+    await put(SESSION_STORE,next);
+    return {ok:true,disposition:clone(row),session:clone(next)};
+  }
+
+  async function reviewClosureForGroup(groupKey){
+    const session=(await activeSession())||(await latestSession());
+    const rows=clone(session?.analysis_result?.capture_item_dispositions||[]).filter(x=>x.group_key===groupKey);
+    const unresolved=rows.filter(x=>x.disposition==='UNRESOLVED');
+    return {
+      group_key:groupKey,
+      total:rows.length,
+      unresolved_count:unresolved.length,
+      closed:rows.length===0||unresolved.length===0,
+      unresolved
+    };
+  }
+
   async function groupSummaryForSession(sessionId){
     const items=await listItems(sessionId);
     const map=new Map();
@@ -417,6 +466,8 @@
     groupSummary,
     requestAnalysis,
     updateReviewDraft,
-    reviewProvenanceForGroup
+    reviewProvenanceForGroup,
+    resolveCaptureItemDisposition,
+    reviewClosureForGroup
   });
 })();
