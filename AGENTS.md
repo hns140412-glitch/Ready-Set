@@ -51,3 +51,18 @@ Report states separately:
 `DECIDED / CODED / CI_VERIFIED / RUNTIME_VERIFIED / DEVICE_VERIFIED / PRODUCTION_VERIFIED`.
 
 Do not ask the user to perform routine debugging or QA while system-side evidence/recovery remains available.
+
+
+## Branch-first device validation / hosting budget — HARD LOCK
+
+For Ready & Set implementation and QA:
+- Development and verification SHALL stay on a non-main branch until bounded CI + Runtime checks pass.
+- Netlify production/main deployment SHALL NOT be used as a routine verification mechanism.
+- Branch CI / Playwright Runtime verification is the default verification path.
+- Hosting usage must be treated as a finite operational resource.
+- Netlify deploy/preview/site creation SHALL NOT be triggered merely to inspect an implementation that can be validated in GitHub Actions.
+- Device verification is a separate final gate after branch verification is closed.
+- A physical-device test may use one deliberate deployment only after the exact candidate SHA is selected.
+- Any temporary hosting site or preview environment created for QA must not be treated as canonical production.
+- `CI_VERIFIED / RUNTIME_VERIFIED != DEVICE_VERIFIED != PRODUCTION_VERIFIED`.
+- Do not use the user as routine QA/debugger; prepare deterministic seed data and pass/fail checks before requesting device execution.
