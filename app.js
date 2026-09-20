@@ -1067,15 +1067,20 @@ document.getElementById('saveTalentFactsBtn')?.addEventListener('click',async()=
       source_date:source,
       deadline_boundary:deadline,
       source_range:book.source_range,
-      teacher_instruction:book.teacher_instruction,
-      artifact_ids:(book.artifact_refs||[]).map(x=>x.artifact_id),
-      answer_ids:(book.answer_reference_ids||[]).map(x=>x.artifact_id)
+      teacher_instruction:book.teacher_instruction
     });
   }
-  const linkedSubjects=TALENT_BOOKS.filter(subject=>talentLinks[subject]?.assignment_id);
-  if(linkedSubjects.length===TALENT_BOOKS.length&&linkedSubjects.every(subject=>talentLinks[subject]?.payload_signature===talentSignatures[subject])){
-    toast('같은 촬영 세션의 재능 FACT가 이미 저장·확정되어 있어 중복 생성하지 않았어요.');
-    return;
+  const activeLinkedSubjects=TALENT_BOOKS.filter(subject=>talentLinks[subject]?.assignment_id);
+  const closedTalentLinks={};
+  if(activeLinkedSubjects.length===0){
+    for(const subject of TALENT_BOOKS){
+      closedTalentLinks[subject]=await window.ReadyCaptureV01?.lastClosedFactLinkForGroup?.('TALENT:'+subject);
+    }
+    const closedSubjects=TALENT_BOOKS.filter(subject=>closedTalentLinks[subject]?.assignment_id);
+    if(closedSubjects.length===TALENT_BOOKS.length&&closedSubjects.every(subject=>closedTalentLinks[subject]?.payload_signature===talentSignatures[subject])){
+      toast('같은 재능 FACT가 이미 저장·확정되어 있어 중복 생성하지 않았어요.');
+      return;
+    }
   }
   const existingPackageId=Object.values(talentLinks).map(x=>x?.package_id).find(Boolean)||undefined;
   const pkg=window.ReadyAssignments.upsertTalentPackage({
@@ -1113,6 +1118,7 @@ document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=
   );
   const existingEnglishLink=existingEnglishLinks.find(x=>x?.assignment_id||x?.workbook_ref_id)||null;
   const englishSignature=stableFactSignature({
+    source_date:localDateKey(),
     workbook_name:name,
     source_range:range,
     next_academy:$('#englishNextAcademy').value,
@@ -1125,10 +1131,16 @@ document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=
     },
     teacher_instruction:$('#englishInstruction').value.trim()
   });
-  const linkedEnglish=existingEnglishLinks.filter(Boolean);
-  if(linkedEnglish.length&&linkedEnglish.every(x=>x.assignment_id===existingEnglishLink?.assignment_id&&x.payload_signature===englishSignature)){
-    toast('같은 촬영 세션의 영어 FACT가 이미 저장·확정되어 있어 중복 생성하지 않았어요.');
-    return;
+  const activeEnglishLinks=existingEnglishLinks.filter(x=>x?.assignment_id||x?.workbook_ref_id);
+  if(!activeEnglishLinks.length){
+    const closedEnglishLinks=await Promise.all(
+      englishGroupKeys.map(groupKey=>window.ReadyCaptureV01?.lastClosedFactLinkForGroup?.(groupKey))
+    );
+    const linkedClosed=closedEnglishLinks.filter(x=>x?.assignment_id);
+    if(linkedClosed.length&&linkedClosed.every(x=>x.assignment_id===linkedClosed[0].assignment_id&&x.payload_signature===englishSignature)){
+      toast('같은 영어 FACT가 이미 저장·확정되어 있어 중복 생성하지 않았어요.');
+      return;
+    }
   }
   const ref=window.ReadyAssignments.upsertWorkbookRef({
     workbook_ref_id:existingEnglishLink?.workbook_ref_id||undefined,
