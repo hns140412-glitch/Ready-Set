@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.4.0';
+  const VERSION='0.5.0';
   const referenceApi=()=>{
     if(typeof globalThis!=='undefined'&&globalThis.ReadyLearningReferenceV01)return globalThis.ReadyLearningReferenceV01;
     if(typeof require==='function'){try{return require('./ready-learning-reference-v01.js')}catch{}}
@@ -213,9 +213,11 @@
     return {raw:text,kind:'UNSTRUCTURED',start:null,end:null,count:null,splittable:false};
   }
 
-  function splitRange(raw,profile){
+  function splitRange(raw,profile,options={}){
     const desc=rangeDescriptor(raw);
-    const policy=profile.split_policy||{kind:'NONE'};
+    const basePolicy=profile.split_policy||{kind:'NONE'};
+    const policy={...basePolicy};
+    if(Number.isFinite(options.max_span)&&options.max_span>0)policy.max_span=Math.max(1,Math.floor(options.max_span));
     if(policy.kind!=='ITEM'||!desc.splittable||!Number.isFinite(policy.max_span)||policy.max_span<=0){
       return [{source_range:clean(raw)||null,range_descriptor:desc}];
     }
@@ -229,6 +231,39 @@
     }
     return chunks;
   }
+
+  function adaptiveReviewPolicy(analysis,profile){
+    const signal=analysis?.escalation_review_signal;
+    if(!signal||signal.authority!=='ESCALATION_ADVISORY_ONLY')return null;
+    const states=(signal.states||[]).map(clean).filter(Boolean);
+    const repeatedFriction=states.filter(x=>['PARTIAL','DEFERRED','BLOCKED','WAITING_FOR_PARENT'].includes(x)).length;
+    const helpBlocked=states.some(x=>['BLOCKED','WAITING_FOR_PARENT'].includes(x));
+    const depth=Math.max(0,Number(signal.carry_over_depth)||0);
+    const baseSpan=Number(profile?.split_policy?.max_span)||null;
+    return {
+      authority:'ADAPTIVE_REVIEW_ONLY',
+      reduce_unit_span:!!(baseSpan&&repeatedFriction>=2&&depth>=3),
+      max_span:baseSpan?Math.max(1,Math.ceil(baseSpan/2)):null,
+      add_checkpoint:repeatedFriction>=2,
+      recovery_floor:(depth>=4||repeatedFriction>=3)?'HIGH':repeatedFriction>=2?'MEDIUM':null,
+      parent_help_floor:helpBlocked?'HIGH':repeatedFriction>=3?'MEDIUM':null,
+      evidence:{repeated_friction_count:repeatedFriction,carry_over_depth:depth,states:[...states]}
+    };
+  }
+
+  function reviewAdjustedSequence(sequence=[],policy){
+    const out=[...(sequence||[])];
+    if(!policy?.add_checkpoint||!out.length)return out;
+    if(out.includes('SHORT_CHECKPOINT'))return out;
+    const at=Math.max(1,out.length-1);
+    out.splice(at,0,'SHORT_CHECKPOINT');
+    return out;
+  }
+
+  function recoveryRank(v){return ({LOW:1,MEDIUM:2,HIGH:3})[clean(v)]||0}
+  function helpRank(v){return ({LOW:1,UNRESOLVED:1,MEDIUM:2,HIGH:3})[clean(v)]||0}
+  function maxRecovery(a,b){return recoveryRank(b)>recoveryRank(a)?b:a}
+  function maxHelp(a,b){return helpRank(b)>helpRank(a)?b:a}
 
   function difficulty(profile,instruction,rangeDesc){
     const text=clean(instruction);
@@ -250,6 +285,7 @@
     const subjectKey=fact.book_subject||fact.subject;
     const profile=(kind==='WORKBOOK_RANGE'&&PROFILE[subjectKey])?PROFILE[subjectKey]:(PROFILE[kind]||PROFILE[subjectKey]||PROFILE.WORKBOOK_RANGE);
     const desc=extra.range_descriptor||rangeDescriptor(extra.source_range??fact.source_range);
+    const reviewPolicy=adaptiveReviewPolicy(analysis,profile);
     const unresolved=[...(extra.unresolved_flags||[])];
     if(!clean(fact.teacher_instruction)&&!extra.concept_skill_target)unresolved.push('CONCEPT_TARGET_INFERRED_FROM_SUBJECT_PROFILE');
     if(desc.kind==='AMBIGUOUS_NUMERIC_RANGE')unresolved.push('RANGE_SEMANTICS_AMBIGUOUS_NOT_SPLIT');
@@ -265,16 +301,16 @@
       source_range:extra.source_range??fact.source_range??null,
       range_descriptor:clone(desc),
       activity_types:clone(extra.activity_types||profile.activity_types),
-      activity_sequence:clone(extra.activity_sequence||profile.activity_sequence||[]),
+      activity_sequence:clone(reviewAdjustedSequence(extra.activity_sequence||profile.activity_sequence||[],reviewPolicy)),
       cognitive_load_profile:clone(extra.cognitive_load_profile||profile.cognitive_load),
       activity_load:{
         score:extra.activity_load_score??profile.activity_load_score??3,
-        recovery_need:extra.recovery_need||profile.recovery_need||'MEDIUM',
+        recovery_need:maxRecovery(extra.recovery_need||profile.recovery_need||'MEDIUM',reviewPolicy?.recovery_floor||null),
         difficulty:extra.difficulty??difficulty(profile,fact.teacher_instruction,desc)
       },
       divisible_boundary:extra.divisible_boundary||profile.default_boundary,
       prerequisite:extra.prerequisite||null,
-      parent_help_dependency:extra.parent_help_dependency||profile.parent_help_dependency||'UNRESOLVED',
+      parent_help_dependency:maxHelp(extra.parent_help_dependency||profile.parent_help_dependency||'UNRESOLVED',reviewPolicy?.parent_help_floor||null),
       review_policy:extra.review_policy||(
         (profile.activity_types||[]).includes('ERROR_CORRECTION')?'ERROR_DRIVEN':
         (profile.activity_types||[]).includes('SELF_CHECK')?'SELF_CHECK_AFTER_EXECUTION':'RESULT_DEPENDENT'
@@ -285,6 +321,8 @@
         assignment_id:fact.assignment_id,
         source_claim_ids:(fact.claims||[]).filter(x=>x.status!=='SUPERSEDED').map(x=>x.claim_id),
         cross_revision_learning_signal:analysis.cross_revision_learning_signal?clone(analysis.cross_revision_learning_signal):null,
+        escalation_review_signal:analysis.escalation_review_signal?clone(analysis.escalation_review_signal):null,
+        adaptive_review_policy:reviewPolicy?clone(reviewPolicy):null,
         learning_reference:(()=>{
           const ref=referenceApi()?.resolve?.(subjectKey,{
             workbook_name:fact.workbook_name||fact.workbook_ref_id||null,
@@ -310,7 +348,8 @@
 
   function talentUnits(fact,analysis){
     const profile=PROFILE[fact.book_subject]||PROFILE.WORKBOOK_RANGE;
-    const chunks=splitRange(fact.source_range,profile);
+    const reviewPolicy=adaptiveReviewPolicy(analysis,profile);
+    const chunks=splitRange(fact.source_range,profile,{max_span:reviewPolicy?.reduce_unit_span?reviewPolicy.max_span:null});
     return chunks.map((chunk,index)=>unitBase(fact,analysis,fact.book_subject,index,{
       source_range:chunk.source_range,
       range_descriptor:chunk.range_descriptor,
@@ -323,7 +362,8 @@
     const out=[];let n=0;
     if(clean(fact.source_range)){
       const profile=PROFILE.WORKBOOK_RANGE;
-      for(const chunk of splitRange(fact.source_range,profile)){
+      const reviewPolicy=adaptiveReviewPolicy(analysis,profile);
+      for(const chunk of splitRange(fact.source_range,profile,{max_span:reviewPolicy?.reduce_unit_span?reviewPolicy.max_span:null})){
         out.push(unitBase(fact,analysis,'WORKBOOK_RANGE',n++,{
           source_range:chunk.source_range,
           range_descriptor:chunk.range_descriptor,
@@ -376,6 +416,7 @@
     analysis.minutes_role='OBSERVATION_ONLY';
     analysis.load_model='SUBJECT_ACTIVITY_DIFFICULTY_RECOVERY';
     analysis.subject_profile=fact.book_subject||fact.subject||null;
+    analysis.adaptive_review_policy=adaptiveReviewPolicy(analysis,PROFILE[analysis.subject_profile]||PROFILE.WORKBOOK_RANGE);
     const ref=referenceApi()?.resolve?.(analysis.subject_profile,{
       workbook_name:fact.workbook_name||fact.workbook_ref_id||null,
       title:fact.title||null,
