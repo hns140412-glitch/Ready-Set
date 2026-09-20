@@ -648,10 +648,11 @@ function renderResult(){
 }
 function renderHistory(){
   const root=$('#historyList');root.innerHTML='';
-  if(!state.records.length){root.innerHTML='<div class="historyItem"><b>아직 기록이 없어요.</b><p>첫 타임어택을 완료하면 여기에 쌓입니다.</p></div>';return}
+  if(!state.records.length){root.innerHTML='<div class="historyItem"><b>아직 기록이 없어요.</b><p>첫 탐험을 마치면 여기에 쌓입니다.</p></div>';return}
   state.records.forEach(r=>{
     const x=document.createElement('article');x.className='historyItem';
-    x.innerHTML=`<header><b>${new Date(r.endAt).toLocaleDateString('ko-KR')}</b><small>${fmt(r.focusMs)} / ${fmt(r.targetMs)}</small></header><p>${escapeHtml([...r.selected,...r.tasks].join(' · '))}</p>`;
+    const profile=resultOutcomeProfile(r);
+    x.innerHTML=`<header><b>${new Date(r.endAt).toLocaleDateString('ko-KR')}</b><small>${escapeHtml(profile.historyLabel)} · ${fmt(r.focusMs)} / ${fmt(r.targetMs)}</small></header><p>${escapeHtml([...r.selected,...r.tasks].join(' · '))}</p>`;
     root.appendChild(x);
   });
 }
