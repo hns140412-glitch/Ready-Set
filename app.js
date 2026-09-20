@@ -752,6 +752,75 @@ $('#saveProfileBtn').onclick=()=>{
 };
 
 
+
+function renderAuthStatus(){
+  const session=familySession();
+  const badge=$('#authStateBadge'),text=$('#authStatusText');
+  const loginControls=$('#authLoginControls'),loggedInControls=$('#authLoggedInControls'),link=$('#familyLinkChildSection');
+  if(badge)badge.textContent=session.authenticated?(session.role==='PARENT'?'보호자':'학생'):'로컬 모드';
+  if(text){
+    text.textContent=session.authenticated
+      ? `${session.role==='PARENT'?'PARENT':'CHILD'} 계정으로 로그인됨 · 가족 ${session.family_id||'-'}`
+      : '로그인하지 않아도 이 기기에서 CHILD 로컬 모드로 사용할 수 있습니다.';
+  }
+  if(loginControls)loginControls.hidden=!!session.authenticated;
+  if(loggedInControls)loggedInControls.hidden=!session.authenticated;
+  if(link)link.hidden=!(session.authenticated&&session.role==='PARENT');
+}
+window.addEventListener('readyset-family-session',()=>{
+  renderAuthStatus();
+  renderPlanner();
+  renderSyncStatus().catch(()=>{});
+});
+
+document.getElementById('authLoginBtn')?.addEventListener('click',async()=>{
+  const email=$('#authEmailInput')?.value.trim(),password=$('#authPasswordInput')?.value||'';
+  if(!email||!password){toast('이메일과 비밀번호를 확인해 주세요.');return;}
+  const result=await window.ReadyFamilySession?.login?.({email,password});
+  if(result?.ok){
+    toast('가족 계정으로 로그인했어요.');
+    renderAuthStatus();renderPlanner();await renderSyncStatus();
+  }else{
+    const msg=result?.reason==='FAMILY_MEMBERSHIP_REQUIRED'
+      ? '아직 가족 연결이 완료되지 않은 계정입니다.'
+      : result?.reason==='IDENTITY_ROLE_INVALID'
+        ? '계정 역할 설정을 확인해 주세요.'
+        : '로그인 정보를 확인해 주세요.';
+    toast(msg);
+  }
+});
+
+document.getElementById('authSignupBtn')?.addEventListener('click',async()=>{
+  const name=$('#authNameInput')?.value.trim(),email=$('#authEmailInput')?.value.trim(),password=$('#authPasswordInput')?.value||'';
+  if(!email||password.length<8){toast('이메일과 8자 이상 비밀번호를 확인해 주세요.');return;}
+  const result=await window.ReadyFamilySession?.signup?.({name,email,password});
+  toast(result?.ok?'가입 확인 메일을 확인해 주세요. 가입 후 기본 역할은 CHILD입니다.':'계정 생성에 실패했습니다.');
+});
+
+document.getElementById('authLogoutBtn')?.addEventListener('click',async()=>{
+  await window.ReadyFamilySession?.logout?.();
+  toast('로그아웃했습니다. 로컬 CHILD 모드로 전환합니다.');
+  renderAuthStatus();renderPlanner();await renderSyncStatus();
+});
+
+document.getElementById('familyLinkChildBtn')?.addEventListener('click',async()=>{
+  if(!requireParentUi())return;
+  const email=$('#familyChildEmailInput')?.value.trim();
+  if(!email){toast('연결할 CHILD 이메일을 입력해 주세요.');return;}
+  const result=await window.ReadyFamilySession?.linkChild?.(email);
+  if(result?.ok){
+    toast('CHILD 계정을 가족에 연결했습니다.');
+    if($('#familyChildEmailInput'))$('#familyChildEmailInput').value='';
+  }else{
+    const message=result?.reason==='CHILD_ACCOUNT_NOT_FOUND'
+      ? '먼저 CHILD 계정을 가입·확인한 뒤 연결해 주세요.'
+      : result?.reason==='TARGET_ALREADY_IN_OTHER_FAMILY'
+        ? '이미 다른 가족에 연결된 계정입니다.'
+        : 'CHILD 계정을 연결하지 못했습니다.';
+    toast(message);
+  }
+});
+
 async function renderSyncStatus(){
   const adapter=window.ReadySetSyncAdapter;
   const local=window.ReadySetLocalFirst;
@@ -798,7 +867,8 @@ function renderSettings(){
   $$('[data-guide-type]').forEach(b=>b.classList.toggle('on',b.dataset.guideType===state.guide.type));
   $$('[data-guide-voice]').forEach(b=>b.classList.toggle('on',b.dataset.guideVoice===state.guide.voice));
   renderNameSuggestions(false);
-  $$('[data-sound]').forEach(b=>b.classList.toggle('on',b.dataset.sound===state.sound));
+  document.querySelectorAll('[data-sound]').forEach(b=>b.classList.toggle('on',b.dataset.sound===state.sound));
+  renderAuthStatus();
   renderSyncStatus().catch(()=>{});
 }
 $('#guideNameInput').onchange=e=>{

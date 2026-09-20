@@ -1,9 +1,0 @@
-[[redirects]]
-  from = "/api/ready-sync/health"
-  to = "/.netlify/functions/ready-sync/health"
-  status = 200
-
-[[redirects]]
-  from = "/api/ready-sync/events"
-  to = "/.netlify/functions/ready-sync/events"
-  status = 200

@@ -1,6 +1,7 @@
 const { test, expect } = require('@playwright/test');
+const fs=require('fs');
 const { createSyncService } = require('../netlify/functions/ready-sync-core.js');
-const { handler } = require('../netlify/functions/ready-sync.js');
+const familyCore=require('../netlify/functions/ready-family-auth-core.js');
 
 function memoryStore(){
   const m=new Map();
@@ -12,7 +13,7 @@ function memoryStore(){
 }
 
 test('remote sync core: health identifies persistent remote contract', async ()=>{
-  const service=createSyncService(memoryStore());
+  const service=createSyncService(memoryStore(),{namespace:'family_a'});
   await expect(service.health()).resolves.toMatchObject({
     ok:true,
     service:'ready-set-sync',
@@ -21,16 +22,10 @@ test('remote sync core: health identifies persistent remote contract', async ()=
   });
 });
 
-test('remote sync core: same idempotency key + digest is accepted once', async ()=>{
+test('remote sync core: same family + idempotency key + digest is accepted once', async ()=>{
   const store=memoryStore();
-  const service=createSyncService(store);
-  const event={
-    event_id:'evt_1',
-    idempotency_key:'idem_1',
-    scope:'planner',
-    digest:'digest-a',
-    payload:'{"x":1}'
-  };
+  const service=createSyncService(store,{namespace:'family_a'});
+  const event={event_id:'evt_1',idempotency_key:'idem_1',scope:'planner',digest:'digest-a',payload:'{"x":1}'};
   const first=await service.putEvent(event);
   const second=await service.putEvent(event);
   expect(first.status).toBe(200);
@@ -38,71 +33,74 @@ test('remote sync core: same idempotency key + digest is accepted once', async (
   expect(second.status).toBe(200);
   expect(second.body.idempotent).toBe(true);
   expect(store.snapshot().size).toBe(1);
+  expect([...store.snapshot().keys()][0]).toContain('families/family_a/events/');
 });
 
-test('remote sync core: conflicting payload returns explicit 409', async ()=>{
-  const service=createSyncService(memoryStore());
-  await service.putEvent({
-    event_id:'evt_2',
-    idempotency_key:'idem_2',
-    scope:'assignments',
-    digest:'digest-a',
-    payload:'{"version":"remote"}'
-  });
-  const conflict=await service.putEvent({
-    event_id:'evt_2',
-    idempotency_key:'idem_2',
-    scope:'assignments',
-    digest:'digest-b',
-    payload:'{"version":"local"}'
-  });
+test('remote sync core: same idempotency key is isolated across families', async ()=>{
+  const store=memoryStore();
+  const a=createSyncService(store,{namespace:'family_a'});
+  const b=createSyncService(store,{namespace:'family_b'});
+  const first=await a.putEvent({event_id:'evt_a',idempotency_key:'shared',scope:'planner',digest:'a',payload:'{"family":"a"}'});
+  const second=await b.putEvent({event_id:'evt_b',idempotency_key:'shared',scope:'planner',digest:'b',payload:'{"family":"b"}'});
+  expect(first.status).toBe(200);
+  expect(second.status).toBe(200);
+  expect(store.snapshot().size).toBe(2);
+});
+
+test('remote sync core: conflicting payload returns explicit 409 inside one family', async ()=>{
+  const service=createSyncService(memoryStore(),{namespace:'family_a'});
+  await service.putEvent({event_id:'evt_2',idempotency_key:'idem_2',scope:'assignments',digest:'digest-a',payload:'{"version":"remote"}'});
+  const conflict=await service.putEvent({event_id:'evt_2',idempotency_key:'idem_2',scope:'assignments',digest:'digest-b',payload:'{"version":"local"}'});
   expect(conflict.status).toBe(409);
   expect(conflict.body.reason).toBe('REMOTE_CONFLICT');
   expect(conflict.body.remote_payload).toBe('{"version":"remote"}');
 });
 
-test('remote sync endpoint: writes are fail-closed when auth is not configured', async ()=>{
-  const before=process.env.READY_SYNC_AUTH_TOKEN;
-  delete process.env.READY_SYNC_AUTH_TOKEN;
-  const res=await handler({
-    httpMethod:'POST',
-    path:'/api/ready-sync/events',
-    headers:{},
-    body:JSON.stringify({event_id:'evt_3',digest:'d3'})
-  });
-  expect(res.statusCode).toBe(503);
-  expect(JSON.parse(res.body).reason).toBe('AUTH_NOT_CONFIGURED');
-  if(before===undefined) delete process.env.READY_SYNC_AUTH_TOKEN;
-  else process.env.READY_SYNC_AUTH_TOKEN=before;
+test('Identity family mapping: Parent gets stable family namespace and Child requires membership', async ()=>{
+  const parent=familyCore.familySessionFromIdentityUser({id:'parent_1',email:'p@example.test',roles:['PARENT'],appMetadata:{roles:['PARENT']}});
+  expect(parent.ok).toBeTruthy();
+  expect(parent.session.role).toBe('PARENT');
+  expect(parent.session.family_id).toBe('family_parent_1');
+
+  const childMissing=familyCore.familySessionFromIdentityUser({id:'child_1',roles:['CHILD'],appMetadata:{roles:['CHILD']}});
+  expect(childMissing.ok).toBeFalsy();
+  expect(childMissing.reason).toBe('FAMILY_MEMBERSHIP_REQUIRED');
+
+  const child=familyCore.familySessionFromIdentityUser({id:'child_1',roles:['CHILD'],appMetadata:{roles:['CHILD'],family_id:'family_parent_1'}});
+  expect(child.ok).toBeTruthy();
+  expect(child.session.family_id).toBe('family_parent_1');
 });
 
-test('remote sync endpoint: wrong bearer token is rejected before remote store access', async ()=>{
-  const before=process.env.READY_SYNC_AUTH_TOKEN;
-  process.env.READY_SYNC_AUTH_TOKEN='server-secret';
-  const res=await handler({
-    httpMethod:'POST',
-    path:'/api/ready-sync/events',
-    headers:{authorization:'Bearer wrong-secret'},
-    body:JSON.stringify({event_id:'evt_4',digest:'d4'})
-  });
-  expect(res.statusCode).toBe(401);
-  expect(JSON.parse(res.body).reason).toBe('UNAUTHORIZED');
-  if(before===undefined) delete process.env.READY_SYNC_AUTH_TOKEN;
-  else process.env.READY_SYNC_AUTH_TOKEN=before;
+test('Identity family mapping: ambiguous roles and cross-family linking are rejected', async ()=>{
+  expect(familyCore.familySessionFromIdentityUser({id:'x',roles:['PARENT','CHILD'],appMetadata:{roles:['PARENT','CHILD']}}).reason).toBe('IDENTITY_ROLE_INVALID');
+  const parent={id:'parent_1',roles:['PARENT'],appMetadata:{roles:['PARENT']}};
+  const otherChild={id:'child_2',roles:['CHILD'],appMetadata:{roles:['CHILD'],family_id:'family_other'}};
+  expect(familyCore.canLinkChild(parent,otherChild).reason).toBe('TARGET_ALREADY_IN_OTHER_FAMILY');
 });
 
-test('remote sync endpoint: health is readable but reports auth readiness truthfully', async ()=>{
-  const before=process.env.READY_SYNC_AUTH_TOKEN;
-  delete process.env.READY_SYNC_AUTH_TOKEN;
-  const res=await handler({
-    httpMethod:'GET',
-    path:'/api/ready-sync/health',
-    headers:{}
+test('Netlify Identity server functions use modern Identity verification patterns', async ()=>{
+  const sync=fs.readFileSync('netlify/functions/ready-sync.mjs','utf8');
+  const login=fs.readFileSync('netlify/functions/auth-login.mjs','utf8');
+  const logout=fs.readFileSync('netlify/functions/auth-logout.mjs','utf8');
+  const session=fs.readFileSync('netlify/functions/auth-session.mjs','utf8');
+  expect(sync).toContain("getUser");
+  expect(sync).toContain("namespace:mapped.session.family_id");
+  expect(login).toContain("verifyRequestOrigin");
+  expect(logout).toContain("verifyRequestOrigin");
+  expect(session).toContain("getUser");
+  expect(sync).not.toContain("READY_SYNC_AUTH_TOKEN");
+});
+
+
+test('Identity signup event assigns CHILD by default and never self-elects PARENT', async ()=>{
+  const identity=await import('../netlify/functions/identity.mjs');
+  const result=identity.default.userSignup({
+    user:{id:'new_user',email:'new@example.test',appMetadata:{}}
   });
-  const body=JSON.parse(res.body);
-  expect(res.statusCode).toBe(200);
-  expect(body.ok).toBe(true);
-  expect(body.write_auth).toBe('NOT_CONFIGURED');
-  if(before===undefined) delete process.env.READY_SYNC_AUTH_TOKEN;
-  else process.env.READY_SYNC_AUTH_TOKEN=before;
+  expect(result.user.appMetadata.roles).toEqual(['CHILD']);
+
+  const existingParent=identity.default.userSignup({
+    user:{id:'parent_user',email:'parent@example.test',appMetadata:{roles:['PARENT']}}
+  });
+  expect(existingParent.user.appMetadata.roles).toEqual(['PARENT']);
 });

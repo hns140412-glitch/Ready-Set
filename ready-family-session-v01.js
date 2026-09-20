@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION='0.1.0';
+  const VERSION='0.2.0';
   const ROLES=new Set(['CHILD','PARENT']);
   let session={
     state:'ANONYMOUS_LOCAL',
@@ -10,7 +10,6 @@
     member_id:null,
     role:'CHILD',
     session_id:null,
-    access_token:null,
     issued_at:null,
     expires_at:null,
     source:'LOCAL_DEFAULT'
@@ -29,7 +28,6 @@
     const familyId=String(input.family_id||'').trim()||null;
     const memberId=String(input.member_id||'').trim()||null;
     const sessionId=String(input.session_id||'').trim()||null;
-    const token=String(input.access_token||'').trim()||null;
     const validRole=ROLES.has(role)?role:null;
     const candidate={
       state:authenticated?'AUTHENTICATED':'ANONYMOUS_LOCAL',
@@ -38,7 +36,6 @@
       member_id:memberId,
       role:validRole||'CHILD',
       session_id:sessionId,
-      access_token:token,
       issued_at:input.issued_at||null,
       expires_at:input.expires_at||null,
       source:String(input.source||'AUTH_BOOTSTRAP')
@@ -56,10 +53,54 @@
     return {ok:true,session:publicSession()};
   }
 
+  async function hydrate(){
+    try{
+      const res=await fetch('/api/auth/session',{method:'GET',headers:{Accept:'application/json'},cache:'no-store',credentials:'same-origin'});
+      const body=await res.json().catch(()=>({}));
+      if(!res.ok||!body?.session){clear();return {ok:false,reason:body?.reason||('AUTH_SESSION_HTTP_'+res.status),session:publicSession()};}
+      return applyBootstrap({...body.session,source:'NETLIFY_IDENTITY_SESSION'});
+    }catch(error){
+      return {ok:false,reason:String(error?.message||error),session:publicSession()};
+    }
+  }
+
+  async function postAuth(path,payload){
+    const res=await fetch(path,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      credentials:'same-origin',
+      body:JSON.stringify(payload||{})
+    });
+    const body=await res.json().catch(()=>({}));
+    if(!res.ok)return {ok:false,reason:body?.reason||('AUTH_HTTP_'+res.status),status:res.status};
+    return body;
+  }
+
+  async function login(input={}){
+    const result=await postAuth('/api/auth/login',{email:String(input.email||'').trim(),password:String(input.password||'')});
+    if(result.ok&&result.session)return applyBootstrap({...result.session,source:'NETLIFY_IDENTITY_LOGIN'});
+    return result;
+  }
+
+  async function signup(input={}){
+    return postAuth('/api/auth/signup',{email:String(input.email||'').trim(),password:String(input.password||''),name:String(input.name||'').trim()});
+  }
+
+  async function logout(){
+    const result=await postAuth('/api/auth/logout',{});
+    clear();
+    return result;
+  }
+
+  async function linkChild(email){
+    const result=await postAuth('/api/family/link-child',{email:String(email||'').trim()});
+    return result;
+  }
+
   function clear(){
     session={
       state:'ANONYMOUS_LOCAL',authenticated:false,family_id:null,member_id:null,role:'CHILD',
-      session_id:null,access_token:null,issued_at:null,expires_at:null,source:'LOCAL_DEFAULT'
+      session_id:null,issued_at:null,expires_at:null,source:'LOCAL_DEFAULT'
     };
     window.dispatchEvent(new CustomEvent('readyset-family-session',{detail:publicSession()}));
     return publicSession();
@@ -67,7 +108,6 @@
 
   function publicSession(){
     const s=clone(session);
-    delete s.access_token;
     return Object.freeze(s);
   }
   function current(){return publicSession();}
@@ -81,13 +121,9 @@
     if(want==='PARENT' && isParent()) return {ok:true,session:s};
     return {ok:false,reason:want==='PARENT'?'PARENT_AUTH_REQUIRED':'ROLE_NOT_ALLOWED',session:s};
   }
-  function authorizationHeader(){
-    if(!session.authenticated||!session.access_token||isExpired(session)) return null;
-    return 'Bearer '+session.access_token;
-  }
-
   const bootstrap=globalThis.__READY_AUTH_BOOTSTRAP__;
-  if(bootstrap&&typeof bootstrap==='object') applyBootstrap(bootstrap);
+  const bootstrapAllowed=typeof location!=='undefined'&&['127.0.0.1','localhost'].includes(location.hostname);
+  if(bootstrapAllowed&&bootstrap&&typeof bootstrap==='object') applyBootstrap(bootstrap);
 
   window.ReadyFamilySession=Object.freeze({
     version:VERSION,
@@ -96,7 +132,13 @@
     isParent,
     isChild,
     requireRole,
-    authorizationHeader,
+    hydrate,
+    login,
+    signup,
+    logout,
+    linkChild,
     clear
   });
+
+  if(!(bootstrapAllowed&&bootstrap&&typeof bootstrap==='object')) hydrate().catch(()=>{});
 })();
