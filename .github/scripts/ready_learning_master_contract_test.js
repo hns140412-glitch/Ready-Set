@@ -125,3 +125,47 @@ assert.strictEqual(subjectMaster.OFFICIAL_BASE.current_elementary_framework_noti
 assert.strictEqual(subjectMaster.OFFICIAL_BASE.subject_curriculum_notice,'MOE_NOTICE_2022_33');
 assert(standardMatcher.OFFICIAL_STANDARD_DATASET.source_refs.includes('NCEC_NOTICE_2026_1_ELEMENTARY_FRAMEWORK'));
 assert(standardMatcher.OFFICIAL_STANDARD_DATASET.source_refs.includes('MOE_NOTICE_2022_33_SUBJECT_CURRICULA'));
+
+const officialRegistry=require('../../ready-official-standard-registry-v01.js');
+
+assert.strictEqual(officialRegistry.DATASET.coverage_status,'PARTIAL_VERIFIED');
+assert.strictEqual(officialRegistry.findByCode('6수04-01').subject,'수학');
+assert.strictEqual(officialRegistry.findByCode('6과01-03').domain,'지구와 우주');
+assert.strictEqual(officialRegistry.findByCode('6영01-08').domain,'이해');
+
+const avgBound=standardMatcher.match('수학',{teacher_instruction:'평균의 의미를 알고 자료를 모아 평균을 구하고 해석'});
+assert.strictEqual(avgBound.status,'MATCHED_VERIFIED_STANDARD');
+assert.strictEqual(avgBound.official_standard_code,'6수04-01');
+assert.strictEqual(avgBound.standard_binding_status,'BOUND_VERIFIED_RECORD');
+
+const fractionStillUnbound=standardMatcher.match('수학',{teacher_instruction:'분수 계산을 풀고 틀린 문제 다시 확인'});
+assert.strictEqual(fractionStillUnbound.selected.domain,'수와 연산');
+assert.strictEqual(fractionStillUnbound.official_standard_code,null);
+assert.strictEqual(fractionStillUnbound.standard_binding_status,'UNBOUND_REQUIRES_VERIFIED_STANDARD_RECORD');
+
+const geologyBound=standardMatcher.match('과학',{teacher_instruction:'지층의 특징을 보고 형성 과정을 모형으로 표현'});
+assert.strictEqual(geologyBound.status,'MATCHED_VERIFIED_STANDARD');
+assert.strictEqual(geologyBound.official_standard_code,'6과01-01');
+
+const fossilBound=standardMatcher.match('과학',{teacher_instruction:'화석 생성 과정을 설명하고 과거 생물과 환경을 추리'});
+assert.strictEqual(fossilBound.official_standard_code,'6과01-03');
+
+const climateBound=standardMatcher.match('사회',{teacher_instruction:'우리나라 계절별 기후 특징과 기후변화 자연재해의 심각성을 탐구'});
+assert.strictEqual(climateBound.status,'MATCHED_VERIFIED_STANDARD');
+assert.strictEqual(climateBound.official_standard_code,'6사02-01');
+
+const englishMediaBound=standardMatcher.match('영어',{teacher_instruction:'다양한 매체 자료를 흥미와 자신감을 가지고 듣기 읽기'});
+assert.strictEqual(englishMediaBound.status,'MATCHED_VERIFIED_STANDARD');
+assert.strictEqual(englishMediaBound.official_standard_code,'6영01-08');
+
+const koreanRevisionBound=standardMatcher.match('국어',{teacher_instruction:'쓰기 과정을 점검 조정하고 통일성 있게 고쳐쓰기'});
+assert.strictEqual(koreanRevisionBound.status,'MATCHED_VERIFIED_STANDARD');
+assert.strictEqual(koreanRevisionBound.official_standard_code,'6국03-05');
+
+const boundScienceFact=learning.interpretFact({
+  assignment_id:'sci_bound_1',source_type:'SCHOOL_EVENT',subject:'과학',
+  confirmation_state:'FACT_CONFIRMED',source_range:'교과서 42~45쪽',
+  teacher_instruction:'지층의 특징을 보고 형성 과정을 모형으로 표현',claims:[]
+});
+assert.strictEqual(boundScienceFact.analysis.learning_reference.standard_match.official_standard_code,'6과01-01');
+assert.strictEqual(boundScienceFact.learning_units[0].analysis_provenance.learning_reference.standard_match.official_standard_code,'6과01-01');

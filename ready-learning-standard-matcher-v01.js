@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.2.0';
+  const VERSION='0.3.0';
   const OFFICIAL_STANDARD_DATASET={
     curriculum:'2022_REVISED_KOREA_NATIONAL_CURRICULUM',
     school_level:'ELEMENTARY',
@@ -45,7 +45,7 @@
       {domain:'운동과 에너지',concept:'힘·운동·빛·열·에너지',terms:['힘','운동','속력','빛','렌즈','전기','열','에너지','자석']},
       {domain:'물질',concept:'물질의 성질·변화',terms:['물질','용해','용액','기체','고체','액체','혼합','상태 변화','산성','염기성']},
       {domain:'생명',concept:'생물의 구조·기능·환경',terms:['생물','식물','동물','세포','기관','생태','먹이','번식','광합성']},
-      {domain:'지구와 우주',concept:'지구·대기·천체·지질',terms:['지구','우주','행성','달','별','태양','지층','화석','날씨','대기','계절']},
+      {domain:'지구와 우주',concept:'지구·대기·천체·지질',terms:['지구','우주','행성','달','별','태양','지층','화석','화석 생성','퇴적암','과거 생물과 환경','날씨','대기','계절']},
       {domain:'과학과 사회',concept:'과학 기술과 사회의 관계',terms:['과학 기술','환경 문제','지속가능','안전','사회 문제']}
     ],
     '영어':[
@@ -62,6 +62,12 @@
       {domain:'녹음 비교',concept:'연주 녹음·자기 비교',terms:['녹음','record','비교','다시 듣기']}
     ]
   };
+
+  function officialRegistryApi(){
+    if(typeof globalThis!=='undefined'&&globalThis.ReadyOfficialStandardRegistryV01)return globalThis.ReadyOfficialStandardRegistryV01;
+    if(typeof require==='function'){try{return require('./ready-official-standard-registry-v01.js')}catch{}}
+    return null;
+  }
 
   const clean=v=>String(v??'').trim();
   const normalize=v=>clean(v).toLowerCase().replace(/\s+/g,' ');
@@ -116,13 +122,32 @@
     }
     const selected=candidates[0];
     const confidence=top>=2?'HIGH':'MEDIUM';
+    if(key==='피아노'){
+      return {
+        ...base,
+        status:'MATCHED_DOMAIN_CANDIDATE',
+        confidence,
+        candidates,
+        selected,
+        unresolved:[]
+      };
+    }
+    const registry=officialRegistryApi();
+    const officialMatch=registry?.match?.(key,selected.domain,text)||null;
+    const hasVerifiedCode=officialMatch?.status==='VERIFIED_STANDARD_MATCH'&&officialMatch.selected?.code;
     return {
       ...base,
-      status:'MATCHED_DOMAIN_CANDIDATE',
+      status:hasVerifiedCode?'MATCHED_VERIFIED_STANDARD':'MATCHED_DOMAIN_CANDIDATE',
       confidence,
       candidates,
       selected,
-      unresolved:key==='피아노'?[]:['OFFICIAL_STANDARD_CODE_NOT_BOUND']
+      official_standard_code:hasVerifiedCode?officialMatch.selected.code:null,
+      standard_binding_status:hasVerifiedCode?'BOUND_VERIFIED_RECORD':'UNBOUND_REQUIRES_VERIFIED_STANDARD_RECORD',
+      official_standard_match:officialMatch,
+      unresolved:hasVerifiedCode?[]:[
+        ...(officialMatch?.unresolved||[]),
+        'OFFICIAL_STANDARD_CODE_NOT_BOUND'
+      ]
     };
   }
 
