@@ -379,19 +379,27 @@
       return renderWrapUp();
     }
     endActiveLap('SESSION_END', currentTask(c)?.state || 'PENDING');
-    if (window.ReadySetPlanner) {
-      for (const task of c.tasks) {
-        if (!task.planner_todo_id) continue;
-        const actualMs = (task.laps || []).reduce((sum, lap) => sum + (Number.isFinite(lap.elapsed_ms) ? lap.elapsed_ms : 0), 0);
-        window.ReadySetPlanner.recordSessionOutcome({
-          todo_id: task.planner_todo_id,
-          ready_state: task.state,
-          actual_ms: actualMs,
-          session_id: c.session_id,
-          task_id: task.task_id,
-          at: iso()
-        });
-      }
+    const taskOutcomes = [];
+    for (const task of c.tasks) {
+      const actualMs = (task.laps || []).reduce((sum, lap) => sum + (Number.isFinite(lap.elapsed_ms) ? lap.elapsed_ms : 0), 0);
+      const plannerOutcome = task.planner_todo_id && window.ReadySetPlanner
+        ? window.ReadySetPlanner.recordSessionOutcome({
+            todo_id: task.planner_todo_id,
+            ready_state: task.state,
+            actual_ms: actualMs,
+            session_id: c.session_id,
+            task_id: task.task_id,
+            at: iso()
+          })
+        : null;
+      taskOutcomes.push({
+        task_id: task.task_id,
+        planner_todo_id: task.planner_todo_id || null,
+        label: task.label,
+        state: task.state,
+        actual_ms: actualMs,
+        plannerOutcome
+      });
     }
     c.session_state = 'ENDED';
     c.ended_at = iso();
@@ -399,7 +407,11 @@
     emit('SESSION_ENDED', { task_states: c.tasks.map(t => ({ task_id:t.task_id, state:t.state })) });
     save();
     document.getElementById('readyRev07Wrap').hidden = true;
-    originalCompleteSession();
+    if (typeof completeSessionFromTaskOutcomes === 'function') {
+      completeSessionFromTaskOutcomes(taskOutcomes);
+    } else {
+      toast('세션 결과 기록기를 찾지 못했어요.');
+    }
   }
 
   function validateContract() {
@@ -419,7 +431,6 @@
     return { ok:Object.values(checks).every(Boolean), checks };
   }
 
-  const originalCompleteSession = completeSession;
   const originalStart = document.getElementById('startBtn')?.onclick;
   const originalNav = nav;
 

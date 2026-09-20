@@ -466,6 +466,28 @@ $$('[data-pause-reason]').forEach(b=>b.onclick=()=>{
 $$('[data-close-pause]').forEach(b=>b.onclick=()=>$('#pauseSheet').hidden=true);
 $('#resumeFromSheetBtn').onclick=resumePausedSession;
 $('#completeBtn').onclick=()=>{$('#outcomeModal').hidden=false};
+function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOutcomes=[]}={}){
+  const s=state.activeSession;if(!s)return null;
+  pauseBgm();
+  if(s.pausedAt){s.issueMs+=Date.now()-s.pausedAt;s.pausedAt=null}
+  s.endAt=Date.now();s.completed=true;
+  const t=sessionTimes();
+  const endedTodoIds=new Set((plannerOutcomes||[]).filter(x=>x?.ok).map(x=>x.todo_id));
+  if(endedTodoIds.size)state.selectedTodoIds=state.selectedTodoIds.filter(id=>!endedTodoIds.has(id));
+  const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs,outcomeState,plannerOutcomes,taskOutcomes};
+  state.records.unshift(rec);state.records=state.records.slice(0,200);
+  state.activeSession=null;state.lastResult=rec;save();nav('result');
+  return rec;
+}
+function completeSessionFromTaskOutcomes(taskOutcomes=[]){
+  const rows=Array.isArray(taskOutcomes)?taskOutcomes.filter(x=>x&&x.state):[];
+  if(!rows.length)return null;
+  const unique=[...new Set(rows.map(x=>x.state))];
+  const outcomeState=unique.length===1?unique[0]:'MIXED';
+  const plannerOutcomes=rows.map(x=>x.plannerOutcome).filter(Boolean);
+  return finishSessionRecord({outcomeState,plannerOutcomes,taskOutcomes:rows});
+}
+
 function completeSession(outcomeState='COMPLETED'){
   const s=state.activeSession;if(!s)return;
   pauseBgm();
@@ -490,11 +512,7 @@ function completeSession(outcomeState='COMPLETED'){
     });
     if(outcome)plannerOutcomes.push(outcome);
   }
-  const endedTodoIds=new Set(plannerOutcomes.filter(x=>x?.ok).map(x=>x.todo_id));
-  if(endedTodoIds.size)state.selectedTodoIds=state.selectedTodoIds.filter(id=>!endedTodoIds.has(id));
-  const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs,outcomeState,plannerOutcomes};
-  state.records.unshift(rec);state.records=state.records.slice(0,200);
-  state.activeSession=null;state.lastResult=rec;save();nav('result');
+  return finishSessionRecord({outcomeState,plannerOutcomes,taskOutcomes:[]});
 }
 
 $('#recBtn').onclick=()=>{
@@ -630,7 +648,8 @@ function resultOutcomeProfile(r={}){
     PARTIAL:{state,label:'일부 남음',historyLabel:'일부 남음',shareTitle:'오늘은 여기까지',shareText:'Ready & Set · 오늘은 여기까지 했어요.',headline:'여기까지 했어요.',line:'남은 건 Planner가 이어서 정리해둘게.',done:false},
     DEFERRED:{state,label:'다음에',historyLabel:'다음에 이어서',shareTitle:'다음 탐험으로 이어가요',shareText:'Ready & Set · 다음 탐험으로 이어가요.',headline:'오늘은 여기까지.',line:'다음 탐험으로 넘겨둘게.',done:false},
     WAITING_FOR_PARENT:{state,label:'부모 도움',historyLabel:'부모 도움 필요',shareTitle:'도움이 필요한 탐험',shareText:'Ready & Set · 도움이 필요한 지점을 남겼어요.',headline:'도움이 필요해요.',line:'부모님 확인이 필요한 일로 표시했어요.',done:false},
-    BLOCKED:{state,label:'막힘',historyLabel:'막힘',shareTitle:'막힌 지점을 찾았어요',shareText:'Ready & Set · 해결이 필요한 지점을 찾았어요.',headline:'막힌 지점 발견.',line:'그냥 넘기지 않고 해결이 필요한 일로 남겼어요.',done:false}
+    BLOCKED:{state,label:'막힘',historyLabel:'막힘',shareTitle:'막힌 지점을 찾았어요',shareText:'Ready & Set · 해결이 필요한 지점을 찾았어요.',headline:'막힌 지점 발견.',line:'그냥 넘기지 않고 해결이 필요한 일로 남겼어요.',done:false},
+    MIXED:{state,label:'과제별 결과',historyLabel:'과제별 결과',shareTitle:'오늘 탐험을 정리했어요',shareText:'Ready & Set · 오늘 탐험 결과를 과제별로 정리했어요.',headline:'오늘 탐험을 정리했어요.',line:'과제마다 끝난 상태를 그대로 기록했어요.',done:false}
   })[state]||{state:'COMPLETED',label:'완료',historyLabel:'작전 완료',shareTitle:'오늘의 탐험 완료',shareText:'Ready & Set · 오늘의 탐험 완료!',done:true};
 }
 function resultSceneFor(r){
