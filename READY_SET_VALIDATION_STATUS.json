@@ -227,5 +227,42 @@
     ],
     "hosting_called": false,
     "deployment_candidate_frozen": false
+  },
+  "family_capture_ocr_domain_sharing": {
+    "coded": true,
+    "ready_assignment_domain": "READY_ASSIGNMENT_FACT",
+    "hide_vocabulary_domain": "HIDE_VOCABULARY",
+    "ready_assignment_roles": [
+      "PARENT"
+    ],
+    "hide_vocabulary_roles": [
+      "PARENT",
+      "CHILD"
+    ],
+    "transport": "/api/capture/analyze",
+    "provider_client_location": "SERVER_ONLY",
+    "hide_direct_provider_client": false,
+    "evidence_link_required": true,
+    "assignment_draft_as_hide_rows_forbidden": true,
+    "mismatch_policy": "FAIL_CLOSED",
+    "hide_ci": {
+      "run_number": 132,
+      "result": "PASS"
+    },
+    "ready_integration_ci": {
+      "run_number": 171,
+      "result": "PASS"
+    },
+    "ready_worker_self_test": {
+      "run_number": 387,
+      "result": "PASS"
+    },
+    "ready_runtime_e2e": {
+      "run_number": 257,
+      "result": "RUNNING"
+    },
+    "device_verified": false,
+    "production_verified": false,
+    "hosting_called": false
   }
 }
