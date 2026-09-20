@@ -175,7 +175,7 @@ assert.strictEqual(officialRegistry.COVERAGE['영어'].verified_record_count,20)
 assert.strictEqual(officialRegistry.list('영어').length,20);
 assert.strictEqual(officialRegistry.findByCode('6영02-10').domain,'표현');
 assert.strictEqual(officialRegistry.findByCode('6영01-06').domain,'이해');
-assert.strictEqual(officialRegistry.COVERAGE['과학'].status,'PARTIAL_VERIFIED');
+assert.strictEqual(officialRegistry.COVERAGE['과학'].status,'VERIFIED_FULL_SUBJECT_COVERAGE');
 assert.strictEqual(officialRegistry.findByCode('6과05-03').domain,'과학과 사회');
 
 const englishWritingBound=standardMatcher.match('영어',{teacher_instruction:'예시문을 참고하여 목적에 맞는 간단한 글쓰기'});
@@ -262,3 +262,12 @@ assert.strictEqual(separationOfPowersBound.official_standard_code,'6사08-02');
 
 const worldClimateBound=standardMatcher.match('사회',{teacher_instruction:'세계의 다양한 기후와 기후 환경이 인간생활에 미치는 관계를 탐구'});
 assert.strictEqual(worldClimateBound.official_standard_code,'6사10-02');
+
+assert.strictEqual(officialRegistry.RECORDS.length,176);
+assert.deepStrictEqual({
+  korean:officialRegistry.list('국어').length,
+  math:officialRegistry.list('수학').length,
+  social:officialRegistry.list('사회').length,
+  science:officialRegistry.list('과학').length,
+  english:officialRegistry.list('영어').length
+},{korean:34,math:45,social:26,science:51,english:20});
