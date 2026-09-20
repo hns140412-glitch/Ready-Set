@@ -76,3 +76,34 @@ Default:
 
 Do not repeat equivalent validation when no actionable delta remains.
 Do not ask the user to debug recoverable system-side failures.
+
+
+## Latest handoff integration — 2026-09-20
+Durable continuity source:
+`Google Drive / READY_SET_HANDOFF_2026-09-20_LATEST`.
+
+The handoff is continuity evidence, not higher authority than current TAKY or current GitHub code.
+Startup/resume order:
+1. load latest TAKY canonical;
+2. read the latest Ready handoff when resuming;
+3. resolve current Ready main SHA;
+4. compare handoff against current code;
+5. continue branch-only implementation/verification;
+6. do not call hosting during implementation review;
+7. freeze one exact candidate only after branch CI + Runtime closure;
+8. external deployment/device validation is allowed only after TAKY PRE-ACTION + external-resource gate passes.
+
+External-resource lock:
+`LOCAL/BRANCH → CI/RUNTIME → ONE FROZEN CANDIDATE → EXTERNAL DEPLOY/VALIDATION`.
+
+Hard:
+- no repeated Netlify/deploy-preview/status calls for the same goal without new evidence;
+- no hosting call before candidate SHA is frozen;
+- if GitHub/CI/Runtime can answer the question, use them first;
+- user is not a routine tester/debugger;
+- system-side failure analysis and minimal rework precede any user device action;
+- Netlify budget defaults to one justified external execution for the frozen deployment goal unless TAKY explicitly permits otherwise.
+
+`TOOL AVAILABLE != CALL JUSTIFIED`.
+`STATUS CHECK != PROGRESS`.
+`RETRY WITHOUT NEW EVIDENCE != VALIDATION`.
