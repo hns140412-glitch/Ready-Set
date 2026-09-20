@@ -363,6 +363,7 @@ let noContextState=noContextDomain.load();
 const noContextInterpreted=learning.interpretInto(noContextState,noContextFact.assignment_id);
 assert.strictEqual(noContextInterpreted.analysis.learning_reference.standard_match.official_standard_code,'6과01-01');
 assert.strictEqual(noContextInterpreted.analysis.learning_reference.standard_match.unit_mapping_evidence.status,'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED');
+assert(noContextInterpreted.analysis.learning_reference.unresolved.includes('ACTUAL_GRADE_SEMESTER_UNIT_CONTEXT_REQUIRED'));
 
 const partialContextDomain=domainCore.createDomain(new MemoryStorage());
 const partialContextFact=partialContextDomain.addEventFact({
@@ -381,3 +382,8 @@ assert.strictEqual(partialContextInterpreted.analysis.learning_reference.standar
 assert.strictEqual(partialContextInterpreted.analysis.learning_reference.standard_match.unit_mapping_evidence.status,'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED');
 assert.strictEqual(partialContextInterpreted.learning_units[0].analysis_provenance.learning_reference.standard_match.unit_mapping_evidence.status,'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED');
 
+
+assert.strictEqual(standardMatcher.version,'0.4.1');
+assert.strictEqual(standardMatcher.OFFICIAL_STANDARD_DATASET.standard_codes_bound,true);
+assert.strictEqual(standardMatcher.OFFICIAL_STANDARD_DATASET.standard_code_binding,'CONDITIONAL_VERIFIED_RECORD_ONLY');
+assert.strictEqual(learning.version,'0.5.1');
