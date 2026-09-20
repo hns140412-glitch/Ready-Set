@@ -1,0 +1,8 @@
+{
+  "name": "ready-set-pwa",
+  "private": true,
+  "version": "0.9.3",
+  "dependencies": {
+    "@netlify/blobs": "^11.1.0"
+  }
+}
