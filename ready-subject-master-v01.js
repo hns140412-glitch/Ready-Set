@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.2.0';
+  const VERSION='0.2.1';
   const GRADE_BAND='ELEMENTARY_5_6';
   const OFFICIAL_BASE={
     curriculum:'2022_REVISED_KOREA_NATIONAL_CURRICULUM',
@@ -128,6 +128,14 @@
       clean(context.teacher_instruction)||
       clean(context.unit_name)
     );
+    const actualUnitContext=!!(
+      clean(context.grade)&&
+      clean(context.semester)&&
+      clean(context.unit_name)
+    );
+    const unresolvedBase=(row.unresolved||[]).filter(flag=>
+      flag!=='TEXTBOOK_UNIT_TO_STANDARD_BINDING_REQUIRES_ACTUAL_BOOK_CONTEXT'||!actualUnitContext
+    );
     return {
       subject:key,
       status:actualContext?'SUBJECT_MASTER_CONTEXT_READY':'SUBJECT_MASTER_REFERENCE_ONLY',
@@ -138,7 +146,7 @@
       mapping_policy:row.mapping_policy,
       source_refs:[...row.source_refs],
       unresolved:[
-        ...row.unresolved,
+        ...unresolvedBase,
         ...(actualContext?[]:['ACTUAL_UNIT_CONTEXT_REQUIRED'])
       ]
     };
