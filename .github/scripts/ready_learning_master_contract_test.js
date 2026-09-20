@@ -186,3 +186,19 @@ assert.strictEqual(englishOrderBound.official_standard_code,'6영01-06');
 
 const scienceTechBound=standardMatcher.match('과학',{teacher_instruction:'지속가능한 삶을 위한 혼합물 분리 과학기술 장치를 조사하고 공유'});
 assert.strictEqual(scienceTechBound.official_standard_code,'6과05-03');
+
+assert.strictEqual(officialRegistry.COVERAGE['국어'].status,'VERIFIED_FULL_SUBJECT_COVERAGE');
+assert.strictEqual(officialRegistry.COVERAGE['국어'].verified_record_count,34);
+assert.strictEqual(officialRegistry.list('국어').length,34);
+assert.strictEqual(officialRegistry.findByCode('6국04-04').domain,'문법');
+assert.strictEqual(officialRegistry.findByCode('6국05-03').domain,'문학');
+assert.strictEqual(officialRegistry.findByCode('6국06-04').domain,'매체');
+
+const koreanInterviewBound=standardMatcher.match('국어',{teacher_instruction:'면담 절차를 이해하고 상대와 매체를 고려해 면담'});
+assert.strictEqual(koreanInterviewBound.official_standard_code,'6국01-04');
+
+const koreanGrammarBound=standardMatcher.match('국어',{teacher_instruction:'문장 성분과 호응 관계를 살펴 올바른 문장 구성'});
+assert.strictEqual(koreanGrammarBound.official_standard_code,'6국04-04');
+
+const koreanLiteratureBound=standardMatcher.match('국어',{teacher_instruction:'소설에서 인물 사건 배경을 파악'});
+assert.strictEqual(koreanLiteratureBound.official_standard_code,'6국05-03');
