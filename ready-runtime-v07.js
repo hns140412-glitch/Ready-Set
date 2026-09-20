@@ -233,7 +233,7 @@
     return null;
   }
 
-  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null }) {
+  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null, payload = null }) {
     const c = ensureContract();
     if (!c || !session_id || session_id !== c.session_id) return false;
     if (event_id && c.applied_event_ids?.includes(event_id)) return false;
@@ -245,6 +245,23 @@
     c.active_task_id = task.task_id;
     if (lap_id) c.active_lap_id = lap_id;
     if (normalized) setTaskState(task.task_id, normalized, from_app || 'SPECIALIST');
+    if (payload && typeof payload==='object') {
+      const safeString=(v,n=120)=>typeof v==='string'?v.slice(0,n):null;
+      task.specialist_result={
+        app:safeString(from_app,40)||'specialist',
+        event_id:safeString(event_id,120),
+        learning_unit_id:safeString(payload.learning_unit_id,120),
+        analysis_id:safeString(payload.analysis_id,120),
+        subject:safeString(payload.subject,80),
+        landmark:safeString(payload.landmark,40),
+        writing_focus:safeString(payload.writing_focus,80),
+        writing_provider:safeString(payload.writing_provider,80),
+        learning_context_used:!!payload.learning_context_used,
+        child_authored:payload.child_authored!==false,
+        final_draft_chars:Number.isFinite(payload.final_draft_chars)?Math.max(0,Math.min(20000,payload.final_draft_chars)):null,
+        received_at:iso()
+      };
+    }
     if (['COMPLETED','BLOCKED'].includes(normalized)) endActiveLap('SPECIALIST_RESULT', normalized);
     if (event_id) c.applied_event_ids = [...(c.applied_event_ids || []), event_id].slice(-200);
     emit('APP_RETURN', { from: from_app || 'specialist', task_state: normalized || task_state || null });
@@ -283,7 +300,8 @@
       lap_id: e.lap_id,
       task_state: taskState,
       from_app: e.app,
-      event_id: e.event_id
+      event_id: e.event_id,
+      payload: e.payload || null
     });
   }
 
