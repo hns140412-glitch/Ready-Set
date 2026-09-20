@@ -136,3 +136,69 @@ test('Planner reality engine refuses configured day with no executable window',a
   expect(out.allocation.available_minutes).toBe(0);
   expect(out.allocation.proposals).toEqual([]);
 });
+
+
+test('Learning Unit allocation skips a configured day with zero executable availability',async({page})=>{
+  await page.addInitScript(() => {
+    window.__READY_AUTH_BOOTSTRAP__={
+      authenticated:true,
+      family_id:'TEST_FAMILY',
+      member_id:'TEST_PARENT',
+      role:'PARENT',
+      session_id:'TEST_SESSION',
+      expires_at:'2099-01-01T00:00:00.000Z',
+      source:'TEST_ONLY'
+    };
+  });
+  await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
+  const out=await page.evaluate(()=>{
+    const p=window.ReadySetPlanner;
+    const key=d=>{
+      const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+      return `${y}-${m}-${day}`;
+    };
+    const todayDate=new Date(),tomorrowDate=new Date(todayDate);tomorrowDate.setDate(tomorrowDate.getDate()+1);
+    const deadlineDate=new Date(todayDate);deadlineDate.setDate(deadlineDate.getDate()+3);
+    const today=key(todayDate),tomorrow=key(tomorrowDate),deadline=key(deadlineDate);
+    const todayDow=String(new Date(today+'T12:00:00').getDay());
+    const tomorrowDow=String(new Date(tomorrow+'T12:00:00').getDay());
+
+    p.upsertAvailabilityProfile({
+      profile_id:'integration-profile',
+      weekday_windows:{
+        [todayDow]:[{start:'16:00',end:'20:00'}],
+        [tomorrowDow]:[{start:'16:00',end:'20:00'}]
+      },
+      confirmed:true
+    });
+    p.upsertScheduleCommitment({
+      commitment_id:'today-full',
+      title:'학교·학원·이동',
+      start_at:today+'T15:30:00',
+      end_at:today+'T20:30:00',
+      confirmed:true
+    });
+
+    const books=window.ReadyAssignmentDomainV2.TALENT_BOOKS.map((subject,i)=>({subject,source_range:`availability unit ${i}`}));
+    const pkg=window.ReadyAssignments.upsertTalentPackage({
+      actor:'PARENT',
+      source_date:today,
+      deadline_boundary:deadline,
+      books
+    });
+    const assignmentId=pkg.fact_ids[0];
+    window.ReadyAssignments.confirmFact(assignmentId,{actor:'PARENT'});
+    const result=window.ReadyIntegrationV1.processAssignment(assignmentId,{
+      candidate_dates:[today,tomorrow],
+      availability_profile_id:'integration-profile'
+    });
+    const todo=p.snapshot().dated_todos.find(x=>x.assignment_id===assignmentId);
+    return {result,todo,today,tomorrow};
+  });
+
+  expect(out.result.ok).toBeTruthy();
+  expect(out.todo).toBeTruthy();
+  expect(out.todo.date).toBe(out.tomorrow);
+  expect(out.todo.date).not.toBe(out.today);
+  expect(out.result.allocation?.availability_role||out.result.availability_role||out.result.run?.availability_role).not.toBe('VOLUME_AUTHORITY');
+});
