@@ -4,37 +4,41 @@
   if(root) root.ReadyOfficialUnitMapV01=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
-
-  const VERSION='0.1.0';
+  const VERSION='0.2.0';
   const DATASET={
     authority:'GYEONGGI_PROVINCIAL_OFFICE_OF_EDUCATION',
     source_id:'GOE_2026_EVAL',
-    source_type:'OFFICIAL_EDUCATION_OFFICE_EXAMPLE_MAPPING',
-    scope:'2026_ELEMENTARY_5_6_INSTRUCTION_ASSESSMENT_EXAMPLE',
-    rule:'This layer is mapping evidence, not curriculum authority and not a universal publisher-textbook truth.',
+    source_type:'OFFICIAL_EDUCATION_OFFICE_STANDARD_UNIT_CONNECTION_TABLE',
+    scope:'2026_ELEMENTARY_5_6_KOREAN_SOCIAL_MATH_SCIENCE',
+    rule:'Mapping evidence is separate from curriculum authority and is not universal publisher-textbook truth.',
     context_required_for_application:true
   };
-
-  const RECORDS=[
-    {standard_code:'6국01-04',subject:'국어',grade:6,semester:2,unit_no:2,unit_title:'궁금한 점을 해결해요',source_page:8},
-    {standard_code:'6사09-01',subject:'사회',grade:6,semester:1,unit_no:3,unit_title:'지구, 대륙 그리고 국가들',source_page:14},
-    {standard_code:'6사09-02',subject:'사회',grade:6,semester:1,unit_no:3,unit_title:'지구, 대륙 그리고 국가들',source_page:14},
-    {standard_code:'6사10-01',subject:'사회',grade:6,semester:2,unit_no:1,unit_title:'세계의 자연환경',source_page:14},
-    {standard_code:'6수01-05',subject:'수학',grade:5,semester:1,unit_no:2,unit_title:'약수와 배수',source_page:186},
-    {standard_code:'6과01-01',subject:'과학',grade:5,semester:1,unit_no:1,unit_title:'지층과 화석',source_page:43},
-    {standard_code:'6과01-02',subject:'과학',grade:5,semester:1,unit_no:1,unit_title:'지층과 화석',source_page:19},
-    {standard_code:'6과01-03',subject:'과학',grade:5,semester:1,unit_no:1,unit_title:'지층과 화석',source_page:19}
-  ];
-
+  const COVERAGE={
+    '국어':{standard_count:34,status:'FULL_SOURCE_TABLE_STRUCTURED'},
+    '사회':{standard_count:27,status:'FULL_SOURCE_TABLE_STRUCTURED'},
+    '수학':{standard_count:45,status:'FULL_SOURCE_TABLE_STRUCTURED'},
+    '과학':{standard_count:51,status:'FULL_SOURCE_TABLE_STRUCTURED'},
+    '영어':{standard_count:20,status:'UNIT_MAPPING_SOURCE_GAP',reason:'No equivalent 2026 standard-unit connection table in the bound source.'}
+  };
+  const GROUPS={"국어":[["6국01-01",[[5,1,"1. 짐작하며 대화해요"],[5,2,"5. 의견을 조정하며 문제를 해결해요"]]],["6국01-02",[[6,1,"3. 절차를 지키며 토론해요"],[6,2,"3. 보거나 듣고 판단해요"]]],["6국01-03",[[5,1,"1. 짐작하며 대화해요"],[5,1,"3. 매체로 발표해요"],[6,1,"1. 성찰하며 읽어요"],[6,2,"2. 궁금한 점을 해결해요"]]],["6국01-04",[[6,2,"2. 궁금한 점을 해결해요"]]],["6국01-05",[[5,1,"3. 매체로 발표해요"]]],["6국01-06",[[5,1,"5. 의논하며 토의해요"],[5,2,"1. 작품에 대한 생각을 나누어요"],[5,2,"5. 의견을 조정하며 문제를 해결해요"],[6,1,"독서 단원. 같은 주제에 대한 책을 읽고 생각을 나누어요"]]],["6국01-07",[[6,1,"3. 절차를 지키며 토론해요"]]],["6국02-01",[[5,1,"독서 단원. 책을 읽고 함께 이야기해요"],[5,1,"4. 대상을 설명해요"],[5,2,"3. 추론하며 읽어요"],[6,2,"1. 작가의 의도를 파악해요"]]],["6국02-02",[[5,1,"3. 추론하며 읽어요"],[5,1,"6. 작품을 감상해요"],[6,2,"4. 우리말의 아름다움을 느껴요"]]],["6국02-03",[[5,1,"매체 단원. 평가하며 이용해요"],[6,1,"4. 비판적으로 읽어요"],[6,2,"3. 보거나 듣고 판단해요"]]],["6국02-04",[[5,1,"5. 의논하며 토의해요"],[6,1,"4. 비판적으로 읽어요"],[6,2,"독서 단원. 다양한 책을 읽고 문제를 해결해요"]]],["6국02-05",[[5,1,"독서 단원. 책을 읽고 함께 이야기해요"],[5,2,"독서 단원. 여러 가지 형태의 책을 읽어요"],[5,2,"4. 표준어와 방언을 알아봐요"],[6,1,"독서 단원. 같은 주제에 대한 책을 읽고 생각을 나누어요"],[6,1,"1. 성찰하며 읽어요"]]],["6국03-01",[[5,1,"4. 대상을 설명해요"]]],["6국03-02",[[5,1,"매체 단원. 필요한 정보를 찾아요"],[6,1,"6. 자신의 글쓰기 과정을 살펴봐요"]]],["6국03-03",[[5,1,"2. 체험한 일을 써요"],[6,1,"5. 관용 표현을 이해하고 생각을 표현해요"],[6,2,"독서 단원. 다양한 책을 읽고 문제를 해결해요"]]],["6국03-04",[[5,2,"2. 올바른 문장으로 글을 써요"],[6,2,"5. 언어의 특성과 독자를 고려하여 소통해요"]]],["6국03-05",[[6,1,"6. 자신의 글쓰기 과정을 살펴봐요"]]],["6국03-06",[[5,2,"2. 바르게 고쳐 써요"],[6,2,"매체 단원. 나를 돌아봐요"],[6,2,"6. 시와 이야기로 표현해요"]]],["6국04-01",[[5,2,"매체 단원. 매체 자료를 만들어요"],[6,2,"5. 언어의 특성과 독자를 고려하여 소통해요"]]],["6국04-02",[[5,2,"4. 표준어와 방언을 알아봐요"]]],["6국04-03",[[6,1,"5. 관용 표현을 이해하고 생각을 표현해요"],[6,2,"4. 우리말의 아름다움을 느껴요"]]],["6국04-04",[[5,2,"2. 올바른 문장으로 글을 써요"],[6,1,"2. 바르게 고쳐 써요"]]],["6국04-05",[[5,1,"2. 체험한 일을 써요"]]],["6국04-06",[[6,1,"2. 바르게 고쳐 써요"],[6,1,"6. 자신의 글쓰기 과정을 살펴봐요"]]],["6국05-01",[[6,2,"1. 작가의 의도를 파악해요"]]],["6국05-02",[[5,1,"6. 빗대어 표현해요"]]],["6국05-03",[[5,2,"6. 작품을 감상해요"]]],["6국05-04",[[5,1,"독서 단원. 책을 읽고 함께 이야기해요"],[5,1,"6. 빗대어 표현해요"],[5,2,"1. 작품에 대한 생각을 나누어요"]]],["6국05-05",[[5,2,"6. 작품을 감상해요"],[6,2,"6. 시와 이야기로 표현해요"]]],["6국05-06",[[5,2,"4. 표준어와 방언을 알아봐요"],[6,1,"1. 성찰하며 읽어요"]]],["6국06-01",[[5,1,"3. 매체로 발표해요"],[5,1,"매체 단원. 필요한 정보를 찾아요"],[5,2,"독서 단원. 여러 가지 형태의 책을 읽어요"]]],["6국06-02",[[5,2,"매체 단원. 평가하며 이용해요"]]],["6국06-03",[[6,1,"매체 단원. 매체 자료를 만들어요"]]],["6국06-04",[[6,2,"매체 단원. 나를 돌아봐요"]]]],"사회":[["6사01-01",[[5,1,"1. 우리나라 국토여행"]]],["6사01-02",[[5,1,"1. 우리나라 국토여행"]]],["6사02-01",[[5,1,"2. 우리나라 지리탐구"]]],["6사02-02",[[5,1,"2. 우리나라 지리탐구"]]],["6사03-01",[[5,1,"3. 법과 인권의 보장"]]],["6사03-02",[[5,1,"3. 법과 인권의 보장"]]],["6사04-01",[[5,2,"1. 유적과 유물로 살펴본 옛 사람들의 생활"]]],["6사04-02",[[5,2,"1. 유적과 유물로 살펴본 옛 사람들의 생활"]]],["6사04-03",[[5,2,"1. 유적과 유물로 살펴본 옛 사람들의 생활"]]],["6사05-01",[[5,2,"2. 달라지는 시대, 변화하는 생활 모습"]]],["6사05-02",[[5,2,"2. 달라지는 시대, 변화하는 생활 모습"]]],["6사06-01",[[5,2,"3. 식민 통치와 저항, 전쟁이 바꾼 사회와 생활"]]],["6사06-02",[[5,2,"3. 식민 통치와 저항, 전쟁이 바꾼 사회와 생활"]]],["6사07-01",[[6,1,"1. 평화 통일을 위한 노력, 민주화와 산업화"]]],["6사07-02",[[6,1,"1. 평화 통일을 위한 노력, 민주화와 산업화"]]],["6사08-01",[[6,1,"2. 민주주의와 시민 참여"]]],["6사08-02",[[6,1,"2. 민주주의와 시민 참여"]]],["6사08-03",[[6,1,"2. 민주주의와 시민 참여"]]],["6사09-01",[[6,1,"3. 지구, 대륙 그리고 국가들"]]],["6사09-02",[[6,1,"3. 지구, 대륙 그리고 국가들"]]],["6사10-01",[[6,2,"1. 세계의 자연환경"]]],["6사10-02",[[6,2,"1. 세계의 자연환경"]]],["6사11-01",[[6,2,"2. 시장경제와 국가 간 거래"]]],["6사11-02",[[6,2,"2. 시장경제와 국가 간 거래"]]],["6사11-03",[[6,2,"2. 시장경제와 국가 간 거래"]]],["6사12-01",[[6,2,"3. 지구촌 사람들"]]],["6사12-02",[[6,2,"3. 지구촌 사람들"]]]],"수학":[["6수01-01",[[5,1,"1. 자연수의 혼합 계산"]]],["6수01-02",[[5,2,"1. 수의 범위와 올림, 버림, 반올림"]]],["6수01-03",[[5,2,"1. 수의 범위와 올림, 버림, 반올림"]]],["6수01-04",[[5,1,"2. 약수와 배수"]]],["6수01-05",[[5,1,"2. 약수와 배수"]]],["6수01-06",[[5,1,"4. 약분과 통분"]]],["6수01-07",[[5,1,"4. 약분과 통분"]]],["6수01-08",[[5,1,"5. 분수의 덧셈과 뺄셈"]]],["6수01-09",[[5,2,"2. 분수의 곱셈"]]],["6수01-10",[[6,1,"1. 분수의 나눗셈"]]],["6수01-11",[[6,1,"1. 분수의 나눗셈"],[6,2,"1. 분수의 나눗셈"]]],["6수01-12",[[5,1,"4. 약분과 통분"]]],["6수01-13",[[5,2,"4. 소수의 곱셈"]]],["6수01-14",[[6,1,"3. 소수의 나눗셈"]]],["6수01-15",[[6,1,"3. 소수의 나눗셈"],[6,2,"3. 소수의 나눗셈"]]],["6수02-01",[[5,1,"3. 대응 관계"]]],["6수02-02",[[6,1,"4. 비와 비율"]]],["6수02-03",[[6,1,"4. 비와 비율"]]],["6수02-04",[[6,2,"4. 비례식과 비례배분"]]],["6수02-05",[[6,2,"4. 비례식과 비례배분"]]],["6수03-01",[[5,2,"3. 합동과 대칭"]]],["6수03-02",[[5,2,"3. 합동과 대칭"]]],["6수03-03",[[5,2,"5. 직육면체와 정육면체"]]],["6수03-04",[[5,2,"5. 직육면체와 정육면체"]]],["6수03-05",[[6,1,"2. 각기둥과 각뿔"]]],["6수03-06",[[6,1,"2. 각기둥과 각뿔"]]],["6수03-07",[[6,2,"6. 원기둥, 원뿔, 구"]]],["6수03-08",[[6,2,"6. 원기둥, 원뿔, 구"]]],["6수03-09",[[6,2,"2. 공간과 입체"]]],["6수03-10",[[6,2,"2. 공간과 입체"]]],["6수03-11",[[5,1,"6. 다각형의 둘레와 넓이"]]],["6수03-12",[[5,1,"6. 다각형의 둘레와 넓이"]]],["6수03-13",[[5,1,"6. 다각형의 둘레와 넓이"]]],["6수03-14",[[5,1,"6. 다각형의 둘레와 넓이"]]],["6수03-15",[[6,2,"5. 원의 둘레와 넓이"]]],["6수03-16",[[6,2,"5. 원의 둘레와 넓이"]]],["6수03-17",[[6,1,"6. 직육면체의 겉넓이와 부피"]]],["6수03-18",[[6,1,"6. 직육면체의 겉넓이와 부피"]]],["6수03-19",[[6,1,"6. 직육면체의 겉넓이와 부피"]]],["6수04-01",[[5,2,"6. 평균과 가능성"]]],["6수04-02",[[6,1,"5. 여러 가지 그래프"]]],["6수04-03",[[6,1,"5. 여러 가지 그래프"]]],["6수04-04",[[5,2,"6. 평균과 가능성"]]],["6수04-05",[[5,2,"6. 평균과 가능성"]]],["6수04-06",[[5,2,"6. 평균과 가능성"]]]],"과학":[["6과01-01",[[5,1,"1. 지층과 화석"]]],["6과01-02",[[5,1,"1. 지층과 화석"]]],["6과01-03",[[5,1,"1. 지층과 화석"]]],["6과02-01",[[5,1,"2. 빛의 성질"]]],["6과02-02",[[5,1,"2. 빛의 성질"]]],["6과02-03",[[5,1,"2. 빛의 성질"]]],["6과03-01",[[5,1,"3. 용해와 용액"]]],["6과03-02",[[5,1,"3. 용해와 용액"]]],["6과03-03",[[5,1,"3. 용해와 용액"]]],["6과04-01",[[5,1,"4. 우리 몸의 구조와 기능"]]],["6과04-02",[[5,1,"4. 우리 몸의 구조와 기능"]]],["6과04-03",[[5,1,"4. 우리 몸의 구조와 기능"]]],["6과05-01",[[5,2,"1. 혼합물의 분리"]]],["6과05-02",[[5,2,"1. 혼합물의 분리"]]],["6과05-03",[[5,2,"1. 혼합물의 분리"]]],["6과06-01",[[5,2,"2. 날씨와 우리 생활"]]],["6과06-02",[[5,2,"2. 날씨와 우리 생활"]]],["6과06-03",[[5,2,"2. 날씨와 우리 생활"]]],["6과07-01",[[5,2,"3. 열과 우리 생활"]]],["6과07-02",[[5,2,"3. 열과 우리 생활"]]],["6과07-03",[[5,2,"3. 열과 우리 생활"]]],["6과07-04",[[5,2,"3. 열과 우리 생활"]]],["6과08-01",[[5,2,"4. 자원과 에너지"]]],["6과08-02",[[5,2,"4. 자원과 에너지"]]],["6과08-03",[[5,2,"4. 자원과 에너지"]]],["6과09-01",[[6,1,"1. 산과 염기"]]],["6과09-02",[[6,1,"1. 산과 염기"]]],["6과09-03",[[6,1,"1. 산과 염기"]]],["6과09-04",[[6,1,"1. 산과 염기"]]],["6과10-01",[[6,1,"2. 물체의 운동"]]],["6과10-02",[[6,1,"2. 물체의 운동"]]],["6과10-03",[[6,1,"2. 물체의 운동"]]],["6과11-01",[[6,1,"3. 식물의 구조와 기능"]]],["6과11-02",[[6,1,"3. 식물의 구조와 기능"]]],["6과11-03",[[6,1,"3. 식물의 구조와 기능"]]],["6과12-01",[[6,1,"4. 지구의 운동"]]],["6과12-02",[[6,1,"4. 지구의 운동"]]],["6과12-03",[[6,1,"4. 지구의 운동"]]],["6과13-01",[[6,2,"1. 계절의 변화"]]],["6과13-02",[[6,2,"1. 계절의 변화"]]],["6과13-03",[[6,2,"1. 계절의 변화"]]],["6과14-01",[[6,2,"2. 물질의 연소"]]],["6과14-02",[[6,2,"2. 물질의 연소"]]],["6과14-03",[[6,2,"2. 물질의 연소"]]],["6과14-04",[[6,2,"2. 물질의 연소"]]],["6과15-01",[[6,2,"3. 전기의 이용"]]],["6과15-02",[[6,2,"3. 전기의 이용"]]],["6과15-03",[[6,2,"3. 전기의 이용"]]],["6과15-04",[[6,2,"3. 전기의 이용"]]],["6과16-01",[[6,2,"4. 과학과 나의 진로"]]],["6과16-02",[[6,2,"4. 과학과 나의 진로"]]]]};
+  const parseUnit=s=>{const m=String(s).match(/^(\d+)\.\s*(.*)$/);return m?{unit_no:Number(m[1]),unit_title:m[2]}:{unit_no:null,unit_title:String(s)}};
+  const RECORDS=[];
+  for(const [subject,rows] of Object.entries(GROUPS)){
+    for(const [standard_code,maps] of rows){
+      for(const [grade,semester,label] of maps){
+        const unit=parseUnit(label);
+        RECORDS.push({standard_code,subject,grade,semester,...unit,display_label:label,source_id:'GOE_2026_EVAL'});
+      }
+    }
+  }
   const clean=v=>String(v??'').trim();
   const norm=v=>clean(v).toLowerCase().replace(/\s+/g,' ');
   const listByCode=code=>RECORDS.filter(x=>x.standard_code===clean(code));
-
+  const listBySubject=subject=>RECORDS.filter(x=>x.subject===clean(subject));
   function evaluate(standardCode,context={}){
     const rows=listByCode(standardCode);
     if(!rows.length)return {status:'UNIT_MAPPING_EVIDENCE_GAP',selected:null,candidates:[],unresolved:['NO_VERIFIED_UNIT_MAPPING_RECORD']};
-    const grade=Number(context.grade||0)||null;
-    const semester=Number(context.semester||0)||null;
+    const grade=Number(context.grade||0)||null, semester=Number(context.semester||0)||null;
     const unitText=norm(context.unit_name||context.workbook_name||context.title||'');
     const candidates=rows.map(row=>{
       let score=0; const evidence=[];
@@ -43,19 +47,11 @@
       if(unitText&&unitText.includes(norm(row.unit_title))){score+=4;evidence.push('UNIT_TITLE_MATCH')}
       else if(unitText&&norm(row.unit_title).split(' ').some(t=>t.length>=2&&unitText.includes(t))){score+=1;evidence.push('UNIT_TOKEN_MATCH')}
       return {...row,score,evidence};
-    }).sort((a,b)=>b.score-a.score);
-
-    const contextPresent=!!(grade||semester||unitText);
-    if(!contextPresent){
-      return {status:'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED',selected:null,candidates,unresolved:['ACTUAL_GRADE_SEMESTER_UNIT_CONTEXT_REQUIRED']};
-    }
-    const top=candidates[0];
-    const ties=candidates.filter(x=>x.score===top.score);
-    if(top.score>=4&&ties.length===1){
-      return {status:'UNIT_MAPPING_CONTEXT_MATCHED',selected:top,candidates,unresolved:[]};
-    }
+    }).sort((a,b)=>b.score-a.score||a.grade-b.grade||a.semester-b.semester);
+    if(!(grade||semester||unitText))return {status:'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED',selected:null,candidates,unresolved:['ACTUAL_GRADE_SEMESTER_UNIT_CONTEXT_REQUIRED']};
+    const top=candidates[0], ties=candidates.filter(x=>x.score===top.score);
+    if(top.score>=4&&ties.length===1)return {status:'UNIT_MAPPING_CONTEXT_MATCHED',selected:top,candidates,unresolved:[]};
     return {status:'UNIT_MAPPING_CANDIDATE',selected:null,candidates,unresolved:['UNIT_CONTEXT_NOT_STRONG_OR_UNIQUE_ENOUGH']};
   }
-
-  return {version:VERSION,DATASET,RECORDS,listByCode,evaluate};
+  return {version:VERSION,DATASET,COVERAGE,GROUPS,RECORDS,listByCode,listBySubject,evaluate};
 });
