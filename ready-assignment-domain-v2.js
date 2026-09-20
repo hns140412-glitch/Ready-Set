@@ -98,7 +98,7 @@
           Object.assign(f,{package_id:packageId,source_type:'TALENT_BOOK_ASSIGNMENT',subject:'재능',book_subject:subject,source_actor:clean(input.actor)||'PARENT',assignment_cycle:'TALENT_WEEKLY',source_date:sourceDate,deadline_boundary:deadline,lifecycle:'ACTIVE',analysis_state:'NOT_ANALYZED'});
           const artifactRefs=registerArtifacts(s,assignmentId,Array.isArray(b.artifact_refs)?b.artifact_refs:[],'SOURCE','FAMILY');
           const answerRefs=registerArtifacts(s,assignmentId,Array.isArray(b.answer_reference_ids)?b.answer_reference_ids:[],'ANSWER_REFERENCE','PARENT_ONLY');
-          addClaim(s,f,input.actor||'PARENT',{source_range:clean(b.source_range),teacher_instruction:clean(b.teacher_instruction),artifact_refs:artifactRefs,answer_reference_ids:answerRefs},input.provenance||{kind:'PARENT_INPUT'});
+          addClaim(s,f,input.actor||'PARENT',{source_range:clean(b.source_range),teacher_instruction:clean(b.teacher_instruction),artifact_refs:artifactRefs,answer_reference_ids:answerRefs},b.provenance||input.provenance||{kind:'PARENT_INPUT'});
           s.assignmentFacts[assignmentId]=f;factIds.push(assignmentId);
         }
         const pkg={package_id:packageId,source_type:'TALENT_WEEKLY_ASSIGNMENT',source_date:sourceDate,deadline_boundary:deadline,fact_ids:factIds,cycle_boundary_kind:'DEADLINE_NEXT_CYCLE_NOT_ALLOCATION_SLOT',created_at:now(),updated_at:now()};
