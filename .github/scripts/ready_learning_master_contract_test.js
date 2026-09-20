@@ -74,3 +74,49 @@ const hanjaMaster=subjectMaster.resolve('한자',{source_range:'1~12'});
 assert(hanjaMaster.domains.includes('회상'));
 const pizzaMaster=subjectMaster.resolve('생각하는 피자',{teacher_instruction:'풀이 방법을 설명'});
 assert(pizzaMaster.learning_loop.includes('EXPLAIN'));
+
+const standardMatcher=require('../../ready-learning-standard-matcher-v01.js');
+
+const mathMatch=standardMatcher.match('수학',{teacher_instruction:'분수 계산을 풀고 틀린 문제 다시 확인'});
+assert.strictEqual(mathMatch.status,'MATCHED_DOMAIN_CANDIDATE');
+assert.strictEqual(mathMatch.selected.domain,'수와 연산');
+assert.strictEqual(mathMatch.official_standard_code,null);
+assert.strictEqual(mathMatch.standard_binding_status,'UNBOUND_REQUIRES_VERIFIED_STANDARD_RECORD');
+
+const koreanMatch=standardMatcher.match('국어',{teacher_instruction:'글을 읽고 중심 내용을 찾아 근거를 들어 요약'});
+assert.strictEqual(koreanMatch.selected.domain,'읽기');
+assert(koreanMatch.selected.matched_terms.includes('근거'));
+
+const scienceMatch=standardMatcher.match('과학',{teacher_instruction:'지층과 화석을 관찰하고 증거를 설명'});
+assert.strictEqual(scienceMatch.selected.domain,'지구와 우주');
+assert.strictEqual(scienceMatch.confidence,'HIGH');
+
+const socialMatch=standardMatcher.match('사회',{teacher_instruction:'지도에서 지역의 위치와 지형을 비교'});
+assert.strictEqual(socialMatch.selected.domain,'지리');
+
+const englishMatch=standardMatcher.match('영어',{components_text:'listening:Track 4 | writing:Paragraph 1'});
+assert(['CANDIDATE','MATCHED_DOMAIN_CANDIDATE'].includes(englishMatch.status));
+assert(englishMatch.candidates.some(x=>x.domain==='이해'));
+assert(englishMatch.candidates.some(x=>x.domain==='표현'));
+
+const pianoMatch=standardMatcher.match('피아노',{source_range:'24~27마디',teacher_instruction:'오른손 구간 반복 후 녹음'});
+assert.strictEqual(pianoMatch.selected.domain,'구간 반복');
+assert.strictEqual(pianoMatch.standard_binding_status,'NOT_APPLICABLE');
+
+const noContextMatch=standardMatcher.match('과학',{});
+assert.strictEqual(noContextMatch.status,'REFERENCE_GAP');
+
+const unknownMatch=standardMatcher.match('미등록과목',{teacher_instruction:'복습'});
+assert.strictEqual(unknownMatch.status,'REFERENCE_GAP');
+
+const scienceRefWithMatch=reference.resolve('과학',{teacher_instruction:'지층과 화석 관찰 결과 설명'});
+assert.strictEqual(scienceRefWithMatch.standard_match.selected.domain,'지구와 우주');
+
+const scienceFactWithMatch=learning.interpretFact({
+  assignment_id:'sci_match_1',source_type:'SCHOOL_EVENT',subject:'과학',
+  confirmation_state:'FACT_CONFIRMED',source_range:'교과서 42~45쪽',
+  teacher_instruction:'지층과 화석을 관찰하고 증거를 설명',claims:[]
+});
+assert.strictEqual(scienceFactWithMatch.analysis.learning_reference.standard_match.selected.domain,'지구와 우주');
+assert.strictEqual(scienceFactWithMatch.analysis.learning_reference.standard_match.official_standard_code,null);
+assert.strictEqual(scienceFactWithMatch.learning_units[0].analysis_provenance.learning_reference.standard_match.selected.domain,'지구와 우주');
