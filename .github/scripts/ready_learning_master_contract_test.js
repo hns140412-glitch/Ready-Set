@@ -169,3 +169,20 @@ const boundScienceFact=learning.interpretFact({
 });
 assert.strictEqual(boundScienceFact.analysis.learning_reference.standard_match.official_standard_code,'6과01-01');
 assert.strictEqual(boundScienceFact.learning_units[0].analysis_provenance.learning_reference.standard_match.official_standard_code,'6과01-01');
+
+assert.strictEqual(officialRegistry.COVERAGE['영어'].status,'VERIFIED_FULL_SUBJECT_COVERAGE');
+assert.strictEqual(officialRegistry.COVERAGE['영어'].verified_record_count,20);
+assert.strictEqual(officialRegistry.list('영어').length,20);
+assert.strictEqual(officialRegistry.findByCode('6영02-10').domain,'표현');
+assert.strictEqual(officialRegistry.findByCode('6영01-06').domain,'이해');
+assert.strictEqual(officialRegistry.COVERAGE['과학'].status,'PARTIAL_VERIFIED');
+assert.strictEqual(officialRegistry.findByCode('6과05-03').domain,'과학과 사회');
+
+const englishWritingBound=standardMatcher.match('영어',{teacher_instruction:'예시문을 참고하여 목적에 맞는 간단한 글쓰기'});
+assert.strictEqual(englishWritingBound.official_standard_code,'6영02-08');
+
+const englishOrderBound=standardMatcher.match('영어',{teacher_instruction:'일상생활 글에서 사건의 순서를 파악하며 읽기'});
+assert.strictEqual(englishOrderBound.official_standard_code,'6영01-06');
+
+const scienceTechBound=standardMatcher.match('과학',{teacher_instruction:'지속가능한 삶을 위한 혼합물 분리 과학기술 장치를 조사하고 공유'});
+assert.strictEqual(scienceTechBound.official_standard_code,'6과05-03');
