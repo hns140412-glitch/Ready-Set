@@ -191,7 +191,7 @@
           if(todo.state==='IN_PROGRESS'){
             todo.revision_conflict=true;
             todo.revision_conflict_reason=reason;
-            todo.fact_revision=revision;
+            todo.revision_conflict_with_fact_revision=revision;
             todo.updated_at=nowIso;
             in_progress_count++;
             continue;
@@ -200,7 +200,7 @@
             todo.state='SUPERSEDED';
             todo.superseded_at=nowIso;
             todo.supersede_reason=reason;
-            todo.fact_revision=revision;
+            todo.superseded_by_fact_revision=revision;
             superseded_todos++;
           }
         }
