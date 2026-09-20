@@ -358,6 +358,8 @@
       created_at:now(),
       provenance:{kind:'LEARNING_MASTER',actor:input.actor||'SYSTEM',source_fact_updated_at:fact.updated_at||null,fact_revision:Number(fact.fact_revision)||1,previous_analysis_ids:[...(fact.previous_analysis_ids||[])]},
       cross_revision_learning_signal:input.learning_signal?clone(input.learning_signal):null,
+      escalation_review_signal:input.escalation_review_signal?clone(input.escalation_review_signal):null,
+      review_reason:clean(input.review_reason)||null,
       confidence:clean(fact.teacher_instruction)?0.78:0.62,
       unresolved_flags:[]
     };
@@ -408,7 +410,27 @@
   function interpretConfirmed(assignmentId,input={}){
     const domain=globalThis.ReadyAssignments;
     if(!domain)throw new Error('ReadyAssignments runtime required');
-    const state=domain.load(),result=interpretInto(state,assignmentId,input);
+    const state=domain.load();
+    const fact=state.assignmentFacts?.[assignmentId];
+    if(input.force_review===true&&fact?.current_analysis_id){
+      const previous=state.analyses?.[fact.current_analysis_id];
+      if(previous){
+        previous.state='SUPERSEDED';
+        previous.superseded_at=now();
+        previous.supersede_reason=clean(input.review_reason)||'LEARNING_MASTER_REVIEW';
+      }
+      for(const unit of Object.values(state.learningUnits||{})){
+        if(unit.analysis_id===fact.current_analysis_id&&unit.state==='INTERPRETED'){
+          unit.state='SUPERSEDED';
+          unit.superseded_at=now();
+          unit.supersede_reason=clean(input.review_reason)||'LEARNING_MASTER_REVIEW';
+        }
+      }
+      fact.previous_analysis_ids=[...new Set([...(fact.previous_analysis_ids||[]),fact.current_analysis_id])];
+      fact.analysis_state='REVIEW_REQUIRED';
+      fact.current_analysis_id=null;
+    }
+    const result=interpretInto(state,assignmentId,input);
     domain.save(state);
     return result;
   }

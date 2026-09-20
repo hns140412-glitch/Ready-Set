@@ -723,9 +723,11 @@ function renderPlannerAdmin(){
       const needs=x.resolution_required===true;
       const escalated=x.escalation_level==='PARENT_LEARNING_MASTER_REVIEW';
       const status=escalated?'반복 검토 필요':needs?'확인 필요':'다음 일정 대기';
-      const actions=needs
-        ? `<div class="adminInlineActions"><button class="miniAction" data-carry-ready="${x.carry_over_id}">다시 계획</button><button class="miniAction" data-carry-cancel="${x.carry_over_id}">종료</button></div>`
-        : '<strong>자동 재진입</strong>';
+      const actions=escalated
+        ? `<div class="adminInlineActions"><button class="miniAction" data-carry-review="${x.carry_over_id}">학습 재검토</button><button class="miniAction" data-carry-cancel="${x.carry_over_id}">종료</button></div>`
+        : needs
+          ? `<div class="adminInlineActions"><button class="miniAction" data-carry-ready="${x.carry_over_id}">다시 계획</button><button class="miniAction" data-carry-cancel="${x.carry_over_id}">종료</button></div>`
+          : '<strong>자동 재진입</strong>';
       const escalationNote=escalated?` · ${escapeHtml(x.escalation_reason||'REVIEW_REQUIRED')}`:'';
       return `<div class="adminListItem"><span><b>${escapeHtml(x.label||'남은 탐험')}</b><small>${escapeHtml(x.state||'')} · ${escapeHtml(status)} · ${escapeHtml(x.from_date||'')}${escalationNote}</small></span>${actions}</div>`;
     }).join(''):'<div class="plannerEmpty"><b>확인할 남은 탐험이 없어요.</b><small>새 carry-over가 생기면 여기에 표시됩니다.</small></div>';
@@ -746,6 +748,13 @@ function editSchedule(id){
 document.getElementById('scheduleClearBtn')?.addEventListener('click',clearScheduleForm);
 document.addEventListener('click',e=>{
   const s=e.target.closest('[data-edit-schedule]'); if(s){editSchedule(s.dataset.editSchedule);return;}
+  const review=e.target.closest('[data-carry-review]');
+  if(review){
+    if(!requireParentUi())return;
+    const result=window.ReadyIntegrationV1?.reviewEscalatedCarryOver?.(review.dataset.carryReview,{start_date:localDateKey()});
+    toast(result?.ok?'학습 패턴을 다시 분석하고 Planner를 갱신했어요.':'학습 재검토를 완료하지 못했어요.');
+    renderPlannerAdmin();renderPlanner();return;
+  }
   const ready=e.target.closest('[data-carry-ready]');
   if(ready){
     if(!requireParentUi())return;
