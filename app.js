@@ -44,6 +44,7 @@ let previewTimer=null,currentGuestType='pico';
 let plannerSelectedDate=null;
 let plannerTab='week';
 const TALENT_BOOKS=['연산','한자','국어','사회','수학','생각하는 피자'];
+const GUIDE_NAME_POOL=['루미','피코','모리','토리','모모','아루','리프','피즈','코코','라온','누리','보리'];
 
 function load(){
   try{
@@ -1540,7 +1541,6 @@ $$('[data-guide-type]').forEach(b=>b.onclick=()=>{
   if(!state.guide.name||state.guide.name===prevDefault)state.guide.name=guideData(type).defaultName;
   save();renderSettings();renderHome();toast(`${state.guide.name}와 함께할게요.`);
 });
-const GUIDE_NAME_POOL=['루미','피코','모리','토리','모모','아루','리프','피즈','코코','라온','누리','보리'];
 function renderNameSuggestions(reroll=true){
   const root=$('#nameSuggestions');if(!root)return;if(!reroll&&root.children.length)return;
   const names=[guideData().defaultName,...GUIDE_NAME_POOL.filter(n=>n!==guideData().defaultName)].sort(()=>Math.random()-.5).slice(0,5);
