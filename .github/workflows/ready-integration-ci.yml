@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Official unit-map contract
+        run: node .github/scripts/ready_unit_map_contract_test.js
       - name: Existing planner contract
         run: node .github/scripts/ready_planner_contract_test.js
       - name: Assignment and Learning Master contract
