@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.3.0';
+  const VERSION='0.4.0';
   const referenceApi=()=>{
     if(typeof globalThis!=='undefined'&&globalThis.ReadyLearningReferenceV01)return globalThis.ReadyLearningReferenceV01;
     if(typeof require==='function'){try{return require('./ready-learning-reference-v01.js')}catch{}}
@@ -291,7 +291,13 @@
             teacher_instruction:fact.teacher_instruction||null,
             unit_name:extra.concept_skill_target||null
           });
-          return ref?{status:ref.status,reference_classes:ref.reference_classes,method:ref.method,evidence_refs:ref.evidence_refs}:null;
+          return ref?{
+            status:ref.status,
+            reference_classes:ref.reference_classes,
+            method:ref.method,
+            evidence_refs:ref.evidence_refs,
+            standard_match:ref.standard_match||null
+          }:null;
         })()
       },
       confidence:extra.confidence??(clean(fact.teacher_instruction)?0.78:0.62),
@@ -368,9 +374,11 @@
     analysis.subject_profile=fact.book_subject||fact.subject||null;
     const ref=referenceApi()?.resolve?.(analysis.subject_profile,{
       workbook_name:fact.workbook_name||fact.workbook_ref_id||null,
+      title:fact.title||null,
       source_range:fact.source_range||null,
       teacher_instruction:fact.teacher_instruction||null,
-      unit_name:null
+      unit_name:null,
+      components_text:fact.components?Object.entries(fact.components).map(([k,v])=>k+':'+v).join(' | '):null
     });
     analysis.learning_reference=ref||{subject:analysis.subject_profile,status:'REFERENCE_GAP',reference_classes:['ASSIGNMENT_FACT'],method:'SOURCE_FACT_ONLY',evidence_refs:[],unresolved:['REFERENCE_REGISTRY_UNAVAILABLE']};
     analysis.unresolved_flags=[...new Set([
@@ -383,6 +391,9 @@
   function interpretInto(domainState,assignmentId,input={}){
     const s=domainState;
     const fact=s.assignmentFacts?.[assignmentId];
+    if(fact?.workbook_ref_id&&!fact.workbook_name&&s.workbookRefs?.[fact.workbook_ref_id]?.name){
+      fact.workbook_name=s.workbookRefs[fact.workbook_ref_id].name;
+    }
     const result=interpretFact(fact,input);
     s.analyses[result.analysis.analysis_id]=clone(result.analysis);
     for(const unit of result.learning_units)s.learningUnits[unit.learning_unit_id]=clone(unit);
