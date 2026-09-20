@@ -1,4 +1,4 @@
-import { getUser, login, logout, verifyRequestOrigin } from '@netlify/identity';
+import { login, logout, verifyRequestOrigin } from '@netlify/identity';
 import core from './ready-family-auth-core.js';
 
 const { familySessionFromIdentityUser } = core;
@@ -17,8 +17,7 @@ export default async function handler(req){
   if(!email||!password) return Response.json({ok:false,reason:'CREDENTIALS_REQUIRED'},{status:400});
 
   try{
-    await login(email,password);
-    const user=await getUser();
+    const user=await login(email,password);
     const mapped=familySessionFromIdentityUser(user||{});
     if(!mapped.ok){
       await logout().catch(()=>{});
