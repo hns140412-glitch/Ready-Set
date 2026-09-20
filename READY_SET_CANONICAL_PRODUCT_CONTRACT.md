@@ -106,3 +106,26 @@ Hard:
 - Do not create branch previews/sites/deploys merely to inspect code that GitHub CI/Runtime can validate.
 - A physical-device deployment is a deliberate final gate after exact candidate SHA selection.
 - Higher-cost/external side effects require applicable PRE-ACTION rule bindings and satisfied preconditions under TAKY.
+
+
+## Resume / external-resource execution contract
+Continuity evidence:
+`READY_SET_HANDOFF_2026-09-20_LATEST` in governed Google Drive.
+
+Authority order:
+`LATEST TAKY → READY CURRENT CANONICAL → CURRENT GITHUB MAIN/BRANCH EVIDENCE → HANDOFF CONTINUITY EVIDENCE`.
+
+Implementation execution:
+`BRANCH IMPLEMENTATION → CI/RUNTIME → INTEGRATED REVIEW → FROZEN EXACT SHA → TAKY EXTERNAL-RESOURCE GATE → ONE EXTERNAL DEPLOYMENT → DEVICE VALIDATION`.
+
+A candidate is not frozen while material implementation gaps in the selected release scope are still being edited or while branch CI/Runtime is not green.
+
+Before any external deployment/validation action, the execution record must satisfy TAKY:
+- PRE-ACTION rule binding;
+- external resource action classification;
+- call budget;
+- exact candidate SHA frozen;
+- no lower-cost local validation remaining for the same question;
+- no repeated equivalent call without new evidence/trigger.
+
+Device validation is a final verification gate, not an implementation/debug loop.
