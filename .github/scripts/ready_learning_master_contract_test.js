@@ -363,3 +363,21 @@ let noContextState=noContextDomain.load();
 const noContextInterpreted=learning.interpretInto(noContextState,noContextFact.assignment_id);
 assert.strictEqual(noContextInterpreted.analysis.learning_reference.standard_match.official_standard_code,'6과01-01');
 assert.strictEqual(noContextInterpreted.analysis.learning_reference.standard_match.unit_mapping_evidence.status,'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED');
+
+const partialContextDomain=domainCore.createDomain(new MemoryStorage());
+const partialContextFact=partialContextDomain.addEventFact({
+  assignment_id:'pipeline_unit_context_grade_semester_only',
+  actor:'PARENT',
+  title:'과학 지층과 화석 숙제',
+  subject:'과학',
+  teacher_instruction:'지층과 화석 단원을 공부하고 지층의 특징과 형성 과정을 모형으로 표현',
+  grade:5,
+  semester:1
+});
+partialContextDomain.confirmFact(partialContextFact.assignment_id,{actor:'PARENT'});
+let partialContextState=partialContextDomain.load();
+const partialContextInterpreted=learning.interpretInto(partialContextState,partialContextFact.assignment_id);
+assert.strictEqual(partialContextInterpreted.analysis.learning_reference.standard_match.official_standard_code,'6과01-01');
+assert.strictEqual(partialContextInterpreted.analysis.learning_reference.standard_match.unit_mapping_evidence.status,'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED');
+assert.strictEqual(partialContextInterpreted.learning_units[0].analysis_provenance.learning_reference.standard_match.unit_mapping_evidence.status,'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED');
+
