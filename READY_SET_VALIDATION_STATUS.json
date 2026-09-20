@@ -30,15 +30,14 @@
     "R0_CANONICAL_SKELETON": "COMPLETE",
     "R1_SINGLE_SESSION_ENGINE": "COMPLETE_RUNTIME_VERIFIED",
     "R2_PRODUCT_LANGUAGE_AUTHORITY": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
-    "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "PARTIAL_RENEWAL_REQUIRED",
+    "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
     "R4_CHILD_FACT_CONFIRMATION_PATH": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
     "R5_PLANNER_FREE_WINDOW": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
-    "R6_LEGACY_AUTHORITY_ARCHIVE": "PARTIAL_RENEWAL_REQUIRED",
+    "R6_LEGACY_AUTHORITY_ARCHIVE": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
     "R7_EXACT_MAIN_VERIFICATION": "COMPLETE"
   },
   "current_open_product_gates": [
-    "PLANNER_REAL_AVAILABILITY_WINDOWS",
-    "LEGACY_VERSION_MANIFEST_README_CLEANUP",
+    "FAMILY_CAPTURE_OCR_DOMAIN_SHARING_RUNTIME",
     "DEVICE_VERIFICATION",
     "PRODUCTION_VERIFICATION"
   ],
@@ -58,7 +57,7 @@
     "policy": "LOCAL_BRANCH_TO_CI_RUNTIME_TO_ONE_FROZEN_CANDIDATE_TO_EXTERNAL",
     "candidate_sha_frozen": false,
     "external_deploy_allowed": false,
-    "reason": "P3/P3b branch-runtime continuity is closed, including Hide Memory Summary advisory roundtrip. Deployment candidate remains unfrozen because P4-P5 renewal gates remain open.",
+    "reason": "P1-P5 core renewal gates are branch/runtime closed. A newer P3c Family Capture/OCR candidate is still awaiting exact Runtime E2E closure, so deployment candidate remains unfrozen and external deploy remains disallowed.",
     "default_external_call_budget": 1,
     "user_as_debugger": false
   },
@@ -81,7 +80,7 @@
     "p1_planner_reality_engine": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
     "review_snapshot_frozen": true,
     "deployment_candidate_frozen": false,
-    "next_unresolved_gate": "P5_LEGACY_VERSION_MANIFEST_README_CLEANUP",
+    "next_unresolved_gate": "P3C_FAMILY_CAPTURE_OCR_RUNTIME",
     "hosting_called_during_review": false
   },
   "p2_child_fact_confirmation_closure": {
@@ -266,5 +265,40 @@
     "hosting_called": false,
     "ci_verified": true,
     "runtime_verified": true
+  },
+  "p5_legacy_version_cleanup_closure": {
+    "candidate_head": "78350a93d32d9ad2d6dba5817e8d7007c70c48a8",
+    "coded": true,
+    "ci_verified": true,
+    "runtime_verified": true,
+    "device_verified": false,
+    "production_verified": false,
+    "integration_ci": {
+      "run_number": 166,
+      "result": "PASS"
+    },
+    "worker_self_test": {
+      "run_number": 381,
+      "result": "PASS"
+    },
+    "runtime_e2e": {
+      "run_number": 252,
+      "result": "PASS",
+      "tests": "50/50"
+    },
+    "normalized": [
+      "manifest.json -> Ready & Set identity",
+      "VERSION.json -> non-authoritative compatibility snapshot",
+      "READY_SET_VERSION_REGISTRY.json -> active version authority",
+      "package.json -> 1.0.0-alpha.2",
+      "service-worker cache -> non-feature generation/version namespace",
+      "README.md -> canonical authority semantics",
+      "README_DEPLOY.md -> deployment gate document",
+      "PC_TEST_README.txt -> Ready & Set local-check language"
+    ],
+    "historical_rev_docs": "PROVENANCE_ONLY",
+    "hosting_called": false,
+    "deployment_candidate_frozen": false,
+    "note": "P5 exact candidate is closed, but branch head later advanced for P3c; do not transfer P5 validation to that newer SHA."
   }
 }
