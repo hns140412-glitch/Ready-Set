@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const RUNTIME_VERSION = '2026.09.20-p3-continuity-v1';
+  const RUNTIME_VERSION = '2026.09.20-p3-memory-roundtrip-v1';
   const HIDE_URL = 'https://dainty-froyo-a6e427.netlify.app';
   const SNAP_URL = 'https://cheerful-pothos-d1c3ee.netlify.app';
   const VALID_TASK_STATES = new Set(['PENDING','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
@@ -202,8 +202,24 @@
     if (raw === 'HELP_NEEDED') return 'BLOCKED';
     return null;
   }
+  function normalizeMemorySummary(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const reasons = ['recovery','confusion','orthographic','latency','hint','decay','stable'];
+    const reasonCounts = Object.fromEntries(reasons.map(k => [k, Math.max(0, Math.floor(Number(raw.reasonCounts?.[k]) || 0))]));
+    const top = (Array.isArray(raw.topReviewPriorities) ? raw.topReviewPriorities : []).slice(0,5).map(x => ({
+      lexicalId: String(x?.lexicalId || '').trim() || null,
+      priority: Math.max(0, Math.min(200, Math.round(Number(x?.priority) || 0))),
+      reason: reasons.includes(String(x?.reason || '').trim()) ? String(x.reason).trim() : 'stable'
+    })).filter(x => x.lexicalId);
+    return {
+      averageMemoryStrength: Math.max(0, Math.min(100, Math.round(Number(raw.averageMemoryStrength) || 0))),
+      reasonCounts,
+      needsUnassistedRecallCount: Math.max(0, Math.floor(Number(raw.needsUnassistedRecallCount) || 0)),
+      topReviewPriorities: top
+    };
+  }
 
-  function applyInboundResult({ session_id, goal_id = null, task_id, lap_id, task_state, from_app, event_id = null }) {
+  function applyInboundResult({ session_id, goal_id = null, task_id, lap_id, task_state, from_app, event_id = null, payload = null, memory_summary = null }) {
     const c = ensureContract();
     if (!c || !session_id || session_id !== c.session_id) return false;
     if (goal_id && goal_id !== c.goal_id) return false;
@@ -212,13 +228,36 @@
     if (!task) return false;
 
     const normalized = normalizeInboundState(task_state);
+    const memorySummary = normalizeMemorySummary(memory_summary || payload?.memorySummary || null);
     c.active_app = 'ready-set';
     c.active_task_id = task.task_id;
     if (lap_id) c.active_lap_id = lap_id;
+    if (memorySummary) {
+      task.specialist_memory_summary = memorySummary;
+      task.specialist_memory_source = from_app || 'specialist';
+      task.specialist_memory_received_at = iso();
+      if (task.planner_todo_id && window.ReadySetPlanner?.recordSpecialistMemorySummary) {
+        window.ReadySetPlanner.recordSpecialistMemorySummary({
+          todo_id: task.planner_todo_id,
+          assignment_id: task.assignment_id || null,
+          session_id,
+          task_id: task.task_id,
+          lap_id: lap_id || c.active_lap_id || null,
+          source_app: from_app || 'specialist',
+          event_id,
+          memory_summary: memorySummary,
+          at: task.specialist_memory_received_at
+        });
+      }
+    }
     if (normalized) setTaskState(task.task_id, normalized, from_app || 'SPECIALIST');
     if (['COMPLETED','BLOCKED'].includes(normalized)) endActiveLap('SPECIALIST_RESULT', normalized);
     if (event_id) c.applied_event_ids = [...(c.applied_event_ids || []), event_id].slice(-200);
-    emit('APP_RETURN', { from: from_app || 'specialist', task_state: normalized || task_state || null });
+    emit('APP_RETURN', {
+      from: from_app || 'specialist',
+      task_state: normalized || task_state || null,
+      memory_summary_received: !!memorySummary
+    });
     save();
     renderContractUI();
     return true;
@@ -226,17 +265,24 @@
 
   function consumeReturnQuery() {
     const p = new URLSearchParams(location.search);
+    let memorySummary = null;
+    try {
+      const raw = p.get('memory_summary');
+      if (raw) memorySummary = JSON.parse(raw);
+    } catch {}
     const args = {
       session_id: p.get('session_id'),
       goal_id: p.get('goal_id'),
       task_id: p.get('task_id'),
       lap_id: p.get('lap_id'),
       task_state: p.get('task_state'),
-      from_app: p.get('from_app')
+      from_app: p.get('from_app'),
+      event_id: p.get('event_id'),
+      memory_summary: memorySummary
     };
     if (!args.session_id || !args.task_id || !applyInboundResult(args)) return;
-    ['session_id','goal_id','task_id','lap_id','task_state','from_app'].forEach(k => p.delete(k));
-    const clean = `${location.pathname}${p.toString() ? `?${p}` : ''}${location.hash}`;
+    ['session_id','goal_id','task_id','lap_id','task_state','from_app','event_id','memory_summary'].forEach(k => p.delete(k));
+    const clean = String(location.pathname) + (p.toString() ? '?' + p.toString() : '') + String(location.hash || '');
     history.replaceState(null, '', clean);
   }
 
@@ -256,7 +302,9 @@
       lap_id: e.lap_id,
       task_state: taskState,
       from_app: e.app,
-      event_id: e.event_id
+      event_id: e.event_id,
+      payload: e.payload || null,
+      memory_summary: e.payload?.memorySummary || null
     });
   }
 
@@ -506,6 +554,8 @@
       launchSpecialist,
       buildSpecialistHandoff,
       applyInboundResult,
+      normalizeMemorySummary,
+      consumeReturnQuery,
       setTaskState,
       switchTask,
       openWrapUp
