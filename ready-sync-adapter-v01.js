@@ -23,7 +23,7 @@
   function status(){
     const config=readConfig();
     return Object.freeze({
-      version:'0.1.0',
+      version:'0.2.0',
       configured:!!config.endpoint,
       enabled:!!config.enabled,
       endpoint:config.endpoint||null,
@@ -64,18 +64,18 @@
       payload:event.payload,
       created_at:event.created_at,
       updated_at:event.updated_at,
-      client:{app:'Ready & Set',adapter_version:'0.1.0'}
+      client:{app:'Ready & Set',adapter_version:'0.2.0'}
     };
-    const authorization=window.ReadyFamilySession?.authorizationHeader?.();
-    if(!authorization) return {ok:false,reason:'AUTH_SESSION_REQUIRED'};
+    const family=window.ReadyFamilySession?.current?.();
+    if(!family?.authenticated) return {ok:false,reason:'AUTH_SESSION_REQUIRED'};
     const res=await fetch(config.endpoint+'/events',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
         'Accept':'application/json',
-        'Idempotency-Key':payload.idempotency_key,
-        'Authorization':authorization
+        'Idempotency-Key':payload.idempotency_key
       },
+      credentials:'same-origin',
       body:JSON.stringify(payload)
     });
     const body=await res.json().catch(()=>({}));
@@ -94,8 +94,21 @@
     return {ok:true,remote_version:body.remote_version??null};
   }
 
+  function bindFamilySession(){
+    const family=window.ReadyFamilySession?.current?.();
+    if(family?.authenticated){
+      const cfg=readConfig();
+      if(!cfg.endpoint||cfg.endpoint==='/api/ready-sync')writeConfig({endpoint:'/api/ready-sync',enabled:true});
+    }else{
+      const cfg=readConfig();
+      if(cfg.endpoint==='/api/ready-sync')writeConfig({enabled:false});
+    }
+  }
+  window.addEventListener('readyset-family-session',()=>bindFamilySession());
+  queueMicrotask(()=>bindFamilySession());
+
   window.ReadySetSyncAdapter=Object.freeze({
-    version:'0.1.0',
+    version:'0.2.0',
     contract:'HTTP_JSON_V1',
     configure:({endpoint,enabled=true}={})=>writeConfig({endpoint:String(endpoint||'').trim(),enabled:!!enabled}),
     disable:()=>writeConfig({enabled:false}),
