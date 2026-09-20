@@ -76,3 +76,22 @@
     transition-duration:.01ms!important;
   }
 }
+
+/* Homework capture pipeline */
+.captureIntakeCard{margin-top:18px;padding-top:18px;border-top:1px solid rgba(39,45,38,.1)}
+.captureActions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.captureShutter{min-height:52px;font-weight:800}
+.capturePreviewList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.capturePreviewItem{position:relative;display:grid;grid-template-columns:68px 1fr;gap:10px;align-items:center;padding:9px;border-radius:18px;background:rgba(255,255,255,.62);border:1px solid rgba(39,45,38,.08);min-width:0}
+.capturePreviewItem img,.capturePreviewPlaceholder{width:68px;height:68px;object-fit:cover;border-radius:13px;background:#eee8df}
+.capturePreviewPlaceholder{display:grid;place-items:center;font-size:10px;font-weight:800;color:#777}
+.capturePreviewItem>div{min-width:0}
+.capturePreviewItem b,.capturePreviewItem small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.capturePreviewItem small{margin-top:4px;color:var(--muted)}
+.capturePreviewItem>button{position:absolute;top:5px;right:5px;width:28px;height:28px;border:0;border-radius:50%;background:rgba(30,30,30,.72);color:white;font-size:18px}
+#captureAnalysisStatus{margin:10px 2px 0}
+@media(max-width:420px){
+  .capturePreviewList{grid-template-columns:1fr}
+  .captureActions{grid-template-columns:1.2fr .8fr}
+}
+
