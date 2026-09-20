@@ -41,6 +41,7 @@ const initial={
 let state=load();
 let mediaRecorder=null,mediaStream=null,chunks=[],recordStartedAt=0,recordTicker=null,currentAudio=null;
 let previewTimer=null,currentGuestType='pico';
+const TALENT_BOOKS=['연산','한자','국어','사회','수학','생각하는 피자'];
 let plannerSelectedDate=null;
 let plannerTab='week';
 
@@ -845,7 +846,6 @@ document.getElementById('saveScheduleBtn')?.addEventListener('click',()=>{
   toast('고정 일정을 저장했어요.');
   renderPlannerAdmin(); renderPlanner();
 });
-const TALENT_BOOKS=['연산','한자','국어','사회','수학','생각하는 피자'];
 function parsePrints(value=''){
   const out={};for(const token of String(value).split(',')){const [day,...rest]=token.split(':');if(day?.trim()&&rest.join(':').trim())out[day.trim().toUpperCase()]=rest.join(':').trim()}return out;
 }
