@@ -21,7 +21,10 @@
   "build_identity": {
     "main_sha": "6142cfeb5599a625d61ffa1faca866b2b6817cc8",
     "build_id_policy": "ready-set-<short-main-sha-or-ci-build-id>",
-    "feature_named_cache_versions_forbidden": true
+    "feature_named_cache_versions_forbidden": true,
+    "cache_identity_policy": "PRODUCT_GENERATION_AND_VERSION_ONLY_UNTIL_EXACT_RELEASE_BUILD_ID_IS_INJECTED",
+    "branch_candidate_cache": "ready-set-renewal-01-alpha2",
+    "branch_candidate_not_release_identity": true
   },
   "active_authority": {
     "product_contract": "READY_SET_CANONICAL_PRODUCT_CONTRACT.md",
@@ -44,9 +47,9 @@
     }
   ],
   "legacy_version_sources": {
-    "VERSION.json": "LEGACY_PENDING_R3_CLEANUP",
-    "package.json.version": "LEGACY_PENDING_R3_CLEANUP",
-    "service_worker_cache_feature_label": "LEGACY_PENDING_R3_CLEANUP",
-    "manifest.json": "LEGACY_PRODUCT_IDENTITY_CLEANUP_REQUIRED"
+    "VERSION.json": "CLEANED_BRANCH_CANDIDATE",
+    "package.json.version": "CLEANED_BRANCH_CANDIDATE",
+    "service_worker_cache_feature_label": "CLEANED_BRANCH_CANDIDATE",
+    "manifest.webmanifest": "CURRENT_PRODUCT_IDENTITY"
   }
 }
