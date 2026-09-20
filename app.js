@@ -210,6 +210,17 @@ function learningSequenceText(item){
   const seq=Array.isArray(item?.activity_sequence)?item.activity_sequence.filter(Boolean):[];
   return seq.length?seq.map(learningStepLabel).join(' → '):'';
 }
+function memoryFollowupText(item){
+  if(!item?.memory_followup_advisory||!item.specialist_memory_summary)return '';
+  const s=item.specialist_memory_summary,counts=s.reasonCounts||{};
+  if(Number(s.needsUnassistedRecallCount||0)>0)return '무힌트 재회상 필요';
+  if(Number(counts.confusion||0)>0)return '뜻 혼동 보강';
+  if(Number(counts.orthographic||0)>0)return '철자 보강';
+  if(Number(counts.latency||0)>0)return '느린 회상 보강';
+  if(Number(counts.hint||0)>0)return '힌트 의존 보강';
+  if(Number(counts.decay||0)>0)return '장기기억 보강';
+  return '기억 보강';
+}
 
 function renderPlannerToday(){
   const root=$('#plannerTodayList');
@@ -226,9 +237,9 @@ function renderPlannerToday(){
     b.className='plannerTodayItem'+(selected?' on':'');
     b.dataset.todoId=item.todo_id;
     b.disabled=!startable;
-    const steps=learningSequenceText(item);
+    const steps=learningSequenceText(item),memoryNote=memoryFollowupText(item);
     const stateNote=startable?(selected?'선택됨':'담기'):(item.state==='IN_PROGRESS'?'진행 중':'선택 불가');
-    b.innerHTML=`<span><b>${escapeHtml(item.label)}</b><small>${item.planner_owned?'플래너 제안':'오늘 할 일'}${steps?` · ${escapeHtml(steps)}`:''}</small></span><strong>${stateNote}</strong>`;
+    b.innerHTML=`<span><b>${escapeHtml(item.label)}</b><small>${item.planner_owned?'플래너 제안':'오늘 할 일'}${steps?` · ${escapeHtml(steps)}`:''}${memoryNote?` · ${escapeHtml(memoryNote)}`:''}</small></span><strong>${stateNote}</strong>`;
     if(startable)b.onclick=()=>{
       state.selectedTodoIds=selected
         ? state.selectedTodoIds.filter(x=>x!==item.todo_id)
@@ -248,8 +259,9 @@ function renderMission(){
   chosen.forEach((t)=>{
     const row=document.createElement('div');
     row.className='taskRow';
-    const steps=learningSequenceText(t);
-    row.innerHTML=`<span><b>${escapeHtml(t.label)}</b>${steps?`<small>${escapeHtml(steps)}</small>`:''}</span><button aria-label="삭제">×</button>`;
+    const steps=learningSequenceText(t),memoryNote=memoryFollowupText(t);
+    const detail=[steps,memoryNote].filter(Boolean).join(' · ');
+    row.innerHTML=`<span><b>${escapeHtml(t.label)}</b>${detail?`<small>${escapeHtml(detail)}</small>`:''}</span><button aria-label="삭제">×</button>`;
     row.querySelector('button').onclick=()=>{state.selectedTodoIds=state.selectedTodoIds.filter(x=>x!==t.todo_id);save();renderMission()};
     tl.appendChild(row);
   });
