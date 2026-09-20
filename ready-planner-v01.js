@@ -9,7 +9,7 @@
 
   const STORAGE_KEY='readyset_planner_v1';
   const SCHEMA_VERSION=1;
-  const TODO_STATES=new Set(['PLANNED','IN_PROGRESS','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
+  const TODO_STATES=new Set(['PLANNED','IN_PROGRESS','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED','SUPERSEDED']);
   const READY_TO_TODO={
     PENDING:'PLANNED',
     COMPLETED:'COMPLETED',
@@ -59,6 +59,7 @@
   }
 
   function createPlanner(storage){
+    const isOpenTodo=t=>t&&t.state!=='COMPLETED'&&t.state!=='SUPERSEDED';
     function load(){
       try{return normalize(JSON.parse(storage.getItem(STORAGE_KEY)||'null'))}catch{return blank()}
     }
@@ -151,7 +152,7 @@
     function linkTodayItems(todoIds=[],options={}){
       const date=cleanText(options.date)||dateKey();
       const ids=new Set((todoIds||[]).map(cleanText).filter(Boolean));
-      return load().dated_todos.filter(x=>ids.has(x.todo_id)&&x.date===date&&x.state!=='COMPLETED').map(x=>({
+      return load().dated_todos.filter(x=>ids.has(x.todo_id)&&x.date===date&&isOpenTodo(x)).map(x=>({
         todo_id:x.todo_id,label:x.label,date:x.date,source:x.source,
         assignment_id:x.assignment_id,analysis_id:x.analysis_id,learning_unit_id:x.learning_unit_id,
         template_id:x.template_id,allocation_run_id:x.allocation_run_id,
@@ -177,6 +178,73 @@
       if(!end)return [];
       const out=[];for(let d=start;d<end;d=addDays(d,1))out.push(d);return out;
     }
+    function invalidateAssignmentOutputs(assignmentId,input={}){
+      const id=cleanText(assignmentId);if(!id)return {ok:false,reason:'ASSIGNMENT_ID_REQUIRED'};
+      const reason=cleanText(input.reason)||'FACT_REVISION';
+      const revision=Number(input.fact_revision)||null;
+      return mutate(s=>{
+        const nowIso=new Date().toISOString();
+        let superseded_todos=0,in_progress_count=0,superseded_templates=0,superseded_runs=0,superseded_carry=0,rejected_estimates=0;
+        for(const todo of s.dated_todos){
+          if(todo.assignment_id!==id)continue;
+          if(todo.state==='COMPLETED')continue;
+          if(todo.state==='IN_PROGRESS'){
+            todo.revision_conflict=true;
+            todo.revision_conflict_reason=reason;
+            todo.fact_revision=revision;
+            todo.updated_at=nowIso;
+            in_progress_count++;
+            continue;
+          }
+          if(todo.state!=='SUPERSEDED'){
+            todo.state='SUPERSEDED';
+            todo.superseded_at=nowIso;
+            todo.supersede_reason=reason;
+            todo.fact_revision=revision;
+            superseded_todos++;
+          }
+        }
+        for(const template of s.homework_templates){
+          if(template.provenance?.assignment_id!==id)continue;
+          if(template.confirmation_state!=='SUPERSEDED'){
+            template.confirmation_state='SUPERSEDED';
+            template.superseded_at=nowIso;
+            template.supersede_reason=reason;
+            superseded_templates++;
+          }
+        }
+        for(const run of s.allocation_runs){
+          if(run.assignment_id!==id)continue;
+          if(run.state!=='SUPERSEDED'){
+            run.state='SUPERSEDED';
+            run.superseded_at=nowIso;
+            run.supersede_reason=reason;
+            superseded_runs++;
+          }
+        }
+        for(const carry of s.carry_over_queue){
+          if(carry.assignment_id!==id||carry.status!=='OPEN')continue;
+          carry.status='SUPERSEDED';
+          carry.superseded_at=nowIso;
+          carry.supersede_reason=reason;
+          superseded_carry++;
+        }
+        const affectedTemplates=new Set(
+          s.homework_templates.filter(x=>x.provenance?.assignment_id===id).map(x=>x.template_id)
+        );
+        for(const proposal of s.adaptive_estimate_proposals){
+          if(proposal.status!=='PENDING'||!affectedTemplates.has(proposal.template_id))continue;
+          proposal.status='REJECTED';
+          proposal.decision_actor='SYSTEM_FACT_REVISION';
+          proposal.decision_role='SYSTEM';
+          proposal.decision_note='Superseded by FACT revision';
+          proposal.decided_at=nowIso;
+          rejected_estimates++;
+        }
+        return {ok:true,assignment_id:id,superseded_todos,in_progress_count,superseded_templates,superseded_runs,superseded_carry,rejected_estimates};
+      });
+    }
+
     function allocateLearningUnits(input={}){
       const assignmentId=cleanText(input.assignment_id);if(!assignmentId)return {ok:false,reason:'ASSIGNMENT_ID_REQUIRED'};
       const domain=input.domain_state||globalThis.ReadyAssignments?.load?.();
@@ -192,7 +260,7 @@
       return mutate(s=>{
         const runId=makeId('allocation_v2');
         const loadByDate=Object.fromEntries(dates.map(d=>[d,(s.dated_todos||[])
-          .filter(t=>t.date===d&&t.state!=='COMPLETED')
+          .filter(t=>t.date===d&&isOpenTodo(t))
           .map(t=>({
             tags:t.cognitive_load_profile||[],
             score:Number.isFinite(t.activity_load_score)?t.activity_load_score:3,
@@ -202,7 +270,7 @@
         const scheduleByDate=Object.fromEntries(dates.map(d=>[d,(s.schedule_commitments||[]).filter(x=>x.confirmed!==false&&x.start_at&&x.end_at&&String(x.start_at).slice(0,10)===d&&String(x.end_at).slice(0,10)===d)]));
         const proposals=[];
         for(const unit of units){
-          const existing=s.dated_todos.find(t=>t.learning_unit_id===unit.learning_unit_id&&t.state!=='COMPLETED');
+          const existing=s.dated_todos.find(t=>t.learning_unit_id===unit.learning_unit_id&&isOpenTodo(t));
           if(existing){proposals.push({decision:'REUSE',date:existing.date,todo_id:existing.todo_id,learning_unit_id:unit.learning_unit_id});continue}
           const tags=unit.cognitive_load_profile||[];
           const unitLoad=unit.activity_load||{};
@@ -262,7 +330,7 @@
       return mutate(s=>{const run=s.allocation_runs.find(x=>x.allocation_run_id===runId&&x.version==='PLANNER_V2');if(!run)return {ok:false,reason:'ALLOCATION_RUN_NOT_FOUND'};
         const created=[];
         for(const p of run.proposals.filter(x=>x.decision==='PROPOSE')){
-          let todo=s.dated_todos.find(x=>x.learning_unit_id===p.learning_unit_id&&x.state!=='COMPLETED');
+          let todo=s.dated_todos.find(x=>x.learning_unit_id===p.learning_unit_id&&isOpenTodo(x));
           if(!todo){todo={
             todo_id:makeId('todo'),date:p.date,label:p.label,assignment_id:p.assignment_id,analysis_id:p.analysis_id,
             learning_unit_id:p.learning_unit_id,template_id:p.template_id,allocation_run_id:runId,
@@ -356,7 +424,7 @@
           : availableMinutes;
 
         const existingOpen=new Set(
-          s.dated_todos.filter(x=>x.date===date&&x.state!=='COMPLETED').map(x=>x.template_id).filter(Boolean)
+          s.dated_todos.filter(x=>x.date===date&&isOpenTodo(x)).map(x=>x.template_id).filter(Boolean)
         );
         const openCarry=s.carry_over_queue.filter(x=>x.status==='OPEN');
         const carryByTemplate=new Map(openCarry.filter(x=>x.template_id).map(x=>[x.template_id,x]));
@@ -437,7 +505,7 @@
         const created=[];
         for(const p of run.proposals){
           if(p.decision!=='PROPOSE'||!ids.has(p.template_id))continue;
-          let todo=s.dated_todos.find(x=>x.date===run.date&&x.template_id===p.template_id&&x.state!=='COMPLETED');
+          let todo=s.dated_todos.find(x=>x.date===run.date&&x.template_id===p.template_id&&isOpenTodo(x));
           if(!todo){
             todo={
               todo_id:makeId('todo'),
@@ -692,7 +760,7 @@
     function today(date=dateKey()){
       const s=load();
       return s.dated_todos
-        .filter(x=>x.date===date&&x.state!=='COMPLETED')
+        .filter(x=>x.date===date&&isOpenTodo(x))
         .sort((a,b)=>(a.order??999)-(b.order??999)||a.label.localeCompare(b.label,'ko'));
     }
 
@@ -748,6 +816,7 @@
       upsertDatedTodo,
       linkTodayItems,
       linkOrCreateTodayItems,
+      invalidateAssignmentOutputs,
       allocateLearningUnits,
       commitLearningAllocation,
       replanCarryOver,

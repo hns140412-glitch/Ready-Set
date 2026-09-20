@@ -1103,7 +1103,9 @@ document.getElementById('saveTalentFactsBtn')?.addEventListener('click',async()=
       payload_signature:talentSignatures[subject]
     });
     const processed=window.ReadyIntegrationV1?.processAssignment?.(assignmentId,{start_date:localDateKey()});
-    if(processed?.ok)todoCount+=(processed.todos||[]).length;else held++;
+    if(processed?.ok)todoCount+=(processed.todos||[]).length;
+    else if(processed?.reason==='FACT_REVISION_IN_PROGRESS_HOLD')held++;
+    else held++;
   }
   await window.ReadyCaptureV01?.finalizeFactLinkage?.();
   toast(`재능 6권 분석 완료 · Planner가 ${todoCount}개 탐험을 배정했어요${held?` · 보류 ${held}건`:''}.`);
@@ -1200,6 +1202,8 @@ document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=
     toast('영어 FACT 저장 · 다음 학원 일정 확인 전 분석/배정 보류');
   }else if(processed?.ok){
     toast(`영어 숙제 분석 완료 · Planner가 ${(processed.todos||[]).length}개 탐험을 배정했어요.`);
+  }else if(processed?.reason==='FACT_REVISION_IN_PROGRESS_HOLD'){
+    toast('영어 FACT 수정은 저장했어요. 진행 중인 기존 탐험이 끝난 뒤 새 기준으로 재배정됩니다.');
   }else{
     toast('영어 FACT는 저장했지만 배정 조건을 더 확인해야 해요.');
   }
