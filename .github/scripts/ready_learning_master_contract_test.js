@@ -128,7 +128,7 @@ assert(standardMatcher.OFFICIAL_STANDARD_DATASET.source_refs.includes('MOE_NOTIC
 
 const officialRegistry=require('../../ready-official-standard-registry-v01.js');
 
-assert.strictEqual(officialRegistry.DATASET.coverage_status,'PARTIAL_VERIFIED');
+assert.strictEqual(officialRegistry.DATASET.coverage_status,'MIXED_VERIFIED');
 assert.strictEqual(officialRegistry.findByCode('6수04-01').subject,'수학');
 assert.strictEqual(officialRegistry.findByCode('6과01-03').domain,'지구와 우주');
 assert.strictEqual(officialRegistry.findByCode('6영01-08').domain,'이해');
@@ -169,3 +169,105 @@ const boundScienceFact=learning.interpretFact({
 });
 assert.strictEqual(boundScienceFact.analysis.learning_reference.standard_match.official_standard_code,'6과01-01');
 assert.strictEqual(boundScienceFact.learning_units[0].analysis_provenance.learning_reference.standard_match.official_standard_code,'6과01-01');
+
+assert.strictEqual(officialRegistry.COVERAGE['영어'].status,'VERIFIED_FULL_SUBJECT_COVERAGE');
+assert.strictEqual(officialRegistry.COVERAGE['영어'].verified_record_count,20);
+assert.strictEqual(officialRegistry.list('영어').length,20);
+assert.strictEqual(officialRegistry.findByCode('6영02-10').domain,'표현');
+assert.strictEqual(officialRegistry.findByCode('6영01-06').domain,'이해');
+assert.strictEqual(officialRegistry.COVERAGE['과학'].status,'VERIFIED_FULL_SUBJECT_COVERAGE');
+assert.strictEqual(officialRegistry.findByCode('6과05-03').domain,'과학과 사회');
+
+const englishWritingBound=standardMatcher.match('영어',{teacher_instruction:'예시문을 참고하여 목적에 맞는 간단한 글쓰기'});
+assert.strictEqual(englishWritingBound.official_standard_code,'6영02-08');
+
+const englishOrderBound=standardMatcher.match('영어',{teacher_instruction:'일상생활 글에서 사건의 순서를 파악하며 읽기'});
+assert.strictEqual(englishOrderBound.official_standard_code,'6영01-06');
+
+const scienceTechBound=standardMatcher.match('과학',{teacher_instruction:'지속가능한 삶을 위한 혼합물 분리 과학기술 장치를 조사하고 공유'});
+assert.strictEqual(scienceTechBound.official_standard_code,'6과05-03');
+
+assert.strictEqual(officialRegistry.COVERAGE['국어'].status,'VERIFIED_FULL_SUBJECT_COVERAGE');
+assert.strictEqual(officialRegistry.COVERAGE['국어'].verified_record_count,34);
+assert.strictEqual(officialRegistry.list('국어').length,34);
+assert.strictEqual(officialRegistry.findByCode('6국04-04').domain,'문법');
+assert.strictEqual(officialRegistry.findByCode('6국05-03').domain,'문학');
+assert.strictEqual(officialRegistry.findByCode('6국06-04').domain,'매체');
+
+const koreanInterviewBound=standardMatcher.match('국어',{teacher_instruction:'면담 절차를 이해하고 상대와 매체를 고려해 면담'});
+assert.strictEqual(koreanInterviewBound.official_standard_code,'6국01-04');
+
+const koreanGrammarBound=standardMatcher.match('국어',{teacher_instruction:'문장 성분과 호응 관계를 살펴 올바른 문장 구성'});
+assert.strictEqual(koreanGrammarBound.official_standard_code,'6국04-04');
+
+const koreanLiteratureBound=standardMatcher.match('국어',{teacher_instruction:'소설에서 인물 사건 배경을 파악'});
+assert.strictEqual(koreanLiteratureBound.official_standard_code,'6국05-03');
+
+assert.strictEqual(officialRegistry.COVERAGE['수학'].status,'VERIFIED_FULL_SUBJECT_COVERAGE');
+assert.strictEqual(officialRegistry.COVERAGE['수학'].verified_record_count,45);
+assert.strictEqual(officialRegistry.list('수학').length,45);
+assert.strictEqual(officialRegistry.findByCode('6수01-08').domain,'수와 연산');
+assert.strictEqual(officialRegistry.findByCode('6수02-04').domain,'변화와 관계');
+assert.strictEqual(officialRegistry.findByCode('6수03-19').domain,'도형과 측정');
+assert.strictEqual(officialRegistry.findByCode('6수04-06').domain,'자료와 가능성');
+assert.strictEqual(officialRegistry.findByCode('6수03-19').source,'GOE_FRAMEWORK_56');
+
+const fractionAdditionBound=standardMatcher.match('수학',{teacher_instruction:'분모가 다른 분수의 덧셈과 뺄셈 계산 원리를 탐구'});
+assert.strictEqual(fractionAdditionBound.official_standard_code,'6수01-08');
+
+const proportionBound=standardMatcher.match('수학',{teacher_instruction:'비례식의 성질을 이해하고 간단한 비례식을 풀기'});
+assert.strictEqual(proportionBound.official_standard_code,'6수02-04');
+
+const volumeBound=standardMatcher.match('수학',{teacher_instruction:'직육면체와 정육면체의 부피를 구하는 방법을 이해하고 계산'});
+assert.strictEqual(volumeBound.official_standard_code,'6수03-19');
+
+const probabilityBound=standardMatcher.match('수학',{teacher_instruction:'자료를 이용해 가능성을 예상하고 근거를 들어 판단'});
+assert.strictEqual(probabilityBound.official_standard_code,'6수04-06');
+
+assert.strictEqual(officialRegistry.COVERAGE['과학'].status,'VERIFIED_FULL_SUBJECT_COVERAGE');
+assert.strictEqual(officialRegistry.COVERAGE['과학'].verified_record_count,51);
+assert.strictEqual(officialRegistry.list('과학').length,51);
+assert.strictEqual(officialRegistry.findByCode('6과02-02').domain,'운동과 에너지');
+assert.strictEqual(officialRegistry.findByCode('6과09-01').domain,'물질');
+assert.strictEqual(officialRegistry.findByCode('6과11-01').domain,'생명');
+assert.strictEqual(officialRegistry.findByCode('6과13-03').domain,'지구와 우주');
+assert.strictEqual(officialRegistry.findByCode('6과16-01').domain,'과학과 사회');
+
+const refractionBound=standardMatcher.match('과학',{teacher_instruction:'빛이 직진 반사 굴절하는 성질을 관찰'});
+assert.strictEqual(refractionBound.official_standard_code,'6과02-02');
+
+const cellBound=standardMatcher.match('과학',{teacher_instruction:'생물의 기본 단위 세포를 현미경으로 관찰'});
+assert.strictEqual(cellBound.official_standard_code,'6과11-01');
+
+const seasonBound=standardMatcher.match('과학',{teacher_instruction:'지구 자전축이 기울어진 채 공전하여 계절 변화가 생기는 원인 설명'});
+assert.strictEqual(seasonBound.official_standard_code,'6과13-03');
+
+const futureScienceBound=standardMatcher.match('과학',{teacher_instruction:'미래 사회 문제를 조사하고 과학이 기여할 방법을 토의'});
+assert.strictEqual(futureScienceBound.official_standard_code,'6과16-01');
+
+assert.strictEqual(officialRegistry.COVERAGE['사회'].status,'PARTIAL_VERIFIED_SOURCE_CODE_AMBIGUITY');
+assert.strictEqual(officialRegistry.COVERAGE['사회'].verified_record_count,26);
+assert.strictEqual(officialRegistry.COVERAGE['사회'].expected_total,27);
+assert(officialRegistry.COVERAGE['사회'].gaps.includes('SOURCE_TABLE_SECOND_6사09_ROW_DUPLICATES_CODE_6사09-01'));
+assert.strictEqual(officialRegistry.list('사회').length,26);
+assert.strictEqual(officialRegistry.findByCode('6사07-01').domain,'역사');
+assert.strictEqual(officialRegistry.findByCode('6사08-02').domain,'일반사회');
+assert.strictEqual(officialRegistry.findByCode('6사10-02').domain,'지리');
+
+const reunificationBound=standardMatcher.match('사회',{teacher_instruction:'분단으로 나타난 문제와 평화 통일을 위해 할 수 있는 일을 탐색'});
+assert.strictEqual(reunificationBound.official_standard_code,'6사07-01');
+
+const separationOfPowersBound=standardMatcher.match('사회',{teacher_instruction:'국회 행정부 법원이 하는 일과 권력 분립 이유를 탐색'});
+assert.strictEqual(separationOfPowersBound.official_standard_code,'6사08-02');
+
+const worldClimateBound=standardMatcher.match('사회',{teacher_instruction:'세계의 다양한 기후와 기후 환경이 인간생활에 미치는 관계를 탐구'});
+assert.strictEqual(worldClimateBound.official_standard_code,'6사10-02');
+
+assert.strictEqual(officialRegistry.RECORDS.length,176);
+assert.deepStrictEqual({
+  korean:officialRegistry.list('국어').length,
+  math:officialRegistry.list('수학').length,
+  social:officialRegistry.list('사회').length,
+  science:officialRegistry.list('과학').length,
+  english:officialRegistry.list('영어').length
+},{korean:34,math:45,social:26,science:51,english:20});
