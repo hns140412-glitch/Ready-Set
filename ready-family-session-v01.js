@@ -10,7 +10,6 @@
     member_id:null,
     role:'CHILD',
     session_id:null,
-    access_token:null,
     issued_at:null,
     expires_at:null,
     source:'LOCAL_DEFAULT'
@@ -29,7 +28,6 @@
     const familyId=String(input.family_id||'').trim()||null;
     const memberId=String(input.member_id||'').trim()||null;
     const sessionId=String(input.session_id||'').trim()||null;
-    const token=String(input.access_token||'').trim()||null;
     const validRole=ROLES.has(role)?role:null;
     const candidate={
       state:authenticated?'AUTHENTICATED':'ANONYMOUS_LOCAL',
@@ -38,7 +36,6 @@
       member_id:memberId,
       role:validRole||'CHILD',
       session_id:sessionId,
-      access_token:token,
       issued_at:input.issued_at||null,
       expires_at:input.expires_at||null,
       source:String(input.source||'AUTH_BOOTSTRAP')
@@ -103,7 +100,7 @@
   function clear(){
     session={
       state:'ANONYMOUS_LOCAL',authenticated:false,family_id:null,member_id:null,role:'CHILD',
-      session_id:null,access_token:null,issued_at:null,expires_at:null,source:'LOCAL_DEFAULT'
+      session_id:null,issued_at:null,expires_at:null,source:'LOCAL_DEFAULT'
     };
     window.dispatchEvent(new CustomEvent('readyset-family-session',{detail:publicSession()}));
     return publicSession();
@@ -111,7 +108,6 @@
 
   function publicSession(){
     const s=clone(session);
-    delete s.access_token;
     return Object.freeze(s);
   }
   function current(){return publicSession();}
@@ -141,7 +137,6 @@
     signup,
     logout,
     linkChild,
-    applyServerSession:applyBootstrap,
     clear
   });
 
