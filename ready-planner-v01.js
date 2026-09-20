@@ -191,7 +191,7 @@
           if(todo.state==='IN_PROGRESS'){
             todo.revision_conflict=true;
             todo.revision_conflict_reason=reason;
-            todo.fact_revision=revision;
+            todo.revision_conflict_with_fact_revision=revision;
             todo.updated_at=nowIso;
             in_progress_count++;
             continue;
@@ -200,7 +200,7 @@
             todo.state='SUPERSEDED';
             todo.superseded_at=nowIso;
             todo.supersede_reason=reason;
-            todo.fact_revision=revision;
+            todo.superseded_by_fact_revision=revision;
             superseded_todos++;
           }
         }
@@ -572,6 +572,7 @@
         todo.actual_minutes=actualMinutes;
         todo.updated_at=new Date().toISOString();
 
+        const eventAt=input.at||new Date().toISOString();
         const observationKey=[cleanText(input.session_id),cleanText(input.task_id),todoId].join('|');
         let obs=s.execution_observations.find(x=>x.observation_key===observationKey);
         if(!obs){
@@ -595,10 +596,34 @@
             session_id:cleanText(input.session_id)||null,
             task_id:cleanText(input.task_id)||null,
             source:'READY_SESSION',
-            at:input.at||new Date().toISOString()
+            time_attribution:cleanText(input.time_attribution)||'DIRECT_TASK_OBSERVATION',
+            session_total_actual_ms:Number.isFinite(input.session_total_actual_ms)?Math.max(0,input.session_total_actual_ms):null,
+            session_task_count:Number.isFinite(input.session_task_count)?Math.max(1,Math.floor(input.session_task_count)):null,
+            at:eventAt
           };
           s.execution_observations.push(obs);
           s.execution_observations=s.execution_observations.slice(-500);
+        }
+
+        const progressKey=[cleanText(input.session_id),cleanText(input.task_id),todoId,mapped].join('|');
+        if(!s.progress_events.some(x=>x.event_key===progressKey)){
+          s.progress_events.push({
+            event_id:makeId('progress'),
+            event_key:progressKey,
+            todo_id:todoId,
+            assignment_id:todo.assignment_id||null,
+            analysis_id:todo.analysis_id||null,
+            learning_unit_id:todo.learning_unit_id||null,
+            template_id:todo.template_id||null,
+            allocation_run_id:todo.allocation_run_id||null,
+            fact_revision:Number(todo.fact_revision)||Number(todo.provenance?.fact_revision)||1,
+            session_id:cleanText(input.session_id)||null,
+            task_id:cleanText(input.task_id)||null,
+            state:mapped,
+            source:'READY_SESSION_OUTCOME',
+            at:eventAt
+          });
+          s.progress_events=s.progress_events.slice(-500);
         }
 
         const carryEligible=['PARTIAL','DEFERRED'].includes(mapped);
@@ -853,7 +878,8 @@
 
     function recordTaskState(input={}){
       const todoId=cleanText(input.todo_id); if(!todoId) return null;
-      const mapped=READY_TO_TODO[input.ready_state]||null; if(!mapped) return null;
+      const requested=cleanText(input.ready_state);
+      const mapped=READY_TO_TODO[requested]||(TODO_STATES.has(requested)?requested:null); if(!mapped) return null;
       return mutate(s=>{
         const todo=s.dated_todos.find(x=>x.todo_id===todoId); if(!todo) return null;
         todo.state=mapped; todo.updated_at=new Date().toISOString();
