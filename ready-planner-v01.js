@@ -298,7 +298,8 @@
                 assignment_id:assignmentId,
                 subject:unit.subject,
                 current_revision:Number(fact.fact_revision)||1,
-                activity_types:unit.activity_types||[]
+                activity_types:unit.activity_types||[],
+                allow_subject_generalization:true
               });
               const historySafetyPenalty=historicalSignal?.risk_band==='HIGH'?(highLoadStack*8+recoveryStack*6):historicalSignal?.risk_band==='MEDIUM'?highLoadStack*3:0;
               return taskLoads.length*8
@@ -334,7 +335,8 @@
               assignment_id:assignmentId,
               subject:unit.subject,
               current_revision:Number(fact.fact_revision)||1,
-              activity_types:unit.activity_types||[]
+              activity_types:unit.activity_types||[],
+              allow_subject_generalization:true
             })
           });
         }
@@ -669,31 +671,69 @@
       const subject=cleanText(input.subject);
       const currentRevision=Number(input.current_revision)||null;
       const activityTypes=new Set((input.activity_types||[]).map(cleanText).filter(Boolean));
+      const allowSubjectGeneralization=input.allow_subject_generalization===true;
+      const maxSamples=Math.max(2,Math.min(20,Number(input.max_samples)||12));
+      const maxAgeDays=Math.max(14,Math.min(365,Number(input.max_age_days)||120));
+      const halfLifeDays=Math.max(7,Math.min(maxAgeDays,Number(input.half_life_days)||30));
+      const nowMs=Number.isFinite(input.now_ms)?input.now_ms:Date.now();
       const s=load();
-      const rows=s.execution_observations
-        .filter(x=>!assignmentId||x.assignment_id===assignmentId)
-        .filter(x=>currentRevision===null||Number(x.fact_revision)!==currentRevision)
-        .filter(x=>!subject||!x.subject||x.subject===subject)
-        .filter(x=>!activityTypes.size||(x.activity_types||[]).some(t=>activityTypes.has(cleanText(t))))
-        .filter(x=>Number.isFinite(x.actual_minutes)&&x.actual_minutes>0)
-        .slice(-20);
+
+      const eligible=x=>{
+        if(currentRevision!==null&&Number(x.fact_revision)===currentRevision)return false;
+        if(!Number.isFinite(x.actual_minutes)||x.actual_minutes<=0)return false;
+        if(subject&&x.subject!==subject)return false;
+        const rowTypes=new Set((x.activity_types||[]).map(cleanText).filter(Boolean));
+        if(activityTypes.size&&!([...activityTypes].some(t=>rowTypes.has(t))))return false;
+        const atMs=Date.parse(x.at||'');
+        if(!Number.isFinite(atMs))return false;
+        const ageDays=Math.max(0,(nowMs-atMs)/86400000);
+        return ageDays<=maxAgeDays;
+      };
+      const assignmentRows=s.execution_observations.filter(x=>x.assignment_id===assignmentId&&eligible(x));
+      let scope='SAME_ASSIGNMENT_HISTORY';
+      let rows=assignmentRows;
+      if(rows.length<2&&allowSubjectGeneralization&&subject&&activityTypes.size){
+        rows=s.execution_observations.filter(x=>eligible(x));
+        scope='SAME_SUBJECT_ACTIVITY_HISTORY';
+      }
+      rows=rows
+        .map(x=>{
+          const ageDays=Math.max(0,(nowMs-Date.parse(x.at))/86400000);
+          const recencyWeight=Math.pow(0.5,ageDays/halfLifeDays);
+          return {...x,_age_days:ageDays,_weight:recencyWeight};
+        })
+        .sort((a,b)=>Date.parse(b.at)-Date.parse(a.at))
+        .slice(0,maxSamples);
       if(rows.length<2)return null;
-      const vals=rows.map(x=>x.actual_minutes).sort((a,b)=>a-b);
-      const mid=Math.floor(vals.length/2);
-      const median=vals.length%2?vals[mid]:Math.round((vals[mid-1]+vals[mid])/2);
+
+      const totalWeight=rows.reduce((sum,x)=>sum+x._weight,0);
+      if(totalWeight<1.1)return null;
+      const weightedMedian=()=>{
+        const ordered=[...rows].sort((a,b)=>a.actual_minutes-b.actual_minutes);
+        let acc=0;
+        for(const row of ordered){
+          acc+=row._weight;
+          if(acc>=totalWeight/2)return row.actual_minutes;
+        }
+        return ordered.at(-1)?.actual_minutes||null;
+      };
       const frictionStates=new Set(['PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
-      const frictionCount=rows.filter(x=>frictionStates.has(cleanText(x.ready_state))).length;
-      const highRecoveryCount=rows.filter(x=>x.recovery_need==='HIGH').length;
+      const weightedRate=predicate=>rows.reduce((sum,x)=>sum+(predicate(x)?x._weight:0),0)/totalWeight;
       const signal={
         authority:'CROSS_REVISION_ADVISORY_ONLY',
         source:'EXECUTION_HISTORY',
+        generalization_scope:scope,
         sample_count:rows.length,
-        median_actual_minutes:median,
-        friction_rate:Number((frictionCount/rows.length).toFixed(2)),
-        high_recovery_rate:Number((highRecoveryCount/rows.length).toFixed(2)),
+        effective_sample_weight:Number(totalWeight.toFixed(2)),
+        median_actual_minutes:weightedMedian(),
+        friction_rate:Number(weightedRate(x=>frictionStates.has(cleanText(x.ready_state))).toFixed(2)),
+        high_recovery_rate:Number(weightedRate(x=>x.recovery_need==='HIGH').toFixed(2)),
         subject:subject||null,
         activity_types:[...activityTypes],
         source_revisions:[...new Set(rows.map(x=>Number(x.fact_revision)||1))].sort((a,b)=>a-b),
+        recency_policy:{half_life_days:halfLifeDays,max_age_days:maxAgeDays,max_samples:maxSamples},
+        oldest_sample_age_days:Number(Math.max(...rows.map(x=>x._age_days)).toFixed(1)),
+        newest_sample_age_days:Number(Math.min(...rows.map(x=>x._age_days)).toFixed(1)),
         can_influence:['LOAD_SAFETY','RECOVERY_SPACING'],
         cannot_influence:['ASSIGNMENT_FACT','SOURCE_RANGE','DEADLINE','REQUIRED_TODAY','FACT_CONFIRMATION']
       };

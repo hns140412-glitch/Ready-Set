@@ -30,7 +30,8 @@
         assignment_id:assignmentId,
         subject,
         current_revision:Number(fact.fact_revision)||1,
-        activity_types:profile?.activity_types||[]
+        activity_types:profile?.activity_types||[],
+        allow_subject_generalization:true
       })||null;
       window.ReadyLearningMasterV01.interpretConfirmed(assignmentId,{
         actor:'LEARNING_MASTER_RUNTIME',
