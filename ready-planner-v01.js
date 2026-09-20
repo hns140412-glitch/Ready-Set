@@ -306,10 +306,12 @@
           })[0];
           loadByDate[date].push({tags,score:unitScore,difficulty:unitDifficulty,recovery_need:unitRecovery});
           const templateId=`template_${unit.learning_unit_id}`;
-          const template={template_id:templateId,title:`${unit.subject} · ${unit.source_range||unit.concept_skill_target}`,subject:unit.subject,assignment_cycle:fact.assignment_cycle,learning_units:[unit.learning_unit_id],provenance:{kind:'LEARNING_MASTER_OUTPUT',assignment_id:assignmentId,analysis_id:analysis.analysis_id},confirmation_state:'CONFIRMED',deadline_date:fact.deadline_boundary||null,estimated_minutes:null,allocation_priority:100,required_today:false,preferred_days:[],updated_at:new Date().toISOString()};
+          const factRevision=Number(fact.fact_revision)||1;
+          const template={template_id:templateId,title:`${unit.subject} · ${unit.source_range||unit.concept_skill_target}`,subject:unit.subject,assignment_cycle:fact.assignment_cycle,learning_units:[unit.learning_unit_id],provenance:{kind:'LEARNING_MASTER_OUTPUT',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:factRevision},confirmation_state:'CONFIRMED',deadline_date:fact.deadline_boundary||null,estimated_minutes:null,planner_estimated_minutes:null,allocation_priority:100,required_today:false,preferred_days:[],updated_at:new Date().toISOString()};
           const ti=s.homework_templates.findIndex(x=>x.template_id===templateId);if(ti>=0)s.homework_templates[ti]=template;else s.homework_templates.push(template);
           proposals.push({
             decision:'PROPOSE',date,label:template.title,assignment_id:assignmentId,analysis_id:analysis.analysis_id,
+            fact_revision:Number(fact.fact_revision)||1,
             learning_unit_id:unit.learning_unit_id,template_id:templateId,
             activity_types:unit.activity_types,
             activity_sequence:unit.activity_sequence||[],
@@ -322,7 +324,7 @@
             prerequisite:unit.prerequisite
           });
         }
-        const run={allocation_run_id:runId,version:'PLANNER_V2',assignment_id:assignmentId,analysis_id:analysis.analysis_id,primary_basis:'LEARNING_UNIT_ACTIVITY_LOAD',minutes_role:'SECONDARY_SAFETY_ONLY',proposals,created_at:new Date().toISOString()};
+        const run={allocation_run_id:runId,version:'PLANNER_V2',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:Number(fact.fact_revision)||1,primary_basis:'LEARNING_UNIT_ACTIVITY_LOAD',minutes_role:'SECONDARY_SAFETY_ONLY',proposals,created_at:new Date().toISOString()};
         s.allocation_runs.push(run);return {ok:true,...run};
       });
     }
@@ -333,13 +335,14 @@
           let todo=s.dated_todos.find(x=>x.learning_unit_id===p.learning_unit_id&&isOpenTodo(x));
           if(!todo){todo={
             todo_id:makeId('todo'),date:p.date,label:p.label,assignment_id:p.assignment_id,analysis_id:p.analysis_id,
+            fact_revision:Number(p.fact_revision)||Number(run.fact_revision)||1,
             learning_unit_id:p.learning_unit_id,template_id:p.template_id,allocation_run_id:runId,
             activity_types:p.activity_types,activity_sequence:p.activity_sequence||[],
             cognitive_load_profile:p.cognitive_load_profile,
             activity_load_score:p.activity_load_score,difficulty:p.difficulty,recovery_need:p.recovery_need,
             review_policy:p.review_policy,parent_help_dependency:p.parent_help_dependency,
             source:'PLANNER_V2_ALLOCATION',source_actor:'PLANNER_MAIN',
-            provenance:{assignment_id:p.assignment_id,analysis_id:p.analysis_id,learning_unit_id:p.learning_unit_id,allocation_run_id:runId},
+            provenance:{assignment_id:p.assignment_id,analysis_id:p.analysis_id,learning_unit_id:p.learning_unit_id,allocation_run_id:runId,fact_revision:Number(p.fact_revision)||Number(run.fact_revision)||1},
             order:created.length,state:'PLANNED',estimated_minutes:null,created_at:new Date().toISOString(),updated_at:new Date().toISOString()
           };s.dated_todos.push(todo)}
           created.push({...todo});
@@ -565,6 +568,7 @@
             analysis_id:todo.analysis_id||null,
             learning_unit_id:todo.learning_unit_id||null,
             allocation_run_id:todo.allocation_run_id||null,
+            fact_revision:Number(todo.fact_revision)||Number(todo.provenance?.fact_revision)||1,
             planned_minutes:Number.isFinite(todo.estimated_minutes)?todo.estimated_minutes:null,
             actual_minutes:actualMinutes,
             ready_state:readyState,
@@ -589,6 +593,7 @@
             analysis_id:todo.analysis_id||null,
             learning_unit_id:todo.learning_unit_id||null,
             allocation_run_id:todo.allocation_run_id||null,
+            fact_revision:Number(todo.fact_revision)||Number(todo.provenance?.fact_revision)||1,
             label:todo.label,
             from_date:todo.date,
             state:mapped,
@@ -641,9 +646,13 @@
       });
     }
 
-    function recentEstimateEvidence(templateId,limit=5){
-      const rows=load().execution_observations
+    function recentEstimateEvidence(templateId,limit=5,options={}){
+      const s=load();
+      const template=s.homework_templates.find(x=>x.template_id===templateId)||null;
+      const targetRevision=Number(options.fact_revision)||Number(template?.provenance?.fact_revision)||null;
+      const rows=s.execution_observations
         .filter(x=>x.template_id===templateId&&Number.isFinite(x.actual_minutes)&&x.actual_minutes>0)
+        .filter(x=>targetRevision===null||Number(x.fact_revision)===targetRevision)
         .slice(-Math.max(1,limit));
       if(!rows.length)return null;
       const vals=rows.map(x=>x.actual_minutes).sort((a,b)=>a-b);
@@ -654,10 +663,26 @@
         sample_count:vals.length,
         median_actual_minutes:median,
         values:vals,
-        authority:'OBSERVATION_ONLY'
+        authority:'OBSERVATION_ONLY',
+        fact_revision:targetRevision
       };
     }
 
+
+    function learningHistory(assignmentId,options={}){
+      const id=cleanText(assignmentId);if(!id)return [];
+      const currentRevision=Number(options.current_revision)||null;
+      const s=load();
+      return s.execution_observations
+        .filter(x=>x.assignment_id===id)
+        .map(x=>({
+          ...x,
+          history_role:currentRevision!==null&&Number(x.fact_revision)===currentRevision
+            ?'CURRENT_REVISION_OBSERVATION'
+            :'HISTORICAL_OBSERVATION_ONLY',
+          reusable_for_current_estimate:currentRevision!==null&&Number(x.fact_revision)===currentRevision
+        }));
+    }
 
     function proposeEstimateAdjustment(templateId,input={}){
       const id=cleanText(templateId);
@@ -668,8 +693,10 @@
       return mutate(s=>{
         const template=s.homework_templates.find(x=>x.template_id===id);
         if(!template)return {ok:false,reason:'TEMPLATE_NOT_FOUND'};
+        const targetRevision=Number(template.provenance?.fact_revision)||null;
         const rows=s.execution_observations
           .filter(x=>x.template_id===id&&Number.isFinite(x.actual_minutes)&&x.actual_minutes>0)
+          .filter(x=>targetRevision===null||Number(x.fact_revision)===targetRevision)
           .slice(-evidenceLimit);
         if(rows.length<minSamples)return {ok:false,reason:'INSUFFICIENT_EVIDENCE',sample_count:rows.length,min_samples:minSamples};
         const vals=rows.map(x=>x.actual_minutes).sort((a,b)=>a-b);
@@ -687,7 +714,7 @@
           current_planner_estimated_minutes:current,
           proposed_planner_estimated_minutes:median,
           delta_minutes:current===null?null:median-current,
-          evidence:{sample_count:vals.length,median_actual_minutes:median,values:vals,authority:'OBSERVATION_ONLY'},
+          evidence:{sample_count:vals.length,median_actual_minutes:median,values:vals,authority:'OBSERVATION_ONLY',fact_revision:targetRevision},
           authority:'PLANNER_PROPOSAL_HUMAN_APPROVAL_REQUIRED',
           status:'PENDING',
           created_at:new Date().toISOString()
@@ -746,6 +773,7 @@
             learning_unit_id:todo.learning_unit_id||null,
             template_id:todo.template_id||null,
             allocation_run_id:todo.allocation_run_id||null,
+            fact_revision:Number(todo.fact_revision)||Number(todo.provenance?.fact_revision)||1,
             session_id:cleanText(input.session_id)||null,
             task_id:cleanText(input.task_id)||null,
             state:mapped,
@@ -827,6 +855,7 @@
       carryOverCandidates,
       resolveCarryOver,
       recentEstimateEvidence,
+      learningHistory,
       proposeEstimateAdjustment,
       decideEstimateAdjustment,
       pendingEstimateAdjustments
