@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.2.0';
+  const VERSION='0.3.0';
   const DATASET={
     curriculum:'2022_REVISED_KOREA_NATIONAL_CURRICULUM',
     school_level:'ELEMENTARY',
@@ -20,7 +20,7 @@
   const COVERAGE={
     '국어':{status:'VERIFIED_FULL_SUBJECT_COVERAGE',verified_record_count:34,expected_total:34,verified_domains:['듣기·말하기','읽기','쓰기','문법','문학','매체'],gaps:[]},
     '수학':{status:'VERIFIED_FULL_SUBJECT_COVERAGE',verified_record_count:45,expected_total:45,verified_domains:['수와 연산','변화와 관계','도형과 측정','자료와 가능성'],gaps:[]},
-    '사회':{status:'PARTIAL_VERIFIED_SOURCE_CODE_AMBIGUITY',verified_record_count:26,expected_total:27,verified_domains:['지리','일반사회','역사'],gaps:['SOURCE_TABLE_SECOND_6사09_ROW_DUPLICATES_CODE_6사09-01']},
+    '사회':{status:'VERIFIED_FULL_SUBJECT_COVERAGE',verified_record_count:27,expected_total:27,verified_domains:['지리','일반사회','역사'],gaps:[]},
     '과학':{status:'VERIFIED_FULL_SUBJECT_COVERAGE',verified_record_count:51,expected_total:51,verified_domains:['운동과 에너지','물질','생명','지구와 우주','과학과 사회'],gaps:[]},
     '영어':{status:'VERIFIED_FULL_SUBJECT_COVERAGE',verified_record_count:20,expected_total:20,verified_domains:['이해','표현'],gaps:[]}
   };
@@ -167,6 +167,7 @@
     {code:'6사08-02',subject:'사회',domain:'일반사회',semantic_summary:'국회·행정부·법원의 역할과 권력 분립 이유 탐색',keywords:['국회','행정부','법원','권력 분립'],source:'GOE_FRAMEWORK_56'},
     {code:'6사08-03',subject:'사회',domain:'일반사회',semantic_summary:'민주주의에서 미디어 역할을 이해하고 비판적으로 분석·이용',keywords:['민주주의','미디어','비판적 분석','이용'],source:'GOE_FRAMEWORK_56'},
     {code:'6사09-01',subject:'사회',domain:'지리',semantic_summary:'공간 자료 특징과 지구본·세계지도 위치 표현 방법 이해',keywords:['공간 자료','지구본','세계지도','위치'],source:'GOE_FRAMEWORK_56'},
+    {code:'6사09-02',subject:'사회',domain:'지리',semantic_summary:'세계 주요 대륙·대양과 여러 국가의 위치·영토 특징 이해',keywords:['대륙','대양','국가','위치','영토'],source:'GOE_2026_EVAL'},
     {code:'6사10-01',subject:'사회',domain:'지리',semantic_summary:'세계 여러 지역 지형 경관과 다양한 삶의 모습 이해',keywords:['세계','지형 경관','삶','지역'],source:'GOE_FRAMEWORK_56'},
     {code:'6사10-02',subject:'사회',domain:'지리',semantic_summary:'세계 기후와 기후 환경·인간생활 관계 탐구',keywords:['세계 기후','기후 환경','인간생활','관계'],source:'GOE_FRAMEWORK_56'},
     {code:'6사11-01',subject:'사회',domain:'일반사회',semantic_summary:'시장경제에서 가계·기업 역할과 근로자 권리·기업 책임 탐색',keywords:['시장경제','가계','기업','근로자','사회적 책임'],source:'GOE_FRAMEWORK_56'},
