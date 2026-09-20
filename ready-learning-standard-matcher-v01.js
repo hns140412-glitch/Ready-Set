@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.2.0';
+  const VERSION='0.3.0';
   const OFFICIAL_STANDARD_DATASET={
     curriculum:'2022_REVISED_KOREA_NATIONAL_CURRICULUM',
     school_level:'ELEMENTARY',
@@ -63,6 +63,12 @@
     ]
   };
 
+  function officialRegistryApi(){
+    if(typeof globalThis!=='undefined'&&globalThis.ReadyOfficialStandardRegistryV01)return globalThis.ReadyOfficialStandardRegistryV01;
+    if(typeof require==='function'){try{return require('./ready-official-standard-registry-v01.js')}catch{}}
+    return null;
+  }
+
   const clean=v=>String(v??'').trim();
   const normalize=v=>clean(v).toLowerCase().replace(/\s+/g,' ');
   function contextText(context={}){
@@ -116,13 +122,32 @@
     }
     const selected=candidates[0];
     const confidence=top>=2?'HIGH':'MEDIUM';
+    if(key==='피아노'){
+      return {
+        ...base,
+        status:'MATCHED_DOMAIN_CANDIDATE',
+        confidence,
+        candidates,
+        selected,
+        unresolved:[]
+      };
+    }
+    const registry=officialRegistryApi();
+    const officialMatch=registry?.match?.(key,selected.domain,text)||null;
+    const hasVerifiedCode=officialMatch?.status==='VERIFIED_STANDARD_MATCH'&&officialMatch.selected?.code;
     return {
       ...base,
-      status:'MATCHED_DOMAIN_CANDIDATE',
+      status:hasVerifiedCode?'MATCHED_VERIFIED_STANDARD':'MATCHED_DOMAIN_CANDIDATE',
       confidence,
       candidates,
       selected,
-      unresolved:key==='피아노'?[]:['OFFICIAL_STANDARD_CODE_NOT_BOUND']
+      official_standard_code:hasVerifiedCode?officialMatch.selected.code:null,
+      standard_binding_status:hasVerifiedCode?'BOUND_VERIFIED_RECORD':'UNBOUND_REQUIRES_VERIFIED_STANDARD_RECORD',
+      official_standard_match:officialMatch,
+      unresolved:hasVerifiedCode?[]:[
+        ...(officialMatch?.unresolved||[]),
+        'OFFICIAL_STANDARD_CODE_NOT_BOUND'
+      ]
     };
   }
 
