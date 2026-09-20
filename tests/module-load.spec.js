@@ -4,7 +4,7 @@ test('integration modules load in browser order',async({page})=>{
   const loaded=await page.evaluate(()=>({
     family:!!window.ReadyFamilySession,
     local:!!window.ReadySetLocalFirst,domain:!!window.ReadyAssignmentDomainV2,
-    assignments:!!window.ReadyAssignments,subjectMaster:!!window.ReadySubjectMasterV01,officialRegistry:!!window.ReadyOfficialStandardRegistryV01,standardMatcher:!!window.ReadyLearningStandardMatcherV01,learningReference:!!window.ReadyLearningReferenceV01,learning:!!window.ReadyLearningMasterV01,
+    assignments:!!window.ReadyAssignments,subjectMaster:!!window.ReadySubjectMasterV01,officialRegistry:!!window.ReadyOfficialStandardRegistryV01,unitMap:!!window.ReadyOfficialUnitMapV01,standardMatcher:!!window.ReadyLearningStandardMatcherV01,learningReference:!!window.ReadyLearningReferenceV01,learning:!!window.ReadyLearningMasterV01,
     planner:!!window.ReadySetPlanner,integration:!!window.ReadyIntegrationV1
   }));
   expect(Object.values(loaded).every(Boolean)).toBeTruthy();
