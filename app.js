@@ -1,5 +1,5 @@
 
-const VERSION={app:'0.9.3-rc1',master:'REV_07',schema:5,cache:'ready-set-v093-rev07'};
+const VERSION={app:'1.0.0-alpha.2',generation:'READY_RENEWAL_01',schema:5,session:2,cache:'ready-set-renewal-01-alpha2'};
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 
