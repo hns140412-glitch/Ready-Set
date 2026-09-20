@@ -22,10 +22,10 @@ Disposition set: PRESERVE / MERGE / SUPERSEDE / ARCHIVE / OPEN / CLOSED / OWNERS
 | RDY-C2S-014 | live Identity/cloud roundtrip | OPEN | production verification |
 | RDY-C2S-015 | Time Attack as product identity | SUPERSEDE | exploration/base-camp product identity |
 | RDY-C2S-016 | Focus Mode as product identity / old Golden active authority | ARCHIVE | historical provenance only; confirmed visual details may remain by explicit owner rule |
-| RDY-C2S-017 | stale Time Attack manifest identity | OPEN | R3 cleanup |
-| RDY-C2S-018 | stale Time Attack/GitHub Pages README language | OPEN | R3 cleanup |
+| RDY-C2S-017 | stale Time Attack manifest identity | CLOSED | manifest.json aligned to Ready & Set identity on P5 exact candidate |
+| RDY-C2S-018 | stale Time Attack/GitHub Pages README language | CLOSED | README/PC local guidance aligned to current product and deployment gate semantics |
 | RDY-C2S-019 | REV_06/07 active-version authority | SUPERSEDE | semantic canonical docs + Version Registry |
-| RDY-C2S-020 | 0.9.3 / feature cache / REV mismatch | OPEN | R3 cleanup |
+| RDY-C2S-020 | 0.9.3 / feature cache / REV mismatch | CLOSED | version registry authority + 1.0.0-alpha.2 + non-feature cache namespace; REV retained only as compatibility/provenance |
 | RDY-C2S-021 | Planner real availability windows + buffers | CLOSED | PR #73 candidate: CODED + CI_VERIFIED + RUNTIME_VERIFIED; main promotion pending |
 | RDY-C2S-022 | child ad-hoc FACT → Parent confirmation generic path | CLOSED | PR #73 candidate: CODED + CI_VERIFIED + RUNTIME_VERIFIED; Child direct confirmation blocked; main promotion pending |
 | RDY-C2S-023 | shared expedition-member personality/lifecycle/rules authority | OWNERSHIP_TRANSFER | Snap & Pop upstream authority; Ready consumes projection only |
@@ -168,8 +168,23 @@ Evidence:
 
 Main promotion remains pending; manifest / README / cache / version authority residue is P5 and remains separate.
 
-### P5 — legacy/version cleanup
-Normalize manifest / README / cache / version labels and archive historical active-authority residue.
+### P5 — legacy/version cleanup — CANDIDATE CLOSED
+Exact candidate HEAD `78350a93d32d9ad2d6dba5817e8d7007c70c48a8`.
+
+Evidence:
+- Integration CI #166 PASS
+- Worker Self-Test #381 PASS
+- Runtime E2E #252 PASS, 50/50
+- `manifest.json` no longer carries Time Attack identity
+- `READY_SET_VERSION_REGISTRY.json` is the active version authority
+- package/app metadata aligns to `1.0.0-alpha.2 / READY_RENEWAL_01`
+- feature-named service-worker cache residue removed
+- README and deployment/local-check guides no longer assert stale REV/Time Attack authority
+- historical REV documents remain `PROVENANCE_ONLY`
+
+Important exact-SHA boundary:
+the branch advanced after this validated P5 SHA for P3c Family Capture/OCR work.
+Therefore P5 is closed, but the newer branch HEAD is **not** automatically Runtime-verified by P5 evidence and the deployment candidate is **not frozen**.
 
 ### P6 — final device gate
 One deliberate exact-SHA deployment only after branch CI + Runtime closure.
