@@ -58,7 +58,7 @@
     "policy": "LOCAL_BRANCH_TO_CI_RUNTIME_TO_ONE_FROZEN_CANDIDATE_TO_EXTERNAL",
     "candidate_sha_frozen": false,
     "external_deploy_allowed": false,
-    "reason": "P4 product-language/UI consolidation is branch-runtime closed; deployment candidate remains unfrozen because P5 legacy/version cleanup is still open.",
+    "reason": "P3/P3b branch-runtime continuity is closed, including Hide Memory Summary advisory roundtrip. Deployment candidate remains unfrozen because P4-P5 renewal gates remain open.",
     "default_external_call_budget": 1,
     "user_as_debugger": false
   },
@@ -180,6 +180,51 @@
       "탐험대원"
     ],
     "internal_legacy_identifiers_preserved": true,
+    "hosting_called": false,
+    "deployment_candidate_frozen": false
+  },
+  "p3_memory_summary_roundtrip": {
+    "ready_candidate_head": "bc31ef9dc5a9f6087ef584f26448e48f30ccc98e",
+    "hide_candidate_head": "62feaff70a7f250e8cf92b12925cd86b9cc30574",
+    "hide_branch": "implementation/hide-seek-capture-session-v02",
+    "coded": true,
+    "ci_verified": true,
+    "runtime_verified": true,
+    "device_verified": false,
+    "production_verified": false,
+    "ready_integration_ci": {
+      "run_number": 151,
+      "result": "PASS"
+    },
+    "ready_worker_self_test": {
+      "run_number": 360,
+      "result": "PASS"
+    },
+    "ready_runtime_e2e": {
+      "run_number": 237,
+      "result": "PASS",
+      "tests": "49/49"
+    },
+    "hide_validation": {
+      "run_number": 111,
+      "result": "PASS"
+    },
+    "transport": [
+      "SAME_WINDOW_RETURN_QUERY",
+      "POSTMESSAGE_WHEN_AVAILABLE"
+    ],
+    "authority": "SPECIALIST_MEMORY_ADVISORY_ONLY",
+    "planner_idempotency": "EVENT_ID_DEDUPED",
+    "today_projection": true,
+    "learning_master_advisory": true,
+    "cannot_influence": [
+      "ASSIGNMENT_FACT",
+      "SOURCE_RANGE",
+      "DEADLINE",
+      "REQUIRED_TODAY",
+      "STUDY_VOLUME",
+      "FACT_CONFIRMATION"
+    ],
     "hosting_called": false,
     "deployment_candidate_frozen": false
   }
