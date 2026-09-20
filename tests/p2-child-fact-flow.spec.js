@@ -33,9 +33,20 @@ test('P2 Child FACT -> Parent confirm -> Learning Master -> Planner -> TODAY is 
   },captured.assignment_id);
   expect(childConfirm).toEqual({ok:false,reason:'PARENT_CONFIRMATION_REQUIRED'});
 
-  await page.evaluate(()=>{
-    window.ReadyFamilySession.requireRole=()=>({ok:true});
+  await page.route('**/api/auth/login',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,session:{
+      authenticated:true,
+      family_id:'TEST_FAMILY',
+      member_id:'TEST_PARENT',
+      role:'PARENT',
+      session_id:'TEST_PARENT_SESSION',
+      expires_at:'2099-01-01T00:00:00.000Z',
+      source:'TEST_ONLY'
+    }})});
   });
+  const parentLogin=await page.evaluate(()=>window.ReadyFamilySession.login({email:'parent@example.test',password:'test-password'}));
+  expect(parentLogin.ok).toBeTruthy();
+  expect(await page.evaluate(()=>window.ReadyFamilySession.current().role)).toBe('PARENT');
   await page.evaluate(() => nav('planner-admin'));
 
   const row=page.locator(`[data-child-fact-row="${captured.assignment_id}"]`);
