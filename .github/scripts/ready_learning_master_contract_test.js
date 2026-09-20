@@ -223,3 +223,24 @@ assert.strictEqual(volumeBound.official_standard_code,'6수03-19');
 
 const probabilityBound=standardMatcher.match('수학',{teacher_instruction:'자료를 이용해 가능성을 예상하고 근거를 들어 판단'});
 assert.strictEqual(probabilityBound.official_standard_code,'6수04-06');
+
+assert.strictEqual(officialRegistry.COVERAGE['과학'].status,'VERIFIED_FULL_SUBJECT_COVERAGE');
+assert.strictEqual(officialRegistry.COVERAGE['과학'].verified_record_count,51);
+assert.strictEqual(officialRegistry.list('과학').length,51);
+assert.strictEqual(officialRegistry.findByCode('6과02-02').domain,'운동과 에너지');
+assert.strictEqual(officialRegistry.findByCode('6과09-01').domain,'물질');
+assert.strictEqual(officialRegistry.findByCode('6과11-01').domain,'생명');
+assert.strictEqual(officialRegistry.findByCode('6과13-03').domain,'지구와 우주');
+assert.strictEqual(officialRegistry.findByCode('6과16-01').domain,'과학과 사회');
+
+const refractionBound=standardMatcher.match('과학',{teacher_instruction:'빛이 직진 반사 굴절하는 성질을 관찰'});
+assert.strictEqual(refractionBound.official_standard_code,'6과02-02');
+
+const cellBound=standardMatcher.match('과학',{teacher_instruction:'생물의 기본 단위 세포를 현미경으로 관찰'});
+assert.strictEqual(cellBound.official_standard_code,'6과11-01');
+
+const seasonBound=standardMatcher.match('과학',{teacher_instruction:'지구 자전축이 기울어진 채 공전하여 계절 변화가 생기는 원인 설명'});
+assert.strictEqual(seasonBound.official_standard_code,'6과13-03');
+
+const futureScienceBound=standardMatcher.match('과학',{teacher_instruction:'미래 사회 문제를 조사하고 과학이 기여할 방법을 토의'});
+assert.strictEqual(futureScienceBound.official_standard_code,'6과16-01');
