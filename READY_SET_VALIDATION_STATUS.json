@@ -29,7 +29,7 @@
   "rewrite_gates": {
     "R0_CANONICAL_SKELETON": "COMPLETE",
     "R1_SINGLE_SESSION_ENGINE": "COMPLETE_RUNTIME_VERIFIED",
-    "R2_PRODUCT_LANGUAGE_AUTHORITY": "PARTIAL_RENEWAL_REQUIRED",
+    "R2_PRODUCT_LANGUAGE_AUTHORITY": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
     "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "PARTIAL_RENEWAL_REQUIRED",
     "R4_CHILD_FACT_CONFIRMATION_PATH": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
     "R5_PLANNER_FREE_WINDOW": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
@@ -38,7 +38,6 @@
   },
   "current_open_product_gates": [
     "PLANNER_REAL_AVAILABILITY_WINDOWS",
-    "ADVENTURE_UI_PRODUCT_LANGUAGE_CONSOLIDATION",
     "LEGACY_VERSION_MANIFEST_README_CLEANUP",
     "DEVICE_VERIFICATION",
     "PRODUCTION_VERIFICATION"
@@ -59,7 +58,7 @@
     "policy": "LOCAL_BRANCH_TO_CI_RUNTIME_TO_ONE_FROZEN_CANDIDATE_TO_EXTERNAL",
     "candidate_sha_frozen": false,
     "external_deploy_allowed": false,
-    "reason": "P3 cross-app runtime continuity is branch-runtime closed across Ready and Hide candidate branches; deployment candidate is still not frozen because P4-P5 renewal gates remain open.",
+    "reason": "P4 product-language/UI consolidation is branch-runtime closed; deployment candidate remains unfrozen because P5 legacy/version cleanup is still open.",
     "default_external_call_budget": 1,
     "user_as_debugger": false
   },
@@ -82,7 +81,7 @@
     "p1_planner_reality_engine": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
     "review_snapshot_frozen": true,
     "deployment_candidate_frozen": false,
-    "next_unresolved_gate": "P4_ADVENTURE_UI_PRODUCT_LANGUAGE",
+    "next_unresolved_gate": "P5_LEGACY_VERSION_MANIFEST_README_CLEANUP",
     "hosting_called_during_review": false
   },
   "p2_child_fact_confirmation_closure": {
@@ -147,6 +146,40 @@
     ],
     "timing_contract": "SAME_LAP_CONTINUOUS_UNTIL_COMPLETED_OR_BLOCKED",
     "wrong_goal_rejected": true,
+    "hosting_called": false,
+    "deployment_candidate_frozen": false
+  },
+  "p4_product_language_closure": {
+    "candidate_head": "c4f68d2fc0a86c9e2c6abc8034185026f31d8d45",
+    "coded": true,
+    "ci_verified": true,
+    "runtime_verified": true,
+    "device_verified": false,
+    "production_verified": false,
+    "integration_ci": {
+      "run_number": 150,
+      "result": "PASS"
+    },
+    "worker_self_test": {
+      "run_number": 359,
+      "result": "PASS"
+    },
+    "runtime_e2e": {
+      "run_number": 236,
+      "result": "PASS",
+      "tests": "48/48"
+    },
+    "active_ui_terms_removed": [
+      "타임어택",
+      "FOCUS MODE",
+      "길잡이"
+    ],
+    "active_ui_terms_adopted": [
+      "BASE CAMP",
+      "탐험",
+      "탐험대원"
+    ],
+    "internal_legacy_identifiers_preserved": true,
     "hosting_called": false,
     "deployment_candidate_frozen": false
   }
