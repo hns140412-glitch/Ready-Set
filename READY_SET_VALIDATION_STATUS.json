@@ -50,5 +50,19 @@
     "branch_first": true,
     "netlify_not_debug_surface": true,
     "device_deploy_only_after_exact_candidate_selected": true
+  },
+  "continuity_basis": {
+    "drive_handoff": "READY_SET_HANDOFF_2026-09-20_LATEST",
+    "handoff_role": "CONTINUITY_EVIDENCE_NOT_CANONICAL_AUTHORITY",
+    "latest_taky_main_at_integration": "a449b88b6faae1169a8cc771da3f3721f9a4ab48",
+    "ready_main_at_integration": "6142cfeb5599a625d61ffa1faca866b2b6817cc8"
+  },
+  "external_resource_gate": {
+    "policy": "LOCAL_BRANCH_TO_CI_RUNTIME_TO_ONE_FROZEN_CANDIDATE_TO_EXTERNAL",
+    "candidate_sha_frozen": false,
+    "external_deploy_allowed": false,
+    "reason": "Renewal branch implementation is still active; P1 and later selected-scope work is not frozen.",
+    "default_external_call_budget": 1,
+    "user_as_debugger": false
   }
 }
