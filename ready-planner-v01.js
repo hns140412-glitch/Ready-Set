@@ -371,8 +371,25 @@
       return mutate(s=>{const carry=s.carry_over_queue.find(x=>x.carry_over_id===carryId&&x.status==='OPEN');if(!carry)return {ok:false,reason:'CARRY_OVER_NOT_FOUND'};
         if(carry.resolution_required)return {ok:false,reason:'CARRY_OVER_REQUIRES_RESOLUTION'};
         const source=s.dated_todos.find(x=>x.todo_id===carry.source_todo_id);if(!source)return {ok:false,reason:'SOURCE_TODO_NOT_FOUND'};
+        const nextDepth=Math.max(0,Number(source.provenance?.carry_over_depth)||0)+1;
+        const template=s.homework_templates.find(x=>x.template_id===source.template_id)||null;
+        const deadline=cleanText(template?.deadline_date)||null;
+        const deadlineExceeded=deadline&&date>deadline;
+        const nearDeadline=deadline&&date>=addDays(deadline,-1);
+        const maxAutoDepth=Math.max(1,Number(input.max_auto_depth)||3);
+        if(deadlineExceeded||nextDepth>maxAutoDepth||(nearDeadline&&nextDepth>=maxAutoDepth)){
+          carry.resolution_required=true;
+          carry.allocation_ready=false;
+          carry.escalation_reason=deadlineExceeded?'DEADLINE_EXCEEDED':nearDeadline?'REPEATED_CARRY_NEAR_DEADLINE':'REPEATED_CARRY_LIMIT';
+          carry.escalation_level='PARENT_LEARNING_MASTER_REVIEW';
+          carry.escalated_at=new Date().toISOString();
+          carry.next_carry_over_depth=nextDepth;
+          carry.deadline_date=deadline;
+          carry.updated_at=new Date().toISOString();
+          return {ok:false,reason:'CARRY_OVER_ESCALATION_REQUIRED',carry_over_id:carryId,escalation_reason:carry.escalation_reason,escalation_level:carry.escalation_level,next_depth:nextDepth,deadline_date:deadline};
+        }
         const rootTodoId=cleanText(source.provenance?.root_todo_id)||source.todo_id;
-        const lineageDepth=Math.max(0,Number(source.provenance?.carry_over_depth)||0)+1;
+        const lineageDepth=nextDepth;
         const todo={
           todo_id:makeId('todo'),
           date,
