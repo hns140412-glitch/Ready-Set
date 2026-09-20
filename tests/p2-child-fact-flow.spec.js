@@ -36,8 +36,9 @@ test('P2 Child FACT -> Parent confirm -> Learning Master -> Planner -> TODAY is 
   await page.evaluate(()=>{
     window.ReadyFamilySession.requireRole=()=>({ok:true});
   });
-  await page.locator('[data-nav="planner"]').first().click();
-  await page.locator('[data-nav="planner-admin"]').click();
+  await page.locator('#missionView [data-nav="home"]').click();
+  await page.locator('#homeView [data-nav="planner"]').first().click();
+  await page.locator('#plannerView [data-nav="planner-admin"]').click();
 
   const row=page.locator(`[data-child-fact-row="${captured.assignment_id}"]`);
   await expect(row).toBeVisible();
