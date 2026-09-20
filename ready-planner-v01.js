@@ -29,6 +29,7 @@
     progress_events:[],
     allocation_runs:[],
     execution_observations:[],
+    specialist_memory_observations:[],
     carry_over_queue:[],
     adaptive_estimate_proposals:[]
   });
@@ -55,6 +56,7 @@
       progress_events:Array.isArray(x.progress_events)?x.progress_events:[],
       allocation_runs:Array.isArray(x.allocation_runs)?x.allocation_runs:[],
       execution_observations:Array.isArray(x.execution_observations)?x.execution_observations:[],
+      specialist_memory_observations:Array.isArray(x.specialist_memory_observations)?x.specialist_memory_observations:[],
       carry_over_queue:Array.isArray(x.carry_over_queue)?x.carry_over_queue:[],
       adaptive_estimate_proposals:Array.isArray(x.adaptive_estimate_proposals)?x.adaptive_estimate_proposals:[]
     };
@@ -851,6 +853,96 @@
       });
     }
 
+    function normalizeSpecialistMemorySummary(raw={}){
+      const reasons=['recovery','confusion','orthographic','latency','hint','decay','stable'];
+      const reasonCounts=Object.fromEntries(reasons.map(k=>[k,Math.max(0,Math.floor(Number(raw?.reasonCounts?.[k])||0))]));
+      const top=(Array.isArray(raw?.topReviewPriorities)?raw.topReviewPriorities:[]).slice(0,5).map(x=>({
+        lexicalId:cleanText(x?.lexicalId)||null,
+        priority:Math.max(0,Math.min(200,Math.round(Number(x?.priority)||0))),
+        reason:reasons.includes(cleanText(x?.reason))?cleanText(x.reason):'stable'
+      })).filter(x=>x.lexicalId);
+      return {
+        averageMemoryStrength:Math.max(0,Math.min(100,Math.round(Number(raw?.averageMemoryStrength)||0))),
+        reasonCounts,
+        needsUnassistedRecallCount:Math.max(0,Math.floor(Number(raw?.needsUnassistedRecallCount)||0)),
+        topReviewPriorities:top
+      };
+    }
+
+    function recordSpecialistMemorySummary(input={}){
+      const todoId=cleanText(input.todo_id);if(!todoId)return {ok:false,reason:'TODO_ID_REQUIRED'};
+      const sourceApp=cleanText(input.source_app)||'hide-seek';
+      const summary=normalizeSpecialistMemorySummary(input.memory_summary||{});
+      const eventKey=cleanText(input.event_id)||[cleanText(input.session_id),cleanText(input.task_id),todoId,sourceApp].join('|');
+      return mutate(s=>{
+        const todo=s.dated_todos.find(x=>x.todo_id===todoId);if(!todo)return {ok:false,reason:'TODO_NOT_FOUND'};
+        const existing=s.specialist_memory_observations.find(x=>x.event_key===eventKey);
+        if(existing)return {ok:true,reused:true,observation:{...existing}};
+        const item={
+          specialist_memory_observation_id:makeId('memory_obs'),
+          event_key:eventKey,
+          todo_id:todoId,
+          assignment_id:todo.assignment_id||cleanText(input.assignment_id)||null,
+          analysis_id:todo.analysis_id||null,
+          learning_unit_id:todo.learning_unit_id||null,
+          allocation_run_id:todo.allocation_run_id||null,
+          fact_revision:Number(todo.fact_revision)||Number(todo.provenance?.fact_revision)||1,
+          session_id:cleanText(input.session_id)||null,
+          task_id:cleanText(input.task_id)||null,
+          lap_id:cleanText(input.lap_id)||null,
+          source_app:sourceApp,
+          authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
+          memory_summary:summary,
+          at:input.at||new Date().toISOString()
+        };
+        s.specialist_memory_observations.push(item);
+        s.specialist_memory_observations=s.specialist_memory_observations.slice(-300);
+        const nonStable=Object.entries(summary.reasonCounts).filter(([k])=>k!=='stable').reduce((sum,[,v])=>sum+v,0);
+        todo.specialist_memory_summary=summary;
+        todo.specialist_memory_source=sourceApp;
+        todo.specialist_memory_received_at=item.at;
+        todo.memory_followup_advisory=summary.needsUnassistedRecallCount>0||nonStable>0;
+        todo.memory_review_priority=summary.topReviewPriorities[0]?.priority||0;
+        todo.updated_at=new Date().toISOString();
+        return {ok:true,reused:false,observation:{...item},memory_followup_advisory:todo.memory_followup_advisory};
+      });
+    }
+
+    function specialistMemorySignal(assignmentId,options={}){
+      const id=cleanText(assignmentId);if(!id)return null;
+      const maxSamples=Math.max(1,Math.min(8,Number(options.max_samples)||4));
+      const currentRevision=Number(options.current_revision)||null;
+      const rows=load().specialist_memory_observations
+        .filter(x=>x.assignment_id===id)
+        .filter(x=>currentRevision===null||Number(x.fact_revision)===currentRevision)
+        .sort((a,b)=>Date.parse(b.at||0)-Date.parse(a.at||0))
+        .slice(0,maxSamples);
+      if(!rows.length)return null;
+      const reasonCounts={recovery:0,confusion:0,orthographic:0,latency:0,hint:0,decay:0,stable:0};
+      let strengthTotal=0,needs=0;
+      for(const row of rows){
+        const s=normalizeSpecialistMemorySummary(row.memory_summary);
+        strengthTotal+=s.averageMemoryStrength;
+        needs+=s.needsUnassistedRecallCount;
+        for(const k of Object.keys(reasonCounts))reasonCounts[k]+=s.reasonCounts[k]||0;
+      }
+      const average=Math.round(strengthTotal/rows.length);
+      const friction=reasonCounts.recovery+reasonCounts.confusion+reasonCounts.orthographic+reasonCounts.latency+reasonCounts.hint+reasonCounts.decay;
+      const risk=needs>0||average<55?'HIGH':friction>0||average<75?'MEDIUM':'LOW';
+      return {
+        authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
+        source:'HIDE_SEEK_MEMORY_SUMMARY',
+        sample_count:rows.length,
+        average_memory_strength:average,
+        needs_unassisted_recall_count:needs,
+        reason_counts:reasonCounts,
+        risk_band:risk,
+        latest_top_review_priorities:normalizeSpecialistMemorySummary(rows[0].memory_summary).topReviewPriorities,
+        can_influence:['RECOVERY_SPACING','REVIEW_PRIORITY','RECALL_CHECKPOINT'],
+        cannot_influence:['ASSIGNMENT_FACT','SOURCE_RANGE','DEADLINE','REQUIRED_TODAY','STUDY_VOLUME','FACT_CONFIRMATION']
+      };
+    }
+
     function crossRevisionLearningSignal(input={}){
       const assignmentId=cleanText(input.assignment_id);
       const subject=cleanText(input.subject);
@@ -1125,6 +1217,9 @@
         recovery_need:x.recovery_need||null,
         review_policy:x.review_policy||null,
         parent_help_dependency:x.parent_help_dependency||null,
+        specialist_memory_summary:x.specialist_memory_summary||null,
+        memory_followup_advisory:x.memory_followup_advisory===true,
+        memory_review_priority:Number.isFinite(x.memory_review_priority)?x.memory_review_priority:null,
         planner_owned:/^PLANNER/.test(x.source||'')
       }));
     }
@@ -1139,6 +1234,10 @@
       }
       for(const e of s.progress_events){
         if(e.todo_id&&!todoIds.has(e.todo_id))issues.push('ORPHAN_PROGRESS_EVENT');
+      }
+      for(const e of s.specialist_memory_observations){
+        if(e.todo_id&&!todoIds.has(e.todo_id))issues.push('ORPHAN_SPECIALIST_MEMORY_OBSERVATION');
+        if(e.authority!=='SPECIALIST_MEMORY_ADVISORY_ONLY')issues.push('SPECIALIST_MEMORY_AUTHORITY_INVALID');
       }
       for(const p of s.adaptive_estimate_proposals){
         if(!['PENDING','CONFIRMED','REJECTED'].includes(p.status))issues.push('ADAPTIVE_ESTIMATE_STATUS_INVALID');
@@ -1173,6 +1272,8 @@
       resolveCarryOver,
       recentEstimateEvidence,
       crossRevisionLearningSignal,
+      recordSpecialistMemorySummary,
+      specialistMemorySignal,
       learningHistory,
       proposeEstimateAdjustment,
       decideEstimateAdjustment,
