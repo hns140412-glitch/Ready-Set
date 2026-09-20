@@ -202,3 +202,24 @@ assert.strictEqual(koreanGrammarBound.official_standard_code,'6국04-04');
 
 const koreanLiteratureBound=standardMatcher.match('국어',{teacher_instruction:'소설에서 인물 사건 배경을 파악'});
 assert.strictEqual(koreanLiteratureBound.official_standard_code,'6국05-03');
+
+assert.strictEqual(officialRegistry.COVERAGE['수학'].status,'VERIFIED_FULL_SUBJECT_COVERAGE');
+assert.strictEqual(officialRegistry.COVERAGE['수학'].verified_record_count,45);
+assert.strictEqual(officialRegistry.list('수학').length,45);
+assert.strictEqual(officialRegistry.findByCode('6수01-08').domain,'수와 연산');
+assert.strictEqual(officialRegistry.findByCode('6수02-04').domain,'변화와 관계');
+assert.strictEqual(officialRegistry.findByCode('6수03-19').domain,'도형과 측정');
+assert.strictEqual(officialRegistry.findByCode('6수04-06').domain,'자료와 가능성');
+assert.strictEqual(officialRegistry.findByCode('6수03-19').source,'GOE_FRAMEWORK_56');
+
+const fractionAdditionBound=standardMatcher.match('수학',{teacher_instruction:'분모가 다른 분수의 덧셈과 뺄셈 계산 원리를 탐구'});
+assert.strictEqual(fractionAdditionBound.official_standard_code,'6수01-08');
+
+const proportionBound=standardMatcher.match('수학',{teacher_instruction:'비례식의 성질을 이해하고 간단한 비례식을 풀기'});
+assert.strictEqual(proportionBound.official_standard_code,'6수02-04');
+
+const volumeBound=standardMatcher.match('수학',{teacher_instruction:'직육면체와 정육면체의 부피를 구하는 방법을 이해하고 계산'});
+assert.strictEqual(volumeBound.official_standard_code,'6수03-19');
+
+const probabilityBound=standardMatcher.match('수학',{teacher_instruction:'자료를 이용해 가능성을 예상하고 근거를 들어 판단'});
+assert.strictEqual(probabilityBound.official_standard_code,'6수04-06');
