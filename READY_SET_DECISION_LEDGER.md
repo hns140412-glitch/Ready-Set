@@ -26,7 +26,7 @@ Disposition set: PRESERVE / MERGE / SUPERSEDE / ARCHIVE / OPEN / CLOSED / OWNERS
 | RDY-C2S-018 | stale Time Attack/GitHub Pages README language | OPEN | R3 cleanup |
 | RDY-C2S-019 | REV_06/07 active-version authority | SUPERSEDE | semantic canonical docs + Version Registry |
 | RDY-C2S-020 | 0.9.3 / feature cache / REV mismatch | OPEN | R3 cleanup |
-| RDY-C2S-021 | Planner real availability windows + buffers | OPEN | R5 implementation |
+| RDY-C2S-021 | Planner real availability windows + buffers | CLOSED | PR #73 candidate: CODED + CI_VERIFIED + RUNTIME_VERIFIED; main promotion pending |
 | RDY-C2S-022 | child ad-hoc FACT → Parent confirmation generic path | OPEN | R4 implementation |
 | RDY-C2S-023 | shared expedition-member personality/lifecycle/rules authority | OWNERSHIP_TRANSFER | Snap & Pop upstream authority; Ready consumes projection only |
 | RDY-C2S-024 | exploration WEEK/DAY/TODAY | PRESERVE | UI/product renewal |
@@ -54,8 +54,20 @@ The old R0→R7 sequence is superseded by the following result-driven sequence.
 - isolate historical REV/Time Attack identity;
 - keep exact-main evidence keyed to SHA.
 
-### P1 — Planner reality engine
-Implement real executable free windows from:
+### P1 — Planner reality engine — CANDIDATE CLOSED
+Candidate HEAD `450caf84b23788b40a93e070742d86edc0165baa`.
+
+Evidence:
+- Integration CI #130 PASS
+- Worker Self-Test #331 PASS
+- Runtime E2E #216 PASS, 45/45
+- real availability profile + schedule commitments + before/after buffers
+- zero-executable-window dates are excluded from Learning Unit allocation
+- availability remains `EXECUTABILITY_GATE_NOT_VOLUME_AUTHORITY`
+
+Main promotion remains pending; this does not imply DEVICE/PRODUCTION verification.
+
+Implemented semantics were based on:
 school / academy / travel / meals / preparation / rest / safety buffer / fixed events,
 then allocate learning units without converting free time into mandatory study volume.
 
