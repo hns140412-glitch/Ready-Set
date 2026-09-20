@@ -63,7 +63,7 @@ test('authenticated Parent bootstrap unlocks Parent authority only for that sess
   expect(out.projection.role).toBe('PARENT');
 });
 
-test('authenticated identity without sync credential cannot send remote data',async({page})=>{
+test('authenticated family session can use same-origin remote sync without browser bearer token',async({page})=>{
   await page.addInitScript(()=>{
     window.__READY_AUTH_BOOTSTRAP__={
       authenticated:true,
@@ -75,15 +75,21 @@ test('authenticated identity without sync credential cannot send remote data',as
       source:'TEST_ONLY'
     };
   });
-  await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
-  const result=await page.evaluate(async()=>{
-    window.ReadySetSyncAdapter.configure({endpoint:'http://127.0.0.1:4173/unused',enabled:true});
-    return window.ReadySetSyncAdapter.send({
-      id:'evt_auth_boundary',
-      scope:'planner',
-      digest:'x',
-      payload:'{}'
-    });
+  let authorization=null;
+  await page.route('**/api/ready-sync/events',async route=>{
+    authorization=route.request().headers()['authorization']||null;
+    await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,remote_version:1})});
   });
-  expect(result).toEqual({ok:false,reason:'AUTH_SESSION_REQUIRED'});
+  await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
+  const status=await page.evaluate(()=>window.ReadySetSyncAdapter.status());
+  expect(status.enabled).toBeTruthy();
+  expect(status.endpoint).toBe('/api/ready-sync');
+  const result=await page.evaluate(()=>window.ReadySetSyncAdapter.send({
+    id:'evt_auth_boundary',
+    scope:'planner',
+    digest:'x',
+    payload:'{}'
+  }));
+  expect(result).toEqual({ok:true,remote_version:1});
+  expect(authorization).toBeNull();
 });
