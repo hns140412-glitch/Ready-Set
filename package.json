@@ -4,6 +4,6 @@
   "version": "0.9.3",
   "dependencies": {
     "@netlify/blobs": "^11.1.0",
-    "@netlify/identity": "^1.0.0"
+    "@netlify/identity": "^2.0.0"
   }
 }
