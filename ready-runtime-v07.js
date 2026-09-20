@@ -529,8 +529,8 @@
 
   function normalizeVersionText() {
     document.querySelectorAll('#settingsView .muted').forEach(el => {
-      if (/APP_VERSION\s+0\.9\.2/.test(el.textContent || '')) {
-        el.textContent = 'APP_VERSION 0.9.3-rc1 · MASTER REV_07 · SCHEMA 5 + REV_07 SESSION CONTRACT';
+      if (/APP_VERSION\s+(?:0\.9\.2|0\.9\.3-rc1)/.test(el.textContent || '')) {
+        el.textContent = 'APP_VERSION 1.0.0-alpha.2 · READY_RENEWAL_01 · SCHEMA 5 · SESSION 2';
       }
     });
   }
