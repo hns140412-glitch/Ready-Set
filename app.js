@@ -376,7 +376,11 @@ function renderFocus(){
   if(!s){if($('#focusView')?.classList.contains('active'))nav('mission');return}
   const labels=[...s.selected,...s.tasks];
   $('#focusMission').textContent=labels.join(' · ')||'오늘의 작전';
-  $('#recBtn').hidden=!s.selected.includes('영어 · 문장 녹음');
+  const focusSteps=[...new Set((s.plannerLinks||[]).flatMap(x=>Array.isArray(x.activity_sequence)?x.activity_sequence:[]))];
+  if($('#focusLearningGuide'))$('#focusLearningGuide').textContent=focusSteps.length
+    ? focusSteps.map(learningStepLabel).join(' → ')
+    : '오늘 할 순서를 따라가요.';
+  $('#recBtn').hidden=!s.selected.includes('영어 · 문장 녹음') && !(s.plannerLinks||[]).some(x=>(x.activity_types||[]).includes('RECORDING'));
   $('#targetTime').textContent=fmt(s.targetMs);
   $('#startClock').textContent=new Date(s.startAt).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false});
   applyGuide($('#focusGuideMini'));
