@@ -159,6 +159,46 @@
     return app === 'hide-seek' ? HIDE_URL : app === 'snap-pop' ? SNAP_URL : location.href;
   }
 
+  function encodeLearningContext(value) {
+    try {
+      const json=JSON.stringify(value);
+      const bytes=new TextEncoder().encode(json);
+      let binary=''; for(const b of bytes) binary+=String.fromCharCode(b);
+      return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    } catch { return null; }
+  }
+
+  function buildSpecialistLearningContext(task) {
+    if (!task?.learning_unit_id || !window.ReadyAssignments?.load) return null;
+    try {
+      const domain=window.ReadyAssignments.load();
+      const unit=domain.learningUnits?.[task.learning_unit_id];
+      if (!unit) return null;
+      const fact=domain.assignmentFacts?.[unit.assignment_id || task.assignment_id];
+      if (!fact || fact.confirmation_state!=='FACT_CONFIRMED') return null;
+      const analysis=domain.analyses?.[unit.analysis_id || task.analysis_id] || null;
+      const cleanList=v=>Array.isArray(v)?v.filter(x=>typeof x==='string'&&x.trim()).slice(0,12):[];
+      return {
+        contract_version:'READY_LEARNING_CONTEXT_V1',
+        learning_unit_id:unit.learning_unit_id,
+        analysis_id:unit.analysis_id || task.analysis_id || null,
+        assignment_id:unit.assignment_id || task.assignment_id || null,
+        subject:String(unit.subject||fact.book_subject||fact.subject||'').slice(0,80),
+        concept_skill_target:String(unit.concept_skill_target||'').slice(0,180),
+        activity_types:cleanList(unit.activity_types),
+        cognitive_load_profile:cleanList(unit.cognitive_load_profile),
+        divisible_boundary:String(unit.divisible_boundary||'').slice(0,80),
+        confidence:Number.isFinite(unit.confidence)?unit.confidence:(Number.isFinite(analysis?.confidence)?analysis.confidence:null),
+        unresolved_flags:cleanList(unit.unresolved_flags),
+        provenance:{
+          engine:unit.analysis_provenance?.engine||'READY_LEARNING_MASTER_V01',
+          version:unit.analysis_provenance?.version||window.ReadyLearningMasterV01?.version||null,
+          confirmation_state:fact.confirmation_state
+        }
+      };
+    } catch { return null; }
+  }
+
   function launchSpecialist(app) {
     const session = state.activeSession;
     const c = ensureContract(session);
@@ -178,6 +218,11 @@
     url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
     url.searchParams.set('snap_target', SNAP_URL);
     url.searchParams.set('from_app', 'ready-set');
+    if (app === 'snap-pop') {
+      const learningContext=buildSpecialistLearningContext(task);
+      const encoded=learningContext?encodeLearningContext(learningContext):null;
+      if (encoded) url.searchParams.set('learning_context', encoded);
+    }
     location.assign(url.href);
   }
 
