@@ -79,7 +79,7 @@
       review_reason:carry.escalation_reason||'CARRY_OVER_ESCALATION',
       escalation_review_signal:escalationSignal
     });
-    const resolved=window.ReadySetPlanner.resolveCarryOver?.(carryOverId,{resolution:'READY_FOR_REPLAN',actor:'PARENT_LEARNING_MASTER_REVIEW'});
+    const resolved=window.ReadySetPlanner.resolveCarryOver?.(carryOverId,{resolution:'CANCEL',actor:'PARENT_LEARNING_MASTER_REVIEW'});
     const processed=processAssignment(assignmentId,{start_date:input.start_date});
     return {
       ok:!!processed?.ok,
