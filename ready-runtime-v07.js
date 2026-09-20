@@ -379,11 +379,12 @@
       return renderWrapUp();
     }
     endActiveLap('SESSION_END', currentTask(c)?.state || 'PENDING');
+    const plannerOutcomes = [];
     if (window.ReadySetPlanner) {
       for (const task of c.tasks) {
         if (!task.planner_todo_id) continue;
         const actualMs = (task.laps || []).reduce((sum, lap) => sum + (Number.isFinite(lap.elapsed_ms) ? lap.elapsed_ms : 0), 0);
-        window.ReadySetPlanner.recordSessionOutcome({
+        const outcome = window.ReadySetPlanner.recordSessionOutcome({
           todo_id: task.planner_todo_id,
           ready_state: task.state,
           actual_ms: actualMs,
@@ -391,6 +392,7 @@
           task_id: task.task_id,
           at: iso()
         });
+        if (outcome) plannerOutcomes.push(outcome);
       }
     }
     c.session_state = 'ENDED';
@@ -399,7 +401,10 @@
     emit('SESSION_ENDED', { task_states: c.tasks.map(t => ({ task_id:t.task_id, state:t.state })) });
     save();
     document.getElementById('readyRev07Wrap').hidden = true;
-    originalCompleteSession();
+    const summaryState = c.tasks.every(t => t.state === 'COMPLETED')
+      ? 'COMPLETED'
+      : (c.tasks.find(t => t.state !== 'COMPLETED')?.state || 'PARTIAL');
+    originalCompleteSession(summaryState,{plannerOutcomes});
   }
 
   function validateContract() {
