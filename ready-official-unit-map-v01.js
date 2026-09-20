@@ -171,7 +171,8 @@
     }
     const top=candidates[0];
     const ties=candidates.filter(x=>x.score===top.score);
-    if(top.score>=4&&ties.length===1){
+    const hasVerifiedUnitTitleMatch=top?.evidence?.includes('UNIT_TITLE_MATCH');
+    if(hasVerifiedUnitTitleMatch&&ties.length===1){
       return {status:'UNIT_MAPPING_CONTEXT_MATCHED',selected:top,candidates,unresolved:[]};
     }
     return {status:'UNIT_MAPPING_CANDIDATE',selected:null,candidates,unresolved:['UNIT_CONTEXT_NOT_STRONG_OR_UNIQUE_ENOUGH']};
