@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.3.0';
+  const VERSION='0.4.0';
   const OFFICIAL_STANDARD_DATASET={
     curriculum:'2022_REVISED_KOREA_NATIONAL_CURRICULUM',
     school_level:'ELEMENTARY',
@@ -37,7 +37,7 @@
       {domain:'자료와 가능성',concept:'자료 해석·가능성',terms:['자료','그래프','표','평균','가능성','확률']}
     ],
     '사회':[
-      {domain:'지리',concept:'공간·지역·지도 이해',terms:['지도','위치','지역','지형','기후','국토','공간','환경','산지','하천','해안','독도','인구 분포','지구본','세계지도','세계 기후','지형 경관']},
+      {domain:'지리',concept:'공간·지역·지도 이해',terms:['지도','위치','지역','지형','기후','국토','공간','환경','산지','하천','해안','독도','인구 분포','지구본','세계지도','세계 기후','지형 경관','대륙','대양','영토']},
       {domain:'일반사회',concept:'사회 제도·경제·공동체',terms:['경제','시장','정부','법','권리','의무','사회','공동체','민주주의','헌법','인권','선거','국회','행정부','법원','권력 분립','미디어','시장경제','가계','기업','근로자','무역','지구촌','지속가능']},
       {domain:'역사',concept:'시대·사건·인물의 맥락',terms:['역사','시대','왕','전쟁','유적','유물','사건','인물','조선','고려','삼국','선사','고조선','유교','개항기','근대 문물','일제','식민 통치','광복','6·25','분단','평화','통일','민주화','산업화']}
     ],
@@ -66,6 +66,11 @@
   function officialRegistryApi(){
     if(typeof globalThis!=='undefined'&&globalThis.ReadyOfficialStandardRegistryV01)return globalThis.ReadyOfficialStandardRegistryV01;
     if(typeof require==='function'){try{return require('./ready-official-standard-registry-v01.js')}catch{}}
+    return null;
+  }
+  function unitMapApi(){
+    if(typeof globalThis!=='undefined'&&globalThis.ReadyOfficialUnitMapV01)return globalThis.ReadyOfficialUnitMapV01;
+    if(typeof require==='function'){try{return require('./ready-official-unit-map-v01.js')}catch{}}
     return null;
   }
 
@@ -135,6 +140,9 @@
     const registry=officialRegistryApi();
     const officialMatch=registry?.match?.(key,selected.domain,text)||null;
     const hasVerifiedCode=officialMatch?.status==='VERIFIED_STANDARD_MATCH'&&officialMatch.selected?.code;
+    const unitMapping=hasVerifiedCode
+      ? unitMapApi()?.evaluate?.(officialMatch.selected.code,context)||null
+      : null;
     return {
       ...base,
       status:hasVerifiedCode?'MATCHED_VERIFIED_STANDARD':'MATCHED_DOMAIN_CANDIDATE',
@@ -144,6 +152,7 @@
       official_standard_code:hasVerifiedCode?officialMatch.selected.code:null,
       standard_binding_status:hasVerifiedCode?'BOUND_VERIFIED_RECORD':'UNBOUND_REQUIRES_VERIFIED_STANDARD_RECORD',
       official_standard_match:officialMatch,
+      unit_mapping_evidence:unitMapping,
       unresolved:hasVerifiedCode?[]:[
         ...(officialMatch?.unresolved||[]),
         'OFFICIAL_STANDARD_CODE_NOT_BOUND'
