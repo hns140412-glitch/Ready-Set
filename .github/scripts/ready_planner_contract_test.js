@@ -46,7 +46,7 @@ for(const [i,mins] of [30,35,40].entries()){
     session_id:sessionId,
     task_id:taskId
   });
-  assert.strictEqual(started.ok,true);
+  assert.strictEqual(started.state,'IN_PROGRESS');
   const outcome=planner.recordSessionOutcome({
     todo_id:todo.todo_id,
     ready_state:'COMPLETED',
@@ -110,7 +110,7 @@ for(const [i,mins] of [20,25,30].entries()){
     session_id:sessionId,
     task_id:taskId
   });
-  assert.strictEqual(started.ok,true);
+  assert.strictEqual(started.state,'IN_PROGRESS');
   planner.recordSessionOutcome({
     todo_id:todo.todo_id,
     ready_state:'COMPLETED',
