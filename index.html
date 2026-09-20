@@ -32,7 +32,7 @@
         <button data-nav="history"><span><b>작전 기록실</b><small>완료한 작전과 기록 보기</small></span><strong>→</strong></button>
       </section>
       <section class="challengePanel"><div class="sectionTitle"><div><span>오늘의 작전</span><h2>어떤 과제에 도전할까요?</h2></div><button class="linkBtn" data-nav="mission">자세히</button></div>
-        <div class="categoryGrid"><button data-category="재능"><i>01</i><b>재능</b><small>개인 학습</small></button><button data-category="학교"><i>02</i><b>학교</b><small>숙제 · 독서</small></button><button data-category="영어"><i>03</i><b>영어</b><small>문장 녹음</small></button></div>
+        <div class="categoryGrid"><button data-nav="mission"><i>01</i><b>재능</b><small>Planner 오늘 탐험 보기</small></button><button data-nav="mission"><i>02</i><b>학교</b><small>Planner 오늘 탐험 보기</small></button><button data-nav="mission"><i>03</i><b>영어</b><small>Planner 오늘 탐험 보기</small></button></div>
         <div class="chipRow" id="homeChips"></div>
       </section>
     </main>
@@ -42,7 +42,7 @@
   <section class="view peach" id="missionView" data-view="mission">
     <header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MISSION BRIEFING</span><h1>타임어택 작전 설정</h1></div><span></span></header>
     <main class="safe scroll"><div class="progressSteps"><span class="on">1 과제 선택</span><span>2 과제 & 시간</span><span>3 작전 공유</span></div>
-      <section class="glassCard"><h2>1. 과제 분류를 선택하세요</h2><p class="muted">복수 선택 가능</p><div class="categoryGrid compact"><button data-category="재능"><b>재능</b><small>개인 학습</small></button><button data-category="학교"><b>학교</b><small>과제</small></button><button data-category="영어"><b>영어</b><small>학습</small></button></div><div id="missionChips" class="chipRow"></div></section>
+      <section class="glassCard"><h2>1. Planner가 준비한 오늘의 탐험</h2><p class="muted">숙제 FACT와 Planner 배정을 기준으로 표시합니다.</p><div id="missionChips" class="chipRow"></div></section>
       <section class="glassCard plannerToday" id="plannerTodaySection" hidden><div class="plannerTodayHead"><div><small>PLANNER · TODAY</small><h2>오늘의 탐험 후보</h2></div><span>내가 고르기</span></div><div id="plannerTodayList" class="plannerTodayList"></div></section>
       <section class="glassCard"><h2>2. 오늘 할 과제를 입력하세요</h2><label class="inputWrap"><input id="taskInput" placeholder="예) 수학 연산 20문제"><button id="voiceTaskBtn" type="button" aria-label="음성으로 과제 입력">🎙</button><button id="addTaskBtn" type="button">추가</button></label><p class="inputHint" id="voiceHint">텍스트로 입력하거나 마이크를 눌러 말할 수 있어요.</p><div id="taskList" class="taskList"></div></section>
       <section class="glassCard"><h2>3. 목표 시간을 선택하세요</h2><div class="timeButtons"><button data-minutes="10">10분</button><button data-minutes="15">15분</button><button class="on" data-minutes="25">25분</button><button data-minutes="custom">직접 입력</button></div><label class="customTime" id="customTimeWrap" hidden><input id="customMinutes" type="number" min="1" max="180" value="25"><span>분</span></label></section>
@@ -236,7 +236,6 @@
 </div>
 </section><section class="glassCard syncStatusCard"><div class="syncStatusHead"><div><small>CLOUD SYNC</small><h2>동기화 상태</h2></div><span id="syncStateBadge">로컬 저장</span></div><p id="syncStatusText" class="muted">현재 이 기기에 안전하게 저장 중이에요. 클라우드 동기화는 아직 연결되지 않았습니다.</p><div class="syncMeta"><span>대기 중 <b id="syncPendingCount">0</b></span><span>충돌 <b id="syncConflictCount">0</b></span></div><button class="btn outline compactBtn" id="checkSyncBtn">연결 상태 확인</button></section><section class="glassCard"><h2>데이터</h2><button class="btn outline" id="exportDataBtn">기록 JSON 내보내기</button><button class="dangerText" id="resetDataBtn">모든 로컬 데이터 초기화</button></section><p class="muted">APP_VERSION 0.9.3-rc1 · MASTER REV_07 · SCHEMA 5 · CACHE ready-set-v093-rev07</p></main></section>
 
-  <div class="sheet" id="categorySheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden><div class="sheetBackdrop" data-close-sheet></div><div class="sheetCard safe"><div class="sheetHandle"></div><div class="sheetHeader"><div><span class="kicker">MULTI SELECT</span><h2 id="sheetTitle">과제 선택</h2></div><button data-close-sheet aria-label="닫기">×</button></div><div class="sheetOptions" id="sheetOptions"></div><button class="btn dark" data-close-sheet>선택 완료</button></div></div>
   <div class="sheet" id="soundSheet" role="dialog" aria-modal="true" aria-label="집중 사운드 선택" hidden><div class="sheetBackdrop" data-close-sound></div><div class="sheetCard safe"><div class="sheetHandle"></div><div class="sheetHeader"><h2>집중 사운드</h2><button data-close-sound aria-label="닫기">×</button></div><div class="soundSheetOptions">
   <button data-sheet-sound="집중 피아노"><span>PIANO</span><b>집중 피아노</b><small>따뜻하고 일정한 기본 BGM</small><i>▶</i></button>
   <button data-sheet-sound="자연 숲"><span>NATURE</span><b>자연 숲</b><small>부드러운 자연 환경음</small><i>▶</i></button>
