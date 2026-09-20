@@ -15,22 +15,36 @@
   function draftId(sessionId,groupKey,index,runNo){
     return 'review_'+String(sessionId||'capture')+'_'+String(runNo||1)+'_'+String(index)+'_'+String(groupKey||'group').replace(/[^a-zA-Z0-9가-힣]+/g,'_');
   }
-  function decorateAnalysisResult(session,result){
+  function decorateAnalysisResult(session,result,manifest=[]){
     if(!result?.ok||!Array.isArray(result.drafts))return result||null;
     const runNo=Number(session.analysis_run_no||0)+1;
     const receivedAt=result.received_at||now();
+    const drafts=result.drafts.map((draft,index)=>({
+      ...draft,
+      review_draft_id:draft.review_draft_id||draftId(session.capture_session_id,draft.group_key,index,runNo),
+      draft_version:1,
+      review_state:'UNREVIEWED',
+      original_extraction:clone(draft),
+      reviewed_value:null,
+      review_events:[{event:'DRAFT_CREATED',at:receivedAt,actor:'ANALYSIS_ADAPTER'}]
+    }));
+    const evidence=new Set(drafts.flatMap(d=>Array.isArray(d.evidence_item_ids)?d.evidence_item_ids:[]));
+    const capture_item_dispositions=(Array.isArray(manifest)?manifest:[]).map(item=>({
+      capture_item_id:item.capture_item_id,
+      group_key:item.group_key,
+      capture_kind:item.kind,
+      disposition:item.kind==='ANSWER_REFERENCE'
+        ?'IGNORED_WITH_REASON'
+        :evidence.has(item.capture_item_id)?'LINKED_TO_REVIEW_DRAFT':'UNRESOLVED',
+      reason:item.kind==='ANSWER_REFERENCE'
+        ?'ANSWER_REFERENCE_EXCLUDED_FROM_OCR'
+        :evidence.has(item.capture_item_id)?null:'NO_DRAFT_EVIDENCE_LINK'
+    }));
     return {
       ...result,
       analysis_run_no:runNo,
-      drafts:result.drafts.map((draft,index)=>({
-        ...draft,
-        review_draft_id:draft.review_draft_id||draftId(session.capture_session_id,draft.group_key,index,runNo),
-        draft_version:1,
-        review_state:'UNREVIEWED',
-        original_extraction:clone(draft),
-        reviewed_value:null,
-        review_events:[{event:'DRAFT_CREATED',at:receivedAt,actor:'ANALYSIS_ADAPTER'}]
-      }))
+      drafts,
+      capture_item_dispositions
     };
   }
 
@@ -295,7 +309,7 @@
       archived_at:now(),
       result:clone(session.analysis_result)
     }:null;
-    const decorated=decorateAnalysisResult(session,result);
+    const decorated=decorateAnalysisResult(session,result,manifest);
     const done={
       ...next,
       analysis_run_no:result?.ok?Number(session.analysis_run_no||0)+1:Number(session.analysis_run_no||0),
@@ -346,6 +360,7 @@
       analysis_adapter:session.analysis_adapter||null,
       provider:session.analysis_result.provider||null,
       model:session.analysis_result.model||null,
+      capture_item_dispositions:clone(session.analysis_result.capture_item_dispositions||[]).filter(x=>x.group_key===groupKey),
       review_drafts:rows.map(d=>({
         review_draft_id:d.review_draft_id,
         draft_version:d.draft_version,
