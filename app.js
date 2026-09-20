@@ -87,6 +87,10 @@ function requireParentUi(){
   return false;
 }
 function nav(name){
+  if(name!=='result'&&$('#resultView')?.classList.contains('active')&&state.lastResult){
+    state.lastResult=null;
+    save();
+  }
   if(name==='planner-admin'&&!requireParentUi())name='planner';
   $$('.view').forEach(v=>v.classList.toggle('active',v.dataset.view===name));
   window.scrollTo(0,0);
@@ -604,7 +608,7 @@ $('[data-outcome-state]').forEach(b=>b.onclick=()=>{
 });
 $('[data-close-outcome]').forEach(b=>b.onclick=()=>{$('#outcomeModal').hidden=true});
 
-function resultSource(){return state.lastResult||state.records[0]||null}
+function resultSource(){return state.lastResult||null}
 function resultOutcomeProfile(r={}){
   const state=r.outcomeState||'COMPLETED';
   return ({
@@ -626,7 +630,8 @@ function resultSceneFor(r){
   return{headline:'작전 완료!',line:'오늘도 끝까지 잘 돌아왔어요.',label:'차이'};
 }
 function renderResult(){
-  const r=resultSource();if(!r)return;
+  const r=resultSource();
+  if(!r){nav('history');return}
   applyAvatar($('#resultAvatar'));
   applyGuide($('#resultGuidePortrait'));
   const guest=$('#resultGuestPortrait');
