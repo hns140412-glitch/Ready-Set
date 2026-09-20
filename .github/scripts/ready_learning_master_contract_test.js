@@ -120,3 +120,8 @@ const scienceFactWithMatch=learning.interpretFact({
 assert.strictEqual(scienceFactWithMatch.analysis.learning_reference.standard_match.selected.domain,'지구와 우주');
 assert.strictEqual(scienceFactWithMatch.analysis.learning_reference.standard_match.official_standard_code,null);
 assert.strictEqual(scienceFactWithMatch.learning_units[0].analysis_provenance.learning_reference.standard_match.selected.domain,'지구와 우주');
+
+assert.strictEqual(subjectMaster.OFFICIAL_BASE.current_elementary_framework_notice,'NCEC_NOTICE_2026_1');
+assert.strictEqual(subjectMaster.OFFICIAL_BASE.subject_curriculum_notice,'MOE_NOTICE_2022_33');
+assert(standardMatcher.OFFICIAL_STANDARD_DATASET.source_refs.includes('NCEC_NOTICE_2026_1_ELEMENTARY_FRAMEWORK'));
+assert(standardMatcher.OFFICIAL_STANDARD_DATASET.source_refs.includes('MOE_NOTICE_2022_33_SUBJECT_CURRICULA'));

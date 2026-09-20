@@ -5,15 +5,19 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.1.0';
+  const VERSION='0.2.0';
   const GRADE_BAND='ELEMENTARY_5_6';
   const OFFICIAL_BASE={
     curriculum:'2022_REVISED_KOREA_NATIONAL_CURRICULUM',
-    authority:'MINISTRY_OF_EDUCATION_NCIC',
+    authority:'NATIONAL_EDUCATION_COMMISSION__MINISTRY_OF_EDUCATION__NCIC',
     effective_for_grade_band:'2026-03-01',
+    current_elementary_framework_notice:'NCEC_NOTICE_2026_1',
+    subject_curriculum_notice:'MOE_NOTICE_2022_33',
+    notice_scope_note:'NCEC_NOTICE_2026_1 amends general/elementary framework books and does not replace the subject-specific curriculum books used here.',
     source_refs:[
-      'MOE_NOTICE_2022_33',
-      'NCIC_2022_REVISED_ELEMENTARY'
+      'NCEC_NOTICE_2026_1_ELEMENTARY_FRAMEWORK',
+      'MOE_NOTICE_2022_33_SUBJECT_CURRICULA',
+      'NCIC_2022_REVISED_ELEMENTARY_ACHIEVEMENT_STANDARDS'
     ]
   };
 
