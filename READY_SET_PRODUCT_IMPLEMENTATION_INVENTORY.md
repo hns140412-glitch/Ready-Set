@@ -93,6 +93,24 @@ A feature is not FUNCTIONAL merely because one underlying contract, module, or h
 | RSP-069 | Adaptive plan-vs-actual learning | PARTIAL | observations/advisories exist; child-specific long-term estimate learning is incomplete. |
 | RSP-070 | No-silent-loss source disposition UX | PARTIAL | evidence disposition model exists; ordinary parent review experience is incomplete. |
 
+## Current status distribution — 2026-09-21
+
+Inventory size: 70 product features.
+
+- FUNCTIONAL: 2
+- VERIFIED: 0
+- PARTIAL: 47
+- SKELETON: 10
+- NOT_IMPLEMENTED: 11
+
+Completed-feature ratio (`FUNCTIONAL + VERIFIED` only): **2 / 70 = 2.9%**.
+
+This 2.9% is **not** a weighted code-progress estimate. It answers only:
+“How many whole user-facing product features are currently complete enough to call functional?”
+
+Likewise, the fact that 49/70 features are PARTIAL-or-better does **not** mean 70% implemented.
+A PARTIAL feature may contain only a contract, data model, narrow happy path, or incomplete UI.
+
 ## Current product-completeness conclusion
 
 The repository contains meaningful subsystem code, but the product itself is still in active implementation.
