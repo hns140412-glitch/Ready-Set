@@ -154,7 +154,15 @@
       return load().dated_todos.filter(x=>ids.has(x.todo_id)&&x.date===date&&x.state!=='COMPLETED').map(x=>({
         todo_id:x.todo_id,label:x.label,date:x.date,source:x.source,
         assignment_id:x.assignment_id,analysis_id:x.analysis_id,learning_unit_id:x.learning_unit_id,
-        template_id:x.template_id,allocation_run_id:x.allocation_run_id
+        template_id:x.template_id,allocation_run_id:x.allocation_run_id,
+        activity_types:Array.isArray(x.activity_types)?x.activity_types:[],
+        activity_sequence:Array.isArray(x.activity_sequence)?x.activity_sequence:[],
+        cognitive_load_profile:Array.isArray(x.cognitive_load_profile)?x.cognitive_load_profile:[],
+        activity_load_score:Number.isFinite(x.activity_load_score)?x.activity_load_score:null,
+        difficulty:Number.isFinite(x.difficulty)?x.difficulty:null,
+        recovery_need:x.recovery_need||null,
+        review_policy:x.review_policy||null,
+        parent_help_dependency:x.parent_help_dependency||null
       }));
     }
     function linkOrCreateTodayItems(values=[],options={}){
@@ -183,13 +191,24 @@
       const dates=allocationDates(fact,input);if(!dates.length)return {ok:false,reason:'NO_ALLOCATION_WINDOW'};
       return mutate(s=>{
         const runId=makeId('allocation_v2');
-        const loadByDate=Object.fromEntries(dates.map(d=>[d,(s.dated_todos||[]).filter(t=>t.date===d&&t.state!=='COMPLETED').map(t=>t.cognitive_load_profile||[])]));
+        const loadByDate=Object.fromEntries(dates.map(d=>[d,(s.dated_todos||[])
+          .filter(t=>t.date===d&&t.state!=='COMPLETED')
+          .map(t=>({
+            tags:t.cognitive_load_profile||[],
+            score:Number.isFinite(t.activity_load_score)?t.activity_load_score:3,
+            difficulty:Number.isFinite(t.difficulty)?t.difficulty:3,
+            recovery_need:t.recovery_need||'MEDIUM'
+          }))]));
         const scheduleByDate=Object.fromEntries(dates.map(d=>[d,(s.schedule_commitments||[]).filter(x=>x.confirmed!==false&&x.start_at&&x.end_at&&String(x.start_at).slice(0,10)===d&&String(x.end_at).slice(0,10)===d)]));
         const proposals=[];
         for(const unit of units){
           const existing=s.dated_todos.find(t=>t.learning_unit_id===unit.learning_unit_id&&t.state!=='COMPLETED');
           if(existing){proposals.push({decision:'REUSE',date:existing.date,todo_id:existing.todo_id,learning_unit_id:unit.learning_unit_id});continue}
           const tags=unit.cognitive_load_profile||[];
+          const unitLoad=unit.activity_load||{};
+          const unitScore=Number.isFinite(unitLoad.score)?unitLoad.score:3;
+          const unitDifficulty=Number.isFinite(unitLoad.difficulty)?unitLoad.difficulty:3;
+          const unitRecovery=unitLoad.recovery_need||'MEDIUM';
           const date=[...dates].sort((a,b)=>{
             const score=d=>{
               const taskLoads=loadByDate[d]||[];
@@ -199,18 +218,41 @@
                 const end=parseLocal(d,String(x.end_at).slice(11,16));
                 return sum+Math.max(0,minutes(end-start));
               },0);
-              return taskLoads.length*10
-                + taskLoads.flat().filter(x=>tags.includes(x)).length*20
-                + commitments.length*15
-                + Math.min(30,Math.floor(commitmentMinutes/30));
+              const existingLoad=taskLoads.reduce((sum,x)=>sum+(x.score||3),0);
+              const overlap=taskLoads.reduce((sum,x)=>sum+(x.tags||[]).filter(tag=>tags.includes(tag)).length,0);
+              const highLoadStack=taskLoads.filter(x=>(x.score||3)>=4).length;
+              const highDifficultyStack=taskLoads.filter(x=>(x.difficulty||3)>=4).length;
+              const recoveryStack=taskLoads.filter(x=>x.recovery_need==='HIGH').length;
+              const schedulePressure=commitments.length*15+Math.min(30,Math.floor(commitmentMinutes/30));
+              const recoveryPenalty=unitRecovery==='HIGH'?(highLoadStack*18+recoveryStack*15):unitRecovery==='MEDIUM'?highLoadStack*8:0;
+              const difficultyPenalty=unitDifficulty>=4?highDifficultyStack*12:0;
+              return taskLoads.length*8
+                + existingLoad*4
+                + overlap*18
+                + recoveryPenalty
+                + difficultyPenalty
+                + (unitScore>=5&&commitmentMinutes>=120?20:0)
+                + schedulePressure;
             };
             return score(a)-score(b)||a.localeCompare(b);
           })[0];
-          loadByDate[date].push(tags);
+          loadByDate[date].push({tags,score:unitScore,difficulty:unitDifficulty,recovery_need:unitRecovery});
           const templateId=`template_${unit.learning_unit_id}`;
           const template={template_id:templateId,title:`${unit.subject} · ${unit.source_range||unit.concept_skill_target}`,subject:unit.subject,assignment_cycle:fact.assignment_cycle,learning_units:[unit.learning_unit_id],provenance:{kind:'LEARNING_MASTER_OUTPUT',assignment_id:assignmentId,analysis_id:analysis.analysis_id},confirmation_state:'CONFIRMED',deadline_date:fact.deadline_boundary||null,estimated_minutes:null,allocation_priority:100,required_today:false,preferred_days:[],updated_at:new Date().toISOString()};
           const ti=s.homework_templates.findIndex(x=>x.template_id===templateId);if(ti>=0)s.homework_templates[ti]=template;else s.homework_templates.push(template);
-          proposals.push({decision:'PROPOSE',date,label:template.title,assignment_id:assignmentId,analysis_id:analysis.analysis_id,learning_unit_id:unit.learning_unit_id,template_id:templateId,activity_types:unit.activity_types,cognitive_load_profile:unit.cognitive_load_profile,prerequisite:unit.prerequisite});
+          proposals.push({
+            decision:'PROPOSE',date,label:template.title,assignment_id:assignmentId,analysis_id:analysis.analysis_id,
+            learning_unit_id:unit.learning_unit_id,template_id:templateId,
+            activity_types:unit.activity_types,
+            activity_sequence:unit.activity_sequence||[],
+            cognitive_load_profile:unit.cognitive_load_profile,
+            activity_load_score:unitScore,
+            difficulty:unitDifficulty,
+            recovery_need:unitRecovery,
+            review_policy:unit.review_policy||'RESULT_DEPENDENT',
+            parent_help_dependency:unit.parent_help_dependency||'UNRESOLVED',
+            prerequisite:unit.prerequisite
+          });
         }
         const run={allocation_run_id:runId,version:'PLANNER_V2',assignment_id:assignmentId,analysis_id:analysis.analysis_id,primary_basis:'LEARNING_UNIT_ACTIVITY_LOAD',minutes_role:'SECONDARY_SAFETY_ONLY',proposals,created_at:new Date().toISOString()};
         s.allocation_runs.push(run);return {ok:true,...run};
@@ -221,7 +263,17 @@
         const created=[];
         for(const p of run.proposals.filter(x=>x.decision==='PROPOSE')){
           let todo=s.dated_todos.find(x=>x.learning_unit_id===p.learning_unit_id&&x.state!=='COMPLETED');
-          if(!todo){todo={todo_id:makeId('todo'),date:p.date,label:p.label,assignment_id:p.assignment_id,analysis_id:p.analysis_id,learning_unit_id:p.learning_unit_id,template_id:p.template_id,allocation_run_id:runId,activity_types:p.activity_types,cognitive_load_profile:p.cognitive_load_profile,source:'PLANNER_V2_ALLOCATION',source_actor:'PLANNER_MAIN',provenance:{assignment_id:p.assignment_id,analysis_id:p.analysis_id,learning_unit_id:p.learning_unit_id,allocation_run_id:runId},order:created.length,state:'PLANNED',estimated_minutes:null,created_at:new Date().toISOString(),updated_at:new Date().toISOString()};s.dated_todos.push(todo)}
+          if(!todo){todo={
+            todo_id:makeId('todo'),date:p.date,label:p.label,assignment_id:p.assignment_id,analysis_id:p.analysis_id,
+            learning_unit_id:p.learning_unit_id,template_id:p.template_id,allocation_run_id:runId,
+            activity_types:p.activity_types,activity_sequence:p.activity_sequence||[],
+            cognitive_load_profile:p.cognitive_load_profile,
+            activity_load_score:p.activity_load_score,difficulty:p.difficulty,recovery_need:p.recovery_need,
+            review_policy:p.review_policy,parent_help_dependency:p.parent_help_dependency,
+            source:'PLANNER_V2_ALLOCATION',source_actor:'PLANNER_MAIN',
+            provenance:{assignment_id:p.assignment_id,analysis_id:p.analysis_id,learning_unit_id:p.learning_unit_id,allocation_run_id:runId},
+            order:created.length,state:'PLANNED',estimated_minutes:null,created_at:new Date().toISOString(),updated_at:new Date().toISOString()
+          };s.dated_todos.push(todo)}
           created.push({...todo});
         }
         return {ok:true,created};
@@ -656,7 +708,15 @@
         state:x.state,
         source:x.source,
         estimated_minutes:Number.isFinite(x.estimated_minutes)?x.estimated_minutes:null,
-        planner_owned:x.source==='PLANNER_ALLOCATION'
+        activity_types:Array.isArray(x.activity_types)?x.activity_types:[],
+        activity_sequence:Array.isArray(x.activity_sequence)?x.activity_sequence:[],
+        cognitive_load_profile:Array.isArray(x.cognitive_load_profile)?x.cognitive_load_profile:[],
+        activity_load_score:Number.isFinite(x.activity_load_score)?x.activity_load_score:null,
+        difficulty:Number.isFinite(x.difficulty)?x.difficulty:null,
+        recovery_need:x.recovery_need||null,
+        review_policy:x.review_policy||null,
+        parent_help_dependency:x.parent_help_dependency||null,
+        planner_owned:/^PLANNER/.test(x.source||'')
       }));
     }
 

@@ -175,6 +175,20 @@ function openCategory(cat){
 $$('[data-category]').forEach(b=>b.addEventListener('click',()=>openCategory(b.dataset.category)));
 $$('[data-close-sheet]').forEach(b=>b.addEventListener('click',()=>$('#categorySheet').hidden=true));
 
+function learningStepLabel(step){
+  return ({
+    SOLVE:'풀기',CHECK:'확인',MARK_ERROR:'틀린 것 표시',
+    ENCODE:'익히기',RECALL:'떠올리기',READ:'읽기',UNDERSTAND:'이해하기',RESPOND:'답하기',
+    CONNECT_CONCEPTS:'개념 연결',UNDERSTAND_CONCEPT:'개념 이해',APPLY:'적용',CHECK_ERROR:'오류 확인',
+    EXPLORE:'탐색',REASON:'생각하기',EXPLAIN:'설명하기',PRACTICE:'연습',COMPLETE:'완료',
+    LISTEN:'듣기',PREPARE:'준비',SPEAK:'말하기',REVIEW:'돌아보기',PLAN:'계획',WRITE:'쓰기',REVISE:'고쳐쓰기'
+  })[step]||String(step||'').replaceAll('_',' ');
+}
+function learningSequenceText(item){
+  const seq=Array.isArray(item?.activity_sequence)?item.activity_sequence.filter(Boolean):[];
+  return seq.length?seq.map(learningStepLabel).join(' → '):'';
+}
+
 function renderPlannerToday(){
   const root=$('#plannerTodayList');
   const section=$('#plannerTodaySection');
@@ -188,7 +202,8 @@ function renderPlannerToday(){
     b.type='button';
     b.className='plannerTodayItem'+(selected?' on':'');
     b.dataset.todoId=item.todo_id;
-    b.innerHTML=`<span><b>${escapeHtml(item.label)}</b><small>${item.planner_owned?'플래너 제안':'오늘 할 일'}${item.estimated_minutes?` · 약 ${item.estimated_minutes}분`:''}</small></span><strong>${selected?'선택됨':'담기'}</strong>`;
+    const steps=learningSequenceText(item);
+    b.innerHTML=`<span><b>${escapeHtml(item.label)}</b><small>${item.planner_owned?'플래너 제안':'오늘 할 일'}${steps?` · ${escapeHtml(steps)}`:''}</small></span><strong>${selected?'선택됨':'담기'}</strong>`;
     b.onclick=()=>{
       state.selectedTodoIds=selected
         ? state.selectedTodoIds.filter(x=>x!==item.todo_id)
@@ -208,7 +223,8 @@ function renderMission(){
   chosen.forEach((t)=>{
     const row=document.createElement('div');
     row.className='taskRow';
-    row.innerHTML=`<span>${escapeHtml(t.label)}</span><button aria-label="삭제">×</button>`;
+    const steps=learningSequenceText(t);
+    row.innerHTML=`<span><b>${escapeHtml(t.label)}</b>${steps?`<small>${escapeHtml(steps)}</small>`:''}</span><button aria-label="삭제">×</button>`;
     row.querySelector('button').onclick=()=>{state.selectedTodoIds=state.selectedTodoIds.filter(x=>x!==t.todo_id);save();renderMission()};
     tl.appendChild(row);
   });
@@ -360,7 +376,11 @@ function renderFocus(){
   if(!s){if($('#focusView')?.classList.contains('active'))nav('mission');return}
   const labels=[...s.selected,...s.tasks];
   $('#focusMission').textContent=labels.join(' · ')||'오늘의 작전';
-  $('#recBtn').hidden=!s.selected.includes('영어 · 문장 녹음');
+  const focusSteps=[...new Set((s.plannerLinks||[]).flatMap(x=>Array.isArray(x.activity_sequence)?x.activity_sequence:[]))];
+  if($('#focusLearningGuide'))$('#focusLearningGuide').textContent=focusSteps.length
+    ? focusSteps.map(learningStepLabel).join(' → ')
+    : '오늘 할 순서를 따라가요.';
+  $('#recBtn').hidden=!s.selected.includes('영어 · 문장 녹음') && !(s.plannerLinks||[]).some(x=>(x.activity_types||[]).includes('RECORDING'));
   $('#targetTime').textContent=fmt(s.targetMs);
   $('#startClock').textContent=new Date(s.startAt).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false});
   applyGuide($('#focusGuideMini'));
@@ -701,6 +721,22 @@ function renderParentIntake(){
     </div>`).join('');
   const status=$('#assignmentFactStatus'),projection=window.ReadyAssignments?.project?.('PARENT');
   if(status&&projection)status.innerHTML=projection.facts.slice(-12).reverse().map(f=>`<div class="adminListItem"><span><b>${escapeHtml(f.book_subject||f.subject)}</b><small>${escapeHtml(f.confirmation_state)} · ${escapeHtml(f.analysis_state)}</small></span></div>`).join('');
+
+  const lmRoot=$('#learningMasterSummary');
+  const domain=window.ReadyAssignments?.load?.();
+  if(lmRoot&&domain){
+    const rows=Object.values(domain.assignmentFacts||{}).filter(f=>f.current_analysis_id).slice(-12).reverse();
+    lmRoot.innerHTML=rows.length?rows.map(f=>{
+      const analysis=domain.analyses?.[f.current_analysis_id];
+      const units=(analysis?.learning_unit_ids||[]).map(id=>domain.learningUnits?.[id]).filter(Boolean);
+      const maxDifficulty=units.reduce((m,u)=>Math.max(m,u.activity_load?.difficulty||0),0);
+      const maxLoad=units.reduce((m,u)=>Math.max(m,u.activity_load?.score||0),0);
+      const recovery=units.some(u=>u.activity_load?.recovery_need==='HIGH')?'회복 필요 높음':units.some(u=>u.activity_load?.recovery_need==='MEDIUM')?'회복 필요 보통':'회복 부담 낮음';
+      const unresolved=[...new Set(units.flatMap(u=>u.unresolved_flags||[]))];
+      return `<div class="adminListItem"><span><b>${escapeHtml(f.book_subject||f.subject)} · ${units.length}개 학습단위</b><small>난이도 ${maxDifficulty||'-'} · 부하 ${maxLoad||'-'} · ${recovery}${unresolved.length?` · 확인 ${unresolved.length}건`:''}</small></span></div>`;
+    }).join(''):'<div class="plannerEmpty"><b>아직 해석된 숙제가 없어요.</b><small>FACT 확인 후 Learning Master가 학습단위를 만듭니다.</small></div>';
+  }
+  if($('#learningMasterVersion'))$('#learningMasterVersion').textContent='v'+(window.ReadyLearningMasterV01?.version||'0.2');
   if($('#talentSourceDate')&&!$('#talentSourceDate').value)$('#talentSourceDate').value=localDateKey();
 }
 document.getElementById('saveTalentFactsBtn')?.addEventListener('click',()=>{
@@ -710,8 +746,14 @@ document.getElementById('saveTalentFactsBtn')?.addEventListener('click',()=>{
   const books=[...document.querySelectorAll('[data-talent-book]')].map(row=>({subject:row.dataset.talentBook,source_range:row.querySelector('[data-range]').value.trim(),teacher_instruction:row.querySelector('[data-instruction]').value.trim(),artifact_refs:[],answer_reference_ids:row.querySelector('[data-answer]').value?[row.querySelector('[data-answer]').value]:[]}));
   if(books.some(x=>!x.source_range)){toast('재능 6권의 숙제 범위를 모두 입력해 주세요.');return}
   const pkg=window.ReadyAssignments.upsertTalentPackage({actor:'PARENT',source_date:source,deadline_boundary:deadline,books,provenance:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}});
-  for(const assignmentId of pkg.fact_ids)window.ReadyAssignments.confirmFact(assignmentId,{actor:'PARENT'});
-  toast('재능 6권 FACT를 확인 저장했어요. 아직 DATED TODO는 만들지 않았습니다.');renderParentIntake();
+  let todoCount=0,held=0;
+  for(const assignmentId of pkg.fact_ids){
+    window.ReadyAssignments.confirmFact(assignmentId,{actor:'PARENT'});
+    const processed=window.ReadyIntegrationV1?.processAssignment?.(assignmentId,{start_date:localDateKey()});
+    if(processed?.ok)todoCount+=(processed.todos||[]).length;else held++;
+  }
+  toast(`재능 6권 분석 완료 · Planner가 ${todoCount}개 탐험을 배정했어요${held?` · 보류 ${held}건`:''}.`);
+  renderParentIntake();renderPlanner();renderMission();
 });
 document.getElementById('saveEnglishFactBtn')?.addEventListener('click',()=>{
   if(!requireParentUi())return;
@@ -719,7 +761,15 @@ document.getElementById('saveEnglishFactBtn')?.addEventListener('click',()=>{
   const ref=window.ReadyAssignments.upsertWorkbookRef({name,subject:'영어',provenance:{kind:'PARENT_INPUT'}});
   const fact=window.ReadyAssignments.upsertEnglishAssignment({actor:'PARENT',workbook_ref_id:ref.workbook_ref_id,source_date:localDateKey(),source_range:range,weekday_prints:parsePrints($('#englishPrints').value),components:{vocabulary:$('#englishVocabulary').value.trim(),listening:$('#englishListening').value.trim(),recording:$('#englishRecording').value.trim(),writing:$('#englishWriting').value.trim()},teacher_instruction:$('#englishInstruction').value.trim(),next_academy:$('#englishNextAcademy').value,provenance:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}});
   window.ReadyAssignments.confirmFact(fact.assignment_id,{actor:'PARENT'});
-  toast(fact.deadline_state==='NEXT_ACADEMY_UNVERIFIED'?'영어 FACT 저장 · 다음 학원 일정 확인 전 분석/배정 보류':'영어 FACT를 확인 저장했어요.');renderParentIntake();
+  const processed=window.ReadyIntegrationV1?.processAssignment?.(fact.assignment_id,{start_date:localDateKey()});
+  if(fact.deadline_state==='NEXT_ACADEMY_UNVERIFIED'||processed?.reason==='NEXT_ACADEMY_UNVERIFIED'){
+    toast('영어 FACT 저장 · 다음 학원 일정 확인 전 분석/배정 보류');
+  }else if(processed?.ok){
+    toast(`영어 숙제 분석 완료 · Planner가 ${(processed.todos||[]).length}개 탐험을 배정했어요.`);
+  }else{
+    toast('영어 FACT는 저장했지만 배정 조건을 더 확인해야 해요.');
+  }
+  renderParentIntake();renderPlanner();renderMission();
 });
 
 function renderProfile(){
