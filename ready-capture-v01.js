@@ -402,21 +402,24 @@
       linked_at:current.linked_at||now(),
       updated_at:now()
     };
+    const next={...session,fact_links:links,updated_at:now()};
+    await put(SESSION_STORE,next);
+    return {ok:true,link:clone(links[groupKey]),session:clone(next)};
+  }
+
+  async function finalizeFactLinkage(){
+    const session=await currentReviewSession();
+    if(!session)return {ok:false,reason:'NO_CAPTURE_SESSION'};
     const items=await listItems(session.capture_session_id);
     const requiredGroups=[...new Set(items.map(x=>x.group_key).filter(Boolean))];
-    const allLinked=requiredGroups.length>0&&requiredGroups.every(key=>links[key]?.assignment_id);
-    const next={
-      ...session,
-      fact_links:links,
-      status:allLinked?'FACT_LINKED':session.status,
-      fact_linked_at:allLinked?(session.fact_linked_at||now()):(session.fact_linked_at||null),
-      updated_at:now()
-    };
+    const links=clone(session.fact_links||{});
+    const missing_groups=requiredGroups.filter(key=>!links[key]?.assignment_id);
+    if(missing_groups.length)return {ok:false,reason:'FACT_LINKS_INCOMPLETE',missing_groups};
+    const next={...session,status:'FACT_LINKED',fact_linked_at:session.fact_linked_at||now(),updated_at:now()};
     await put(SESSION_STORE,next);
-    if(allLinked&&localStorage.getItem(ACTIVE_SESSION_KEY)===session.capture_session_id){
-      localStorage.removeItem(ACTIVE_SESSION_KEY);
-    }
-    return {ok:true,link:clone(links[groupKey]),session:clone(next),all_linked:allLinked};
+    if(localStorage.getItem(ACTIVE_SESSION_KEY)===session.capture_session_id)localStorage.removeItem(ACTIVE_SESSION_KEY);
+    return {ok:true,session:clone(next)};
+
   }
 
   async function resolveCaptureItemDisposition(itemId,input={}){
@@ -515,6 +518,7 @@
     reviewProvenanceForGroup,
     factLinkForGroup,
     recordFactLink,
+    finalizeFactLinkage,
     resolveCaptureItemDisposition,
     reviewClosureForGroup
   });
