@@ -222,7 +222,7 @@
     };
   }
 
-  function applyInboundResult({ session_id, goal_id = null, task_id, lap_id, task_state, from_app, event_id = null, payload = null, memory_summary = null }) {
+  function applyInboundResult({ session_id, goal_id = null, task_id, lap_id, task_state, from_app, event_id = null, payload = null, memory_summary = null, specialist_report = null }) {
     const c = ensureContract();
     if (!c || !session_id || session_id !== c.session_id) return false;
     if (goal_id && goal_id !== c.goal_id) return false;
@@ -232,9 +232,26 @@
 
     const normalized = normalizeInboundState(task_state);
     const memorySummary = normalizeMemorySummary(memory_summary || payload?.memorySummary || null);
+    const specialistReport = specialist_report || (payload ? {
+      explorationMissionId: payload.explorationMissionId || null,
+      explorationMissionTitle: payload.explorationMissionTitle || null,
+      inputActorRole: payload.inputActorRole || null,
+      validWordCount: Number(payload.validWordCount || 0),
+      trailMastery: Number(payload.trailMastery || 0),
+      learningPhase: payload.learningPhase || null,
+      finalSeekAttemptCount: Number(payload.finalSeekAttemptCount || 0),
+      seekAgainRemainingCount: Number(payload.seekAgainRemainingCount || 0)
+    } : null);
     c.active_app = 'ready-set';
     c.active_task_id = task.task_id;
     if (lap_id) c.active_lap_id = lap_id;
+    if (specialistReport) {
+      task.specialist_report = {...specialistReport};
+      task.exploration_mission_id = specialistReport.explorationMissionId || null;
+      task.exploration_mission_title = specialistReport.explorationMissionTitle || null;
+      task.input_actor_role = specialistReport.inputActorRole || null;
+      task.specialist_report_received_at = iso();
+    }
     if (memorySummary) {
       task.specialist_memory_summary = memorySummary;
       task.specialist_memory_source = from_app || 'specialist';
@@ -249,6 +266,7 @@
           source_app: from_app || 'specialist',
           event_id,
           memory_summary: memorySummary,
+          specialist_report: specialistReport,
           at: task.specialist_memory_received_at
         });
       }
@@ -259,7 +277,8 @@
     emit('APP_RETURN', {
       from: from_app || 'specialist',
       task_state: normalized || task_state || null,
-      memory_summary_received: !!memorySummary
+      memory_summary_received: !!memorySummary,
+      specialist_report_received: !!specialistReport
     });
     save();
     renderContractUI();
@@ -268,10 +287,14 @@
 
   function consumeReturnQuery() {
     const p = new URLSearchParams(location.search);
-    let memorySummary = null;
+    let memorySummary = null, specialistReport = null;
     try {
       const raw = p.get('memory_summary');
       if (raw) memorySummary = JSON.parse(raw);
+    } catch {}
+    try {
+      const raw = p.get('specialist_report');
+      if (raw) specialistReport = JSON.parse(raw);
     } catch {}
     const args = {
       session_id: p.get('session_id'),
@@ -281,10 +304,11 @@
       task_state: p.get('task_state'),
       from_app: p.get('from_app'),
       event_id: p.get('event_id'),
-      memory_summary: memorySummary
+      memory_summary: memorySummary,
+      specialist_report: specialistReport
     };
     if (!args.session_id || !args.task_id || !applyInboundResult(args)) return;
-    ['session_id','goal_id','task_id','lap_id','task_state','from_app','event_id','memory_summary'].forEach(k => p.delete(k));
+    ['session_id','goal_id','task_id','lap_id','task_state','from_app','event_id','memory_summary','specialist_report'].forEach(k => p.delete(k));
     const clean = String(location.pathname) + (p.toString() ? '?' + p.toString() : '') + String(location.hash || '');
     history.replaceState(null, '', clean);
   }
@@ -307,7 +331,17 @@
       from_app: e.app,
       event_id: e.event_id,
       payload: e.payload || null,
-      memory_summary: e.payload?.memorySummary || null
+      memory_summary: e.payload?.memorySummary || null,
+      specialist_report: e.payload ? {
+        explorationMissionId:e.payload.explorationMissionId||null,
+        explorationMissionTitle:e.payload.explorationMissionTitle||null,
+        inputActorRole:e.payload.inputActorRole||e.actor_role||null,
+        validWordCount:Number(e.payload.validWordCount||0),
+        trailMastery:Number(e.payload.trailMastery||0),
+        learningPhase:e.payload.learningPhase||null,
+        finalSeekAttemptCount:Number(e.payload.finalSeekAttemptCount||0),
+        seekAgainRemainingCount:Number(e.payload.seekAgainRemainingCount||0)
+      } : null
     });
   }
 
