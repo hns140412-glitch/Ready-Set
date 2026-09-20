@@ -39,7 +39,14 @@
       });
       state=window.ReadyAssignments.load();fact=state.assignmentFacts[assignmentId];
     }
-    const allocation=window.ReadySetPlanner.allocateLearningUnits({assignment_id:assignmentId,domain_state:state,start_date:input.start_date,candidate_dates:input.candidate_dates});
+    const allocation=window.ReadySetPlanner.allocateLearningUnits({
+      assignment_id:assignmentId,
+      domain_state:state,
+      start_date:input.start_date,
+      candidate_dates:input.candidate_dates,
+      availability_profile_id:input.availability_profile_id,
+      candidate_windows_by_date:input.candidate_windows_by_date
+    });
     if(!allocation.ok)return {...allocation,revision_impact:revisionImpact};
     const committed=window.ReadySetPlanner.commitLearningAllocation(allocation.allocation_run_id);
     if(committed.ok&&fact.planner_revision_pending){
@@ -48,7 +55,16 @@
         allocation_run_id:allocation.allocation_run_id
       });
     }
-    return {ok:committed.ok,assignment_id:assignmentId,analysis_id:fact.current_analysis_id,allocation_run_id:allocation.allocation_run_id,todos:committed.created||[],revision_impact:revisionImpact};
+    return {
+      ok:committed.ok,
+      assignment_id:assignmentId,
+      analysis_id:fact.current_analysis_id,
+      allocation_run_id:allocation.allocation_run_id,
+      availability_role:allocation.availability_role||null,
+      availability_by_date:allocation.availability_by_date||null,
+      todos:committed.created||[],
+      revision_impact:revisionImpact
+    };
   }
   function reviewEscalatedCarryOver(carryOverId,input={}){
     if(!window.ReadyAssignments||!window.ReadyLearningMasterV01||!window.ReadySetPlanner)return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
