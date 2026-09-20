@@ -13,6 +13,7 @@ test('English actor conflict and unverified academy block analysis/allocation/TO
   });
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
   const out=await page.evaluate(()=>{
+    window.ReadyFamilySession={...window.ReadyFamilySession,requireRole:()=>({ok:true,session:window.ReadyFamilySession.current()})};
     const ref=window.ReadyAssignments.upsertWorkbookRef({name:'Workbook'});
     window.ReadyAssignments.upsertEnglishAssignment({assignment_id:'eng_conflict',actor:'PARENT',workbook_ref_id:ref.workbook_ref_id,source_range:'p.1~5',next_academy:''});
     window.ReadyAssignments.upsertEnglishAssignment({assignment_id:'eng_conflict',actor:'CHILD',workbook_ref_id:ref.workbook_ref_id,source_range:'p.1~8',next_academy:''});
