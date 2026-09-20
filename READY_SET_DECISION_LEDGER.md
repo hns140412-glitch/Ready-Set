@@ -132,6 +132,24 @@ Authority boundary:
 
 Main promotion remains pending; DEVICE/PRODUCTION verification remains NOT RUN.
 
+### P3c — Family Capture/OCR domain sharing — BRANCH CANDIDATE
+Family capture analysis transport is shared through `/api/capture/analyze`.
+
+Domains:
+- `READY_ASSIGNMENT_FACT` — Ready homework FACT extraction, PARENT-only.
+- `HIDE_VOCABULARY` — Hide printed vocabulary OCR, PARENT or CHILD.
+
+Boundaries:
+- shared transport/image provider/auth envelope != shared domain interpretation.
+- Ready keeps assignment-FACT draft schema.
+- Hide keeps word↔meaning interpretation/review semantics.
+- Hide frontend no longer requires a private Gemini client/key.
+- Hide vocabulary rows must preserve `evidence_item_id` and confidence/warnings.
+- assignment drafts cannot be accepted as Hide vocabulary rows.
+- unsupported/mismatched domain fails closed; original capture remains preserved.
+
+Evidence pending exact Runtime E2E completion on latest candidate. Hide adapter/contract CI is independently green.
+
 ### P4 — exploration UI/product-language consolidation — CANDIDATE CLOSED
 Candidate HEAD `c4f68d2fc0a86c9e2c6abc8034185026f31d8d45`.
 
