@@ -16,6 +16,15 @@
   const id=p=>p+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
   const clone=v=>JSON.parse(JSON.stringify(v));
   const blank=()=>({schema_version:2,assignmentFacts:{},assignmentPackages:{},workbookRefs:{},artifacts:{},analyses:{},learningUnits:{}});
+  function requireBrowserActor(actor){
+    const normalized=clean(actor).toUpperCase();
+    const family=globalThis.ReadyFamilySession;
+    if(!family)return {ok:true};
+    if(normalized==='PARENT')return family.requireRole?.('PARENT')||{ok:false,reason:'PARENT_AUTH_REQUIRED'};
+    if(normalized==='CHILD')return family.requireRole?.('CHILD')||{ok:false,reason:'ROLE_NOT_ALLOWED'};
+    return {ok:true};
+  }
+
 
   function normalize(raw){
     const x=raw&&typeof raw==='object'?raw:{};
@@ -67,6 +76,7 @@
       });
     }
     function confirmFact(assignmentId,input={}){
+      const actorGuard=requireBrowserActor(input.actor);if(!actorGuard.ok)throw new Error(actorGuard.reason);
       return mutate(s=>{const f=s.assignmentFacts[assignmentId];if(!f)throw new Error('fact not found');
         if(claimsConflict(f.claims||[])&&!input.accepted_claim_id)throw new Error('conflict resolution required');
         if(input.accepted_claim_id){
@@ -77,6 +87,7 @@
       });
     }
     function upsertTalentPackage(input={}){
+      const actorGuard=requireBrowserActor(input.actor);if(!actorGuard.ok)throw new Error(actorGuard.reason);
       const sourceDate=clean(input.source_date);const deadline=clean(input.deadline_boundary);
       if(!sourceDate||!deadline)throw new Error('talent cycle boundary required');
       const books=Array.isArray(input.books)?input.books:[];const byName=new Map(books.map(x=>[clean(x.subject),x]));
@@ -95,6 +106,7 @@
       });
     }
     function upsertEnglishAssignment(input={}){
+      const actorGuard=requireBrowserActor(input.actor);if(!actorGuard.ok)throw new Error(actorGuard.reason);
       const workbookRefId=clean(input.workbook_ref_id);if(!workbookRefId)throw new Error('workbook ref required');
       return mutate(s=>{if(!s.workbookRefs[workbookRefId])throw new Error('workbook ref not found');
         const assignmentId=clean(input.assignment_id)||id('assignment');const f=s.assignmentFacts[assignmentId]||{assignment_id:assignmentId,claims:[],created_at:now()};
@@ -104,6 +116,7 @@
       });
     }
     function addEventFact(input={}){
+      const actorGuard=requireBrowserActor(input.actor);if(!actorGuard.ok)throw new Error(actorGuard.reason);
       const title=clean(input.title);if(!title)throw new Error('event title required');
       return mutate(s=>{const assignmentId=clean(input.assignment_id)||id('assignment');
         const f={assignment_id:assignmentId,source_type:'SCHOOL_EVENT',subject:clean(input.subject)||'학교',source_actor:clean(input.actor)||'CHILD',assignment_cycle:'AD_HOC',claims:[],created_at:now(),lifecycle:'ACTIVE',analysis_state:'NOT_ANALYZED'};
