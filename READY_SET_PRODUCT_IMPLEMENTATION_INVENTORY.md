@@ -72,6 +72,26 @@ A feature is not FUNCTIONAL merely because one underlying contract, module, or h
 | RSP-048 | Physical-device behavior | NOT_IMPLEMENTED | product is not ready for device verification because material product features remain incomplete. |
 | RSP-049 | Production deployment/provenance | NOT_IMPLEMENTED | intentionally blocked. |
 | RSP-050 | Whole-product regression / release readiness | NOT_IMPLEMENTED | cannot be claimed until material feature inventory reaches FUNCTIONAL/VERIFIED scope. |
+| RSP-051 | Talent weekly package lifecycle | PARTIAL | six-book FACT intake exists, but full weekly package lifecycle and ordinary parent workflow are incomplete. |
+| RSP-052 | Talent six separate book capture groups | PARTIAL | book-level records exist; capture grouping/UX for cover-range-answer per book is incomplete. |
+| RSP-053 | Talent activity-load based distribution | PARTIAL | Learning Unit/load metadata exists; real weekly distribution experience is incomplete. |
+| RSP-054 | Parent daytime grading → next-study first correction | SKELETON | carry/result concepts exist; explicit grading-to-next-correction product loop is not complete. |
+| RSP-055 | English workbook reusable reference | PARTIAL | workbook reference model exists; lifecycle/UX across weeks remains incomplete. |
+| RSP-056 | English next-academy homework confirmation | PARTIAL | NEXT_ACADEMY boundary and hold states exist; after-academy confirmation workflow is incomplete. |
+| RSP-057 | English weekday print homework | PARTIAL | data model supports weekday_prints; planner/product treatment as independent learning units needs completion. |
+| RSP-058 | English full assignment fact visibility for parent/child | PARTIAL | projections exist; polished whole-assignment vs TODAY distinction remains incomplete. |
+| RSP-059 | Sudden school homework/event intake | PARTIAL | child event/fact APIs exist; complete school-day UX and downstream replan are incomplete. |
+| RSP-060 | Household account → family member profiles | NOT_IMPLEMENTED | current role/session contract is not the intended household/member profile architecture. |
+| RSP-061 | Child iPad member routing | NOT_IMPLEMENTED | no complete device/member binding or default child profile routing. |
+| RSP-062 | Parent-device support workflow | NOT_IMPLEMENTED | capture/confirm/grading/support across authenticated family devices is not product-complete. |
+| RSP-063 | Young-child Ready/Snap flow | NOT_IMPLEMENTED | adopted idea only; no voice-first six-year-old product mode implemented. |
+| RSP-064 | Piano teacher reference model | SKELETON | piano profile exists; song/bars/hand/demo/tempo/instruction reference workflow is not complete. |
+| RSP-065 | Piano record/compare/repeat learning loop | NOT_IMPLEMENTED | no complete teacher-reference vs child-recording comparison product loop. |
+| RSP-066 | Focus visual direction final implementation | PARTIAL | current focus/session works, but confirmed visual/interaction direction has not been fully reconciled. |
+| RSP-067 | Guide peek/talk/guide/hide behavior | SKELETON | expedition member visuals exist; governed contextual behavior loop is incomplete. |
+| RSP-068 | BGM essential; integration | PARTIAL | BGM mechanics exist; complete preserved essential;/device behavior is not re-established in current product truth. |
+| RSP-069 | Adaptive plan-vs-actual learning | PARTIAL | observations/advisories exist; child-specific long-term estimate learning is incomplete. |
+| RSP-070 | No-silent-loss source disposition UX | PARTIAL | evidence disposition model exists; ordinary parent review experience is incomplete. |
 
 ## Current product-completeness conclusion
 
@@ -80,7 +100,7 @@ The prior P1–P5 labels describe selected technical closure slices, not the per
 
 Do NOT derive a whole-product implementation percentage from CI test count or the number of CLOSED C2S atoms.
 
-A numeric product implementation percentage remains UNRESOLVED until this inventory is expanded against recovered historical requirements and each material feature is assigned a weight and evidence state.
+A numeric product implementation percentage remains UNRESOLVED until this inventory is expanded against recovered historical requirements and each material feature is assigned a weight and evidence state. Google Drive recovery has now confirmed additional Talent, English, grading/correction, household/member-profile, young-child and Piano requirements; these are included in RSP-051–070.
 
 ## Immediate implementation priority
 
