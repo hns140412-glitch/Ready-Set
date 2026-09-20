@@ -66,3 +66,11 @@ assert(scienceRef.subject_master.domains.includes('운동과 에너지'));
 const pianoRef=reference.resolve('피아노',{source_range:'24~27마디',teacher_instruction:'오른손 연습 후 녹음'});
 assert.strictEqual(pianoRef.subject_master.grade_band,'LEARNER_LEVEL_BASED');
 assert(pianoRef.subject_master.domains.includes('녹음 비교'));
+
+const arithmeticMaster=subjectMaster.resolve('연산',{source_range:'1~20'});
+assert.strictEqual(arithmeticMaster.status,'SUBJECT_MASTER_CONTEXT_READY');
+assert(arithmeticMaster.domains.includes('계산 유창성'));
+const hanjaMaster=subjectMaster.resolve('한자',{source_range:'1~12'});
+assert(hanjaMaster.domains.includes('회상'));
+const pizzaMaster=subjectMaster.resolve('생각하는 피자',{teacher_instruction:'풀이 방법을 설명'});
+assert(pizzaMaster.learning_loop.includes('EXPLAIN'));
