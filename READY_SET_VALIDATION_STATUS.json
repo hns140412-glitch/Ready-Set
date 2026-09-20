@@ -32,7 +32,7 @@
     "R2_PRODUCT_LANGUAGE_AUTHORITY": "PARTIAL_RENEWAL_REQUIRED",
     "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "PARTIAL_RENEWAL_REQUIRED",
     "R4_CHILD_FACT_CONFIRMATION_PATH": "OPEN_IMPLEMENTATION",
-    "R5_PLANNER_FREE_WINDOW": "OPEN_IMPLEMENTATION",
+    "R5_PLANNER_FREE_WINDOW": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
     "R6_LEGACY_AUTHORITY_ARCHIVE": "PARTIAL_RENEWAL_REQUIRED",
     "R7_EXACT_MAIN_VERIFICATION": "COMPLETE"
   },
@@ -61,8 +61,30 @@
     "policy": "LOCAL_BRANCH_TO_CI_RUNTIME_TO_ONE_FROZEN_CANDIDATE_TO_EXTERNAL",
     "candidate_sha_frozen": false,
     "external_deploy_allowed": false,
-    "reason": "Renewal branch implementation is still active; P1 and later selected-scope work is not frozen.",
+    "reason": "Review snapshot is closed, but the product deployment candidate is not frozen; next implementation gate is P2 Child FACT confirmation.",
     "default_external_call_budget": 1,
     "user_as_debugger": false
+  },
+  "renewal_review_closure": {
+    "reviewed_head": "450caf84b23788b40a93e070742d86edc0165baa",
+    "draft_pr": 73,
+    "integration_ci": {
+      "run_number": 130,
+      "result": "PASS"
+    },
+    "worker_self_test": {
+      "run_number": 331,
+      "result": "PASS"
+    },
+    "runtime_e2e": {
+      "run_number": 216,
+      "result": "PASS",
+      "tests": "45/45"
+    },
+    "p1_planner_reality_engine": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
+    "review_snapshot_frozen": true,
+    "deployment_candidate_frozen": false,
+    "next_unresolved_gate": "P2_CHILD_FACT_CONFIRMATION",
+    "hosting_called_during_review": false
   }
 }
