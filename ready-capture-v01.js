@@ -267,7 +267,8 @@
     const result=await adapter.analyze({session:next,manifest,getBlob:async itemId=>(await getItem(itemId))?.blob||null});
     const done={...next,analysis_state:result?.ok?'ANALYSIS_COMPLETE':'ANALYSIS_FAILED',analysis_result:result||null,updated_at:now()};
     await put(SESSION_STORE,done);
-    localStorage.removeItem(ACTIVE_SESSION_KEY);
+    if(result?.ok) localStorage.removeItem(ACTIVE_SESSION_KEY);
+    else localStorage.setItem(ACTIVE_SESSION_KEY,done.capture_session_id);
     return {ok:!!result?.ok,capture_session_id:done.capture_session_id,analysis_state:done.analysis_state,result};
   }
 
