@@ -393,3 +393,8 @@ const scienceSubjectGap=subjectMaster.resolve('과학',{teacher_instruction:'지
 assert(scienceSubjectGap.unresolved.includes('TEXTBOOK_UNIT_TO_STANDARD_BINDING_REQUIRES_ACTUAL_BOOK_CONTEXT'));
 const scienceSubjectResolved=subjectMaster.resolve('과학',{grade:5,semester:1,unit_name:'1. 지층과 화석',teacher_instruction:'지층의 특징을 설명'});
 assert(!scienceSubjectResolved.unresolved.includes('TEXTBOOK_UNIT_TO_STANDARD_BINDING_REQUIRES_ACTUAL_BOOK_CONTEXT'));
+
+assert.strictEqual(unitMap.version,'0.2.1');
+const noExplicitUnitName=unitMap.evaluate('6과01-01',{grade:5,semester:1,workbook_name:'1. 지층과 화석',title:'지층과 화석 숙제'});
+assert.strictEqual(noExplicitUnitName.status,'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED');
+assert(noExplicitUnitName.unresolved.includes('ACTUAL_GRADE_SEMESTER_UNIT_CONTEXT_REQUIRED'));
