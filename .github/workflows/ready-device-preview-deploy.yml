@@ -1,0 +1,39 @@
+name: Ready Device Preview Deploy
+
+on:
+  push:
+    branches:
+      - taky/device-validation-preview-030e0eda
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NETLIFY_SITE_ID: 9c03f42a-d6e1-4351-9d86-574bf8592f2c
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Netlify credential is available
+        shell: bash
+        run: |
+          if [ -z "${NETLIFY_AUTH_TOKEN:-}" ]; then
+            echo "NETLIFY_AUTH_TOKEN_MISSING"
+            exit 23
+          fi
+      - name: Deploy exact branch to Netlify preview
+        shell: bash
+        run: |
+          npx -y netlify-cli@latest deploy             --dir .             --functions netlify/functions             --site "$NETLIFY_SITE_ID"             --auth "$NETLIFY_AUTH_TOKEN"             --json | tee /tmp/netlify-deploy.json
+      - name: Publish deploy evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ready-device-netlify-deploy
+          path: /tmp/netlify-deploy.json
+          if-no-files-found: warn
+          retention-days: 1
