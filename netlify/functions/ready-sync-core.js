@@ -2,10 +2,12 @@
 
 function clean(value){ return String(value ?? '').trim(); }
 
-function createSyncService(store){
+function createSyncService(store,options={}){
   if(!store || typeof store.get !== 'function' || typeof store.set !== 'function'){
     throw new Error('store with get/set required');
   }
+  const namespace=clean(options.namespace);
+  if(!namespace) throw new Error('namespace required');
 
   async function health(){
     return {ok:true,service:'ready-set-sync',contract:'HTTP_JSON_V1',persistence:'REMOTE_STORE'};
@@ -19,7 +21,7 @@ function createSyncService(store){
       return {status:400,body:{ok:false,reason:'INVALID_EVENT'}};
     }
 
-    const key='events/'+encodeURIComponent(idempotencyKey);
+    const key='families/'+encodeURIComponent(namespace)+'/events/'+encodeURIComponent(idempotencyKey);
     const existing=await store.get(key);
     if(existing){
       const current=typeof existing==='string' ? JSON.parse(existing) : existing;
@@ -47,6 +49,7 @@ function createSyncService(store){
       updated_at:input.updated_at || null,
       client:input.client || null,
       remote_version:1,
+      family_namespace:namespace,
       accepted_at:new Date().toISOString()
     };
     await store.set(key,JSON.stringify(record));
