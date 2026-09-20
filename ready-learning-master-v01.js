@@ -349,7 +349,7 @@
       analysis_version:VERSION,
       state:'INTERPRETED',
       created_at:now(),
-      provenance:{kind:'LEARNING_MASTER',actor:input.actor||'SYSTEM',source_fact_updated_at:fact.updated_at||null},
+      provenance:{kind:'LEARNING_MASTER',actor:input.actor||'SYSTEM',source_fact_updated_at:fact.updated_at||null,fact_revision:Number(fact.fact_revision)||1,previous_analysis_ids:[...(fact.previous_analysis_ids||[])]},
       confidence:clean(fact.teacher_instruction)?0.78:0.62,
       unresolved_flags:[]
     };
