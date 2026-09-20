@@ -10,6 +10,7 @@
     source_id:'GOE_2026_EVAL',
     source_type:'OFFICIAL_EDUCATION_OFFICE_STANDARD_UNIT_CONNECTION_TABLE',
     scope:'2026_ELEMENTARY_5_6_KOREAN_SOCIAL_MATH_SCIENCE',
+    source_table_pages:'PDF_PAGES_8_TO_22',
     rule:'Mapping evidence is separate from curriculum authority and is not universal publisher-textbook truth.',
     context_required_for_application:true
   };
