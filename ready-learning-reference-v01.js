@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.1.0';
+  const VERSION='0.2.0';
   const AUTHORITY={
     ASSIGNMENT_FACT:{rank:100,role:'EXECUTION_TRUTH',can_override_assignment:false},
     TEACHER_INSTRUCTION:{rank:95,role:'LOCAL_INSTRUCTION',can_override_assignment:false},
@@ -77,7 +77,12 @@
   };
 
   function clean(v){return String(v??'').trim();}
-  function resolve(subject){
+  function subjectMasterApi(){
+    if(typeof globalThis!=='undefined'&&globalThis.ReadySubjectMasterV01)return globalThis.ReadySubjectMasterV01;
+    if(typeof require==='function'){try{return require('./ready-subject-master-v01.js')}catch{}}
+    return null;
+  }
+  function resolve(subject,context={}){
     const key=clean(subject);
     const row=SUBJECTS[key];
     if(!row){
@@ -90,13 +95,16 @@
         unresolved:['SUBJECT_REFERENCE_PROFILE_MISSING']
       };
     }
+    const subjectMaster=subjectMasterApi()?.resolve?.(key,context)||null;
+    const unresolved=[...row.unresolved,...(subjectMaster?.unresolved||[])];
     return {
       subject:key,
-      status:row.unresolved.length?'PARTIAL_REFERENCE':'REFERENCE_READY',
+      status:unresolved.length?'PARTIAL_REFERENCE':'REFERENCE_READY',
       reference_classes:[...row.reference_classes],
       method:row.method,
-      evidence_refs:[...row.evidence_refs],
-      unresolved:[...row.unresolved]
+      evidence_refs:[...new Set([...row.evidence_refs,...(subjectMaster?.source_refs||[])])],
+      subject_master:subjectMaster,
+      unresolved:[...new Set(unresolved)]
     };
   }
 
