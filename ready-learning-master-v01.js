@@ -284,6 +284,7 @@
         version:VERSION,
         assignment_id:fact.assignment_id,
         source_claim_ids:(fact.claims||[]).filter(x=>x.status!=='SUPERSEDED').map(x=>x.claim_id),
+        cross_revision_learning_signal:analysis.cross_revision_learning_signal?clone(analysis.cross_revision_learning_signal):null,
         learning_reference:(()=>{
           const ref=referenceApi()?.resolve?.(subjectKey,{
             workbook_name:fact.workbook_name||fact.workbook_ref_id||null,
@@ -356,6 +357,7 @@
       state:'INTERPRETED',
       created_at:now(),
       provenance:{kind:'LEARNING_MASTER',actor:input.actor||'SYSTEM',source_fact_updated_at:fact.updated_at||null,fact_revision:Number(fact.fact_revision)||1,previous_analysis_ids:[...(fact.previous_analysis_ids||[])]},
+      cross_revision_learning_signal:input.learning_signal?clone(input.learning_signal):null,
       confidence:clean(fact.teacher_instruction)?0.78:0.62,
       unresolved_flags:[]
     };
