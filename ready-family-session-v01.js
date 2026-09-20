@@ -126,7 +126,8 @@
     return {ok:false,reason:want==='PARENT'?'PARENT_AUTH_REQUIRED':'ROLE_NOT_ALLOWED',session:s};
   }
   const bootstrap=globalThis.__READY_AUTH_BOOTSTRAP__;
-  if(bootstrap&&typeof bootstrap==='object') applyBootstrap(bootstrap);
+  const bootstrapAllowed=typeof location!=='undefined'&&['127.0.0.1','localhost'].includes(location.hostname);
+  if(bootstrapAllowed&&bootstrap&&typeof bootstrap==='object') applyBootstrap(bootstrap);
 
   window.ReadyFamilySession=Object.freeze({
     version:VERSION,
@@ -144,5 +145,5 @@
     clear
   });
 
-  if(!(bootstrap&&typeof bootstrap==='object')) hydrate().catch(()=>{});
+  if(!(bootstrapAllowed&&bootstrap&&typeof bootstrap==='object')) hydrate().catch(()=>{});
 })();
