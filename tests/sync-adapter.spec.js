@@ -24,7 +24,7 @@ test('HTTP sync adapter contract sends idempotent event and handles conflict', a
   await page.route('**/sync-test/events',async route=>{
     const req=route.request();
     const body=JSON.parse(req.postData()||'{}');
-    seen.push({body,idem:req.headers()['idempotency-key']});
+    seen.push({body,idem:req.headers()['idempotency-key'],authorization:req.headers()['authorization']});
     if(body.event_id==='evt_conflict'){
       await route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({reason:'REMOTE_CONFLICT',remote_payload:'{"remote":true}'})});
     }else{
@@ -32,7 +32,10 @@ test('HTTP sync adapter contract sends idempotent event and handles conflict', a
     }
   });
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
-  await page.evaluate(()=>window.ReadySetSyncAdapter.configure({endpoint:'http://127.0.0.1:4173/sync-test',enabled:true}));
+  await page.evaluate(()=>{
+    window.ReadyFamilySession={...window.ReadyFamilySession,authorizationHeader:()=> 'Bearer TEST_ONLY'};
+    window.ReadySetSyncAdapter.configure({endpoint:'http://127.0.0.1:4173/sync-test',enabled:true});
+  });
   const health=await page.evaluate(()=>window.ReadySetSyncAdapter.health());
   expect(health.ok).toBeTruthy();
   expect(health.status.state).toBe('CONNECTED');
@@ -52,6 +55,7 @@ test('HTTP sync adapter contract sends idempotent event and handles conflict', a
   expect(seen).toHaveLength(2);
   expect(seen[0].idem).toBe('evt_ok');
   expect(seen[0].body.client.adapter_version).toBe('0.1.0');
+  expect(seen[0].authorization).toBe('Bearer TEST_ONLY');
 });
 
 test('local-first outbox flush uses configured sync adapter', async ({page})=>{
@@ -62,6 +66,7 @@ test('local-first outbox flush uses configured sync adapter', async ({page})=>{
   });
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
   await page.evaluate(async()=>{
+    window.ReadyFamilySession={...window.ReadyFamilySession,authorizationHeader:()=> 'Bearer TEST_ONLY'};
     window.ReadySetSyncAdapter.configure({endpoint:'http://127.0.0.1:4173/sync-flush',enabled:true});
     await window.ReadySetLocalFirst.capture('planner',{probe:'sync-flush'});
   });
