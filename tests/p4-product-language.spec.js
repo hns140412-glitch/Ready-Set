@@ -18,7 +18,7 @@ test('P4 active UI uses exploration/base-camp/expedition-member language', async
   await page.locator('[data-nav="mission"]').first().click();
   await expect(page.locator('#missionView')).toContainText('오늘 탐험 준비');
   await expect(page.locator('#startBtn')).toContainText('탐험 START');
-  await expect(page.locator('#missionView')).toContainText('오늘 탐험 미리보기');
+  await expect(page.locator('#missionView')).toContainText('오늘의 탐험 미리보기');
   await expect(page.locator('#missionShareBtn')).toContainText('탐험 공유하기');
 
   await page.evaluate(() => nav('settings'));
