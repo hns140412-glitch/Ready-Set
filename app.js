@@ -660,6 +660,7 @@ function plannerStateLabel(v){
   return ({PLANNED:'예정',IN_PROGRESS:'진행',COMPLETED:'완료',PARTIAL:'일부 남음',DEFERRED:'다음에',WAITING_FOR_PARENT:'부모 도움',BLOCKED:'막힘',FIXED:'고정'})[v]||v;
 }
 function renderPlanner(){
+  window.ReadySetPlanner?.replanReadyCarryOvers?.({date:localDateKey()});
   const adminJump=document.querySelector('.plannerAdminJump');
   if(adminJump)adminJump.hidden=!window.ReadyFamilySession?.isParent?.();
   const snap=plannerSnapshot(), start=weekStart(new Date(plannerSelectedDate+'T12:00:00'));
@@ -715,6 +716,18 @@ function renderPlannerAdmin(){
       </button>`).join('')
     : '<div class="plannerEmpty"><b>등록된 고정 일정이 없어요.</b><small>학원·피아노·태권도처럼 움직이지 않는 일정을 먼저 넣어요.</small></div>';
 
+  const carryRoot=$('#carryOverAdminList');
+  if(carryRoot){
+    const carry=(snap.carry_over_queue||[]).filter(x=>x.status==='OPEN');
+    carryRoot.innerHTML=carry.length?carry.map(x=>{
+      const needs=x.resolution_required===true;
+      const status=needs?'확인 필요':'다음 일정 대기';
+      const actions=needs
+        ? `<div class="adminInlineActions"><button class="miniAction" data-carry-ready="${x.carry_over_id}">다시 계획</button><button class="miniAction" data-carry-cancel="${x.carry_over_id}">종료</button></div>`
+        : '<strong>자동 재진입</strong>';
+      return `<div class="adminListItem"><span><b>${escapeHtml(x.label||'남은 탐험')}</b><small>${escapeHtml(x.state||'')} · ${escapeHtml(status)} · ${escapeHtml(x.from_date||'')}</small></span>${actions}</div>`;
+    }).join(''):'<div class="plannerEmpty"><b>확인할 남은 탐험이 없어요.</b><small>새 carry-over가 생기면 여기에 표시됩니다.</small></div>';
+  }
   if(!$('#scheduleDate').value) $('#scheduleDate').value=localDateKey();
   renderParentIntake();
 }
@@ -731,6 +744,25 @@ function editSchedule(id){
 document.getElementById('scheduleClearBtn')?.addEventListener('click',clearScheduleForm);
 document.addEventListener('click',e=>{
   const s=e.target.closest('[data-edit-schedule]'); if(s){editSchedule(s.dataset.editSchedule);return;}
+  const ready=e.target.closest('[data-carry-ready]');
+  if(ready){
+    if(!requireParentUi())return;
+    const id=ready.dataset.carryReady;
+    const resolved=window.ReadySetPlanner?.resolveCarryOver?.(id,{resolution:'READY_FOR_REPLAN',actor:'PARENT'});
+    if(resolved?.ok){
+      const tomorrow=localDateKey(addDays(new Date(),1));
+      const replanned=window.ReadySetPlanner?.replanCarryOver?.({carry_over_id:id,date:tomorrow});
+      toast(replanned?.ok?'남은 탐험을 다음 일정으로 옮겼어요.':'다시 계획 가능한 상태로 바꿨어요.');
+    }else toast('남은 탐험 상태를 변경하지 못했어요.');
+    renderPlannerAdmin();renderPlanner();return;
+  }
+  const cancel=e.target.closest('[data-carry-cancel]');
+  if(cancel){
+    if(!requireParentUi())return;
+    const resolved=window.ReadySetPlanner?.resolveCarryOver?.(cancel.dataset.carryCancel,{resolution:'CANCEL',actor:'PARENT'});
+    toast(resolved?.ok?'이 남은 탐험은 종료했어요.':'종료 처리하지 못했어요.');
+    renderPlannerAdmin();renderPlanner();return;
+  }
 });
 document.getElementById('saveScheduleBtn')?.addEventListener('click',()=>{
   if(!requireParentUi())return;
