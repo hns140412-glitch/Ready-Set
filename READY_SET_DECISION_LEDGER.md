@@ -108,6 +108,30 @@ Ready → Hide & Seek / Snap & Pop → Ready, with one session / one goal / same
 
 Main promotion remains pending; this does not imply DEVICE/PRODUCTION verification or frozen deployment candidate.
 
+### P3b — Hide Memory Summary → Ready advisory roundtrip — CANDIDATE CLOSED
+Ready code candidate HEAD `bc31ef9dc5a9f6087ef584f26448e48f30ccc98e`.
+Hide code candidate HEAD `62feaff70a7f250e8cf92b12925cd86b9cc30574` on `implementation/hide-seek-capture-session-v02`.
+
+Evidence:
+- Ready Integration CI #151 PASS
+- Ready Worker Self-Test #360 PASS
+- Ready Runtime E2E #237 PASS, 49/49
+- Hide Validate #111 PASS
+- same-window Hide → Ready return carries compact `memory_summary` plus `event_id`
+- postMessage and URL-return paths normalize through one Ready inbound contract
+- Planner stores idempotent `SPECIALIST_MEMORY_ADVISORY_ONLY` observations
+- TODAY projection exposes memory follow-up without changing assignment FACT, source range, deadline, required-today, or study volume
+- Learning Master may use the advisory only for recovery spacing / review priority / recall checkpoint
+- duplicate event_id does not duplicate Planner evidence
+
+Closed flow:
+`HIDE RAW TRACE → HIDE COMPACT MEMORY SUMMARY → READY RUNTIME → PLANNER ADVISORY → TODAY FOLLOW-UP → FUTURE LEARNING MASTER ADVISORY`.
+
+Authority boundary:
+`SPECIALIST MEMORY SIGNAL != ASSIGNMENT FACT != STUDY VOLUME AUTHORITY`.
+
+Main promotion remains pending; DEVICE/PRODUCTION verification remains NOT RUN.
+
 ### P4 — exploration UI/product-language consolidation — CANDIDATE CLOSED
 Candidate HEAD `c4f68d2fc0a86c9e2c6abc8034185026f31d8d45`.
 
