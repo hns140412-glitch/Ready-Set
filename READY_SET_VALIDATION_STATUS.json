@@ -38,7 +38,6 @@
   },
   "current_open_product_gates": [
     "PLANNER_REAL_AVAILABILITY_WINDOWS",
-    "CROSS_APP_READY_HIDE_SNAP_RUNTIME_HANDOFF",
     "ADVENTURE_UI_PRODUCT_LANGUAGE_CONSOLIDATION",
     "LEGACY_VERSION_MANIFEST_README_CLEANUP",
     "DEVICE_VERIFICATION",
@@ -60,7 +59,7 @@
     "policy": "LOCAL_BRANCH_TO_CI_RUNTIME_TO_ONE_FROZEN_CANDIDATE_TO_EXTERNAL",
     "candidate_sha_frozen": false,
     "external_deploy_allowed": false,
-    "reason": "P2 Child FACT confirmation is branch-runtime closed; deployment candidate is still not frozen because P3-P5 renewal gates remain open.",
+    "reason": "P3 cross-app runtime continuity is branch-runtime closed across Ready and Hide candidate branches; deployment candidate is still not frozen because P4-P5 renewal gates remain open.",
     "default_external_call_budget": 1,
     "user_as_debugger": false
   },
@@ -83,7 +82,7 @@
     "p1_planner_reality_engine": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
     "review_snapshot_frozen": true,
     "deployment_candidate_frozen": false,
-    "next_unresolved_gate": "P3_CROSS_APP_RUNTIME_CONTINUITY",
+    "next_unresolved_gate": "P4_ADVENTURE_UI_PRODUCT_LANGUAGE",
     "hosting_called_during_review": false
   },
   "p2_child_fact_confirmation_closure": {
@@ -113,5 +112,42 @@
     "p1_regression_evidence": "NONE; P1 regression tests remained PASS",
     "deployment_candidate_frozen": false,
     "hosting_called": false
+  },
+  "p3_cross_app_runtime_closure": {
+    "ready_candidate_head": "dec81f5bc3f133e5af25bd105a170dc1da6bb510",
+    "hide_candidate_head": "5e4a4fca4338b146a49e10e4151d4f45753e5cdf",
+    "hide_draft_pr": 5,
+    "coded": true,
+    "ci_verified": true,
+    "runtime_verified": true,
+    "device_verified": false,
+    "production_verified": false,
+    "ready_integration_ci": {
+      "run_number": 140,
+      "result": "PASS"
+    },
+    "ready_worker_self_test": {
+      "run_number": 343,
+      "result": "PASS"
+    },
+    "ready_runtime_e2e": {
+      "run_number": 226,
+      "result": "PASS",
+      "tests": "47/47"
+    },
+    "hide_validation": {
+      "result": "PASS"
+    },
+    "preserved_identity": [
+      "session_id",
+      "goal_id",
+      "task_id",
+      "lap_id",
+      "return_target"
+    ],
+    "timing_contract": "SAME_LAP_CONTINUOUS_UNTIL_COMPLETED_OR_BLOCKED",
+    "wrong_goal_rejected": true,
+    "hosting_called": false,
+    "deployment_candidate_frozen": false
   }
 }
