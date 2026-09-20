@@ -330,7 +330,7 @@
             teacher_instruction:fact.teacher_instruction||null,
             grade:fact.grade||null,
             semester:fact.semester||null,
-            unit_name:fact.unit_name||extra.concept_skill_target||null
+            unit_name:fact.unit_name||null
           });
           return ref?{
             status:ref.status,
