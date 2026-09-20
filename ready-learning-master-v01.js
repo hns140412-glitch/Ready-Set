@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.5.0';
+  const VERSION='0.5.1';
   const referenceApi=()=>{
     if(typeof globalThis!=='undefined'&&globalThis.ReadyLearningReferenceV01)return globalThis.ReadyLearningReferenceV01;
     if(typeof require==='function'){try{return require('./ready-learning-reference-v01.js')}catch{}}
