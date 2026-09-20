@@ -700,7 +700,15 @@
         state:x.state,
         source:x.source,
         estimated_minutes:Number.isFinite(x.estimated_minutes)?x.estimated_minutes:null,
-        planner_owned:x.source==='PLANNER_ALLOCATION'
+        activity_types:Array.isArray(x.activity_types)?x.activity_types:[],
+        activity_sequence:Array.isArray(x.activity_sequence)?x.activity_sequence:[],
+        cognitive_load_profile:Array.isArray(x.cognitive_load_profile)?x.cognitive_load_profile:[],
+        activity_load_score:Number.isFinite(x.activity_load_score)?x.activity_load_score:null,
+        difficulty:Number.isFinite(x.difficulty)?x.difficulty:null,
+        recovery_need:x.recovery_need||null,
+        review_policy:x.review_policy||null,
+        parent_help_dependency:x.parent_help_dependency||null,
+        planner_owned:/^PLANNER/.test(x.source||'')
       }));
     }
 
