@@ -294,11 +294,19 @@
               const schedulePressure=commitments.length*15+Math.min(30,Math.floor(commitmentMinutes/30));
               const recoveryPenalty=unitRecovery==='HIGH'?(highLoadStack*18+recoveryStack*15):unitRecovery==='MEDIUM'?highLoadStack*8:0;
               const difficultyPenalty=unitDifficulty>=4?highDifficultyStack*12:0;
+              const historicalSignal=crossRevisionLearningSignal({
+                assignment_id:assignmentId,
+                subject:unit.subject,
+                current_revision:Number(fact.fact_revision)||1,
+                activity_types:unit.activity_types||[]
+              });
+              const historySafetyPenalty=historicalSignal?.risk_band==='HIGH'?(highLoadStack*8+recoveryStack*6):historicalSignal?.risk_band==='MEDIUM'?highLoadStack*3:0;
               return taskLoads.length*8
                 + existingLoad*4
                 + overlap*18
                 + recoveryPenalty
                 + difficultyPenalty
+                + historySafetyPenalty
                 + (unitScore>=5&&commitmentMinutes>=120?20:0)
                 + schedulePressure;
             };
@@ -310,7 +318,7 @@
           const template={template_id:templateId,title:`${unit.subject} · ${unit.source_range||unit.concept_skill_target}`,subject:unit.subject,assignment_cycle:fact.assignment_cycle,learning_units:[unit.learning_unit_id],provenance:{kind:'LEARNING_MASTER_OUTPUT',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:factRevision},confirmation_state:'CONFIRMED',deadline_date:fact.deadline_boundary||null,estimated_minutes:null,planner_estimated_minutes:null,allocation_priority:100,required_today:false,preferred_days:[],updated_at:new Date().toISOString()};
           const ti=s.homework_templates.findIndex(x=>x.template_id===templateId);if(ti>=0)s.homework_templates[ti]=template;else s.homework_templates.push(template);
           proposals.push({
-            decision:'PROPOSE',date,label:template.title,assignment_id:assignmentId,analysis_id:analysis.analysis_id,
+            decision:'PROPOSE',date,label:template.title,subject:unit.subject,assignment_id:assignmentId,analysis_id:analysis.analysis_id,
             fact_revision:Number(fact.fact_revision)||1,
             learning_unit_id:unit.learning_unit_id,template_id:templateId,
             activity_types:unit.activity_types,
@@ -321,7 +329,13 @@
             recovery_need:unitRecovery,
             review_policy:unit.review_policy||'RESULT_DEPENDENT',
             parent_help_dependency:unit.parent_help_dependency||'UNRESOLVED',
-            prerequisite:unit.prerequisite
+            prerequisite:unit.prerequisite,
+            cross_revision_learning_signal:crossRevisionLearningSignal({
+              assignment_id:assignmentId,
+              subject:unit.subject,
+              current_revision:Number(fact.fact_revision)||1,
+              activity_types:unit.activity_types||[]
+            })
           });
         }
         const run={allocation_run_id:runId,version:'PLANNER_V2',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:Number(fact.fact_revision)||1,primary_basis:'LEARNING_UNIT_ACTIVITY_LOAD',minutes_role:'SECONDARY_SAFETY_ONLY',proposals,created_at:new Date().toISOString()};
@@ -334,7 +348,7 @@
         for(const p of run.proposals.filter(x=>x.decision==='PROPOSE')){
           let todo=s.dated_todos.find(x=>x.learning_unit_id===p.learning_unit_id&&isOpenTodo(x));
           if(!todo){todo={
-            todo_id:makeId('todo'),date:p.date,label:p.label,assignment_id:p.assignment_id,analysis_id:p.analysis_id,
+            todo_id:makeId('todo'),date:p.date,label:p.label,subject:p.subject||null,assignment_id:p.assignment_id,analysis_id:p.analysis_id,
             fact_revision:Number(p.fact_revision)||Number(run.fact_revision)||1,
             learning_unit_id:p.learning_unit_id,template_id:p.template_id,allocation_run_id:runId,
             activity_types:p.activity_types,activity_sequence:p.activity_sequence||[],
@@ -569,6 +583,10 @@
             learning_unit_id:todo.learning_unit_id||null,
             allocation_run_id:todo.allocation_run_id||null,
             fact_revision:Number(todo.fact_revision)||Number(todo.provenance?.fact_revision)||1,
+            subject:todo.subject||null,
+            activity_types:Array.isArray(todo.activity_types)?[...todo.activity_types]:[],
+            difficulty:Number.isFinite(todo.difficulty)?todo.difficulty:null,
+            recovery_need:todo.recovery_need||null,
             planned_minutes:Number.isFinite(todo.estimated_minutes)?todo.estimated_minutes:null,
             actual_minutes:actualMinutes,
             ready_state:readyState,
@@ -644,6 +662,43 @@
         }
         return {ok:false,reason:'INVALID_CARRY_OVER_RESOLUTION'};
       });
+    }
+
+    function crossRevisionLearningSignal(input={}){
+      const assignmentId=cleanText(input.assignment_id);
+      const subject=cleanText(input.subject);
+      const currentRevision=Number(input.current_revision)||null;
+      const activityTypes=new Set((input.activity_types||[]).map(cleanText).filter(Boolean));
+      const s=load();
+      const rows=s.execution_observations
+        .filter(x=>!assignmentId||x.assignment_id===assignmentId)
+        .filter(x=>currentRevision===null||Number(x.fact_revision)!==currentRevision)
+        .filter(x=>!subject||!x.subject||x.subject===subject)
+        .filter(x=>!activityTypes.size||(x.activity_types||[]).some(t=>activityTypes.has(cleanText(t))))
+        .filter(x=>Number.isFinite(x.actual_minutes)&&x.actual_minutes>0)
+        .slice(-20);
+      if(rows.length<2)return null;
+      const vals=rows.map(x=>x.actual_minutes).sort((a,b)=>a-b);
+      const mid=Math.floor(vals.length/2);
+      const median=vals.length%2?vals[mid]:Math.round((vals[mid-1]+vals[mid])/2);
+      const frictionStates=new Set(['PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
+      const frictionCount=rows.filter(x=>frictionStates.has(cleanText(x.ready_state))).length;
+      const highRecoveryCount=rows.filter(x=>x.recovery_need==='HIGH').length;
+      const signal={
+        authority:'CROSS_REVISION_ADVISORY_ONLY',
+        source:'EXECUTION_HISTORY',
+        sample_count:rows.length,
+        median_actual_minutes:median,
+        friction_rate:Number((frictionCount/rows.length).toFixed(2)),
+        high_recovery_rate:Number((highRecoveryCount/rows.length).toFixed(2)),
+        subject:subject||null,
+        activity_types:[...activityTypes],
+        source_revisions:[...new Set(rows.map(x=>Number(x.fact_revision)||1))].sort((a,b)=>a-b),
+        can_influence:['LOAD_SAFETY','RECOVERY_SPACING'],
+        cannot_influence:['ASSIGNMENT_FACT','SOURCE_RANGE','DEADLINE','REQUIRED_TODAY','FACT_CONFIRMATION']
+      };
+      signal.risk_band=signal.friction_rate>=0.5||signal.high_recovery_rate>=0.5?'HIGH':signal.friction_rate>=0.25?'MEDIUM':'LOW';
+      return signal;
     }
 
     function recentEstimateEvidence(templateId,limit=5,options={}){
@@ -855,6 +910,7 @@
       carryOverCandidates,
       resolveCarryOver,
       recentEstimateEvidence,
+      crossRevisionLearningSignal,
       learningHistory,
       proposeEstimateAdjustment,
       decideEstimateAdjustment,
