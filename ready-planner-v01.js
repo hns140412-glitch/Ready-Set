@@ -662,6 +662,18 @@
       });
     }
 
+    function replanReadyCarryOvers(input={}){
+      const date=cleanText(input.date)||dateKey();
+      const s=load();
+      const ids=s.carry_over_queue
+        .filter(x=>x.status==='OPEN'&&x.allocation_ready===true&&x.resolution_required!==true)
+        .filter(x=>cleanText(x.from_date)<date)
+        .map(x=>x.carry_over_id);
+      const results=[];
+      for(const carryOverId of ids)results.push(replanCarryOver({carry_over_id:carryOverId,date}));
+      return {ok:true,date,attempted:ids.length,results};
+    }
+
     function carryOverCandidates(){
       return load().carry_over_queue.filter(x=>x.status==='OPEN').map(x=>({...x}));
     }
@@ -969,6 +981,7 @@
       allocateLearningUnits,
       commitLearningAllocation,
       replanCarryOver,
+      replanReadyCarryOvers,
       recordTaskState,
       allocateToday,
       commitAllocation,
