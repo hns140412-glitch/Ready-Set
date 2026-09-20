@@ -294,3 +294,35 @@ assert.strictEqual(scienceUnitBound.unit_mapping_evidence.status,'UNIT_MAPPING_C
 const noUnitContext=standardMatcher.match('과학',{teacher_instruction:'지층의 특징을 알고 형성 과정을 모형으로 표현'});
 assert.strictEqual(noUnitContext.official_standard_code,'6과01-01');
 assert.strictEqual(noUnitContext.unit_mapping_evidence.status,'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED');
+
+assert.strictEqual(unitMap.version,'0.2.0');
+assert.strictEqual(unitMap.COVERAGE['국어'].status,'FULL_SOURCE_TABLE_STRUCTURED');
+assert.strictEqual(unitMap.COVERAGE['사회'].status,'FULL_SOURCE_TABLE_STRUCTURED');
+assert.strictEqual(unitMap.COVERAGE['수학'].status,'FULL_SOURCE_TABLE_STRUCTURED');
+assert.strictEqual(unitMap.COVERAGE['과학'].status,'FULL_SOURCE_TABLE_STRUCTURED');
+assert.strictEqual(unitMap.COVERAGE['영어'].status,'UNIT_MAPPING_SOURCE_GAP');
+assert.strictEqual(unitMap.RECORDS.length,196);
+
+for(const subject of ['국어','사회','수학','과학']){
+  const standardCodes=new Set(officialRegistry.list(subject).map(x=>x.code));
+  const mappedCodes=new Set(unitMap.listBySubject(subject).map(x=>x.standard_code));
+  assert.strictEqual(mappedCodes.size,standardCodes.size,`${subject} unit-map standard coverage mismatch`);
+  for(const code of standardCodes)assert(mappedCodes.has(code),`${subject} missing unit map for ${code}`);
+}
+
+assert.strictEqual(unitMap.listByCode('6국01-03').length,4);
+assert.strictEqual(unitMap.listByCode('6수01-11').length,2);
+assert(unitMap.listByCode('6수01-11').some(x=>x.grade===6&&x.semester===1));
+assert(unitMap.listByCode('6수01-11').some(x=>x.grade===6&&x.semester===2));
+
+const mathFullMap=unitMap.evaluate('6수03-19',{grade:6,semester:1,unit_name:'6. 직육면체의 겉넓이와 부피'});
+assert.strictEqual(mathFullMap.status,'UNIT_MAPPING_CONTEXT_MATCHED');
+assert.strictEqual(mathFullMap.selected.unit_title,'직육면체의 겉넓이와 부피');
+
+const koreanMultiMap=unitMap.evaluate('6국01-03',{grade:6,semester:2,unit_name:'2. 궁금한 점을 해결해요'});
+assert.strictEqual(koreanMultiMap.status,'UNIT_MAPPING_CONTEXT_MATCHED');
+
+const mismatchedUnit=unitMap.evaluate('6과01-01',{grade:6,semester:2,unit_name:'4. 과학과 나의 진로'});
+assert.notStrictEqual(mismatchedUnit.status,'UNIT_MAPPING_CONTEXT_MATCHED');
+
+assert.strictEqual(unitMap.listBySubject('영어').length,0);
