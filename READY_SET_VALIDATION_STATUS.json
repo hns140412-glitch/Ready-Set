@@ -31,14 +31,13 @@
     "R1_SINGLE_SESSION_ENGINE": "COMPLETE_RUNTIME_VERIFIED",
     "R2_PRODUCT_LANGUAGE_AUTHORITY": "PARTIAL_RENEWAL_REQUIRED",
     "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "PARTIAL_RENEWAL_REQUIRED",
-    "R4_CHILD_FACT_CONFIRMATION_PATH": "OPEN_IMPLEMENTATION",
+    "R4_CHILD_FACT_CONFIRMATION_PATH": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
     "R5_PLANNER_FREE_WINDOW": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
     "R6_LEGACY_AUTHORITY_ARCHIVE": "PARTIAL_RENEWAL_REQUIRED",
     "R7_EXACT_MAIN_VERIFICATION": "COMPLETE"
   },
   "current_open_product_gates": [
     "PLANNER_REAL_AVAILABILITY_WINDOWS",
-    "CHILD_INPUT_TO_PARENT_CONFIRMATION_GENERAL_PATH",
     "CROSS_APP_READY_HIDE_SNAP_RUNTIME_HANDOFF",
     "ADVENTURE_UI_PRODUCT_LANGUAGE_CONSOLIDATION",
     "LEGACY_VERSION_MANIFEST_README_CLEANUP",
@@ -61,7 +60,7 @@
     "policy": "LOCAL_BRANCH_TO_CI_RUNTIME_TO_ONE_FROZEN_CANDIDATE_TO_EXTERNAL",
     "candidate_sha_frozen": false,
     "external_deploy_allowed": false,
-    "reason": "Review snapshot is closed, but the product deployment candidate is not frozen; next implementation gate is P2 Child FACT confirmation.",
+    "reason": "P2 Child FACT confirmation is branch-runtime closed; deployment candidate is still not frozen because P3-P5 renewal gates remain open.",
     "default_external_call_budget": 1,
     "user_as_debugger": false
   },
@@ -84,7 +83,35 @@
     "p1_planner_reality_engine": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
     "review_snapshot_frozen": true,
     "deployment_candidate_frozen": false,
-    "next_unresolved_gate": "P2_CHILD_FACT_CONFIRMATION",
+    "next_unresolved_gate": "P3_CROSS_APP_RUNTIME_CONTINUITY",
     "hosting_called_during_review": false
+  },
+  "p2_child_fact_confirmation_closure": {
+    "candidate_head": "60bc3ba2fea851f1951866111f2561d17339e08f",
+    "draft_pr": 73,
+    "coded": true,
+    "ci_verified": true,
+    "runtime_verified": true,
+    "device_verified": false,
+    "production_verified": false,
+    "integration_ci": {
+      "run_number": 136,
+      "result": "PASS"
+    },
+    "worker_self_test": {
+      "run_number": 338,
+      "result": "PASS"
+    },
+    "runtime_e2e": {
+      "run_number": 222,
+      "result": "PASS",
+      "tests": "46/46"
+    },
+    "flow": "CHILD_INPUT -> PARENT_REVIEW_CONFIRM -> FACT -> LEARNING_MASTER -> PLANNER -> TODAY",
+    "child_direct_confirmation_blocked": "PARENT_CONFIRMATION_REQUIRED",
+    "p1_reworked": false,
+    "p1_regression_evidence": "NONE; P1 regression tests remained PASS",
+    "deployment_candidate_frozen": false,
+    "hosting_called": false
   }
 }
