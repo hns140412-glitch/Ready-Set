@@ -298,7 +298,8 @@
                 assignment_id:assignmentId,
                 subject:unit.subject,
                 current_revision:Number(fact.fact_revision)||1,
-                activity_types:unit.activity_types||[]
+                activity_types:unit.activity_types||[],
+                allow_subject_generalization:true
               });
               const historySafetyPenalty=historicalSignal?.risk_band==='HIGH'?(highLoadStack*8+recoveryStack*6):historicalSignal?.risk_band==='MEDIUM'?highLoadStack*3:0;
               return taskLoads.length*8
@@ -334,7 +335,8 @@
               assignment_id:assignmentId,
               subject:unit.subject,
               current_revision:Number(fact.fact_revision)||1,
-              activity_types:unit.activity_types||[]
+              activity_types:unit.activity_types||[],
+              allow_subject_generalization:true
             })
           });
         }
