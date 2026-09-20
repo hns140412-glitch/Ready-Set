@@ -295,7 +295,7 @@ const noUnitContext=standardMatcher.match('과학',{teacher_instruction:'지층�
 assert.strictEqual(noUnitContext.official_standard_code,'6과01-01');
 assert.strictEqual(noUnitContext.unit_mapping_evidence.status,'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED');
 
-assert.strictEqual(unitMap.version,'0.2.1');
+assert.strictEqual(unitMap.version,'0.2.2');
 assert.strictEqual(unitMap.RECORDS.length,196);
 for(const [subject,expected] of Object.entries({국어:34,사회:27,수학:45,과학:51})){
   const cov=unitMap.coverage(subject);
@@ -394,7 +394,11 @@ assert(scienceSubjectGap.unresolved.includes('TEXTBOOK_UNIT_TO_STANDARD_BINDING_
 const scienceSubjectResolved=subjectMaster.resolve('과학',{grade:5,semester:1,unit_name:'1. 지층과 화석',teacher_instruction:'지층의 특징을 설명'});
 assert(!scienceSubjectResolved.unresolved.includes('TEXTBOOK_UNIT_TO_STANDARD_BINDING_REQUIRES_ACTUAL_BOOK_CONTEXT'));
 
-assert.strictEqual(unitMap.version,'0.2.1');
+assert.strictEqual(unitMap.version,'0.2.2');
 const noExplicitUnitName=unitMap.evaluate('6과01-01',{grade:5,semester:1,workbook_name:'1. 지층과 화석',title:'지층과 화석 숙제'});
 assert.strictEqual(noExplicitUnitName.status,'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED');
 assert(noExplicitUnitName.unresolved.includes('ACTUAL_GRADE_SEMESTER_UNIT_CONTEXT_REQUIRED'));
+
+const wrongUnitSameGradeSemester=unitMap.evaluate('6과01-01',{grade:5,semester:1,unit_name:'전혀 다른 단원'});
+assert.strictEqual(wrongUnitSameGradeSemester.status,'UNIT_MAPPING_CANDIDATE');
+assert.strictEqual(wrongUnitSameGradeSemester.selected,null);
