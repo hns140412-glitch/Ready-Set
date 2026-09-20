@@ -250,19 +250,21 @@
       "result": "PASS"
     },
     "ready_integration_ci": {
-      "run_number": 171,
+      "run_number": 172,
       "result": "PASS"
     },
     "ready_worker_self_test": {
-      "run_number": 387,
+      "run_number": 388,
       "result": "PASS"
     },
     "ready_runtime_e2e": {
-      "run_number": 257,
-      "result": "RUNNING"
+      "run_number": 258,
+      "result": "PASS"
     },
     "device_verified": false,
     "production_verified": false,
-    "hosting_called": false
+    "hosting_called": false,
+    "ci_verified": true,
+    "runtime_verified": true
   }
 }
