@@ -784,7 +784,7 @@ async function applyCaptureDraft(draft){
 async function recordCaptureReview(groupKey,reviewedValue,event='PARENT_REVIEWED'){
   const api=window.ReadyCaptureV01;
   if(!api?.updateReviewDraft)return null;
-  const session=(await api.activeSession?.())||(await api.latestSession?.());
+  const session=await api.currentReviewSession?.();
   const drafts=Array.isArray(session?.analysis_result?.drafts)?session.analysis_result.drafts:[];
   const draft=[...drafts].reverse().find(x=>x.group_key===groupKey);
   if(!draft?.review_draft_id)return null;
@@ -848,7 +848,7 @@ async function renderCaptureIntake(){
   if(!api||!summaryRoot||!previewRoot)return;
 
   clearCapturePreviewUrls();
-  const session=(await api.activeSession())||(await api.latestSession());
+  const session=await api.currentReviewSession?.();
   if(!session){
     badge.textContent='임시저장';
     status.textContent='촬영하면 자동으로 임시저장됩니다.';
@@ -1083,7 +1083,10 @@ document.getElementById('saveTalentFactsBtn')?.addEventListener('click',async()=
 document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=>{
   if(!requireParentUi())return;
   const name=$('#englishWorkbook').value.trim(),range=$('#englishRange').value.trim();if(!name||!range){toast('문제집과 숙제 범위를 확인해 주세요.');return}
-  const existingEnglishLink=await window.ReadyCaptureV01?.factLinkForGroup?.('ENGLISH:WORKBOOK');
+  const existingEnglishLinks=await Promise.all(
+    ['ENGLISH:WORKBOOK','ENGLISH:PRINT','ENGLISH:OTHER'].map(groupKey=>window.ReadyCaptureV01?.factLinkForGroup?.(groupKey))
+  );
+  const existingEnglishLink=existingEnglishLinks.find(x=>x?.assignment_id||x?.workbook_ref_id)||null;
   const ref=window.ReadyAssignments.upsertWorkbookRef({
     workbook_ref_id:existingEnglishLink?.workbook_ref_id||undefined,
     name,
