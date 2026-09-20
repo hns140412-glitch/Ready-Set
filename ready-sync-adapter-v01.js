@@ -66,9 +66,16 @@
       updated_at:event.updated_at,
       client:{app:'Ready & Set',adapter_version:'0.1.0'}
     };
+    const authorization=window.ReadyFamilySession?.authorizationHeader?.();
+    if(!authorization) return {ok:false,reason:'AUTH_SESSION_REQUIRED'};
     const res=await fetch(config.endpoint+'/events',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Accept':'application/json','Idempotency-Key':payload.idempotency_key},
+      headers:{
+        'Content-Type':'application/json',
+        'Accept':'application/json',
+        'Idempotency-Key':payload.idempotency_key,
+        'Authorization':authorization
+      },
       body:JSON.stringify(payload)
     });
     const body=await res.json().catch(()=>({}));

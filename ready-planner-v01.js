@@ -66,6 +66,10 @@
     function mutate(fn){const s=load();const out=fn(s);save(s);return out}
 
     function upsertScheduleCommitment(input={}){
+      if(globalThis.ReadyFamilySession && cleanText(input.source)==='PARENT_ADMIN_UI'){
+        const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
+        if(!gate?.ok) throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
+      }
       const title=cleanText(input.title); if(!title) throw new Error('title required');
       return mutate(s=>{
         const id=cleanText(input.commitment_id)||makeId('commitment');

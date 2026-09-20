@@ -79,7 +79,15 @@ function toast(msg){
   t.textContent=msg;t.hidden=false;
   clearTimeout(t._tm);t._tm=setTimeout(()=>t.hidden=true,2400);
 }
+function familySession(){return window.ReadyFamilySession?.current?.()||{authenticated:false,role:'CHILD'}}
+function requireParentUi(){
+  const gate=window.ReadyFamilySession?.requireRole?.('PARENT');
+  if(gate?.ok)return true;
+  toast('부모 인증이 필요한 화면입니다.');
+  return false;
+}
 function nav(name){
+  if(name==='planner-admin'&&!requireParentUi())name='planner';
   $$('.view').forEach(v=>v.classList.toggle('active',v.dataset.view===name));
   window.scrollTo(0,0);
   if(name==='home')renderHome();
@@ -589,6 +597,8 @@ function plannerStateLabel(v){
   return ({PLANNED:'예정',IN_PROGRESS:'진행',COMPLETED:'완료',PARTIAL:'일부 남음',DEFERRED:'다음에',WAITING_FOR_PARENT:'부모 도움',BLOCKED:'막힘',FIXED:'고정'})[v]||v;
 }
 function renderPlanner(){
+  const adminJump=document.querySelector('.plannerAdminJump');
+  if(adminJump)adminJump.hidden=!window.ReadyFamilySession?.isParent?.();
   const snap=plannerSnapshot(), start=weekStart(new Date(plannerSelectedDate+'T12:00:00'));
   const strip=$('#plannerWeekStrip'), detail=$('#plannerWeekDetail');
   if(!strip||!detail)return;
@@ -630,6 +640,7 @@ function clearScheduleForm(){
   $('#scheduleMovable').checked=false;
 }
 function renderPlannerAdmin(){
+  if(!requireParentUi()){nav('planner');return}
   const snap=plannerSnapshot();
   const scheduleRoot=$('#scheduleAdminList');
   if(!scheduleRoot)return;
@@ -659,6 +670,7 @@ document.addEventListener('click',e=>{
   const s=e.target.closest('[data-edit-schedule]'); if(s){editSchedule(s.dataset.editSchedule);return;}
 });
 document.getElementById('saveScheduleBtn')?.addEventListener('click',()=>{
+  if(!requireParentUi())return;
   const title=$('#scheduleTitle').value.trim(), date=$('#scheduleDate').value, start=$('#scheduleStart').value, end=$('#scheduleEnd').value;
   if(!title||!date||!start||!end){toast('일정명·날짜·시작·종료 시간을 확인해 주세요.');return;}
   if(end<=start){toast('종료 시간은 시작 시간보다 늦어야 해요.');return;}
@@ -692,6 +704,7 @@ function renderParentIntake(){
   if($('#talentSourceDate')&&!$('#talentSourceDate').value)$('#talentSourceDate').value=localDateKey();
 }
 document.getElementById('saveTalentFactsBtn')?.addEventListener('click',()=>{
+  if(!requireParentUi())return;
   const source=$('#talentSourceDate').value,deadline=$('#talentDeadline').value;
   if(!source||!deadline){toast('받은 날과 다음 화요일 경계를 확인해 주세요.');return}
   const books=[...document.querySelectorAll('[data-talent-book]')].map(row=>({subject:row.dataset.talentBook,source_range:row.querySelector('[data-range]').value.trim(),teacher_instruction:row.querySelector('[data-instruction]').value.trim(),artifact_refs:[],answer_reference_ids:row.querySelector('[data-answer]').value?[row.querySelector('[data-answer]').value]:[]}));
@@ -701,6 +714,7 @@ document.getElementById('saveTalentFactsBtn')?.addEventListener('click',()=>{
   toast('재능 6권 FACT를 확인 저장했어요. 아직 DATED TODO는 만들지 않았습니다.');renderParentIntake();
 });
 document.getElementById('saveEnglishFactBtn')?.addEventListener('click',()=>{
+  if(!requireParentUi())return;
   const name=$('#englishWorkbook').value.trim(),range=$('#englishRange').value.trim();if(!name||!range){toast('문제집과 숙제 범위를 확인해 주세요.');return}
   const ref=window.ReadyAssignments.upsertWorkbookRef({name,subject:'영어',provenance:{kind:'PARENT_INPUT'}});
   const fact=window.ReadyAssignments.upsertEnglishAssignment({actor:'PARENT',workbook_ref_id:ref.workbook_ref_id,source_date:localDateKey(),source_range:range,weekday_prints:parsePrints($('#englishPrints').value),components:{vocabulary:$('#englishVocabulary').value.trim(),listening:$('#englishListening').value.trim(),recording:$('#englishRecording').value.trim(),writing:$('#englishWriting').value.trim()},teacher_instruction:$('#englishInstruction').value.trim(),next_academy:$('#englishNextAcademy').value,provenance:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}});
