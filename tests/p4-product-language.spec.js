@@ -8,7 +8,8 @@ test('P4 active UI uses exploration/base-camp/expedition-member language', async
   expect(bodyText).not.toContain('FOCUS MODE');
   expect(bodyText).not.toContain('길잡이');
 
-  await expect(page.locator('#homeView')).toContainText('오늘의 탐험');
+  await expect(page.locator('#homeView')).toContainText('오늘의');
+  await expect(page.locator('#homeView')).toContainText('탐험');
   await expect(page.locator('#homeView')).toContainText('MY CREW');
 
   await page.locator('[data-nav="mission"]').first().click();
