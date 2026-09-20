@@ -26,7 +26,7 @@ Disposition set: PRESERVE / MERGE / SUPERSEDE / ARCHIVE / OPEN / CLOSED / OWNERS
 | RDY-C2S-018 | stale Time Attack/GitHub Pages README language | CLOSED | README/PC local guidance aligned to current product and deployment gate semantics |
 | RDY-C2S-019 | REV_06/07 active-version authority | SUPERSEDE | semantic canonical docs + Version Registry |
 | RDY-C2S-020 | 0.9.3 / feature cache / REV mismatch | CLOSED | version registry authority + 1.0.0-alpha.2 + non-feature cache namespace; REV retained only as compatibility/provenance |
-| RDY-C2S-021 | Planner real availability windows + buffers | CLOSED | PR #73 candidate: CODED + CI_VERIFIED + RUNTIME_VERIFIED; main promotion pending |
+| RDY-C2S-021 | Planner real availability windows + buffers | CLOSED | availability-window subsystem only; whole Planner product remains incomplete per Product Implementation Inventory |
 | RDY-C2S-022 | child ad-hoc FACT → Parent confirmation generic path | CLOSED | PR #73 candidate: CODED + CI_VERIFIED + RUNTIME_VERIFIED; Child direct confirmation blocked; main promotion pending |
 | RDY-C2S-023 | shared expedition-member personality/lifecycle/rules authority | OWNERSHIP_TRANSFER | Snap & Pop upstream authority; Ready consumes projection only |
 | RDY-C2S-024 | exploration WEEK/DAY/TODAY | PRESERVE | UI/product renewal |
@@ -35,10 +35,30 @@ Disposition set: PRESERVE / MERGE / SUPERSEDE / ARCHIVE / OPEN / CLOSED / OWNERS
 | RDY-C2S-027 | exact current main CI/runtime failing | SUPERSEDE | main SHA 6142cfeb...: Integration CI #119 PASS / Runtime E2E #205 42/42 PASS / Worker #322 PASS |
 | RDY-C2S-028 | DEVICE_VERIFIED | OPEN | final physical-device gate only after exact candidate closure |
 | RDY-C2S-029 | PRODUCTION_VERIFIED | OPEN | final production gate; Netlify is not a debugging surface |
-| RDY-C2S-030 | Learning Engine main integration | CLOSED | PR #68 merged; current main runtime verified |
+| RDY-C2S-030 | Learning Engine main integration | CLOSED | module integration/runtime slice only; subject intelligence and grade/unit mapping remain incomplete |
 | RDY-C2S-031 | validation evidence keyed by SHA | PRESERVE | Validation Status |
 | RDY-C2S-032 | append-only REV_08 approach | SUPERSEDE | semantic canonical docs |
 | RDY-C2S-033 | historical REV docs retained as provenance | PRESERVE | historical only, non-authoritative |
+
+## Product-completeness correction — 2026-09-21
+
+The meaning of prior `CLOSED` atoms is narrowed as follows:
+
+- `CLOSED` means the named atom, contract, migration, or subsystem slice is closed within its declared scope.
+- `CLOSED` never means the whole user-facing product feature is complete unless the product inventory explicitly marks that feature `FUNCTIONAL` or `VERIFIED`.
+- CI/Runtime evidence proves the tested path only.
+- P1–P5 are retained as historical subsystem closure evidence, not as a whole-product implementation percentage.
+- The previous frozen multi-repo tuple is revoked as a release/device candidate because material product gaps remain.
+
+Authoritative whole-product status source:
+`READY_SET_PRODUCT_IMPLEMENTATION_INVENTORY.md`.
+
+Specific corrections:
+- RDY-C2S-021 Planner availability closure = availability-window subsystem only; **Planner product remains PARTIAL/SKELETON across timetable, WEEK/DAY, exceptions and automatic replan**.
+- RDY-C2S-030 Learning Engine integration closure = module integration/runtime path only; **subject depth and grade/unit mapping remain incomplete**.
+- P3c OCR closure = domain/transport/evidence contract only; **continuous capture, retake, quality recovery and full review UX remain incomplete**.
+- P4 language closure = terminology migration only; **does not imply complete WEEK/DAY/TODAY product UX**.
+- DEVICE_VERIFIED and PRODUCTION_VERIFIED stay blocked until material whole-product features reach functional scope.
 
 ## Coverage
 Recovered atoms registered here: 33.
@@ -204,7 +224,7 @@ Verify actual production deploy provenance, Identity/cloud roundtrip, PWA behavi
 Ready consumes the shared expedition projection; it does not fork a competing rule set.
 
 
-### Frozen candidate tuple — READY FOR P6 GATE
+### Historical validated subsystem tuple — RELEASE FREEZE REVOKED
 The exact multi-repo candidate is frozen as:
 
 - Ready & Set: `110f58fb1f98500f89a45e1c1bc25be1039a87cc`
@@ -217,8 +237,7 @@ Validation basis:
 - Ready Runtime E2E #258 PASS, 54/54
 - Hide Validate #134 PASS
 
-This freezes code identity only.
-`FROZEN_CANDIDATE != DEVICE_VERIFIED != PRODUCTION_VERIFIED`.
+This tuple preserves exact-SHA subsystem evidence only. It is **not** a current release/device candidate.
+The release freeze was revoked after whole-product completeness reassessment identified material timetable, Planner, OCR, Learning Engine, Parent UX and sync gaps.
 
-External deployment remains blocked until explicit HUMAN APPROVAL / user direction.
-No Netlify/hosting call was used during P1–P5/P3c implementation or closure.
+External deployment remains blocked. Device verification must not resume until the whole-product inventory reaches the required functional scope.
