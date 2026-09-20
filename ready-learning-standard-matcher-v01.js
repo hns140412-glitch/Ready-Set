@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.4.0';
+  const VERSION='0.4.1';
   const OFFICIAL_STANDARD_DATASET={
     curriculum:'2022_REVISED_KOREA_NATIONAL_CURRICULUM',
     school_level:'ELEMENTARY',
@@ -13,7 +13,8 @@
     authority:'NATIONAL_EDUCATION_COMMISSION__MINISTRY_OF_EDUCATION__NCIC',
     current_elementary_framework_notice:'NCEC_NOTICE_2026_1',
     subject_curriculum_notice:'MOE_NOTICE_2022_33',
-    standard_codes_bound:false,
+    standard_code_binding:'CONDITIONAL_VERIFIED_RECORD_ONLY',
+    standard_codes_bound:true,
     source_refs:[
       'NCEC_NOTICE_2026_1_ELEMENTARY_FRAMEWORK',
       'MOE_NOTICE_2022_33_SUBJECT_CURRICULA',
