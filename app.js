@@ -41,6 +41,8 @@ const initial={
 let state=load();
 let mediaRecorder=null,mediaStream=null,chunks=[],recordStartedAt=0,recordTicker=null,currentAudio=null;
 let previewTimer=null,currentGuestType='pico';
+let plannerSelectedDate=null;
+let plannerTab='week';
 
 function load(){
   try{
@@ -691,8 +693,7 @@ function weekStart(base=new Date()){
   const d=new Date(base); const dow=d.getDay(); const delta=dow===0?-6:1-dow; d.setDate(d.getDate()+delta); d.setHours(12,0,0,0); return d;
 }
 function plannerSnapshot(){return window.ReadySetPlanner?.snapshot?.()||{dated_todos:[],schedule_commitments:[],carry_over_queue:[]}}
-let plannerSelectedDate=localDateKey();
-let plannerTab='week';
+plannerSelectedDate=plannerSelectedDate||localDateKey();
 function plannerItemsForDate(date,snap=plannerSnapshot()){
   const todos=(snap.dated_todos||[]).filter(x=>x.date===date).map(x=>({
     kind:'TODO',label:x.label,state:x.state||'PLANNED',minutes:x.estimated_minutes||null,order:x.order??999,
