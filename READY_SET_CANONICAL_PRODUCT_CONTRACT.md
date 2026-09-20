@@ -1,7 +1,7 @@
 # READY_SET_CANONICAL_PRODUCT_CONTRACT
 
-Status: ACTIVE_REWRITE_CANONICAL
-Generation: READY_C2S_REWRITE_01
+Status: ACTIVE_RENEWED_CANONICAL
+Generation: READY_RENEWAL_01
 Date: 2026-09-20
 
 ## Product identity
@@ -65,3 +65,44 @@ CODED / CI_VERIFIED / RUNTIME_VERIFIED / DEVICE_VERIFIED / PRODUCTION_VERIFIED a
 ## Rewrite closure
 UNMAPPED_MATERIAL=0 and SILENT_LOSS=0 within recovered scope.
 Reverse Reconstruction Test must reproduce intended Ready behavior without requiring historical REV documents.
+
+
+## Current implementation truth
+Exact Ready main evidence basis:
+- main SHA: `6142cfeb5599a625d61ffa1faca866b2b6817cc8`
+- Ready Integration CI #119: PASS
+- Ready Runtime E2E #205: PASS, 42/42
+- TAKY Codex Worker Self-Test #322: PASS
+- Learning Engine PR #68: merged to main
+- Device verification: NOT PERFORMED
+- Production verification: NOT VERIFIED
+
+This evidence proves current coded/CI/runtime state only. It does not erase remaining product gaps.
+
+## Expedition-rule ownership
+Shared expedition-member identity, personality, lifecycle and behavior rules are owned upstream by Snap & Pop under TAKY governance.
+Ready consumes the shared expedition projection for its child experience.
+
+Hard:
+- Ready SHALL NOT fork a competing expedition-member rule system.
+- Ready MAY define Ready-specific presentation/use of expedition members without redefining upstream personality/lifecycle authority.
+- shared-rule changes flow from the upstream owner into Ready through governed reflection.
+
+## Renewal priorities
+1. Planner real availability windows and life-buffer semantics.
+2. Child FACT → Parent confirmation → Learning Master → Planner closure.
+3. Ready ↔ Hide & Seek / Snap & Pop runtime handoff roundtrip.
+4. WEEK/DAY/TODAY/Mission/Session/Result adventure-language/UI consolidation.
+5. legacy manifest/README/cache/version cleanup.
+6. physical-device verification on one exact candidate SHA.
+7. production verification.
+
+## Deployment / device verification budget
+Implementation and verification are branch-first.
+GitHub CI and deterministic Runtime verification are the default closure path before hosting.
+
+Hard:
+- Netlify is not a debugging surface.
+- Do not create branch previews/sites/deploys merely to inspect code that GitHub CI/Runtime can validate.
+- A physical-device deployment is a deliberate final gate after exact candidate SHA selection.
+- Higher-cost/external side effects require applicable PRE-ACTION rule bindings and satisfied preconditions under TAKY.
