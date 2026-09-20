@@ -296,6 +296,7 @@ assert.strictEqual(noUnitContext.official_standard_code,'6과01-01');
 assert.strictEqual(noUnitContext.unit_mapping_evidence.status,'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED');
 
 assert.strictEqual(unitMap.version,'0.2.0');
+assert.strictEqual(unitMap.RECORDS.length,196);
 for(const [subject,expected] of Object.entries({국어:34,사회:27,수학:45,과학:51})){
   const cov=unitMap.coverage(subject);
   assert.strictEqual(cov.expected_standard_count,expected);
