@@ -148,7 +148,12 @@ Boundaries:
 - assignment drafts cannot be accepted as Hide vocabulary rows.
 - unsupported/mismatched domain fails closed; original capture remains preserved.
 
-Evidence pending exact Runtime E2E completion on latest candidate. Hide adapter/contract CI is independently green.
+Evidence:
+- Ready Integration CI #172 PASS
+- Ready Worker Self-Test #388 PASS
+- Ready Runtime E2E #258 PASS
+- Hide Family OCR adapter/contract CI independently green
+- Production/device verification remains NOT RUN.
 
 ### P4 — exploration UI/product-language consolidation — CANDIDATE CLOSED
 Candidate HEAD `c4f68d2fc0a86c9e2c6abc8034185026f31d8d45`.
