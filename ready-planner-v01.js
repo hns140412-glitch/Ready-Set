@@ -878,7 +878,8 @@
 
     function recordTaskState(input={}){
       const todoId=cleanText(input.todo_id); if(!todoId) return null;
-      const mapped=READY_TO_TODO[input.ready_state]||null; if(!mapped) return null;
+      const requested=cleanText(input.ready_state);
+      const mapped=READY_TO_TODO[requested]||(TODO_STATES.has(requested)?requested:null); if(!mapped) return null;
       return mutate(s=>{
         const todo=s.dated_todos.find(x=>x.todo_id===todoId); if(!todo) return null;
         todo.state=mapped; todo.updated_at=new Date().toISOString();
