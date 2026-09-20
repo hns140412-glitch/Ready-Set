@@ -30,7 +30,7 @@ Disposition set: PRESERVE / MERGE / SUPERSEDE / ARCHIVE / OPEN / CLOSED / OWNERS
 | RDY-C2S-022 | child ad-hoc FACT → Parent confirmation generic path | CLOSED | PR #73 candidate: CODED + CI_VERIFIED + RUNTIME_VERIFIED; Child direct confirmation blocked; main promotion pending |
 | RDY-C2S-023 | shared expedition-member personality/lifecycle/rules authority | OWNERSHIP_TRANSFER | Snap & Pop upstream authority; Ready consumes projection only |
 | RDY-C2S-024 | exploration WEEK/DAY/TODAY | PRESERVE | UI/product renewal |
-| RDY-C2S-025 | Base Camp naming/island identity | OPEN | product-language/UI consolidation |
+| RDY-C2S-025 | Base Camp naming/island identity | CLOSED | active Ready UI consolidated to base-camp / exploration language; main promotion pending |
 | RDY-C2S-026 | Imagination Cloud call | OPEN | post-core product layer |
 | RDY-C2S-027 | exact current main CI/runtime failing | SUPERSEDE | main SHA 6142cfeb...: Integration CI #119 PASS / Runtime E2E #205 42/42 PASS / Worker #322 PASS |
 | RDY-C2S-028 | DEVICE_VERIFIED | OPEN | final physical-device gate only after exact candidate closure |
@@ -108,9 +108,18 @@ Ready → Hide & Seek / Snap & Pop → Ready, with one session / one goal / same
 
 Main promotion remains pending; this does not imply DEVICE/PRODUCTION verification or frozen deployment candidate.
 
-### P4 — exploration UI/product-language consolidation
-Unify WEEK / DAY / TODAY / Mission / Session / Result around the adventure/base-camp identity.
-Remove stale Time Attack / Focus Mode product identity without discarding explicitly confirmed visual details.
+### P4 — exploration UI/product-language consolidation — CANDIDATE CLOSED
+Candidate HEAD `c4f68d2fc0a86c9e2c6abc8034185026f31d8d45`.
+
+Evidence:
+- Integration CI #150 PASS
+- Worker Self-Test #359 PASS
+- Runtime E2E #236 PASS, 48/48
+- active UI no longer exposes `타임어택 / FOCUS MODE / 길잡이`
+- home / mission / session / settings language now follows `BASE CAMP / 탐험 / 탐험대원`
+- internal legacy identifiers were intentionally left untouched to avoid needless runtime churn
+
+Main promotion remains pending; manifest / README / cache / version authority residue is P5 and remains separate.
 
 ### P5 — legacy/version cleanup
 Normalize manifest / README / cache / version labels and archive historical active-authority residue.
