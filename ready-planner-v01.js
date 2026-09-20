@@ -371,7 +371,46 @@
       return mutate(s=>{const carry=s.carry_over_queue.find(x=>x.carry_over_id===carryId&&x.status==='OPEN');if(!carry)return {ok:false,reason:'CARRY_OVER_NOT_FOUND'};
         if(carry.resolution_required)return {ok:false,reason:'CARRY_OVER_REQUIRES_RESOLUTION'};
         const source=s.dated_todos.find(x=>x.todo_id===carry.source_todo_id);if(!source)return {ok:false,reason:'SOURCE_TODO_NOT_FOUND'};
-        const todo={...source,todo_id:makeId('todo'),date,state:'PLANNED',source:'PLANNER_V2_CARRY_OVER',source_actor:'PLANNER_MAIN',provenance:{...(source.provenance||{}),carry_over_id:carryId,source_todo_id:source.todo_id},created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+        const rootTodoId=cleanText(source.provenance?.root_todo_id)||source.todo_id;
+        const lineageDepth=Math.max(0,Number(source.provenance?.carry_over_depth)||0)+1;
+        const todo={
+          todo_id:makeId('todo'),
+          date,
+          label:source.label,
+          subject:source.subject||null,
+          template_id:source.template_id||null,
+          assignment_id:source.assignment_id||null,
+          analysis_id:source.analysis_id||null,
+          fact_revision:Number(source.fact_revision)||Number(source.provenance?.fact_revision)||1,
+          learning_unit_id:source.learning_unit_id||null,
+          allocation_run_id:source.allocation_run_id||null,
+          activity_types:Array.isArray(source.activity_types)?[...source.activity_types]:[],
+          activity_sequence:Array.isArray(source.activity_sequence)?[...source.activity_sequence]:[],
+          cognitive_load_profile:Array.isArray(source.cognitive_load_profile)?[...source.cognitive_load_profile]:[],
+          activity_load_score:Number.isFinite(source.activity_load_score)?source.activity_load_score:null,
+          difficulty:Number.isFinite(source.difficulty)?source.difficulty:null,
+          recovery_need:source.recovery_need||null,
+          review_policy:source.review_policy||null,
+          parent_help_dependency:source.parent_help_dependency||null,
+          estimated_minutes:Number.isFinite(source.estimated_minutes)?source.estimated_minutes:null,
+          source:'PLANNER_V2_CARRY_OVER',
+          source_actor:'PLANNER_MAIN',
+          provenance:{
+            assignment_id:source.assignment_id||source.provenance?.assignment_id||null,
+            analysis_id:source.analysis_id||source.provenance?.analysis_id||null,
+            learning_unit_id:source.learning_unit_id||source.provenance?.learning_unit_id||null,
+            allocation_run_id:source.allocation_run_id||source.provenance?.allocation_run_id||null,
+            fact_revision:Number(source.fact_revision)||Number(source.provenance?.fact_revision)||1,
+            carry_over_id:carryId,
+            source_todo_id:source.todo_id,
+            root_todo_id:rootTodoId,
+            carry_over_depth:lineageDepth
+          },
+          order:Number.isFinite(source.order)?source.order:999,
+          state:'PLANNED',
+          created_at:new Date().toISOString(),
+          updated_at:new Date().toISOString()
+        };
         s.dated_todos.push(todo);carry.status='RESCHEDULED';carry.rescheduled_todo_id=todo.todo_id;carry.rescheduled_to=date;carry.updated_at=new Date().toISOString();return {ok:true,todo:{...todo}};
       });
     }
