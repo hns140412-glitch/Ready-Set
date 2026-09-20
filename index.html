@@ -120,6 +120,50 @@
       <section class="glassCard adminCard" id="parentHomeworkIntake">
         <div class="adminSectionHead"><div><small>ASSIGNMENT FACT</small><h2>숙제 입력 · 확인</h2></div><span>Parent</span></div>
         <p class="muted">숙제 원본 사실만 입력합니다. 난이도·시간·요일별 배정은 Learning Master와 Planner가 처리합니다.</p>
+        <section class="captureIntakeCard" id="captureIntakeCard">
+          <div class="adminSectionHead"><div><small>CAPTURE INTAKE</small><h2>숙제 자료 촬영</h2></div><span id="captureStateBadge">임시저장</span></div>
+          <p class="muted">촬영하면 자동으로 임시저장됩니다. 같은 책은 같은 그룹으로 계속 촬영한 뒤 마지막에 저장하고 분석하세요.</p>
+          <div class="adminGrid two">
+            <label class="inputBlock">자료 그룹
+              <select id="captureGroupSelect">
+                <optgroup label="재능">
+                  <option value="TALENT:연산">연산</option>
+                  <option value="TALENT:한자">한자</option>
+                  <option value="TALENT:국어">국어</option>
+                  <option value="TALENT:사회">사회</option>
+                  <option value="TALENT:수학">수학</option>
+                  <option value="TALENT:생각하는 피자">생각하는 피자</option>
+                </optgroup>
+                <optgroup label="영어">
+                  <option value="ENGLISH:WORKBOOK">영어 문제집</option>
+                  <option value="ENGLISH:PRINT">영어 프린트</option>
+                  <option value="ENGLISH:OTHER">영어 기타</option>
+                </optgroup>
+              </select>
+            </label>
+            <label class="inputBlock">촬영 종류
+              <select id="captureKindSelect">
+                <option value="COVER">표지</option>
+                <option value="RANGE" selected>범위</option>
+                <option value="INSTRUCTION">지시사항</option>
+                <option value="ANSWER_REFERENCE">답안 참고</option>
+              </select>
+            </label>
+          </div>
+          <div class="captureActions">
+            <label class="btn dark captureShutter">촬영
+              <input id="homeworkCameraInput" type="file" accept="image/*" capture="environment" hidden>
+            </label>
+            <label class="btn outline">사진 선택
+              <input id="homeworkGalleryInput" type="file" accept="image/*" multiple hidden>
+            </label>
+          </div>
+          <div id="captureGroupSummary" class="adminList"></div>
+          <div id="capturePreviewList" class="capturePreviewList"></div>
+          <button class="btn dark" id="captureAnalyzeBtn">저장하고 분석</button>
+          <p class="muted" id="captureAnalysisStatus">아직 분석 요청 전입니다.</p>
+        </section>
+
         <div class="adminSectionHead"><div><small>TALENT WEEKLY</small><h2>재능 6권</h2></div></div>
         <div class="adminGrid two">
           <label class="inputBlock">받은 날<input id="talentSourceDate" type="date"></label>
@@ -195,6 +239,7 @@
 <script src="./ready-family-session-v01.js"></script>
 <script src="./ready-sync-adapter-v01.js"></script>
 <script src="./ready-local-first-v01.js"></script>
+<script src="./ready-capture-v01.js"></script>
 <script src="./ready-assignment-domain-v2.js"></script>
 <script src="./ready-learning-master-v01.js"></script>
 <script src="./ready-planner-v01.js"></script>
