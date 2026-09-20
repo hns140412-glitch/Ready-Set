@@ -1,36 +1,54 @@
 {
-  "status_version": "READY_C2S_REWRITE_01",
+  "status_version": "READY_RENEWAL_01",
   "product": "Ready & Set",
   "evidence_policy": "Validation belongs to an exact code SHA; product/version labels alone never imply validation.",
-  "current_main_sha_at_r0": "c82109651609440d2e9e08486f2ef5a042a68e46",
+  "exact_main_sha": "6142cfeb5599a625d61ffa1faca866b2b6817cc8",
   "current_main": {
     "coded": true,
-    "ci_verified": false,
-    "runtime_verified": false,
+    "ci_verified": true,
+    "runtime_verified": true,
     "device_verified": false,
     "production_verified": false,
-    "reason": "PR #70 targeted per-task session-end behavior is verified, but exact-main Ready Runtime E2E and TAKY Codex Worker Self-Test remain failing; global CI/runtime verification is false."
-  },
-  "historical_verified_evidence": {
-    "status": "HISTORICAL_REFERENCE_ONLY"
+    "evidence": {
+      "ready_integration_ci": {
+        "run_number": 119,
+        "result": "PASS"
+      },
+      "ready_runtime_e2e": {
+        "run_number": 205,
+        "result": "PASS",
+        "tests": "42/42"
+      },
+      "taky_codex_worker_self_test": {
+        "run_number": 322,
+        "result": "PASS"
+      }
+    },
+    "reason": "Exact main is CODED + CI_VERIFIED + RUNTIME_VERIFIED. Physical-device and production deployment verification remain separate gates."
   },
   "rewrite_gates": {
     "R0_CANONICAL_SKELETON": "COMPLETE",
-    "R1_SINGLE_SESSION_ENGINE": "PARTIAL_IMPLEMENTED_TARGETED_VERIFIED_PR70",
-    "R2_PRODUCT_LANGUAGE_AUTHORITY": "NOT_STARTED",
-    "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "NOT_STARTED",
-    "R4_CHILD_FACT_CONFIRMATION_PATH": "NOT_STARTED",
-    "R5_PLANNER_FREE_WINDOW": "NOT_STARTED",
-    "R6_LEGACY_AUTHORITY_ARCHIVE": "NOT_STARTED",
-    "R7_EXACT_MAIN_VERIFICATION": "IN_PROGRESS_FAILURE_CLASSIFICATION"
+    "R1_SINGLE_SESSION_ENGINE": "COMPLETE_RUNTIME_VERIFIED",
+    "R2_PRODUCT_LANGUAGE_AUTHORITY": "PARTIAL_RENEWAL_REQUIRED",
+    "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "PARTIAL_RENEWAL_REQUIRED",
+    "R4_CHILD_FACT_CONFIRMATION_PATH": "OPEN_IMPLEMENTATION",
+    "R5_PLANNER_FREE_WINDOW": "OPEN_IMPLEMENTATION",
+    "R6_LEGACY_AUTHORITY_ARCHIVE": "PARTIAL_RENEWAL_REQUIRED",
+    "R7_EXACT_MAIN_VERIFICATION": "COMPLETE"
   },
-  "release_state": "REWRITE_IN_PROGRESS_NOT_RELEASE_VERIFIED",
-  "latest_targeted_evidence": {
-    "sha": "c82109651609440d2e9e08486f2ef5a042a68e46",
-    "pr": 70,
-    "scope": "per-task session-end single authority",
-    "result": "TARGETED_BEHAVIOR_VERIFIED",
-    "global_ci_verified": false,
-    "global_runtime_verified": false
+  "current_open_product_gates": [
+    "PLANNER_REAL_AVAILABILITY_WINDOWS",
+    "CHILD_INPUT_TO_PARENT_CONFIRMATION_GENERAL_PATH",
+    "CROSS_APP_READY_HIDE_SNAP_RUNTIME_HANDOFF",
+    "ADVENTURE_UI_PRODUCT_LANGUAGE_CONSOLIDATION",
+    "LEGACY_VERSION_MANIFEST_README_CLEANUP",
+    "DEVICE_VERIFICATION",
+    "PRODUCTION_VERIFICATION"
+  ],
+  "release_state": "MAIN_RUNTIME_VERIFIED_RENEWAL_IN_PROGRESS",
+  "deployment_policy": {
+    "branch_first": true,
+    "netlify_not_debug_surface": true,
+    "device_deploy_only_after_exact_candidate_selected": true
   }
 }
