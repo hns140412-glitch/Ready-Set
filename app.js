@@ -721,11 +721,13 @@ function renderPlannerAdmin(){
     const carry=(snap.carry_over_queue||[]).filter(x=>x.status==='OPEN');
     carryRoot.innerHTML=carry.length?carry.map(x=>{
       const needs=x.resolution_required===true;
-      const status=needs?'확인 필요':'다음 일정 대기';
+      const escalated=x.escalation_level==='PARENT_LEARNING_MASTER_REVIEW';
+      const status=escalated?'반복 검토 필요':needs?'확인 필요':'다음 일정 대기';
       const actions=needs
         ? `<div class="adminInlineActions"><button class="miniAction" data-carry-ready="${x.carry_over_id}">다시 계획</button><button class="miniAction" data-carry-cancel="${x.carry_over_id}">종료</button></div>`
         : '<strong>자동 재진입</strong>';
-      return `<div class="adminListItem"><span><b>${escapeHtml(x.label||'남은 탐험')}</b><small>${escapeHtml(x.state||'')} · ${escapeHtml(status)} · ${escapeHtml(x.from_date||'')}</small></span>${actions}</div>`;
+      const escalationNote=escalated?` · ${escapeHtml(x.escalation_reason||'REVIEW_REQUIRED')}`:'';
+      return `<div class="adminListItem"><span><b>${escapeHtml(x.label||'남은 탐험')}</b><small>${escapeHtml(x.state||'')} · ${escapeHtml(status)} · ${escapeHtml(x.from_date||'')}${escalationNote}</small></span>${actions}</div>`;
     }).join(''):'<div class="plannerEmpty"><b>확인할 남은 탐험이 없어요.</b><small>새 carry-over가 생기면 여기에 표시됩니다.</small></div>';
   }
   if(!$('#scheduleDate').value) $('#scheduleDate').value=localDateKey();
