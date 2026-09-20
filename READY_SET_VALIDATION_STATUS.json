@@ -37,11 +37,10 @@
     "R7_EXACT_MAIN_VERIFICATION": "COMPLETE"
   },
   "current_open_product_gates": [
-    "FAMILY_CAPTURE_OCR_DOMAIN_SHARING_RUNTIME",
     "DEVICE_VERIFICATION",
     "PRODUCTION_VERIFICATION"
   ],
-  "release_state": "MAIN_RUNTIME_VERIFIED_RENEWAL_IN_PROGRESS",
+  "release_state": "FROZEN_MULTI_REPO_CANDIDATE_DEVICE_GATE_PENDING",
   "deployment_policy": {
     "branch_first": true,
     "netlify_not_debug_surface": true,
@@ -55,9 +54,9 @@
   },
   "external_resource_gate": {
     "policy": "LOCAL_BRANCH_TO_CI_RUNTIME_TO_ONE_FROZEN_CANDIDATE_TO_EXTERNAL",
-    "candidate_sha_frozen": false,
+    "candidate_sha_frozen": true,
     "external_deploy_allowed": false,
-    "reason": "P1-P5 core renewal gates are branch/runtime closed. A newer P3c Family Capture/OCR candidate is still awaiting exact Runtime E2E closure, so deployment candidate remains unfrozen and external deploy remains disallowed.",
+    "reason": "Exact multi-repo candidate tuple is frozen after branch/CI/runtime closure. External deployment remains disallowed until explicit HUMAN APPROVAL / user direction for the one deliberate device-validation deployment.",
     "default_external_call_budget": 1,
     "user_as_debugger": false
   },
@@ -79,8 +78,8 @@
     },
     "p1_planner_reality_engine": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
     "review_snapshot_frozen": true,
-    "deployment_candidate_frozen": false,
-    "next_unresolved_gate": "P3C_FAMILY_CAPTURE_OCR_RUNTIME",
+    "deployment_candidate_frozen": true,
+    "next_unresolved_gate": "P6_DEVICE_VERIFICATION",
     "hosting_called_during_review": false
   },
   "p2_child_fact_confirmation_closure": {
@@ -245,7 +244,7 @@
     "assignment_draft_as_hide_rows_forbidden": true,
     "mismatch_policy": "FAIL_CLOSED",
     "hide_ci": {
-      "run_number": 132,
+      "run_number": 134,
       "result": "PASS"
     },
     "ready_integration_ci": {
@@ -258,13 +257,16 @@
     },
     "ready_runtime_e2e": {
       "run_number": 258,
-      "result": "PASS"
+      "result": "PASS",
+      "tests": "54/54"
     },
     "device_verified": false,
     "production_verified": false,
     "hosting_called": false,
     "ci_verified": true,
-    "runtime_verified": true
+    "runtime_verified": true,
+    "ready_candidate_head": "110f58fb1f98500f89a45e1c1bc25be1039a87cc",
+    "hide_candidate_head": "7b8decf45151f736245f3b3c54ee2b81bfdc83ae"
   },
   "p5_legacy_version_cleanup_closure": {
     "candidate_head": "78350a93d32d9ad2d6dba5817e8d7007c70c48a8",
@@ -300,5 +302,32 @@
     "hosting_called": false,
     "deployment_candidate_frozen": false,
     "note": "P5 exact candidate is closed, but branch head later advanced for P3c; do not transfer P5 validation to that newer SHA."
+  },
+  "frozen_candidate_tuple": {
+    "frozen": true,
+    "frozen_at_basis": "POST_P1_P5_AND_P3C_BRANCH_RUNTIME_CLOSURE",
+    "ready": {
+      "repo": "hns140412-glitch/Ready-Set",
+      "sha": "110f58fb1f98500f89a45e1c1bc25be1039a87cc"
+    },
+    "hide_seek": {
+      "repo": "hns140412-glitch/Hide-Seek",
+      "sha": "7b8decf45151f736245f3b3c54ee2b81bfdc83ae",
+      "branch": "implementation/hide-seek-capture-session-v02"
+    },
+    "snap_pop": {
+      "repo": "hns140412-glitch/Snap-Pop",
+      "sha": "0e2b5bee094045dc03656ab22b4bed630d4d670f",
+      "ref": "main"
+    },
+    "validation": {
+      "ready_integration_ci": "#172 PASS",
+      "ready_worker": "#388 PASS",
+      "ready_runtime_e2e": "#258 PASS 54/54",
+      "hide_validate": "#134 PASS"
+    },
+    "external_deploy_allowed": false,
+    "next_gate": "P6_DEVICE_VERIFICATION_WITH_EXPLICIT_HUMAN_APPROVAL",
+    "netlify_calls_during_renewal": 0
   }
 }
