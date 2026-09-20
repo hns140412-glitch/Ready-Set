@@ -15,6 +15,12 @@
   const clean=v=>String(v??'').trim();
   const id=p=>p+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
   const clone=v=>JSON.parse(JSON.stringify(v));
+  function learningContext(input={}){
+    const grade=Number(input.grade||0)||null;
+    const semester=Number(input.semester||0)||null;
+    const unit_name=clean(input.unit_name)||null;
+    return {grade,semester,unit_name};
+  }
   const blank=()=>({schema_version:2,assignmentFacts:{},assignmentPackages:{},workbookRefs:{},artifacts:{},analyses:{},learningUnits:{}});
   function requireBrowserActor(actor){
     const normalized=clean(actor).toUpperCase();
@@ -128,7 +134,7 @@
           Object.assign(f,{package_id:packageId,source_type:'TALENT_BOOK_ASSIGNMENT',subject:'재능',book_subject:subject,source_actor:clean(input.actor)||'PARENT',assignment_cycle:'TALENT_WEEKLY',source_date:sourceDate,deadline_boundary:deadline,lifecycle:'ACTIVE',analysis_state:'NOT_ANALYZED'});
           const artifactRefs=registerArtifacts(s,assignmentId,Array.isArray(b.artifact_refs)?b.artifact_refs:[],'SOURCE','FAMILY');
           const answerRefs=registerArtifacts(s,assignmentId,Array.isArray(b.answer_reference_ids)?b.answer_reference_ids:[],'ANSWER_REFERENCE','PARENT_ONLY');
-          addClaim(s,f,input.actor||'PARENT',{source_range:clean(b.source_range),teacher_instruction:clean(b.teacher_instruction),artifact_refs:artifactRefs,answer_reference_ids:answerRefs},b.provenance||input.provenance||{kind:'PARENT_INPUT'});
+          addClaim(s,f,input.actor||'PARENT',{source_range:clean(b.source_range),teacher_instruction:clean(b.teacher_instruction),...learningContext(b),artifact_refs:artifactRefs,answer_reference_ids:answerRefs},b.provenance||input.provenance||{kind:'PARENT_INPUT'});
           s.assignmentFacts[assignmentId]=f;factIds.push(assignmentId);
         }
         const pkg={package_id:packageId,source_type:'TALENT_WEEKLY_ASSIGNMENT',source_date:sourceDate,deadline_boundary:deadline,fact_ids:factIds,cycle_boundary_kind:'DEADLINE_NEXT_CYCLE_NOT_ALLOCATION_SLOT',created_at:now(),updated_at:now()};
@@ -146,7 +152,7 @@
         Object.assign(f,{source_type:'ENGLISH_ACADEMY_PACKAGE',subject:'영어',workbook_ref_id:workbookRefId,source_actor:clean(input.actor)||'UNKNOWN',assignment_cycle:'ACADEMY_TO_NEXT_CONFIRMED_CLASS',source_date:clean(input.source_date),deadline_boundary:clean(input.next_academy)||null,deadline_state:clean(input.next_academy)?'NEXT_ACADEMY_CONFIRMED':'NEXT_ACADEMY_UNVERIFIED',lifecycle:'ACTIVE',analysis_state:'NOT_ANALYZED'});
         const artifactRefs=registerArtifacts(s,assignmentId,Array.isArray(input.artifact_refs)?input.artifact_refs:[],'SOURCE','FAMILY');
         const answerRefs=registerArtifacts(s,assignmentId,Array.isArray(input.answer_reference_ids)?input.answer_reference_ids:[],'ANSWER_REFERENCE','PARENT_ONLY');
-        addClaim(s,f,input.actor||'UNKNOWN',{source_range:clean(input.source_range),weekday_prints:clone(input.weekday_prints||{}),components:clone(input.components||{}),teacher_instruction:clean(input.teacher_instruction),artifact_refs:artifactRefs,answer_reference_ids:answerRefs},input.provenance||{kind:(input.actor==='CHILD'?'CHILD_INPUT':'PARENT_INPUT')});
+        addClaim(s,f,input.actor||'UNKNOWN',{source_range:clean(input.source_range),weekday_prints:clone(input.weekday_prints||{}),components:clone(input.components||{}),teacher_instruction:clean(input.teacher_instruction),...learningContext(input),artifact_refs:artifactRefs,answer_reference_ids:answerRefs},input.provenance||{kind:(input.actor==='CHILD'?'CHILD_INPUT':'PARENT_INPUT')});
         s.assignmentFacts[assignmentId]=f;return clone(f);
       });
     }
@@ -155,7 +161,7 @@
       const title=clean(input.title);if(!title)throw new Error('event title required');
       return mutate(s=>{const assignmentId=clean(input.assignment_id)||id('assignment');
         const f={assignment_id:assignmentId,source_type:'SCHOOL_EVENT',subject:clean(input.subject)||'학교',source_actor:clean(input.actor)||'CHILD',assignment_cycle:'AD_HOC',claims:[],created_at:now(),fact_revision:1,planner_revision_pending:false,lifecycle:'ACTIVE',analysis_state:'NOT_ANALYZED'};
-        addClaim(s,f,input.actor||'CHILD',{title,source_range:clean(input.source_range),teacher_instruction:clean(input.teacher_instruction),deadline_boundary:clean(input.deadline_boundary)||null},input.provenance||{kind:'CHILD_INPUT'});
+        addClaim(s,f,input.actor||'CHILD',{title,source_range:clean(input.source_range),teacher_instruction:clean(input.teacher_instruction),deadline_boundary:clean(input.deadline_boundary)||null,...learningContext(input)},input.provenance||{kind:'CHILD_INPUT'});
         s.assignmentFacts[assignmentId]=f;return clone(f);
       });
     }

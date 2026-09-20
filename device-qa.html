@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fff7ef">
+<title>Ready & Set Device QA</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Noto Sans KR",sans-serif;color:#231d19;background:#fff7ef}
+*{box-sizing:border-box}body{margin:0;padding:env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom));background:linear-gradient(#fff7ef,#ffe8d8);min-height:100dvh}
+main{max-width:680px;margin:auto}.card{background:#fff;border:1px solid #ead8cb;border-radius:20px;padding:16px;margin:12px 0;box-shadow:0 8px 24px #6d402014}
+h1{font-size:24px;margin:18px 0 4px}h2{font-size:16px;margin:0 0 10px}.muted{font-size:12px;color:#79675d;line-height:1.5}
+button,a.btn{display:block;width:100%;border:0;border-radius:14px;padding:14px;margin:8px 0;font-weight:900;font-size:14px;text-align:center;text-decoration:none}
+.primary{background:#201b18;color:white}.secondary{background:#f4e4d8;color:#3a2920}.danger{background:#fff0ef;color:#a43831;border:1px solid #f0c5c0}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.kv{display:grid;grid-template-columns:120px 1fr;gap:7px;font-size:12px;padding:4px 0}.ok{color:#19713b;font-weight:900}.bad{color:#b43b32;font-weight:900}.warn{color:#9a6416;font-weight:900}
+ol{padding-left:20px;font-size:13px;line-height:1.65}.step{padding:8px 0;border-bottom:1px solid #f0e7e1}.step:last-child{border:0}
+code{font-size:11px;word-break:break-all;background:#f7f1ed;padding:2px 5px;border-radius:6px}
+</style>
+</head>
+<body>
+<main>
+<h1>Ready & Set · Device QA</h1>
+<p class="muted">실기기에서 데이터 입력부터 TODAY → Mission → Focus → Result → Carry-over까지 한 번에 검증하기 위한 전용 진입점입니다.</p>
+
+<section class="card">
+<h2>기기 상태</h2>
+<div id="device"></div>
+</section>
+
+<section class="card">
+<h2>1. 테스트 데이터 준비</h2>
+<p class="muted">기존 사용자 데이터와 구분되는 <code>DEVICE_QA_</code> ID만 생성합니다. 기존 Planner 데이터를 지우지 않습니다.</p>
+<button id="seed" class="primary">예제 데이터 넣기</button>
+<div class="row"><button id="inspect" class="secondary">현재 QA 데이터 확인</button><button id="clear" class="danger">QA 데이터만 삭제</button></div>
+<div id="seedStatus" class="muted"></div>
+</section>
+
+<section class="card">
+<h2>2. 아이폰에서 실제 진행</h2>
+<ol>
+<li class="step">아래 버튼으로 Ready & Set 본앱을 엽니다.</li>
+<li class="step"><b>Mission/TODAY</b>에서 <b>DEVICE QA · 과학 지층과 화석</b>을 선택합니다.</li>
+<li class="step">Focus를 시작하고 5~10초 실제 실행합니다.</li>
+<li class="step">완료 시 <b>일부 남음(PARTIAL)</b>으로 종료합니다.</li>
+<li class="step">다시 이 Device QA 화면으로 돌아와 <b>결과 읽기</b>를 누릅니다.</li>
+</ol>
+<a class="btn primary" href="./index.html?device_qa=1">Ready & Set 열기</a>
+<button id="result" class="secondary">결과 읽기</button>
+<div id="resultBox" class="muted"></div>
+</section>
+
+<section class="card">
+<h2>3. 합격 기준</h2>
+<div id="checks"></div>
+</section>
+</main>
+<script>
+(()=>{
+ const PLANNER_KEY='readyset_planner_v1';
+ const QA_KEY='readyset_device_qa_v1';
+ const TODAY=()=>new Date().toLocaleDateString('sv-SE');
+ const TODO_ID='DEVICE_QA_TODO_SCIENCE_01';
+ const now=()=>new Date().toISOString();
+ const load=()=>{try{return JSON.parse(localStorage.getItem(PLANNER_KEY)||'null')||{}}catch{return{}}};
+ const save=s=>localStorage.setItem(PLANNER_KEY,JSON.stringify(s));
+ const blank=()=>({schema_version:1,storage_backend:'LOCALSTORAGE_COMPATIBILITY_SCAFFOLD',schedule_commitments:[],homework_templates:[],dated_todos:[],progress_events:[],allocation_runs:[],execution_observations:[],carry_over_queue:[],adaptive_estimate_proposals:[]});
+ const normalize=s=>Object.assign(blank(),s||{},{
+  schedule_commitments:Array.isArray(s?.schedule_commitments)?s.schedule_commitments:[],
+  homework_templates:Array.isArray(s?.homework_templates)?s.homework_templates:[],
+  dated_todos:Array.isArray(s?.dated_todos)?s.dated_todos:[],
+  progress_events:Array.isArray(s?.progress_events)?s.progress_events:[],
+  allocation_runs:Array.isArray(s?.allocation_runs)?s.allocation_runs:[],
+  execution_observations:Array.isArray(s?.execution_observations)?s.execution_observations:[],
+  carry_over_queue:Array.isArray(s?.carry_over_queue)?s.carry_over_queue:[],
+  adaptive_estimate_proposals:Array.isArray(s?.adaptive_estimate_proposals)?s.adaptive_estimate_proposals:[]
+ });
+ function seed(){
+  const s=normalize(load());
+  s.dated_todos=s.dated_todos.filter(x=>x.todo_id!==TODO_ID);
+  s.dated_todos.push({
+   todo_id:TODO_ID,date:TODAY(),label:'DEVICE QA · 과학 지층과 화석',
+   subject:'과학',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',
+   state:'PLANNED',estimated_minutes:null,
+   assignment_id:'DEVICE_QA_ASSIGNMENT_SCIENCE_01',
+   analysis_id:'DEVICE_QA_ANALYSIS_SCIENCE_01',
+   learning_unit_id:'DEVICE_QA_LU_SCIENCE_01',
+   template_id:'DEVICE_QA_TEMPLATE_SCIENCE_01',
+   allocation_run_id:'DEVICE_QA_RUN_01',
+   provenance:{
+    qa:true,grade:5,semester:1,unit_name:'지층과 화석',
+    teacher_instruction:'지층의 특징을 관찰하고 형성 과정을 설명'
+   },
+   created_at:now(),updated_at:now()
+  });
+  save(s);
+  localStorage.setItem(QA_KEY,JSON.stringify({seeded_at:now(),todo_id:TODO_ID,date:TODAY(),status:'SEEDED'}));
+  renderSeed('예제 데이터 준비 완료 · TODAY에서 보이면 정상입니다.','ok');
+  renderChecks();
+ }
+ function clear(){
+  const s=normalize(load());
+  s.dated_todos=s.dated_todos.filter(x=>x.todo_id!==TODO_ID && !String(x.todo_id||'').startsWith('DEVICE_QA_'));
+  s.progress_events=s.progress_events.filter(x=>x.todo_id!==TODO_ID && !String(x.todo_id||'').startsWith('DEVICE_QA_'));
+  s.execution_observations=s.execution_observations.filter(x=>x.todo_id!==TODO_ID && !String(x.todo_id||'').startsWith('DEVICE_QA_'));
+  s.carry_over_queue=s.carry_over_queue.filter(x=>x.source_todo_id!==TODO_ID && !String(x.source_todo_id||'').startsWith('DEVICE_QA_'));
+  save(s); localStorage.removeItem(QA_KEY);
+  renderSeed('Device QA 데이터만 삭제했습니다.','warn'); renderResult(); renderChecks();
+ }
+ function find(){
+  const s=normalize(load());
+  return {
+   s,
+   todo:s.dated_todos.find(x=>x.todo_id===TODO_ID)||null,
+   obs:s.execution_observations.find(x=>x.todo_id===TODO_ID)||null,
+   carry:s.carry_over_queue.find(x=>x.source_todo_id===TODO_ID)||null,
+   events:s.progress_events.filter(x=>x.todo_id===TODO_ID)
+  };
+ }
+ function renderSeed(msg,cls=''){document.getElementById('seedStatus').innerHTML='<p class="'+cls+'">'+msg+'</p>'}
+ function renderResult(){
+  const x=find(), box=document.getElementById('resultBox');
+  box.innerHTML='<div class="kv"><b>TODO</b><span>'+(x.todo?x.todo.state:'없음')+'</span></div>'+
+   '<div class="kv"><b>Observation</b><span>'+(x.obs?x.obs.source||'있음':'없음')+'</span></div>'+
+   '<div class="kv"><b>Carry-over</b><span>'+(x.carry?(x.carry.status||'있음'):'없음')+'</span></div>'+
+   '<div class="kv"><b>Progress events</b><span>'+x.events.length+'</span></div>';
+ }
+ function checks(){
+  const x=find();
+  return [
+   ['예제 TODO 생성',!!x.todo],
+   ['Identity chain 보존',!!(x.todo?.assignment_id&&x.todo?.analysis_id&&x.todo?.learning_unit_id&&x.todo?.template_id&&x.todo?.allocation_run_id)],
+   ['오늘 날짜 배치',x.todo?.date===TODAY()],
+   ['실행 결과 기록',!!x.obs],
+   ['PARTIAL 상태 반영',x.todo?.state==='PARTIAL'],
+   ['Carry-over 생성',!!x.carry],
+   ['Carry-over OPEN',x.carry?.status==='OPEN'],
+   ['Ready session provenance',x.obs?.source==='READY_SESSION']
+  ];
+ }
+ function renderChecks(){
+  document.getElementById('checks').innerHTML=checks().map(([n,v])=>'<div class="kv"><b>'+n+'</b><span class="'+(v?'ok':'warn')+'">'+(v?'PASS':'대기')+'</span></div>').join('');
+ }
+ const standalone=window.matchMedia('(display-mode: standalone)').matches || navigator.standalone===true;
+ document.getElementById('device').innerHTML=
+  '<div class="kv"><b>User Agent</b><span>'+navigator.userAgent+'</span></div>'+
+  '<div class="kv"><b>PWA standalone</b><span class="'+(standalone?'ok':'warn')+'">'+standalone+'</span></div>'+
+  '<div class="kv"><b>Viewport</b><span>'+innerWidth+' × '+innerHeight+'</span></div>'+
+  '<div class="kv"><b>Online</b><span>'+navigator.onLine+'</span></div>';
+ document.getElementById('seed').onclick=seed;
+ document.getElementById('clear').onclick=clear;
+ document.getElementById('inspect').onclick=()=>{renderResult();renderChecks()};
+ document.getElementById('result').onclick=()=>{renderResult();renderChecks()};
+ renderResult();renderChecks();
+})();
+</script>
+</body>
+</html>

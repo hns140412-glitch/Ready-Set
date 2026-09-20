@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.5.0';
+  const VERSION='0.5.1';
   const referenceApi=()=>{
     if(typeof globalThis!=='undefined'&&globalThis.ReadyLearningReferenceV01)return globalThis.ReadyLearningReferenceV01;
     if(typeof require==='function'){try{return require('./ready-learning-reference-v01.js')}catch{}}
@@ -328,7 +328,9 @@
             workbook_name:fact.workbook_name||fact.workbook_ref_id||null,
             source_range:extra.source_range??fact.source_range??null,
             teacher_instruction:fact.teacher_instruction||null,
-            unit_name:extra.concept_skill_target||null
+            grade:fact.grade||null,
+            semester:fact.semester||null,
+            unit_name:fact.unit_name||null
           });
           return ref?{
             status:ref.status,
@@ -422,7 +424,9 @@
       title:fact.title||null,
       source_range:fact.source_range||null,
       teacher_instruction:fact.teacher_instruction||null,
-      unit_name:null,
+      grade:fact.grade||null,
+      semester:fact.semester||null,
+      unit_name:fact.unit_name||null,
       components_text:fact.components?Object.entries(fact.components).map(([k,v])=>k+':'+v).join(' | '):null
     });
     analysis.learning_reference=ref||{subject:analysis.subject_profile,status:'REFERENCE_GAP',reference_classes:['ASSIGNMENT_FACT'],method:'SOURCE_FACT_ONLY',evidence_refs:[],unresolved:['REFERENCE_REGISTRY_UNAVAILABLE']};
