@@ -107,11 +107,6 @@
       "issue": "Remote sync adapter contract is implemented, but current main has no validated production cloud backend."
     },
     {
-      "id": "AUTH-FAMILY-001",
-      "status": "OPEN",
-      "issue": "Full family authentication / real Parent-Child identity separation is not implemented."
-    },
-    {
       "id": "LEARNING-MASTER-DEEP-001",
       "status": "OPEN",
       "issue": "Learning Master V0.1 contract is runtime-integrated, but deep subject-specific decomposition remains partial where source evidence is insufficient."
@@ -125,6 +120,11 @@
       "id": "REMOTE-SYNC-AUTH-DEPLOY-001",
       "status": "OPEN",
       "issue": "Backend scaffold is merged and fail-closed, but real remote sync remains unavailable until Family/Auth, authenticated client transport, exact-provenance deployment, and live roundtrip validation are completed."
+    },
+    {
+      "id": "REAL-AUTH-PROVIDER-001",
+      "status": "OPEN",
+      "issue": "Family/Auth boundary is runtime-verified, but a real server-side authentication provider, session issuance/verification, family enrollment, and production credential lifecycle are not deployed."
     }
   ],
   "rules": [
@@ -133,8 +133,8 @@
     "Old-base draft PRs must be rebased and revalidated against canonical main before merge consideration.",
     "Superseded authority paths must not be restored to make stale tests pass."
   ],
-  "next_action": "Do not claim remote sync complete. Next product gap should address Family/Auth and authenticated sync transport, while physical-device validation remains blocked on exact-provenance HTTPS staging deployment.",
-  "canonical_runtime_sha": "c2545dd31ec4d332efb6ae0c842e0bb7fea2c320",
+  "next_action": "Do not claim login/auth complete. The next implementation decision is the real server-side auth provider/session lifecycle and its authenticated remote-sync integration. Device validation remains blocked until an exact-provenance HTTPS staging deploy is available.",
+  "canonical_runtime_sha": "78b23efc40867f8db963ce4378bfcfa87a66033a",
   "main_head_policy": "Resolve live main HEAD before every future implementation/deploy claim; validation metadata commits may advance HEAD without changing runtime code.",
   "accessibility": {
     "status": "MERGED_RUNTIME_VERIFIED",
@@ -178,6 +178,28 @@
       "client authenticated credential/session transport",
       "exact-provenance deployment",
       "live remote-store roundtrip validation"
+    ]
+  },
+  "family_auth_boundary": {
+    "status": "MERGED_RUNTIME_VERIFIED_REAL_AUTH_PROVIDER_NOT_DEPLOYED",
+    "merged_pr": 37,
+    "runtime_sha": "78b23efc40867f8db963ce4378bfcfa87a66033a",
+    "runtime_run_id": 35478371919,
+    "playwright_total": "36/36 PASS",
+    "verified": [
+      "anonymous local default is CHILD",
+      "Parent/Admin UI hidden and navigation blocked without authenticated Parent session",
+      "Parent Assignment FACT mutations and confirmations require Parent role in browser runtime",
+      "Parent schedule mutation requires Parent role",
+      "Family identity and remote-sync credential are separated",
+      "remote sync send fails closed without session credential"
+    ],
+    "remaining_blockers": [
+      "server-side authentication provider",
+      "server-side session issuance and verification",
+      "real Parent/Child account enrollment and family membership lifecycle",
+      "production credential rotation/revocation",
+      "live authenticated remote-sync roundtrip"
     ]
   }
 }
