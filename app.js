@@ -712,6 +712,114 @@ const TALENT_BOOKS=['연산','한자','국어','사회','수학','생각하는 �
 function parsePrints(value=''){
   const out={};for(const token of String(value).split(',')){const [day,...rest]=token.split(':');if(day?.trim()&&rest.join(':').trim())out[day.trim().toUpperCase()]=rest.join(':').trim()}return out;
 }
+
+let capturePreviewUrls=[];
+function clearCapturePreviewUrls(){
+  for(const url of capturePreviewUrls){try{URL.revokeObjectURL(url)}catch{}}
+  capturePreviewUrls=[];
+}
+async function renderCaptureIntake(){
+  const api=window.ReadyCaptureV01;
+  const summaryRoot=$('#captureGroupSummary'),previewRoot=$('#capturePreviewList'),badge=$('#captureStateBadge'),status=$('#captureAnalysisStatus');
+  if(!api||!summaryRoot||!previewRoot)return;
+
+  clearCapturePreviewUrls();
+  const session=(await api.activeSession())||(await api.latestSession());
+  if(!session){
+    badge.textContent='임시저장';
+    status.textContent='촬영하면 자동으로 임시저장됩니다.';
+    summaryRoot.innerHTML='<div class="plannerEmpty"><b>촬영한 자료가 없어요.</b><small>자료 그룹을 고르고 촬영을 시작하세요.</small></div>';
+    previewRoot.innerHTML='';
+    return;
+  }
+
+  const groups=await api.groupSummary(session.capture_session_id);
+  const items=await api.listItems(session.capture_session_id);
+  badge.textContent=session.status==='TEMP_CAPTURE'?'임시저장':session.analysis_state==='WAITING_ANALYSIS_ADAPTER'?'분석 대기':'저장됨';
+  status.textContent=session.analysis_state==='WAITING_ANALYSIS_ADAPTER'
+    ? '원본 저장 완료 · OCR/분류 분석기 연결 대기 중입니다. 가짜 분석 결과는 만들지 않습니다.'
+    : session.analysis_state==='ANALYSIS_COMPLETE'
+      ? '분석 결과가 준비되었습니다. Parent 검토 후 FACT로 확정하세요.'
+      : session.status==='TEMP_CAPTURE'
+        ? '촬영할 때마다 자동 임시저장 중입니다.'
+        : '촬영 세션이 저장되었습니다.';
+
+  summaryRoot.innerHTML=groups.length?groups.map(g=>{
+    const label=String(g.group_key||'').replace('TALENT:','').replace('ENGLISH:','영어 · ');
+    const kinds=Object.entries(g.kinds||{}).map(([k,n])=>`${k} ${n}`).join(' · ');
+    return `<div class="adminListItem"><span><b>${escapeHtml(label)}</b><small>${escapeHtml(kinds||'자료 저장됨')}</small></span><strong>${g.total}장</strong></div>`;
+  }).join(''):'';
+
+  previewRoot.innerHTML='';
+  for(const item of items){
+    const card=document.createElement('article');
+    card.className='capturePreviewItem';
+    const url=await api.previewUrl(item.capture_item_id);
+    if(url)capturePreviewUrls.push(url);
+    const label=String(item.group_key||'').replace('TALENT:','').replace('ENGLISH:','영어 · ');
+    card.innerHTML=`
+      ${url?`<img src="${url}" alt="${escapeHtml(label)} 촬영 미리보기">`:'<div class="capturePreviewPlaceholder">IMAGE</div>'}
+      <div><b>${escapeHtml(label)}</b><small>${escapeHtml(item.kind)} · ${Math.max(1,Math.round((item.size||0)/1024))}KB</small></div>
+      ${session.status==='TEMP_CAPTURE'?`<button type="button" data-remove-capture="${item.capture_item_id}" aria-label="촬영 삭제">×</button>`:''}
+    `;
+    previewRoot.appendChild(card);
+  }
+}
+
+async function captureFiles(files){
+  const api=window.ReadyCaptureV01;
+  if(!api||!files?.length)return;
+  if(!requireParentUi())return;
+  const group=$('#captureGroupSelect')?.value||'TALENT:연산';
+  const kind=$('#captureKindSelect')?.value||'RANGE';
+  await api.setCaptureTarget(group,kind);
+  const created=await api.addFiles(files,{group_key:group,kind});
+  toast(created.length===1?'촬영 자료를 임시저장했어요.':`${created.length}장 임시저장했어요.`);
+  await renderCaptureIntake();
+}
+
+document.getElementById('homeworkCameraInput')?.addEventListener('change',async e=>{
+  const files=e.target.files;
+  await captureFiles(files);
+  e.target.value='';
+});
+document.getElementById('homeworkGalleryInput')?.addEventListener('change',async e=>{
+  const files=e.target.files;
+  await captureFiles(files);
+  e.target.value='';
+});
+document.getElementById('captureGroupSelect')?.addEventListener('change',async()=>{
+  await window.ReadyCaptureV01?.setCaptureTarget?.($('#captureGroupSelect').value,$('#captureKindSelect').value);
+});
+document.getElementById('captureKindSelect')?.addEventListener('change',async()=>{
+  await window.ReadyCaptureV01?.setCaptureTarget?.($('#captureGroupSelect').value,$('#captureKindSelect').value);
+});
+document.addEventListener('click',async e=>{
+  const btn=e.target.closest('[data-remove-capture]');
+  if(!btn)return;
+  await window.ReadyCaptureV01?.removeItem?.(btn.dataset.removeCapture);
+  toast('촬영 자료를 삭제했어요.');
+  await renderCaptureIntake();
+});
+document.getElementById('captureAnalyzeBtn')?.addEventListener('click',async()=>{
+  if(!requireParentUi())return;
+  const result=await window.ReadyCaptureV01?.requestAnalysis?.();
+  if(!result?.ok){
+    toast(result?.reason==='NO_CAPTURE_ITEMS'?'먼저 자료를 촬영해 주세요.':'촬영 세션을 확인해 주세요.');
+    return;
+  }
+  toast(result.analysis_state==='WAITING_ANALYSIS_ADAPTER'?'원본 저장 완료 · 분석 연결 대기':'저장하고 분석을 시작했어요.');
+  await renderCaptureIntake();
+});
+
+async function capturedRefs(groupKey){
+  const refs=await window.ReadyCaptureV01?.artifactsForGroup?.(groupKey)||[];
+  return {
+    source:refs.filter(x=>x.kind!=='ANSWER_REFERENCE'),
+    answers:refs.filter(x=>x.kind==='ANSWER_REFERENCE')
+  };
+}
+
 function renderParentIntake(){
   const root=$('#talentBookFacts');if(root&&!root.children.length)root.innerHTML=TALENT_BOOKS.map(subject=>`
     <div class="adminGrid two" data-talent-book="${subject}">
@@ -738,12 +846,24 @@ function renderParentIntake(){
   }
   if($('#learningMasterVersion'))$('#learningMasterVersion').textContent='v'+(window.ReadyLearningMasterV01?.version||'0.2');
   if($('#talentSourceDate')&&!$('#talentSourceDate').value)$('#talentSourceDate').value=localDateKey();
+  renderCaptureIntake().catch(()=>{});
 }
-document.getElementById('saveTalentFactsBtn')?.addEventListener('click',()=>{
+document.getElementById('saveTalentFactsBtn')?.addEventListener('click',async()=>{
   if(!requireParentUi())return;
   const source=$('#talentSourceDate').value,deadline=$('#talentDeadline').value;
   if(!source||!deadline){toast('받은 날과 다음 화요일 경계를 확인해 주세요.');return}
-  const books=[...document.querySelectorAll('[data-talent-book]')].map(row=>({subject:row.dataset.talentBook,source_range:row.querySelector('[data-range]').value.trim(),teacher_instruction:row.querySelector('[data-instruction]').value.trim(),artifact_refs:[],answer_reference_ids:row.querySelector('[data-answer]').value?[row.querySelector('[data-answer]').value]:[]}));
+  const books=[];
+  for(const row of [...document.querySelectorAll('[data-talent-book]')]){
+    const subject=row.dataset.talentBook;
+    const captured=await capturedRefs('TALENT:'+subject);
+    books.push({
+      subject,
+      source_range:row.querySelector('[data-range]').value.trim(),
+      teacher_instruction:row.querySelector('[data-instruction]').value.trim(),
+      artifact_refs:captured.source,
+      answer_reference_ids:captured.answers
+    });
+  }
   if(books.some(x=>!x.source_range)){toast('재능 6권의 숙제 범위를 모두 입력해 주세요.');return}
   const pkg=window.ReadyAssignments.upsertTalentPackage({actor:'PARENT',source_date:source,deadline_boundary:deadline,books,provenance:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}});
   let todoCount=0,held=0;
@@ -755,11 +875,23 @@ document.getElementById('saveTalentFactsBtn')?.addEventListener('click',()=>{
   toast(`재능 6권 분석 완료 · Planner가 ${todoCount}개 탐험을 배정했어요${held?` · 보류 ${held}건`:''}.`);
   renderParentIntake();renderPlanner();renderMission();
 });
-document.getElementById('saveEnglishFactBtn')?.addEventListener('click',()=>{
+document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=>{
   if(!requireParentUi())return;
   const name=$('#englishWorkbook').value.trim(),range=$('#englishRange').value.trim();if(!name||!range){toast('문제집과 숙제 범위를 확인해 주세요.');return}
   const ref=window.ReadyAssignments.upsertWorkbookRef({name,subject:'영어',provenance:{kind:'PARENT_INPUT'}});
-  const fact=window.ReadyAssignments.upsertEnglishAssignment({actor:'PARENT',workbook_ref_id:ref.workbook_ref_id,source_date:localDateKey(),source_range:range,weekday_prints:parsePrints($('#englishPrints').value),components:{vocabulary:$('#englishVocabulary').value.trim(),listening:$('#englishListening').value.trim(),recording:$('#englishRecording').value.trim(),writing:$('#englishWriting').value.trim()},teacher_instruction:$('#englishInstruction').value.trim(),next_academy:$('#englishNextAcademy').value,provenance:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}});
+  const englishGroups=await Promise.all(['ENGLISH:WORKBOOK','ENGLISH:PRINT','ENGLISH:OTHER'].map(capturedRefs));
+  const englishSource=englishGroups.flatMap(x=>x.source);
+  const englishAnswers=englishGroups.flatMap(x=>x.answers);
+  const fact=window.ReadyAssignments.upsertEnglishAssignment({
+    actor:'PARENT',workbook_ref_id:ref.workbook_ref_id,source_date:localDateKey(),source_range:range,
+    weekday_prints:parsePrints($('#englishPrints').value),
+    components:{vocabulary:$('#englishVocabulary').value.trim(),listening:$('#englishListening').value.trim(),recording:$('#englishRecording').value.trim(),writing:$('#englishWriting').value.trim()},
+    teacher_instruction:$('#englishInstruction').value.trim(),
+    next_academy:$('#englishNextAcademy').value,
+    artifact_refs:englishSource,
+    answer_reference_ids:englishAnswers,
+    provenance:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE',capture_linked:englishSource.length+englishAnswers.length>0}
+  });
   window.ReadyAssignments.confirmFact(fact.assignment_id,{actor:'PARENT'});
   const processed=window.ReadyIntegrationV1?.processAssignment?.(fact.assignment_id,{start_date:localDateKey()});
   if(fact.deadline_state==='NEXT_ACADEMY_UNVERIFIED'||processed?.reason==='NEXT_ACADEMY_UNVERIFIED'){

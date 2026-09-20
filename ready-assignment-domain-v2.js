@@ -111,7 +111,9 @@
       return mutate(s=>{if(!s.workbookRefs[workbookRefId])throw new Error('workbook ref not found');
         const assignmentId=clean(input.assignment_id)||id('assignment');const f=s.assignmentFacts[assignmentId]||{assignment_id:assignmentId,claims:[],created_at:now()};
         Object.assign(f,{source_type:'ENGLISH_ACADEMY_PACKAGE',subject:'영어',workbook_ref_id:workbookRefId,source_actor:clean(input.actor)||'UNKNOWN',assignment_cycle:'ACADEMY_TO_NEXT_CONFIRMED_CLASS',source_date:clean(input.source_date),deadline_boundary:clean(input.next_academy)||null,deadline_state:clean(input.next_academy)?'NEXT_ACADEMY_CONFIRMED':'NEXT_ACADEMY_UNVERIFIED',lifecycle:'ACTIVE',analysis_state:'NOT_ANALYZED'});
-        addClaim(s,f,input.actor||'UNKNOWN',{source_range:clean(input.source_range),weekday_prints:clone(input.weekday_prints||{}),components:clone(input.components||{}),teacher_instruction:clean(input.teacher_instruction)},input.provenance||{kind:(input.actor==='CHILD'?'CHILD_INPUT':'PARENT_INPUT')});
+        const artifactRefs=registerArtifacts(s,assignmentId,Array.isArray(input.artifact_refs)?input.artifact_refs:[],'SOURCE','FAMILY');
+        const answerRefs=registerArtifacts(s,assignmentId,Array.isArray(input.answer_reference_ids)?input.answer_reference_ids:[],'ANSWER_REFERENCE','PARENT_ONLY');
+        addClaim(s,f,input.actor||'UNKNOWN',{source_range:clean(input.source_range),weekday_prints:clone(input.weekday_prints||{}),components:clone(input.components||{}),teacher_instruction:clean(input.teacher_instruction),artifact_refs:artifactRefs,answer_reference_ids:answerRefs},input.provenance||{kind:(input.actor==='CHILD'?'CHILD_INPUT':'PARENT_INPUT')});
         s.assignmentFacts[assignmentId]=f;return clone(f);
       });
     }
