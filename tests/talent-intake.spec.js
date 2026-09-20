@@ -1,5 +1,5 @@
 const {test,expect}=require('@playwright/test');
-test('Parent Talent intake creates six confirmed facts and zero TODOs',async({page})=>{
+test('Parent Talent intake creates six confirmed/interpreted facts and Planner TODOs',async({page})=>{
   await page.addInitScript(() => {
     window.__READY_AUTH_BOOTSTRAP__={
       authenticated:true,
@@ -19,8 +19,16 @@ test('Parent Talent intake creates six confirmed facts and zero TODOs',async({pa
   const rows=page.locator('[data-talent-book]');expect(await rows.count()).toBe(6);
   for(let i=0;i<6;i++)await rows.nth(i).locator('[data-range]').fill(`범위 ${i+1}`);
   await page.locator('#saveTalentFactsBtn').click();
+  await page.waitForFunction(() => {
+    const domain=window.ReadyAssignments?.load?.();
+    const facts=Object.values(domain?.assignmentFacts||{}).filter(x=>x.source_type==='TALENT_BOOK_ASSIGNMENT');
+    return facts.length===6 && facts.every(x=>x.confirmation_state==='FACT_CONFIRMED'&&x.analysis_state==='INTERPRETED');
+  });
   const result=await page.evaluate(()=>({domain:window.ReadyAssignments.load(),planner:window.ReadySetPlanner.snapshot()}));
-  expect(Object.values(result.domain.assignmentFacts).filter(x=>x.source_type==='TALENT_BOOK_ASSIGNMENT')).toHaveLength(6);
-  expect(Object.values(result.domain.assignmentFacts).every(x=>x.confirmation_state==='FACT_CONFIRMED')).toBeTruthy();
-  expect(result.planner.dated_todos).toHaveLength(0);
+  const facts=Object.values(result.domain.assignmentFacts).filter(x=>x.source_type==='TALENT_BOOK_ASSIGNMENT');
+  expect(facts).toHaveLength(6);
+  expect(facts.every(x=>x.confirmation_state==='FACT_CONFIRMED')).toBeTruthy();
+  expect(facts.every(x=>x.analysis_state==='INTERPRETED')).toBeTruthy();
+  expect(result.planner.dated_todos.length).toBeGreaterThan(0);
+  expect(result.planner.dated_todos.every(x=>x.assignment_id&&x.analysis_id&&x.learning_unit_id&&x.todo_id)).toBeTruthy();
 });
