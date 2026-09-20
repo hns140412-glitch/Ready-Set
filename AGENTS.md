@@ -51,3 +51,28 @@ Report states separately:
 `DECIDED / CODED / CI_VERIFIED / RUNTIME_VERIFIED / DEVICE_VERIFIED / PRODUCTION_VERIFIED`.
 
 Do not ask the user to perform routine debugging or QA while system-side evidence/recovery remains available.
+
+
+## PRE-ACTION application gate — HARD LOCK
+Before any material implementation, validation, external verification, deployment, repository promotion, or costly side effect:
+1. resolve applicable TAKY/project rules;
+2. bind them to the exact planned action;
+3. verify required preconditions;
+4. choose the lowest-impact compliant execution path;
+5. block the action when it conflicts with an applicable rule.
+
+`RULE LOADED != RULE APPLIED`.
+
+For Ready:
+- branch implementation/CI/Runtime comes before external hosting;
+- Netlify is not a routine debugging surface;
+- production/main promotion and device deployment remain explicit release gates;
+- external UI references are comparison inputs, not Ready authority;
+- Snap & Pop owns shared expedition-member rules; Ready consumes them.
+
+## Branch-first renewal workflow
+Default:
+`RENEWAL BRANCH → IMPLEMENT → BOUNDED CI/RUNTIME → INTEGRATED REVIEW → HUMAN-APPROVED PROMOTION WHEN REQUIRED → DEVICE FINAL GATE → PRODUCTION FINAL GATE`.
+
+Do not repeat equivalent validation when no actionable delta remains.
+Do not ask the user to debug recoverable system-side failures.
