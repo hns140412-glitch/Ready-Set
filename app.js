@@ -344,8 +344,18 @@ $('#startBtn').onclick=async()=>{
   const plannerLinks=window.ReadySetPlanner?.linkTodayItems(state.selectedTodoIds)||[];
   if(!plannerLinks.length){toast('선택한 Planner TODO를 찾을 수 없어요. TODAY를 다시 확인해 주세요.');return}
   const labels=plannerLinks.map(x=>x.label);
+  const sessionId=`s_${now}`;
+  for(const link of plannerLinks){
+    window.ReadySetPlanner?.recordTaskState?.({
+      todo_id:link.todo_id,
+      ready_state:'IN_PROGRESS',
+      session_id:sessionId,
+      task_id:link.learning_unit_id||link.todo_id,
+      at:new Date(now).toISOString()
+    });
+  }
   state.activeSession={
-    id:`s_${now}`,startAt:now,targetMs:state.targetMin*60000,
+    id:sessionId,startAt:now,targetMs:state.targetMin*60000,
     pausedAt:null,issueMs:0,completed:false,
     selected:[],tasks:labels,
     plannerLinks,
@@ -424,7 +434,27 @@ function completeSession(){
   if(s.pausedAt){s.issueMs+=Date.now()-s.pausedAt;s.pausedAt=null}
   s.endAt=Date.now();s.completed=true;
   const t=sessionTimes();
-  const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs};
+  const links=Array.isArray(s.plannerLinks)?s.plannerLinks.filter(x=>x?.todo_id):[];
+  const taskCount=Math.max(1,links.length);
+  const attributedMs=links.length?Math.floor(t.focus/taskCount):0;
+  const plannerOutcomes=[];
+  for(const link of links){
+    const outcome=window.ReadySetPlanner?.recordSessionOutcome?.({
+      todo_id:link.todo_id,
+      ready_state:'COMPLETED',
+      actual_ms:attributedMs,
+      session_total_actual_ms:t.focus,
+      session_task_count:taskCount,
+      time_attribution:links.length>1?'EQUAL_SHARE_SESSION_OBSERVATION':'DIRECT_TASK_OBSERVATION',
+      session_id:s.id,
+      task_id:link.learning_unit_id||link.todo_id,
+      at:new Date(s.endAt).toISOString()
+    });
+    if(outcome)plannerOutcomes.push(outcome);
+  }
+  const completedTodoIds=new Set(plannerOutcomes.filter(x=>x?.ok&&x.state==='COMPLETED').map(x=>x.todo_id));
+  if(completedTodoIds.size)state.selectedTodoIds=state.selectedTodoIds.filter(id=>!completedTodoIds.has(id));
+  const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs,plannerOutcomes};
   state.records.unshift(rec);state.records=state.records.slice(0,200);
   state.activeSession=null;state.lastResult=rec;save();nav('result');
 }
