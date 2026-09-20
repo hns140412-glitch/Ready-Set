@@ -718,6 +718,79 @@ function clearCapturePreviewUrls(){
   for(const url of capturePreviewUrls){try{URL.revokeObjectURL(url)}catch{}}
   capturePreviewUrls=[];
 }
+function captureDraftLabel(groupKey=''){
+  return String(groupKey).replace('TALENT:','').replace('ENGLISH:','영어 · ');
+}
+function captureDraftWarnings(draft){
+  return Array.isArray(draft?.warnings)?draft.warnings.filter(Boolean):[];
+}
+function captureDraftConfidence(draft){
+  const n=Number(draft?.confidence);
+  return Number.isFinite(n)?Math.round(Math.max(0,Math.min(1,n))*100):0;
+}
+function applyCaptureDraft(draft){
+  if(!draft)return;
+  const group=String(draft.group_key||'');
+  if(group.startsWith('TALENT:')){
+    const subject=group.slice('TALENT:'.length);
+    const row=[...document.querySelectorAll('[data-talent-book]')].find(x=>x.dataset.talentBook===subject);
+    if(!row)return;
+    if(draft.source_range)row.querySelector('[data-range]').value=draft.source_range;
+    if(draft.teacher_instruction)row.querySelector('[data-instruction]').value=draft.teacher_instruction;
+    toast(`${subject} 분석 초안을 입력칸에 적용했어요. 확인 후 FACT를 저장하세요.`);
+    return;
+  }
+
+  if(group.startsWith('ENGLISH:')){
+    if(draft.workbook_name&&$('#englishWorkbook')&&!$('#englishWorkbook').value)$('#englishWorkbook').value=draft.workbook_name;
+    if(draft.source_range&&$('#englishRange')&&!$('#englishRange').value)$('#englishRange').value=draft.source_range;
+    if(draft.teacher_instruction&&$('#englishInstruction')){
+      const old=$('#englishInstruction').value.trim();
+      $('#englishInstruction').value=old?[old,draft.teacher_instruction].filter((x,i,a)=>a.indexOf(x)===i).join(' / '):draft.teacher_instruction;
+    }
+    const components=draft.components||{};
+    const componentMap={
+      vocabulary:'#englishVocabulary',
+      listening:'#englishListening',
+      recording:'#englishRecording',
+      writing:'#englishWriting'
+    };
+    for(const [key,selector] of Object.entries(componentMap)){
+      if(components[key]&&$(selector)&&!$(selector).value)$(selector).value=components[key];
+    }
+    if(Array.isArray(draft.weekday_prints)&&draft.weekday_prints.length&&$('#englishPrints')){
+      const value=draft.weekday_prints.filter(x=>x?.weekday&&x?.value).map(x=>`${x.weekday}:${x.value}`).join(', ');
+      if(value&&!$('#englishPrints').value)$('#englishPrints').value=value;
+    }
+    toast('영어 분석 초안을 입력칸에 적용했어요. 확인 후 FACT를 저장하세요.');
+  }
+}
+async function renderCaptureReview(session){
+  const section=$('#captureReviewSection'),root=$('#captureReviewDrafts');
+  if(!section||!root)return;
+  const drafts=session?.analysis_state==='ANALYSIS_COMPLETE'&&Array.isArray(session.analysis_result?.drafts)
+    ?session.analysis_result.drafts:[];
+  section.hidden=!drafts.length;
+  if(!drafts.length){root.innerHTML='';return}
+  root.innerHTML=drafts.map((draft,index)=>{
+    const warnings=captureDraftWarnings(draft);
+    const detail=[
+      draft.source_range?`범위 ${draft.source_range}`:'',
+      draft.teacher_instruction?`지시 ${draft.teacher_instruction}`:'',
+      `신뢰도 ${captureDraftConfidence(draft)}%`
+    ].filter(Boolean).join(' · ');
+    return `<div class="captureReviewDraft">
+      <div>
+        <b>${escapeHtml(captureDraftLabel(draft.group_key))}</b>
+        <small>${escapeHtml(detail||'분석 초안')}</small>
+        ${warnings.length?`<small class="captureWarnings">확인 필요 · ${escapeHtml(warnings.join(' / '))}</small>`:''}
+      </div>
+      <button type="button" class="miniAction" data-apply-capture-draft="${index}">폼에 적용</button>
+    </div>`;
+  }).join('');
+  root._drafts=drafts;
+}
+
 async function renderCaptureIntake(){
   const api=window.ReadyCaptureV01;
   const summaryRoot=$('#captureGroupSummary'),previewRoot=$('#capturePreviewList'),badge=$('#captureStateBadge'),status=$('#captureAnalysisStatus');
@@ -740,9 +813,11 @@ async function renderCaptureIntake(){
     ? '원본 저장 완료 · OCR/분류 분석기 연결 대기 중입니다. 가짜 분석 결과는 만들지 않습니다.'
     : session.analysis_state==='ANALYSIS_COMPLETE'
       ? '분석 결과가 준비되었습니다. Parent 검토 후 FACT로 확정하세요.'
-      : session.status==='TEMP_CAPTURE'
-        ? '촬영할 때마다 자동 임시저장 중입니다.'
-        : '촬영 세션이 저장되었습니다.';
+      : session.analysis_state==='ANALYSIS_FAILED'
+        ? `분석 실패 · ${escapeHtml(session.analysis_result?.reason||'원본은 보존되어 있으며 다시 분석할 수 있습니다.')}`
+        : session.status==='TEMP_CAPTURE'
+          ? '촬영할 때마다 자동 임시저장 중입니다.'
+          : '촬영 세션이 저장되었습니다.';
 
   summaryRoot.innerHTML=groups.length?groups.map(g=>{
     const label=String(g.group_key||'').replace('TALENT:','').replace('ENGLISH:','영어 · ');
@@ -764,6 +839,7 @@ async function renderCaptureIntake(){
     `;
     previewRoot.appendChild(card);
   }
+  await renderCaptureReview(session);
 }
 
 async function captureFiles(files){
@@ -795,6 +871,12 @@ document.getElementById('captureKindSelect')?.addEventListener('change',async()=
   await window.ReadyCaptureV01?.setCaptureTarget?.($('#captureGroupSelect').value,$('#captureKindSelect').value);
 });
 document.addEventListener('click',async e=>{
+  const apply=e.target.closest('[data-apply-capture-draft]');
+  if(apply){
+    const drafts=$('#captureReviewDrafts')?._drafts||[];
+    applyCaptureDraft(drafts[Number(apply.dataset.applyCaptureDraft)]);
+    return;
+  }
   const btn=e.target.closest('[data-remove-capture]');
   if(!btn)return;
   await window.ReadyCaptureV01?.removeItem?.(btn.dataset.removeCapture);
@@ -805,10 +887,19 @@ document.getElementById('captureAnalyzeBtn')?.addEventListener('click',async()=>
   if(!requireParentUi())return;
   const result=await window.ReadyCaptureV01?.requestAnalysis?.();
   if(!result?.ok){
-    toast(result?.reason==='NO_CAPTURE_ITEMS'?'먼저 자료를 촬영해 주세요.':'촬영 세션을 확인해 주세요.');
+    const reason=result?.result?.reason||result?.reason;
+    const message=reason==='ANALYSIS_PROVIDER_NOT_CONFIGURED'
+      ? '분석 서버 키가 아직 설정되지 않았습니다. 원본은 그대로 보존했어요.'
+      : reason==='PARENT_AUTH_REQUIRED'
+        ? 'Parent 로그인 후 분석할 수 있습니다.'
+        : reason==='NO_CAPTURE_ITEMS'
+          ? '먼저 자료를 촬영해 주세요.'
+          : '분석에 실패했습니다. 원본은 보존되어 다시 시도할 수 있어요.';
+    toast(message);
+    await renderCaptureIntake();
     return;
   }
-  toast(result.analysis_state==='WAITING_ANALYSIS_ADAPTER'?'원본 저장 완료 · 분석 연결 대기':'저장하고 분석을 시작했어요.');
+  toast(result.analysis_state==='ANALYSIS_COMPLETE'?'분석 초안이 준비됐어요. Parent 검토가 필요합니다.':'저장하고 분석을 시작했어요.');
   await renderCaptureIntake();
 });
 
