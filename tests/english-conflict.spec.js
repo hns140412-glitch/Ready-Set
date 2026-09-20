@@ -1,5 +1,16 @@
 const {test,expect}=require('@playwright/test');
 test('English actor conflict and unverified academy block analysis/allocation/TODO',async({page})=>{
+  await page.addInitScript(() => {
+    window.__READY_AUTH_BOOTSTRAP__={
+      authenticated:true,
+      family_id:'TEST_FAMILY',
+      member_id:'TEST_PARENT',
+      role:'PARENT',
+      session_id:'TEST_SESSION',
+      expires_at:'2099-01-01T00:00:00.000Z',
+      source:'TEST_ONLY'
+    };
+  });
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
   const out=await page.evaluate(()=>{
     const ref=window.ReadyAssignments.upsertWorkbookRef({name:'Workbook'});
