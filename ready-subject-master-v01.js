@@ -18,6 +18,33 @@
   };
 
   const SUBJECTS={
+    '연산':{
+      authority:'PROGRAM_SPECIFIC_SUBJECT_MASTER',
+      grade_band:GRADE_BAND,
+      domains:['기초 연산','정확도','계산 유창성','오류 점검'],
+      learning_loop:['SOLVE','CHECK','MARK_ERROR','RETRY'],
+      mapping_policy:'ACTUAL_WORKBOOK_RANGE_IS_PRIMARY',
+      source_refs:['READY_TALENT_WEEKLY_FACT'],
+      unresolved:[]
+    },
+    '한자':{
+      authority:'PROGRAM_SPECIFIC_SUBJECT_MASTER',
+      grade_band:GRADE_BAND,
+      domains:['형태','음','뜻','회상','쓰기'],
+      learning_loop:['ENCODE','RECALL','CHECK','RETRY'],
+      mapping_policy:'ACTUAL_WORKBOOK_RANGE_IS_PRIMARY',
+      source_refs:['READY_TALENT_WEEKLY_FACT'],
+      unresolved:[]
+    },
+    '생각하는 피자':{
+      authority:'PROGRAM_SPECIFIC_SUBJECT_MASTER',
+      grade_band:GRADE_BAND,
+      domains:['탐색','추론','전략','설명','비교'],
+      learning_loop:['EXPLORE','REASON','EXPLAIN','COMPARE','REFLECT'],
+      mapping_policy:'TEACHER_INSTRUCTION_AND_TASK_STRUCTURE_ARE_PRIMARY',
+      source_refs:['READY_TALENT_WEEKLY_FACT'],
+      unresolved:[]
+    },
     '국어':{
       authority:'OFFICIAL_CURRICULUM',
       grade_band:GRADE_BAND,
