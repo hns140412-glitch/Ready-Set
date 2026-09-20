@@ -151,7 +151,7 @@
     if(!rows.length)return {status:'UNIT_MAPPING_EVIDENCE_GAP',selected:null,candidates:[],unresolved:['NO_VERIFIED_UNIT_MAPPING_RECORD']};
     const grade=Number(context.grade||0)||null;
     const semester=Number(context.semester||0)||null;
-    const unitText=norm(context.unit_name||context.workbook_name||context.title||'');
+    const unitText=norm(context.unit_name||'');
     const candidates=rows.map(row=>{
       let score=0; const evidence=[];
       if(grade&&grade===row.grade){score+=2;evidence.push('GRADE_MATCH')}
