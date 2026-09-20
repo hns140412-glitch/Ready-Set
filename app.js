@@ -605,7 +605,19 @@ $('[data-outcome-state]').forEach(b=>b.onclick=()=>{
 $('[data-close-outcome]').forEach(b=>b.onclick=()=>{$('#outcomeModal').hidden=true});
 
 function resultSource(){return state.lastResult||state.records[0]||null}
+function resultOutcomeProfile(r={}){
+  const state=r.outcomeState||'COMPLETED';
+  return ({
+    COMPLETED:{state,label:'완료',historyLabel:'작전 완료',shareTitle:'오늘의 탐험 완료',shareText:'Ready & Set · 오늘의 탐험 완료!',done:true},
+    PARTIAL:{state,label:'일부 남음',historyLabel:'일부 남음',shareTitle:'오늘은 여기까지',shareText:'Ready & Set · 오늘은 여기까지 했어요.',headline:'여기까지 했어요.',line:'남은 건 Planner가 이어서 정리해둘게.',done:false},
+    DEFERRED:{state,label:'다음에',historyLabel:'다음에 이어서',shareTitle:'다음 탐험으로 이어가요',shareText:'Ready & Set · 다음 탐험으로 이어가요.',headline:'오늘은 여기까지.',line:'다음 탐험으로 넘겨둘게.',done:false},
+    WAITING_FOR_PARENT:{state,label:'부모 도움',historyLabel:'부모 도움 필요',shareTitle:'도움이 필요한 탐험',shareText:'Ready & Set · 도움이 필요한 지점을 남겼어요.',headline:'도움이 필요해요.',line:'부모님 확인이 필요한 일로 표시했어요.',done:false},
+    BLOCKED:{state,label:'막힘',historyLabel:'막힘',shareTitle:'막힌 지점을 찾았어요',shareText:'Ready & Set · 해결이 필요한 지점을 찾았어요.',headline:'막힌 지점 발견.',line:'그냥 넘기지 않고 해결이 필요한 일로 남겼어요.',done:false}
+  })[state]||{state:'COMPLETED',label:'완료',historyLabel:'작전 완료',shareTitle:'오늘의 탐험 완료',shareText:'Ready & Set · 오늘의 탐험 완료!',done:true};
+}
 function resultSceneFor(r){
+  const profile=resultOutcomeProfile(r);
+  if(!profile.done)return{headline:profile.headline,line:profile.line,label:'결과'};
   const delta=r.deltaMs;
   if(delta<=-120000)return{headline:'엣헴~! 오늘 좀 했습니다.',line:'잠깐… 시계보다 먼저 왔는데?',label:'TIME SAVE'};
   if(Math.abs(delta)<=60000)return{headline:'오? 계산대로인데?',line:'시계랑 거의 동시에 들어왔어요.',label:'차이'};
@@ -620,12 +632,7 @@ function renderResult(){
   const guest=$('#resultGuestPortrait');
   if(r.recordingDone&&r.guestType){guest.hidden=false;applyGuide(guest,r.guestType);guest.classList.add('guest')}else guest.hidden=true;
   const sc=resultSceneFor(r);
-  const outcomeCopy={
-    PARTIAL:{headline:'여기까지 했어요.',line:'남은 건 Planner가 이어서 정리해둘게.'},
-    DEFERRED:{headline:'오늘은 여기까지.',line:'다음 탐험으로 넘겨둘게.'},
-    WAITING_FOR_PARENT:{headline:'도움이 필요해요.',line:'부모님 확인이 필요한 일로 표시했어요.'},
-    BLOCKED:{headline:'막힌 지점 발견.',line:'그냥 넘기지 않고 해결이 필요한 일로 남겼어요.'}
-  }[r.outcomeState]||sc;
+  const outcomeCopy=sc;
   $('#resultHeadline').textContent=outcomeCopy.headline;
   $('#resultLine').textContent=outcomeCopy.line;
   $('#resultTasks').textContent=[...r.selected,...r.tasks].join(' · ');
@@ -647,7 +654,8 @@ function renderCalendar(){
   const root=$('#calendarList');root.innerHTML='';
   state.records.slice(0,31).forEach(r=>{
     const x=document.createElement('article');x.className='historyItem';
-    x.innerHTML=`<header><b>${new Date(r.endAt).toLocaleDateString('ko-KR')}</b><small>작전 완료</small></header><p>${escapeHtml([...r.selected,...r.tasks].join(' · '))}</p>`;
+    const profile=resultOutcomeProfile(r);
+    x.innerHTML=`<header><b>${new Date(r.endAt).toLocaleDateString('ko-KR')}</b><small>${escapeHtml(profile.historyLabel)}</small></header><p>${escapeHtml([...r.selected,...r.tasks].join(' · '))}</p>`;
     root.appendChild(x);
   });
   if(!root.children.length)root.innerHTML='<div class="historyItem"><b>이번 달 작전 기록이 없어요.</b></div>';
@@ -1576,7 +1584,8 @@ async function shareCard(kind='result'){
   const file=new File([blob],`Ready_Set_${kind}_${Date.now()}.png`,{type:'image/png'});
   try{
     if(navigator.canShare?.({files:[file]})){
-      await navigator.share({files:[file],text:kind==='result'?'Ready & Set 작전 완료!':'Ready & Set 작전 시작!'});return;
+      const shareProfile=kind==='result'?resultOutcomeProfile(r||{}):null;
+      await navigator.share({files:[file],text:kind==='result'?shareProfile.shareText:'Ready & Set 작전 시작!'});return;
     }
     const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=file.name;a.click();
     setTimeout(()=>URL.revokeObjectURL(url),1000);toast('공유 카드를 이미지로 저장했어요.');
@@ -1670,12 +1679,16 @@ window.addEventListener('load',()=>{
 
 /* REV_07 compact themed share overlay — preserves the full Ready runtime above. */
 function readyShareTheme(){return state.share?.theme==='sail'?'sail':'drop'}
-function readyThemeCopy(theme,kind){
-  if(theme==='sail')return kind==='result'
-    ?{title:'멋진 항해였어요!',sub:'오늘의 섬 탐험 완료'}
-    :{title:'오늘의 할 일을 찾아 항해해볼까?',sub:'바다를 따라 오늘의 섬으로'};
-  return kind==='result'
-    ?{title:'오늘의 할 일이 도착했어요!',sub:'오늘의 섬 탐험 완료'}
+function readyThemeCopy(theme,kind,r=null){
+  if(kind==='result'){
+    const profile=resultOutcomeProfile(r||{});
+    if(!profile.done)return {title:profile.shareTitle,sub:profile.historyLabel};
+    return theme==='sail'
+      ?{title:'멋진 항해였어요!',sub:'오늘의 섬 탐험 완료'}
+      :{title:'오늘의 할 일이 도착했어요!',sub:'오늘의 섬 탐험 완료'};
+  }
+  return theme==='sail'
+    ?{title:'오늘의 할 일을 찾아 항해해볼까?',sub:'바다를 따라 오늘의 섬으로'}
     :{title:'오늘의 할 일을 발견하러 가볼까?',sub:'아래로 내려가 오늘의 섬으로'};
 }
 function readyDrawIslandScene(x,theme){
@@ -1692,16 +1705,17 @@ function readyDrawIslandScene(x,theme){
   }
 }
 async function renderCompactShareCard(kind='result'){
-  const r=kind==='result'?resultSource():null,theme=readyShareTheme(),copy=readyThemeCopy(theme,kind);
+  const r=kind==='result'?resultSource():null,theme=readyShareTheme(),copy=readyThemeCopy(theme,kind,r);
   const c=document.createElement('canvas');c.width=900;c.height=600;const x=c.getContext('2d');
   x.fillStyle='#fff';x.fillRect(0,0,900,600);readyDrawIslandScene(x,theme);
   x.fillStyle='rgba(255,255,255,.92)';roundRect(x,28,24,238,54,27);x.fill();x.fillStyle='#102d55';x.font='900 27px sans-serif';x.textAlign='left';x.fillText('Ready & Set',55,60);
   x.fillStyle='#0a3265';x.font='900 46px sans-serif';x.fillText(copy.title,40,145);x.font='700 23px sans-serif';x.fillText(copy.sub,42,182);
   await drawAvatar(x,theme==='sail'?300:245,theme==='sail'?325:285,58);
   const tasks=kind==='result'?[...(r?.selected||[]),...(r?.tasks||[])]:[...(state.selected||[]),...(state.tasks||[])];
-  const total=Math.max(1,tasks.length),done=kind==='result'?total:0,focus=kind==='result'&&r?fmt(r.focusMs||0):'00:00',stars=kind==='result'?Math.max(1,Math.min(30,done*5)):0;
+  const profile=kind==='result'?resultOutcomeProfile(r||{}):null;
+  const total=Math.max(1,tasks.length),done=kind==='result'&&profile?.done?total:0,focus=kind==='result'&&r?fmt(r.focusMs||0):'00:00',stars=kind==='result'&&profile?.done?Math.max(1,Math.min(30,done*5)):0;
   x.fillStyle='#fff';roundRect(x,0,430,900,170,0);x.fill();x.strokeStyle='#e5edf5';x.lineWidth=2;x.beginPath();x.moveTo(0,430);x.lineTo(900,430);x.stroke();
-  const stats=[[kind==='result'?done+'/'+total:total+'개',kind==='result'?'완료 미션':'오늘의 미션'],[focus,'집중 시간'],['+'+stars,'획득 별']];
+  const stats=[[kind==='result'?(profile?.done?done+'/'+total:profile.label):total+'개',kind==='result'?(profile?.done?'완료 미션':'결과 상태'):'오늘의 미션'],[focus,'집중 시간'],['+'+stars,'획득 별']];
   stats.forEach((v,i)=>{const cx=150+i*300;x.textAlign='center';x.fillStyle='#0d3569';x.font='900 35px sans-serif';x.fillText(v[0],cx,495);x.fillStyle='#718098';x.font='700 18px sans-serif';x.fillText(v[1],cx,528);if(i<2){x.strokeStyle='#e2e8ef';x.beginPath();x.moveTo(cx+150,458);x.lineTo(cx+150,540);x.stroke()}});
   x.textAlign='left';x.fillStyle='#223d62';x.font='700 18px sans-serif';x.fillText(tasks.slice(0,3).join(' · ')||'오늘의 탐험',35,574);
   return c;
@@ -1710,7 +1724,7 @@ async function compactShareCard(kind='result'){
   const c=await renderCompactShareCard(kind);
   const blob=await new Promise(res=>c.toBlob(res,'image/png',.94));
   const file=new File([blob],`Ready_Set_${readyShareTheme()}_${kind}_${Date.now()}.png`,{type:'image/png'});
-  const text=kind==='result'?'Ready & Set · 오늘의 섬 탐험 완료!':'Ready & Set · 오늘의 탐험을 시작해요!';
+  const text=kind==='result'?resultOutcomeProfile(resultSource()||{}).shareText:'Ready & Set · 오늘의 탐험을 시작해요!';
   try{
     if(navigator.canShare?.({files:[file]})){await navigator.share({files:[file],title:'Ready & Set',text});return}
     const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=file.name;a.click();
@@ -1718,7 +1732,7 @@ async function compactShareCard(kind='result'){
   }catch(e){if(e.name!=='AbortError')toast('공유를 완료하지 못했어요.')}
 }
 function buildKakaoFeed({imageUrl,webUrl,kind='result'}={}){
-  const r=kind==='result'?resultSource():null,theme=readyShareTheme(),copy=readyThemeCopy(theme,kind);
+  const r=kind==='result'?resultSource():null,theme=readyShareTheme(),copy=readyThemeCopy(theme,kind,r);
   return {objectType:'feed',content:{title:copy.title,description:kind==='result'?`${copy.sub} · 집중 ${fmt(r?.focusMs||0)}`:copy.sub,imageUrl,link:{mobileWebUrl:webUrl,webUrl}},buttons:[{title:kind==='result'?'탐험 기록 보기':'탐험 응원하기',link:{mobileWebUrl:webUrl,webUrl}}]};
 }
 window.ReadySetShare={
