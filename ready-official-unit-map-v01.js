@@ -161,9 +161,13 @@
       return {...row,score,evidence};
     }).sort((a,b)=>b.score-a.score||a.grade-b.grade||a.semester-b.semester);
 
-    const contextPresent=!!(grade||semester||unitText);
-    if(!contextPresent){
-      return {status:'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED',selected:null,candidates,unresolved:['ACTUAL_GRADE_SEMESTER_UNIT_CONTEXT_REQUIRED']};
+    const applicationContextComplete=!!(grade&&semester&&unitText);
+    if(!applicationContextComplete){
+      const missing=[];
+      if(!grade)missing.push('GRADE_REQUIRED');
+      if(!semester)missing.push('SEMESTER_REQUIRED');
+      if(!unitText)missing.push('UNIT_CONTEXT_REQUIRED');
+      return {status:'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED',selected:null,candidates,unresolved:['ACTUAL_GRADE_SEMESTER_UNIT_CONTEXT_REQUIRED',...missing]};
     }
     const top=candidates[0];
     const ties=candidates.filter(x=>x.score===top.score);
