@@ -728,7 +728,7 @@ function captureDraftConfidence(draft){
   const n=Number(draft?.confidence);
   return Number.isFinite(n)?Math.round(Math.max(0,Math.min(1,n))*100):0;
 }
-function applyCaptureDraft(draft){
+async function applyCaptureDraft(draft){
   if(!draft)return;
   const group=String(draft.group_key||'');
   if(group.startsWith('TALENT:')){
@@ -737,6 +737,10 @@ function applyCaptureDraft(draft){
     if(!row)return;
     if(draft.source_range)row.querySelector('[data-range]').value=draft.source_range;
     if(draft.teacher_instruction)row.querySelector('[data-instruction]').value=draft.teacher_instruction;
+    await recordCaptureReview(group,{
+      source_range:row.querySelector('[data-range]').value.trim(),
+      teacher_instruction:row.querySelector('[data-instruction]').value.trim()
+    },'PARENT_APPLIED_DRAFT');
     toast(`${subject} 분석 초안을 입력칸에 적용했어요. 확인 후 FACT를 저장하세요.`);
     return;
   }
@@ -762,8 +766,36 @@ function applyCaptureDraft(draft){
       const value=draft.weekday_prints.filter(x=>x?.weekday&&x?.value).map(x=>`${x.weekday}:${x.value}`).join(', ');
       if(value&&!$('#englishPrints').value)$('#englishPrints').value=value;
     }
+    await recordCaptureReview(group,{
+      workbook_name:$('#englishWorkbook')?.value.trim()||'',
+      source_range:$('#englishRange')?.value.trim()||'',
+      weekday_prints:parsePrints($('#englishPrints')?.value||''),
+      components:{
+        vocabulary:$('#englishVocabulary')?.value.trim()||'',
+        listening:$('#englishListening')?.value.trim()||'',
+        recording:$('#englishRecording')?.value.trim()||'',
+        writing:$('#englishWriting')?.value.trim()||''
+      },
+      teacher_instruction:$('#englishInstruction')?.value.trim()||''
+    },'PARENT_APPLIED_DRAFT');
     toast('영어 분석 초안을 입력칸에 적용했어요. 확인 후 FACT를 저장하세요.');
   }
+}
+async function recordCaptureReview(groupKey,reviewedValue,event='PARENT_REVIEWED'){
+  const api=window.ReadyCaptureV01;
+  if(!api?.updateReviewDraft)return null;
+  const session=(await api.activeSession?.())||(await api.latestSession?.());
+  const drafts=Array.isArray(session?.analysis_result?.drafts)?session.analysis_result.drafts:[];
+  const draft=[...drafts].reverse().find(x=>x.group_key===groupKey);
+  if(!draft?.review_draft_id)return null;
+  await api.updateReviewDraft(draft.review_draft_id,{
+    actor:'PARENT',
+    event,
+    review_state:event==='FACT_CONFIRMED'?'FACT_CONFIRMED':'PARENT_REVIEWED',
+    reviewed_value:reviewedValue,
+    fields:Object.keys(reviewedValue||{})
+  });
+  return api.reviewProvenanceForGroup?.(groupKey)||null;
 }
 async function renderCaptureReview(session){
   const section=$('#captureReviewSection'),root=$('#captureReviewDrafts');
@@ -772,12 +804,14 @@ async function renderCaptureReview(session){
     ?session.analysis_result.drafts:[];
   section.hidden=!drafts.length;
   if(!drafts.length){root.innerHTML='';return}
-  root.innerHTML=drafts.map((draft,index)=>{
+  const history=Array.isArray(session.analysis_history)?session.analysis_history:[];
+  root.innerHTML=(history.length?`<div class="adminListItem"><span><b>분석 이력</b><small>이전 분석 ${history.length}회 보존 · 현재 실행 #${session.analysis_result?.analysis_run_no||session.analysis_run_no||1}</small></span><strong>HISTORY</strong></div>`:'')+drafts.map((draft,index)=>{
     const warnings=captureDraftWarnings(draft);
     const detail=[
       draft.source_range?`범위 ${draft.source_range}`:'',
       draft.teacher_instruction?`지시 ${draft.teacher_instruction}`:'',
-      `신뢰도 ${captureDraftConfidence(draft)}%`
+      `신뢰도 ${captureDraftConfidence(draft)}%`,
+      `초안 v${draft.draft_version||1}`
     ].filter(Boolean).join(' · ');
     return `<div class="captureReviewDraft">
       <div>
@@ -874,7 +908,7 @@ document.addEventListener('click',async e=>{
   const apply=e.target.closest('[data-apply-capture-draft]');
   if(apply){
     const drafts=$('#captureReviewDrafts')?._drafts||[];
-    applyCaptureDraft(drafts[Number(apply.dataset.applyCaptureDraft)]);
+    await applyCaptureDraft(drafts[Number(apply.dataset.applyCaptureDraft)]);
     return;
   }
   const btn=e.target.closest('[data-remove-capture]');
@@ -883,6 +917,18 @@ document.addEventListener('click',async e=>{
   toast('촬영 자료를 삭제했어요.');
   await renderCaptureIntake();
 });
+document.getElementById('captureReanalyzeBtn')?.addEventListener('click',async()=>{
+  if(!requireParentUi())return;
+  const result=await window.ReadyCaptureV01?.requestAnalysis?.();
+  if(!result?.ok){
+    toast('재분석에 실패했습니다. 기존 초안과 원본은 그대로 보존돼요.');
+    await renderCaptureIntake();
+    return;
+  }
+  toast('새 분석 초안을 만들었어요. 이전 초안은 이력으로 보존됩니다.');
+  await renderCaptureIntake();
+});
+
 document.getElementById('captureAnalyzeBtn')?.addEventListener('click',async()=>{
   if(!requireParentUi())return;
   const result=await window.ReadyCaptureV01?.requestAnalysis?.();
@@ -947,12 +993,17 @@ document.getElementById('saveTalentFactsBtn')?.addEventListener('click',async()=
   for(const row of [...document.querySelectorAll('[data-talent-book]')]){
     const subject=row.dataset.talentBook;
     const captured=await capturedRefs('TALENT:'+subject);
+    const reviewedValue={
+      source_range:row.querySelector('[data-range]').value.trim(),
+      teacher_instruction:row.querySelector('[data-instruction]').value.trim()
+    };
+    const reviewProvenance=await recordCaptureReview('TALENT:'+subject,reviewedValue,'FACT_CONFIRMED');
     books.push({
       subject,
-      source_range:row.querySelector('[data-range]').value.trim(),
-      teacher_instruction:row.querySelector('[data-instruction]').value.trim(),
+      ...reviewedValue,
       artifact_refs:captured.source,
-      answer_reference_ids:captured.answers
+      answer_reference_ids:captured.answers,
+      provenance:reviewProvenance?{kind:'PARENT_REVIEWED_CAPTURE',surface:'PARENT_INTAKE',capture_review:reviewProvenance}:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}
     });
   }
   if(books.some(x=>!x.source_range)){toast('재능 6권의 숙제 범위를 모두 입력해 주세요.');return}
@@ -973,6 +1024,18 @@ document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=
   const englishGroups=await Promise.all(['ENGLISH:WORKBOOK','ENGLISH:PRINT','ENGLISH:OTHER'].map(capturedRefs));
   const englishSource=englishGroups.flatMap(x=>x.source);
   const englishAnswers=englishGroups.flatMap(x=>x.answers);
+  const englishReviewedValue={
+    workbook_name:name,
+    source_range:range,
+    weekday_prints:parsePrints($('#englishPrints').value),
+    components:{vocabulary:$('#englishVocabulary').value.trim(),listening:$('#englishListening').value.trim(),recording:$('#englishRecording').value.trim(),writing:$('#englishWriting').value.trim()},
+    teacher_instruction:$('#englishInstruction').value.trim()
+  };
+  const englishReviewRows=[];
+  for(const groupKey of ['ENGLISH:WORKBOOK','ENGLISH:PRINT','ENGLISH:OTHER']){
+    const p=await recordCaptureReview(groupKey,englishReviewedValue,'FACT_CONFIRMED');
+    if(p)englishReviewRows.push(p);
+  }
   const fact=window.ReadyAssignments.upsertEnglishAssignment({
     actor:'PARENT',workbook_ref_id:ref.workbook_ref_id,source_date:localDateKey(),source_range:range,
     weekday_prints:parsePrints($('#englishPrints').value),
@@ -981,7 +1044,9 @@ document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=
     next_academy:$('#englishNextAcademy').value,
     artifact_refs:englishSource,
     answer_reference_ids:englishAnswers,
-    provenance:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE',capture_linked:englishSource.length+englishAnswers.length>0}
+    provenance:englishReviewRows.length
+      ?{kind:'PARENT_REVIEWED_CAPTURE',surface:'PARENT_INTAKE',capture_linked:true,capture_reviews:englishReviewRows}
+      :{kind:'PARENT_INPUT',surface:'PARENT_INTAKE',capture_linked:englishSource.length+englishAnswers.length>0}
   });
   window.ReadyAssignments.confirmFact(fact.assignment_id,{actor:'PARENT'});
   const processed=window.ReadyIntegrationV1?.processAssignment?.(fact.assignment_id,{start_date:localDateKey()});
