@@ -173,6 +173,8 @@
     url.searchParams.set('lap_id', lap.lap_id);
     url.searchParams.set('return_target', returnTarget);
     url.searchParams.set('snap_target', SNAP_URL);
+    const actorRole = (() => { try { return familySession()?.role || null; } catch { return null; } })();
+    if (actorRole) url.searchParams.set('actor_role', actorRole);
     url.searchParams.set('from_app', 'ready-set');
     return {
       app,
@@ -182,6 +184,7 @@
       goal_id: c.goal_id,
       task_id: task.task_id,
       lap_id: lap.lap_id,
+      actor_role: actorRole,
       lap_started_ms: lap.started_ms
     };
   }
