@@ -294,3 +294,33 @@ assert.strictEqual(scienceUnitBound.unit_mapping_evidence.status,'UNIT_MAPPING_C
 const noUnitContext=standardMatcher.match('과학',{teacher_instruction:'지층의 특징을 알고 형성 과정을 모형으로 표현'});
 assert.strictEqual(noUnitContext.official_standard_code,'6과01-01');
 assert.strictEqual(noUnitContext.unit_mapping_evidence.status,'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED');
+
+assert.strictEqual(unitMap.version,'0.2.0');
+for(const [subject,expected] of Object.entries({국어:34,사회:27,수학:45,과학:51})){
+  const cov=unitMap.coverage(subject);
+  assert.strictEqual(cov.expected_standard_count,expected);
+  assert.strictEqual(cov.mapped_standard_count,expected);
+  assert.strictEqual(cov.status,'VERIFIED_FULL_UNIT_MAPPING_COVERAGE');
+  const officialCodes=officialRegistry.list(subject).map(x=>x.code).sort();
+  assert.deepStrictEqual(unitMap.mappedCodesBySubject(subject),officialCodes);
+}
+assert.strictEqual(unitMap.coverage('영어').status,'PARTIAL_OR_UNSUPPORTED');
+assert.strictEqual(unitMap.DATASET.english_status,'NO_STANDARD_UNIT_CONNECTION_TABLE_IN_THIS_SOURCE');
+
+assert.strictEqual(unitMap.listByCode('6국01-03').length,4);
+assert.strictEqual(unitMap.listByCode('6국02-05').length,5);
+assert.strictEqual(unitMap.listByCode('6수01-11').length,2);
+assert.strictEqual(unitMap.listByCode('6과13-03').length,1);
+
+const koreanMultiMap=unitMap.evaluate('6국01-03',{grade:6,semester:2,unit_name:'2. 궁금한 점을 해결해요'});
+assert.strictEqual(koreanMultiMap.status,'UNIT_MAPPING_CONTEXT_MATCHED');
+assert.strictEqual(koreanMultiMap.selected.grade,6);
+assert.strictEqual(koreanMultiMap.selected.semester,2);
+assert.strictEqual(koreanMultiMap.selected.unit_no,2);
+
+const mathDualMap=unitMap.evaluate('6수01-11',{grade:6,semester:2,unit_name:'1. 분수의 나눗셈'});
+assert.strictEqual(mathDualMap.status,'UNIT_MAPPING_CONTEXT_MATCHED');
+assert.strictEqual(mathDualMap.selected.semester,2);
+
+const unsupportedEnglishUnit=unitMap.evaluate('6영01-01',{grade:5,semester:1,unit_name:'임의 단원'});
+assert.strictEqual(unsupportedEnglishUnit.status,'UNIT_MAPPING_EVIDENCE_GAP');
