@@ -1,30 +1,53 @@
-# Ready & Set Agent / Conversation Recovery Rules
+# Ready & Set Agent / Recovery Rules
 
-For any Ready & Set UI, Focus, Time Attack, responsive-layout, implementation, review, or deployment task, load and apply these files before making design or missing-source claims:
+## CURRENT AUTHORITY — HARD LOCK
 
-1. `Ready_Set_Ui_Master_Logic_REV_07.md`
-2. inherited `Ready_Set_Ui_Master_Logic_REV_06.md`
-3. `Ready_Set_Focus_Golden_Reference_REV_01.md` when Focus/Timer is relevant
-4. current implementation: `index.html`, `styles.css`, `app.js`, `ready-runtime-v07.js`
+Before any Ready & Set implementation, review, recovery, UI, runtime, validation, or deployment task, load and apply in this order:
 
-## HARD RECOVERY RULE
+1. `READY_SET_CANONICAL_PRODUCT_CONTRACT.md`
+2. `READY_SET_RUNTIME_STATE_MODEL.md`
+3. `READY_SET_DECISION_LEDGER.md`
+4. `READY_SET_VERSION_REGISTRY.json`
+5. `READY_SET_VALIDATION_STATUS.json`
+6. current implementation and exact branch/HEAD evidence
 
-Do not say that the approved Focus UI cannot be applied merely because a prior-chat screenshot or original image is not visible in the current conversation.
+GitHub TAKY remains the higher governance authority. These Ready files are the current project authority.
 
-The Focus design is recoverable from the canonical Golden Reference contract plus repository implementation.
+`CANONICAL LOADED != CANONICAL APPLIED`
+`HISTORICAL REFERENCE != CURRENT AUTHORITY`
+`SEARCH MISS != SOURCE ABSENCE`
 
-Before any material absence claim, inspect the canonical files and implementation routes above.
+## Historical UI / REV material
 
-`SCREENSHOT MISSING FROM CHAT ≠ DESIGN SOURCE MISSING`
-`SEARCH MISS ≠ SOURCE ABSENCE`
-`CANONICAL LOADED ≠ CANONICAL APPLIED`
+The following files are provenance/recovery evidence only unless the current Ready canonical explicitly reactivates a specific part:
 
-For Focus, preserve the Golden composition and responsive behavior defined in `Ready_Set_Focus_Golden_Reference_REV_01.md`:
-- phone = centered full Stage
-- tablet/wide = right-anchored full Stage with left background expansion
-- no screenshot crop as functional UI
-- live current-time analog clock
-- OS status-bar graphics are not drawn; safe-area values are respected
-- internal composition is preserved while background expands
+- `Ready_Set_Ui_Master_Logic_REV_06.md`
+- `Ready_Set_Ui_Master_Logic_REV_07.md`
+- `Ready_Set_Focus_Golden_Reference_REV_01.md`
 
-Any implementation or generated mockup must be validated as `PRESERVED / IMPROVED / CHANGED / REGRESSED / UNKNOWN` before claiming PASS.
+They MUST NOT override the current Product Contract, Runtime State Model, Decision Ledger, Version Registry, or latest user correction.
+
+In particular:
+- Ready & Set is an exploration/base-camp execution orchestrator, not a Time Attack product.
+- timing remains an execution tool;
+- Time Attack / Focus Mode are not active product identities;
+- Focus Golden is not active product authority;
+- `SESSION_END != TASK_COMPLETE`;
+- Planner is the sole DATED TODO allocation authority.
+
+## Recovery rule
+
+Do not declare a prior source, decision, screenshot, or implementation absent before checking current canonical plus recoverable repository evidence.
+
+`SCREENSHOT MISSING FROM CHAT != DESIGN SOURCE MISSING`
+
+When historical evidence conflicts with current canonical, preserve the evidence as provenance and follow current canonical.
+
+## Implementation / validation truth
+
+Before editing, resolve current HEAD. After editing, inspect integrated result and run bounded relevant checks.
+
+Report states separately:
+`DECIDED / CODED / CI_VERIFIED / RUNTIME_VERIFIED / DEVICE_VERIFIED / PRODUCTION_VERIFIED`.
+
+Do not ask the user to perform routine debugging or QA while system-side evidence/recovery remains available.
