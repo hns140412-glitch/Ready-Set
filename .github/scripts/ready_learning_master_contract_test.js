@@ -128,7 +128,7 @@ assert(standardMatcher.OFFICIAL_STANDARD_DATASET.source_refs.includes('MOE_NOTIC
 
 const officialRegistry=require('../../ready-official-standard-registry-v01.js');
 
-assert.strictEqual(officialRegistry.DATASET.coverage_status,'MIXED_VERIFIED');
+assert.strictEqual(officialRegistry.DATASET.coverage_status,'VERIFIED_FULL_CORE_SUBJECT_COVERAGE');
 assert.strictEqual(officialRegistry.findByCode('6수04-01').subject,'수학');
 assert.strictEqual(officialRegistry.findByCode('6과01-03').domain,'지구와 우주');
 assert.strictEqual(officialRegistry.findByCode('6영01-08').domain,'이해');
@@ -245,11 +245,11 @@ assert.strictEqual(seasonBound.official_standard_code,'6과13-03');
 const futureScienceBound=standardMatcher.match('과학',{teacher_instruction:'미래 사회 문제를 조사하고 과학이 기여할 방법을 토의'});
 assert.strictEqual(futureScienceBound.official_standard_code,'6과16-01');
 
-assert.strictEqual(officialRegistry.COVERAGE['사회'].status,'PARTIAL_VERIFIED_SOURCE_CODE_AMBIGUITY');
-assert.strictEqual(officialRegistry.COVERAGE['사회'].verified_record_count,26);
+assert.strictEqual(officialRegistry.COVERAGE['사회'].status,'VERIFIED_FULL_SUBJECT_COVERAGE');
+assert.strictEqual(officialRegistry.COVERAGE['사회'].verified_record_count,27);
 assert.strictEqual(officialRegistry.COVERAGE['사회'].expected_total,27);
-assert(officialRegistry.COVERAGE['사회'].gaps.includes('SOURCE_TABLE_SECOND_6사09_ROW_DUPLICATES_CODE_6사09-01'));
-assert.strictEqual(officialRegistry.list('사회').length,26);
+assert.deepStrictEqual(officialRegistry.COVERAGE['사회'].gaps,[]);
+assert.strictEqual(officialRegistry.list('사회').length,27);
 assert.strictEqual(officialRegistry.findByCode('6사07-01').domain,'역사');
 assert.strictEqual(officialRegistry.findByCode('6사08-02').domain,'일반사회');
 assert.strictEqual(officialRegistry.findByCode('6사10-02').domain,'지리');
@@ -263,11 +263,34 @@ assert.strictEqual(separationOfPowersBound.official_standard_code,'6사08-02');
 const worldClimateBound=standardMatcher.match('사회',{teacher_instruction:'세계의 다양한 기후와 기후 환경이 인간생활에 미치는 관계를 탐구'});
 assert.strictEqual(worldClimateBound.official_standard_code,'6사10-02');
 
-assert.strictEqual(officialRegistry.RECORDS.length,176);
+assert.strictEqual(officialRegistry.RECORDS.length,177);
 assert.deepStrictEqual({
   korean:officialRegistry.list('국어').length,
   math:officialRegistry.list('수학').length,
   social:officialRegistry.list('사회').length,
   science:officialRegistry.list('과학').length,
   english:officialRegistry.list('영어').length
-},{korean:34,math:45,social:26,science:51,english:20});
+},{korean:34,math:45,social:27,science:51,english:20});
+
+const unitMap=require('../../ready-official-unit-map-v01.js');
+assert.strictEqual(unitMap.listByCode('6사09-02')[0].unit_title,'지구, 대륙 그리고 국가들');
+assert.strictEqual(unitMap.listByCode('6수01-05')[0].unit_title,'약수와 배수');
+assert.strictEqual(unitMap.listByCode('6과01-01')[0].unit_title,'지층과 화석');
+
+const socialWorldBound=standardMatcher.match('사회',{grade:6,semester:1,unit_name:'3. 지구, 대륙 그리고 국가들',teacher_instruction:'세계 주요 대륙과 대양, 여러 국가의 위치와 영토 특징을 이해'});
+assert.strictEqual(socialWorldBound.official_standard_code,'6사09-02');
+assert.strictEqual(socialWorldBound.unit_mapping_evidence.status,'UNIT_MAPPING_CONTEXT_MATCHED');
+assert.strictEqual(socialWorldBound.unit_mapping_evidence.selected.grade,6);
+assert.strictEqual(socialWorldBound.unit_mapping_evidence.selected.semester,1);
+
+const mathUnitBound=standardMatcher.match('수학',{grade:5,semester:1,unit_name:'2. 약수와 배수',teacher_instruction:'배수 공배수 최소공배수를 이해하고 구하기'});
+assert.strictEqual(mathUnitBound.official_standard_code,'6수01-05');
+assert.strictEqual(mathUnitBound.unit_mapping_evidence.status,'UNIT_MAPPING_CONTEXT_MATCHED');
+
+const scienceUnitBound=standardMatcher.match('과학',{grade:5,semester:1,unit_name:'1. 지층과 화석',teacher_instruction:'지층의 특징을 알고 형성 과정을 모형으로 표현'});
+assert.strictEqual(scienceUnitBound.official_standard_code,'6과01-01');
+assert.strictEqual(scienceUnitBound.unit_mapping_evidence.status,'UNIT_MAPPING_CONTEXT_MATCHED');
+
+const noUnitContext=standardMatcher.match('과학',{teacher_instruction:'지층의 특징을 알고 형성 과정을 모형으로 표현'});
+assert.strictEqual(noUnitContext.official_standard_code,'6과01-01');
+assert.strictEqual(noUnitContext.unit_mapping_evidence.status,'UNIT_MAPPING_EVIDENCE_AVAILABLE_NOT_APPLIED');
