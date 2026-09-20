@@ -415,8 +415,8 @@
     analysis.page_count_role='SECONDARY_SOURCE_FACT_ONLY';
     analysis.minutes_role='OBSERVATION_ONLY';
     analysis.load_model='SUBJECT_ACTIVITY_DIFFICULTY_RECOVERY';
-    analysis.adaptive_review_policy=adaptiveReviewPolicy(analysis,PROFILE[analysis.subject_profile]||PROFILE.WORKBOOK_RANGE);
     analysis.subject_profile=fact.book_subject||fact.subject||null;
+    analysis.adaptive_review_policy=adaptiveReviewPolicy(analysis,PROFILE[analysis.subject_profile]||PROFILE.WORKBOOK_RANGE);
     const ref=referenceApi()?.resolve?.(analysis.subject_profile,{
       workbook_name:fact.workbook_name||fact.workbook_ref_id||null,
       title:fact.title||null,
