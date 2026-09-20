@@ -892,6 +892,16 @@
           lap_id:cleanText(input.lap_id)||null,
           source_app:sourceApp,
           authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
+          exploration_mission_id:cleanText(input.specialist_report?.explorationMissionId)||null,
+          exploration_mission_title:cleanText(input.specialist_report?.explorationMissionTitle)||null,
+          input_actor_role:cleanText(input.specialist_report?.inputActorRole)||null,
+          specialist_progress:input.specialist_report?{
+            valid_word_count:Math.max(0,Math.floor(Number(input.specialist_report.validWordCount)||0)),
+            trail_mastery:Math.max(0,Math.min(100,Math.round(Number(input.specialist_report.trailMastery)||0))),
+            learning_phase:cleanText(input.specialist_report.learningPhase)||null,
+            final_seek_attempt_count:Math.max(0,Math.floor(Number(input.specialist_report.finalSeekAttemptCount)||0)),
+            seek_again_remaining_count:Math.max(0,Math.floor(Number(input.specialist_report.seekAgainRemainingCount)||0))
+          }:null,
           memory_summary:summary,
           at:input.at||new Date().toISOString()
         };
@@ -900,6 +910,10 @@
         const nonStable=Object.entries(summary.reasonCounts).filter(([k])=>k!=='stable').reduce((sum,[,v])=>sum+v,0);
         todo.specialist_memory_summary=summary;
         todo.specialist_memory_source=sourceApp;
+        todo.exploration_mission_id=item.exploration_mission_id;
+        todo.exploration_mission_title=item.exploration_mission_title;
+        todo.specialist_input_actor_role=item.input_actor_role;
+        todo.specialist_progress=item.specialist_progress;
         todo.specialist_memory_received_at=item.at;
         todo.memory_followup_advisory=summary.needsUnassistedRecallCount>0||nonStable>0;
         todo.memory_review_priority=summary.topReviewPriorities[0]?.priority||0;
