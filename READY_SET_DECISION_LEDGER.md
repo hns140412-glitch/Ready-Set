@@ -13,7 +13,7 @@ Disposition set: PRESERVE / MERGE / SUPERSEDE / ARCHIVE / OPEN / CLOSED / OWNERS
 | RDY-C2S-005 | SESSION_END != TASK_COMPLETE | CLOSED | Runtime State Model / per-task outcome path active |
 | RDY-C2S-006 | REV_07 bulk-complete conflict | CLOSED | current main uses per-task finalization authority |
 | RDY-C2S-007 | timestamp timing | PRESERVE | Product Contract / runtime |
-| RDY-C2S-008 | Hide & Seek / Snap & Pop continuity | OPEN | cross-app runtime roundtrip implementation |
+| RDY-C2S-008 | Hide & Seek / Snap & Pop continuity | CLOSED | Ready + Hide branch candidates preserve shared runtime identity and continuous lap timing; main promotion pending |
 | RDY-C2S-009 | voice wrap-up for unresolved states | MERGE | Runtime State Model / UI refinement remaining |
 | RDY-C2S-010 | Capture → Review Draft → Parent Confirm → FACT | PRESERVE | Product Contract |
 | RDY-C2S-011 | capture No Silent Loss | PRESERVE | Product Contract |
@@ -88,9 +88,25 @@ CHILD INPUT → PARENT REVIEW/CONFIRM → FACT → LEARNING MASTER → PLANNER �
 
 Main promotion remains pending; this does not imply DEVICE/PRODUCTION verification or frozen deployment candidate.
 
-### P3 — cross-app execution continuity
-Close Ready → Hide & Seek / Snap & Pop → Ready roundtrip while preserving:
-session_id / goal_id / task_id / lap_id / timing / return_target.
+### P3 — cross-app execution continuity — CANDIDATE CLOSED
+Ready candidate HEAD `dec81f5bc3f133e5af25bd105a170dc1da6bb510`.
+Hide candidate HEAD `5e4a4fca4338b146a49e10e4151d4f45753e5cdf` / draft PR #5.
+
+Evidence:
+- Ready Integration CI #140 PASS
+- Ready Worker Self-Test #343 PASS
+- Ready Runtime E2E #226 PASS, 47/47
+- Hide validation PASS
+- Ready → Hide / Snap handoff preserves `session_id / goal_id / task_id / lap_id / return_target`
+- Hide → Snap now preserves `goal_id / return_target` in addition to session/task/lap
+- wrong `goal_id` inbound result is rejected by Ready
+- PARTIAL return keeps the same active lap and original `started_ms`
+- COMPLETED return ends that same lap and records elapsed timing
+
+Closed roundtrip contract:
+Ready → Hide & Seek / Snap & Pop → Ready, with one session / one goal / same task / same lap until result closure.
+
+Main promotion remains pending; this does not imply DEVICE/PRODUCTION verification or frozen deployment candidate.
 
 ### P4 — exploration UI/product-language consolidation
 Unify WEEK / DAY / TODAY / Mission / Session / Result around the adventure/base-camp identity.
