@@ -153,10 +153,12 @@
       standard_binding_status:hasVerifiedCode?'BOUND_VERIFIED_RECORD':'UNBOUND_REQUIRES_VERIFIED_STANDARD_RECORD',
       official_standard_match:officialMatch,
       unit_mapping_evidence:unitMapping,
-      unresolved:hasVerifiedCode?[]:[
-        ...(officialMatch?.unresolved||[]),
-        'OFFICIAL_STANDARD_CODE_NOT_BOUND'
-      ]
+      unresolved:hasVerifiedCode
+        ? [...new Set(unitMapping?.unresolved||[])]
+        : [
+            ...(officialMatch?.unresolved||[]),
+            'OFFICIAL_STANDARD_CODE_NOT_BOUND'
+          ]
     };
   }
 
