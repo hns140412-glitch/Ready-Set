@@ -28,7 +28,8 @@
     progress_events:[],
     allocation_runs:[],
     execution_observations:[],
-    carry_over_queue:[]
+    carry_over_queue:[],
+    adaptive_estimate_proposals:[]
   });
 
   const cleanText=x=>String(x??'').trim();
@@ -52,7 +53,8 @@
       progress_events:Array.isArray(x.progress_events)?x.progress_events:[],
       allocation_runs:Array.isArray(x.allocation_runs)?x.allocation_runs:[],
       execution_observations:Array.isArray(x.execution_observations)?x.execution_observations:[],
-      carry_over_queue:Array.isArray(x.carry_over_queue)?x.carry_over_queue:[]
+      carry_over_queue:Array.isArray(x.carry_over_queue)?x.carry_over_queue:[],
+      adaptive_estimate_proposals:Array.isArray(x.adaptive_estimate_proposals)?x.adaptive_estimate_proposals:[]
     };
   }
 
@@ -100,6 +102,7 @@
           confirmation_state:cleanText(input.confirmation_state)||'CONFIRMED',
           deadline_date:cleanText(input.deadline_date)||null,
           estimated_minutes:Number.isFinite(input.estimated_minutes)?Math.max(0,input.estimated_minutes):null,
+          planner_estimated_minutes:Number.isFinite(input.planner_estimated_minutes)?Math.max(0,input.planner_estimated_minutes):null,
           allocation_priority:Number.isFinite(input.allocation_priority)?input.allocation_priority:100,
           required_today:input.required_today===true,
           preferred_days:Array.isArray(input.preferred_days)?input.preferred_days.map(Number).filter(x=>x>=0&&x<=6):[],
@@ -531,6 +534,77 @@
       };
     }
 
+
+    function proposeEstimateAdjustment(templateId,input={}){
+      const id=cleanText(templateId);
+      if(!id)return {ok:false,reason:'TEMPLATE_ID_REQUIRED'};
+      const minSamples=Number.isFinite(input.min_samples)?Math.max(1,Math.floor(input.min_samples)):3;
+      const minDelta=Number.isFinite(input.min_delta_minutes)?Math.max(0,Math.floor(input.min_delta_minutes)):5;
+      const evidenceLimit=Number.isFinite(input.evidence_limit)?Math.max(minSamples,Math.floor(input.evidence_limit)):5;
+      return mutate(s=>{
+        const template=s.homework_templates.find(x=>x.template_id===id);
+        if(!template)return {ok:false,reason:'TEMPLATE_NOT_FOUND'};
+        const rows=s.execution_observations
+          .filter(x=>x.template_id===id&&Number.isFinite(x.actual_minutes)&&x.actual_minutes>0)
+          .slice(-evidenceLimit);
+        if(rows.length<minSamples)return {ok:false,reason:'INSUFFICIENT_EVIDENCE',sample_count:rows.length,min_samples:minSamples};
+        const vals=rows.map(x=>x.actual_minutes).sort((a,b)=>a-b);
+        const mid=Math.floor(vals.length/2);
+        const median=vals.length%2?vals[mid]:Math.round((vals[mid-1]+vals[mid])/2);
+        const current=Number.isFinite(template.planner_estimated_minutes)?template.planner_estimated_minutes:null;
+        if(current!==null && Math.abs(median-current)<minDelta){
+          return {ok:false,reason:'DELTA_BELOW_THRESHOLD',current_planner_estimated_minutes:current,median_actual_minutes:median,delta_minutes:median-current};
+        }
+        const existing=s.adaptive_estimate_proposals.find(x=>x.template_id===id&&x.status==='PENDING');
+        if(existing)return {ok:true,reused:true,proposal:{...existing}};
+        const proposal={
+          proposal_id:makeId('estimate'),
+          template_id:id,
+          current_planner_estimated_minutes:current,
+          proposed_planner_estimated_minutes:median,
+          delta_minutes:current===null?null:median-current,
+          evidence:{sample_count:vals.length,median_actual_minutes:median,values:vals,authority:'OBSERVATION_ONLY'},
+          authority:'PLANNER_PROPOSAL_HUMAN_APPROVAL_REQUIRED',
+          status:'PENDING',
+          created_at:new Date().toISOString()
+        };
+        s.adaptive_estimate_proposals.push(proposal);
+        s.adaptive_estimate_proposals=s.adaptive_estimate_proposals.slice(-200);
+        return {ok:true,reused:false,proposal:{...proposal}};
+      });
+    }
+
+    function decideEstimateAdjustment(proposalId,input={}){
+      const id=cleanText(proposalId);
+      if(!id)return {ok:false,reason:'PROPOSAL_ID_REQUIRED'};
+      const decision=cleanText(input.decision).toUpperCase();
+      if(!['CONFIRM','REJECT'].includes(decision))return {ok:false,reason:'INVALID_DECISION'};
+      return mutate(s=>{
+        const proposal=s.adaptive_estimate_proposals.find(x=>x.proposal_id===id);
+        if(!proposal)return {ok:false,reason:'PROPOSAL_NOT_FOUND'};
+        if(proposal.status!=='PENDING')return {ok:false,reason:'PROPOSAL_ALREADY_DECIDED',status:proposal.status};
+        const template=s.homework_templates.find(x=>x.template_id===proposal.template_id);
+        if(!template)return {ok:false,reason:'TEMPLATE_NOT_FOUND'};
+        proposal.status=decision==='CONFIRM'?'CONFIRMED':'REJECTED';
+        proposal.decision_actor=cleanText(input.actor)||'HUMAN_APPROVER';
+        proposal.decision_role='HUMAN_APPROVER';
+        proposal.decided_at=new Date().toISOString();
+        proposal.decision_note=cleanText(input.note)||null;
+        if(decision==='CONFIRM'){
+          template.planner_estimated_minutes=proposal.proposed_planner_estimated_minutes;
+          template.updated_at=new Date().toISOString();
+          proposal.applied_planner_estimated_minutes=template.planner_estimated_minutes;
+        }else{
+          proposal.applied_planner_estimated_minutes=Number.isFinite(template.planner_estimated_minutes)?template.planner_estimated_minutes:null;
+        }
+        return {ok:true,proposal:{...proposal},template:{...template}};
+      });
+    }
+
+    function pendingEstimateAdjustments(){
+      return load().adaptive_estimate_proposals.filter(x=>x.status==='PENDING').map(x=>({...x}));
+    }
+
     function recordTaskState(input={}){
       const todoId=cleanText(input.todo_id); if(!todoId) return null;
       const mapped=READY_TO_TODO[input.ready_state]||null; if(!mapped) return null;
@@ -593,6 +667,10 @@
       for(const e of s.progress_events){
         if(e.todo_id&&!todoIds.has(e.todo_id))issues.push('ORPHAN_PROGRESS_EVENT');
       }
+      for(const p of s.adaptive_estimate_proposals){
+        if(!['PENDING','CONFIRMED','REJECTED'].includes(p.status))issues.push('ADAPTIVE_ESTIMATE_STATUS_INVALID');
+        if(!s.homework_templates.some(x=>x.template_id===p.template_id))issues.push('ORPHAN_ADAPTIVE_ESTIMATE_PROPOSAL');
+      }
       return {ok:issues.length===0,issues,schema_version:s.schema_version,storage_backend:s.storage_backend};
     }
 
@@ -615,7 +693,10 @@
       recordSessionOutcome,
       carryOverCandidates,
       resolveCarryOver,
-      recentEstimateEvidence
+      recentEstimateEvidence,
+      proposeEstimateAdjustment,
+      decideEstimateAdjustment,
+      pendingEstimateAdjustments
     };
   }
 

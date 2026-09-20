@@ -25,4 +25,97 @@ planner.recordSessionOutcome({todo_id:todo.todo_id,ready_state:'PARTIAL',actual_
 const snap=planner.snapshot();for(const row of [snap.progress_events[0],snap.execution_observations[0],snap.carry_over_queue[0]])assert.strictEqual(row.learning_unit_id,todo.learning_unit_id);
 const replanned=planner.replanCarryOver({carry_over_id:snap.carry_over_queue[0].carry_over_id,date:'2026-09-22'});assert(replanned.ok);assert.strictEqual(replanned.todo.assignment_id,todo.assignment_id);
 assert.throws(()=>planner.upsertDatedTodo({label:'forbidden',source:'READY_MANUAL'}),/authority/);
+
+// Adaptive Planner V2: observations are evidence only; Planner proposes; human only confirms/rejects the fixed proposal.
+const adaptiveTemplate=planner.upsertHomeworkTemplate({
+  title:'적응형 수학 연산',
+  allocation_priority:50
+});
+for(const [i,mins] of [30,35,40].entries()){
+  const todo=planner.upsertDatedTodo({
+    date:`2026-09-${23+i}`,
+    label:'적응형 수학 연산',
+    template_id:adaptiveTemplate.template_id,
+    source:'PLANNER_V2_ALLOCATION',
+    source_actor:'PLANNER_MAIN'
+  });
+  const outcome=planner.recordSessionOutcome({
+    todo_id:todo.todo_id,
+    ready_state:'COMPLETED',
+    actual_ms:mins*60*1000,
+    session_id:`adaptive-session-${i}`,
+    task_id:`adaptive-task-${i}`
+  });
+  assert.strictEqual(outcome.ok,true);
+}
+assert.strictEqual(
+  planner.snapshot().homework_templates.find(x=>x.template_id===adaptiveTemplate.template_id).planner_estimated_minutes,
+  null
+);
+const adaptiveProposal=planner.proposeEstimateAdjustment(adaptiveTemplate.template_id,{
+  min_samples:3,
+  min_delta_minutes:5
+});
+assert.strictEqual(adaptiveProposal.ok,true);
+assert.strictEqual(adaptiveProposal.proposal.status,'PENDING');
+assert.strictEqual(adaptiveProposal.proposal.current_planner_estimated_minutes,null);
+assert.strictEqual(adaptiveProposal.proposal.proposed_planner_estimated_minutes,35);
+assert.strictEqual(adaptiveProposal.proposal.evidence.authority,'OBSERVATION_ONLY');
+assert.strictEqual(adaptiveProposal.proposal.authority,'PLANNER_PROPOSAL_HUMAN_APPROVAL_REQUIRED');
+assert.strictEqual(planner.pendingEstimateAdjustments().length,1);
+
+const adaptiveProposalAgain=planner.proposeEstimateAdjustment(adaptiveTemplate.template_id,{
+  min_samples:3,
+  min_delta_minutes:5
+});
+assert.strictEqual(adaptiveProposalAgain.ok,true);
+assert.strictEqual(adaptiveProposalAgain.reused,true);
+assert.strictEqual(adaptiveProposalAgain.proposal.proposal_id,adaptiveProposal.proposal.proposal_id);
+
+const confirmedAdaptive=planner.decideEstimateAdjustment(adaptiveProposal.proposal.proposal_id,{
+  decision:'CONFIRM',
+  actor:'PARENT'
+});
+assert.strictEqual(confirmedAdaptive.ok,true);
+assert.strictEqual(confirmedAdaptive.proposal.status,'CONFIRMED');
+assert.strictEqual(confirmedAdaptive.proposal.decision_role,'HUMAN_APPROVER');
+assert.strictEqual(confirmedAdaptive.template.planner_estimated_minutes,35);
+assert.strictEqual(planner.pendingEstimateAdjustments().length,0);
+
+const rejectTemplate=planner.upsertHomeworkTemplate({
+  title:'거절 검증 독서',
+  planner_estimated_minutes:10,
+  allocation_priority:60
+});
+for(const [i,mins] of [20,25,30].entries()){
+  const todo=planner.upsertDatedTodo({
+    date:`2026-09-${26+i}`,
+    label:'거절 검증 독서',
+    template_id:rejectTemplate.template_id,
+    source:'PLANNER_V2_ALLOCATION',
+    source_actor:'PLANNER_MAIN'
+  });
+  planner.recordSessionOutcome({
+    todo_id:todo.todo_id,
+    ready_state:'COMPLETED',
+    actual_ms:mins*60*1000,
+    session_id:`reject-session-${i}`,
+    task_id:`reject-task-${i}`
+  });
+}
+const rejectProposal=planner.proposeEstimateAdjustment(rejectTemplate.template_id,{
+  min_samples:3,
+  min_delta_minutes:5
+});
+assert.strictEqual(rejectProposal.ok,true);
+assert.strictEqual(rejectProposal.proposal.proposed_planner_estimated_minutes,25);
+const rejectedAdaptive=planner.decideEstimateAdjustment(rejectProposal.proposal.proposal_id,{
+  decision:'REJECT',
+  actor:'PARENT',
+  note:'이번 주만 예외적으로 오래 걸림'
+});
+assert.strictEqual(rejectedAdaptive.ok,true);
+assert.strictEqual(rejectedAdaptive.proposal.status,'REJECTED');
+assert.strictEqual(rejectedAdaptive.template.planner_estimated_minutes,10);
+
 console.log(JSON.stringify({pass:true,planner_v2:true,identity_chain:true,legacy_minute_fit:'SUPERSEDED_BY_CURRENT_TRUTH'}));
