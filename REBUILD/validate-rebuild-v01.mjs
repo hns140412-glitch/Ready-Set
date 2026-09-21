@@ -533,3 +533,26 @@ assert('session-completion-state-mutation-removed-from-app',
   !appSource.includes('state.activeSession=null;state.lastResult=rec') &&
   !appSource.includes('const outcome=rebuildSessionService.outcome')
 );
+
+const missionControllerSource=loadSource('src/views/mission-controller-runtime.js');
+assert('mission-controller-owner',missionControllerSource.includes('ReadyRebuildMissionController'));
+assert('mission-controller-loaded-before-app',
+  indexSource.indexOf('src/views/mission-controller-runtime.js')>0 &&
+  indexSource.indexOf('src/views/mission-controller-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('mission-controller-wired',
+  appSource.includes('rebuildMissionController.create') &&
+  appSource.includes('missionControllerRuntime.bind()') &&
+  appSource.includes('missionControllerRuntime.render()')
+);
+assert('mission-controller-authority-stays-external',
+  missionControllerSource.includes('assignments()?.addEventFact') &&
+  missionControllerSource.includes('plannerQuery.todayProjection()')
+);
+assert('mission-inline-input-wiring-removed',
+  !appSource.includes("$('#addTaskBtn').onclick") &&
+  !appSource.includes("$('#voiceTaskBtn').onclick") &&
+  !appSource.includes("$$('[data-minutes]').forEach") &&
+  !appSource.includes('let voiceRecognition=') &&
+  !appSource.includes('function openCategory(')
+);

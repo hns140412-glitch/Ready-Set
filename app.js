@@ -20,6 +20,7 @@ const rebuildPlannerView=globalThis.ReadyRebuildPlannerView||null;
 const rebuildNavigation=globalThis.ReadyRebuildNavigation||null;
 const rebuildPersistence=globalThis.ReadyRebuildAppPersistence||null;
 const rebuildMissionView=globalThis.ReadyRebuildMissionView||null;
+const rebuildMissionController=globalThis.ReadyRebuildMissionController||null;
 const rebuildFocusView=globalThis.ReadyRebuildFocusView||null;
 const rebuildMissionFocusController=globalThis.ReadyRebuildMissionFocusController||null;
 const rebuildPlannerAdminView=globalThis.ReadyRebuildPlannerAdminView||null;
@@ -50,7 +51,7 @@ const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildAppBootstrapController=globalThis.ReadyRebuildAppBootstrapController||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildMissionController||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -207,30 +208,6 @@ function renderHome(){
 function renderChips(root){
   homeViewRuntime.renderChips(root,currentMissionLabels());
 }
-let sheetCategory='';
-function openCategory(cat){
-  sheetCategory=cat;
-  $('#sheetTitle').textContent=`${cat} · 세부 과제 선택`;
-  const root=$('#sheetOptions');root.innerHTML='';
-  categories[cat].forEach(item=>{
-    const key=`${cat} · ${item}`;
-    const b=document.createElement('button');
-    b.textContent=item;
-    b.classList.toggle('on',state.selected.includes(key));
-    b.onclick=()=>{
-      state.selected.includes(key)
-        ? state.selected=state.selected.filter(v=>v!==key)
-        : state.selected.push(key);
-      b.classList.toggle('on');
-      save();renderMission();renderHome();
-    };
-    root.appendChild(b);
-  });
-  $('#categorySheet').hidden=false;
-}
-$$('[data-category]').forEach(b=>b.addEventListener('click',()=>openCategory(b.dataset.category)));
-$$('[data-close-sheet]').forEach(b=>b.addEventListener('click',()=>$('#categorySheet').hidden=true));
-
 function learningStepLabel(step){
   return ({
     SOLVE:'풀기',CHECK:'확인',MARK_ERROR:'틀린 것 표시',
@@ -252,58 +229,24 @@ const missionView=rebuildMissionView.create({
   learningSequenceText
 });
 
-function toggleMissionTodo(todoId,wasSelected){
-  state.selectedTodoIds=wasSelected
-    ? state.selectedTodoIds.filter(x=>x!==todoId)
-    : [...state.selectedTodoIds,todoId];
-  save();
-  renderMission();
-}
-
-function renderPlannerToday(){
-  missionView.renderPlannerToday({
-    items:plannerQueryRuntime.todayProjection(),
-    selectedTodoIds:state.selectedTodoIds,
-    onToggle:toggleMissionTodo
-  });
-}
-
-function renderMission(){
-  missionView.render({
-    state,
-    todayItems:plannerQueryRuntime.todayProjection(),
-    renderChips,
-    onToggleTodo:toggleMissionTodo
-  });
-}
-$('#addTaskBtn').onclick=()=>{
-  const v=$('#taskInput').value.trim();
-  if(!v)return;
-  window.ReadyAssignments?.addEventFact?.({actor:'CHILD',title:v,provenance:{kind:'CHILD_INPUT',surface:'MISSION'}});
-  $('#taskInput').value='';
-  toast('새 숙제를 부모님 확인 목록에 보냈어요. 확인 후 Planner가 TODAY에 배정합니다.');
-};
-let voiceRecognition=null;
-$('#voiceTaskBtn').onclick=()=>{
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){$('#voiceHint').textContent='이 브라우저에서는 음성 입력을 지원하지 않아요. 텍스트로 입력해 주세요.';return}
-  if(voiceRecognition){try{voiceRecognition.stop()}catch{};return}
-  voiceRecognition=new SR();voiceRecognition.lang='ko-KR';voiceRecognition.interimResults=false;voiceRecognition.maxAlternatives=1;
-  $('#voiceTaskBtn').classList.add('listening');$('#voiceHint').textContent='듣고 있어요… 과제를 말해 주세요.';
-  voiceRecognition.onresult=e=>{const text=e.results?.[0]?.[0]?.transcript?.trim();if(text){$('#taskInput').value=text;$('#voiceHint').textContent='음성 입력 완료. 확인 후 추가를 눌러주세요.'}};
-  voiceRecognition.onerror=()=>{$('#voiceHint').textContent='음성 입력이 잘 되지 않았어요. 다시 누르거나 텍스트로 입력해 주세요.'};
-  voiceRecognition.onend=()=>{$('#voiceTaskBtn').classList.remove('listening');voiceRecognition=null;if($('#voiceHint').textContent.startsWith('듣고'))$('#voiceHint').textContent='텍스트로 입력하거나 마이크를 눌러 말할 수 있어요.'};
-  try{voiceRecognition.start()}catch{$('#voiceTaskBtn').classList.remove('listening');voiceRecognition=null}
-};
-$$('[data-minutes]').forEach(b=>b.onclick=()=>{
-  if(b.dataset.minutes==='custom'){$('#customTimeWrap').hidden=false;return}
-  $('#customTimeWrap').hidden=true;
-  state.targetMin=+b.dataset.minutes;save();renderMission();
+const missionControllerRuntime=rebuildMissionController.create({
+  query:$,
+  queryAll:$$,
+  getState:()=>state,
+  save,
+  categories,
+  assignments:()=>window.ReadyAssignments,
+  plannerQuery:plannerQueryRuntime,
+  view:missionView,
+  renderHome,
+  renderChips,
+  toast
 });
-$('#customMinutes').onchange=e=>{
-  state.targetMin=Math.max(1,Math.min(180,+e.target.value||25));
-  save();renderMission();
-};
+missionControllerRuntime.bind();
+function currentPlannerMissionItems(){return missionControllerRuntime.currentMissionItems();}
+function currentMissionLabels(){return missionControllerRuntime.currentMissionLabels();}
+function renderPlannerToday(){return missionControllerRuntime.renderPlannerToday();}
+function renderMission(){return missionControllerRuntime.render();}
 
 function bgm(){
   return $('#bgmPlayer');
