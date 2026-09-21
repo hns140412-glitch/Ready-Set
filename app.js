@@ -17,7 +17,8 @@ const rebuildPlannerProjection=globalThis.ReadyRebuildPlannerProjection||null;
 const rebuildPlannerView=globalThis.ReadyRebuildPlannerView||null;
 const rebuildNavigation=globalThis.ReadyRebuildNavigation||null;
 const rebuildPersistence=globalThis.ReadyRebuildAppPersistence||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence){
+const rebuildMissionView=globalThis.ReadyRebuildMissionView||null;
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -221,57 +222,36 @@ function learningSequenceText(item){
   return seq.length?seq.map(learningStepLabel).join(' → '):'';
 }
 
+const missionView=rebuildMissionView.create({
+  query:$,
+  queryAll:$$,
+  escapeHtml,
+  learningSequenceText
+});
+
+function toggleMissionTodo(todoId,wasSelected){
+  state.selectedTodoIds=wasSelected
+    ? state.selectedTodoIds.filter(x=>x!==todoId)
+    : [...state.selectedTodoIds,todoId];
+  save();
+  renderMission();
+}
+
 function renderPlannerToday(){
-  const root=$('#plannerTodayList');
-  const section=$('#plannerTodaySection');
-  if(!root||!section)return;
-  const items=plannerTodayProjection();
-  section.hidden=!items.length;
-  root.innerHTML='';
-  for(const item of items){
-    const startable=item.state==='PLANNED';
-    const selected=startable&&state.selectedTodoIds.includes(item.todo_id);
-    const b=document.createElement('button');
-    b.type='button';
-    b.className='plannerTodayItem'+(selected?' on':'');
-    b.dataset.todoId=item.todo_id;
-    b.disabled=!startable;
-    const steps=learningSequenceText(item);
-    const stateNote=startable?(selected?'선택됨':'담기'):(item.state==='IN_PROGRESS'?'진행 중':'선택 불가');
-    b.innerHTML=`<span><b>${escapeHtml(item.label)}</b><small>${item.planner_owned?'플래너 제안':'오늘 할 일'}${steps?` · ${escapeHtml(steps)}`:''}</small></span><strong>${stateNote}</strong>`;
-    if(startable)b.onclick=()=>{
-      state.selectedTodoIds=selected
-        ? state.selectedTodoIds.filter(x=>x!==item.todo_id)
-        : [...state.selectedTodoIds,item.todo_id];
-      save();
-      renderMission();
-    };
-    root.appendChild(b);
-  }
+  missionView.renderPlannerToday({
+    items:plannerTodayProjection(),
+    selectedTodoIds:state.selectedTodoIds,
+    onToggle:toggleMissionTodo
+  });
 }
 
 function renderMission(){
-  renderChips($('#missionChips'));
-  renderPlannerToday();
-  const tl=$('#taskList');tl.innerHTML='';
-  const chosen=(plannerTodayProjection()).filter(x=>x.state==='PLANNED'&&state.selectedTodoIds.includes(x.todo_id));
-  chosen.forEach((t)=>{
-    const row=document.createElement('div');
-    row.className='taskRow';
-    const steps=learningSequenceText(t);
-    row.innerHTML=`<span><b>${escapeHtml(t.label)}</b>${steps?`<small>${escapeHtml(steps)}</small>`:''}</span><button aria-label="삭제">×</button>`;
-    row.querySelector('button').onclick=()=>{state.selectedTodoIds=state.selectedTodoIds.filter(x=>x!==t.todo_id);save();renderMission()};
-    tl.appendChild(row);
+  missionView.render({
+    state,
+    todayItems:plannerTodayProjection(),
+    renderChips,
+    onToggleTodo:toggleMissionTodo
   });
-  $$('[data-minutes]').forEach(b=>{
-    const active=String(state.targetMin)===b.dataset.minutes;
-    b.classList.toggle('on',active);
-    b.setAttribute('aria-pressed',active?'true':'false');
-  });
-  $('#customMinutes').value=state.targetMin;
-  $('#soundName').textContent=state.sound;
-  const labels=chosen.map(x=>x.label);
-  $('#missionPreviewText').textContent=`${labels.length?labels.join(' · '):'과제를 선택해 주세요'} · ${state.targetMin}분`;
 }
 $('#addTaskBtn').onclick=()=>{
   const v=$('#taskInput').value.trim();
