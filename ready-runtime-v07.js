@@ -70,6 +70,31 @@
         events: [],
         created_at: iso(session.startAt || Date.now())
       };
+      if (window.ReadySetPlanner) {
+        const plannerState = window.ReadySetPlanner.snapshot?.();
+        const plannerTodos = plannerState?.dated_todos || [];
+        tasks.forEach((task, index) => {
+          if (!task.planner_todo_id) return;
+          const todo = plannerTodos.find(x => x.todo_id === task.planner_todo_id);
+          if (index === 0 && todo?.state === 'PLANNED') {
+            window.ReadySetPlanner.recordTaskState({
+              todo_id: task.planner_todo_id,
+              ready_state: 'IN_PROGRESS',
+              session_id: session.rev07.session_id,
+              task_id: task.task_id,
+              at: iso()
+            });
+          } else if (index > 0 && todo?.state === 'IN_PROGRESS' && todo?.active_session_id === session.rev07.session_id) {
+            window.ReadySetPlanner.recordTaskState({
+              todo_id: task.planner_todo_id,
+              ready_state: 'PLANNED',
+              session_id: session.rev07.session_id,
+              task_id: task.task_id,
+              at: iso()
+            });
+          }
+        });
+      }
       if (tasks[0]) startLap(tasks[0], 'SESSION_START', session);
       save();
     }
@@ -147,8 +172,32 @@
   function switchTask(taskId) {
     const c = ensureContract();
     const next = c?.tasks?.find(t => t.task_id === taskId);
-    if (!next || next.task_id === c.active_task_id) return;
-    endActiveLap('TASK_CHANGE', currentTask(c)?.state || 'PENDING');
+    const previous = currentTask(c);
+    if (!next || next.task_id === c.active_task_id || next.state !== 'PENDING') return;
+
+    if (next.planner_todo_id && window.ReadySetPlanner) {
+      const activated = window.ReadySetPlanner.recordTaskState({
+        todo_id: next.planner_todo_id,
+        ready_state: 'IN_PROGRESS',
+        session_id: c.session_id,
+        task_id: next.task_id,
+        at: iso()
+      });
+      if (activated?.state !== 'IN_PROGRESS') return;
+    }
+
+    endActiveLap('TASK_CHANGE', previous?.state || 'PENDING');
+
+    if (previous?.state === 'PENDING' && previous.planner_todo_id && window.ReadySetPlanner) {
+      window.ReadySetPlanner.recordTaskState({
+        todo_id: previous.planner_todo_id,
+        ready_state: 'PLANNED',
+        session_id: c.session_id,
+        task_id: previous.task_id,
+        at: iso()
+      });
+    }
+
     c.active_task_id = next.task_id;
     startLap(next, 'NEXT_TASK', state.activeSession);
     save();
@@ -419,10 +468,15 @@
     if (!c) return { ok:false, reason:'NO_ACTIVE_REV07_SESSION' };
     const activeLaps = c.tasks.flatMap(t => t.laps || []).filter(l => !l.ended_at);
     const taskIds = new Set(c.tasks.map(t => t.task_id));
+    const plannerRuntime = window.ReadySetPlanner?.sessionRuntimeStatus?.(c.session_id) || {in_progress:[]};
+    const activePlannerTodos = Array.isArray(plannerRuntime.in_progress) ? plannerRuntime.in_progress : [];
+    const activeTask = currentTask(c);
     const checks = {
       oneSessionId: !!c.session_id,
       oneGoalId: !!c.goal_id,
       oneActiveTask: !c.active_task_id || taskIds.has(c.active_task_id),
+      atMostOnePlannerTaskInProgress: activePlannerTodos.length <= 1,
+      plannerActiveMatchesRuntimeTask: activePlannerTodos.length === 0 || !!activeTask?.planner_todo_id && activePlannerTodos[0].todo_id === activeTask.planner_todo_id,
       atMostOneActiveLap: activeLaps.length <= 1,
       activeLapPointerValid: !c.active_lap_id || activeLaps.some(l => l.lap_id === c.active_lap_id),
       validTaskStates: c.tasks.every(t => VALID_TASK_STATES.has(t.state)),
