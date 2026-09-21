@@ -135,3 +135,8 @@ assert('assignment-service-duplicate-guards',assignmentServiceSource.includes('D
 assert('assignment-service-no-silent-loss',assignmentServiceSource.includes('CAPTURE_REVIEW_UNRESOLVED'));
 assert('assignment-service-parent-confirm',assignmentServiceSource.includes("confirmFact(assignmentId,{actor:'PARENT'})")&&assignmentServiceSource.includes("confirmFact(fact.assignment_id,{actor:'PARENT'})"));
 assert('assignment-service-planner-routing',assignmentServiceSource.includes('processAssignment?.'));
+
+assert('assignment-service-review-provenance',
+  assignmentServiceSource.includes("PARENT_REVIEWED_CAPTURE") &&
+  assignmentServiceSource.includes("capture_reviews:captureReviews")
+);
