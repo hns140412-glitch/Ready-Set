@@ -208,6 +208,65 @@
     return app === 'hide-seek' ? HIDE_URL : app === 'snap-pop' ? SNAP_URL : location.href;
   }
 
+  function resolveLearningContext(task) {
+    if (!task?.learning_unit_id || !task?.analysis_id || !task?.assignment_id) return null;
+    const domain = window.ReadyAssignments;
+    if (!domain?.load) return null;
+    try {
+      const state = domain.load();
+      const unit = state?.learningUnits?.[task.learning_unit_id];
+      const analysis = state?.analyses?.[task.analysis_id];
+      const fact = state?.assignmentFacts?.[task.assignment_id];
+      if (!unit || !analysis || !fact) return null;
+      if (unit.analysis_id !== task.analysis_id || unit.assignment_id !== task.assignment_id) return null;
+      if (analysis.assignment_id !== task.assignment_id) return null;
+      if (fact.current_analysis_id && fact.current_analysis_id !== task.analysis_id) return null;
+      if (fact.confirmation_state && fact.confirmation_state !== 'FACT_CONFIRMED') return null;
+      if (unit.state && unit.state !== 'INTERPRETED') return null;
+      if (analysis.state && analysis.state !== 'INTERPRETED') return null;
+
+      return {
+        contract_version: 'READY_LEARNING_CONTEXT_V1',
+        learning_unit_id: unit.learning_unit_id,
+        analysis_id: unit.analysis_id,
+        assignment_id: unit.assignment_id,
+        subject: unit.subject || analysis.subject_profile || fact.book_subject || fact.subject || null,
+        concept_skill_target: unit.concept_skill_target || null,
+        activity_types: Array.isArray(unit.activity_types) ? [...unit.activity_types] : [],
+        cognitive_load_profile: Array.isArray(unit.cognitive_load_profile) ? [...unit.cognitive_load_profile] : [],
+        divisible_boundary: unit.divisible_boundary || null,
+        confidence: Number.isFinite(unit.confidence)
+          ? Math.max(0, Math.min(1, unit.confidence))
+          : Number.isFinite(analysis.confidence)
+            ? Math.max(0, Math.min(1, analysis.confidence))
+            : null,
+        unresolved_flags: [...new Set([
+          ...(Array.isArray(unit.unresolved_flags) ? unit.unresolved_flags : []),
+          ...(Array.isArray(analysis.unresolved_flags) ? analysis.unresolved_flags : [])
+        ])],
+        provenance: {
+          engine: 'READY_LEARNING_MASTER',
+          version: analysis.analysis_version || window.ReadyLearningMaster?.version || null,
+          confirmation_state: fact.confirmation_state || null
+        }
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  function encodeLearningContext(value) {
+    if (!value) return null;
+    try {
+      const bytes = new TextEncoder().encode(JSON.stringify(value));
+      let binary = '';
+      bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+    } catch {
+      return null;
+    }
+  }
+
   function launchSpecialist(app) {
     const session = state.activeSession;
     const c = ensureContract(session);
@@ -227,6 +286,9 @@
     url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
     url.searchParams.set('snap_target', SNAP_URL);
     url.searchParams.set('from_app', 'ready-set');
+    const learningContext = resolveLearningContext(task);
+    const encodedLearningContext = encodeLearningContext(learningContext);
+    if (encodedLearningContext) url.searchParams.set('learning_context', encodedLearningContext);
     location.assign(url.href);
   }
 
