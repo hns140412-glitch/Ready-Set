@@ -742,7 +742,7 @@ function addDays(base,n){const d=new Date(base);d.setDate(d.getDate()+n);return 
 function weekStart(base=new Date()){
   const d=new Date(base); const dow=d.getDay(); const delta=dow===0?-6:1-dow; d.setDate(d.getDate()+delta); d.setHours(12,0,0,0); return d;
 }
-function plannerSnapshot(){return window.ReadySetPlanner?.snapshot?.()||{dated_todos:[],schedule_commitments:[],daily_availability_windows:[],carry_over_queue:[]}}
+function plannerSnapshot(){return window.ReadySetPlanner?.snapshot?.()||{dated_todos:[],schedule_commitments:[],daily_availability_windows:[],weekly_availability_templates:[],availability_closed_dates:[],carry_over_queue:[]}}
 plannerSelectedDate=plannerSelectedDate||localDateKey();
 function plannerItemsForDate(date,snap=plannerSnapshot()){
   const todos=(snap.dated_todos||[]).filter(x=>x.date===date).map(x=>({
@@ -814,6 +814,12 @@ function clearAvailabilityForm(){
   $('#availabilityStart').value='';
   $('#availabilityEnd').value='';
 }
+function clearWeeklyAvailabilityForm(){
+  $('#weeklyAvailabilityId').value='';
+  $('#weeklyAvailabilityDay').value='1';
+  $('#weeklyAvailabilityStart').value='';
+  $('#weeklyAvailabilityEnd').value='';
+}
 function renderPlannerAdmin(){
   if(!requireParentUi()){nav('planner');return}
   const snap=plannerSnapshot();
@@ -838,6 +844,24 @@ function renderPlannerAdmin(){
       : '<div class="plannerEmpty"><b>확인된 학습 가능 시간이 없어요.</b><small>Planner는 시간을 추정하지 않고, 확인된 범위가 있을 때만 가용시간 근거로 사용해요.</small></div>';
   }
 
+  const weeklyRoot=$('#weeklyAvailabilityAdminList');
+  if(weeklyRoot){
+    const dayNames=['일','월','화','수','목','금','토'];
+    weeklyRoot.innerHTML=(snap.weekly_availability_templates||[]).length
+      ? [...snap.weekly_availability_templates].sort((a,b)=>Number(a.day_of_week)-Number(b.day_of_week)||String(a.start).localeCompare(String(b.start))).map(x=>`
+        <div class="adminListItem">
+          <button type="button" data-edit-weekly-availability="${x.template_id}"><span><b>${dayNames[Number(x.day_of_week)]||'?'}요일 기본시간</b><small>${escapeHtml(x.start)} → ${escapeHtml(x.end)} · Parent 확인</small></span><strong>수정</strong></button>
+          <button class="miniAction" type="button" data-delete-weekly-availability="${x.template_id}">삭제</button>
+        </div>`).join('')
+      : '<div class="plannerEmpty"><b>등록된 주간 기본시간이 없어요.</b><small>매주 반복되는 학습 가능 시간을 넣으면 Planner가 날짜별 후보를 자동으로 만들어요.</small></div>';
+  }
+  const closedRoot=$('#availabilityClosedList');
+  if(closedRoot){
+    closedRoot.innerHTML=(snap.availability_closed_dates||[]).length
+      ? [...snap.availability_closed_dates].sort().map(date=>`<div class="adminListItem"><span><b>${escapeHtml(date)} 학습 불가</b><small>주간 기본시간을 사용하지 않음</small></span><strong>예외</strong></div>`).join('')
+      : '<div class="plannerEmpty"><b>등록된 예외일이 없어요.</b><small>필요할 때만 특정일을 학습 불가로 표시하세요.</small></div>';
+  }
+
   const carryRoot=$('#carryOverAdminList');
   if(carryRoot){
     const carry=(snap.carry_over_queue||[]).filter(x=>x.status==='OPEN');
@@ -856,6 +880,7 @@ function renderPlannerAdmin(){
   }
   if(!$('#scheduleDate').value) $('#scheduleDate').value=localDateKey();
   if(!$('#availabilityDate').value) $('#availabilityDate').value=localDateKey();
+  if(!$('#availabilityClosedDate').value) $('#availabilityClosedDate').value=localDateKey();
   renderParentIntake();
 }
 function editSchedule(id){
@@ -875,8 +900,16 @@ function editAvailability(id){
   $('#availabilityStart').value=x.start||'';
   $('#availabilityEnd').value=x.end||'';
 }
+function editWeeklyAvailability(id){
+  const x=plannerSnapshot().weekly_availability_templates.find(v=>v.template_id===id); if(!x)return;
+  $('#weeklyAvailabilityId').value=x.template_id;
+  $('#weeklyAvailabilityDay').value=String(x.day_of_week);
+  $('#weeklyAvailabilityStart').value=x.start||'';
+  $('#weeklyAvailabilityEnd').value=x.end||'';
+}
 document.getElementById('scheduleClearBtn')?.addEventListener('click',clearScheduleForm);
 document.getElementById('availabilityClearBtn')?.addEventListener('click',clearAvailabilityForm);
+document.getElementById('weeklyAvailabilityClearBtn')?.addEventListener('click',clearWeeklyAvailabilityForm);
 document.addEventListener('click',e=>{
   const childConfirm=e.target.closest('[data-child-fact-confirm]');
   if(childConfirm){
@@ -899,6 +932,14 @@ document.addEventListener('click',e=>{
   }
   const s=e.target.closest('[data-edit-schedule]'); if(s){editSchedule(s.dataset.editSchedule);return;}
   const a=e.target.closest('[data-edit-availability]'); if(a){editAvailability(a.dataset.editAvailability);return;}
+  const wa=e.target.closest('[data-edit-weekly-availability]'); if(wa){editWeeklyAvailability(wa.dataset.editWeeklyAvailability);return;}
+  const wad=e.target.closest('[data-delete-weekly-availability]');
+  if(wad){
+    if(!requireParentUi())return;
+    const removed=window.ReadySetPlanner?.removeWeeklyAvailabilityTemplate?.(wad.dataset.deleteWeeklyAvailability);
+    toast(removed?.ok?'주간 기본시간을 삭제했어요.':'주간 기본시간을 삭제하지 못했어요.');
+    clearWeeklyAvailabilityForm();renderPlannerAdmin();renderPlanner();return;
+  }
   const ad=e.target.closest('[data-delete-availability]');
   if(ad){
     if(!requireParentUi())return;
@@ -963,6 +1004,30 @@ document.getElementById('saveAvailabilityBtn')?.addEventListener('click',()=>{
   });
   toast('학습 가능 시간을 확인했어요. Planner가 배정 근거로 사용합니다.');
   renderPlannerAdmin(); renderPlanner();
+});
+document.getElementById('saveWeeklyAvailabilityBtn')?.addEventListener('click',()=>{
+  if(!requireParentUi())return;
+  const day=Number($('#weeklyAvailabilityDay').value),start=$('#weeklyAvailabilityStart').value,end=$('#weeklyAvailabilityEnd').value;
+  if(!Number.isInteger(day)||!start||!end){toast('요일·시작·종료 시간을 확인해 주세요.');return;}
+  if(end<=start){toast('종료 시간은 시작 시간보다 늦어야 해요.');return;}
+  window.ReadySetPlanner.upsertWeeklyAvailabilityTemplate({
+    template_id:$('#weeklyAvailabilityId').value||undefined,
+    day_of_week:day,start,end,confirmed:true,parent_editable:true,source:'PARENT_ADMIN_UI'
+  });
+  toast('주간 기본 학습시간을 저장했어요.');
+  renderPlannerAdmin();renderPlanner();
+});
+document.getElementById('markAvailabilityClosedBtn')?.addEventListener('click',()=>{
+  if(!requireParentUi())return;
+  const date=$('#availabilityClosedDate').value;if(!date){toast('예외 날짜를 확인해 주세요.');return;}
+  window.ReadySetPlanner.setAvailabilityClosedDate(date,true);
+  toast('이 날짜는 학습 불가로 표시했어요.');renderPlannerAdmin();renderPlanner();
+});
+document.getElementById('clearAvailabilityClosedBtn')?.addEventListener('click',()=>{
+  if(!requireParentUi())return;
+  const date=$('#availabilityClosedDate').value;if(!date){toast('예외 날짜를 확인해 주세요.');return;}
+  window.ReadySetPlanner.setAvailabilityClosedDate(date,false);
+  toast('이 날짜는 다시 주간 기본시간을 사용합니다.');renderPlannerAdmin();renderPlanner();
 });
 function parsePrints(value=''){
   const out={};for(const token of String(value).split(',')){const [day,...rest]=token.split(':');if(day?.trim()&&rest.join(':').trim())out[day.trim().toUpperCase()]=rest.join(':').trim()}return out;

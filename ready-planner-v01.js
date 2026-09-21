@@ -24,6 +24,8 @@
     storage_backend:'LOCALSTORAGE_COMPATIBILITY_SCAFFOLD',
     schedule_commitments:[],
     daily_availability_windows:[],
+    weekly_availability_templates:[],
+    availability_closed_dates:[],
     homework_templates:[],
     dated_todos:[],
     progress_events:[],
@@ -50,6 +52,8 @@
       schema_version:SCHEMA_VERSION,
       schedule_commitments:Array.isArray(x.schedule_commitments)?x.schedule_commitments:[],
       daily_availability_windows:Array.isArray(x.daily_availability_windows)?x.daily_availability_windows:[],
+      weekly_availability_templates:Array.isArray(x.weekly_availability_templates)?x.weekly_availability_templates:[],
+      availability_closed_dates:Array.isArray(x.availability_closed_dates)?x.availability_closed_dates:[],
       homework_templates:Array.isArray(x.homework_templates)?x.homework_templates:[],
       dated_todos:Array.isArray(x.dated_todos)?x.dated_todos:[],
       progress_events:Array.isArray(x.progress_events)?x.progress_events:[],
@@ -131,13 +135,71 @@
       });
     }
 
+    function upsertWeeklyAvailabilityTemplate(input={}){
+      if(globalThis.ReadyFamilySession && cleanText(input.source)==='PARENT_ADMIN_UI'){
+        const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
+        if(!gate?.ok) throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
+      }
+      const day=Number(input.day_of_week),start=cleanText(input.start),end=cleanText(input.end);
+      if(!Number.isInteger(day)||day<0||day>6) throw new Error('valid day_of_week required');
+      if(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start) throw new Error('valid start/end required');
+      return mutate(s=>{
+        const id=cleanText(input.template_id)||makeId('weekly_availability');
+        const item={
+          template_id:id,day_of_week:day,start,end,
+          confirmed:input.confirmed!==false,
+          source:cleanText(input.source)||'READY_LOCAL',
+          parent_editable:input.parent_editable!==false,
+          updated_at:new Date().toISOString()
+        };
+        const i=s.weekly_availability_templates.findIndex(x=>x.template_id===id);
+        if(i>=0)s.weekly_availability_templates[i]=item;else s.weekly_availability_templates.push(item);
+        return item;
+      });
+    }
+
+    function removeWeeklyAvailabilityTemplate(id){
+      const target=cleanText(id); if(!target)return {ok:false,reason:'WEEKLY_AVAILABILITY_ID_REQUIRED'};
+      if(globalThis.ReadyFamilySession){
+        const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
+        if(!gate?.ok) throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
+      }
+      return mutate(s=>{
+        const before=s.weekly_availability_templates.length;
+        s.weekly_availability_templates=s.weekly_availability_templates.filter(x=>x.template_id!==target);
+        return before===s.weekly_availability_templates.length?{ok:false,reason:'WEEKLY_AVAILABILITY_NOT_FOUND'}:{ok:true,template_id:target};
+      });
+    }
+
+    function setAvailabilityClosedDate(date,closed=true){
+      const key=cleanText(date); if(!/^\d{4}-\d{2}-\d{2}$/.test(key)) throw new Error('date required');
+      if(globalThis.ReadyFamilySession){
+        const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
+        if(!gate?.ok) throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
+      }
+      return mutate(s=>{
+        const set=new Set(s.availability_closed_dates||[]);
+        if(closed)set.add(key);else set.delete(key);
+        s.availability_closed_dates=[...set].sort();
+        return {ok:true,date:key,closed:!!closed};
+      });
+    }
+
     function candidateWindowsByDate(dates=[]){
       const s=load(),out={};
+      const closed=new Set(s.availability_closed_dates||[]);
       for(const date of dates||[]){
-        out[date]=(s.daily_availability_windows||[])
+        if(closed.has(date)){out[date]=[];continue}
+        const exact=(s.daily_availability_windows||[])
           .filter(x=>x.confirmed!==false&&x.date===date)
           .sort((a,b)=>String(a.start).localeCompare(String(b.start)))
-          .map(x=>({start:x.start,end:x.end,availability_id:x.availability_id,source:x.source}));
+          .map(x=>({start:x.start,end:x.end,availability_id:x.availability_id,source:x.source,scope:'DATE_OVERRIDE'}));
+        if(exact.length){out[date]=exact;continue}
+        const dow=parseLocal(date,'12:00').getDay();
+        out[date]=(s.weekly_availability_templates||[])
+          .filter(x=>x.confirmed!==false&&Number(x.day_of_week)===dow)
+          .sort((a,b)=>String(a.start).localeCompare(String(b.start)))
+          .map(x=>({start:x.start,end:x.end,template_id:x.template_id,source:x.source,scope:'WEEKLY_BASE'}));
       }
       return out;
     }
@@ -1169,6 +1231,9 @@
       upsertScheduleCommitment,
       upsertDailyAvailabilityWindow,
       removeDailyAvailabilityWindow,
+      upsertWeeklyAvailabilityTemplate,
+      removeWeeklyAvailabilityTemplate,
+      setAvailabilityClosedDate,
       candidateWindowsByDate,
       upsertHomeworkTemplate,
       upsertDatedTodo,

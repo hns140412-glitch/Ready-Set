@@ -47,10 +47,10 @@ planner.upsertScheduleCommitment({
 });
 
 assert.deepEqual(planner.candidateWindowsByDate(['2026-09-22','2026-09-23']),{
-  '2026-09-22':[{start:'15:00',end:'20:00',availability_id:'avail-1',source:'TEST_FIXTURE'}],
+  '2026-09-22':[{start:'15:00',end:'20:00',availability_id:'avail-1',source:'TEST_FIXTURE',scope:'DATE_OVERRIDE'}],
   '2026-09-23':[
-    {start:'15:00',end:'20:00',availability_id:'avail-2',source:'TEST_FIXTURE'},
-    {start:'17:00',end:'20:00',availability_id:'avail-3',source:'TEST_FIXTURE'}
+    {start:'15:00',end:'20:00',availability_id:'avail-2',source:'TEST_FIXTURE',scope:'DATE_OVERRIDE'},
+    {start:'17:00',end:'20:00',availability_id:'avail-3',source:'TEST_FIXTURE',scope:'DATE_OVERRIDE'}
   ]
 });
 

@@ -130,6 +130,34 @@
         <div id="availabilityAdminList" class="adminList"></div>
       </section>
 
+      <section class="glassCard">
+        <div class="adminSectionHead"><div><small>WEEKLY AVAILABILITY</small><h2>주간 기본 학습시간</h2></div><button class="miniAction" id="weeklyAvailabilityClearBtn">새 시간</button></div>
+        <p class="muted">반복되는 기본 시간입니다. 특정 날짜에 별도 시간을 넣으면 그 날짜 값이 우선합니다.</p>
+        <input id="weeklyAvailabilityId" type="hidden">
+        <div class="adminGrid two">
+          <label class="inputBlock">요일
+            <select id="weeklyAvailabilityDay">
+              <option value="1">월요일</option><option value="2">화요일</option><option value="3">수요일</option>
+              <option value="4">목요일</option><option value="5">금요일</option><option value="6">토요일</option><option value="0">일요일</option>
+            </select>
+          </label>
+          <span></span>
+        </div>
+        <div class="adminGrid two">
+          <label class="inputBlock">시작<input id="weeklyAvailabilityStart" type="time"></label>
+          <label class="inputBlock">종료<input id="weeklyAvailabilityEnd" type="time"></label>
+        </div>
+        <button class="btn dark" id="saveWeeklyAvailabilityBtn">주간 기본시간 저장</button>
+        <div id="weeklyAvailabilityAdminList" class="adminList"></div>
+        <div class="adminSectionHead"><div><small>DATE EXCEPTION</small><h2>특정일 예외</h2></div><span>Parent</span></div>
+        <label class="inputBlock">날짜<input id="availabilityClosedDate" type="date"></label>
+        <div class="adminInlineActions">
+          <button class="miniAction" id="markAvailabilityClosedBtn" type="button">이 날은 학습 불가</button>
+          <button class="miniAction" id="clearAvailabilityClosedBtn" type="button">주간 기본값 사용</button>
+        </div>
+        <div id="availabilityClosedList" class="adminList"></div>
+      </section>
+
       <section class="glassCard adminCard" id="carryOverAdminCard">
         <div class="adminSectionHead"><div><small>CARRY-OVER</small><h2>남은 탐험 정리</h2></div><span>Parent</span></div>
         <p class="muted">일부 남음·다음에 할 일은 다음 Planner 날짜로 자동 재진입합니다. 막힘·부모 도움은 확인 후 다시 계획할 수 있어요.</p>
