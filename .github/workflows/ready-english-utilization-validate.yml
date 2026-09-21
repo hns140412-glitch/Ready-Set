@@ -1,0 +1,25 @@
+name: Ready English Utilization Validation
+
+on:
+  push:
+    branches:
+      - integration/ready-english-activity-decomposer-v2-2026-09-22
+
+permissions:
+  contents: read
+
+jobs:
+  validate-english-utilization:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate rebuild foundation and English utilization guards
+        run: node REBUILD/validate-rebuild-v01.mjs
+      - name: Guard changed JavaScript parseability
+        run: |
+          node --check ready-learning-master-v01.js
+          node --check src/assignment/assignment-intake-controller-runtime.js
