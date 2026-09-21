@@ -480,3 +480,29 @@ assert('assignment-intake-inline-handlers-removed',
   !appSource.includes("data-child-fact-confirm") &&
   !appSource.includes("data-child-fact-reject")
 );
+
+const recordingControllerSource=loadSource('src/recording/recording-controller-runtime.js');
+assert('recording-controller-owner',recordingControllerSource.includes('ReadyRebuildRecordingController'));
+assert('recording-controller-loaded-before-app',
+  indexSource.indexOf('src/recording/recording-controller-runtime.js')>0 &&
+  indexSource.indexOf('src/recording/recording-controller-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('recording-controller-wired',
+  appSource.includes('rebuildRecordingController.create') &&
+  appSource.includes('recordingControllerRuntime.bind()') &&
+  appSource.includes('recordingControllerRuntime.renderContext()')
+);
+assert('recording-authority-stays-external',
+  recordingControllerSource.includes('runtime.start') &&
+  recordingControllerSource.includes('runtime.currentAudio') &&
+  recordingControllerSource.includes('service.storeAudio') &&
+  recordingControllerSource.includes('service.filenameFor')
+);
+assert('recording-inline-handlers-removed',
+  !appSource.includes("$('#recBtn').onclick") &&
+  !appSource.includes("$('#recordAction').onclick") &&
+  !appSource.includes("function startRecording()") &&
+  !appSource.includes("function finishRecording(") &&
+  !appSource.includes("function chooseGuest()") &&
+  !appSource.includes("$('#saveRecordingBtn').onclick")
+);

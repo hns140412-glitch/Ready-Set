@@ -34,6 +34,7 @@ const rebuildAssignmentService=globalThis.ReadyRebuildAssignmentService||null;
 const rebuildAssignmentIntakeController=globalThis.ReadyRebuildAssignmentIntakeController||null;
 const rebuildRecordingService=globalThis.ReadyRebuildRecordingService||null;
 const rebuildRecordingOrchestrator=globalThis.ReadyRebuildRecordingOrchestrator||null;
+const rebuildRecordingController=globalThis.ReadyRebuildRecordingController||null;
 const rebuildRecordingView=globalThis.ReadyRebuildRecordingView||null;
 const rebuildResultHistoryView=globalThis.ReadyRebuildResultHistoryView||null;
 const rebuildResultHistoryController=globalThis.ReadyRebuildResultHistoryController||null;
@@ -48,7 +49,7 @@ const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildAppBootstrapController=globalThis.ReadyRebuildAppBootstrapController||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -94,7 +95,7 @@ const appPersistence=rebuildPersistence.create({
   safePoint:appState=>!appState?.activeSession
 });
 let state=appPersistence.load();
-let previewTimer=null,currentGuestType='pico';
+let previewTimer=null;
 let plannerSelectedDate=null;
 let plannerTab='week';
 const TALENT_BOOKS=['연산','한자','국어','사회','수학','생각하는 피자'];
@@ -431,22 +432,6 @@ function completeSession(outcomeState='COMPLETED'){
   return finishSessionRecord({outcomeState,plannerOutcomes:outcome.plannerOutcomes,taskOutcomes:[]});
 }
 
-$('#recBtn').onclick=()=>{
-  applyGuide($('#recIntroGuide'));
-  $('#recIntro').hidden=false;
-};
-$('#cancelRecordBtn').onclick=()=>$('#recIntro').hidden=true;
-$('#goRecordBtn').onclick=async()=>{
-  $('#recIntro').hidden=true;
-  await pauseBgm();
-  nav('recording');
-};
-$('#recordBackBtn').onclick=async()=>{
-  if(recordingRuntime.isRecording()){toast('녹음을 먼저 끝내주세요.');return}
-  nav('focus');
-  if(state.activeSession?.sound!=='OFF')await resumeBgm(state.activeSession.sound);
-};
-
 const recordingView=rebuildRecordingView.create({
   query:$,
   formatTime:fmt,
@@ -456,75 +441,26 @@ const recordingView=rebuildRecordingView.create({
 const recordingRuntime=rebuildRecordingOrchestrator.create({
   recordingService:rebuildRecordingService
 });
+const recordingControllerRuntime=rebuildRecordingController.create({
+  query:$,
+  getState:()=>state,
+  save,
+  view:recordingView,
+  runtime:recordingRuntime,
+  service:rebuildRecordingService,
+  guideTypes:GUIDE_TYPES,
+  guideData:()=>guideData(),
+  sessionTimes,
+  applyGuide,
+  pauseBgm,
+  resumeBgm,
+  nav,
+  toast
+});
+recordingControllerRuntime.bind();
 function renderRecordingContext(){
-  recordingView.renderContext({
-    sessionTimes,
-    state,
-    guideData:guideData()
-  });
+  return recordingControllerRuntime.renderContext();
 }
-$('#recordAction').onclick=async()=>{
-  if(recordingRuntime.isRecording()){recordingRuntime.stop();return}
-  await startRecording();
-};
-async function startRecording(){
-  await pauseBgm();
-  const started=await recordingRuntime.start({
-    onTick:ms=>{
-      recordingView.renderClock(ms);
-      renderRecordingContext();
-    },
-    onStop:finishRecording
-  });
-  if(!started.ok){
-    const message=started.reason==='UNSUPPORTED'
-      ?'이 브라우저는 마이크 녹음을 지원하지 않습니다.'
-      :started.reason==='MIC_PERMISSION_DENIED'
-        ?'마이크 권한이 필요합니다.'
-        :'녹음을 시작할 수 없습니다.';
-    toast(message);
-    return;
-  }
-  recordingView.setRecordingActive(true);
-}
-function chooseGuest(){
-  const all=Object.keys(GUIDE_TYPES).filter(x=>x!==state.guide.type);
-  const recent=new Set((state.guestHistory||[]).slice(-1));
-  let pool=all.filter(x=>!recent.has(x));if(!pool.length)pool=all;
-  currentGuestType=pool[Math.floor(Math.random()*pool.length)]||all[0]||'pico';
-  state.guestHistory=[...(state.guestHistory||[]),currentGuestType].slice(-4);save();
-}
-function finishRecording({blob,type,durationMs}={}){
-  if(!blob)return;
-  chooseGuest();
-  recordingView.renderReview({
-    audioUrl:URL.createObjectURL(blob),
-    mainGuideType:state.guide.type,
-    guestGuideType:currentGuestType,
-    mainGuideName:state.guide.name,
-    guestGuideName:GUIDE_TYPES[currentGuestType].defaultName,
-    formatNote:rebuildRecordingService.formatNote(type)
-  });
-  state.recordingMeta={mime:type,durationMs,guestType:currentGuestType};
-  save();
-}
-$('#rerecordBtn').onclick=()=>{
-  recordingRuntime.clearAudio();
-  recordingView.resetReview({guideName:state.guide.name});
-};
-$('#saveRecordingBtn').onclick=async()=>{
-  const currentAudio=recordingRuntime.currentAudio();
-  if(!currentAudio)return;
-  const type=currentAudio.type||'audio/webm';
-  const filename=rebuildRecordingService.filenameFor({profileName:state.profile.name||'Judy',date:new Date(),type});
-  await rebuildRecordingService.storeAudio(currentAudio,filename,type);
-  if(state.activeSession){state.activeSession.recordingDone=true;state.activeSession.guestType=currentGuestType;state.activeSession.recordingMime=type}
-  save();toast(`저장 완료 · ${filename}`);
-  setTimeout(async()=>{
-    nav('focus');
-    if(state.activeSession?.sound!=='OFF')await resumeBgm(state.activeSession.sound);
-  },450);
-};
 
 
 
