@@ -674,3 +674,11 @@ assert('weekly-availability-exception-overlay',
   plannerAvailabilityExceptionSource.includes("exception?.type==='REPLACE'") &&
   indexSource.includes('availabilityExceptionCard')
 );
+
+const captureRuntimeSource=loadSource('ready-capture-v01.js');
+assert('capture-failed-reanalysis-preserves-current',
+  captureRuntimeSource.includes('FAILED_REANALYSIS_ATTEMPT') &&
+  captureRuntimeSource.includes('prior_analysis_preserved:true') &&
+  captureRuntimeSource.includes("analysis_state:'ANALYSIS_COMPLETE'") &&
+  captureRuntimeSource.includes('last_analysis_failure')
+);
