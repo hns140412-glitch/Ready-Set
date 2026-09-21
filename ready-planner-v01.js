@@ -951,6 +951,8 @@
             time_attribution:cleanText(input.time_attribution)||'DIRECT_TASK_OBSERVATION',
             session_total_actual_ms:Number.isFinite(input.session_total_actual_ms)?Math.max(0,input.session_total_actual_ms):null,
             session_task_count:Number.isFinite(input.session_task_count)?Math.max(1,Math.floor(input.session_task_count)):null,
+            learning_evidence:Array.isArray(input.learning_evidence)?input.learning_evidence.slice(-120):[],
+            completed_specialists:Array.isArray(input.completed_specialists)?[...new Set(input.completed_specialists.map(cleanText).filter(Boolean))]:[],
             at:eventAt
           };
           s.execution_observations.push(obs);
@@ -972,6 +974,8 @@
             session_id:cleanText(input.session_id)||null,
             task_id:cleanText(input.task_id)||null,
             state:mapped,
+            evidence_types:[...new Set((Array.isArray(input.learning_evidence)?input.learning_evidence:[]).map(x=>cleanText(x?.evidence_type)).filter(Boolean))],
+            completed_specialists:Array.isArray(input.completed_specialists)?[...new Set(input.completed_specialists.map(cleanText).filter(Boolean))]:[],
             source:'READY_SESSION_OUTCOME',
             at:eventAt
           });
@@ -1000,6 +1004,8 @@
             resolution_required:carryNeedsResolution,
             planned_minutes:Number.isFinite(todo.estimated_minutes)?todo.estimated_minutes:null,
             actual_minutes:actualMinutes,
+            evidence_types:[...new Set((Array.isArray(input.learning_evidence)?input.learning_evidence:[]).map(x=>cleanText(x?.evidence_type)).filter(Boolean))],
+            completed_specialists:Array.isArray(input.completed_specialists)?[...new Set(input.completed_specialists.map(cleanText).filter(Boolean))]:[],
             created_at:new Date().toISOString()
           });
         }
