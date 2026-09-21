@@ -51,6 +51,14 @@ assert('planner-finishability',plannerMod.canFinishTodo({state:'IN_PROGRESS'})==
 assert('planner-parity-ready-map',legacyPlanner.includes("WAITING_FOR_PARENT:'WAITING_FOR_PARENT'")&&legacyPlanner.includes("BLOCKED:'BLOCKED'"));
 assert('planner-parity-ownership',legacyPlanner.includes("'SESSION_OWNERSHIP_CONFLICT'"));
 
+
+const outcomeMod=await importSource('src/planner/outcome-policy.js');
+assert('carry-partial',outcomeMod.carryPolicyForState('PARTIAL').carryEligible===true);
+assert('carry-help-resolution',outcomeMod.carryPolicyForState('WAITING_FOR_PARENT').resolutionRequired===true);
+assert('carry-completed-resolves',outcomeMod.carryPolicyForState('COMPLETED').resolvesOpenCarry===true);
+assert('carry-escalate-deadline',outcomeMod.carryEscalation({nextDepth:1,deadline:'2026-09-20',targetDate:'2026-09-21'}).reason==='DEADLINE_EXCEEDED');
+assert('carry-parity-policy',legacyPlanner.includes("const carryEligible=['PARTIAL','DEFERRED'].includes(mapped)")&&legacyPlanner.includes("const carryNeedsResolution=['BLOCKED','WAITING_FOR_PARENT'].includes(mapped)"));
+
 console.log('REBUILD_DOMAIN_PARITY_PASS');
 
 console.log('REBUILD_V01_FOUNDATION_PASS ready-set');
