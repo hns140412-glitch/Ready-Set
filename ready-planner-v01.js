@@ -499,6 +499,16 @@
       }).filter(w=>w.end>w.start);
     }
 
+    function mergeIntervals(intervals=[]){
+      const sorted=[...(intervals||[])].sort((a,b)=>a.start-b.start);
+      const out=[];
+      for(const interval of sorted){
+        if(!out.length||interval.start>out[out.length-1].end){out.push({...interval});continue}
+        if(interval.end>out[out.length-1].end)out[out.length-1].end=interval.end;
+      }
+      return out;
+    }
+
     function commitmentIntervals(state,date){
       return state.schedule_commitments
         .filter(x=>x.confirmed!==false && x.start_at && x.end_at)
@@ -529,7 +539,7 @@
     function minutes(ms){return Math.max(0,Math.floor(ms/60000));}
 
     function freeWindowEvidence(state,date,windows=[]){
-      const candidate=clampWindows(date,windows||[]);
+      const candidate=mergeIntervals(clampWindows(date,windows||[]));
       if(!candidate.length)return {known:false,date,total_free_minutes:null,largest_contiguous_minutes:null,window_count:0,open_windows:[]};
       const commitments=commitmentIntervals(state,date);
       const open=candidate.flatMap(w=>subtractIntervals(w,commitments));
