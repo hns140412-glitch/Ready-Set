@@ -28,8 +28,17 @@
       meta:/^PLANNER/.test(x.source||'')?'플래너':'직접 추가',
       reason:allocationReason(x,snapshot)
     }));
+    const dow=new Date(date+'T12:00:00').getDay();
     const commitments=(snapshot.schedule_commitments||[])
-      .filter(x=>String(x.start_at||'').slice(0,10)===date)
+      .filter(x=>{
+        if(x.recurrence==='WEEKLY'){
+          if(Number(x.weekday)!==dow)return false;
+          if(x.valid_from&&date<x.valid_from)return false;
+          if(x.valid_until&&date>x.valid_until)return false;
+          return true;
+        }
+        return String(x.start_at||'').slice(0,10)===date;
+      })
       .map(x=>({
         kind:'SCHEDULE',
         commitment_id:x.commitment_id,
@@ -37,7 +46,7 @@
         state:'FIXED',
         minutes:null,
         order:-1,
-        time:String(x.start_at||'').slice(11,16),
+        time:x.recurrence==='WEEKLY'?String(x.start||''):String(x.start_at||'').slice(11,16),
         meta:'고정 일정'
       }));
     return [...commitments,...todos].sort((a,b)=>(a.order??999)-(b.order??999)||String(a.label||'').localeCompare(String(b.label||''),'ko'));

@@ -5,13 +5,26 @@
   function scheduleCommitment(input={},ctx={}){
     const title=clean(input.title);
     if(!title)throw new Error('title required');
+    const recurrence=clean(input.recurrence)||null;
+    const weekday=Number.isInteger(input.weekday)?input.weekday:null;
+    const start=clean(input.start)||null;
+    const end=clean(input.end)||null;
+    if(recurrence==='WEEKLY'){
+      if(!(weekday>=0&&weekday<=6))throw new Error('weekday required');
+      if(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start)throw new Error('valid start/end required');
+    }
     return {
       commitment_id:clean(input.commitment_id)||ctx.id,
       title,
       category:clean(input.category)||'OTHER',
-      start_at:input.start_at||null,
-      end_at:input.end_at||null,
-      recurrence:input.recurrence||null,
+      start_at:recurrence==='WEEKLY'?null:(input.start_at||null),
+      end_at:recurrence==='WEEKLY'?null:(input.end_at||null),
+      recurrence:recurrence==='WEEKLY'?'WEEKLY':null,
+      weekday:recurrence==='WEEKLY'?weekday:null,
+      start:recurrence==='WEEKLY'?start:null,
+      end:recurrence==='WEEKLY'?end:null,
+      valid_from:clean(input.valid_from)||null,
+      valid_until:clean(input.valid_until)||null,
       confirmed:input.confirmed!==false,
       planner_movable:!!input.planner_movable,
       parent_editable:input.parent_editable!==false,

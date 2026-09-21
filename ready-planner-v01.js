@@ -72,6 +72,24 @@
     function save(s){const payload=JSON.stringify(normalize(s));storage.setItem(STORAGE_KEY,payload);globalThis.ReadySetLocalFirst?.capture?.('planner',payload).catch?.(()=>{})}
     function mutate(fn){const s=load();const out=fn(s);save(s);return out}
 
+    function scheduleCommitmentsForDate(date,state=load()){
+      const dow=parseLocal(date,'12:00').getDay();
+      return (state.schedule_commitments||[])
+        .filter(x=>x.confirmed!==false)
+        .filter(x=>{
+          if(x.recurrence==='WEEKLY'){
+            if(Number(x.weekday)!==dow)return false;
+            if(x.valid_from&&date<x.valid_from)return false;
+            if(x.valid_until&&date>x.valid_until)return false;
+            return /^\d{2}:\d{2}$/.test(String(x.start||''))&&/^\d{2}:\d{2}$/.test(String(x.end||''));
+          }
+          return x.start_at&&x.end_at&&String(x.start_at).slice(0,10)===date&&String(x.end_at).slice(0,10)===date;
+        })
+        .map(x=>x.recurrence==='WEEKLY'
+          ? {...x,start_at:date+'T'+x.start+':00',end_at:date+'T'+x.end+':00',occurrence_date:date}
+          : {...x,occurrence_date:date});
+    }
+
     function upsertScheduleCommitment(input={}){
       if(globalThis.ReadyFamilySession && cleanText(input.source)==='PARENT_ADMIN_UI'){
         const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
@@ -80,13 +98,26 @@
       const title=cleanText(input.title); if(!title) throw new Error('title required');
       return mutate(s=>{
         const id=cleanText(input.commitment_id)||makeId('commitment');
+        const recurrence=cleanText(input.recurrence)||null;
+        const weekday=Number.isInteger(input.weekday)?input.weekday:null;
+        const start=cleanText(input.start)||null;
+        const end=cleanText(input.end)||null;
+        if(recurrence==='WEEKLY'){
+          if(!(weekday>=0&&weekday<=6))throw new Error('weekday required');
+          if(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start)throw new Error('valid start/end required');
+        }
         const item=rebuildProjection?.scheduleCommitment?.(input,{id,now:new Date().toISOString()})||{
           commitment_id:id,
           title,
           category:cleanText(input.category)||'OTHER',
-          start_at:input.start_at||null,
-          end_at:input.end_at||null,
-          recurrence:input.recurrence||null,
+          start_at:recurrence==='WEEKLY'?null:(input.start_at||null),
+          end_at:recurrence==='WEEKLY'?null:(input.end_at||null),
+          recurrence:recurrence==='WEEKLY'?'WEEKLY':null,
+          weekday:recurrence==='WEEKLY'?weekday:null,
+          start:recurrence==='WEEKLY'?start:null,
+          end:recurrence==='WEEKLY'?end:null,
+          valid_from:cleanText(input.valid_from)||null,
+          valid_until:cleanText(input.valid_until)||null,
           confirmed:input.confirmed!==false,
           planner_movable:!!input.planner_movable,
           parent_editable:input.parent_editable!==false,
@@ -372,7 +403,7 @@
             difficulty:Number.isFinite(t.difficulty)?t.difficulty:3,
             recovery_need:t.recovery_need||'MEDIUM'
           }))]));
-        const scheduleByDate=Object.fromEntries(dates.map(d=>[d,(s.schedule_commitments||[]).filter(x=>x.confirmed!==false&&x.start_at&&x.end_at&&String(x.start_at).slice(0,10)===d&&String(x.end_at).slice(0,10)===d)]));
+        const scheduleByDate=Object.fromEntries(dates.map(d=>[d,scheduleCommitmentsForDate(d,s)]));
         const proposals=[];
         for(const unit of units){
           const existing=s.dated_todos.find(t=>t.learning_unit_id===unit.learning_unit_id&&isOpenTodo(t));
@@ -1157,8 +1188,7 @@
           const semantic=Number.isFinite(todo.activity_load_score)?todo.activity_load_score:(Number.isFinite(todo.difficulty)?todo.difficulty:3);
           let eligible=dates.filter(d=>!deadline||d<=deadline);
           if(todo.operating_rule==='ENGLISH_ACADEMY_MORNING_VOCAB_REVIEW'){
-            const academyDates=eligible.filter(d=>(s.schedule_commitments||[])
-              .some(x=>x.confirmed!==false&&String(x.start_at||'').slice(0,10)===d&&isEnglishAcademyCommitment(x)));
+            const academyDates=eligible.filter(d=>scheduleCommitmentsForDate(d,s).some(isEnglishAcademyCommitment));
             if(academyDates.length)eligible=academyDates;
           }
           if(!eligible.length)continue;
@@ -1367,6 +1397,7 @@
       today,
       todayProjection,
       upsertScheduleCommitment,
+      scheduleCommitmentsForDate,
       upsertDailyAvailabilityWindow,
       removeDailyAvailabilityWindow,
       candidateWindowsByDate,
