@@ -571,3 +571,16 @@ assert('planner-screen-mutation-owned-by-controller',
   plannerScreenControllerSource.includes('replanReadyCarryOvers') &&
   !appSource.includes('window.ReadySetPlanner?.replanReadyCarryOvers')
 );
+
+assert('planner-adaptive-ui-wired',
+  indexSource.includes('adaptiveEstimateRefreshBtn') &&
+  indexSource.includes('adaptiveEstimateAdminList') &&
+  plannerAdminControllerSource.includes('proposeEstimateAdjustment') &&
+  plannerAdminControllerSource.includes('decideEstimateAdjustment') &&
+  plannerAdminViewSource.includes('data-estimate-confirm') &&
+  plannerAdminViewSource.includes('data-estimate-reject')
+);
+assert('planner-adaptive-human-approval',
+  plannerAdminControllerSource.includes("decision,'CONFIRM'") ||
+  plannerAdminControllerSource.includes("'CONFIRM'")
+);

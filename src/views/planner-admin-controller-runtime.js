@@ -165,6 +165,34 @@
       return result;
     }
 
+    function refreshAdaptiveSuggestions(){
+      if(!requireParentUi())return {ok:false,reason:'PARENT_REQUIRED'};
+      const snap=snapshot();
+      let created=0,reused=0,insufficient=0,unchanged=0;
+      for(const template of snap.homework_templates||[]){
+        const result=planner()?.proposeEstimateAdjustment?.(template.template_id,{min_samples:3,min_delta_minutes:5,evidence_limit:5});
+        if(result?.ok){
+          if(result.reused)reused++; else created++;
+        }else if(result?.reason==='INSUFFICIENT_EVIDENCE')insufficient++;
+        else if(result?.reason==='DELTA_BELOW_THRESHOLD')unchanged++;
+      }
+      toast(created?(`실제 수행시간을 분석해 ${created}개의 조정안을 만들었어요.`):'새로 조정할 시간 제안이 없어요.');
+      refresh();
+      return {ok:true,created,reused,insufficient,unchanged};
+    }
+
+    function decideAdaptive(id,decision){
+      if(!requireParentUi())return {ok:false,reason:'PARENT_REQUIRED'};
+      const result=planner()?.decideEstimateAdjustment?.(id,{decision,actor:'PARENT'});
+      if(result?.ok){
+        toast(decision==='CONFIRM'?'실제 수행시간 기준을 다음 배정에 반영했어요.':'현재 배정 기준을 유지했어요.');
+      }else{
+        toast('시간 조정 제안을 처리하지 못했어요.');
+      }
+      refresh();
+      return result;
+    }
+
     function onDocumentClick(event){
       const schedule=event.target.closest?.('[data-edit-schedule]');
       if(schedule){editSchedule(schedule.dataset.editSchedule);return;}
@@ -177,7 +205,11 @@
       const ready=event.target.closest?.('[data-carry-ready]');
       if(ready){readyCarry(ready.dataset.carryReady);return;}
       const cancel=event.target.closest?.('[data-carry-cancel]');
-      if(cancel){cancelCarry(cancel.dataset.carryCancel);}
+      if(cancel){cancelCarry(cancel.dataset.carryCancel);return;}
+      const estimateConfirm=event.target.closest?.('[data-estimate-confirm]');
+      if(estimateConfirm){decideAdaptive(estimateConfirm.dataset.estimateConfirm,'CONFIRM');return;}
+      const estimateReject=event.target.closest?.('[data-estimate-reject]');
+      if(estimateReject){decideAdaptive(estimateReject.dataset.estimateReject,'REJECT');}
     }
 
     function bind(){
@@ -187,13 +219,15 @@
       query('#availabilityClearBtn')?.addEventListener('click',clearAvailabilityForm);
       query('#saveScheduleBtn')?.addEventListener('click',saveSchedule);
       query('#saveAvailabilityBtn')?.addEventListener('click',saveAvailability);
+      query('#adaptiveEstimateRefreshBtn')?.addEventListener('click',refreshAdaptiveSuggestions);
       eventTarget.addEventListener?.('click',onDocumentClick);
       return true;
     }
 
     return Object.freeze({
       snapshot,render,clearScheduleForm,clearAvailabilityForm,editSchedule,editAvailability,
-      removeAvailability,reviewCarry,readyCarry,cancelCarry,saveSchedule,saveAvailability,bind
+      removeAvailability,reviewCarry,readyCarry,cancelCarry,saveSchedule,saveAvailability,
+      refreshAdaptiveSuggestions,decideAdaptive,bind
     });
   }
 

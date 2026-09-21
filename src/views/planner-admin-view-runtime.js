@@ -27,6 +27,18 @@
         : '<div class="plannerEmpty"><b>확인된 학습 가능 시간이 없어요.</b><small>Planner는 시간을 추정하지 않고, 확인된 범위가 있을 때만 가용시간 근거로 사용해요.</small></div>';
     }
 
+    function renderAdaptive(snapshot={}){
+      const el=q('#adaptiveEstimateAdminList'); if(!el)return;
+      const rows=(snapshot.adaptive_estimate_proposals||[]).filter(x=>x.status==='PENDING');
+      el.innerHTML=rows.length?rows.map(x=>{
+        const template=(snapshot.homework_templates||[]).find(t=>t.template_id===x.template_id);
+        const current=Number.isFinite(x.current_planner_estimated_minutes)?x.current_planner_estimated_minutes:'미설정';
+        const proposed=Number.isFinite(x.proposed_planner_estimated_minutes)?x.proposed_planner_estimated_minutes:'-';
+        const samples=x.evidence?.sample_count||0;
+        return `<div class="adminListItem"><span><b>${escapeHtml(template?.title||'학습 탐험 시간 조정')}</b><small>현재 ${escapeHtml(current)}분 → 제안 ${escapeHtml(proposed)}분 · 실제 수행 ${samples}회 근거</small></span><div class="adminInlineActions"><button class="miniAction" data-estimate-confirm="${x.proposal_id}">적용</button><button class="miniAction" data-estimate-reject="${x.proposal_id}">유지</button></div></div>`;
+      }).join(''):'<div class="plannerEmpty"><b>검토할 시간 조정 제안이 없어요.</b><small>실제 수행시간이 충분히 쌓이면 Planner가 조정안을 제안합니다.</small></div>';
+    }
+
     function renderCarry(snapshot={}){
       const el=q('#carryOverAdminList'); if(!el)return;
       const rows=(snapshot.carry_over_queue||[]).filter(x=>x.status==='OPEN');
@@ -47,11 +59,12 @@
     function render(snapshot={}){
       renderSchedule(snapshot);
       renderAvailability(snapshot);
+      renderAdaptive(snapshot);
       renderCarry(snapshot);
       return {ok:true};
     }
 
-    return Object.freeze({render,renderSchedule,renderAvailability,renderCarry});
+    return Object.freeze({render,renderSchedule,renderAvailability,renderAdaptive,renderCarry});
   }
 
   root.ReadyRebuildPlannerAdminView=Object.freeze({
