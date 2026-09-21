@@ -400,27 +400,16 @@ $('#startBtn').onclick=async()=>{
   if(!plannerLinks.length){toast('지금 시작할 수 있는 Planner TODO가 없어요. TODAY를 다시 확인해 주세요.');return}
   const labels=plannerLinks.map(x=>x.label);
   const sessionId=`s_${now}`;
-  const started=[];
-  for(const link of plannerLinks){
-    const result=window.ReadySetPlanner?.recordTaskState?.({
-      todo_id:link.todo_id,
-      ready_state:'IN_PROGRESS',
-      session_id:sessionId,
-      task_id:link.learning_unit_id||link.todo_id,
-      at:new Date(now).toISOString()
-    });
-    if(result?.state==='IN_PROGRESS')started.push(link);
-  }
-  if(started.length!==plannerLinks.length){
-    for(const link of started){
-      window.ReadySetPlanner?.recordTaskState?.({
-        todo_id:link.todo_id,
-        ready_state:'PLANNED',
-        session_id:sessionId,
-        task_id:link.learning_unit_id||link.todo_id,
-        at:new Date(now).toISOString()
-      });
-    }
+  const started=[...plannerLinks];
+  const firstLink=plannerLinks[0];
+  const firstStarted=window.ReadySetPlanner?.recordTaskState?.({
+    todo_id:firstLink.todo_id,
+    ready_state:'IN_PROGRESS',
+    session_id:sessionId,
+    task_id:firstLink.learning_unit_id||firstLink.todo_id,
+    at:new Date(now).toISOString()
+  });
+  if(firstStarted?.state!=='IN_PROGRESS'){
     toast('다른 세션에서 이미 진행 중인 할 일이 있어 시작하지 않았어요.');
     renderMission();
     return;
