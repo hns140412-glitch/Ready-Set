@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.2.1';
+  const VERSION='0.3.0';
   const GRADE_BAND='ELEMENTARY_5_6';
   const OFFICIAL_BASE={
     curriculum:'2022_REVISED_KOREA_NATIONAL_CURRICULUM',
@@ -35,7 +35,7 @@
       authority:'PROGRAM_SPECIFIC_SUBJECT_MASTER',
       grade_band:GRADE_BAND,
       domains:['형태','음','뜻','회상','쓰기'],
-      learning_loop:['ENCODE','RECALL','CHECK','RETRY'],
+      learning_loop:['FORM','SOUND','CORE_MEANING','VERIFIED_RELATION','COMPOUND_WORD','SCENE_CONTEXT','RECALL','CHECK'],
       mapping_policy:'ACTUAL_WORKBOOK_RANGE_IS_PRIMARY',
       source_refs:['READY_TALENT_WEEKLY_FACT'],
       unresolved:[]
@@ -53,7 +53,7 @@
       authority:'OFFICIAL_CURRICULUM',
       grade_band:GRADE_BAND,
       domains:['듣기·말하기','읽기','쓰기','문법','문학','매체'],
-      learning_loop:['READ_OR_LISTEN','UNDERSTAND','FIND_EVIDENCE','RESPOND_OR_EXPRESS','REVIEW'],
+      learning_loop:['TOOL_LANGUAGE_GATE','READ_OR_LISTEN','UNDERSTAND','FIND_EVIDENCE','MEANING_CONTEXT_REUSE','RESPOND_OR_EXPRESS','REVIEW'],
       mapping_policy:'FACT_AND_TEXTBOOK_RANGE_REQUIRED_FOR_UNIT_BINDING',
       source_refs:[
         ...OFFICIAL_BASE.source_refs,
@@ -66,7 +66,7 @@
       authority:'OFFICIAL_CURRICULUM',
       grade_band:GRADE_BAND,
       domains:['수와 연산','변화와 관계','도형과 측정','자료와 가능성'],
-      learning_loop:['UNDERSTAND_CONCEPT','REPRESENT','APPLY','COMPARE_STRATEGY','CHECK_ERROR','TRANSFER'],
+      learning_loop:['SCENE_OR_VISUAL_MODEL','RESTATE_QUESTION','UNDERSTAND_CONCEPT','REPRESENT_RELATION','PREDICT','SOLVE','EXPLAIN','TRANSFER','CHECK_ERROR','RECONSTRUCT_CONCEPT_IF_NEEDED'],
       mapping_policy:'FACT_AND_TEXTBOOK_RANGE_REQUIRED_FOR_UNIT_BINDING',
       source_refs:[...OFFICIAL_BASE.source_refs,'NCIC_ELEMENTARY_5_6_MATH_ACHIEVEMENT_STANDARDS'],
       unresolved:['TEXTBOOK_UNIT_TO_STANDARD_BINDING_REQUIRES_ACTUAL_BOOK_CONTEXT']
@@ -93,7 +93,7 @@
       authority:'OFFICIAL_CURRICULUM',
       grade_band:GRADE_BAND,
       domains:['이해','표현'],
-      learning_loop:['INPUT','NOTICE_MEANING','RECALL','COMPREHEND','PRODUCE','SELF_REVIEW'],
+      learning_loop:['INPUT','NOTICE_MEANING','BIDIRECTIONAL_RECALL','COMPREHEND','SELECTIVE_RELEARN','PRODUCE','SELF_REVIEW'],
       mapping_policy:'FACT_COMPONENT_AND_TEXTBOOK_CONTEXT_REQUIRED_FOR_STANDARD_BINDING',
       source_refs:[...OFFICIAL_BASE.source_refs,'NCIC_ELEMENTARY_5_6_ENGLISH_ACHIEVEMENT_STANDARDS'],
       unresolved:['TEXTBOOK_UNIT_TO_STANDARD_BINDING_REQUIRES_ACTUAL_BOOK_CONTEXT']
@@ -128,6 +128,7 @@
       clean(context.teacher_instruction)||
       clean(context.unit_name)
     );
+    const matchedDomain=clean(context.matched_domain||context.standard_domain);
     const actualUnitContext=!!(
       clean(context.grade)&&
       clean(context.semester)&&
@@ -136,13 +137,22 @@
     const unresolvedBase=(row.unresolved||[]).filter(flag=>
       flag!=='TEXTBOOK_UNIT_TO_STANDARD_BINDING_REQUIRES_ACTUAL_BOOK_CONTEXT'||!actualUnitContext
     );
+    let learningLoop=[...row.learning_loop];
+    let methodVariant=null;
+    if(key==='사회'&&matchedDomain==='역사'){
+      methodVariant='KOREAN_HISTORY_EVIDENCE_ROUTE';
+      learningLoop=['QUESTION','LIFE_SOCIETY_CONTEXT','PERSON_EVENT','OBJECT_SITE','PRIMARY_SOURCE_RECORD','MAP_TIMELINE','COMPARE_INFER','CLAIM_EVIDENCE','EXPLAIN','CROSS_PERIOD_CONNECTION'];
+    }
+    if(key==='수학') methodVariant='CONCEPT_VISUAL_RELATION_PRIORITY';
     return {
       subject:key,
       status:actualContext?'SUBJECT_MASTER_CONTEXT_READY':'SUBJECT_MASTER_REFERENCE_ONLY',
       authority:row.authority,
       grade_band:row.grade_band,
       domains:[...row.domains],
-      learning_loop:[...row.learning_loop],
+      method_variant:methodVariant,
+      matched_domain:matchedDomain||null,
+      learning_loop:learningLoop,
       mapping_policy:row.mapping_policy,
       source_refs:[...row.source_refs],
       unresolved:[
