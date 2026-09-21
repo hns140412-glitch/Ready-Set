@@ -73,3 +73,49 @@ This closes the runtime path:
 `Planner review TODO -> Ready session task -> Hide review directive -> Hide retrieval -> Hide memorySummary -> Ready task outcome`.
 
 No new Hide scheduling authority was introduced.
+
+
+## Hide Runtime V2 contract correction
+
+Current Hide V2 producer contract:
+- resultContract = `HIDE_SPECIALIST_RESULT_V2`
+- runtime = `V2`
+- activeMissionId / missionStatus
+- taskState / learningPhase
+- trailMastery = null unless Hide owns and actually measures Trail Mastery separately
+- memorySummary = SPECIALIST_MEMORY_ADVISORY_ONLY
+- taskContext preserves Ready session/task/lap correlation
+
+Ready now:
+- normalizes V2 mission fields without pretending they are V1 sheet fields;
+- preserves null `trailMastery` instead of coercing null to 0;
+- consumes Hide V2 `learning_event` query envelopes;
+- validates the V2 event through `normalizeHideV2ReturnEvent()`;
+- stores the normalized Hide result on the Ready task.
+
+### Stale-target fail-closed correction
+The historical hard-coded Hide Netlify URL is not accepted as evidence of the current V2 candidate.
+
+For Planner-directed Hide review:
+- Ready requires explicit `globalThis.ReadySetSpecialistTargets.hideSeekV2`.
+- If no current V2 target is configured, launch fails closed with `HIDE_V2_TARGET_REQUIRED`.
+- Ready must not silently route a V2 review directive to the historical V1 deployment.
+
+### Validation
+Ready pre-document HEAD `84b68624612c745b5a30274cb0b5744199963a53`:
+- Hide Memory Review Roundtrip #13 — SUCCESS
+- Ready Integration CI #278 — SUCCESS
+- Ready Runtime E2E #445 — SUCCESS
+- Ready Daily Availability Gate #24 — SUCCESS
+- Ready Weekly Availability Gate #18 — SUCCESS
+- Ready Single Active Task Gate #18 — SUCCESS
+- TAKY Codex Worker Self-Test #541 — SUCCESS
+
+Hide V2 producer HEAD `4a9797a048a1c4a2c04023e90f35f97ee6d43d12`:
+- Validate Hide Runtime V2 #73 — SUCCESS
+- Validate Hide & Seek #527 — SUCCESS
+
+### Remaining truth boundary
+This is CURRENT-CANDIDATE CONTRACT VERIFIED, not live cross-app runtime verified.
+No current Hide V2 hosted target has been configured and no deployment was performed.
+Therefore the full Ready-current-candidate -> Hide-current-candidate -> Ready browser roundtrip remains OPEN.
