@@ -7,6 +7,7 @@ on:
       - taky/runtime-e2e-0131929
       - taky/ready-integration-v01
       - taky/unit-mapping-table-full-v02
+      - taky/ready-rebuild-v01-2026-09-21
   pull_request:
     branches:
       - main
