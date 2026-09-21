@@ -12,6 +12,12 @@ const VERSION={
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const rebuildSession=globalThis.ReadyRebuildSessionDomain||null;
+const rebuildSessionService=globalThis.ReadyRebuildSessionService||null;
+const rebuildPlannerProjection=globalThis.ReadyRebuildPlannerProjection||null;
+const rebuildPlannerView=globalThis.ReadyRebuildPlannerView||null;
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView){
+  throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
+}
 
 const categories={
   재능:['국어','한자','피자','수학','연산','기타'],
@@ -165,8 +171,11 @@ function applyGuide(el,type=state.guide.type){
 }
 function guideData(type=state.guide.type){return GUIDE_TYPES[type]||GUIDE_TYPES.lumi}
 
+function plannerTodayProjection(){
+  return (plannerTodayProjection()).map(x=>rebuildPlannerProjection.todayItem(x));
+}
 function currentPlannerMissionItems(){
-  const today=window.ReadySetPlanner?.todayProjection?.()||[];
+  const today=plannerTodayProjection();
   const selected=today.filter(x=>x.state==='PLANNED'&&state.selectedTodoIds.includes(x.todo_id));
   return selected.length?selected:today.filter(x=>x.state==='PLANNED');
 }
@@ -235,7 +244,7 @@ function renderPlannerToday(){
   const root=$('#plannerTodayList');
   const section=$('#plannerTodaySection');
   if(!root||!section)return;
-  const items=window.ReadySetPlanner?.todayProjection?.()||[];
+  const items=plannerTodayProjection();
   section.hidden=!items.length;
   root.innerHTML='';
   for(const item of items){
@@ -264,7 +273,7 @@ function renderMission(){
   renderChips($('#missionChips'));
   renderPlannerToday();
   const tl=$('#taskList');tl.innerHTML='';
-  const chosen=(window.ReadySetPlanner?.todayProjection?.()||[]).filter(x=>x.state==='PLANNED'&&state.selectedTodoIds.includes(x.todo_id));
+  const chosen=(plannerTodayProjection()).filter(x=>x.state==='PLANNED'&&state.selectedTodoIds.includes(x.todo_id));
   chosen.forEach((t)=>{
     const row=document.createElement('div');
     row.className='taskRow';
@@ -394,43 +403,26 @@ $$('[data-sheet-sound]').forEach(b=>b.onclick=async()=>{
 });
 
 $('#startBtn').onclick=async()=>{
-  const preStart=rebuildSession?.preStartGuard?.({activeSession:state.activeSession,selectedTodoIds:state.selectedTodoIds})||{
-    ok:!state.activeSession&&state.selectedTodoIds.length>0,
-    reason:state.activeSession?'SESSION_ALREADY_ACTIVE':'NO_SELECTED_TODO'
-  };
-  if(!preStart.ok){
-    if(preStart.reason==='SESSION_ALREADY_ACTIVE'){toast('이미 진행 중인 작전이 있어요. 먼저 진행 중인 작전으로 돌아가 주세요.');nav('focus');return}
-    toast('먼저 Planner가 준비한 오늘의 탐험을 선택해 주세요.');return
-  }
-  const now=Date.now();
-  const plannerLinks=window.ReadySetPlanner?.linkTodayItems(state.selectedTodoIds,{allowed_states:['PLANNED']})||[];
-  const plannerStart=rebuildSession?.plannerStartGuard?.(plannerLinks)||{ok:plannerLinks.length>0,reason:'NO_STARTABLE_PLANNER_TODO'};
-  if(!plannerStart.ok){toast('지금 시작할 수 있는 Planner TODO가 없어요. TODAY를 다시 확인해 주세요.');return}
-  const labels=plannerLinks.map(x=>x.label);
-  const sessionId=`s_${now}`;
-  const started=[...plannerLinks];
-  const firstLink=plannerLinks[0];
-  const firstStarted=window.ReadySetPlanner?.recordTaskState?.({
-    todo_id:firstLink.todo_id,
-    ready_state:'IN_PROGRESS',
-    session_id:sessionId,
-    task_id:firstLink.learning_unit_id||firstLink.todo_id,
-    at:new Date(now).toISOString()
+  const now=Date.now(),sessionId=`s_${now}`;
+  const started=rebuildSessionService.start({
+    sessionDomain:rebuildSession,
+    planner:window.ReadySetPlanner,
+    activeSession:state.activeSession,
+    selectedTodoIds:state.selectedTodoIds,
+    sessionId,
+    now,
+    targetMin:state.targetMin,
+    sound:state.sound
   });
-  if(firstStarted?.state!=='IN_PROGRESS'){
+  if(!started.ok){
+    if(started.reason==='SESSION_ALREADY_ACTIVE'){toast('이미 진행 중인 작전이 있어요. 먼저 진행 중인 작전으로 돌아가 주세요.');nav('focus');return}
+    if(started.reason==='NO_SELECTED_TODO'){toast('먼저 Planner가 준비한 오늘의 탐험을 선택해 주세요.');return}
+    if(started.reason==='NO_STARTABLE_PLANNER_TODO'){toast('지금 시작할 수 있는 Planner TODO가 없어요. TODAY를 다시 확인해 주세요.');return}
     toast('다른 세션에서 이미 진행 중인 할 일이 있어 시작하지 않았어요.');
     renderMission();
     return;
   }
-  state.activeSession=rebuildSession?.createSession?.({
-    sessionId,now,targetMin:state.targetMin,plannerLinks:started,sound:state.sound
-  })||{
-    id:sessionId,startAt:now,targetMs:state.targetMin*60000,
-    pausedAt:null,issueMs:0,completed:false,
-    selected:[],tasks:labels,
-    plannerLinks:started,
-    sound:state.sound,recordingDone:false
-  };
+  state.activeSession=started.session;
   save();
   nav('focus');
   if(state.sound!=='OFF')await resumeBgm(state.sound);
@@ -527,26 +519,19 @@ function completeSession(outcomeState='COMPLETED'){
   if(s.pausedAt){s.issueMs+=Date.now()-s.pausedAt;s.pausedAt=null}
   s.endAt=Date.now();s.completed=true;
   const t=sessionTimes();
-  const attribution=rebuildSession?.attribution?.(s,t.focus)||null;
-  const links=attribution?.links||(Array.isArray(s.plannerLinks)?s.plannerLinks.filter(x=>x?.todo_id):[]);
-  const taskCount=attribution?.taskCount||Math.max(1,links.length);
-  const attributedMs=Number.isFinite(attribution?.attributedMs)?attribution.attributedMs:(links.length?Math.floor(t.focus/taskCount):0);
-  const plannerOutcomes=[];
-  for(const link of links){
-    const outcome=window.ReadySetPlanner?.recordSessionOutcome?.({
-      todo_id:link.todo_id,
-      ready_state:outcomeState,
-      actual_ms:attributedMs,
-      session_total_actual_ms:t.focus,
-      session_task_count:taskCount,
-      time_attribution:attribution?.timeAttribution||(links.length>1?'EQUAL_SHARE_SESSION_OBSERVATION':'DIRECT_TASK_OBSERVATION'),
-      session_id:s.id,
-      task_id:link.learning_unit_id||link.todo_id,
-      at:new Date(s.endAt).toISOString()
-    });
-    if(outcome)plannerOutcomes.push(outcome);
+  const outcome=rebuildSessionService.outcome({
+    sessionDomain:rebuildSession,
+    planner:window.ReadySetPlanner,
+    session:s,
+    focusMs:t.focus,
+    outcomeState,
+    endAt:s.endAt
+  });
+  if(!outcome.ok){
+    toast('작전 결과를 Planner에 반영하지 못했어요.');
+    return null;
   }
-  return finishSessionRecord({outcomeState,plannerOutcomes,taskOutcomes:[]});
+  return finishSessionRecord({outcomeState,plannerOutcomes:outcome.plannerOutcomes,taskOutcomes:[]});
 }
 
 $('#recBtn').onclick=()=>{
@@ -746,18 +731,10 @@ function weekStart(base=new Date()){
 function plannerSnapshot(){return window.ReadySetPlanner?.snapshot?.()||{dated_todos:[],schedule_commitments:[],daily_availability_windows:[],carry_over_queue:[]}}
 plannerSelectedDate=plannerSelectedDate||localDateKey();
 function plannerItemsForDate(date,snap=plannerSnapshot()){
-  const todos=(snap.dated_todos||[]).filter(x=>x.date===date).map(x=>({
-    kind:'TODO',label:x.label,state:x.state||'PLANNED',minutes:x.estimated_minutes||null,order:x.order??999,
-    meta:x.source==='PLANNER_ALLOCATION'?'플래너':'직접 추가'
-  }));
-  const commitments=(snap.schedule_commitments||[]).filter(x=>String(x.start_at||'').slice(0,10)===date).map(x=>({
-    kind:'SCHEDULE',label:x.title,state:'FIXED',minutes:null,order:-1,
-    time:String(x.start_at||'').slice(11,16),meta:'고정 일정'
-  }));
-  return [...commitments,...todos].sort((a,b)=>(a.order??999)-(b.order??999));
+  return rebuildPlannerView.itemsForDate(date,snap);
 }
 function plannerStateLabel(v){
-  return ({PLANNED:'예정',IN_PROGRESS:'진행',COMPLETED:'완료',PARTIAL:'일부 남음',DEFERRED:'다음에',WAITING_FOR_PARENT:'부모 도움',BLOCKED:'막힘',FIXED:'고정'})[v]||v;
+  return rebuildPlannerView.stateLabel(v);
 }
 function renderPlanner(){
   plannerSelectedDate=plannerSelectedDate||localDateKey();
