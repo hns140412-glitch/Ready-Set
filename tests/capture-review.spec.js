@@ -82,6 +82,26 @@ test('capture review preserves source evidence, closes unresolved items, and arc
   expect(closed.provenance.review_drafts[0].reviewed_value.source_range).toBe('1~18번');
   expect(closed.provenance.capture_item_dispositions.some(x=>x.disposition==='IGNORED_WITH_REASON')).toBe(true);
 
+  const failedReanalysis=await page.evaluate(async()=>{
+    const api=window.ReadyCaptureV01;
+    window.ReadyCaptureAnalysisAdapter={
+      version:'TEST_CAPTURE_ADAPTER_FAIL',
+      analyze:async()=>({ok:false,reason:'ANALYSIS_PROVIDER_ERROR',provider_status:503})
+    };
+    const result=await api.requestAnalysis();
+    const session=await api.currentReviewSession();
+    return {result,session};
+  });
+
+  expect(failedReanalysis.result.ok).toBe(false);
+  expect(failedReanalysis.result.prior_analysis_preserved).toBe(true);
+  expect(failedReanalysis.session.analysis_state).toBe('ANALYSIS_COMPLETE');
+  expect(failedReanalysis.session.analysis_run_no).toBe(1);
+  expect(failedReanalysis.session.analysis_result.drafts[0].reviewed_value.source_range).toBe('1~18번');
+  expect(failedReanalysis.session.last_analysis_failure.result.reason).toBe('ANALYSIS_PROVIDER_ERROR');
+  expect(failedReanalysis.session.analysis_history).toHaveLength(1);
+  expect(failedReanalysis.session.analysis_history[0].kind).toBe('FAILED_REANALYSIS_ATTEMPT');
+
   const reanalyzed=await page.evaluate(async()=>{
     const api=window.ReadyCaptureV01;
     window.ReadyCaptureAnalysisAdapter={
@@ -113,8 +133,10 @@ test('capture review preserves source evidence, closes unresolved items, and arc
 
   expect(reanalyzed.result.ok).toBe(true);
   expect(reanalyzed.session.analysis_run_no).toBe(2);
-  expect(reanalyzed.session.analysis_history).toHaveLength(1);
-  expect(reanalyzed.session.analysis_history[0].result.analysis_run_no).toBe(1);
+  expect(reanalyzed.session.analysis_history).toHaveLength(2);
+  expect(reanalyzed.session.analysis_history[0].kind).toBe('FAILED_REANALYSIS_ATTEMPT');
+  expect(reanalyzed.session.analysis_history[1].kind).toBe('SUCCESSFUL_ANALYSIS_ARCHIVE');
+  expect(reanalyzed.session.analysis_history[1].result.analysis_run_no).toBe(1);
   expect(reanalyzed.session.analysis_result.drafts[0].source_range).toBe('1~18번');
   expect(reanalyzed.session.analysis_result.capture_item_dispositions.every(x=>x.disposition==='LINKED_TO_REVIEW_DRAFT')).toBe(true);
 });
