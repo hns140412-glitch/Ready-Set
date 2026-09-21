@@ -665,3 +665,24 @@ assert('planner-daypart-evidence-ui',
   plannerDaypartScreenSource.includes("value==='MORNING'?'아침'") &&
   plannerDaypartScreenSource.includes('daypartLabel')
 );
+
+assert('english-source-utilization-input-fields',
+  indexSource.includes('id="englishGrammar"') &&
+  indexSource.includes('id="englishReading"')
+);
+assert('english-source-utilization-components',
+  assignmentIntakeControllerSource.includes("grammar:query('#englishGrammar').value.trim()") &&
+  assignmentIntakeControllerSource.includes("reading:query('#englishReading').value.trim()")
+);
+const learningMasterSourceForEnglishUtilization=loadSource('ready-learning-master-v01.js');
+assert('english-grammar-reading-profiles',
+  learningMasterSourceForEnglishUtilization.includes("'grammar':{") &&
+  learningMasterSourceForEnglishUtilization.includes("'reading':{") &&
+  learningMasterSourceForEnglishUtilization.includes("'GRAMMAR_CHECK','QUIZ','REVIEW'") &&
+  learningMasterSourceForEnglishUtilization.includes("'READ_STORY','COMPREHENSION_CHECK','SENTENCE_BUILDING','REVIEW'")
+);
+assert('english-component-specific-sequence-precedence',
+  learningMasterSourceForEnglishUtilization.includes('componentSpecificProfile') &&
+  learningMasterSourceForEnglishUtilization.includes('preferredActivitySequence') &&
+  learningMasterSourceForEnglishUtilization.includes('extra.activity_sequence||preferredActivitySequence')
+);
