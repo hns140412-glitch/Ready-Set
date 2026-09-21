@@ -287,7 +287,7 @@ $('#addTaskBtn').onclick=()=>{
   if(!v)return;
   window.ReadyAssignments?.addEventFact?.({actor:'CHILD',title:v,provenance:{kind:'CHILD_INPUT',surface:'MISSION'}});
   $('#taskInput').value='';
-  toast('새 숙제 FACT를 기록했어요. 확인과 Planner 배정 후 TODAY에 나타납니다.');
+  toast('새 숙제를 부모님 확인 목록에 보냈어요. 확인 후 Planner가 TODAY에 배정합니다.');
 };
 let voiceRecognition=null;
 $('#voiceTaskBtn').onclick=()=>{
@@ -852,6 +852,25 @@ function editSchedule(id){
 }
 document.getElementById('scheduleClearBtn')?.addEventListener('click',clearScheduleForm);
 document.addEventListener('click',e=>{
+  const childConfirm=e.target.closest('[data-child-fact-confirm]');
+  if(childConfirm){
+    if(!requireParentUi())return;
+    try{
+      const reviewed=window.ReadyAssignments?.reviewChildFact?.(childConfirm.dataset.childFactConfirm,{actor:'PARENT',decision:'CONFIRM'});
+      const processed=reviewed?.ok?window.ReadyIntegrationV1?.processAssignment?.(childConfirm.dataset.childFactConfirm,{start_date:localDateKey()}):null;
+      toast(processed?.ok?'숙제를 확인했고 Planner가 TODAY 후보를 만들었어요.':reviewed?.ok?'숙제를 확인했어요. Planner 배정 조건을 더 확인해야 합니다.':'숙제 확인을 완료하지 못했어요.');
+    }catch(error){toast(error?.message||'숙제 확인을 완료하지 못했어요.')}
+    renderPlannerAdmin();renderPlanner();renderMission();return;
+  }
+  const childReject=e.target.closest('[data-child-fact-reject]');
+  if(childReject){
+    if(!requireParentUi())return;
+    try{
+      window.ReadyAssignments?.reviewChildFact?.(childReject.dataset.childFactReject,{actor:'PARENT',decision:'REJECT',reason:'PARENT_REJECTED_CHILD_INPUT'});
+      toast('이 CHILD 숙제 제안은 Planner에 보내지 않았어요.');
+    }catch(error){toast(error?.message||'숙제 제외를 완료하지 못했어요.')}
+    renderPlannerAdmin();renderPlanner();renderMission();return;
+  }
   const s=e.target.closest('[data-edit-schedule]'); if(s){editSchedule(s.dataset.editSchedule);return;}
   const review=e.target.closest('[data-carry-review]');
   if(review){
@@ -1200,7 +1219,16 @@ function renderParentIntake(){
       <input data-answer type="hidden" value="">
     </div>`).join('');
   const status=$('#assignmentFactStatus'),projection=window.ReadyAssignments?.project?.('PARENT');
-  if(status&&projection)status.innerHTML=projection.facts.slice(-12).reverse().map(f=>`<div class="adminListItem"><span><b>${escapeHtml(f.book_subject||f.subject)}</b><small>${escapeHtml(f.confirmation_state)} · ${escapeHtml(f.analysis_state)}</small></span></div>`).join('');
+  if(status&&projection){
+    const pending=window.ReadyAssignments?.pendingChildFacts?.()||[];
+    const pendingIds=new Set(pending.map(x=>x.assignment_id));
+    status.innerHTML=projection.facts.slice(-20).reverse().map(f=>{
+      const childPending=pendingIds.has(f.assignment_id);
+      const actions=childPending?`<div class="adminInlineActions"><button class="miniAction" data-child-fact-confirm="${f.assignment_id}">확인</button><button class="miniAction" data-child-fact-reject="${f.assignment_id}">제외</button></div>`:'';
+      const label=f.title||f.book_subject||f.subject||'숙제 제안';
+      return `<div class="adminListItem"><span><b>${escapeHtml(label)}</b><small>${childPending?'CHILD 제안 · Parent 확인 대기':escapeHtml(f.confirmation_state)} · ${escapeHtml(f.analysis_state)}</small></span>${actions}</div>`;
+    }).join('');
+  }
 
   const lmRoot=$('#learningMasterSummary');
   const domain=window.ReadyAssignments?.load?.();
