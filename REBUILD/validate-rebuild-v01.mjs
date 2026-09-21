@@ -728,3 +728,18 @@ assert('recording-artifact-result-history-link',
   resultHistoryArtifactSource.includes('record.recordingRef') &&
   indexSource.includes('resultRecordingAudio')
 );
+
+const learnerContextSource=loadSource('src/learning/learner-context-runtime.js');
+assert('learner-birthdate-context-wired',
+  learnerContextSource.includes('BIRTHDATE_ONLY') &&
+  indexSource.includes('profileBirthdate') &&
+  indexSource.includes('src/learning/learner-context-runtime.js') &&
+  appSource.includes('ReadySetLearnerContext') &&
+  loadSource('ready-integration-v1.js').includes('learner_context') &&
+  loadSource('ready-learning-master-v01.js').includes('learnerAgePolicy')
+);
+assert('learner-age-does-not-infer-grade-or-schedule',
+  learnerContextSource.includes('inferred_grade:null') &&
+  learnerContextSource.includes("'SCHEDULE_DATE'") &&
+  learnerContextSource.includes("'PLANNER_DATE'")
+);

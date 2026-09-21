@@ -14,6 +14,7 @@
     function renderProfile(state){
       const img=q('#profileImage'),ph=q('#profilePlaceholder');
       const name=q('#profileName'); if(name)name.value=state.profile.name;
+      const birth=q('#profileBirthdate'); if(birth)birth.value=state.profile.birthdate||'';
       const share=q('#shareAvatarOptIn'); if(share)share.checked=!!state.profile.shareAvatar;
       if(state.profile.photo){
         if(img){img.src=state.profile.photo;img.hidden=false;img.style.filter=styleFilter(state.profile.style)}

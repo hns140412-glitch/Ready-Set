@@ -33,9 +33,11 @@
         activity_types:profile?.activity_types||[],
         allow_subject_generalization:true
       })||null;
+      const learnerContext=input.learner_context||window.ReadySetLearnerContext?.current?.()||null;
       window.ReadyLearningMasterV01.interpretConfirmed(assignmentId,{
         actor:'LEARNING_MASTER_RUNTIME',
-        learning_signal:learningSignal
+        learning_signal:learningSignal,
+        learner_context:learnerContext
       });
       state=window.ReadyAssignments.load();fact=state.assignmentFacts[assignmentId];
     }
@@ -95,11 +97,13 @@
       specialist_evidence:specialistEvidenceSignal(recent),
       cannot_influence:['ASSIGNMENT_FACT','SOURCE_RANGE','DEADLINE','FACT_CONFIRMATION','SCHEDULE_DATE','PLANNER_DATE']
     };
+    const learnerContext=input.learner_context||window.ReadySetLearnerContext?.current?.()||null;
     const reviewed=window.ReadyLearningMasterV01.interpretConfirmed(assignmentId,{
       actor:'LEARNING_MASTER_ESCALATION_REVIEW',
       force_review:true,
       review_reason:carry.escalation_reason||'CARRY_OVER_ESCALATION',
-      escalation_review_signal:escalationSignal
+      escalation_review_signal:escalationSignal,
+      learner_context:learnerContext
     });
     const resolved=window.ReadySetPlanner.resolveCarryOver?.(carryOverId,{resolution:'CANCEL',actor:'PARENT_LEARNING_MASTER_REVIEW'});
     const processed=processAssignment(assignmentId,{start_date:input.start_date});
