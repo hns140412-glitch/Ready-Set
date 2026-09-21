@@ -1,5 +1,14 @@
 
-const VERSION={app:'0.9.3-rc1',master:'REV_07',schema:5,cache:'ready-set-v093-rev07'};
+const RELEASE=globalThis.ReadySetReleaseDescriptor;
+if(!globalThis.TakyReleaseContract?.validateDescriptor?.(RELEASE)?.ok){
+  throw new Error('INVALID_READY_RELEASE_DESCRIPTOR');
+}
+const VERSION={
+  app:RELEASE.app_version,
+  master:RELEASE.master_revision||'C2S_REWRITE_01',
+  schema:RELEASE.data_schema_version,
+  cache:RELEASE.release_id
+};
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 
@@ -77,7 +86,17 @@ function migrate(x){
     guide:{...initial.guide,...x.guide}
   };
 }
-function save(){const payload=JSON.stringify(state);localStorage.setItem('readyset_state',payload);window.ReadySetLocalFirst?.capture?.('app_state',payload).catch?.(()=>{})}
+function readyPwaSafePoint(){
+  return !state.activeSession;
+}
+globalThis.ReadySetPwaSafePoint=readyPwaSafePoint;
+function save(){
+  const payload=JSON.stringify(state);
+  localStorage.setItem('readyset_state',payload);
+  window.ReadySetLocalFirst?.capture?.('app_state',payload).catch?.(()=>{});
+  window.dispatchEvent(new CustomEvent('readyset-state-saved',{detail:{pwa_safe_point:readyPwaSafePoint()}}));
+  if(readyPwaSafePoint()) window.dispatchEvent(new CustomEvent('readyset-safe-point'));
+}
 function toast(msg){
   const t=$('#toast'); if(!t)return;
   t.textContent=msg;t.hidden=false;
@@ -1727,9 +1746,11 @@ function reconcileReadyRuntimeState(){
 
 window.addEventListener('load',()=>{
   renderHome();renderSettings();
+  const versionInfo=document.getElementById('readyVersionInfo');
+  if(versionInfo) versionInfo.textContent=`APP ${VERSION.app} · MASTER ${VERSION.master} · SCHEMA ${VERSION.schema} · RELEASE ${VERSION.cache}`;
   const recovery=reconcileReadyRuntimeState();
   if(recovery.resumed)nav('focus');
-  if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  if(readyPwaSafePoint()) window.dispatchEvent(new CustomEvent('readyset-safe-point'));
 });
 
 
