@@ -147,8 +147,32 @@
   function switchTask(taskId) {
     const c = ensureContract();
     const next = c?.tasks?.find(t => t.task_id === taskId);
-    if (!next || next.task_id === c.active_task_id) return;
-    endActiveLap('TASK_CHANGE', currentTask(c)?.state || 'PENDING');
+    const previous = currentTask(c);
+    if (!next || next.task_id === c.active_task_id || next.state !== 'PENDING') return;
+
+    if (next.planner_todo_id && window.ReadySetPlanner) {
+      const activated = window.ReadySetPlanner.recordTaskState({
+        todo_id: next.planner_todo_id,
+        ready_state: 'IN_PROGRESS',
+        session_id: c.session_id,
+        task_id: next.task_id,
+        at: iso()
+      });
+      if (activated?.state !== 'IN_PROGRESS') return;
+    }
+
+    endActiveLap('TASK_CHANGE', previous?.state || 'PENDING');
+
+    if (previous?.state === 'PENDING' && previous.planner_todo_id && window.ReadySetPlanner) {
+      window.ReadySetPlanner.recordTaskState({
+        todo_id: previous.planner_todo_id,
+        ready_state: 'PLANNED',
+        session_id: c.session_id,
+        task_id: previous.task_id,
+        at: iso()
+      });
+    }
+
     c.active_task_id = next.task_id;
     startLap(next, 'NEXT_TASK', state.activeSession);
     save();
