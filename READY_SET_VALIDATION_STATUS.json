@@ -1,5 +1,5 @@
 {
-  "status_version": "READY_C2S_REWRITE_01",
+  "status_version": "READY_C2S_REWRITE_01.1",
   "product": "Ready & Set",
   "evidence_policy": "Validation belongs to an exact code SHA; product/version labels alone never imply validation.",
   "current_main_sha_at_r0": "c82109651609440d2e9e08486f2ef5a042a68e46",
@@ -9,28 +9,59 @@
     "runtime_verified": false,
     "device_verified": false,
     "production_verified": false,
-    "reason": "PR #70 targeted per-task session-end behavior is verified, but exact-main Ready Runtime E2E and TAKY Codex Worker Self-Test remain failing; global CI/runtime verification is false."
+    "evidence_state": "LIVE_HEAD_REFRESH_REQUIRED__RUNTIME_CODE_BASIS_RECORDED",
+    "reason": "Runtime/product code basis a85bc52c9ead654e058ac1c5a8369e7e9c53dd5e includes PR #81. Final PR #81 head f077fd73f9d957b4b41720173b1dc098a514fd15 passed Planner Free Window Gate, Ready Integration CI, Ready Runtime E2E and TAKY Codex Worker Self-Test. This status file does not self-assert its eventual merge SHA."
   },
   "historical_verified_evidence": {
     "status": "HISTORICAL_REFERENCE_ONLY"
   },
   "rewrite_gates": {
     "R0_CANONICAL_SKELETON": "COMPLETE",
-    "R1_SINGLE_SESSION_ENGINE": "PARTIAL_IMPLEMENTED_TARGETED_VERIFIED_PR70",
-    "R2_PRODUCT_LANGUAGE_AUTHORITY": "NOT_STARTED",
-    "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "NOT_STARTED",
+    "R1_SINGLE_SESSION_ENGINE": "PARTIAL_IMPLEMENTED_TARGETED_VERIFIED",
+    "R2_PRODUCT_LANGUAGE_AUTHORITY": "PARTIAL_IMPLEMENTED_CANONICAL_IDENTITY_AND_README_ALIGNED",
+    "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "PARTIAL_IMPLEMENTED_SHARED_RELEASE_RUNTIME_VERIFIED",
     "R4_CHILD_FACT_CONFIRMATION_PATH": "NOT_STARTED",
-    "R5_PLANNER_FREE_WINDOW": "NOT_STARTED",
+    "R5_PLANNER_FREE_WINDOW": "PARTIAL_IMPLEMENTED_PR81_VERIFIED__ACTUAL_AVAILABILITY_INPUT_OPEN",
     "R6_LEGACY_AUTHORITY_ARCHIVE": "NOT_STARTED",
-    "R7_EXACT_MAIN_VERIFICATION": "IN_PROGRESS_FAILURE_CLASSIFICATION"
+    "R7_EXACT_MAIN_VERIFICATION": "NOT_ASSERTED__PR_HEAD_GATES_GREEN"
   },
   "release_state": "REWRITE_IN_PROGRESS_NOT_RELEASE_VERIFIED",
   "latest_targeted_evidence": {
-    "sha": "c82109651609440d2e9e08486f2ef5a042a68e46",
-    "pr": 70,
-    "scope": "per-task session-end single authority",
+    "sha": "f077fd73f9d957b4b41720173b1dc098a514fd15",
+    "pr": 81,
+    "scope": "Planner V2 actual free-window evidence connection",
     "result": "TARGETED_BEHAVIOR_VERIFIED",
-    "global_ci_verified": false,
-    "global_runtime_verified": false
+    "gates": {
+      "planner_free_window": {
+        "run_id": 35560398864,
+        "status": "PASS"
+      },
+      "integration_ci": {
+        "run_id": 35560398815,
+        "status": "PASS"
+      },
+      "runtime_e2e": {
+        "run_id": 35560398875,
+        "status": "PASS"
+      },
+      "codex_selftest": {
+        "run_id": 35560398934,
+        "status": "PASS"
+      }
+    },
+    "claim_boundary": "PR_HEAD_VERIFIED; runtime code basis recorded; live repository head/exact-main/device/production not asserted",
+    "merged_runtime_code_basis_sha": "a85bc52c9ead654e058ac1c5a8369e7e9c53dd5e"
+  },
+  "open_product_gaps": [
+    "R4 child FACT confirmation path remains not started.",
+    "R5 free-window engine is connected, but real candidate_windows_by_date supply from confirmed daily availability remains open.",
+    "R6 legacy authority archive remains not started.",
+    "Exact-main/device/production verification remains separate."
+  ],
+  "head_policy": "STATUS_FILE_CANNOT_SELF_ASSERT_EVENTUAL_MERGE_SHA; repository head is volatile and must be live-refreshed when material.",
+  "runtime_code_basis": {
+    "sha": "a85bc52c9ead654e058ac1c5a8369e7e9c53dd5e",
+    "relation": "BASE_MAIN_BEFORE_STATUS_ONLY_PR82",
+    "note": "PR #82 changes validation metadata only; it does not change Ready runtime/product code."
   }
 }
