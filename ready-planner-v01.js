@@ -18,6 +18,7 @@
     WAITING_FOR_PARENT:'WAITING_FOR_PARENT',
     BLOCKED:'BLOCKED'
   };
+  const rebuildPolicy=globalThis.ReadyRebuildPlannerPolicy||null;
 
   const blank=()=>({
     schema_version:SCHEMA_VERSION,
@@ -458,13 +459,12 @@
         const nextDepth=Math.max(0,Number(source.provenance?.carry_over_depth)||0)+1;
         const template=s.homework_templates.find(x=>x.template_id===source.template_id)||null;
         const deadline=cleanText(template?.deadline_date)||null;
-        const deadlineExceeded=deadline&&date>deadline;
-        const nearDeadline=deadline&&date>=addDays(deadline,-1);
         const maxAutoDepth=Math.max(1,Number(input.max_auto_depth)||3);
-        if(deadlineExceeded||nextDepth>maxAutoDepth||(nearDeadline&&nextDepth>=maxAutoDepth)){
+        const escalation=rebuildPolicy?.carryEscalation?.({nextDepth,deadline,targetDate:date,maxAutoDepth})||(()=>{const deadlineExceeded=deadline&&date>deadline;const nearDeadline=deadline&&date>=addDays(deadline,-1);return {required:!!(deadlineExceeded||nextDepth>maxAutoDepth||(nearDeadline&&nextDepth>=maxAutoDepth)),reason:deadlineExceeded?'DEADLINE_EXCEEDED':nearDeadline?'REPEATED_CARRY_NEAR_DEADLINE':nextDepth>maxAutoDepth?'REPEATED_CARRY_LIMIT':null}})();
+        if(escalation.required){
           carry.resolution_required=true;
           carry.allocation_ready=false;
-          carry.escalation_reason=deadlineExceeded?'DEADLINE_EXCEEDED':nearDeadline?'REPEATED_CARRY_NEAR_DEADLINE':'REPEATED_CARRY_LIMIT';
+          carry.escalation_reason=escalation.reason;
           carry.escalation_level='PARENT_LEARNING_MASTER_REVIEW';
           carry.escalated_at=new Date().toISOString();
           carry.next_carry_over_depth=nextDepth;
@@ -733,18 +733,20 @@
     function recordSessionOutcome(input={}){
       const todoId=cleanText(input.todo_id); if(!todoId) return {ok:false,reason:'TODO_ID_REQUIRED'};
       const readyState=cleanText(input.ready_state);
-      const mapped=READY_TO_TODO[readyState]||readyState;
-      if(!TODO_STATES.has(mapped)) return {ok:false,reason:'INVALID_READY_STATE'};
+      const mapped=rebuildPolicy?.mapReadyState?.(readyState)??(READY_TO_TODO[readyState]||readyState);
+      if(!mapped||!TODO_STATES.has(mapped)) return {ok:false,reason:'INVALID_READY_STATE'};
       const actualMs=Number.isFinite(input.actual_ms)?Math.max(0,input.actual_ms):0;
       const actualMinutes=Math.round(actualMs/60000);
       return mutate(s=>{
         const todo=s.dated_todos.find(x=>x.todo_id===todoId);
         if(!todo)return {ok:false,reason:'TODO_NOT_FOUND'};
         const sessionId=cleanText(input.session_id)||null;
-        if(todo.active_session_id&&sessionId&&todo.active_session_id!==sessionId){
-          return {ok:false,reason:'SESSION_OWNERSHIP_CONFLICT',todo_id:todoId,active_session_id:todo.active_session_id};
+        const ownership=rebuildPolicy?.validateSessionOwnership?.(todo,sessionId)||{ok:!(todo.active_session_id&&sessionId&&todo.active_session_id!==sessionId),reason:'SESSION_OWNERSHIP_CONFLICT',active_session_id:todo.active_session_id};
+        if(!ownership.ok){
+          return {ok:false,reason:ownership.reason||'SESSION_OWNERSHIP_CONFLICT',todo_id:todoId,active_session_id:ownership.active_session_id||todo.active_session_id};
         }
-        if(todo.state!=='IN_PROGRESS'&&!['PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].includes(todo.state)){
+        const finishable=rebuildPolicy?.canFinishTodo?.(todo)??(todo.state==='IN_PROGRESS'||['PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].includes(todo.state));
+        if(!finishable){
           return {ok:false,reason:'TODO_NOT_FINISHABLE',todo_id:todoId,state:todo.state};
         }
         todo.state=mapped;
@@ -807,8 +809,9 @@
           s.progress_events=s.progress_events.slice(-500);
         }
 
-        const carryEligible=['PARTIAL','DEFERRED'].includes(mapped);
-        const carryNeedsResolution=['BLOCKED','WAITING_FOR_PARENT'].includes(mapped);
+        const carryPolicy=rebuildPolicy?.carryPolicyForState?.(mapped)||{carryEligible:['PARTIAL','DEFERRED'].includes(mapped),resolutionRequired:['BLOCKED','WAITING_FOR_PARENT'].includes(mapped),resolvesOpenCarry:mapped==='COMPLETED'};
+        const carryEligible=carryPolicy.carryEligible;
+        const carryNeedsResolution=carryPolicy.resolutionRequired;
         const existing=s.carry_over_queue.find(x=>x.source_todo_id===todoId&&x.status==='OPEN');
         if((carryEligible||carryNeedsResolution)&&!existing){
           s.carry_over_queue.push({
@@ -831,7 +834,7 @@
             created_at:new Date().toISOString()
           });
         }
-        if(mapped==='COMPLETED'){
+        if(carryPolicy.resolvesOpenCarry){
           s.carry_over_queue.forEach(x=>{
             if(x.source_todo_id===todoId&&x.status==='OPEN'){
               x.status='RESOLVED';
@@ -1088,8 +1091,9 @@
           todo.active_task_id=cleanText(input.task_id)||null;
           todo.started_at=todo.started_at||input.at||new Date().toISOString();
         }else{
-          if(todo.active_session_id&&sessionId&&todo.active_session_id!==sessionId){
-            return {ok:false,reason:'SESSION_OWNERSHIP_CONFLICT',todo_id:todoId,active_session_id:todo.active_session_id};
+          const ownership=rebuildPolicy?.validateSessionOwnership?.(todo,sessionId)||{ok:!(todo.active_session_id&&sessionId&&todo.active_session_id!==sessionId),reason:'SESSION_OWNERSHIP_CONFLICT',active_session_id:todo.active_session_id};
+          if(!ownership.ok){
+            return {ok:false,reason:ownership.reason||'SESSION_OWNERSHIP_CONFLICT',todo_id:todoId,active_session_id:ownership.active_session_id||todo.active_session_id};
           }
           todo.state=mapped;
           todo.active_session_id=null;
