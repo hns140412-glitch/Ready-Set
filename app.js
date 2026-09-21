@@ -27,6 +27,7 @@ const rebuildCaptureDraft=globalThis.ReadyRebuildCaptureDraft||null;
 const rebuildCaptureView=globalThis.ReadyRebuildCaptureView||null;
 const rebuildAssignmentService=globalThis.ReadyRebuildAssignmentService||null;
 const rebuildRecordingService=globalThis.ReadyRebuildRecordingService||null;
+const rebuildRecordingOrchestrator=globalThis.ReadyRebuildRecordingOrchestrator||null;
 const rebuildRecordingView=globalThis.ReadyRebuildRecordingView||null;
 const rebuildResultHistoryView=globalThis.ReadyRebuildResultHistoryView||null;
 const rebuildProfileSettingsView=globalThis.ReadyRebuildProfileSettingsView||null;
@@ -36,7 +37,7 @@ const rebuildPlannerScreenView=globalThis.ReadyRebuildPlannerScreenView||null;
 const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -82,7 +83,6 @@ const appPersistence=rebuildPersistence.create({
   safePoint:appState=>!appState?.activeSession
 });
 let state=appPersistence.load();
-let mediaRecorder=null,mediaStream=null,chunks=[],recordStartedAt=0,recordTicker=null,currentAudio=null;
 let previewTimer=null,currentGuestType='pico';
 let plannerSelectedDate=null;
 let plannerTab='week';
@@ -489,7 +489,7 @@ $('#goRecordBtn').onclick=async()=>{
   nav('recording');
 };
 $('#recordBackBtn').onclick=async()=>{
-  if(mediaRecorder?.state==='recording'){toast('녹음을 먼저 끝내주세요.');return}
+  if(recordingRuntime.isRecording()){toast('녹음을 먼저 끝내주세요.');return}
   nav('focus');
   if(state.activeSession?.sound!=='OFF')await resumeBgm(state.activeSession.sound);
 };
@@ -500,6 +500,9 @@ const recordingView=rebuildRecordingView.create({
   applyAvatar,
   applyGuide
 });
+const recordingRuntime=rebuildRecordingOrchestrator.create({
+  recordingService:rebuildRecordingService
+});
 function renderRecordingContext(){
   recordingView.renderContext({
     sessionTimes,
@@ -508,29 +511,28 @@ function renderRecordingContext(){
   });
 }
 $('#recordAction').onclick=async()=>{
-  if(mediaRecorder&&mediaRecorder.state==='recording'){mediaRecorder.stop();return}
+  if(recordingRuntime.isRecording()){recordingRuntime.stop();return}
   await startRecording();
 };
 async function startRecording(){
   await pauseBgm();
-  if(!navigator.mediaDevices?.getUserMedia){toast('이 브라우저는 마이크 녹음을 지원하지 않습니다.');return}
-  try{
-    mediaStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-    const mime=rebuildRecordingService.chooseMime(window.MediaRecorder);
-    mediaRecorder=new MediaRecorder(mediaStream,mime?{mimeType:mime}:undefined);
-    chunks=[];
-    mediaRecorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
-    mediaRecorder.onstop=finishRecording;
-    mediaRecorder.start(250);
-    recordStartedAt=Date.now();
-    recordingView.setRecordingActive(true);
-    recordTicker=setInterval(()=>{
-      recordingView.renderClock(Date.now()-recordStartedAt);
+  const started=await recordingRuntime.start({
+    onTick:ms=>{
+      recordingView.renderClock(ms);
       renderRecordingContext();
-    },250);
-  }catch(e){
-    toast(e.name==='NotAllowedError'?'마이크 권한이 필요합니다.':'녹음을 시작할 수 없습니다.');
+    },
+    onStop:finishRecording
+  });
+  if(!started.ok){
+    const message=started.reason==='UNSUPPORTED'
+      ?'이 브라우저는 마이크 녹음을 지원하지 않습니다.'
+      :started.reason==='MIC_PERMISSION_DENIED'
+        ?'마이크 권한이 필요합니다.'
+        :'녹음을 시작할 수 없습니다.';
+    toast(message);
+    return;
   }
+  recordingView.setRecordingActive(true);
 }
 function chooseGuest(){
   const all=Object.keys(GUIDE_TYPES).filter(x=>x!==state.guide.type);
@@ -539,28 +541,26 @@ function chooseGuest(){
   currentGuestType=pool[Math.floor(Math.random()*pool.length)]||all[0]||'pico';
   state.guestHistory=[...(state.guestHistory||[]),currentGuestType].slice(-4);save();
 }
-function finishRecording(){
-  clearInterval(recordTicker);
-  mediaStream?.getTracks().forEach(t=>t.stop());
-  const type=mediaRecorder.mimeType||chunks[0]?.type||'audio/webm';
-  currentAudio=new Blob(chunks,{type});
+function finishRecording({blob,type,durationMs}={}){
+  if(!blob)return;
   chooseGuest();
   recordingView.renderReview({
-    audioUrl:URL.createObjectURL(currentAudio),
+    audioUrl:URL.createObjectURL(blob),
     mainGuideType:state.guide.type,
     guestGuideType:currentGuestType,
     mainGuideName:state.guide.name,
     guestGuideName:GUIDE_TYPES[currentGuestType].defaultName,
     formatNote:rebuildRecordingService.formatNote(type)
   });
-  state.recordingMeta={mime:type,durationMs:Date.now()-recordStartedAt,guestType:currentGuestType};
+  state.recordingMeta={mime:type,durationMs,guestType:currentGuestType};
   save();
 }
 $('#rerecordBtn').onclick=()=>{
-  currentAudio=null;
+  recordingRuntime.clearAudio();
   recordingView.resetReview({guideName:state.guide.name});
 };
 $('#saveRecordingBtn').onclick=async()=>{
+  const currentAudio=recordingRuntime.currentAudio();
   if(!currentAudio)return;
   const type=currentAudio.type||'audio/webm';
   const filename=rebuildRecordingService.filenameFor({profileName:state.profile.name||'Judy',date:new Date(),type});

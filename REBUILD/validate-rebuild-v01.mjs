@@ -220,3 +220,21 @@ assert('capture-orchestrator-wired',
 assert('capture-orchestrator-direct-api-reduced',
   (appSource.match(/window\.ReadyCaptureV01/g)||[]).length===1
 );
+
+const recordingOrchestratorSource=loadSource('src/recording/recording-orchestrator-runtime.js');
+assert('recording-orchestrator-owner',recordingOrchestratorSource.includes('ReadyRebuildRecordingOrchestrator'));
+assert('recording-orchestrator-loaded-before-app',
+  indexSource.indexOf('src/recording/recording-orchestrator-runtime.js')>0 &&
+  indexSource.indexOf('src/recording/recording-orchestrator-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('recording-orchestrator-wired',
+  appSource.includes('rebuildRecordingOrchestrator.create') &&
+  appSource.includes('recordingRuntime.start') &&
+  appSource.includes('recordingRuntime.currentAudio')
+);
+assert('recording-inline-media-lifecycle-removed',
+  !appSource.includes('navigator.mediaDevices?.getUserMedia') &&
+  !appSource.includes('new MediaRecorder(') &&
+  !appSource.includes('mediaStream?.getTracks()') &&
+  !appSource.includes('let mediaRecorder=')
+);
