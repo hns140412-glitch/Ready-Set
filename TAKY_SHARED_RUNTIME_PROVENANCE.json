@@ -1,0 +1,22 @@
+{
+  "version": "2026-09-21.1",
+  "canonical_source": {
+    "repository": "hns140412-glitch/TAKY",
+    "commit": "c53ee827c03133576f1f9c6e0c6480991f470207"
+  },
+  "vendored_files": [
+    {
+      "consumer_path": "vendor/taky/release-contract.js",
+      "source_path": "SHARED/runtime/release-contract.js",
+      "source_blob_sha": "4fa1ba14734eb66e4b41778282a97417f3a64786",
+      "capability_id": "CAP-RELEASE-COMPAT-001"
+    },
+    {
+      "consumer_path": "vendor/taky/pwa-update-state.js",
+      "source_path": "SHARED/runtime/pwa-update-state.js",
+      "source_blob_sha": "05e4294cc2260ef05b7b6ba7ce95bdfcceeb7e5b",
+      "capability_id": "CAP-PWA-UPDATE-001"
+    }
+  ],
+  "policy": "Vendored copies must stay byte-equivalent to the recorded canonical source until an explicitly validated consumer adaptation is required. Domain semantics stay in Ready-owned adapters."
+}
