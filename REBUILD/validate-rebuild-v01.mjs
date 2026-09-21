@@ -302,3 +302,27 @@ assert('settings-inline-handlers-removed',
   !appSource.includes('function renderNameSuggestions(') &&
   !appSource.includes('function speakGuide(')
 );
+
+const authSyncControllerSource=loadSource('src/views/auth-sync-controller-runtime.js');
+assert('auth-sync-controller-owner',authSyncControllerSource.includes('ReadyRebuildAuthSyncController'));
+assert('auth-sync-controller-loaded-before-app',
+  indexSource.indexOf('src/views/auth-sync-controller-runtime.js')>0 &&
+  indexSource.indexOf('src/views/auth-sync-controller-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('auth-sync-controller-wired',
+  appSource.includes('rebuildAuthSyncController.create') &&
+  appSource.includes('authSyncRuntime.bind()')
+);
+assert('auth-sync-authority-stays-external',
+  authSyncControllerSource.includes('familyApi()?.login') &&
+  authSyncControllerSource.includes('familyApi()?.linkChild') &&
+  authSyncControllerSource.includes('requireParentUi()') &&
+  !authSyncView.includes('linkChild')
+);
+assert('auth-sync-inline-handlers-removed',
+  !appSource.includes("document.getElementById('authLoginBtn')") &&
+  !appSource.includes("document.getElementById('familyLinkChildBtn')") &&
+  !appSource.includes("document.getElementById('checkSyncBtn')") &&
+  !appSource.includes('async function renderSyncStatus()') &&
+  !appSource.includes('function renderAuthStatus()')
+);

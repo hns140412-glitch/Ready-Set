@@ -35,12 +35,13 @@ const rebuildProfileSettingsView=globalThis.ReadyRebuildProfileSettingsView||nul
 const rebuildProfileController=globalThis.ReadyRebuildProfileController||null;
 const rebuildSettingsController=globalThis.ReadyRebuildSettingsController||null;
 const rebuildAuthSyncView=globalThis.ReadyRebuildAuthSyncView||null;
+const rebuildAuthSyncController=globalThis.ReadyRebuildAuthSyncController||null;
 const rebuildHomeView=globalThis.ReadyRebuildHomeView||null;
 const rebuildPlannerScreenView=globalThis.ReadyRebuildPlannerScreenView||null;
 const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -1050,8 +1051,8 @@ const profileSettingsView=rebuildProfileSettingsView.create({
   guideData,
   applyGuide,
   renderNameSuggestions:reroll=>settingsRuntime.renderNameSuggestions(reroll),
-  renderAuthStatus,
-  renderSyncStatus
+  renderAuthStatus:()=>authSyncRuntime?.renderAuthStatus(),
+  renderSyncStatus:()=>authSyncRuntime?.renderSyncStatus()
 });
 const profileRuntime=rebuildProfileController.create({
   view:profileSettingsView,
@@ -1070,87 +1071,19 @@ $('#saveProfileBtn').onclick=()=>profileRuntime.saveProfile({
 
 
 
-function renderAuthStatus(){
-  authSyncView.renderAuth(familySession());
-}
-window.addEventListener('readyset-family-session',()=>{
-  renderAuthStatus();
-  renderPlanner();
-  renderSyncStatus().catch(()=>{});
+const authSyncRuntime=rebuildAuthSyncController.create({
+  view:authSyncView,
+  query:$,
+  familySession,
+  familyApi:()=>window.ReadyFamilySession,
+  syncAdapter:()=>window.ReadySetSyncAdapter,
+  localFirst:()=>window.ReadySetLocalFirst,
+  requireParentUi,
+  renderPlanner,
+  toast,
+  eventTarget:window
 });
-
-document.getElementById('authLoginBtn')?.addEventListener('click',async()=>{
-  const email=$('#authEmailInput')?.value.trim(),password=$('#authPasswordInput')?.value||'';
-  if(!email||!password){toast('이메일과 비밀번호를 확인해 주세요.');return;}
-  const result=await window.ReadyFamilySession?.login?.({email,password});
-  if(result?.ok){
-    toast('가족 계정으로 로그인했어요.');
-    renderAuthStatus();renderPlanner();await renderSyncStatus();
-  }else{
-    const msg=result?.reason==='FAMILY_MEMBERSHIP_REQUIRED'
-      ? '아직 가족 연결이 완료되지 않은 계정입니다.'
-      : result?.reason==='IDENTITY_ROLE_INVALID'
-        ? '계정 역할 설정을 확인해 주세요.'
-        : '로그인 정보를 확인해 주세요.';
-    toast(msg);
-  }
-});
-
-document.getElementById('authSignupBtn')?.addEventListener('click',async()=>{
-  const name=$('#authNameInput')?.value.trim(),email=$('#authEmailInput')?.value.trim(),password=$('#authPasswordInput')?.value||'';
-  if(!email||password.length<8){toast('이메일과 8자 이상 비밀번호를 확인해 주세요.');return;}
-  const result=await window.ReadyFamilySession?.signup?.({name,email,password});
-  toast(result?.ok?'가입 확인 메일을 확인해 주세요. 가입 후 기본 역할은 CHILD입니다.':'계정 생성에 실패했습니다.');
-});
-
-document.getElementById('authLogoutBtn')?.addEventListener('click',async()=>{
-  await window.ReadyFamilySession?.logout?.();
-  toast('로그아웃했습니다. 로컬 CHILD 모드로 전환합니다.');
-  renderAuthStatus();renderPlanner();await renderSyncStatus();
-});
-
-document.getElementById('familyLinkChildBtn')?.addEventListener('click',async()=>{
-  if(!requireParentUi())return;
-  const email=$('#familyChildEmailInput')?.value.trim();
-  if(!email){toast('연결할 CHILD 이메일을 입력해 주세요.');return;}
-  const result=await window.ReadyFamilySession?.linkChild?.(email);
-  if(result?.ok){
-    toast('CHILD 계정을 가족에 연결했습니다.');
-    if($('#familyChildEmailInput'))$('#familyChildEmailInput').value='';
-  }else{
-    const message=result?.reason==='CHILD_ACCOUNT_NOT_FOUND'
-      ? '먼저 CHILD 계정을 가입·확인한 뒤 연결해 주세요.'
-      : result?.reason==='TARGET_ALREADY_IN_OTHER_FAMILY'
-        ? '이미 다른 가족에 연결된 계정입니다.'
-        : 'CHILD 계정을 연결하지 못했습니다.';
-    toast(message);
-  }
-});
-
-async function renderSyncStatus(){
-  const adapter=window.ReadySetSyncAdapter;
-  const local=window.ReadySetLocalFirst;
-  if(!adapter||!local)return;
-  const status=adapter.status();
-  const [outbox,conflicts]=await Promise.all([local.outbox(),local.conflicts()]);
-  const pending=outbox.filter(x=>!['SENT','SUPERSEDED'].includes(x.status)).length;
-  const openConflicts=conflicts.filter(x=>x.status==='OPEN').length;
-  authSyncView.renderSync({status,pending,conflicts:openConflicts});
-}
-window.addEventListener('readyset-sync-status',()=>renderSyncStatus().catch(()=>{}));
-document.getElementById('checkSyncBtn')?.addEventListener('click',async()=>{
-  const s=window.ReadySetSyncAdapter?.status();
-  if(!s?.configured||!s?.enabled){
-    toast('클라우드 동기화는 아직 연결되지 않았어요. 로컬 저장은 정상입니다.');
-    await renderSyncStatus(); return;
-  }
-  const h=await window.ReadySetSyncAdapter.health();
-  if(h.ok){
-    const f=await window.ReadySetLocalFirst.flush();
-    toast(`동기화 연결 확인 · 전송 ${f.sent||0}건`);
-  }else toast('클라우드 연결을 확인하지 못했어요. 로컬 저장을 유지합니다.');
-  await renderSyncStatus();
-});
+authSyncRuntime.bind();
 
 const settingsRuntime=rebuildSettingsController.create({
   view:profileSettingsView,
