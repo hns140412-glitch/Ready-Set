@@ -234,7 +234,7 @@
     <button class="btn outline compactBtn" id="familyLinkChildBtn">CHILD 연결</button>
   </div>
 </div>
-</section><section class="glassCard syncStatusCard"><div class="syncStatusHead"><div><small>CLOUD SYNC</small><h2>동기화 상태</h2></div><span id="syncStateBadge">로컬 저장</span></div><p id="syncStatusText" class="muted">현재 이 기기에 안전하게 저장 중이에요. 클라우드 동기화는 아직 연결되지 않았습니다.</p><div class="syncMeta"><span>대기 중 <b id="syncPendingCount">0</b></span><span>충돌 <b id="syncConflictCount">0</b></span></div><button class="btn outline compactBtn" id="checkSyncBtn">연결 상태 확인</button></section><section class="glassCard"><h2>데이터</h2><button class="btn outline" id="exportDataBtn">기록 JSON 내보내기</button><button class="dangerText" id="resetDataBtn">모든 로컬 데이터 초기화</button></section><p class="muted">APP_VERSION 0.9.3-rc1 · MASTER REV_07 · SCHEMA 5 · CACHE ready-set-v093-rev07</p></main></section>
+</section><section class="glassCard syncStatusCard"><div class="syncStatusHead"><div><small>CLOUD SYNC</small><h2>동기화 상태</h2></div><span id="syncStateBadge">로컬 저장</span></div><p id="syncStatusText" class="muted">현재 이 기기에 안전하게 저장 중이에요. 클라우드 동기화는 아직 연결되지 않았습니다.</p><div class="syncMeta"><span>대기 중 <b id="syncPendingCount">0</b></span><span>충돌 <b id="syncConflictCount">0</b></span></div><button class="btn outline compactBtn" id="checkSyncBtn">연결 상태 확인</button></section><section class="glassCard"><h2>데이터</h2><button class="btn outline" id="exportDataBtn">기록 JSON 내보내기</button><button class="dangerText" id="resetDataBtn">모든 로컬 데이터 초기화</button></section><p class="muted" id="readyVersionInfo">Release information loading…</p></main></section>
 
   <div class="sheet" id="soundSheet" role="dialog" aria-modal="true" aria-label="집중 사운드 선택" hidden><div class="sheetBackdrop" data-close-sound></div><div class="sheetCard safe"><div class="sheetHandle"></div><div class="sheetHeader"><h2>집중 사운드</h2><button data-close-sound aria-label="닫기">×</button></div><div class="soundSheetOptions">
   <button data-sheet-sound="집중 피아노"><span>PIANO</span><b>집중 피아노</b><small>따뜻하고 일정한 기본 BGM</small><i>▶</i></button>
@@ -264,6 +264,9 @@
   <div class="modal" id="recIntro" role="dialog" aria-modal="true" aria-labelledby="recIntroTitle" hidden><div class="modalBackdrop"></div><div class="modalCard"><div class="guidePortrait" id="recIntroGuide"></div><span class="kicker">SPECIAL EVENT</span><h2 id="recIntroTitle">영어 녹음 작전</h2><p>이번엔 영어 문장 녹음이네. 준비됐으면 바로 들어가자!</p><button class="btn dark" id="goRecordBtn">녹음하러 가기</button><button class="linkBtn" id="cancelRecordBtn">다음에 할래</button></div></div>
   <audio id="bgmPlayer" loop preload="auto"></audio><div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 </div>
+<script src="./vendor/taky/release-contract.js"></script>
+<script src="./vendor/taky/pwa-update-state.js"></script>
+<script src="./ready-release-v01.js"></script>
 <script src="./ready-family-session-v01.js"></script>
 <script src="./ready-sync-adapter-v01.js"></script>
 <script src="./ready-local-first-v01.js"></script>
@@ -279,6 +282,7 @@
 <script src="./ready-planner-v01.js"></script>
 <script src="./ready-integration-v1.js"></script>
 <script src="./app.js"></script>
+<script src="./ready-pwa-update-v01.js"></script>
 <script src="./ready-runtime-v07.js"></script>
 </body>
 </html>
