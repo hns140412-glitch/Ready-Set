@@ -46,13 +46,14 @@ test('Parent can create and approve adaptive estimate proposal from observed exe
       template_id:'adaptive_template',title:'수학 연산 적응형',subject:'수학',
       planner_estimated_minutes:20,confirmation_state:'CONFIRMED'
     });
-    const raw=JSON.parse(localStorage.getItem('readyset_planner_v1'));
+    const plannerKey=window.ReadyMemberScope?.storageKey?.('readyset_planner_v1')||'readyset_planner_v1';
+    const raw=JSON.parse(localStorage.getItem(plannerKey));
     raw.execution_observations.push(
       {observation_id:'o1',observation_key:'a',template_id:'adaptive_template',actual_minutes:30,fact_revision:null},
       {observation_id:'o2',observation_key:'b',template_id:'adaptive_template',actual_minutes:35,fact_revision:null},
       {observation_id:'o3',observation_key:'c',template_id:'adaptive_template',actual_minutes:40,fact_revision:null}
     );
-    localStorage.setItem('readyset_planner_v1',JSON.stringify(raw));
+    localStorage.setItem(plannerKey,JSON.stringify(raw));
   });
   await page.locator('[data-nav="planner"]').first().click();
   await page.locator('[data-nav="planner-admin"]').click();
