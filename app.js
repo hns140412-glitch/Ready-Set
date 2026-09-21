@@ -33,13 +33,14 @@ const rebuildResultHistoryView=globalThis.ReadyRebuildResultHistoryView||null;
 const rebuildResultHistoryController=globalThis.ReadyRebuildResultHistoryController||null;
 const rebuildProfileSettingsView=globalThis.ReadyRebuildProfileSettingsView||null;
 const rebuildProfileController=globalThis.ReadyRebuildProfileController||null;
+const rebuildSettingsController=globalThis.ReadyRebuildSettingsController||null;
 const rebuildAuthSyncView=globalThis.ReadyRebuildAuthSyncView||null;
 const rebuildHomeView=globalThis.ReadyRebuildHomeView||null;
 const rebuildPlannerScreenView=globalThis.ReadyRebuildPlannerScreenView||null;
 const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -131,7 +132,7 @@ const appNavigation=rebuildNavigation.create({
     planner:()=>renderPlanner(),
     'planner-admin':()=>renderPlannerAdmin(),
     profile:()=>profileRuntime.renderProfile(),
-    settings:()=>renderSettings(),
+    settings:()=>settingsRuntime.renderSettings(),
     result:()=>resultHistoryRuntime.renderResult()
   }
 });
@@ -349,7 +350,7 @@ $$('[data-sheet-sound]').forEach(b=>b.onclick=async()=>{
   save();
   $$('[data-sheet-sound]').forEach(x=>x.classList.toggle('on',x===b));
   $('#soundName').textContent=sound;
-  renderSettings();
+  settingsRuntime.renderSettings();
   if(sound==='OFF')pauseBgm();
   else{
     clearTimeout(previewTimer);
@@ -1048,7 +1049,7 @@ const profileSettingsView=rebuildProfileSettingsView.create({
   styleFilter,
   guideData,
   applyGuide,
-  renderNameSuggestions,
+  renderNameSuggestions:reroll=>settingsRuntime.renderNameSuggestions(reroll),
   renderAuthStatus,
   renderSyncStatus
 });
@@ -1151,46 +1152,26 @@ document.getElementById('checkSyncBtn')?.addEventListener('click',async()=>{
   await renderSyncStatus();
 });
 
-function renderSettings(){
-  profileSettingsView.renderSettings(state).catch(()=>{});
-}
-$('#guideNameInput').onchange=e=>{
-  state.guide.name=e.target.value.trim()||guideData().defaultName;
-  save();renderSettings();renderHome();
-};
-$$('[data-guide-type]').forEach(b=>b.onclick=()=>{
-  const prevDefault=guideData().defaultName;
-  const type=b.dataset.guideType;
-  state.guide.type=type;
-  if(!state.guide.name||state.guide.name===prevDefault)state.guide.name=guideData(type).defaultName;
-  save();renderSettings();renderHome();toast(`${state.guide.name}와 함께할게요.`);
+const settingsRuntime=rebuildSettingsController.create({
+  view:profileSettingsView,
+  getState:()=>state,
+  save,
+  toast,
+  renderHome,
+  renderMission,
+  guideData,
+  guideNamePool:GUIDE_NAME_POOL,
+  query:$,
+  playBgm,
+  pauseBgm
 });
-function renderNameSuggestions(reroll=true){
-  const root=$('#nameSuggestions');if(!root)return;if(!reroll&&root.children.length)return;
-  const names=[guideData().defaultName,...GUIDE_NAME_POOL.filter(n=>n!==guideData().defaultName)].sort(()=>Math.random()-.5).slice(0,5);
-  root.innerHTML='';names.forEach(n=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>{state.guide.name=n;save();renderSettings();renderHome()};root.appendChild(b)});
-}
-$('#recommendNameBtn').onclick=()=>renderNameSuggestions(true);
-$$('[data-guide-voice]').forEach(b=>b.onclick=()=>{state.guide.voice=b.dataset.guideVoice;save();renderSettings();toast('길잡이 목소리를 바꿨어요.')});
-function speakGuide(text){
-  if(!('speechSynthesis'in window)){toast('이 브라우저에서는 음성 안내를 지원하지 않아요.');return false}
-  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';
-  const cfg={warm:{rate:.92,pitch:1.02},bright:{rate:1.04,pitch:1.12},calm:{rate:.86,pitch:.94},playful:{rate:1.08,pitch:1.18}}[state.guide.voice]||{rate:.95,pitch:1};u.rate=cfg.rate;u.pitch=cfg.pitch;u.volume=.92;speechSynthesis.speak(u);return true;
-}
-$('#voicePreviewBtn').onclick=()=>speakGuide(`${state.guide.name}야. 오늘 작전도 네 옆에서 같이 갈게.`);
-$('#coachVoiceBtn').onclick=()=>speakGuide($('#duoText').textContent||'오늘 녹음을 끝까지 잘 마쳤어.');
-
-$$('[data-sound]').forEach(b=>b.onclick=async()=>{
-  state.sound=b.dataset.sound;
-  if(state.activeSession)state.activeSession.sound=state.sound;
-  save();renderSettings();renderMission();
-  if(state.sound==='OFF')pauseBgm();
-  else{
-    clearTimeout(previewTimer);
-    await playBgm(state.sound,{preview:!state.activeSession});
-    if(!state.activeSession)previewTimer=setTimeout(()=>pauseBgm(),4000);
-  }
-});
+$('#guideNameInput').onchange=e=>settingsRuntime.setGuideName(e.target.value);
+$$('[data-guide-type]').forEach(b=>b.onclick=()=>settingsRuntime.setGuideType(b.dataset.guideType));
+$('#recommendNameBtn').onclick=()=>settingsRuntime.renderNameSuggestions(true);
+$$('[data-guide-voice]').forEach(b=>b.onclick=()=>settingsRuntime.setGuideVoice(b.dataset.guideVoice));
+$('#voicePreviewBtn').onclick=()=>settingsRuntime.speakGuide(`${state.guide.name}야. 오늘 작전도 네 옆에서 같이 갈게.`);
+$('#coachVoiceBtn').onclick=()=>settingsRuntime.speakGuide($('#duoText').textContent||'오늘 녹음을 끝까지 잘 마쳤어.');
+$$('[data-sound]').forEach(b=>b.onclick=()=>settingsRuntime.setSound(b.dataset.sound));
 
 function guidePalette(type){
   return {
@@ -1306,7 +1287,7 @@ function reconcileReadyRuntimeState(){
 }
 
 window.addEventListener('load',()=>{
-  renderHome();renderSettings();
+  renderHome();settingsRuntime.renderSettings();
   const versionInfo=document.getElementById('readyVersionInfo');
   if(versionInfo) versionInfo.textContent=`APP ${VERSION.app} · MASTER ${VERSION.master} · SCHEMA ${VERSION.schema} · RELEASE ${VERSION.cache}`;
   const recovery=reconcileReadyRuntimeState();

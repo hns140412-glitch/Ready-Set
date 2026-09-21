@@ -283,3 +283,22 @@ assert('profile-inline-handlers-removed',
 assert('profile-style-handler-uses-query-all',
   appSource.split('\n').some(line=>line.includes("$('[data-style]').forEach"))
 );
+
+const settingsControllerSource=loadSource('src/views/settings-controller-runtime.js');
+assert('settings-controller-owner',settingsControllerSource.includes('ReadyRebuildSettingsController'));
+assert('settings-controller-loaded-before-app',
+  indexSource.indexOf('src/views/settings-controller-runtime.js')>0 &&
+  indexSource.indexOf('src/views/settings-controller-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('settings-controller-wired',
+  appSource.includes('rebuildSettingsController.create') &&
+  appSource.includes('settingsRuntime.setGuideName') &&
+  appSource.includes('settingsRuntime.setGuideType') &&
+  appSource.includes('settingsRuntime.setGuideVoice') &&
+  appSource.includes('settingsRuntime.setSound')
+);
+assert('settings-inline-handlers-removed',
+  !appSource.includes('function renderSettings()') &&
+  !appSource.includes('function renderNameSuggestions(') &&
+  !appSource.includes('function speakGuide(')
+);
