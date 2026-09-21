@@ -169,6 +169,8 @@ test('Parent can request linking an existing Child account through server family
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
   await page.locator('[data-nav="settings"]').first().click();
   await page.locator('#familyChildEmailInput').fill('child@example.test');
+  const linkRequest=page.waitForRequest(req=>req.url().includes('/api/family/link-child')&&req.method()==='POST');
   await page.locator('#familyLinkChildBtn').click();
-  expect(linkedEmail).toBe('child@example.test');
+  await linkRequest;
+  await expect.poll(()=>linkedEmail).toBe('child@example.test');
 });
