@@ -110,7 +110,9 @@
       });
     }
     function confirmFact(assignmentId,input={}){
-      const actorGuard=requireBrowserActor(input.actor);if(!actorGuard.ok)throw new Error(actorGuard.reason);
+      const actor=clean(input.actor).toUpperCase();
+      if(actor!=='PARENT')throw new Error('PARENT_CONFIRMATION_REQUIRED');
+      const actorGuard=requireBrowserActor(actor);if(!actorGuard.ok)throw new Error(actorGuard.reason);
       return mutate(s=>{const f=s.assignmentFacts[assignmentId];if(!f)throw new Error('fact not found');
         if(claimsConflict(f.claims||[])&&!input.accepted_claim_id)throw new Error('conflict resolution required');
         if(input.accepted_claim_id){
@@ -165,6 +167,46 @@
         s.assignmentFacts[assignmentId]=f;return clone(f);
       });
     }
+    function pendingChildFacts(){
+      const state=load();
+      return Object.values(state.assignmentFacts||{}).filter(f=>{
+        if(f.confirmation_state==='FACT_CONFIRMED'||f.confirmation_state==='REJECTED_BY_PARENT')return false;
+        return (f.claims||[]).some(c=>c.actor==='CHILD'&&c.status==='ACTIVE');
+      }).map(clone);
+    }
+
+    function reviewChildFact(assignmentId,input={}){
+      const actor=clean(input.actor).toUpperCase();
+      if(actor!=='PARENT')throw new Error('PARENT_REVIEW_REQUIRED');
+      const actorGuard=requireBrowserActor(actor);if(!actorGuard.ok)throw new Error(actorGuard.reason);
+      const decision=clean(input.decision).toUpperCase();
+      if(decision==='CONFIRM'){
+        const state=load(),fact=state.assignmentFacts[assignmentId];
+        if(!fact)throw new Error('fact not found');
+        const activeChild=(fact.claims||[]).filter(c=>c.actor==='CHILD'&&c.status==='ACTIVE');
+        if(!activeChild.length)throw new Error('active child claim not found');
+        const accepted=input.accepted_claim_id||activeChild.at(-1).claim_id;
+        return {ok:true,decision:'CONFIRM',fact:confirmFact(assignmentId,{actor:'PARENT',accepted_claim_id:accepted})};
+      }
+      if(decision==='REJECT'){
+        return mutate(s=>{
+          const f=s.assignmentFacts[assignmentId];if(!f)throw new Error('fact not found');
+          let rejected=0;
+          for(const c of f.claims||[]){
+            if(c.actor==='CHILD'&&c.status==='ACTIVE'){c.status='REJECTED';c.rejected_at=now();rejected++}
+          }
+          if(!rejected)throw new Error('active child claim not found');
+          f.confirmation_state='REJECTED_BY_PARENT';
+          f.lifecycle='REJECTED';
+          f.analysis_state='NOT_ANALYZED';
+          f.parent_review={decision:'REJECT',actor:'PARENT',reason:clean(input.reason)||null,reviewed_at:now()};
+          f.updated_at=now();
+          return {ok:true,decision:'REJECT',fact:clone(f)};
+        });
+      }
+      throw new Error('INVALID_CHILD_FACT_REVIEW_DECISION');
+    }
+
     function markRevisionPropagationComplete(assignmentId,input={}){
       return mutate(s=>{
         const f=s.assignmentFacts[assignmentId];if(!f)throw new Error('fact not found');
@@ -195,7 +237,7 @@
       });
       return {role:parent?'PARENT':'CHILD',facts,packages:Object.values(s.assignmentPackages).map(clone),workbookRefs:Object.values(s.workbookRefs).map(clone),artifacts:Object.values(visibleArtifacts).map(clone)};
     }
-    return {version:VERSION,load,save,upsertWorkbookRef,upsertTalentPackage,upsertEnglishAssignment,addEventFact,confirmFact,markRevisionPropagationComplete,project};
+    return {version:VERSION,load,save,upsertWorkbookRef,upsertTalentPackage,upsertEnglishAssignment,addEventFact,pendingChildFacts,reviewChildFact,confirmFact,markRevisionPropagationComplete,project};
   }
   return {version:VERSION,STORAGE_KEY,TALENT_BOOKS,createDomain,normalize};
 });
