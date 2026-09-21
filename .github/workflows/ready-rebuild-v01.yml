@@ -28,6 +28,8 @@ jobs:
         run: node tests/specialist-handoff-contract.test.js
       - name: Validate evidence ontology
         run: node tests/evidence-ontology.test.js
+      - name: Validate learning routing roundtrip
+        run: node tests/learning-routing-roundtrip.test.js
       - name: Guard JavaScript parseability
         run: |
           node --check app.js
