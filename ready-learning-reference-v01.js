@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.3.0';
+  const VERSION='0.4.0';
   const AUTHORITY={
     ASSIGNMENT_FACT:{rank:100,role:'EXECUTION_TRUTH',can_override_assignment:false},
     TEACHER_INSTRUCTION:{rank:95,role:'LOCAL_INSTRUCTION',can_override_assignment:false},
@@ -100,8 +100,12 @@
         unresolved:['SUBJECT_REFERENCE_PROFILE_MISSING']
       };
     }
-    const subjectMaster=subjectMasterApi()?.resolve?.(key,context)||null;
     const standardMatch=standardMatcherApi()?.match?.(key,context)||null;
+    const subjectMaster=subjectMasterApi()?.resolve?.(key,{
+      ...context,
+      matched_domain:standardMatch?.selected?.domain||null,
+      standard_domain:standardMatch?.selected?.domain||null
+    })||null;
     const unresolved=[
       ...row.unresolved,
       ...(subjectMaster?.unresolved||[]),
