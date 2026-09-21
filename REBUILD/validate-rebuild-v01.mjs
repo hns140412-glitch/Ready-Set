@@ -228,8 +228,8 @@ assert('capture-orchestrator-loaded-before-app',
 );
 assert('capture-orchestrator-wired',
   appSource.includes('rebuildCaptureOrchestrator.create') &&
-  captureIntakeControllerSource.includes('runtime.loadReview()') &&
-  captureIntakeControllerSource.includes('runtime.requestAnalysis()')
+  loadSource('src/assignment/capture-intake-controller-runtime.js').includes('runtime.loadReview()') &&
+  loadSource('src/assignment/capture-intake-controller-runtime.js').includes('runtime.requestAnalysis()')
 );
 assert('capture-orchestrator-direct-api-reduced',
   (appSource.match(/window\.ReadyCaptureV01/g)||[]).length===1
