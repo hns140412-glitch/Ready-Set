@@ -122,6 +122,8 @@
         nextAcademy:query('#englishNextAcademy').value,
         weekdayPrints:parsePrints(query('#englishPrints').value),
         components:{
+          grammar:query('#englishGrammar').value.trim(),
+          reading:query('#englishReading').value.trim(),
           vocabulary:query('#englishVocabulary').value.trim(),
           listening:query('#englishListening').value.trim(),
           recording:query('#englishRecording').value.trim(),
