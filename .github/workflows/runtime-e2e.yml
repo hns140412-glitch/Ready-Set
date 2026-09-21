@@ -7,6 +7,7 @@ on:
       - taky/runtime-e2e-0131929
       - taky/ready-integration-v01
       - taky/unit-mapping-table-full-v02
+      - taky/learning-app-family-p1-2026-09-21
   pull_request:
     branches:
       - main
@@ -20,6 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Validate Learning App Family return-state contract
+        run: node tests/learning-app-family-return-contract.test.js
       - name: Validate shared runtime contract
         run: node tests/shared-runtime-contract.test.js
       - name: Install Playwright
