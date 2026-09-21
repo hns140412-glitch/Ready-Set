@@ -2,10 +2,23 @@
   'use strict';
 
   const RUNTIME_VERSION = '2026.09.07-rev07-b';
-  const HIDE_URL = 'https://dainty-froyo-a6e427.netlify.app';
+  const LEGACY_HIDE_URL = 'https://dainty-froyo-a6e427.netlify.app';
   const SNAP_URL = 'https://cheerful-pothos-d1c3ee.netlify.app';
   const VALID_TASK_STATES = new Set(['PENDING','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
-  const TRUSTED_APP_ORIGINS = new Set([new URL(HIDE_URL).origin, new URL(SNAP_URL).origin]);
+
+  function configuredHideV2Url(){
+    const raw=String(globalThis.ReadySetSpecialistTargets?.hideSeekV2||'').trim();
+    if(!raw)return null;
+    try{
+      const url=new URL(raw,location.href);
+      if(url.protocol!=='https:'&&url.hostname!=='127.0.0.1'&&url.hostname!=='localhost')return null;
+      return url.href;
+    }catch{return null}
+  }
+  function trustedAppOrigins(){
+    const urls=[LEGACY_HIDE_URL,SNAP_URL,configuredHideV2Url()].filter(Boolean);
+    return new Set(urls.map(x=>new URL(x,location.href).origin));
+  }
 
   const id = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
   const iso = ms => new Date(ms ?? Date.now()).toISOString();
@@ -210,8 +223,12 @@
     renderContractUI();
   }
 
-  function appUrl(app) {
-    return app === 'hide-seek' ? HIDE_URL : app === 'snap-pop' ? SNAP_URL : location.href;
+  function appUrl(app,task=null) {
+    if(app==='hide-seek'){
+      if(task?.review_directive)return configuredHideV2Url();
+      return LEGACY_HIDE_URL;
+    }
+    return app === 'snap-pop' ? SNAP_URL : location.href;
   }
 
   function launchSpecialist(app) {
@@ -225,7 +242,15 @@
     emit('APP_SWITCH', { from: 'ready-set', to: app, lap_ended: false });
     save();
 
-    const url = new URL(appUrl(app));
+    const target=appUrl(app,task);
+    if(!target){
+      emit('APP_ROUTE_BLOCKED',{to:app,reason:'HIDE_V2_TARGET_REQUIRED',task_id:task.task_id});
+      c.active_app='ready-set';
+      save();
+      renderContractUI();
+      return false;
+    }
+    const url = new URL(target);
     url.searchParams.set('session_id', c.session_id);
     url.searchParams.set('goal_id', c.goal_id);
     url.searchParams.set('task_id', task.task_id);
@@ -237,6 +262,7 @@
       url.searchParams.set('review_directive',JSON.stringify(task.review_directive));
     }
     location.assign(url.href);
+    return true;
   }
 
   function normalizeInboundState(raw) {
@@ -272,6 +298,32 @@
 
   function consumeReturnQuery() {
     const p = new URLSearchParams(location.search);
+    const rawEvent=p.get('learning_event');
+    if(rawEvent){
+      let e=null;
+      try{e=JSON.parse(rawEvent)}catch{}
+      const payload=e?.payload||null;
+      const taskContext=payload?.taskContext||{};
+      const eventType=e?.event_type||e?.type||null;
+      if(e?.source==='hide-seek'&&eventType==='TASK_COMPLETED'&&payload?.resultContract==='HIDE_SPECIALIST_RESULT_V2'){
+        const applied=applyInboundResult({
+          session_id:taskContext.session_id,
+          task_id:taskContext.task_id,
+          lap_id:taskContext.lap_id,
+          task_state:payload.taskState||'COMPLETED',
+          from_app:'hide-seek',
+          event_id:e.event_id||null,
+          result_payload:payload
+        });
+        if(applied){
+          p.delete('learning_event');
+          const clean=`${location.pathname}${p.toString()?`?${p}`:''}${location.hash}`;
+          history.replaceState(null,'',clean);
+          return;
+        }
+      }
+    }
+
     const args = {
       session_id: p.get('session_id'),
       task_id: p.get('task_id'),
@@ -286,7 +338,7 @@
   }
 
   function handleLearningEvent(messageEvent) {
-    if (!TRUSTED_APP_ORIGINS.has(messageEvent.origin)) return;
+    if (!trustedAppOrigins().has(messageEvent.origin)) return;
     const e = messageEvent.data?.type === 'TAKY_LEARNING_EVENT' ? messageEvent.data.event : null;
     if (!e) return;
     const taskState = e.type === 'TASK_COMPLETED' ? 'COMPLETED'
