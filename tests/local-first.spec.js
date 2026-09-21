@@ -4,7 +4,7 @@ test('local-first sidecar mirrors planner/app state and keeps outbox pending wit
   await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
 
   const version = await page.evaluate(() => window.ReadySetLocalFirst?.version || null);
-  expect(version).toBe('0.2.0');
+  expect(version).toBe('0.3.0');
 
   await page.evaluate(() => {
     window.ReadySetPlanner.upsertDatedTodo({
@@ -41,7 +41,7 @@ test('local-first sidecar mirrors planner/app state and keeps outbox pending wit
 
 test('recovers localStorage from IndexedDB snapshot after local data loss', async ({ page }) => {
   await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
-  expect(await page.evaluate(() => window.ReadySetLocalFirst?.version)).toBe('0.2.0');
+  expect(await page.evaluate(() => window.ReadySetLocalFirst?.version)).toBe('0.3.0');
 
   await page.evaluate(() => {
     window.ReadySetPlanner.upsertDatedTodo({
