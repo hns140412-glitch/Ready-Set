@@ -18,7 +18,8 @@ const rebuildPlannerView=globalThis.ReadyRebuildPlannerView||null;
 const rebuildNavigation=globalThis.ReadyRebuildNavigation||null;
 const rebuildPersistence=globalThis.ReadyRebuildAppPersistence||null;
 const rebuildMissionView=globalThis.ReadyRebuildMissionView||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView){
+const rebuildFocusView=globalThis.ReadyRebuildFocusView||null;
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -405,33 +406,22 @@ function fmt(ms){
   const m=Math.floor(ms/60),s=ms%60;
   return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
+const focusView=rebuildFocusView.create({
+  query:$,
+  learningStepLabel,
+  formatTime:fmt,
+  applyGuide,
+  updateBgmStatus
+});
 function renderFocus(){
   const s=state.activeSession;
   if(!s){if($('#focusView')?.classList.contains('active'))nav('mission');return}
-  const labels=[...s.selected,...s.tasks];
-  $('#focusMission').textContent=labels.join(' · ')||'오늘의 작전';
-  const focusSteps=[...new Set((s.plannerLinks||[]).flatMap(x=>Array.isArray(x.activity_sequence)?x.activity_sequence:[]))];
-  if($('#focusLearningGuide'))$('#focusLearningGuide').textContent=focusSteps.length
-    ? focusSteps.map(learningStepLabel).join(' → ')
-    : '오늘 할 순서를 따라가요.';
-  $('#recBtn').hidden=!s.selected.includes('영어 · 문장 녹음') && !(s.plannerLinks||[]).some(x=>(x.activity_types||[]).includes('RECORDING'));
-  $('#targetTime').textContent=fmt(s.targetMs);
-  $('#startClock').textContent=new Date(s.startAt).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false});
-  applyGuide($('#focusGuideMini'));
-  updateBgmStatus();
+  focusView.render(s);
   tickFocus();
 }
 function tickFocus(){
   const s=state.activeSession;if(!s)return;
-  const t=sessionTimes();
-  $('#remainingTime').textContent=t.remaining>=0?fmt(t.remaining):`+${fmt(-t.remaining)}`;
-  $('#focusElapsed').textContent=fmt(t.focus);
-  $('#issueElapsed').textContent=fmt(t.issue);
-  $('#pauseBtn').textContent=s.pausedAt?'다시, 작전 속으로':'잠깐 멈춤';
-  const d=new Date();
-  $('#secondHand').style.transform=`rotate(${d.getSeconds()*6}deg)`;
-  $('#minuteHand').style.transform=`rotate(${d.getMinutes()*6+d.getSeconds()*.1}deg)`;
-  $('#hourHand').style.transform=`rotate(${((d.getHours()%12)*30)+d.getMinutes()*.5}deg)`;
+  focusView.renderTick(s,sessionTimes(),new Date());
   if(!s.completed&&$('#focusView').classList.contains('active'))requestAnimationFrame(tickFocus);
 }
 $('#pauseBtn').onclick=async()=>{
