@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.5.1';
+  const VERSION='0.6.0';
   const referenceApi=()=>{
     if(typeof globalThis!=='undefined'&&globalThis.ReadyLearningReferenceV01)return globalThis.ReadyLearningReferenceV01;
     if(typeof require==='function'){try{return require('./ready-learning-reference-v01.js')}catch{}}
@@ -286,6 +286,17 @@
     const profile=(kind==='WORKBOOK_RANGE'&&PROFILE[subjectKey])?PROFILE[subjectKey]:(PROFILE[kind]||PROFILE[subjectKey]||PROFILE.WORKBOOK_RANGE);
     const desc=extra.range_descriptor||rangeDescriptor(extra.source_range??fact.source_range);
     const reviewPolicy=adaptiveReviewPolicy(analysis,profile);
+    const learningRef=referenceApi()?.resolve?.(subjectKey,{
+      workbook_name:fact.workbook_name||fact.workbook_ref_id||null,
+      source_range:extra.source_range??fact.source_range??null,
+      teacher_instruction:fact.teacher_instruction||null,
+      grade:fact.grade||null,
+      semester:fact.semester||null,
+      unit_name:fact.unit_name||null
+    });
+    const subjectMethodSequence=Array.isArray(learningRef?.subject_master?.learning_loop)
+      ? learningRef.subject_master.learning_loop
+      : null;
     const unresolved=[...(extra.unresolved_flags||[])];
     if(!clean(fact.teacher_instruction)&&!extra.concept_skill_target)unresolved.push('CONCEPT_TARGET_INFERRED_FROM_SUBJECT_PROFILE');
     if(desc.kind==='AMBIGUOUS_NUMERIC_RANGE')unresolved.push('RANGE_SEMANTICS_AMBIGUOUS_NOT_SPLIT');
@@ -301,7 +312,7 @@
       source_range:extra.source_range??fact.source_range??null,
       range_descriptor:clone(desc),
       activity_types:clone(extra.activity_types||profile.activity_types),
-      activity_sequence:clone(reviewAdjustedSequence(extra.activity_sequence||profile.activity_sequence||[],reviewPolicy)),
+      activity_sequence:clone(reviewAdjustedSequence(extra.activity_sequence||subjectMethodSequence||profile.activity_sequence||[],reviewPolicy)),
       cognitive_load_profile:clone(extra.cognitive_load_profile||profile.cognitive_load),
       activity_load:{
         score:extra.activity_load_score??profile.activity_load_score??3,
@@ -323,23 +334,16 @@
         cross_revision_learning_signal:analysis.cross_revision_learning_signal?clone(analysis.cross_revision_learning_signal):null,
         escalation_review_signal:analysis.escalation_review_signal?clone(analysis.escalation_review_signal):null,
         adaptive_review_policy:reviewPolicy?clone(reviewPolicy):null,
-        learning_reference:(()=>{
-          const ref=referenceApi()?.resolve?.(subjectKey,{
-            workbook_name:fact.workbook_name||fact.workbook_ref_id||null,
-            source_range:extra.source_range??fact.source_range??null,
-            teacher_instruction:fact.teacher_instruction||null,
-            grade:fact.grade||null,
-            semester:fact.semester||null,
-            unit_name:fact.unit_name||null
-          });
-          return ref?{
-            status:ref.status,
-            reference_classes:ref.reference_classes,
-            method:ref.method,
-            evidence_refs:ref.evidence_refs,
-            standard_match:ref.standard_match||null
-          }:null;
-        })()
+        learning_reference:learningRef?{
+          status:learningRef.status,
+          reference_classes:learningRef.reference_classes,
+          method:learningRef.method,
+          method_variant:learningRef.subject_master?.method_variant||null,
+          matched_domain:learningRef.subject_master?.matched_domain||learningRef.standard_match?.selected?.domain||null,
+          method_sequence:subjectMethodSequence?[...subjectMethodSequence]:null,
+          evidence_refs:learningRef.evidence_refs,
+          standard_match:learningRef.standard_match||null
+        }:null
       },
       confidence:extra.confidence??(clean(fact.teacher_instruction)?0.78:0.62),
       unresolved_flags:[...new Set(unresolved)],
