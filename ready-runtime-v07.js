@@ -85,6 +85,7 @@
         route_plan:routeTask(link),
         completed_specialists:[],
         active_specialist:null,
+        learning_evidence:[],
         laps: []
       }));
       session.rev07 = {
@@ -295,6 +296,10 @@
     }
 
     const normalized = normalizeInboundState(task_state);
+    const evidence=window.ReadyEvidenceOntology?.specialistEvidence?.({
+      task,from_app:sourceApp,task_state:normalized||task_state||null,payload,event_id:event_id||null
+    })||null;
+    if(evidence)task.learning_evidence=window.ReadyEvidenceOntology?.append?.(task.learning_evidence||[],evidence)||[...(task.learning_evidence||[]),evidence].slice(-120);
     c.active_app = 'ready-set';
     c.active_task_id = task.task_id;
     if (lap_id) c.active_lap_id = lap_id;
@@ -313,7 +318,7 @@
       if(normalized==='BLOCKED')endActiveLap('SPECIALIST_RESULT','BLOCKED');
     }
     if (event_id) c.applied_event_ids = [...(c.applied_event_ids || []), event_id].slice(-200);
-    emit('APP_RETURN', { from: sourceApp || from_app || 'specialist', task_state: normalized || task_state || null, specialist_payload:payload||null });
+    emit('APP_RETURN', { from: sourceApp || from_app || 'specialist', task_state: normalized || task_state || null, specialist_payload:payload||null, evidence_record:evidence||null });
     save();
     renderContractUI();
     return true;
