@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import vm from 'node:vm';
 
 function loadSource(path){
   return fs.readFileSync(path,'utf8');
@@ -57,7 +58,11 @@ assert('carry-partial',outcomeMod.carryPolicyForState('PARTIAL').carryEligible==
 assert('carry-help-resolution',outcomeMod.carryPolicyForState('WAITING_FOR_PARENT').resolutionRequired===true);
 assert('carry-completed-resolves',outcomeMod.carryPolicyForState('COMPLETED').resolvesOpenCarry===true);
 assert('carry-escalate-deadline',outcomeMod.carryEscalation({nextDepth:1,deadline:'2026-09-20',targetDate:'2026-09-21'}).reason==='DEADLINE_EXCEEDED');
-assert('carry-parity-policy',legacyPlanner.includes("const carryEligible=['PARTIAL','DEFERRED'].includes(mapped)")&&legacyPlanner.includes("const carryNeedsResolution=['BLOCKED','WAITING_FOR_PARENT'].includes(mapped)"));
+const runtimeContext={};vm.createContext(runtimeContext);vm.runInContext(loadSource('src/planner/planner-policy-runtime.js'),runtimeContext);
+const livePolicy=runtimeContext.ReadyRebuildPlannerPolicy;
+assert('carry-runtime-policy-live',livePolicy?.carryPolicyForState('PARTIAL').carryEligible===true&&livePolicy?.carryPolicyForState('WAITING_FOR_PARENT').resolutionRequired===true);
+assert('carry-runtime-escalation-live',livePolicy?.carryEscalation({nextDepth:1,deadline:'2026-09-20',targetDate:'2026-09-21'}).reason==='DEADLINE_EXCEEDED');
+assert('carry-inline-duplicate-removed',!legacyPlanner.includes("const carryEligible=['PARTIAL','DEFERRED'].includes(mapped)")&&!legacyPlanner.includes("const carryNeedsResolution=['BLOCKED','WAITING_FOR_PARENT'].includes(mapped)"));
 
 
 const plannerRuntime=loadSource('src/planner/planner-policy-runtime.js');
