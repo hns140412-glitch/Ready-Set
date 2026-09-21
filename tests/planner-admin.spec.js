@@ -113,10 +113,10 @@ test('weekly fixed schedule expands into planner dates', async ({ page }) => {
   await page.locator('#scheduleEnd').fill('19:00');
   await page.locator('#saveScheduleBtn').click();
   await expect(page.locator('#scheduleAdminList')).toContainText('매주 월요일');
-  const out=await page.evaluate(()=>window.ReadySetPlanner.scheduleCommitmentsForDate('2026-09-28'));
+  const out=await page.evaluate(()=>window.ReadySetPlanner.scheduleCommitmentsForDate('2026-09-21'));
   expect(out).toHaveLength(1);
-  expect(out[0].start_at).toBe('2026-09-28T17:00:00');
-  await page.locator('[data-nav="planner"]').first().click();
-  await page.locator('[data-planner-date="2026-09-28"]').click();
+  expect(out[0].start_at).toBe('2026-09-21T17:00:00');
+  await page.locator('#plannerAdminView [data-nav="planner"]').click();
+  await page.locator('[data-planner-date="2026-09-21"]').click();
   await expect(page.locator('#plannerWeekDetail')).toContainText('영어학원');
 });
