@@ -9,8 +9,8 @@
     "runtime_verified": false,
     "device_verified": false,
     "production_verified": false,
-    "evidence_state": "EXACT_MAIN_NOT_ASSERTED",
-    "reason": "Current main includes PR #81. Its final PR head f077fd73f9d957b4b41720173b1dc098a514fd15 passed Planner Free Window Gate, Ready Integration CI, Ready Runtime E2E and TAKY Codex Worker Self-Test. The available connector exposes PR-triggered runs only, so exact-main SHA verification is not asserted here."
+    "evidence_state": "LIVE_HEAD_REFRESH_REQUIRED__RUNTIME_CODE_BASIS_RECORDED",
+    "reason": "Runtime/product code basis a85bc52c9ead654e058ac1c5a8369e7e9c53dd5e includes PR #81. Final PR #81 head f077fd73f9d957b4b41720173b1dc098a514fd15 passed Planner Free Window Gate, Ready Integration CI, Ready Runtime E2E and TAKY Codex Worker Self-Test. This status file does not self-assert its eventual merge SHA."
   },
   "historical_verified_evidence": {
     "status": "HISTORICAL_REFERENCE_ONLY"
@@ -28,7 +28,6 @@
   "release_state": "REWRITE_IN_PROGRESS_NOT_RELEASE_VERIFIED",
   "latest_targeted_evidence": {
     "sha": "f077fd73f9d957b4b41720173b1dc098a514fd15",
-    "merged_main_sha": "a85bc52c9ead654e058ac1c5a8369e7e9c53dd5e",
     "pr": 81,
     "scope": "Planner V2 actual free-window evidence connection",
     "result": "TARGETED_BEHAVIOR_VERIFIED",
@@ -50,13 +49,19 @@
         "status": "PASS"
       }
     },
-    "claim_boundary": "PR_HEAD_VERIFIED; exact-main/device/production not asserted"
+    "claim_boundary": "PR_HEAD_VERIFIED; runtime code basis recorded; live repository head/exact-main/device/production not asserted",
+    "merged_runtime_code_basis_sha": "a85bc52c9ead654e058ac1c5a8369e7e9c53dd5e"
   },
-  "current_main_sha": "a85bc52c9ead654e058ac1c5a8369e7e9c53dd5e",
   "open_product_gaps": [
     "R4 child FACT confirmation path remains not started.",
     "R5 free-window engine is connected, but real candidate_windows_by_date supply from confirmed daily availability remains open.",
     "R6 legacy authority archive remains not started.",
     "Exact-main/device/production verification remains separate."
-  ]
+  ],
+  "head_policy": "STATUS_FILE_CANNOT_SELF_ASSERT_EVENTUAL_MERGE_SHA; repository head is volatile and must be live-refreshed when material.",
+  "runtime_code_basis": {
+    "sha": "a85bc52c9ead654e058ac1c5a8369e7e9c53dd5e",
+    "relation": "BASE_MAIN_BEFORE_STATUS_ONLY_PR82",
+    "note": "PR #82 changes validation metadata only; it does not change Ready runtime/product code."
+  }
 }
