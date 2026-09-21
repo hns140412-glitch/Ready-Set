@@ -53,3 +53,23 @@ PR #100 HEAD: a12d58412eaaf1ceb6587962560edadd4908ed54
 - Planner does not schedule without confirmed availability.
 - Learning policy output contains no date.
 - Hide does not self-select old vocabulary from advisory priority.
+
+
+## Session-level execution closure
+Ready session runtime now carries the Planner-created Hide review directive into the actual specialist launch:
+- Planner TODO provenance is revalidated through `directiveForPlannerTodo()`.
+- Review TODOs force `suggested_app = hide-seek`.
+- `launchSpecialist('hide-seek')` appends the serialized `review_directive` to the Hide URL.
+- Hide consumes the existing canonical `reviewDirective()` contract and performs only the specified lexical retrieval.
+
+On specialist return:
+- Hide already emits `buildTaskSnapshot()`, including `memorySummary`, inside the TAKY learning event payload.
+- Ready now passes the event payload into `applyInboundResult()`.
+- `normalizeHideSpecialistResult()` accepts the result only when the memory summary still declares Hide advisory authority and Ready/Planner ownership.
+- The normalized specialist result is stored on the Ready runtime task.
+- Session wrap-up preserves `specialistResult` alongside the Planner outcome in `taskOutcomes`.
+
+This closes the runtime path:
+`Planner review TODO -> Ready session task -> Hide review directive -> Hide retrieval -> Hide memorySummary -> Ready task outcome`.
+
+No new Hide scheduling authority was introduced.
