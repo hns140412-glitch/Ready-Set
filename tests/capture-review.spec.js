@@ -1,0 +1,120 @@
+const { test, expect } = require('@playwright/test');
+
+test('capture review preserves source evidence, closes unresolved items, and archives reanalysis history', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__READY_AUTH_BOOTSTRAP__={
+      authenticated:true,
+      family_id:'TEST_FAMILY',
+      member_id:'TEST_PARENT',
+      role:'PARENT',
+      session_id:'TEST_SESSION',
+      expires_at:'2099-01-01T00:00:00.000Z',
+      source:'TEST_ONLY'
+    };
+  });
+  await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
+
+  const first=await page.evaluate(async()=>{
+    const api=window.ReadyCaptureV01;
+    await api.createSession({source_surface:'E2E_CAPTURE',group_key:'TALENT:수학',kind:'RANGE'});
+    const files=[
+      new File([new Uint8Array([1,2,3,4])],'math-1.jpg',{type:'image/jpeg'}),
+      new File([new Uint8Array([5,6,7,8])],'math-2.jpg',{type:'image/jpeg'})
+    ];
+    const created=await api.addFiles(files,{group_key:'TALENT:수학',kind:'RANGE'});
+    window.ReadyCaptureAnalysisAdapter={
+      version:'TEST_CAPTURE_ADAPTER_V1',
+      analyze:async({manifest})=>({
+        ok:true,
+        provider:'TEST_PROVIDER',
+        model:'FIXTURE_V1',
+        received_at:new Date().toISOString(),
+        drafts:[{
+          group_key:'TALENT:수학',
+          detected_material_type:'TALENT_BOOK',
+          detected_subject:'수학',
+          workbook_name:'테스트 수학',
+          source_range:'1~20번',
+          teacher_instruction:'',
+          components:{vocabulary:'',listening:'',recording:'',writing:''},
+          weekday_prints:[],
+          confidence:0.93,
+          evidence_item_ids:[manifest[0].capture_item_id],
+          warnings:[]
+        }]
+      })
+    };
+    const analyzed=await api.requestAnalysis();
+    const session=await api.currentReviewSession();
+    return {created,analyzed,session};
+  });
+
+  expect(first.analyzed.ok).toBe(true);
+  expect(first.session.analysis_state).toBe('ANALYSIS_COMPLETE');
+  expect(first.session.analysis_result.drafts).toHaveLength(1);
+  expect(first.session.analysis_result.capture_item_dispositions).toHaveLength(2);
+  expect(first.session.analysis_result.capture_item_dispositions.filter(x=>x.disposition==='UNRESOLVED')).toHaveLength(1);
+
+  const closed=await page.evaluate(async()=>{
+    const api=window.ReadyCaptureV01;
+    const session=await api.currentReviewSession();
+    const unresolved=session.analysis_result.capture_item_dispositions.find(x=>x.disposition==='UNRESOLVED');
+    await api.resolveCaptureItemDisposition(unresolved.capture_item_id,{
+      disposition:'IGNORED_WITH_REASON',
+      reason:'PARENT_MARKED_NOT_ASSIGNMENT_SOURCE'
+    });
+    const draft=(await api.currentReviewSession()).analysis_result.drafts[0];
+    await api.updateReviewDraft(draft.review_draft_id,{
+      actor:'PARENT',
+      event:'PARENT_REVIEWED',
+      review_state:'PARENT_REVIEWED',
+      reviewed_value:{source_range:'1~18번',teacher_instruction:'틀린 문제 다시 풀기'},
+      fields:['source_range','teacher_instruction']
+    });
+    const closure=await api.reviewClosureForGroup('TALENT:수학');
+    const provenance=await api.reviewProvenanceForGroup('TALENT:수학');
+    return {closure,provenance,session:await api.currentReviewSession()};
+  });
+
+  expect(closed.closure.closed).toBe(true);
+  expect(closed.closure.unresolved_count).toBe(0);
+  expect(closed.provenance.review_drafts[0].review_state).toBe('PARENT_REVIEWED');
+  expect(closed.provenance.review_drafts[0].reviewed_value.source_range).toBe('1~18번');
+  expect(closed.provenance.capture_item_dispositions.some(x=>x.disposition==='IGNORED_WITH_REASON')).toBe(true);
+
+  const reanalyzed=await page.evaluate(async()=>{
+    const api=window.ReadyCaptureV01;
+    window.ReadyCaptureAnalysisAdapter={
+      version:'TEST_CAPTURE_ADAPTER_V2',
+      analyze:async({manifest})=>({
+        ok:true,
+        provider:'TEST_PROVIDER',
+        model:'FIXTURE_V2',
+        received_at:new Date().toISOString(),
+        drafts:[{
+          group_key:'TALENT:수학',
+          detected_material_type:'TALENT_BOOK',
+          detected_subject:'수학',
+          workbook_name:'테스트 수학',
+          source_range:'1~18번',
+          teacher_instruction:'틀린 문제 다시 풀기',
+          components:{vocabulary:'',listening:'',recording:'',writing:''},
+          weekday_prints:[],
+          confidence:0.98,
+          evidence_item_ids:manifest.map(x=>x.capture_item_id),
+          warnings:[]
+        }]
+      })
+    };
+    const result=await api.requestAnalysis();
+    const session=await api.currentReviewSession();
+    return {result,session};
+  });
+
+  expect(reanalyzed.result.ok).toBe(true);
+  expect(reanalyzed.session.analysis_run_no).toBe(2);
+  expect(reanalyzed.session.analysis_history).toHaveLength(1);
+  expect(reanalyzed.session.analysis_history[0].result.analysis_run_no).toBe(1);
+  expect(reanalyzed.session.analysis_result.drafts[0].source_range).toBe('1~18번');
+  expect(reanalyzed.session.analysis_result.capture_item_dispositions.every(x=>x.disposition==='LINKED_TO_REVIEW_DRAFT')).toBe(true);
+});
