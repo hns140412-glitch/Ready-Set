@@ -142,7 +142,7 @@ test('P3 Hide Memory Summary returns into Ready Planner, TODAY, and Learning Mas
   expect(learning.learning_units[0].activity_sequence).toContain('SHORT_CHECKPOINT');
   expect(learning.learning_units[0].activity_load.recovery_need).toBe('HIGH');
 
-  const duplicate=await page.evaluate(({handoff,summary})=>window.ReadySetRev07.applyInboundResult({
+  const duplicate=await page.evaluate(({handoff,summary,specialistReport})=>window.ReadySetRev07.applyInboundResult({
     session_id:handoff.session_id,
     goal_id:handoff.goal_id,
     task_id:handoff.task_id,
