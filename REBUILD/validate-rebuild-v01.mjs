@@ -317,7 +317,7 @@ assert('auth-sync-authority-stays-external',
   authSyncControllerSource.includes('familyApi()?.login') &&
   authSyncControllerSource.includes('familyApi()?.linkChild') &&
   authSyncControllerSource.includes('requireParentUi()') &&
-  !authSyncView.includes('linkChild')
+  !authSyncSource.includes('linkChild')
 );
 assert('auth-sync-inline-handlers-removed',
   !appSource.includes("document.getElementById('authLoginBtn')") &&
