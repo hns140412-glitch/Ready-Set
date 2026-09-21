@@ -47,11 +47,12 @@ const rebuildAuthSyncView=globalThis.ReadyRebuildAuthSyncView||null;
 const rebuildAuthSyncController=globalThis.ReadyRebuildAuthSyncController||null;
 const rebuildHomeView=globalThis.ReadyRebuildHomeView||null;
 const rebuildPlannerScreenView=globalThis.ReadyRebuildPlannerScreenView||null;
+const rebuildPlannerScreenController=globalThis.ReadyRebuildPlannerScreenController||null;
 const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildAppBootstrapController=globalThis.ReadyRebuildAppBootstrapController||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildMissionController||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildMissionController||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildPlannerScreenController||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -417,15 +418,18 @@ const plannerScreenView=rebuildPlannerScreenView.create({
   itemsForDate:(date,snap)=>plannerQueryRuntime.itemsForDate(date,snap),
   stateLabel:value=>plannerQueryRuntime.stateLabel(value)
 });
+const plannerScreenRuntime=rebuildPlannerScreenController.create({
+  view:plannerScreenView,
+  planner:()=>window.ReadySetPlanner,
+  plannerQuery:plannerQueryRuntime,
+  familySession:()=>window.ReadyFamilySession,
+  localDateKey,
+  getSelectedDate:()=>plannerSelectedDate,
+  setSelectedDate:value=>{plannerSelectedDate=value;},
+  getTab:()=>plannerTab
+});
 function renderPlanner(){
-  plannerSelectedDate=plannerSelectedDate||localDateKey();
-  window.ReadySetPlanner?.replanReadyCarryOvers?.({date:localDateKey()});
-  plannerScreenView.render({
-    selectedDate:plannerSelectedDate,
-    tab:plannerTab,
-    snapshot:plannerQueryRuntime.snapshot(),
-    isParent:!!window.ReadyFamilySession?.isParent?.()
-  });
+  return plannerScreenRuntime.render();
 }
 const plannerAdminView=rebuildPlannerAdminView.create({
   query:$,

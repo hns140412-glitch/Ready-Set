@@ -556,3 +556,18 @@ assert('mission-inline-input-wiring-removed',
   !appSource.includes('let voiceRecognition=') &&
   !appSource.includes('function openCategory(')
 );
+
+const plannerScreenControllerSource=loadSource('src/views/planner-screen-controller-runtime.js');
+assert('planner-screen-controller-owner',plannerScreenControllerSource.includes('ReadyRebuildPlannerScreenController'));
+assert('planner-screen-controller-loaded-before-app',
+  indexSource.indexOf('src/views/planner-screen-controller-runtime.js')>0 &&
+  indexSource.indexOf('src/views/planner-screen-controller-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('planner-screen-controller-wired',
+  appSource.includes('rebuildPlannerScreenController.create') &&
+  appSource.includes('plannerScreenRuntime.render()')
+);
+assert('planner-screen-mutation-owned-by-controller',
+  plannerScreenControllerSource.includes('replanReadyCarryOvers') &&
+  !appSource.includes('window.ReadySetPlanner?.replanReadyCarryOvers')
+);
