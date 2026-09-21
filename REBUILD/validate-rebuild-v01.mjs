@@ -604,3 +604,11 @@ assert('planner-weekly-reflow-human-approval',
   plannerAdminControllerSource.includes('planWeeklyReflow') &&
   plannerAdminViewSourceForReflow.includes('data-reflow-confirm')
 );
+
+const plannerOperatingRuleSource=loadSource('ready-planner-v01.js');
+assert('english-academy-morning-vocab-rule',
+  plannerOperatingRuleSource.includes('ENGLISH_ACADEMY_MORNING_VOCAB_REVIEW') &&
+  plannerOperatingRuleSource.includes("preferred_daypart:'MORNING'") &&
+  plannerOperatingRuleSource.includes('operatingRuleForUnit') &&
+  plannerOperatingRuleSource.includes('isEnglishAcademyCommitment')
+);

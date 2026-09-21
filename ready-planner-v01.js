@@ -318,6 +318,33 @@
       });
     }
 
+    function isEnglishAcademyCommitment(item={}){
+      const text=(cleanText(item.title)+' '+cleanText(item.category)).toUpperCase();
+      const hasEnglish=/영어|ENGLISH/.test(text);
+      const hasAcademy=/학원|ACADEMY/.test(text);
+      return hasEnglish&&hasAcademy;
+    }
+
+    function operatingRuleForUnit(unit={},date,scheduleByDate={}){
+      const target=cleanText(unit.concept_skill_target).toUpperCase();
+      const isVocabulary=target==='VOCABULARY';
+      if(!isVocabulary)return null;
+      const academy=(scheduleByDate[date]||[]).find(isEnglishAcademyCommitment);
+      if(!academy)return null;
+      return {
+        rule_id:'ENGLISH_ACADEMY_MORNING_VOCAB_REVIEW',
+        preferred_daypart:'MORNING',
+        evidence:{
+          commitment_id:academy.commitment_id||null,
+          commitment_title:academy.title||null,
+          commitment_category:academy.category||null,
+          academy_date:date,
+          learning_unit_id:unit.learning_unit_id||null,
+          concept_skill_target:unit.concept_skill_target||null
+        }
+      };
+    }
+
     function allocateLearningUnits(input={}){
       const assignmentId=cleanText(input.assignment_id);if(!assignmentId)return {ok:false,reason:'ASSIGNMENT_ID_REQUIRED'};
       const domain=input.domain_state||globalThis.ReadyAssignments?.load?.();
@@ -355,7 +382,10 @@
           const unitScore=Number.isFinite(unitLoad.score)?unitLoad.score:3;
           const unitDifficulty=Number.isFinite(unitLoad.difficulty)?unitLoad.difficulty:3;
           const unitRecovery=unitLoad.recovery_need||'MEDIUM';
+          const operatingRuleByDate=Object.fromEntries(dates.map(d=>[d,operatingRuleForUnit(unit,d,scheduleByDate)]));
           const date=[...dates].sort((a,b)=>{
+            const ar=!!operatingRuleByDate[a],br=!!operatingRuleByDate[b];
+            if(ar!==br)return ar?-1:1;
             const wa=freeWindowByDate[a],wb=freeWindowByDate[b];
             if(wa.known||wb.known){
               if(wa.known!==wb.known)return wa.known?-1:1;
@@ -400,9 +430,10 @@
             return score(a)-score(b)||a.localeCompare(b);
           })[0];
           loadByDate[date].push({tags,score:unitScore,difficulty:unitDifficulty,recovery_need:unitRecovery});
+          const operatingRule=operatingRuleByDate[date]||null;
           const templateId=`template_${unit.learning_unit_id}`;
           const factRevision=Number(fact.fact_revision)||1;
-          const template={template_id:templateId,title:`${unit.subject} · ${unit.source_range||unit.concept_skill_target}`,subject:unit.subject,assignment_cycle:fact.assignment_cycle,learning_units:[unit.learning_unit_id],provenance:{kind:'LEARNING_MASTER_OUTPUT',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:factRevision},confirmation_state:'CONFIRMED',deadline_date:fact.deadline_boundary||null,estimated_minutes:null,planner_estimated_minutes:null,allocation_priority:100,required_today:false,preferred_days:[],updated_at:new Date().toISOString()};
+          const template={template_id:templateId,title:`${unit.subject} · ${unit.source_range||unit.concept_skill_target}`,subject:unit.subject,assignment_cycle:fact.assignment_cycle,learning_units:[unit.learning_unit_id],provenance:{kind:'LEARNING_MASTER_OUTPUT',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:factRevision},confirmation_state:'CONFIRMED',deadline_date:fact.deadline_boundary||null,estimated_minutes:null,planner_estimated_minutes:null,allocation_priority:operatingRule?20:100,required_today:!!operatingRule,preferred_days:[],operating_rule:operatingRule?.rule_id||null,preferred_daypart:operatingRule?.preferred_daypart||null,operating_rule_evidence:operatingRule?.evidence||null,updated_at:new Date().toISOString()};
           const ti=s.homework_templates.findIndex(x=>x.template_id===templateId);if(ti>=0)s.homework_templates[ti]=template;else s.homework_templates.push(template);
           proposals.push({
             decision:'PROPOSE',date,label:template.title,subject:unit.subject,assignment_id:assignmentId,analysis_id:analysis.analysis_id,
@@ -417,6 +448,9 @@
             review_policy:unit.review_policy||'RESULT_DEPENDENT',
             parent_help_dependency:unit.parent_help_dependency||'UNRESOLVED',
             prerequisite:unit.prerequisite,
+            operating_rule:operatingRule?.rule_id||null,
+            preferred_daypart:operatingRule?.preferred_daypart||null,
+            operating_rule_evidence:operatingRule?.evidence||null,
             cross_revision_learning_signal:crossRevisionLearningSignal({
               assignment_id:assignmentId,
               subject:unit.subject,
@@ -445,6 +479,9 @@
             activity_load_score:p.activity_load_score,difficulty:p.difficulty,recovery_need:p.recovery_need,
             free_window_evidence:p.free_window_evidence||null,
             review_policy:p.review_policy,parent_help_dependency:p.parent_help_dependency,
+            operating_rule:p.operating_rule||null,
+            preferred_daypart:p.preferred_daypart||null,
+            operating_rule_evidence:p.operating_rule_evidence||null,
             source:'PLANNER_V2_ALLOCATION',source_actor:'PLANNER_MAIN',
             provenance:{assignment_id:p.assignment_id,analysis_id:p.analysis_id,learning_unit_id:p.learning_unit_id,allocation_run_id:runId,fact_revision:Number(p.fact_revision)||Number(run.fact_revision)||1},
             order:created.length,state:'PLANNED',estimated_minutes:null,created_at:new Date().toISOString(),updated_at:new Date().toISOString()
@@ -496,6 +533,9 @@
           recovery_need:source.recovery_need||null,
           review_policy:source.review_policy||null,
           parent_help_dependency:source.parent_help_dependency||null,
+          operating_rule:source.operating_rule||null,
+          preferred_daypart:source.preferred_daypart||null,
+          operating_rule_evidence:source.operating_rule_evidence||null,
           estimated_minutes:Number.isFinite(source.estimated_minutes)?source.estimated_minutes:null,
           source:'PLANNER_V2_CARRY_OVER',
           source_actor:'PLANNER_MAIN',
@@ -1115,7 +1155,12 @@
           const deadline=cleanText(template?.deadline_date)||null;
           const est=Number.isFinite(todo.estimated_minutes)?todo.estimated_minutes:(Number.isFinite(template?.planner_estimated_minutes)?template.planner_estimated_minutes:null);
           const semantic=Number.isFinite(todo.activity_load_score)?todo.activity_load_score:(Number.isFinite(todo.difficulty)?todo.difficulty:3);
-          const eligible=dates.filter(d=>!deadline||d<=deadline);
+          let eligible=dates.filter(d=>!deadline||d<=deadline);
+          if(todo.operating_rule==='ENGLISH_ACADEMY_MORNING_VOCAB_REVIEW'){
+            const academyDates=eligible.filter(d=>(s.schedule_commitments||[])
+              .some(x=>x.confirmed!==false&&String(x.start_at||'').slice(0,10)===d&&isEnglishAcademyCommitment(x)));
+            if(academyDates.length)eligible=academyDates;
+          }
           if(!eligible.length)continue;
           const anyKnown=eligible.some(d=>evidenceByDate[d]?.known);
           const ranked=eligible.map(d=>{

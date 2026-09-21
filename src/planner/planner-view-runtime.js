@@ -8,6 +8,7 @@
   });
   function stateLabel(value){return STATE_LABELS[value]||clean(value)}
   function allocationReason(todo={},snapshot={}){
+    if(todo.operating_rule==='ENGLISH_ACADEMY_MORNING_VOCAB_REVIEW')return '영어학원 날 아침 단어 복습';
     if(todo.source==='PLANNER_V2_CARRY_OVER'||todo.provenance?.carry_over_id)return '남은 탐험 다시 배정';
     const template=(snapshot.homework_templates||[]).find(x=>x.template_id===todo.template_id);
     const parts=[];
