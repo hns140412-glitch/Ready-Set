@@ -831,9 +831,10 @@ function renderPlannerAdmin(){
   if(availabilityRoot){
     availabilityRoot.innerHTML=(snap.daily_availability_windows||[]).length
       ? [...snap.daily_availability_windows].sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)).map(x=>`
-        <button class="adminListItem" type="button" data-edit-availability="${x.availability_id}">
-          <span><b>${escapeHtml(x.date)} 학습 가능</b><small>${escapeHtml(x.start)} → ${escapeHtml(x.end)} · Parent 확인</small></span><strong>수정</strong>
-        </button>`).join('')
+        <div class="adminListItem">
+          <button type="button" data-edit-availability="${x.availability_id}"><span><b>${escapeHtml(x.date)} 학습 가능</b><small>${escapeHtml(x.start)} → ${escapeHtml(x.end)} · Parent 확인</small></span><strong>수정</strong></button>
+          <button class="miniAction" type="button" data-delete-availability="${x.availability_id}">삭제</button>
+        </div>`).join('')
       : '<div class="plannerEmpty"><b>확인된 학습 가능 시간이 없어요.</b><small>Planner는 시간을 추정하지 않고, 확인된 범위가 있을 때만 가용시간 근거로 사용해요.</small></div>';
   }
 
@@ -898,6 +899,13 @@ document.addEventListener('click',e=>{
   }
   const s=e.target.closest('[data-edit-schedule]'); if(s){editSchedule(s.dataset.editSchedule);return;}
   const a=e.target.closest('[data-edit-availability]'); if(a){editAvailability(a.dataset.editAvailability);return;}
+  const ad=e.target.closest('[data-delete-availability]');
+  if(ad){
+    if(!requireParentUi())return;
+    const removed=window.ReadySetPlanner?.removeDailyAvailabilityWindow?.(ad.dataset.deleteAvailability);
+    toast(removed?.ok?'학습 가능 시간을 삭제했어요. Planner가 다음 배정부터 사용하지 않습니다.':'학습 가능 시간을 삭제하지 못했어요.');
+    clearAvailabilityForm();renderPlannerAdmin();renderPlanner();return;
+  }
   const review=e.target.closest('[data-carry-review]');
   if(review){
     if(!requireParentUi())return;
