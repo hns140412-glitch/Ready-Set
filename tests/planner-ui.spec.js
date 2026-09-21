@@ -47,3 +47,23 @@ test('planner explains assignment evidence without inventing hidden rationale', 
   await expect(page.locator('#plannerWeekDetail')).toContainText('확인된 학습 가능 시간');
   await expect(page.locator('#plannerWeekDetail')).toContainText('실제 수행시간 반영');
 });
+
+
+test('planner UI honors weekly schedule skip and replacement exceptions', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__READY_AUTH_BOOTSTRAP__={authenticated:true,family_id:'TEST_FAMILY',member_id:'TEST_PARENT',role:'PARENT',session_id:'TEST_SESSION',expires_at:'2099-01-01T00:00:00.000Z',source:'TEST_ONLY'};
+  });
+  await page.goto('http://127.0.0.1:4173/', {waitUntil:'load'});
+  await page.evaluate(()=>{
+    const p=window.ReadySetPlanner;
+    p.upsertScheduleCommitment({commitment_id:'ui_weekly',title:'피아노',category:'피아노',recurrence:'WEEKLY',weekday:2,start:'16:00',end:'17:00',confirmed:true,source:'PARENT_ADMIN_UI'});
+    p.upsertScheduleException({commitment_id:'ui_weekly',date:'2026-09-22',type:'SKIP',source:'PARENT_ADMIN_UI'});
+    p.upsertScheduleException({commitment_id:'ui_weekly',date:'2026-09-29',type:'REPLACE',start:'18:00',end:'19:00',source:'PARENT_ADMIN_UI'});
+  });
+  const skipped=await page.evaluate(()=>window.ReadyRebuildPlannerView.itemsForDate('2026-09-22',window.ReadySetPlanner.snapshot(),{commitments:window.ReadySetPlanner.scheduleCommitmentsForDate('2026-09-22')}));
+  const replaced=await page.evaluate(()=>window.ReadyRebuildPlannerView.itemsForDate('2026-09-29',window.ReadySetPlanner.snapshot(),{commitments:window.ReadySetPlanner.scheduleCommitmentsForDate('2026-09-29')}));
+  expect(skipped.some(x=>x.label==='피아노')).toBeFalsy();
+  const piano=replaced.find(x=>x.label==='피아노');
+  expect(piano.time).toBe('18:00');
+  expect(piano.meta).toContain('이번 주 변경');
+});

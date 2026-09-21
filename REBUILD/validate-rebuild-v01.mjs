@@ -649,3 +649,11 @@ assert('planner-reflow-review-dirty-flag',
   plannerReflowReviewSource.includes("'SCHEDULE_CHANGED'") &&
   plannerReflowReviewSource.includes("'AVAILABILITY_CHANGED'")
 );
+
+const plannerQueryScheduleSource=loadSource('src/planner/planner-query-controller-runtime.js');
+const plannerViewScheduleSource=loadSource('src/planner/planner-view-runtime.js');
+assert('planner-view-uses-expanded-schedule-contract',
+  plannerQueryScheduleSource.includes('scheduleCommitmentsForDate') &&
+  plannerViewScheduleSource.includes('options.commitments') &&
+  plannerViewScheduleSource.includes('schedule_exception')
+);

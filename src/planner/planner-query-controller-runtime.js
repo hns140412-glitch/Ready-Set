@@ -29,7 +29,8 @@
     }
 
     function itemsForDate(date,snap=snapshot()){
-      return plannerView.itemsForDate(date,snap);
+      const commitments=planner()?.scheduleCommitmentsForDate?.(date)||null;
+      return plannerView.itemsForDate(date,snap,{commitments});
     }
 
     function stateLabel(value){

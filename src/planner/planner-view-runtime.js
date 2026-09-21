@@ -17,7 +17,7 @@
     if(Number.isFinite(template?.planner_estimated_minutes))parts.push('실제 수행시간 반영');
     return parts.join(' · ')||(/^PLANNER/.test(todo.source||'')?'Planner 배정':'직접 추가');
   }
-  function itemsForDate(date,snapshot={}){
+  function itemsForDate(date,snapshot={},options={}){
     const todos=(snapshot.dated_todos||[]).filter(x=>x.date===date).map(x=>({
       kind:'TODO',
       todo_id:x.todo_id,
@@ -29,26 +29,40 @@
       reason:allocationReason(x,snapshot)
     }));
     const dow=new Date(date+'T12:00:00').getDay();
-    const commitments=(snapshot.schedule_commitments||[])
+    const fallbackCommitments=(snapshot.schedule_commitments||[])
       .filter(x=>{
         if(x.recurrence==='WEEKLY'){
           if(Number(x.weekday)!==dow)return false;
           if(x.valid_from&&date<x.valid_from)return false;
           if(x.valid_until&&date>x.valid_until)return false;
+          const exception=(snapshot.schedule_exceptions||[]).find(e=>e.commitment_id===x.commitment_id&&e.date===date);
+          if(exception?.type==='SKIP')return false;
           return true;
         }
         return String(x.start_at||'').slice(0,10)===date;
       })
-      .map(x=>({
-        kind:'SCHEDULE',
-        commitment_id:x.commitment_id,
-        label:x.title,
-        state:'FIXED',
-        minutes:null,
-        order:-1,
-        time:x.recurrence==='WEEKLY'?String(x.start||''):String(x.start_at||'').slice(11,16),
-        meta:'고정 일정'
-      }));
+      .map(x=>{
+        const exception=(snapshot.schedule_exceptions||[]).find(e=>e.commitment_id===x.commitment_id&&e.date===date);
+        const start=exception?.type==='REPLACE'?(exception.start||x.start):x.start;
+        const end=exception?.type==='REPLACE'?(exception.end||x.end):x.end;
+        return {
+          ...x,
+          start_at:x.recurrence==='WEEKLY'?date+'T'+start+':00':x.start_at,
+          end_at:x.recurrence==='WEEKLY'?date+'T'+end+':00':x.end_at,
+          schedule_exception:exception||null
+        };
+      });
+    const sourceCommitments=Array.isArray(options.commitments)?options.commitments:fallbackCommitments;
+    const commitments=sourceCommitments.map(x=>({
+      kind:'SCHEDULE',
+      commitment_id:x.commitment_id,
+      label:x.title,
+      state:'FIXED',
+      minutes:null,
+      order:-1,
+      time:String(x.start_at||'').slice(11,16),
+      meta:x.schedule_exception?.type==='REPLACE'?'고정 일정 · 이번 주 변경':'고정 일정'
+    }));
     return [...commitments,...todos].sort((a,b)=>(a.order??999)-(b.order??999)||String(a.label||'').localeCompare(String(b.label||''),'ko'));
   }
   function dayModel(date,snapshot={}){
