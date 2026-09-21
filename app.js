@@ -10,7 +10,8 @@ const VERSION={
   cache:RELEASE.release_id
 };
 const $=(s,r=document)=>r.querySelector(s);
-const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const $=(s,r=document)=>[...r.querySelectorAll(s)];
+const rebuildSession=globalThis.ReadyRebuildSessionDomain||null;
 
 const categories={
   재능:['국어','한자','피자','수학','연산','기타'],
@@ -393,11 +394,18 @@ $$('[data-sheet-sound]').forEach(b=>b.onclick=async()=>{
 });
 
 $('#startBtn').onclick=async()=>{
-  if(state.activeSession){toast('이미 진행 중인 작전이 있어요. 먼저 진행 중인 작전으로 돌아가 주세요.');nav('focus');return}
-  if(!state.selectedTodoIds.length){toast('먼저 Planner가 준비한 오늘의 탐험을 선택해 주세요.');return}
+  const preStart=rebuildSession?.preStartGuard?.({activeSession:state.activeSession,selectedTodoIds:state.selectedTodoIds})||{
+    ok:!state.activeSession&&state.selectedTodoIds.length>0,
+    reason:state.activeSession?'SESSION_ALREADY_ACTIVE':'NO_SELECTED_TODO'
+  };
+  if(!preStart.ok){
+    if(preStart.reason==='SESSION_ALREADY_ACTIVE'){toast('이미 진행 중인 작전이 있어요. 먼저 진행 중인 작전으로 돌아가 주세요.');nav('focus');return}
+    toast('먼저 Planner가 준비한 오늘의 탐험을 선택해 주세요.');return
+  }
   const now=Date.now();
   const plannerLinks=window.ReadySetPlanner?.linkTodayItems(state.selectedTodoIds,{allowed_states:['PLANNED']})||[];
-  if(!plannerLinks.length){toast('지금 시작할 수 있는 Planner TODO가 없어요. TODAY를 다시 확인해 주세요.');return}
+  const plannerStart=rebuildSession?.plannerStartGuard?.(plannerLinks)||{ok:plannerLinks.length>0,reason:'NO_STARTABLE_PLANNER_TODO'};
+  if(!plannerStart.ok){toast('지금 시작할 수 있는 Planner TODO가 없어요. TODAY를 다시 확인해 주세요.');return}
   const labels=plannerLinks.map(x=>x.label);
   const sessionId=`s_${now}`;
   const started=[...plannerLinks];
@@ -414,7 +422,9 @@ $('#startBtn').onclick=async()=>{
     renderMission();
     return;
   }
-  state.activeSession={
+  state.activeSession=rebuildSession?.createSession?.({
+    sessionId,now,targetMin:state.targetMin,plannerLinks:started,sound:state.sound
+  })||{
     id:sessionId,startAt:now,targetMs:state.targetMin*60000,
     pausedAt:null,issueMs:0,completed:false,
     selected:[],tasks:labels,
@@ -427,6 +437,7 @@ $('#startBtn').onclick=async()=>{
 };
 
 function sessionTimes(){
+  if(rebuildSession?.times)return rebuildSession.times(state.activeSession,{now:Date.now(),fallbackTargetMin:state.targetMin});
   const s=state.activeSession;
   if(!s)return{focus:0,issue:0,remaining:state.targetMin*60000};
   const now=s.completed?s.endAt:Date.now();
@@ -516,9 +527,10 @@ function completeSession(outcomeState='COMPLETED'){
   if(s.pausedAt){s.issueMs+=Date.now()-s.pausedAt;s.pausedAt=null}
   s.endAt=Date.now();s.completed=true;
   const t=sessionTimes();
-  const links=Array.isArray(s.plannerLinks)?s.plannerLinks.filter(x=>x?.todo_id):[];
-  const taskCount=Math.max(1,links.length);
-  const attributedMs=links.length?Math.floor(t.focus/taskCount):0;
+  const attribution=rebuildSession?.attribution?.(s,t.focus)||null;
+  const links=attribution?.links||Array.isArray(s.plannerLinks)?s.plannerLinks.filter(x=>x?.todo_id):[];
+  const taskCount=attribution?.taskCount||Math.max(1,links.length);
+  const attributedMs=Number.isFinite(attribution?.attributedMs)?attribution.attributedMs:(links.length?Math.floor(t.focus/taskCount):0);
   const plannerOutcomes=[];
   for(const link of links){
     const outcome=window.ReadySetPlanner?.recordSessionOutcome?.({
@@ -527,7 +539,7 @@ function completeSession(outcomeState='COMPLETED'){
       actual_ms:attributedMs,
       session_total_actual_ms:t.focus,
       session_task_count:taskCount,
-      time_attribution:links.length>1?'EQUAL_SHARE_SESSION_OBSERVATION':'DIRECT_TASK_OBSERVATION',
+      time_attribution:attribution?.timeAttribution||(links.length>1?'EQUAL_SHARE_SESSION_OBSERVATION':'DIRECT_TASK_OBSERVATION'),
       session_id:s.id,
       task_id:link.learning_unit_id||link.todo_id,
       at:new Date(s.endAt).toISOString()
