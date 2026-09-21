@@ -66,11 +66,18 @@
     const memory=payload?.memorySummary;
     if(!memory||memory.authority!=='SPECIALIST_MEMORY_ADVISORY_ONLY')return null;
     if(memory.reviewPolicyOwner!=='READY_LEARNING_ENGINE'||memory.scheduleOwner!=='READY_SET_PLANNER')return null;
+    const contract=clean(payload.resultContract)||'HIDE_SPECIALIST_RESULT_V1';
+    if(!['HIDE_SPECIALIST_RESULT_V1','HIDE_SPECIALIST_RESULT_V2'].includes(contract))return null;
+    const isV2=contract==='HIDE_SPECIALIST_RESULT_V2'||clean(payload.runtime)==='V2';
     return Object.freeze({
       sourceApp:'hide-seek',
+      resultContract:isV2?'HIDE_SPECIALIST_RESULT_V2':'HIDE_SPECIALIST_RESULT_V1',
+      runtime:clean(payload.runtime)||null,
       evidenceAuthority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
-      activeSheetId:clean(payload.activeSheetId)||null,
-      sheetStatus:clean(payload.sheetStatus)||null,
+      activeMissionId:isV2?(clean(payload.activeMissionId)||null):null,
+      missionStatus:isV2?(clean(payload.missionStatus)||null):null,
+      activeSheetId:!isV2?(clean(payload.activeSheetId)||null):null,
+      sheetStatus:!isV2?(clean(payload.sheetStatus)||null):null,
       taskState:clean(payload.taskState)||null,
       learningPhase:clean(payload.learningPhase)||null,
       trailMastery:Number.isFinite(Number(payload.trailMastery))?Number(payload.trailMastery):null,
