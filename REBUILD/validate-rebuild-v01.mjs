@@ -205,3 +205,18 @@ assert('share-card-inline-duplicate-removed',
   !appSource.includes('async function renderCompactShareCard(') &&
   !appSource.includes('async function compactShareCard(')
 );
+
+const captureOrchestratorSource=loadSource('src/assignment/capture-orchestrator-runtime.js');
+assert('capture-orchestrator-owner',captureOrchestratorSource.includes('ReadyRebuildCaptureOrchestrator'));
+assert('capture-orchestrator-loaded-before-app',
+  indexSource.indexOf('src/assignment/capture-orchestrator-runtime.js')>0 &&
+  indexSource.indexOf('src/assignment/capture-orchestrator-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('capture-orchestrator-wired',
+  appSource.includes('rebuildCaptureOrchestrator.create') &&
+  appSource.includes('captureRuntime.loadReview()') &&
+  appSource.includes('captureRuntime.requestAnalysis()')
+);
+assert('capture-orchestrator-direct-api-reduced',
+  (appSource.match(/window\\.ReadyCaptureV01/g)||[]).length===1
+);

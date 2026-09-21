@@ -22,6 +22,7 @@ const rebuildFocusView=globalThis.ReadyRebuildFocusView||null;
 const rebuildPlannerAdminView=globalThis.ReadyRebuildPlannerAdminView||null;
 const rebuildParentIntakeView=globalThis.ReadyRebuildParentIntakeView||null;
 const rebuildCaptureService=globalThis.ReadyRebuildCaptureService||null;
+const rebuildCaptureOrchestrator=globalThis.ReadyRebuildCaptureOrchestrator||null;
 const rebuildCaptureDraft=globalThis.ReadyRebuildCaptureDraft||null;
 const rebuildCaptureView=globalThis.ReadyRebuildCaptureView||null;
 const rebuildAssignmentService=globalThis.ReadyRebuildAssignmentService||null;
@@ -35,7 +36,7 @@ const rebuildPlannerScreenView=globalThis.ReadyRebuildPlannerScreenView||null;
 const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -792,7 +793,9 @@ document.getElementById('saveAvailabilityBtn')?.addEventListener('click',()=>{
   toast('학습 가능 시간을 확인했어요. Planner가 배정 근거로 사용합니다.');
   renderPlannerAdmin(); renderPlanner();
 });
-const captureService=rebuildCaptureService.create({captureApi:window.ReadyCaptureV01});
+const captureApi=window.ReadyCaptureV01;
+const captureService=rebuildCaptureService.create({captureApi});
+const captureRuntime=rebuildCaptureOrchestrator.create({captureApi});
 function parsePrints(value=''){return captureService.parsePrints(value)}
 function stableFactSignature(value){return captureService.stableFactSignature(value)}
 
@@ -834,12 +837,11 @@ const captureView=rebuildCaptureView.create({
 });
 
 async function renderCaptureIntake(){
-  const api=window.ReadyCaptureV01;
   const summaryRoot=$('#captureGroupSummary'),previewRoot=$('#capturePreviewList');
-  if(!api||!summaryRoot||!previewRoot)return;
+  if(!summaryRoot||!previewRoot)return;
 
   clearCapturePreviewUrls();
-  const session=await api.currentReviewSession?.();
+  const {session,groups,items}=await captureRuntime.loadReview();
   captureView.renderStatus(session);
 
   if(!session){
@@ -849,15 +851,13 @@ async function renderCaptureIntake(){
     return;
   }
 
-  const groups=await api.groupSummary(session.capture_session_id);
-  const items=await api.listItems(session.capture_session_id);
   captureView.renderGroups(groups);
 
   previewRoot.innerHTML='';
   for(const item of items){
     const card=document.createElement('article');
     card.className='capturePreviewItem';
-    const url=await api.previewUrl(item.capture_item_id);
+    const url=item.preview_url;
     if(url)capturePreviewUrls.push(url);
     const label=String(item.group_key||'').replace('TALENT:','').replace('ENGLISH:','영어 · ');
     card.innerHTML=`
@@ -874,13 +874,11 @@ async function renderCaptureIntake(){
 
 
 async function captureFiles(files){
-  const api=window.ReadyCaptureV01;
-  if(!api||!files?.length)return;
+  if(!files?.length)return;
   if(!requireParentUi())return;
   const group=$('#captureGroupSelect')?.value||'TALENT:연산';
   const kind=$('#captureKindSelect')?.value||'RANGE';
-  await api.setCaptureTarget(group,kind);
-  const created=await api.addFiles(files,{group_key:group,kind});
+  const created=await captureRuntime.addFiles(files,{group_key:group,kind});
   toast(created.length===1?'촬영 자료를 임시저장했어요.':`${created.length}장 임시저장했어요.`);
   await renderCaptureIntake();
 }
@@ -896,15 +894,15 @@ document.getElementById('homeworkGalleryInput')?.addEventListener('change',async
   e.target.value='';
 });
 document.getElementById('captureGroupSelect')?.addEventListener('change',async()=>{
-  await window.ReadyCaptureV01?.setCaptureTarget?.($('#captureGroupSelect').value,$('#captureKindSelect').value);
+  await captureRuntime.setTarget($('#captureGroupSelect').value,$('#captureKindSelect').value);
 });
 document.getElementById('captureKindSelect')?.addEventListener('change',async()=>{
-  await window.ReadyCaptureV01?.setCaptureTarget?.($('#captureGroupSelect').value,$('#captureKindSelect').value);
+  await captureRuntime.setTarget($('#captureGroupSelect').value,$('#captureKindSelect').value);
 });
 document.addEventListener('click',async e=>{
   const linkItem=e.target.closest('[data-link-capture-item]');
   if(linkItem){
-    const result=await window.ReadyCaptureV01?.resolveCaptureItemDisposition?.(linkItem.dataset.linkCaptureItem,{
+    const result=await captureRuntime.resolveDisposition(linkItem.dataset.linkCaptureItem,{
       disposition:'LINKED_TO_REVIEW_DRAFT',
       review_draft_id:linkItem.dataset.reviewDraftId
     });
@@ -914,7 +912,7 @@ document.addEventListener('click',async e=>{
   }
   const ignoreItem=e.target.closest('[data-ignore-capture-item]');
   if(ignoreItem){
-    const result=await window.ReadyCaptureV01?.resolveCaptureItemDisposition?.(ignoreItem.dataset.ignoreCaptureItem,{
+    const result=await captureRuntime.resolveDisposition(ignoreItem.dataset.ignoreCaptureItem,{
       disposition:'IGNORED_WITH_REASON',
       reason:'PARENT_MARKED_NOT_ASSIGNMENT_SOURCE'
     });
@@ -930,13 +928,13 @@ document.addEventListener('click',async e=>{
   }
   const btn=e.target.closest('[data-remove-capture]');
   if(!btn)return;
-  await window.ReadyCaptureV01?.removeItem?.(btn.dataset.removeCapture);
+  await captureRuntime.removeItem(btn.dataset.removeCapture);
   toast('촬영 자료를 삭제했어요.');
   await renderCaptureIntake();
 });
 document.getElementById('captureReanalyzeBtn')?.addEventListener('click',async()=>{
   if(!requireParentUi())return;
-  const result=await window.ReadyCaptureV01?.requestAnalysis?.();
+  const result=await captureRuntime.requestAnalysis();
   if(!result?.ok){
     toast('재분석에 실패했습니다. 기존 초안과 원본은 그대로 보존돼요.');
     await renderCaptureIntake();
@@ -948,7 +946,7 @@ document.getElementById('captureReanalyzeBtn')?.addEventListener('click',async()
 
 document.getElementById('captureAnalyzeBtn')?.addEventListener('click',async()=>{
   if(!requireParentUi())return;
-  const result=await window.ReadyCaptureV01?.requestAnalysis?.();
+  const result=await captureRuntime.requestAnalysis();
   if(!result?.ok){
     const reason=result?.result?.reason||result?.reason;
     const message=reason==='ANALYSIS_PROVIDER_NOT_CONFIGURED'
@@ -972,7 +970,7 @@ async function capturedRefs(groupKey){
 
 const assignmentService=rebuildAssignmentService.create({
   assignments:window.ReadyAssignments,
-  capture:window.ReadyCaptureV01,
+  capture:captureApi,
   integration:window.ReadyIntegrationV1,
   captureService,
   localDateKey,
