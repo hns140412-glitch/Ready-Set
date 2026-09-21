@@ -708,3 +708,13 @@ assert('capture-english-grammar-reading-contract',
   captureAnalyzeEnglishSource.includes('grammar:{type:\'string\'}') &&
   captureAnalyzeEnglishSource.includes('reading:{type:\'string\'}')
 );
+
+const authSyncConflictController=loadSource('src/views/auth-sync-controller-runtime.js');
+const authSyncConflictView=loadSource('src/views/auth-sync-view-runtime.js');
+assert('sync-conflict-resolution-ui',
+  indexSource.includes('syncConflictList') &&
+  authSyncConflictController.includes('resolveSyncConflict') &&
+  authSyncConflictController.includes("'KEEP_LOCAL','ACCEPT_REMOTE'") &&
+  authSyncConflictView.includes('data-sync-conflict-resolution="KEEP_LOCAL"') &&
+  authSyncConflictView.includes('data-sync-conflict-resolution="ACCEPT_REMOTE"')
+);

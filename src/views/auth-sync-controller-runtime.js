@@ -25,10 +25,10 @@
       if(!adapter||!local)return {ok:false,reason:'SYNC_RUNTIME_MISSING'};
       const status=adapter.status();
       const [outbox,conflicts]=await Promise.all([local.outbox(),local.conflicts()]);
-      const pending=outbox.filter(x=>!['SENT','SUPERSEDED'].includes(x.status)).length;
-      const openConflicts=conflicts.filter(x=>x.status==='OPEN').length;
-      view.renderSync({status,pending,conflicts:openConflicts});
-      return {ok:true,status,pending,conflicts:openConflicts};
+      const pending=outbox.filter(x=>!['SENT','SUPERSEDED','ACKED'].includes(x.status)).length;
+      const openConflictRows=conflicts.filter(x=>x.status==='OPEN');
+      view.renderSync({status,pending,conflicts:openConflictRows.length,conflictRows:openConflictRows});
+      return {ok:true,status,pending,conflicts:openConflictRows.length,conflictRows:openConflictRows};
     }
 
     async function login(){
@@ -87,6 +87,35 @@
       return result||{ok:false,reason:'LINK_CHILD_FAILED'};
     }
 
+    async function resolveSyncConflict(conflictId,resolution){
+      const local=localFirst();
+      if(!local?.resolveConflict)return {ok:false,reason:'SYNC_RUNTIME_MISSING'};
+      const result=await local.resolveConflict(conflictId,resolution);
+      if(!result?.ok){
+        toast('동기화 충돌을 해결하지 못했어요.');
+        await renderSyncStatus();
+        return result||{ok:false,reason:'CONFLICT_RESOLUTION_FAILED'};
+      }
+      if(resolution==='KEEP_LOCAL'){
+        toast('이 기기의 내용을 유지했어요. 다음 동기화 때 다시 전송합니다.');
+        await renderSyncStatus();
+        return result;
+      }
+      toast('클라우드 내용을 적용했어요. 화면을 다시 불러옵니다.');
+      await renderSyncStatus();
+      if(result.reload_required)root.location.reload();
+      return result;
+    }
+
+    async function onConflictClick(event){
+      const button=event.target?.closest?.('[data-sync-conflict-resolution]');
+      if(!button)return;
+      const conflictId=button.dataset.syncConflictId;
+      const resolution=button.dataset.syncConflictResolution;
+      if(!conflictId||!['KEEP_LOCAL','ACCEPT_REMOTE'].includes(resolution))return;
+      await resolveSyncConflict(conflictId,resolution);
+    }
+
     async function checkSync(){
       const adapter=syncAdapter();
       const local=localFirst();
@@ -114,6 +143,7 @@
         renderAuthStatus();renderPlanner();renderSyncStatus().catch(()=>{});
       });
       eventTarget.addEventListener?.('readyset-sync-status',()=>renderSyncStatus().catch(()=>{}));
+      eventTarget.addEventListener?.('click',onConflictClick);
       query('#authLoginBtn')?.addEventListener('click',login);
       query('#authSignupBtn')?.addEventListener('click',signup);
       query('#authLogoutBtn')?.addEventListener('click',logout);
@@ -122,7 +152,7 @@
       return true;
     }
 
-    return Object.freeze({renderAuthStatus,renderSyncStatus,login,signup,logout,linkChild,checkSync,bind});
+    return Object.freeze({renderAuthStatus,renderSyncStatus,resolveSyncConflict,login,signup,logout,linkChild,checkSync,bind});
   }
 
   root.ReadyRebuildAuthSyncController=Object.freeze({

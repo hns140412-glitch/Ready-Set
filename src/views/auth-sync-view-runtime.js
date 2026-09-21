@@ -2,6 +2,7 @@
   'use strict';
   function create(options={}){
     const q=options.query||((s)=>document.querySelector(s));
+    const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 
     function renderAuth(session={}){
       const badge=q('#authStateBadge'),text=q('#authStatusText');
@@ -17,7 +18,7 @@
       if(link)link.hidden=!(session.authenticated&&session.role==='PARENT');
     }
 
-    function renderSync({status={},pending=0,conflicts=0}={}){
+    function renderSync({status={},pending=0,conflicts=0,conflictRows=[]}={}){
       const badge=q('#syncStateBadge'),text=q('#syncStatusText');
       if(badge){
         badge.textContent=status.state==='CONNECTED'?'클라우드 연결':status.state==='ERROR'?'연결 오류':'로컬 저장';
@@ -32,6 +33,22 @@
       }
       const p=q('#syncPendingCount');if(p)p.textContent=String(pending);
       const c=q('#syncConflictCount');if(c)c.textContent=String(conflicts);
+      const list=q('#syncConflictList');
+      if(list){
+        const scopeLabel={planner:'Planner',assignments:'숙제',app_state:'앱 상태'};
+        list.hidden=!conflictRows.length;
+        list.innerHTML=conflictRows.length?conflictRows.map(row=>{
+          const label=scopeLabel[row.scope]||row.scope||'데이터';
+          const at=row.created_at?new Date(row.created_at).toLocaleString('ko-KR'):'';
+          return `<div class="adminListItem syncConflictItem">
+            <span><b>${escapeHtml(label)} 충돌</b><small>${escapeHtml(at)} · 어느 내용을 유지할지 선택해 주세요.</small></span>
+            <span class="captureDispositionActions">
+              <button type="button" class="miniAction" data-sync-conflict-id="${escapeHtml(row.id)}" data-sync-conflict-resolution="KEEP_LOCAL">내 기기 유지</button>
+              <button type="button" class="miniAction" data-sync-conflict-id="${escapeHtml(row.id)}" data-sync-conflict-resolution="ACCEPT_REMOTE">클라우드 내용 사용</button>
+            </span>
+          </div>`;
+        }).join(''):'';
+      }
     }
 
     return Object.freeze({renderAuth,renderSync});
