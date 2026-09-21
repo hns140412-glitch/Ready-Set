@@ -19,6 +19,7 @@
     BLOCKED:'BLOCKED'
   };
   const rebuildPolicy=globalThis.ReadyRebuildPlannerPolicy||null;
+  const rebuildProjection=globalThis.ReadyRebuildPlannerProjection||null;
 
   const blank=()=>({
     schema_version:SCHEMA_VERSION,
@@ -77,7 +78,7 @@
       const title=cleanText(input.title); if(!title) throw new Error('title required');
       return mutate(s=>{
         const id=cleanText(input.commitment_id)||makeId('commitment');
-        const item={
+        const item=rebuildProjection?.scheduleCommitment?.(input,{id,now:new Date().toISOString()})||{
           commitment_id:id,
           title,
           category:cleanText(input.category)||'OTHER',
@@ -109,7 +110,7 @@
       if(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start) throw new Error('valid start/end required');
       return mutate(s=>{
         const id=cleanText(input.availability_id)||makeId('availability');
-        const item={
+        const item=rebuildProjection?.availabilityWindow?.(input,{id,now:new Date().toISOString()})||{
           availability_id:id,date:recurrence==='WEEKLY'?null:date,start,end,
           recurrence:recurrence==='WEEKLY'?'WEEKLY':null,
           weekday:recurrence==='WEEKLY'?weekday:null,
@@ -1143,7 +1144,7 @@
     }
 
     function todayProjection(date=dateKey()){
-      return today(date).map(x=>({
+      return today(date).map(x=>rebuildProjection?.todayItem?.(x)||({
         todo_id:x.todo_id,
         assignment_id:x.assignment_id||null,
         analysis_id:x.analysis_id||null,
