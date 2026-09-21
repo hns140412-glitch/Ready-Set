@@ -28,7 +28,8 @@ const rebuildRecordingService=globalThis.ReadyRebuildRecordingService||null;
 const rebuildResultHistoryView=globalThis.ReadyRebuildResultHistoryView||null;
 const rebuildProfileSettingsView=globalThis.ReadyRebuildProfileSettingsView||null;
 const rebuildAuthSyncView=globalThis.ReadyRebuildAuthSyncView||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView){
+const rebuildHomeView=globalThis.ReadyRebuildHomeView||null;
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -174,26 +175,19 @@ function currentPlannerMissionItems(){
 function currentMissionLabels(){
   return currentPlannerMissionItems().map(x=>x.label).filter(Boolean);
 }
+const homeView=rebuildHomeView.create({
+  query:$,
+  formatTime:fmt,
+  applyAvatar,
+  applyGuide,
+  guideData
+});
 function renderHome(){
-  applyAvatar($('#homeAvatar'));
-  $('#heroTime').textContent=fmt(state.targetMin*60000);
-  renderChips($('#homeChips'));
-  applyGuide($('#homeGuidePortrait'));
-  $('#homeGuideName').textContent=state.guide.name;
-  const labels=currentMissionLabels();
-  $('#homeGuideLine').textContent=state.activeSession
-    ? '진행 중인 탐험이 있어요. 이어서 가볼까요?'
-    : labels.length
-      ? `오늘 Planner가 준비한 탐험 ${labels.length}개가 있어요.`
-      : guideData().home;
+  homeView.render({state,missionLabels:currentMissionLabels()});
 }
 function renderChips(root){
-  if(!root)return;
-  root.innerHTML='';
-  const labels=currentMissionLabels().slice(0,6);
-  labels.forEach(x=>{const s=document.createElement('span');s.textContent=x;root.appendChild(s)});
+  homeView.renderChips(root,currentMissionLabels());
 }
-
 let sheetCategory='';
 function openCategory(cat){
   sheetCategory=cat;
