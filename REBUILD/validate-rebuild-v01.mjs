@@ -456,3 +456,27 @@ assert('capture-intake-inline-handlers-removed',
   !appSource.includes("function captureFiles(") &&
   !appSource.includes("data-link-capture-item")
 );
+
+const assignmentIntakeControllerSource=loadSource('src/assignment/assignment-intake-controller-runtime.js');
+assert('assignment-intake-controller-owner',assignmentIntakeControllerSource.includes('ReadyRebuildAssignmentIntakeController'));
+assert('assignment-intake-controller-loaded-before-app',
+  indexSource.indexOf('src/assignment/assignment-intake-controller-runtime.js')>0 &&
+  indexSource.indexOf('src/assignment/assignment-intake-controller-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('assignment-intake-controller-wired',
+  appSource.includes('rebuildAssignmentIntakeController.create') &&
+  appSource.includes('assignmentIntakeRuntime.bind()') &&
+  appSource.includes('assignmentIntakeRuntime?.render()')
+);
+assert('assignment-intake-authority-stays-external',
+  assignmentIntakeControllerSource.includes('assignmentService.saveTalent') &&
+  assignmentIntakeControllerSource.includes('assignmentService.saveEnglish') &&
+  assignmentIntakeControllerSource.includes('reviewChildFact') &&
+  assignmentIntakeControllerSource.includes('processAssignment')
+);
+assert('assignment-intake-inline-handlers-removed',
+  !appSource.includes("getElementById('saveTalentFactsBtn')") &&
+  !appSource.includes("getElementById('saveEnglishFactBtn')") &&
+  !appSource.includes("data-child-fact-confirm") &&
+  !appSource.includes("data-child-fact-reject")
+);

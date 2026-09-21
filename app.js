@@ -31,6 +31,7 @@ const rebuildCaptureIntakeController=globalThis.ReadyRebuildCaptureIntakeControl
 const rebuildCaptureDraft=globalThis.ReadyRebuildCaptureDraft||null;
 const rebuildCaptureView=globalThis.ReadyRebuildCaptureView||null;
 const rebuildAssignmentService=globalThis.ReadyRebuildAssignmentService||null;
+const rebuildAssignmentIntakeController=globalThis.ReadyRebuildAssignmentIntakeController||null;
 const rebuildRecordingService=globalThis.ReadyRebuildRecordingService||null;
 const rebuildRecordingOrchestrator=globalThis.ReadyRebuildRecordingOrchestrator||null;
 const rebuildRecordingView=globalThis.ReadyRebuildRecordingView||null;
@@ -47,7 +48,7 @@ const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildAppBootstrapController=globalThis.ReadyRebuildAppBootstrapController||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -588,27 +589,7 @@ const plannerAdminRuntime=rebuildPlannerAdminController.create({
 });
 plannerAdminRuntime.bind();
 
-document.addEventListener('click',e=>{
-  const childConfirm=e.target.closest('[data-child-fact-confirm]');
-  if(childConfirm){
-    if(!requireParentUi())return;
-    try{
-      const reviewed=window.ReadyAssignments?.reviewChildFact?.(childConfirm.dataset.childFactConfirm,{actor:'PARENT',decision:'CONFIRM'});
-      const processed=reviewed?.ok?window.ReadyIntegrationV1?.processAssignment?.(childConfirm.dataset.childFactConfirm,{start_date:localDateKey()}):null;
-      toast(processed?.ok?'숙제를 확인했고 Planner가 TODAY 후보를 만들었어요.':reviewed?.ok?'숙제를 확인했어요. Planner 배정 조건을 더 확인해야 합니다.':'숙제 확인을 완료하지 못했어요.');
-    }catch(error){toast(error?.message||'숙제 확인을 완료하지 못했어요.')}
-    plannerAdminRuntime.render();renderPlanner();renderMission();return;
-  }
-  const childReject=e.target.closest('[data-child-fact-reject]');
-  if(childReject){
-    if(!requireParentUi())return;
-    try{
-      window.ReadyAssignments?.reviewChildFact?.(childReject.dataset.childFactReject,{actor:'PARENT',decision:'REJECT',reason:'PARENT_REJECTED_CHILD_INPUT'});
-      toast('이 CHILD 숙제 제안은 Planner에 보내지 않았어요.');
-    }catch(error){toast(error?.message||'숙제 제외를 완료하지 못했어요.')}
-    plannerAdminRuntime.render();renderPlanner();renderMission();return;
-  }
-});
+
 const captureApi=window.ReadyCaptureV01;
 const captureService=rebuildCaptureService.create({captureApi});
 const captureRuntime=rebuildCaptureOrchestrator.create({captureApi});
@@ -662,10 +643,6 @@ async function renderCaptureIntake(){
   return captureIntakeRuntime.render();
 }
 
-async function capturedRefs(groupKey){
-  return captureService.capturedRefs(groupKey);
-}
-
 const assignmentService=rebuildAssignmentService.create({
   assignments:window.ReadyAssignments,
   capture:captureApi,
@@ -680,82 +657,31 @@ const parentIntakeView=rebuildParentIntakeView.create({
   talentBooks:TALENT_BOOKS,
   localDateKey
 });
+
+let assignmentIntakeRuntime=null;
 function renderParentIntake(){
-  parentIntakeView.render({
-    assignments:window.ReadyAssignments,
-    learningMasterVersion:window.ReadyLearningMasterV01?.version||'0.5.1'
-  });
-  renderCaptureIntake().catch(()=>{});
+  return assignmentIntakeRuntime?.render();
 }
-document.getElementById('saveTalentFactsBtn')?.addEventListener('click',async()=>{
-  if(!requireParentUi())return;
-  const source=$('#talentSourceDate').value,deadline=$('#talentDeadline').value;
-  if(!source||!deadline){toast('받은 날과 다음 화요일 경계를 확인해 주세요.');return}
-  const books=[];
-  for(const row of [...document.querySelectorAll('[data-talent-book]')]){
-    const subject=row.dataset.talentBook;
-    const captured=await capturedRefs('TALENT:'+subject);
-    const reviewedValue={
-      source_range:row.querySelector('[data-range]').value.trim(),
-      teacher_instruction:row.querySelector('[data-instruction]').value.trim()
-    };
-    const reviewProvenance=await recordCaptureReview('TALENT:'+subject,reviewedValue,'PARENT_REVIEWED');
-    books.push({
-      subject,
-      ...reviewedValue,
-      artifact_refs:captured.source,
-      answer_reference_ids:captured.answers,
-      provenance:reviewProvenance
-        ?{kind:'PARENT_REVIEWED_CAPTURE',surface:'PARENT_INTAKE',capture_review:reviewProvenance}
-        :{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}
-    });
-  }
-  const result=await assignmentService.saveTalent({source,deadline,books});
-  if(!result.ok){
-    if(result.reason==='TALENT_RANGE_MISSING'){toast('재능 6권의 숙제 범위를 모두 입력해 주세요.');return}
-    if(result.reason==='CAPTURE_REVIEW_UNRESOLVED'){toast(`${result.subject||'재능'} 촬영 원본 ${result.unresolved_count||0}건을 먼저 연결하거나 분석 제외로 처리해 주세요.`);return}
-    if(result.reason==='DUPLICATE_TALENT_FACT'){toast('같은 재능 FACT가 이미 저장·확정되어 있어 중복 생성하지 않았어요.');return}
-    toast('재능 FACT 저장 조건을 확인해 주세요.');return;
-  }
-  toast(`재능 6권 분석 완료 · Planner가 ${result.todoCount}개 탐험을 배정했어요${result.held?` · 보류 ${result.held}건`:''}.`);
-  renderParentIntake();renderPlanner();renderMission();
+assignmentIntakeRuntime=rebuildAssignmentIntakeController.create({
+  query:$,
+  queryAll:$$,
+  eventTarget:document,
+  assignments:()=>window.ReadyAssignments,
+  integration:()=>window.ReadyIntegrationV1,
+  learningMaster:()=>window.ReadyLearningMasterV01,
+  assignmentService,
+  parentView:parentIntakeView,
+  captureService,
+  renderCapture:()=>renderCaptureIntake(),
+  requireParentUi,
+  localDateKey,
+  parsePrints,
+  toast,
+  renderPlanner,
+  renderMission,
+  talentBooks:TALENT_BOOKS
 });
-document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=>{
-  if(!requireParentUi())return;
-  const name=$('#englishWorkbook').value.trim();
-  const range=$('#englishRange').value.trim();
-  if(!name||!range){toast('문제집과 숙제 범위를 확인해 주세요.');return}
-  const result=await assignmentService.saveEnglish({
-    name,
-    range,
-    nextAcademy:$('#englishNextAcademy').value,
-    weekdayPrints:parsePrints($('#englishPrints').value),
-    components:{
-      vocabulary:$('#englishVocabulary').value.trim(),
-      listening:$('#englishListening').value.trim(),
-      recording:$('#englishRecording').value.trim(),
-      writing:$('#englishWriting').value.trim()
-    },
-    teacherInstruction:$('#englishInstruction').value.trim(),
-    sourceDate:localDateKey()
-  });
-  if(!result.ok){
-    if(result.reason==='DUPLICATE_ENGLISH_FACT'){toast('같은 영어 FACT가 이미 저장·확정되어 있어 중복 생성하지 않았어요.');return}
-    if(result.reason==='CAPTURE_REVIEW_UNRESOLVED'){toast(`영어 촬영 원본 ${result.unresolved_count||0}건을 먼저 연결하거나 분석 제외로 처리해 주세요.`);return}
-    toast('영어 FACT 저장 조건을 확인해 주세요.');return;
-  }
-  const fact=result.fact,processed=result.processed;
-  if(fact.deadline_state==='NEXT_ACADEMY_UNVERIFIED'||processed?.reason==='NEXT_ACADEMY_UNVERIFIED'){
-    toast('영어 FACT 저장 · 다음 학원 일정 확인 전 분석/배정 보류');
-  }else if(processed?.ok){
-    toast(`영어 숙제 분석 완료 · Planner가 ${(processed.todos||[]).length}개 탐험을 배정했어요.`);
-  }else if(processed?.reason==='FACT_REVISION_IN_PROGRESS_HOLD'){
-    toast('영어 FACT 수정은 저장했어요. 진행 중인 기존 탐험이 끝난 뒤 새 기준으로 재배정됩니다.');
-  }else{
-    toast('영어 FACT는 저장했지만 배정 조건을 더 확인해야 해요.');
-  }
-  renderParentIntake();renderPlanner();renderMission();
-});
+assignmentIntakeRuntime.bind();
 
 const authSyncView=rebuildAuthSyncView.create({query:$});
 const profileSettingsView=rebuildProfileSettingsView.create({
