@@ -3,6 +3,8 @@ const fs=require('fs');
 const path=require('path');
 const release=require('../vendor/taky/release-contract.js');
 const pwa=require('../vendor/taky/pwa-update-state.js');
+const eventEnvelope=require('../vendor/taky/event-envelope.js');
+const localQueue=require('../vendor/taky/local-queue.js');
 
 delete globalThis.ReadySetReleaseDescriptor;
 require('../ready-release-v01.js');
@@ -17,6 +19,8 @@ const pkg=JSON.parse(fs.readFileSync(path.join(__dirname,'..','package.json'),'u
 const sw=fs.readFileSync(path.join(__dirname,'..','sw.js'),'utf8');
 const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 const app=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
+const localFirst=fs.readFileSync(path.join(__dirname,'..','ready-local-first-v01.js'),'utf8');
+const syncAdapter=fs.readFileSync(path.join(__dirname,'..','ready-sync-adapter-v01.js'),'utf8');
 
 assert.equal(versionMirror.authoritativeSource,'ready-release-v01.js');
 assert.equal(versionMirror.appVersion,descriptor.app_version);
@@ -34,6 +38,8 @@ assert(!sw.includes(".then(()=>self.skipWaiting())"));
 assert(sw.includes("event.data?.type==='APPLY_UPDATE'"));
 assert(index.includes('./vendor/taky/release-contract.js'));
 assert(index.includes('./vendor/taky/pwa-update-state.js'));
+assert(index.includes('./vendor/taky/event-envelope.js'));
+assert(index.includes('./vendor/taky/local-queue.js'));
 assert(index.includes('./ready-release-v01.js'));
 assert(index.includes('./ready-pwa-update-v01.js'));
 assert(app.includes('globalThis.ReadySetReleaseDescriptor'));
@@ -60,3 +66,25 @@ const direct=pwa.transition('DOWNLOADED_WAITING','ACTIVATE',{safe_point:true});
 assert.equal(direct.ok,false,'waiting worker must not activate without safe-point transition');
 
 console.log('PASS: Ready consumes TAKY shared release/PWA primitives with one release identity');
+
+
+const evA=eventEnvelope.create({source:'ready-set',event_type:'READY_SCOPE_SNAPSHOT_CAPTURED',payload:{scope:'planner',value:1}});
+const evB=eventEnvelope.create({source:'ready-set',event_type:'READY_SCOPE_SNAPSHOT_CAPTURED',payload:{scope:'planner',value:1}});
+assert.notEqual(evA.event_id,evB.event_id,'event identity must not be derived from equal payload digest');
+assert.equal(evA.payload_digest,evB.payload_digest,'equal payloads should retain equal integrity digest');
+
+let q=localQueue.create({event_id:evA.event_id,idempotency_key:evA.idempotency_key,max_attempts:2,created_at:'2026-09-21T00:00:00.000Z'});
+q=localQueue.markInFlight(q,'2026-09-21T00:00:00.000Z').row;
+q=localQueue.markRetry(q,'NETWORK','2026-09-21T00:00:00.000Z').row;
+assert.equal(q.status,'RETRY');
+q=localQueue.markInFlight(q,q.next_retry_at).row;
+q=localQueue.markRetry(q,'NETWORK',q.updated_at).row;
+assert.equal(q.status,'DEAD_LETTER','bounded retry must end in dead letter');
+
+assert(localFirst.includes("CAP-EVENT-ENVELOPE-001"));
+assert(localFirst.includes("CAP-LOCAL-QUEUE-001"));
+assert(localFirst.includes("domain_conflict"));
+assert(!localFirst.includes("id='evt_'+scope+'_'+digest"),'Ready must not derive event identity from state digest');
+assert(syncAdapter.includes("event.event_id||event.id"),'sync adapter must accept shared immutable event identity');
+
+console.log('PASS: Ready consumes shared event envelope/local queue mechanics without absorbing Ready conflict/auth semantics');
