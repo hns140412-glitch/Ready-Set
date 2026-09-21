@@ -22,6 +22,7 @@ const rebuildFocusView=globalThis.ReadyRebuildFocusView||null;
 const rebuildPlannerAdminView=globalThis.ReadyRebuildPlannerAdminView||null;
 const rebuildParentIntakeView=globalThis.ReadyRebuildParentIntakeView||null;
 const rebuildCaptureService=globalThis.ReadyRebuildCaptureService||null;
+const rebuildCaptureDraft=globalThis.ReadyRebuildCaptureDraft||null;
 const rebuildCaptureView=globalThis.ReadyRebuildCaptureView||null;
 const rebuildAssignmentService=globalThis.ReadyRebuildAssignmentService||null;
 const rebuildRecordingService=globalThis.ReadyRebuildRecordingService||null;
@@ -33,7 +34,7 @@ const rebuildHomeView=globalThis.ReadyRebuildHomeView||null;
 const rebuildPlannerScreenView=globalThis.ReadyRebuildPlannerScreenView||null;
 const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility){
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -810,58 +811,15 @@ function captureDraftConfidence(draft){
   const n=Number(draft?.confidence);
   return Number.isFinite(n)?Math.round(Math.max(0,Math.min(1,n))*100):0;
 }
+const captureDraftController=rebuildCaptureDraft.create({
+  query:$,
+  queryAll:$$,
+  parsePrints,
+  recordCaptureReview,
+  toast
+});
 async function applyCaptureDraft(draft){
-  if(!draft)return;
-  const group=String(draft.group_key||'');
-  if(group.startsWith('TALENT:')){
-    const subject=group.slice('TALENT:'.length);
-    const row=[...document.querySelectorAll('[data-talent-book]')].find(x=>x.dataset.talentBook===subject);
-    if(!row)return;
-    if(draft.source_range)row.querySelector('[data-range]').value=draft.source_range;
-    if(draft.teacher_instruction)row.querySelector('[data-instruction]').value=draft.teacher_instruction;
-    await recordCaptureReview(group,{
-      source_range:row.querySelector('[data-range]').value.trim(),
-      teacher_instruction:row.querySelector('[data-instruction]').value.trim()
-    },'PARENT_APPLIED_DRAFT');
-    toast(`${subject} 분석 초안을 입력칸에 적용했어요. 확인 후 FACT를 저장하세요.`);
-    return;
-  }
-
-  if(group.startsWith('ENGLISH:')){
-    if(draft.workbook_name&&$('#englishWorkbook')&&!$('#englishWorkbook').value)$('#englishWorkbook').value=draft.workbook_name;
-    if(draft.source_range&&$('#englishRange')&&!$('#englishRange').value)$('#englishRange').value=draft.source_range;
-    if(draft.teacher_instruction&&$('#englishInstruction')){
-      const old=$('#englishInstruction').value.trim();
-      $('#englishInstruction').value=old?[old,draft.teacher_instruction].filter((x,i,a)=>a.indexOf(x)===i).join(' / '):draft.teacher_instruction;
-    }
-    const components=draft.components||{};
-    const componentMap={
-      vocabulary:'#englishVocabulary',
-      listening:'#englishListening',
-      recording:'#englishRecording',
-      writing:'#englishWriting'
-    };
-    for(const [key,selector] of Object.entries(componentMap)){
-      if(components[key]&&$(selector)&&!$(selector).value)$(selector).value=components[key];
-    }
-    if(Array.isArray(draft.weekday_prints)&&draft.weekday_prints.length&&$('#englishPrints')){
-      const value=draft.weekday_prints.filter(x=>x?.weekday&&x?.value).map(x=>`${x.weekday}:${x.value}`).join(', ');
-      if(value&&!$('#englishPrints').value)$('#englishPrints').value=value;
-    }
-    await recordCaptureReview(group,{
-      workbook_name:$('#englishWorkbook')?.value.trim()||'',
-      source_range:$('#englishRange')?.value.trim()||'',
-      weekday_prints:parsePrints($('#englishPrints')?.value||''),
-      components:{
-        vocabulary:$('#englishVocabulary')?.value.trim()||'',
-        listening:$('#englishListening')?.value.trim()||'',
-        recording:$('#englishRecording')?.value.trim()||'',
-        writing:$('#englishWriting')?.value.trim()||''
-      },
-      teacher_instruction:$('#englishInstruction')?.value.trim()||''
-    },'PARENT_APPLIED_DRAFT');
-    toast('영어 분석 초안을 입력칸에 적용했어요. 확인 후 FACT를 저장하세요.');
-  }
+  return captureDraftController.apply(draft);
 }
 async function recordCaptureReview(groupKey,reviewedValue,event='PARENT_REVIEWED'){
   return captureService.recordCaptureReview(groupKey,reviewedValue,event);
