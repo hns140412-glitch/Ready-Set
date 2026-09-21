@@ -77,10 +77,10 @@
     },
     {
       "id": "RRS-011",
-      "type": "OPEN",
-      "text": "Latest exact-head Runtime E2E run 35599385063 was still in progress at closure; must be rechecked before claiming PASS.",
-      "disposition": "OPEN",
-      "destination": "NEXT_CHAT_FIRST_CHECK"
+      "type": "EVIDENCE",
+      "text": "Latest exact-head Runtime E2E run 35599385063 failed. Primary error: ReferenceError: Cannot access 'homeView' before initialization, with cascading navigation/UI failures.",
+      "disposition": "FAIL",
+      "destination": "NEXT_CHAT_FIRST_FIX"
     },
     {
       "id": "RRS-012",
@@ -102,6 +102,13 @@
       "text": "No Netlify, production deploy, main merge or user-as-tester during rebuild.",
       "disposition": "LOCKED",
       "destination": "EXTERNAL_RESOURCE_GATE"
+    },
+    {
+      "id": "RRS-015",
+      "type": "CORRECTION",
+      "text": "Do not continue new extraction from head 59a0619... until bootstrap/homeView initialization order is repaired and exact-head Runtime E2E passes.",
+      "disposition": "LOCKED",
+      "destination": "NEXT_WORK_GATE"
     }
   ],
   "closure": {
