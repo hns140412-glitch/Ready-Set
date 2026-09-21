@@ -123,6 +123,8 @@
         weekdayPrints:parsePrints(query('#englishPrints').value),
         components:{
           vocabulary:query('#englishVocabulary').value.trim(),
+          grammar:query('#englishGrammar').value.trim(),
+          reading:query('#englishReading').value.trim(),
           listening:query('#englishListening').value.trim(),
           recording:query('#englishRecording').value.trim(),
           writing:query('#englishWriting').value.trim()
