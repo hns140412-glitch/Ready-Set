@@ -16,7 +16,8 @@ const rebuildSessionService=globalThis.ReadyRebuildSessionService||null;
 const rebuildPlannerProjection=globalThis.ReadyRebuildPlannerProjection||null;
 const rebuildPlannerView=globalThis.ReadyRebuildPlannerView||null;
 const rebuildNavigation=globalThis.ReadyRebuildNavigation||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation){
+const rebuildPersistence=globalThis.ReadyRebuildAppPersistence||null;
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -55,7 +56,13 @@ const initial={
   recordingMeta:null
 };
 
-let state=load();
+const appPersistence=rebuildPersistence.create({
+  initial,
+  storageKey:'readyset_state',
+  localFirst:window.ReadySetLocalFirst,
+  safePoint:appState=>!appState?.activeSession
+});
+let state=appPersistence.load();
 let mediaRecorder=null,mediaStream=null,chunks=[],recordStartedAt=0,recordTicker=null,currentAudio=null;
 let previewTimer=null,currentGuestType='pico';
 let plannerSelectedDate=null;
@@ -63,47 +70,12 @@ let plannerTab='week';
 const TALENT_BOOKS=['연산','한자','국어','사회','수학','생각하는 피자'];
 const GUIDE_NAME_POOL=['루미','피코','모리','토리','모모','아루','리프','피즈','코코','라온','누리','보리'];
 
-function load(){
-  try{
-    const x=JSON.parse(localStorage.getItem('readyset_state')||'null');
-    if(!x)return structuredClone(initial);
-    return migrate(x);
-  }catch{return structuredClone(initial)}
-}
-function migrate(x){
-  if(!x.schemaVersion)x.schemaVersion=1;
-  x.profile=x.profile||{};
-  x.guide=x.guide||{};
-  if(x.schemaVersion<5){
-    x.profile={name:x.profile.name||'',photo:x.profile.photo||'',style:x.profile.style||'editorial',shareAvatar:!!x.profile.shareAvatar};
-    x.guide={type:x.guide.type||'lumi',name:x.guide.name||'루미',voice:x.guide.voice||'warm'};
-    x.guestHistory=Array.isArray(x.guestHistory)?x.guestHistory:[];
-    x.records=x.records||[];
-    x.selected=x.selected||[];
-    x.tasks=x.tasks||[];
-    x.selectedTodoIds=Array.isArray(x.selectedTodoIds)?x.selectedTodoIds:[];
-    x.targetMin=x.targetMin||25;
-    if(x.sound==='자연음')x.sound='자연 숲';
-    x.sound=x.sound||'집중 피아노';
-    x.schemaVersion=5;
-  }
-  return {
-    ...structuredClone(initial),
-    ...x,
-    profile:{...initial.profile,...x.profile},
-    guide:{...initial.guide,...x.guide}
-  };
-}
 function readyPwaSafePoint(){
   return !state.activeSession;
 }
 globalThis.ReadySetPwaSafePoint=readyPwaSafePoint;
 function save(){
-  const payload=JSON.stringify(state);
-  localStorage.setItem('readyset_state',payload);
-  window.ReadySetLocalFirst?.capture?.('app_state',payload).catch?.(()=>{});
-  window.dispatchEvent(new CustomEvent('readyset-state-saved',{detail:{pwa_safe_point:readyPwaSafePoint()}}));
-  if(readyPwaSafePoint()) window.dispatchEvent(new CustomEvent('readyset-safe-point'));
+  return appPersistence.save(state);
 }
 function toast(msg){
   const t=$('#toast'); if(!t)return;
