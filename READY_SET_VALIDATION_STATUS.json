@@ -1,5 +1,5 @@
 {
-  "status_version": "READY_C2S_REWRITE_01.3",
+  "status_version": "READY_C2S_REWRITE_01.4",
   "product": "Ready & Set",
   "evidence_policy": "Validation belongs to an exact code SHA; product/version labels alone never imply validation.",
   "current_main_sha_at_r0": "c82109651609440d2e9e08486f2ef5a042a68e46",
@@ -22,48 +22,36 @@
     "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "PARTIAL_IMPLEMENTED_SHARED_RELEASE_RUNTIME_VERIFIED",
     "R4_CHILD_FACT_CONFIRMATION_PATH": "IMPLEMENTED_TARGETED_VERIFIED",
     "R5_PLANNER_FREE_WINDOW": "IMPLEMENTED_TARGETED_VERIFIED__CONFIRMED_AVAILABILITY_INPUT_CONNECTED",
-    "R6_LEGACY_AUTHORITY_ARCHIVE": "NOT_STARTED",
+    "R6_LEGACY_AUTHORITY_ARCHIVE": "IMPLEMENTED_TARGETED_VERIFIED__LEGACY_AUTHORITY_ISOLATED",
     "R7_EXACT_MAIN_VERIFICATION": "NOT_ASSERTED__PR_HEAD_GATES_GREEN"
   },
   "release_state": "REWRITE_IN_PROGRESS_NOT_RELEASE_VERIFIED",
   "latest_targeted_evidence": {
-    "sha": "c92069c7f2b0f96298653a90f0200368855530d2",
-    "pr": 86,
-    "scope": "Parent-confirmed daily availability → Planner candidate windows → fixed commitment subtraction → free-window evidence → Planner date allocation",
+    "sha": "4d3870ccb25ef610268e9d6f3188ecbdc83f88a5",
+    "pr": 91,
+    "scope": "Legacy REV_06/REV_07/Focus Golden Reference authority isolation + registry + validator",
     "result": "TARGETED_BEHAVIOR_VERIFIED",
     "gates": {
-      "daily_availability": {
-        "run_id": 35566686378,
-        "status": "PASS"
-      },
-      "planner_free_window": {
-        "run_id": 35566686244,
-        "status": "PASS"
-      },
-      "child_fact_confirmation": {
-        "run_id": 35566686339,
+      "legacy_authority": {
+        "run_id": 35567921152,
         "status": "PASS"
       },
       "integration_ci": {
-        "run_id": 35566686298,
+        "run_id": 35567918222,
         "status": "PASS"
       },
       "runtime_e2e": {
-        "run_id": 35566686309,
-        "status": "PASS"
-      },
-      "codex_selftest": {
-        "run_id": 35566686285,
+        "run_id": 35567908454,
         "status": "PASS"
       }
     },
-    "claim_boundary": "PR_HEAD_VERIFIED_AND_MERGED; DEVICE/PRODUCTION not asserted",
-    "merged_runtime_code_basis_sha": "297d59f67993cf5759771d58580468f9f6d2daa7"
+    "claim_boundary": "PR_HEAD_VERIFIED_AND_MERGED; exact-main/device/production not asserted",
+    "merged_main_sha": "a49d626daadca29dfa3d4e73b9787dfceeb0ade5"
   },
   "open_product_gaps": [
     "R4 child FACT confirmation path is implemented/targeted verified on merged main; exact device/production behavior remains separate.",
     "R5 confirmed daily availability supply is implemented/targeted verified and merged; recurring/weekly availability templates and exact device/production behavior remain separate.",
-    "R6 legacy authority archive remains not started.",
+    "R6 legacy authority is isolated/targeted verified and merged; historical files remain preserved as provenance/visual references only.",
     "Exact-main/device/production verification remains separate."
   ],
   "head_policy": "STATUS_FILE_CANNOT_SELF_ASSERT_EVENTUAL_MERGE_SHA; repository head is volatile and must be live-refreshed when material.",
