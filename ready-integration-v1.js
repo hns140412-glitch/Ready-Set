@@ -39,7 +39,7 @@
       });
       state=window.ReadyAssignments.load();fact=state.assignmentFacts[assignmentId];
     }
-    const allocation=window.ReadySetPlanner.allocateLearningUnits({assignment_id:assignmentId,domain_state:state,start_date:input.start_date,candidate_dates:input.candidate_dates});
+    const allocation=window.ReadySetPlanner.allocateLearningUnits({assignment_id:assignmentId,domain_state:state,start_date:input.start_date,candidate_dates:input.candidate_dates,candidate_windows_by_date:input.candidate_windows_by_date});
     if(!allocation.ok)return {...allocation,revision_impact:revisionImpact};
     const committed=window.ReadySetPlanner.commitLearningAllocation(allocation.allocation_run_id);
     if(committed.ok&&fact.planner_revision_pending){

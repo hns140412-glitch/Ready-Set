@@ -260,6 +260,9 @@
       const dates=allocationDates(fact,input);if(!dates.length)return {ok:false,reason:'NO_ALLOCATION_WINDOW'};
       return mutate(s=>{
         const runId=makeId('allocation_v2');
+        const windowsByDate=(input.candidate_windows_by_date&&typeof input.candidate_windows_by_date==='object')?input.candidate_windows_by_date:{};
+        const freeWindowByDate=Object.fromEntries(dates.map(d=>[d,freeWindowEvidence(s,d,windowsByDate[d]||[])]));
+        const freeWindowCoverage=dates.filter(d=>freeWindowByDate[d].known).length;
         const loadByDate=Object.fromEntries(dates.map(d=>[d,(s.dated_todos||[])
           .filter(t=>t.date===d&&isOpenTodo(t))
           .map(t=>({
@@ -279,6 +282,14 @@
           const unitDifficulty=Number.isFinite(unitLoad.difficulty)?unitLoad.difficulty:3;
           const unitRecovery=unitLoad.recovery_need||'MEDIUM';
           const date=[...dates].sort((a,b)=>{
+            const wa=freeWindowByDate[a],wb=freeWindowByDate[b];
+            if(wa.known||wb.known){
+              if(wa.known!==wb.known)return wa.known?-1:1;
+              const aHas=wa.total_free_minutes>0,bHas=wb.total_free_minutes>0;
+              if(aHas!==bHas)return aHas?-1:1;
+              if((wb.largest_contiguous_minutes||0)!==(wa.largest_contiguous_minutes||0))return (wb.largest_contiguous_minutes||0)-(wa.largest_contiguous_minutes||0);
+              if((wb.total_free_minutes||0)!==(wa.total_free_minutes||0))return (wb.total_free_minutes||0)-(wa.total_free_minutes||0);
+            }
             const score=d=>{
               const taskLoads=loadByDate[d]||[];
               const commitments=scheduleByDate[d]||[];
@@ -338,10 +349,11 @@
               current_revision:Number(fact.fact_revision)||1,
               activity_types:unit.activity_types||[],
               allow_subject_generalization:true
-            })
+            }),
+            free_window_evidence:freeWindowByDate[date]
           });
         }
-        const run={allocation_run_id:runId,version:'PLANNER_V2',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:Number(fact.fact_revision)||1,primary_basis:'LEARNING_UNIT_ACTIVITY_LOAD',minutes_role:'SECONDARY_SAFETY_ONLY',proposals,created_at:new Date().toISOString()};
+        const run={allocation_run_id:runId,version:'PLANNER_V2',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:Number(fact.fact_revision)||1,primary_basis:'LEARNING_UNIT_ACTIVITY_LOAD',minutes_role:'SECONDARY_SAFETY_ONLY',free_window_role:'SECONDARY_CAPACITY_SAFETY',free_window_coverage:{known_dates:freeWindowCoverage,total_dates:dates.length},free_window_by_date:freeWindowByDate,proposals,created_at:new Date().toISOString()};
         s.allocation_runs.push(run);return {ok:true,...run};
       });
     }
@@ -357,6 +369,7 @@
             activity_types:p.activity_types,activity_sequence:p.activity_sequence||[],
             cognitive_load_profile:p.cognitive_load_profile,
             activity_load_score:p.activity_load_score,difficulty:p.difficulty,recovery_need:p.recovery_need,
+            free_window_evidence:p.free_window_evidence||null,
             review_policy:p.review_policy,parent_help_dependency:p.parent_help_dependency,
             source:'PLANNER_V2_ALLOCATION',source_actor:'PLANNER_MAIN',
             provenance:{assignment_id:p.assignment_id,analysis_id:p.analysis_id,learning_unit_id:p.learning_unit_id,allocation_run_id:runId,fact_revision:Number(p.fact_revision)||Number(run.fact_revision)||1},
@@ -476,6 +489,28 @@
     }
 
     function minutes(ms){return Math.max(0,Math.floor(ms/60000));}
+
+    function freeWindowEvidence(state,date,windows=[]){
+      const candidate=clampWindows(date,windows||[]);
+      if(!candidate.length)return {known:false,date,total_free_minutes:null,largest_contiguous_minutes:null,window_count:0,open_windows:[]};
+      const commitments=commitmentIntervals(state,date);
+      const open=candidate.flatMap(w=>subtractIntervals(w,commitments));
+      const spans=open.map(w=>({
+        start:w.start.toISOString(),
+        end:w.end.toISOString(),
+        minutes:minutes(w.end-w.start)
+      }));
+      const total=spans.reduce((sum,w)=>sum+w.minutes,0);
+      const largest=spans.reduce((max,w)=>Math.max(max,w.minutes),0);
+      return {
+        known:true,
+        date,
+        total_free_minutes:total,
+        largest_contiguous_minutes:largest,
+        window_count:spans.length,
+        open_windows:spans
+      };
+    }
 
     function eligibleTemplate(template,date){
       if(template.confirmation_state && template.confirmation_state!=='CONFIRMED')return false;
