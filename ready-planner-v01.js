@@ -27,6 +27,7 @@
     schedule_commitments:[],
     schedule_exceptions:[],
     daily_availability_windows:[],
+    availability_exceptions:[],
     homework_templates:[],
     dated_todos:[],
     progress_events:[],
@@ -56,6 +57,7 @@
       schedule_commitments:Array.isArray(x.schedule_commitments)?x.schedule_commitments:[],
       schedule_exceptions:Array.isArray(x.schedule_exceptions)?x.schedule_exceptions:[],
       daily_availability_windows:Array.isArray(x.daily_availability_windows)?x.daily_availability_windows:[],
+      availability_exceptions:Array.isArray(x.availability_exceptions)?x.availability_exceptions:[],
       homework_templates:Array.isArray(x.homework_templates)?x.homework_templates:[],
       dated_todos:Array.isArray(x.dated_todos)?x.dated_todos:[],
       progress_events:Array.isArray(x.progress_events)?x.progress_events:[],
@@ -237,6 +239,44 @@
       });
     }
 
+    function upsertAvailabilityException(input={}){
+      if(globalThis.ReadyFamilySession){
+        const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
+        if(!gate?.ok)throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
+      }
+      const availabilityId=cleanText(input.availability_id);
+      const date=cleanText(input.date);
+      const type=cleanText(input.type).toUpperCase();
+      if(!availabilityId||!/^\d{4}-\d{2}-\d{2}$/.test(date))return {ok:false,reason:'AVAILABILITY_AND_DATE_REQUIRED'};
+      if(!['SKIP','REPLACE'].includes(type))return {ok:false,reason:'INVALID_EXCEPTION_TYPE'};
+      const start=cleanText(input.start)||null,end=cleanText(input.end)||null;
+      if(type==='REPLACE'&&(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start))return {ok:false,reason:'VALID_REPLACEMENT_TIME_REQUIRED'};
+      return mutate(s=>{
+        const source=s.daily_availability_windows.find(x=>x.availability_id===availabilityId&&x.recurrence==='WEEKLY');
+        if(!source)return {ok:false,reason:'WEEKLY_AVAILABILITY_NOT_FOUND'};
+        const item={exception_id:cleanText(input.exception_id)||(availabilityId+'@'+date),availability_id:availabilityId,date,type,start:type==='REPLACE'?start:null,end:type==='REPLACE'?end:null,note:cleanText(input.note)||null,source:cleanText(input.source)||'PARENT_ADMIN_UI',updated_at:new Date().toISOString()};
+        const i=s.availability_exceptions.findIndex(x=>x.availability_id===availabilityId&&x.date===date);
+        if(i>=0)s.availability_exceptions[i]=item;else s.availability_exceptions.push(item);
+        markReflowReview(s,'AVAILABILITY_EXCEPTION_CHANGED');
+        return {ok:true,item:{...item}};
+      });
+    }
+
+    function removeAvailabilityException(input={}){
+      if(globalThis.ReadyFamilySession){
+        const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
+        if(!gate?.ok)throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
+      }
+      const id=cleanText(input.exception_id),availabilityId=cleanText(input.availability_id),date=cleanText(input.date);
+      return mutate(s=>{
+        const before=s.availability_exceptions.length;
+        s.availability_exceptions=s.availability_exceptions.filter(x=>id?x.exception_id!==id:!(x.availability_id===availabilityId&&x.date===date));
+        if(before===s.availability_exceptions.length)return {ok:false,reason:'AVAILABILITY_EXCEPTION_NOT_FOUND'};
+        markReflowReview(s,'AVAILABILITY_EXCEPTION_REMOVED');
+        return {ok:true};
+      });
+    }
+
     function removeDailyAvailabilityWindow(id){
       const target=cleanText(id); if(!target)return {ok:false,reason:'AVAILABILITY_ID_REQUIRED'};
       if(globalThis.ReadyFamilySession){
@@ -256,6 +296,7 @@
       const s=load(),out={};
       for(const date of dates||[]){
         const dow=parseLocal(date,'12:00').getDay();
+        const exceptionByAvailability=new Map((s.availability_exceptions||[]).filter(x=>x.date===date).map(x=>[x.availability_id,x]));
         out[date]=(s.daily_availability_windows||[])
           .filter(x=>x.confirmed!==false)
           .filter(x=>{
@@ -263,14 +304,17 @@
               if(Number(x.weekday)!==dow)return false;
               if(x.valid_from&&date<x.valid_from)return false;
               if(x.valid_until&&date>x.valid_until)return false;
+              if(exceptionByAvailability.get(x.availability_id)?.type==='SKIP')return false;
               return true;
             }
             return x.date===date;
           })
           .sort((a,b)=>String(a.start).localeCompare(String(b.start)))
-          .map(x=>x.recurrence==='WEEKLY'
-            ? {start:x.start,end:x.end,availability_id:x.availability_id,source:x.source,recurrence:'WEEKLY',weekday:Number(x.weekday)}
-            : {start:x.start,end:x.end,availability_id:x.availability_id,source:x.source});
+          .map(x=>{
+            const exception=exceptionByAvailability.get(x.availability_id)||null;
+            if(x.recurrence==='WEEKLY')return {start:exception?.type==='REPLACE'?(exception.start||x.start):x.start,end:exception?.type==='REPLACE'?(exception.end||x.end):x.end,availability_id:x.availability_id,source:x.source,recurrence:'WEEKLY',weekday:Number(x.weekday),availability_exception:exception};
+            return {start:x.start,end:x.end,availability_id:x.availability_id,source:x.source};
+          });
       }
       return out;
     }
@@ -1490,6 +1534,7 @@
       for(const e of s.progress_events){
         if(e.todo_id&&!todoIds.has(e.todo_id))issues.push('ORPHAN_PROGRESS_EVENT');
       }
+      for(const ae of s.availability_exceptions){if(!['SKIP','REPLACE'].includes(ae.type))issues.push('AVAILABILITY_EXCEPTION_TYPE_INVALID');}
       for(const e of s.schedule_exceptions){
         if(!['SKIP','REPLACE'].includes(e.type))issues.push('SCHEDULE_EXCEPTION_TYPE_INVALID');
       }
@@ -1513,6 +1558,8 @@
       upsertScheduleException,
       removeScheduleException,
       upsertDailyAvailabilityWindow,
+      upsertAvailabilityException,
+      removeAvailabilityException,
       removeDailyAvailabilityWindow,
       candidateWindowsByDate,
       upsertHomeworkTemplate,

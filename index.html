@@ -161,6 +161,17 @@
         <div id="availabilityAdminList" class="adminList"></div>
       </section>
 
+      <section class="glassCard adminCard" id="availabilityExceptionCard">
+        <div class="adminSectionHead"><div><small>AVAILABILITY EXCEPTION</small><h2>이번 날만 가능시간 변경</h2></div><button class="miniAction" id="availabilityExceptionClearBtn">새 예외</button></div>
+        <p class="muted">매주 반복 가능시간은 유지하고 특정 날짜만 불가 또는 다른 시간으로 바꿉니다.</p>
+        <label class="inputBlock">반복 가능시간<select id="availabilityExceptionAvailability"><option value="">반복 가능시간 선택</option></select></label>
+        <div class="adminGrid two"><label class="inputBlock">날짜<input id="availabilityExceptionDate" type="date"></label><label class="inputBlock">처리<select id="availabilityExceptionType"><option value="SKIP">이번 날 불가</option><option value="REPLACE">가능시간 변경</option></select></label></div>
+        <div class="adminGrid two"><label class="inputBlock">변경 시작<input id="availabilityExceptionStart" type="time"></label><label class="inputBlock">변경 종료<input id="availabilityExceptionEnd" type="time"></label></div>
+        <label class="inputBlock">메모<input id="availabilityExceptionNote" placeholder="예) 가족 일정 / 외출"></label>
+        <button class="btn dark" id="saveAvailabilityExceptionBtn">이번 날짜만 반영</button>
+        <div id="availabilityExceptionList" class="adminList"></div>
+      </section>
+
       <section class="glassCard adminCard" id="weeklyReflowAdminCard">
         <div class="adminSectionHead"><div><small>WEEKLY REFLOW</small><h2>이번 주 다시 맞추기</h2></div><button class="miniAction" id="weeklyReflowPlanBtn">재배치안 만들기</button></div>
         <p class="muted">고정 일정·가용시간·마감·학습 부하를 다시 읽고, 시작하지 않은 Planner 탐험만 이번 주 안에서 재배치합니다. 적용 전 Parent 확인이 필요합니다.</p>

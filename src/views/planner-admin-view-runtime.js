@@ -46,6 +46,16 @@
         : '<div class="plannerEmpty"><b>확인된 학습 가능 시간이 없어요.</b><small>Planner는 시간을 추정하지 않고, 확인된 범위가 있을 때만 가용시간 근거로 사용해요.</small></div>';
     }
 
+    function renderAvailabilityExceptions(snapshot={}){
+      const select=q('#availabilityExceptionAvailability'),el=q('#availabilityExceptionList');
+      const weekly=(snapshot.daily_availability_windows||[]).filter(x=>x.recurrence==='WEEKLY');
+      if(select){const current=select.value;select.innerHTML='<option value="">반복 가능시간 선택</option>'+weekly.map(x=>`<option value="${x.availability_id}">매주 ${['일','월','화','수','목','금','토'][Number(x.weekday)]} ${escapeHtml(x.start)}-${escapeHtml(x.end)}</option>`).join('');if(weekly.some(x=>x.availability_id===current))select.value=current;}
+      if(!el)return;
+      const byId=new Map((snapshot.daily_availability_windows||[]).map(x=>[x.availability_id,x]));
+      const rows=snapshot.availability_exceptions||[];
+      el.innerHTML=rows.length?rows.map(x=>{const base=byId.get(x.availability_id);const desc=x.type==='SKIP'?'학습 불가':`가능시간 변경 ${escapeHtml(x.start)} → ${escapeHtml(x.end)}`;return `<div class="adminListItem"><span><b>${escapeHtml(x.date)} · ${desc}</b><small>기본 ${escapeHtml(base?.start||'')} → ${escapeHtml(base?.end||'')}${x.note?' · '+escapeHtml(x.note):''}</small></span><button class="miniAction" data-delete-availability-exception="${x.exception_id}">삭제</button></div>`;}).join(''):'<div class="plannerEmpty"><b>가능시간 예외가 없어요.</b><small>가족 일정·외출 등으로 이번 날만 달라질 때 추가합니다.</small></div>';
+    }
+
     function renderReflow(snapshot={}){
       const el=q('#weeklyReflowAdminList'); if(!el)return;
       const run=[...(snapshot.weekly_reflow_runs||[])].filter(x=>x.status==='PENDING').at(-1);
@@ -96,13 +106,14 @@
       renderSchedule(snapshot);
       renderScheduleExceptions(snapshot);
       renderAvailability(snapshot);
+      renderAvailabilityExceptions(snapshot);
       renderReflow(snapshot);
       renderAdaptive(snapshot);
       renderCarry(snapshot);
       return {ok:true};
     }
 
-    return Object.freeze({render,renderSchedule,renderScheduleExceptions,renderAvailability,renderReflow,renderAdaptive,renderCarry});
+    return Object.freeze({render,renderSchedule,renderScheduleExceptions,renderAvailability,renderAvailabilityExceptions,renderReflow,renderAdaptive,renderCarry});
   }
 
   root.ReadyRebuildPlannerAdminView=Object.freeze({

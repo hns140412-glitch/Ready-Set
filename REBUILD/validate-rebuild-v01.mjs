@@ -665,3 +665,12 @@ assert('planner-daypart-evidence-ui',
   plannerDaypartScreenSource.includes("value==='MORNING'?'아침'") &&
   plannerDaypartScreenSource.includes('daypartLabel')
 );
+
+const plannerAvailabilityExceptionSource=loadSource('ready-planner-v01.js');
+assert('weekly-availability-exception-overlay',
+  plannerAvailabilityExceptionSource.includes('availability_exceptions') &&
+  plannerAvailabilityExceptionSource.includes('upsertAvailabilityException') &&
+  plannerAvailabilityExceptionSource.includes("exception?.type==='SKIP'") &&
+  plannerAvailabilityExceptionSource.includes("exception?.type==='REPLACE'") &&
+  indexSource.includes('availabilityExceptionCard')
+);

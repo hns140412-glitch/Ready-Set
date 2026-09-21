@@ -196,3 +196,11 @@ test('schedule changes mark weekly reflow review without moving todos', async ({
   expect(out.review.reasons).toContain('SCHEDULE_CHANGED');
   expect(out.after).toBe(out.before);
 });
+
+
+test('weekly availability exception overlays a single date only', async ({ page }) => {
+  await page.addInitScript(() => {window.__READY_AUTH_BOOTSTRAP__={authenticated:true,family_id:'TEST_FAMILY',member_id:'TEST_PARENT',role:'PARENT',session_id:'TEST_SESSION',expires_at:'2099-01-01T00:00:00.000Z',source:'TEST_ONLY'};});
+  await page.goto('http://127.0.0.1:4173/', {waitUntil:'load'});
+  const out=await page.evaluate(()=>{const p=window.ReadySetPlanner;p.upsertDailyAvailabilityWindow({availability_id:'weekly_av',recurrence:'WEEKLY',weekday:3,start:'16:00',end:'20:00',confirmed:true,source:'PARENT_ADMIN_UI'});p.upsertAvailabilityException({availability_id:'weekly_av',date:'2026-09-23',type:'SKIP',note:'가족 일정',source:'PARENT_ADMIN_UI'});p.upsertAvailabilityException({availability_id:'weekly_av',date:'2026-09-30',type:'REPLACE',start:'18:00',end:'20:00',note:'늦게 가능',source:'PARENT_ADMIN_UI'});return p.candidateWindowsByDate(['2026-09-23','2026-09-30','2026-10-07']);});
+  expect(out['2026-09-23']).toHaveLength(0);expect(out['2026-09-30'][0].start).toBe('18:00');expect(out['2026-09-30'][0].end).toBe('20:00');expect(out['2026-10-07'][0].start).toBe('16:00');
+});

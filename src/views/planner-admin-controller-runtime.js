@@ -44,6 +44,15 @@
       query('#scheduleExceptionNote').value='';
     }
 
+    function clearAvailabilityExceptionForm(){
+      query('#availabilityExceptionAvailability').value='';
+      query('#availabilityExceptionDate').value=localDateKey();
+      query('#availabilityExceptionType').value='SKIP';
+      query('#availabilityExceptionStart').value='';
+      query('#availabilityExceptionEnd').value='';
+      query('#availabilityExceptionNote').value='';
+    }
+
     function clearAvailabilityForm(){
       query('#availabilityId').value='';
       query('#availabilityDate').value=localDateKey();
@@ -64,6 +73,7 @@
       if(!query('#scheduleDate').value)query('#scheduleDate').value=localDateKey();
       if(!query('#availabilityDate').value)query('#availabilityDate').value=localDateKey();
       if(!query('#scheduleExceptionDate').value)query('#scheduleExceptionDate').value=localDateKey();
+      if(!query('#availabilityExceptionDate').value)query('#availabilityExceptionDate').value=localDateKey();
       renderParentIntake();
       return {ok:true,snapshot:snap};
     }
@@ -226,6 +236,31 @@
       return result;
     }
 
+    function saveAvailabilityException(){
+      if(!requireParentUi())return {ok:false,reason:'PARENT_REQUIRED'};
+      const result=planner()?.upsertAvailabilityException?.({
+        availability_id:query('#availabilityExceptionAvailability').value,
+        date:query('#availabilityExceptionDate').value,
+        type:query('#availabilityExceptionType').value,
+        start:query('#availabilityExceptionStart').value,
+        end:query('#availabilityExceptionEnd').value,
+        note:query('#availabilityExceptionNote').value.trim(),
+        source:'PARENT_ADMIN_UI'
+      });
+      if(result?.ok)toast(query('#availabilityExceptionType').value==='SKIP'?'이번 날짜만 학습 불가로 반영했어요.':'이번 날짜만 학습 가능 시간을 변경했어요.');
+      else if(result?.reason==='VALID_REPLACEMENT_TIME_REQUIRED')toast('변경 시작·종료 시간을 확인해 주세요.');
+      else toast('학습 가능시간 예외를 저장하지 못했어요.');
+      if(result?.ok){clearAvailabilityExceptionForm();refresh();}
+      return result;
+    }
+
+    function removeAvailabilityException(id){
+      if(!requireParentUi())return {ok:false,reason:'PARENT_REQUIRED'};
+      const result=planner()?.removeAvailabilityException?.({exception_id:id});
+      toast(result?.ok?'가능시간 예외를 삭제했어요. 기본 반복 시간이 다시 적용됩니다.':'가능시간 예외를 삭제하지 못했어요.');
+      refresh();return result;
+    }
+
     function planWeeklyReflow(){
       if(!requireParentUi())return {ok:false,reason:'PARENT_REQUIRED'};
       const result=planner()?.planWeeklyReflow?.({start_date:localDateKey(),days:7});
@@ -279,6 +314,8 @@
       if(schedule){editSchedule(schedule.dataset.editSchedule);return;}
       const exceptionRemove=event.target.closest?.('[data-delete-schedule-exception]');
       if(exceptionRemove){removeScheduleException(exceptionRemove.dataset.deleteScheduleException);return;}
+      const availabilityExceptionRemove=event.target.closest?.('[data-delete-availability-exception]');
+      if(availabilityExceptionRemove){removeAvailabilityException(availabilityExceptionRemove.dataset.deleteAvailabilityException);return;}
       const availability=event.target.closest?.('[data-edit-availability]');
       if(availability){editAvailability(availability.dataset.editAvailability);return;}
       const remove=event.target.closest?.('[data-delete-availability]');
@@ -305,9 +342,11 @@
       query('#scheduleClearBtn')?.addEventListener('click',clearScheduleForm);
       query('#scheduleExceptionClearBtn')?.addEventListener('click',clearScheduleExceptionForm);
       query('#availabilityClearBtn')?.addEventListener('click',clearAvailabilityForm);
+      query('#availabilityExceptionClearBtn')?.addEventListener('click',clearAvailabilityExceptionForm);
       query('#saveScheduleBtn')?.addEventListener('click',saveSchedule);
       query('#saveScheduleExceptionBtn')?.addEventListener('click',saveScheduleException);
       query('#saveAvailabilityBtn')?.addEventListener('click',saveAvailability);
+      query('#saveAvailabilityExceptionBtn')?.addEventListener('click',saveAvailabilityException);
       query('#weeklyReflowPlanBtn')?.addEventListener('click',planWeeklyReflow);
       query('#adaptiveEstimateRefreshBtn')?.addEventListener('click',refreshAdaptiveSuggestions);
       eventTarget.addEventListener?.('click',onDocumentClick);
@@ -315,8 +354,8 @@
     }
 
     return Object.freeze({
-      snapshot,render,clearScheduleForm,clearScheduleExceptionForm,clearAvailabilityForm,editSchedule,editAvailability,
-      removeAvailability,removeScheduleException,reviewCarry,readyCarry,cancelCarry,saveSchedule,saveScheduleException,saveAvailability,
+      snapshot,render,clearScheduleForm,clearScheduleExceptionForm,clearAvailabilityForm,clearAvailabilityExceptionForm,editSchedule,editAvailability,
+      removeAvailability,removeScheduleException,removeAvailabilityException,reviewCarry,readyCarry,cancelCarry,saveSchedule,saveScheduleException,saveAvailability,saveAvailabilityException,
       planWeeklyReflow,decideWeeklyReflow,refreshAdaptiveSuggestions,decideAdaptive,bind
     });
   }
