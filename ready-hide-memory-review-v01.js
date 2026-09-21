@@ -85,6 +85,26 @@
     });
   }
 
+  function normalizeHideV2ReturnEvent(event={}){
+    const eventType=clean(event.event_type||event.type);
+    if(event?.source!=='hide-seek'||eventType!=='TASK_COMPLETED')return null;
+    const payload=event?.payload;
+    if(!payload||payload.resultContract!=='HIDE_SPECIALIST_RESULT_V2'||clean(payload.runtime)!=='V2')return null;
+    if(!normalizeHideSpecialistResult(payload))return null;
+    const ctx=payload.taskContext||{};
+    const sessionId=clean(ctx.session_id),taskId=clean(ctx.task_id);
+    if(!sessionId||!taskId)return null;
+    return Object.freeze({
+      session_id:sessionId,
+      task_id:taskId,
+      lap_id:clean(ctx.lap_id)||null,
+      task_state:clean(payload.taskState)||'COMPLETED',
+      from_app:'hide-seek',
+      event_id:clean(event.event_id)||null,
+      result_payload:payload
+    });
+  }
+
   function planReview(decision,planner,options={}){
     if(decision?.authority!=='READY_LEARNING_ENGINE_REVIEW_POLICY')return {ok:false,reason:'READY_REVIEW_DECISION_REQUIRED'};
     if(decision?.scheduleOwner!=='READY_SET_PLANNER')return {ok:false,reason:'PLANNER_SCHEDULE_OWNER_REQUIRED'};
@@ -121,5 +141,5 @@
     return {ok:true,todo,directive};
   }
 
-  return Object.freeze({version:VERSION,interpretHideMemorySummary,planReview,directiveForPlannerTodo,normalizeHideSpecialistResult});
+  return Object.freeze({version:VERSION,interpretHideMemorySummary,planReview,directiveForPlannerTodo,normalizeHideSpecialistResult,normalizeHideV2ReturnEvent});
 });
