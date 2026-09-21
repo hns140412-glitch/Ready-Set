@@ -45,19 +45,27 @@
     if (!session) return null;
     if (!session.rev07) {
       const linked=(session.plannerLinks||[]);
-      const tasks = linked.map((link, index) => ({
-        task_id: `task_${session.id || Date.now()}_${index + 1}`,
-        label:link.label,
-        state: 'PENDING',
-        planner_todo_id: link.todo_id,
-        assignment_id:link.assignment_id||null,
-        analysis_id:link.analysis_id||null,
-        learning_unit_id:link.learning_unit_id||null,
-        template_id:link.template_id||null,
-        allocation_run_id:link.allocation_run_id||null,
-        suggested_app: suggestedApp(link.label),
-        laps: []
-      }));
+      const plannerTodos = window.ReadySetPlanner?.snapshot?.()?.dated_todos || [];
+      const tasks = linked.map((link, index) => {
+        const taskId=`task_${session.id || Date.now()}_${index + 1}`;
+        const todo=plannerTodos.find(x=>x.todo_id===link.todo_id)||null;
+        const reviewDirective=window.ReadyHideMemoryReviewV01?.directiveForPlannerTodo?.(todo,taskId)||null;
+        return {
+          task_id: taskId,
+          label:link.label,
+          state: 'PENDING',
+          planner_todo_id: link.todo_id,
+          assignment_id:link.assignment_id||null,
+          analysis_id:link.analysis_id||null,
+          learning_unit_id:link.learning_unit_id||null,
+          template_id:link.template_id||null,
+          allocation_run_id:link.allocation_run_id||null,
+          suggested_app: reviewDirective?'hide-seek':suggestedApp(link.label),
+          review_directive:reviewDirective,
+          specialist_result:null,
+          laps: []
+        };
+      });
       session.rev07 = {
         contract_version: 'REV_07',
         session_id: session.id || id('session'),
@@ -71,8 +79,6 @@
         created_at: iso(session.startAt || Date.now())
       };
       if (window.ReadySetPlanner) {
-        const plannerState = window.ReadySetPlanner.snapshot?.();
-        const plannerTodos = plannerState?.dated_todos || [];
         tasks.forEach((task, index) => {
           if (!task.planner_todo_id) return;
           const todo = plannerTodos.find(x => x.todo_id === task.planner_todo_id);
@@ -227,6 +233,9 @@
     url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
     url.searchParams.set('snap_target', SNAP_URL);
     url.searchParams.set('from_app', 'ready-set');
+    if(app==='hide-seek'&&task.review_directive){
+      url.searchParams.set('review_directive',JSON.stringify(task.review_directive));
+    }
     location.assign(url.href);
   }
 
@@ -237,7 +246,7 @@
     return null;
   }
 
-  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null }) {
+  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null, result_payload = null }) {
     const c = ensureContract();
     if (!c || !session_id || session_id !== c.session_id) return false;
     if (event_id && c.applied_event_ids?.includes(event_id)) return false;
@@ -245,6 +254,10 @@
     if (!task) return false;
 
     const normalized = normalizeInboundState(task_state);
+    if(from_app==='hide-seek'&&result_payload){
+      const specialistResult=window.ReadyHideMemoryReviewV01?.normalizeHideSpecialistResult?.(result_payload)||null;
+      if(specialistResult)task.specialist_result=specialistResult;
+    }
     c.active_app = 'ready-set';
     c.active_task_id = task.task_id;
     if (lap_id) c.active_lap_id = lap_id;
@@ -287,7 +300,8 @@
       lap_id: e.lap_id,
       task_state: taskState,
       from_app: e.app,
-      event_id: e.event_id
+      event_id: e.event_id,
+      result_payload: e.payload||null
     });
   }
 
@@ -447,6 +461,7 @@
         label: task.label,
         state: task.state,
         actual_ms: actualMs,
+        specialistResult:task.specialist_result||null,
         plannerOutcome
       });
     }
