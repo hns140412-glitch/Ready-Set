@@ -742,7 +742,7 @@ function addDays(base,n){const d=new Date(base);d.setDate(d.getDate()+n);return 
 function weekStart(base=new Date()){
   const d=new Date(base); const dow=d.getDay(); const delta=dow===0?-6:1-dow; d.setDate(d.getDate()+delta); d.setHours(12,0,0,0); return d;
 }
-function plannerSnapshot(){return window.ReadySetPlanner?.snapshot?.()||{dated_todos:[],schedule_commitments:[],carry_over_queue:[]}}
+function plannerSnapshot(){return window.ReadySetPlanner?.snapshot?.()||{dated_todos:[],schedule_commitments:[],daily_availability_windows:[],carry_over_queue:[]}}
 plannerSelectedDate=plannerSelectedDate||localDateKey();
 function plannerItemsForDate(date,snap=plannerSnapshot()){
   const todos=(snap.dated_todos||[]).filter(x=>x.date===date).map(x=>({
@@ -808,6 +808,12 @@ function clearScheduleForm(){
   $('#scheduleEnd').value='';
   $('#scheduleMovable').checked=false;
 }
+function clearAvailabilityForm(){
+  $('#availabilityId').value='';
+  $('#availabilityDate').value=localDateKey();
+  $('#availabilityStart').value='';
+  $('#availabilityEnd').value='';
+}
 function renderPlannerAdmin(){
   if(!requireParentUi()){nav('planner');return}
   const snap=plannerSnapshot();
@@ -820,6 +826,17 @@ function renderPlannerAdmin(){
         <span><b>${escapeHtml(x.title)}</b><small>${String(x.start_at||'').slice(0,16).replace('T',' ')} → ${String(x.end_at||'').slice(11,16)} · ${escapeHtml(x.category||'OTHER')}</small></span><strong>수정</strong>
       </button>`).join('')
     : '<div class="plannerEmpty"><b>등록된 고정 일정이 없어요.</b><small>학원·피아노·태권도처럼 움직이지 않는 일정을 먼저 넣어요.</small></div>';
+
+  const availabilityRoot=$('#availabilityAdminList');
+  if(availabilityRoot){
+    availabilityRoot.innerHTML=(snap.daily_availability_windows||[]).length
+      ? [...snap.daily_availability_windows].sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)).map(x=>`
+        <div class="adminListItem">
+          <button type="button" data-edit-availability="${x.availability_id}"><span><b>${escapeHtml(x.date)} 학습 가능</b><small>${escapeHtml(x.start)} → ${escapeHtml(x.end)} · Parent 확인</small></span><strong>수정</strong></button>
+          <button class="miniAction" type="button" data-delete-availability="${x.availability_id}">삭제</button>
+        </div>`).join('')
+      : '<div class="plannerEmpty"><b>확인된 학습 가능 시간이 없어요.</b><small>Planner는 시간을 추정하지 않고, 확인된 범위가 있을 때만 가용시간 근거로 사용해요.</small></div>';
+  }
 
   const carryRoot=$('#carryOverAdminList');
   if(carryRoot){
@@ -838,6 +855,7 @@ function renderPlannerAdmin(){
     }).join(''):'<div class="plannerEmpty"><b>확인할 남은 탐험이 없어요.</b><small>새 carry-over가 생기면 여기에 표시됩니다.</small></div>';
   }
   if(!$('#scheduleDate').value) $('#scheduleDate').value=localDateKey();
+  if(!$('#availabilityDate').value) $('#availabilityDate').value=localDateKey();
   renderParentIntake();
 }
 function editSchedule(id){
@@ -850,7 +868,15 @@ function editSchedule(id){
   $('#scheduleEnd').value=String(x.end_at||'').slice(11,16);
   $('#scheduleMovable').checked=!!x.planner_movable;
 }
+function editAvailability(id){
+  const x=plannerSnapshot().daily_availability_windows.find(v=>v.availability_id===id); if(!x)return;
+  $('#availabilityId').value=x.availability_id;
+  $('#availabilityDate').value=x.date||localDateKey();
+  $('#availabilityStart').value=x.start||'';
+  $('#availabilityEnd').value=x.end||'';
+}
 document.getElementById('scheduleClearBtn')?.addEventListener('click',clearScheduleForm);
+document.getElementById('availabilityClearBtn')?.addEventListener('click',clearAvailabilityForm);
 document.addEventListener('click',e=>{
   const childConfirm=e.target.closest('[data-child-fact-confirm]');
   if(childConfirm){
@@ -872,6 +898,14 @@ document.addEventListener('click',e=>{
     renderPlannerAdmin();renderPlanner();renderMission();return;
   }
   const s=e.target.closest('[data-edit-schedule]'); if(s){editSchedule(s.dataset.editSchedule);return;}
+  const a=e.target.closest('[data-edit-availability]'); if(a){editAvailability(a.dataset.editAvailability);return;}
+  const ad=e.target.closest('[data-delete-availability]');
+  if(ad){
+    if(!requireParentUi())return;
+    const removed=window.ReadySetPlanner?.removeDailyAvailabilityWindow?.(ad.dataset.deleteAvailability);
+    toast(removed?.ok?'학습 가능 시간을 삭제했어요. Planner가 다음 배정부터 사용하지 않습니다.':'학습 가능 시간을 삭제하지 못했어요.');
+    clearAvailabilityForm();renderPlannerAdmin();renderPlanner();return;
+  }
   const review=e.target.closest('[data-carry-review]');
   if(review){
     if(!requireParentUi())return;
@@ -916,6 +950,18 @@ document.getElementById('saveScheduleBtn')?.addEventListener('click',()=>{
     source:'PARENT_ADMIN_UI'
   });
   toast('고정 일정을 저장했어요.');
+  renderPlannerAdmin(); renderPlanner();
+});
+document.getElementById('saveAvailabilityBtn')?.addEventListener('click',()=>{
+  if(!requireParentUi())return;
+  const date=$('#availabilityDate').value,start=$('#availabilityStart').value,end=$('#availabilityEnd').value;
+  if(!date||!start||!end){toast('날짜·시작·종료 시간을 확인해 주세요.');return;}
+  if(end<=start){toast('종료 시간은 시작 시간보다 늦어야 해요.');return;}
+  window.ReadySetPlanner.upsertDailyAvailabilityWindow({
+    availability_id:$('#availabilityId').value||undefined,
+    date,start,end,confirmed:true,parent_editable:true,source:'PARENT_ADMIN_UI'
+  });
+  toast('학습 가능 시간을 확인했어요. Planner가 배정 근거로 사용합니다.');
   renderPlannerAdmin(); renderPlanner();
 });
 function parsePrints(value=''){
