@@ -101,12 +101,19 @@
         if(!gate?.ok) throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
       }
       const date=cleanText(input.date),start=cleanText(input.start),end=cleanText(input.end);
-      if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('date required');
+      const recurrence=cleanText(input.recurrence)||null;
+      const weekday=Number.isInteger(input.weekday)?input.weekday:null;
+      if(recurrence!=='WEEKLY'&&!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('date required');
+      if(recurrence==='WEEKLY'&&!(weekday>=0&&weekday<=6)) throw new Error('weekday required');
       if(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start) throw new Error('valid start/end required');
       return mutate(s=>{
         const id=cleanText(input.availability_id)||makeId('availability');
         const item={
-          availability_id:id,date,start,end,
+          availability_id:id,date:recurrence==='WEEKLY'?null:date,start,end,
+          recurrence:recurrence==='WEEKLY'?'WEEKLY':null,
+          weekday:recurrence==='WEEKLY'?weekday:null,
+          valid_from:cleanText(input.valid_from)||null,
+          valid_until:cleanText(input.valid_until)||null,
           confirmed:input.confirmed!==false,
           source:cleanText(input.source)||'READY_LOCAL',
           parent_editable:input.parent_editable!==false,
@@ -134,10 +141,20 @@
     function candidateWindowsByDate(dates=[]){
       const s=load(),out={};
       for(const date of dates||[]){
+        const dow=parseLocal(date,'12:00').getDay();
         out[date]=(s.daily_availability_windows||[])
-          .filter(x=>x.confirmed!==false&&x.date===date)
+          .filter(x=>x.confirmed!==false)
+          .filter(x=>{
+            if(x.recurrence==='WEEKLY'){
+              if(Number(x.weekday)!==dow)return false;
+              if(x.valid_from&&date<x.valid_from)return false;
+              if(x.valid_until&&date>x.valid_until)return false;
+              return true;
+            }
+            return x.date===date;
+          })
           .sort((a,b)=>String(a.start).localeCompare(String(b.start)))
-          .map(x=>({start:x.start,end:x.end,availability_id:x.availability_id,source:x.source}));
+          .map(x=>({start:x.start,end:x.end,availability_id:x.availability_id,source:x.source,recurrence:x.recurrence||null,weekday:x.weekday??null}));
       }
       return out;
     }
