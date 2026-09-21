@@ -503,6 +503,8 @@
             actual_ms: actualMs,
             session_id: c.session_id,
             task_id: task.task_id,
+            learning_evidence:Array.isArray(task.learning_evidence)?[...task.learning_evidence]:[],
+            completed_specialists:Array.isArray(task.completed_specialists)?[...task.completed_specialists]:[],
             at: iso()
           })
         : null;
