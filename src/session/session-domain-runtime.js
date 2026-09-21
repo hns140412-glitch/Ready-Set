@@ -1,11 +1,20 @@
 (function(root){
   'use strict';
 
-  function startGuard({activeSession,selectedTodoIds=[],plannerLinks=[]}={}){
+  function preStartGuard({activeSession,selectedTodoIds=[]}={}){
     if(activeSession)return {ok:false,reason:'SESSION_ALREADY_ACTIVE'};
     if(!Array.isArray(selectedTodoIds)||selectedTodoIds.length===0)return {ok:false,reason:'NO_SELECTED_TODO'};
+    return {ok:true};
+  }
+
+  function plannerStartGuard(plannerLinks=[]){
     if(!Array.isArray(plannerLinks)||plannerLinks.length===0)return {ok:false,reason:'NO_STARTABLE_PLANNER_TODO'};
     return {ok:true};
+  }
+
+  function startGuard(input={}){
+    const pre=preStartGuard(input);if(!pre.ok)return pre;
+    return plannerStartGuard(input.plannerLinks);
   }
 
   function createSession({sessionId,now,targetMin,plannerLinks=[],sound='OFF'}={}){
@@ -51,6 +60,8 @@
 
   root.ReadyRebuildSessionDomain=Object.freeze({
     version:'READY_REBUILD_SESSION_DOMAIN_V01',
+    preStartGuard,
+    plannerStartGuard,
     startGuard,
     createSession,
     times,
