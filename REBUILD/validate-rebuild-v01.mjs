@@ -218,5 +218,5 @@ assert('capture-orchestrator-wired',
   appSource.includes('captureRuntime.requestAnalysis()')
 );
 assert('capture-orchestrator-direct-api-reduced',
-  (appSource.match(/window\\.ReadyCaptureV01/g)||[]).length===1
+  (appSource.match(/window\.ReadyCaptureV01/g)||[]).length===1
 );
