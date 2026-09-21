@@ -88,6 +88,20 @@ assert('planner-projection-loaded-before-planner',indexSource.indexOf('src/plann
 assert('planner-wired-projection',plannerSource.includes('rebuildProjection?.todayItem'));
 assert('planner-wired-schedule',plannerSource.includes('rebuildProjection?.scheduleCommitment')&&plannerSource.includes('rebuildProjection?.availabilityWindow'));
 
+
+const sessionSource=loadSource('src/session/session-domain-runtime.js');
+const sessionContext={};vm.createContext(sessionContext);vm.runInContext(sessionSource,sessionContext);
+const sessionDomain=sessionContext.ReadyRebuildSessionDomain;
+assert('session-start-guard-active',sessionDomain.startGuard({activeSession:{id:'x'},selectedTodoIds:['t'],plannerLinks:[{todo_id:'t'}]}).reason==='SESSION_ALREADY_ACTIVE');
+assert('session-start-guard-selection',sessionDomain.startGuard({activeSession:null,selectedTodoIds:[],plannerLinks:[]}).reason==='NO_SELECTED_TODO');
+const shadowSession=sessionDomain.createSession({sessionId:'s1',now:1000,targetMin:25,plannerLinks:[{todo_id:'t1',label:'숙제'}],sound:'OFF'});
+assert('session-create-shape',shadowSession.id==='s1'&&shadowSession.targetMs===1500000&&shadowSession.tasks[0]==='숙제'&&shadowSession.plannerLinks[0].todo_id==='t1');
+const shadowTimes=sessionDomain.times({...shadowSession,startAt:1000,targetMs:60000,issueMs:5000},{now:31000,fallbackTargetMin:25});
+assert('session-times',shadowTimes.focus===25000&&shadowTimes.issue===5000&&shadowTimes.remaining===35000);
+const attribution=sessionDomain.attribution({plannerLinks:[{todo_id:'a'},{todo_id:'b'}]},10001);
+assert('session-attribution',attribution.taskCount===2&&attribution.attributedMs===5000&&attribution.timeAttribution==='EQUAL_SHARE_SESSION_OBSERVATION');
+assert('session-loaded-before-app',indexSource.indexOf('src/session/session-domain-runtime.js')>0&&indexSource.indexOf('src/session/session-domain-runtime.js')<indexSource.indexOf('app.js'));
+
 console.log('REBUILD_DOMAIN_PARITY_PASS');
 
 console.log('REBUILD_V01_FOUNDATION_PASS ready-set');
