@@ -76,6 +76,41 @@ assert.equal(normalizedResult.activeSheetId,null);
 assert.equal(normalizedResult.trailMastery,null);
 assert.equal(normalizedResult.memorySummary.authority,'SPECIALIST_MEMORY_ADVISORY_ONLY');
 
+const normalizedReturnEvent=review.normalizeHideV2ReturnEvent({
+  envelope_version:1,
+  event_id:'evt-hide-v2-1',
+  event_type:'TASK_COMPLETED',
+  source:'hide-seek',
+  occurred_at:'2026-09-21T12:00:00.000Z',
+  idempotency_key:'evt-hide-v2-1',
+  payload_digest:'fixture',
+  payload:{
+    resultContract:'HIDE_SPECIALIST_RESULT_V2',
+    runtime:'V2',
+    taskContext:{session_id:'ready-session-1',task_id:'task-review-1',lap_id:'lap-1'},
+    activeMissionId:'mission-1',
+    missionStatus:'COMPLETED',
+    taskState:'COMPLETED',
+    learningPhase:'COMPLETE',
+    trailMastery:null,
+    memorySummary:{
+      authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
+      reviewPolicyOwner:'READY_LEARNING_ENGINE',
+      scheduleOwner:'READY_SET_PLANNER',
+      prioritySemantics:'ADVISORY_SIGNAL_NOT_DATE',
+      reviewAdvisories:[]
+    }
+  }
+});
+assert.equal(normalizedReturnEvent.session_id,'ready-session-1');
+assert.equal(normalizedReturnEvent.task_id,'task-review-1');
+assert.equal(normalizedReturnEvent.lap_id,'lap-1');
+assert.equal(normalizedReturnEvent.task_state,'COMPLETED');
+assert.equal(normalizedReturnEvent.from_app,'hide-seek');
+assert.equal(normalizedReturnEvent.event_id,'evt-hide-v2-1');
+assert.equal(normalizedReturnEvent.result_payload.resultContract,'HIDE_SPECIALIST_RESULT_V2');
+assert.equal(review.normalizeHideV2ReturnEvent({source:'hide-seek',event_type:'TASK_COMPLETED',payload:{resultContract:'HIDE_SPECIALIST_RESULT_V2',runtime:'V2'}}),null);
+
 assert.equal(review.normalizeHideSpecialistResult({
   memorySummary:{authority:'FORGED',reviewPolicyOwner:'READY_LEARNING_ENGINE',scheduleOwner:'READY_SET_PLANNER'}
 }),null);
@@ -86,7 +121,7 @@ assert(runtime.includes("url.searchParams.set('review_directive',JSON.stringify(
 assert(runtime.includes("HIDE_V2_TARGET_REQUIRED"));
 assert(runtime.includes("configuredHideV2Url"));
 assert(runtime.includes("p.get('learning_event')"));
-assert(runtime.includes("payload?.resultContract==='HIDE_SPECIALIST_RESULT_V2'"));
+assert(runtime.includes("normalizeHideV2ReturnEvent"));
 assert(runtime.includes("result_payload: e.payload||null"));
 assert(runtime.includes("task.specialist_result=specialistResult"));
 assert(runtime.includes("specialistResult:task.specialist_result||null"));
