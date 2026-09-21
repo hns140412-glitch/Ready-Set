@@ -83,6 +83,8 @@
         confidence:Number.isFinite(link.confidence)?link.confidence:null,
         unresolved_flags:Array.isArray(link.unresolved_flags)?[...link.unresolved_flags]:[],
         route_plan:routeTask(link),
+        completed_specialists:[],
+        active_specialist:null,
         laps: []
       }));
       session.rev07 = {
@@ -242,13 +244,14 @@
     const lap = currentLap(c) || (task ? startLap(task, 'SPECIALIST_ROUTE', session) : null);
     if (!session || !c || !task || !lap || !['hide-seek','snap-pop'].includes(app)) return;
     const plan=task.route_plan||routeTask(task);
-    if(!window.ReadySpecialistRouter?.canLaunch?.(plan,app)){
+    if(!window.ReadySpecialistRouter?.canLaunch?.(plan,app,task.completed_specialists||[])){
       emit('SPECIALIST_ROUTE_DENIED',{requested_app:app,route_plan:plan});
       return false;
     }
 
     c.active_app = app;
-    emit('APP_SWITCH', { from: 'ready-set', to: app, lap_ended: false });
+    task.active_specialist=app;
+    emit('APP_SWITCH', { from: 'ready-set', to: app, lap_ended: false, route_plan:plan });
     save();
 
     const url = new URL(appUrl(app));
@@ -281,8 +284,13 @@
     const task = c.tasks.find(t => t.task_id === task_id);
     if (!task) return false;
     const sourceApp=window.ReadySpecialistHandoffContract?.sourceApp?.(from_app)||null;
-    if(sourceApp&&!window.ReadySpecialistHandoffContract?.authorized?.(task,sourceApp)){
-      emit('SPECIALIST_RETURN_DENIED',{from_app:sourceApp,event_id:event_id||null,route_plan:task.route_plan||null});
+    if(!sourceApp){
+      emit('SPECIALIST_RETURN_DENIED',{from_app:null,event_id:event_id||null,reason:'SOURCE_APP_REQUIRED',route_plan:task.route_plan||null});
+      return false;
+    }
+    if(!window.ReadySpecialistHandoffContract?.authorized?.(task,sourceApp)||
+       task.active_specialist!==sourceApp){
+      emit('SPECIALIST_RETURN_DENIED',{from_app:sourceApp,event_id:event_id||null,reason:'ROUTE_OR_SEQUENCE_MISMATCH',route_plan:task.route_plan||null,active_specialist:task.active_specialist||null});
       return false;
     }
 
@@ -290,8 +298,20 @@
     c.active_app = 'ready-set';
     c.active_task_id = task.task_id;
     if (lap_id) c.active_lap_id = lap_id;
-    if (normalized) setTaskState(task.task_id, normalized, from_app || 'SPECIALIST');
-    if (['COMPLETED','BLOCKED'].includes(normalized)) endActiveLap('SPECIALIST_RESULT', normalized);
+    if(normalized==='COMPLETED'){
+      task.completed_specialists=[...new Set([...(task.completed_specialists||[]),sourceApp])];
+      task.active_specialist=null;
+      const next=window.ReadySpecialistRouter?.nextSpecialist?.(task.route_plan,task.completed_specialists||[])||null;
+      if(next){
+        setTaskState(task.task_id,'PARTIAL',sourceApp);
+      }else{
+        setTaskState(task.task_id,'COMPLETED',sourceApp);
+        endActiveLap('SPECIALIST_RESULT','COMPLETED');
+      }
+    }else if(normalized){
+      setTaskState(task.task_id,normalized,sourceApp);
+      if(normalized==='BLOCKED')endActiveLap('SPECIALIST_RESULT','BLOCKED');
+    }
     if (event_id) c.applied_event_ids = [...(c.applied_event_ids || []), event_id].slice(-200);
     emit('APP_RETURN', { from: sourceApp || from_app || 'specialist', task_state: normalized || task_state || null, specialist_payload:payload||null });
     save();
@@ -378,7 +398,7 @@
       <small>ONE SESSION · CONTINUOUS TIMER</small>
       <h3>${task ? escapeHtml(task.label) : '현재 과제 없음'} · ${task ? labelState(task.state) : ''}</h3>
       <div class="rev07-row">
-        ${(task?.route_plan?.allowed_specialists||[]).map(app=>`<button class="primary" data-rev07-app="${app}">${app==='hide-seek'?'Hide & Seek':'Snap & Pop'}</button>`).join('')}
+        ${(()=>{const app=task?window.ReadySpecialistRouter?.nextSpecialist?.(task.route_plan,task.completed_specialists||[]):null;return app?`<button class="primary" data-rev07-app="${app}">${app==='hide-seek'?'Hide & Seek':'Snap & Pop'}</button>`:''})()}
       </div>
       <div class="rev07-tasks">${c.tasks.map(t => `<button class="rev07-task ${t.task_id===c.active_task_id?'active':''}" data-rev07-task="${t.task_id}"><span>${escapeHtml(t.label)}</span><strong>${labelState(t.state)}</strong></button>`).join('')}</div>`;
     const mission = document.getElementById('focusMission');
