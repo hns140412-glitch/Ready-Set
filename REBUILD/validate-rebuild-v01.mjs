@@ -238,3 +238,26 @@ assert('recording-inline-media-lifecycle-removed',
   !appSource.includes('mediaStream?.getTracks()') &&
   !appSource.includes('let mediaRecorder=')
 );
+
+const resultHistoryControllerSource=loadSource('src/views/result-history-controller-runtime.js');
+assert('result-history-controller-owner',resultHistoryControllerSource.includes('ReadyRebuildResultHistoryController'));
+assert('result-history-controller-loaded-before-app',
+  indexSource.indexOf('src/views/result-history-controller-runtime.js')>0 &&
+  indexSource.indexOf('src/views/result-history-controller-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('result-history-scene-owned-by-view',
+  resultHistorySource.includes('function resultSceneFor(record={})') &&
+  !appSource.includes('function resultSceneFor(')
+);
+assert('result-history-controller-wired',
+  appSource.includes('rebuildResultHistoryController.create') &&
+  appSource.includes('resultHistoryRuntime.renderResult()') &&
+  appSource.includes('resultHistoryRuntime.renderHistory()') &&
+  appSource.includes('resultHistoryRuntime.renderCalendar()')
+);
+assert('result-history-inline-handlers-removed',
+  !appSource.includes('function resultSource()') &&
+  !appSource.includes('function renderResult()') &&
+  !appSource.includes('function renderHistory()') &&
+  !appSource.includes('function renderCalendar()')
+);

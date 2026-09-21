@@ -30,6 +30,7 @@ const rebuildRecordingService=globalThis.ReadyRebuildRecordingService||null;
 const rebuildRecordingOrchestrator=globalThis.ReadyRebuildRecordingOrchestrator||null;
 const rebuildRecordingView=globalThis.ReadyRebuildRecordingView||null;
 const rebuildResultHistoryView=globalThis.ReadyRebuildResultHistoryView||null;
+const rebuildResultHistoryController=globalThis.ReadyRebuildResultHistoryController||null;
 const rebuildProfileSettingsView=globalThis.ReadyRebuildProfileSettingsView||null;
 const rebuildAuthSyncView=globalThis.ReadyRebuildAuthSyncView||null;
 const rebuildHomeView=globalThis.ReadyRebuildHomeView||null;
@@ -37,7 +38,7 @@ const rebuildPlannerScreenView=globalThis.ReadyRebuildPlannerScreenView||null;
 const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -124,13 +125,13 @@ const appNavigation=rebuildNavigation.create({
     mission:()=>renderMission(),
     focus:()=>renderFocus(),
     recording:()=>renderRecordingContext(),
-    history:()=>renderHistory(),
-    calendar:()=>renderCalendar(),
+    history:()=>resultHistoryRuntime.renderHistory(),
+    calendar:()=>resultHistoryRuntime.renderCalendar(),
     planner:()=>renderPlanner(),
     'planner-admin':()=>renderPlannerAdmin(),
     profile:()=>renderProfile(),
     settings:()=>renderSettings(),
-    result:()=>renderResult()
+    result:()=>resultHistoryRuntime.renderResult()
   }
 });
 function nav(name){
@@ -581,39 +582,18 @@ $$('[data-outcome-state]').forEach(b=>b.onclick=()=>{
 });
 $$('[data-close-outcome]').forEach(b=>b.onclick=()=>{$('#outcomeModal').hidden=true});
 
-function resultSource(){return state.lastResult||null}
-function resultOutcomeProfile(r={}){
-  return rebuildResultHistoryView.outcomeProfile(r);
-}
-function resultSceneFor(r){
-  const profile=resultOutcomeProfile(r);
-  if(!profile.done)return{headline:profile.headline,line:profile.line,label:'결과'};
-  const delta=r.deltaMs;
-  if(delta<=-120000)return{headline:'엣헴~! 오늘 좀 했습니다.',line:'잠깐… 시계보다 먼저 왔는데?',label:'TIME SAVE'};
-  if(Math.abs(delta)<=60000)return{headline:'오? 계산대로인데?',line:'시계랑 거의 동시에 들어왔어요.',label:'차이'};
-  if(delta>0)return{headline:'무사 귀환!',line:'헤헤… 조금 늦었습니다. 그래도 작전 완료!',label:'차이'};
-  if(r.issueMs>120000)return{headline:'오늘은 사건이 좀 많았습니다.',line:'그래도 다시 돌아와서 끝냈네.',label:'차이'};
-  return{headline:'작전 완료!',line:'오늘도 끝까지 잘 돌아왔어요.',label:'차이'};
-}
 const resultHistoryView=rebuildResultHistoryView.create({
   query:$,
   escapeHtml,
   formatTime:fmt,
   applyAvatar,
-  applyGuide,
-  resultSceneFor
+  applyGuide
 });
-function renderResult(){
-  const r=resultSource();
-  if(!r){nav('history');return}
-  resultHistoryView.renderResult(r);
-}
-function renderHistory(){
-  resultHistoryView.renderHistory(state.records);
-}
-function renderCalendar(){
-  resultHistoryView.renderCalendar(state.records);
-}
+const resultHistoryRuntime=rebuildResultHistoryController.create({
+  view:resultHistoryView,
+  getState:()=>state,
+  navigate:nav
+});
 function localDateKey(d=new Date()){
   const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
@@ -1344,15 +1324,15 @@ function readyShareTheme(){return state.share?.theme==='sail'?'sail':'drop'}
 const shareCardRuntime=rebuildShareCard.create({
   drawAvatar,
   currentMissionLabels,
-  resultSource,
-  resultOutcomeProfile,
+  resultSource:()=>resultHistoryRuntime.resultSource(),
+  resultOutcomeProfile:record=>resultHistoryRuntime.outcomeProfile(record),
   shareTheme:readyShareTheme,
   formatTime:fmt,
   roundRect,
   toast
 });
 function buildKakaoFeed({imageUrl,webUrl,kind='result'}={}){
-  const r=kind==='result'?resultSource():null,theme=readyShareTheme(),copy=shareCardRuntime.themeCopy(theme,kind,r);
+  const r=kind==='result'?resultHistoryRuntime.resultSource():null,theme=readyShareTheme(),copy=shareCardRuntime.themeCopy(theme,kind,r);
   const description=kind==='result'?copy.sub+' · 집중 '+fmt(r?.focusMs||0):copy.sub;
   return {objectType:'feed',content:{title:copy.title,description,imageUrl,link:{mobileWebUrl:webUrl,webUrl}},buttons:[{title:kind==='result'?'탐험 기록 보기':'탐험 응원하기',link:{mobileWebUrl:webUrl,webUrl}}]};
 }

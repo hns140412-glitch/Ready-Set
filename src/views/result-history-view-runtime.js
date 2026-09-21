@@ -15,13 +15,24 @@
     return PROFILES[state]||PROFILES.COMPLETED;
   }
 
+  function resultSceneFor(record={}){
+    const profile=outcomeProfile(record);
+    if(!profile.done)return {headline:profile.headline,line:profile.line,label:'결과'};
+    const delta=record.deltaMs||0;
+    if(delta<=-120000)return {headline:'엣헴~! 오늘 좀 했습니다.',line:'잠깐… 시계보다 먼저 왔는데?',label:'TIME SAVE'};
+    if(Math.abs(delta)<=60000)return {headline:'오? 계산대로인데?',line:'시계랑 거의 동시에 들어왔어요.',label:'차이'};
+    if(delta>0)return {headline:'무사 귀환!',line:'헤헤… 조금 늦었습니다. 그래도 작전 완료!',label:'차이'};
+    if((record.issueMs||0)>120000)return {headline:'오늘은 사건이 좀 많았습니다.',line:'그래도 다시 돌아와서 끝냈네.',label:'차이'};
+    return {headline:'작전 완료!',line:'오늘도 끝까지 잘 돌아왔어요.',label:'차이'};
+  }
+
   function create(options={}){
     const q=options.query||((s)=>document.querySelector(s));
     const escapeHtml=options.escapeHtml||((s)=>String(s??''));
     const fmt=options.formatTime||((v)=>String(v??''));
     const applyAvatar=options.applyAvatar||(()=>{});
     const applyGuide=options.applyGuide||(()=>{});
-    const sceneFor=options.resultSceneFor||((r)=>({headline:outcomeProfile(r).headline||'오늘도 작전 완료!',line:outcomeProfile(r).line||'오늘도 작전 완료!',label:outcomeProfile(r).label}));
+    const sceneFor=options.resultSceneFor||resultSceneFor;
 
     function renderResult(record){
       if(!record)return {ok:false,reason:'NO_RESULT'};
@@ -70,13 +81,14 @@
       if(!el.children.length)el.innerHTML='<div class="historyItem"><b>이번 달 작전 기록이 없어요.</b></div>';
     }
 
-    return Object.freeze({outcomeProfile,renderResult,renderHistory,renderCalendar});
+    return Object.freeze({outcomeProfile,resultSceneFor,renderResult,renderHistory,renderCalendar});
   }
 
   root.ReadyRebuildResultHistoryView=Object.freeze({
     version:'READY_REBUILD_RESULT_HISTORY_VIEW_V01',
     PROFILES,
     outcomeProfile,
+    resultSceneFor,
     create
   });
 })(typeof globalThis!=='undefined'?globalThis:this);
