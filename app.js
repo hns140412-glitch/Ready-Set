@@ -10,7 +10,7 @@ const VERSION={
   cache:RELEASE.release_id
 };
 const $=(s,r=document)=>r.querySelector(s);
-const $=(s,r=document)=>[...r.querySelectorAll(s)];
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const rebuildSession=globalThis.ReadyRebuildSessionDomain||null;
 
 const categories={
