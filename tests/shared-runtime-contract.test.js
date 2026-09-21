@@ -1,6 +1,6 @@
 const assert=require('assert');
-const release=require('./vendor/taky/release-contract.js');
-const pwa=require('./vendor/taky/pwa-update-state.js');
+const release=require('../vendor/taky/release-contract.js');
+const pwa=require('../vendor/taky/pwa-update-state.js');
 
 const descriptor={
   app_id:'ready-set',
