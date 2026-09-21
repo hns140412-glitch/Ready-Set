@@ -66,7 +66,7 @@
       created_at:shared.created_at,
       updated_at:shared.updated_at,
       acked_at:shared.acked_at||null,
-      scope:effectiveScope??null,
+      scope:scope??null,
       digest:digest??null,
       payload:payload??null,
       envelope:envelope??null,
@@ -126,7 +126,7 @@
     const tx=db.transaction(['snapshots','outbox'],'readwrite');
     tx.objectStore('snapshots').put({scope:effectiveScope,payload:text,digest,updated_at});
     if(options.enqueue!==false){
-      tx.objectStore('outbox').put(toStoredQueue(shared,{scope,digest,payload:text,envelope}));
+      tx.objectStore('outbox').put(toStoredQueue(shared,{scope:effectiveScope,digest,payload:text,envelope}));
     }
     return new Promise((resolve,reject)=>{
       tx.oncomplete=()=>resolve({scope:effectiveScope,digest,event_id:envelope.event_id});
