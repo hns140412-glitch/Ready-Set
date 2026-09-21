@@ -240,23 +240,39 @@
     const helpBlocked=states.some(x=>['BLOCKED','WAITING_FOR_PARENT'].includes(x));
     const depth=Math.max(0,Number(signal.carry_over_depth)||0);
     const baseSpan=Number(profile?.split_policy?.max_span)||null;
+    const specialist=signal.specialist_evidence?.authority==='READY_EVIDENCE_INTERPRETATION_ONLY'
+      ? signal.specialist_evidence
+      : null;
+    const memoryPriority=Number(specialist?.max_memory_review_priority);
+    const memoryStrength=Number(specialist?.min_memory_strength);
+    const memoryConcern=(Number.isFinite(memoryPriority)&&memoryPriority>=70)||(Number.isFinite(memoryStrength)&&memoryStrength<60);
+    const productionObserved=Number(specialist?.child_authored_production_count||0)>0;
     return {
       authority:'ADAPTIVE_REVIEW_ONLY',
       reduce_unit_span:!!(baseSpan&&repeatedFriction>=2&&depth>=3),
       max_span:baseSpan?Math.max(1,Math.ceil(baseSpan/2)):null,
-      add_checkpoint:repeatedFriction>=2,
-      recovery_floor:(depth>=4||repeatedFriction>=3)?'HIGH':repeatedFriction>=2?'MEDIUM':null,
+      add_checkpoint:repeatedFriction>=2||memoryConcern,
+      add_retrieval_checkpoint:memoryConcern,
+      production_evidence_observed:productionObserved,
+      recovery_floor:(depth>=4||repeatedFriction>=3||memoryConcern)?'HIGH':repeatedFriction>=2?'MEDIUM':null,
       parent_help_floor:helpBlocked?'HIGH':repeatedFriction>=3?'MEDIUM':null,
-      evidence:{repeated_friction_count:repeatedFriction,carry_over_depth:depth,states:[...states]}
+      evidence:{repeated_friction_count:repeatedFriction,carry_over_depth:depth,states:[...states],specialist_evidence:specialist?clone(specialist):null},
+      cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','DEADLINE','ASSIGNMENT_FACT']
     };
   }
 
   function reviewAdjustedSequence(sequence=[],policy){
     const out=[...(sequence||[])];
-    if(!policy?.add_checkpoint||!out.length)return out;
-    if(out.includes('SHORT_CHECKPOINT'))return out;
-    const at=Math.max(1,out.length-1);
-    out.splice(at,0,'SHORT_CHECKPOINT');
+    if(!out.length)return out;
+    if(policy?.add_retrieval_checkpoint&&!out.includes('RETRIEVAL_CHECKPOINT')){
+      const beforeProduction=out.findIndex(x=>['PRODUCE','RESPOND_OR_EXPRESS','EXPLAIN'].includes(x));
+      const at=beforeProduction>0?beforeProduction:Math.max(1,out.length-1);
+      out.splice(at,0,'RETRIEVAL_CHECKPOINT');
+    }
+    if(policy?.add_checkpoint&&!out.includes('SHORT_CHECKPOINT')){
+      const at=Math.max(1,out.length-1);
+      out.splice(at,0,'SHORT_CHECKPOINT');
+    }
     return out;
   }
 
