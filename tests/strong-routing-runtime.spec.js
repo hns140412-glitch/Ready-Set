@@ -1,9 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
 test('Ready enforces Hide -> Snap ordered specialist roundtrip without external deploy', async ({ page }) => {
-  await page.route('https://dainty-froyo-a6e427.netlify.app/**', route => route.abort());
-  await page.route('https://cheerful-pothos-d1c3ee.netlify.app/**', route => route.abort());
-
   await page.addInitScript(() => {
     const now=Date.now();
     localStorage.setItem('readyset_state', JSON.stringify({
@@ -60,11 +57,14 @@ test('Ready enforces Hide -> Snap ordered specialist roundtrip without external 
   expect(await page.locator('[data-rev07-app]').count()).toBe(1);
   await expect(page.locator('[data-rev07-app]')).toHaveAttribute('data-rev07-app','hide-seek');
 
-  const snapBefore = await page.evaluate(() => window.ReadySetRev07.launchSpecialist('snap-pop'));
-  expect(snapBefore).toBe(false);
+  const snapBefore = await page.evaluate(() => window.ReadySetRev07.prepareSpecialistLaunch('snap-pop'));
+  expect(snapBefore.ok).toBe(false);
+  expect(snapBefore.reason).toBe('SPECIALIST_ROUTE_DENIED');
 
-  await page.evaluate(() => window.ReadySetRev07.launchSpecialist('hide-seek'));
-  await page.waitForTimeout(50);
+  const hidePrepared = await page.evaluate(() => window.ReadySetRev07.prepareSpecialistLaunch('hide-seek'));
+  expect(hidePrepared.ok).toBe(true);
+  expect(hidePrepared.url).toContain('dainty-froyo-a6e427.netlify.app');
+  expect(hidePrepared.url).toContain('handoff_scope=MEMORY_RETRIEVAL');
   let afterHideLaunch = await page.evaluate(() => window.ReadySetRev07.contract());
   expect(afterHideLaunch.tasks[0].active_specialist).toBe('hide-seek');
 
@@ -110,8 +110,11 @@ test('Ready enforces Hide -> Snap ordered specialist roundtrip without external 
   expect(await page.locator('[data-rev07-app]').count()).toBe(1);
   await expect(page.locator('[data-rev07-app]')).toHaveAttribute('data-rev07-app','snap-pop');
 
-  await page.evaluate(() => window.ReadySetRev07.launchSpecialist('snap-pop'));
-  await page.waitForTimeout(50);
+  const snapPrepared = await page.evaluate(() => window.ReadySetRev07.prepareSpecialistLaunch('snap-pop'));
+  expect(snapPrepared.ok).toBe(true);
+  expect(snapPrepared.url).toContain('cheerful-pothos-d1c3ee.netlify.app');
+  expect(snapPrepared.url).toContain('handoff_scope=LEARNER_PRODUCTION');
+  expect(snapPrepared.url).toContain('learning_context=');
   const afterSnapLaunch = await page.evaluate(() => window.ReadySetRev07.contract());
   expect(afterSnapLaunch.tasks[0].active_specialist).toBe('snap-pop');
 
@@ -173,9 +176,8 @@ test('Ready rejects specialist return that does not match active ordered handoff
 
   await page.goto('http://127.0.0.1:4173/');
   await page.waitForFunction(() => !!window.ReadySetRev07);
-  await page.route('https://dainty-froyo-a6e427.netlify.app/**', route => route.abort());
-  await page.evaluate(() => window.ReadySetRev07.launchSpecialist('hide-seek'));
-  await page.waitForTimeout(30);
+  const prepared = await page.evaluate(() => window.ReadySetRev07.prepareSpecialistLaunch('hide-seek'));
+  expect(prepared.ok).toBe(true);
 
   const before = await page.evaluate(() => window.ReadySetRev07.contract());
   await page.evaluate(() => {
@@ -190,7 +192,6 @@ test('Ready rejects specialist return that does not match active ordered handoff
       }}
     }));
   });
-  await page.waitForTimeout(30);
   const after = await page.evaluate(() => window.ReadySetRev07.contract());
   expect(after.tasks[0].active_specialist).toBe('hide-seek');
   expect(after.tasks[0].completed_specialists).toEqual([]);
