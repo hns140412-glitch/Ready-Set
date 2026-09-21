@@ -24,6 +24,8 @@ jobs:
         run: node tests/subject-method-routing.test.js
       - name: Validate specialist routing
         run: node tests/specialist-router.test.js
+      - name: Validate specialist handoff contract
+        run: node tests/specialist-handoff-contract.test.js
       - name: Guard JavaScript parseability
         run: |
           node --check app.js
@@ -31,6 +33,7 @@ jobs:
           node --check ready-runtime-v07.js
           node --check ready-integration-v1.js
           node --check src/integrations/specialist-router-runtime.js
+          node --check src/integrations/specialist-handoff-contract.js
           node --check src/planner/planner-policy-runtime.js
           node --check src/planner/planner-projection-runtime.js
           node --check src/session/session-domain-runtime.js
