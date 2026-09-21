@@ -11,7 +11,7 @@ on:
       - 'ready-planner-v01.js'
       - 'ready-runtime-v07.js'
       - 'app.js'
-      - 'src/views/settings-controller-runtime.js'
+      - 'src/**/*.js'
       - 'index.html'
       - 'sw.js'
   push:
@@ -24,7 +24,7 @@ on:
       - 'ready-planner-v01.js'
       - 'ready-runtime-v07.js'
       - 'app.js'
-      - 'src/views/settings-controller-runtime.js'
+      - 'src/**/*.js'
       - 'index.html'
       - 'sw.js'
 
@@ -45,8 +45,8 @@ jobs:
           python -m py_compile .github/scripts/taky_ready_validation.py
           node --check ready-planner-v01.js
           node --check app.js
-          node --check src/views/settings-controller-runtime.js
           node --check ready-runtime-v07.js
+          find src -type f -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: Verify Planner entity/runtime contract
         run: node .github/scripts/ready_planner_contract_test.js
       - name: Verify queue integrity and profile binding
@@ -79,15 +79,15 @@ jobs:
           PY
       - name: Verify trusted Ready validation profile
         run: python .github/scripts/taky_ready_validation.py --task /tmp/task.json --changed-files /tmp/changed.txt --output /tmp/validation.json
-      - name: Verify restored Ready runtime anchors
+      - name: Verify rebuild ownership anchors
         run: |
           grep -q "function nav(" app.js
-          grep -q "function completeSession(" app.js
-          grep -q "function startRecording(" app.js
+          grep -q "ReadyRebuildAppBootstrapController" src/shell/app-bootstrap-controller-runtime.js
+          grep -q "ReadyRebuildMissionFocusController" src/session/mission-focus-controller-runtime.js
+          grep -q "ReadyRebuildCaptureIntakeController" src/assignment/capture-intake-controller-runtime.js
+          grep -q "ReadyRebuildAssignmentIntakeController" src/assignment/assignment-intake-controller-runtime.js
           grep -q "ReadyRebuildSettingsController" src/views/settings-controller-runtime.js
-          grep -q "function speakGuide(" src/views/settings-controller-runtime.js
           grep -q "window.ReadySetRev07" ready-runtime-v07.js
-          test "$(wc -c < app.js)" -ge 20000
       - name: Verify validation rejects out-of-scope materialization
         run: |
           printf "app.js\nstyles.css\n" > /tmp/bad-changed.txt

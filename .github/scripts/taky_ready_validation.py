@@ -7,7 +7,20 @@ from __future__ import annotations
 import argparse, fnmatch, json, subprocess
 from pathlib import Path
 
-CORE=["index.html","styles.css","ready-planner-v01.js","app.js","ready-runtime-v07.js","ready-release-v01.js","ready-pwa-update-v01.js","vendor/taky/release-contract.js","vendor/taky/pwa-update-state.js","config.js","sw.js","manifest.webmanifest","src/views/settings-controller-runtime.js"]
+CORE=["index.html","styles.css","ready-planner-v01.js","app.js","ready-runtime-v07.js","ready-release-v01.js","ready-pwa-update-v01.js","vendor/taky/release-contract.js","vendor/taky/pwa-update-state.js","config.js","sw.js","manifest.webmanifest"]
+REBUILD_OWNERS=[
+    "src/shell/app-bootstrap-controller-runtime.js",
+    "src/planner/planner-query-controller-runtime.js",
+    "src/views/planner-admin-controller-runtime.js",
+    "src/session/session-recovery-controller-runtime.js",
+    "src/session/mission-focus-controller-runtime.js",
+    "src/assignment/capture-intake-controller-runtime.js",
+    "src/assignment/assignment-intake-controller-runtime.js",
+    "src/views/result-history-controller-runtime.js",
+    "src/views/profile-controller-runtime.js",
+    "src/views/settings-controller-runtime.js",
+    "src/views/auth-sync-controller-runtime.js",
+]
 
 def allowed(path, rules):
     return any(path==r or path.startswith(r.rstrip("/")+"/") or fnmatch.fnmatch(path,r) for r in rules)
@@ -23,21 +36,43 @@ def validate(task, changed_files):
     vr={}
     vr["diff_scope"]={"status":"PASS" if changed and not deviations else "FAIL","evidence":f"changed={changed}; outside_allowed={deviations}"}
     vr["build"]={"status":"NOT_APPLICABLE","evidence":"Ready & Set is a static PWA repository with no package build pipeline in the verified base."}
-    js_files=sorted({p for p in CORE+changed if p.endswith(".js") and Path(p).exists()})
+    src_js=[str(p).replace("\\","/") for p in Path("src").rglob("*.js")]
+    js_files=sorted({p for p in CORE+REBUILD_OWNERS+src_js+changed if p.endswith(".js") and Path(p).exists()})
     syntax=[]; syntax_ok=True
     for p in js_files:
         ok,msg=run_node_check(p); syntax_ok=syntax_ok and ok; syntax.append({"file":p,"pass":ok,"output":msg[-2000:]})
     vr["relevant_tests"]={"status":"PASS" if syntax_ok else "FAIL","evidence":json.dumps(syntax,ensure_ascii=False)}
-    missing=[p for p in CORE if not Path(p).exists()]
+    missing=[p for p in CORE+REBUILD_OWNERS if not Path(p).exists()]
     runtime_required={
         "app.js":[
             "function nav(",
             "function renderFocus(",
-            "function completeSession(",
-            "function renderPlannerToday(",
-            "function startRecording(",
             "globalThis.ReadySetPwaSafePoint=readyPwaSafePoint",
             "globalThis.ReadySetReleaseDescriptor",
+            "rebuildAppBootstrapController.create",
+            "rebuildMissionFocusController.create",
+            "rebuildCaptureIntakeController.create",
+            "rebuildAssignmentIntakeController.create",
+        ],
+        "src/shell/app-bootstrap-controller-runtime.js":[
+            "ReadyRebuildAppBootstrapController",
+            "function bind(",
+        ],
+        "src/session/mission-focus-controller-runtime.js":[
+            "ReadyRebuildMissionFocusController",
+            "readyset-session-started",
+            "function startMission(",
+        ],
+        "src/assignment/capture-intake-controller-runtime.js":[
+            "ReadyRebuildCaptureIntakeController",
+            "runtime.requestAnalysis",
+            "runtime.resolveDisposition",
+        ],
+        "src/assignment/assignment-intake-controller-runtime.js":[
+            "ReadyRebuildAssignmentIntakeController",
+            "assignmentService.saveTalent",
+            "assignmentService.saveEnglish",
+            "reviewChildFact",
         ],
         "src/views/settings-controller-runtime.js":[
             "ReadyRebuildSettingsController",
@@ -87,7 +122,7 @@ def validate(task, changed_files):
         if absent:
             runtime_missing[path]=absent
     app_size=Path("app.js").stat().st_size if Path("app.js").exists() else 0
-    runtime_ok=not runtime_missing and app_size >= 20000
+    runtime_ok=not runtime_missing
     regression_ok=syntax_ok and not missing and runtime_ok
     vr["regression"]={
         "status":"PASS" if regression_ok else "FAIL",
@@ -98,7 +133,7 @@ def validate(task, changed_files):
     if deviations: risks.append({"severity":"BLOCKING","detail":f"Out-of-scope changes: {deviations}"})
     if not syntax_ok: risks.append({"severity":"HIGH","detail":"JavaScript syntax validation failed."})
     if missing: risks.append({"severity":"HIGH","detail":f"Core files missing: {missing}"})
-    if not runtime_ok: risks.append({"severity":"BLOCKING","detail":f"Ready runtime contract missing or truncated: {runtime_missing}; app.js bytes={app_size}"})
+    if not runtime_ok: risks.append({"severity":"BLOCKING","detail":f"Ready runtime contract missing: {runtime_missing}; app.js bytes={app_size}"})
     return {"pass":overall,"profile":"READY_SET_STATIC_V1","changed_files":changed,"scope_deviations":deviations,"validation_results":vr,"unresolved_risks":risks}
 
 def main():
