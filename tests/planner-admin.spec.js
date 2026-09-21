@@ -177,3 +177,22 @@ test('weekly schedule and availability honor validity ranges', async ({ page }) 
   expect(out.windows['2026-09-23']).toHaveLength(1);
   expect(out.windows['2026-11-04']).toHaveLength(0);
 });
+
+
+test('schedule changes mark weekly reflow review without moving todos', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__READY_AUTH_BOOTSTRAP__={authenticated:true,family_id:'TEST_FAMILY',member_id:'TEST_PARENT',role:'PARENT',session_id:'TEST_SESSION',expires_at:'2099-01-01T00:00:00.000Z',source:'TEST_ONLY'};
+  });
+  await page.goto('http://127.0.0.1:4173/', {waitUntil:'load'});
+  const out=await page.evaluate(()=>{
+    const p=window.ReadySetPlanner;
+    p.upsertDatedTodo({todo_id:'review_guard',date:'2026-09-23',label:'기존 탐험',source:'PLANNER_V2_ALLOCATION',state:'PLANNED'});
+    const before=p.snapshot().dated_todos.find(x=>x.todo_id==='review_guard').date;
+    p.upsertScheduleCommitment({commitment_id:'review_sched',title:'과학학원',category:'과학',recurrence:'WEEKLY',weekday:3,start:'18:00',end:'20:00',confirmed:true,source:'PARENT_ADMIN_UI'});
+    const snap=p.snapshot();
+    return {before,after:snap.dated_todos.find(x=>x.todo_id==='review_guard').date,review:snap.reflow_review};
+  });
+  expect(out.review.needed).toBeTruthy();
+  expect(out.review.reasons).toContain('SCHEDULE_CHANGED');
+  expect(out.after).toBe(out.before);
+});

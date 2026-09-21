@@ -34,7 +34,8 @@
     execution_observations:[],
     carry_over_queue:[],
     adaptive_estimate_proposals:[],
-    weekly_reflow_runs:[]
+    weekly_reflow_runs:[],
+    reflow_review:{needed:false,reasons:[],updated_at:null}
   });
 
   const cleanText=x=>String(x??'').trim();
@@ -62,7 +63,8 @@
       execution_observations:Array.isArray(x.execution_observations)?x.execution_observations:[],
       carry_over_queue:Array.isArray(x.carry_over_queue)?x.carry_over_queue:[],
       adaptive_estimate_proposals:Array.isArray(x.adaptive_estimate_proposals)?x.adaptive_estimate_proposals:[],
-      weekly_reflow_runs:Array.isArray(x.weekly_reflow_runs)?x.weekly_reflow_runs:[]
+      weekly_reflow_runs:Array.isArray(x.weekly_reflow_runs)?x.weekly_reflow_runs:[],
+      reflow_review:(x.reflow_review&&typeof x.reflow_review==='object')?x.reflow_review:{needed:false,reasons:[],updated_at:null}
     };
   }
 
@@ -73,6 +75,16 @@
     }
     function save(s){const payload=JSON.stringify(normalize(s));storage.setItem(STORAGE_KEY,payload);globalThis.ReadySetLocalFirst?.capture?.('planner',payload).catch?.(()=>{})}
     function mutate(fn){const s=load();const out=fn(s);save(s);return out}
+
+    function markReflowReview(state,reason){
+      const reasons=new Set(Array.isArray(state.reflow_review?.reasons)?state.reflow_review.reasons:[]);
+      if(reason)reasons.add(reason);
+      state.reflow_review={needed:true,reasons:[...reasons],updated_at:new Date().toISOString()};
+    }
+
+    function clearReflowReview(state){
+      state.reflow_review={needed:false,reasons:[],updated_at:new Date().toISOString()};
+    }
 
     function scheduleCommitmentsForDate(date,state=load()){
       const dow=parseLocal(date,'12:00').getDay();
@@ -138,6 +150,7 @@
         };
         const i=s.schedule_commitments.findIndex(x=>x.commitment_id===id);
         if(i>=0)s.schedule_commitments[i]=item;else s.schedule_commitments.push(item);
+        markReflowReview(s,'SCHEDULE_CHANGED');
         return item;
       });
     }
@@ -171,6 +184,7 @@
         };
         const i=s.schedule_exceptions.findIndex(x=>x.commitment_id===commitmentId&&x.date===date);
         if(i>=0)s.schedule_exceptions[i]=item;else s.schedule_exceptions.push(item);
+        markReflowReview(s,'SCHEDULE_EXCEPTION_CHANGED');
         return {ok:true,item:{...item}};
       });
     }
@@ -186,7 +200,9 @@
       return mutate(s=>{
         const before=s.schedule_exceptions.length;
         s.schedule_exceptions=s.schedule_exceptions.filter(x=>id?x.exception_id!==id:!(x.commitment_id===commitmentId&&x.date===date));
-        return before===s.schedule_exceptions.length?{ok:false,reason:'SCHEDULE_EXCEPTION_NOT_FOUND'}:{ok:true};
+        if(before===s.schedule_exceptions.length)return {ok:false,reason:'SCHEDULE_EXCEPTION_NOT_FOUND'};
+        markReflowReview(s,'SCHEDULE_EXCEPTION_REMOVED');
+        return {ok:true};
       });
     }
 
@@ -216,6 +232,7 @@
         };
         const i=s.daily_availability_windows.findIndex(x=>x.availability_id===id);
         if(i>=0)s.daily_availability_windows[i]=item;else s.daily_availability_windows.push(item);
+        markReflowReview(s,'AVAILABILITY_CHANGED');
         return item;
       });
     }
@@ -229,7 +246,9 @@
       return mutate(s=>{
         const before=s.daily_availability_windows.length;
         s.daily_availability_windows=s.daily_availability_windows.filter(x=>x.availability_id!==target);
-        return before===s.daily_availability_windows.length?{ok:false,reason:'AVAILABILITY_NOT_FOUND'}:{ok:true,availability_id:target};
+        if(before===s.daily_availability_windows.length)return {ok:false,reason:'AVAILABILITY_NOT_FOUND'};
+        markReflowReview(s,'AVAILABILITY_REMOVED');
+        return {ok:true,availability_id:target};
       });
     }
 
@@ -1213,7 +1232,7 @@
       const windowsByDate=candidateWindowsByDate(dates);
       return mutate(s=>{
         const existingPending=s.weekly_reflow_runs.find(x=>x.status==='PENDING'&&x.start_date===start&&x.days===days);
-        if(existingPending)return {ok:true,reused:true,run:{...existingPending}};
+        if(existingPending){clearReflowReview(s);return {ok:true,reused:true,run:{...existingPending}};}
 
         const templateById=new Map((s.homework_templates||[]).map(x=>[x.template_id,x]));
         const evidenceByDate=Object.fromEntries(dates.map(d=>[d,freeWindowEvidence(s,d,windowsByDate[d]||[])]));
@@ -1296,6 +1315,7 @@
         };
         s.weekly_reflow_runs.push(run);
         s.weekly_reflow_runs=s.weekly_reflow_runs.slice(-50);
+        clearReflowReview(s);
         return {ok:true,reused:false,run:{...run}};
       });
     }

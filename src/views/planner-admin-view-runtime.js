@@ -50,7 +50,10 @@
       const el=q('#weeklyReflowAdminList'); if(!el)return;
       const run=[...(snapshot.weekly_reflow_runs||[])].filter(x=>x.status==='PENDING').at(-1);
       if(!run){
-        el.innerHTML='<div class="plannerEmpty"><b>검토할 주간 재배치안이 없어요.</b><small>고정 일정이나 가능 시간이 바뀌면 Planner가 이번 주 안에서 다시 맞출 수 있어요.</small></div>';
+        const review=snapshot.reflow_review||{};
+        el.innerHTML=review.needed
+          ? '<div class="plannerEmpty"><b>일정 변경을 감지했어요.</b><small>이번 주 배정을 다시 볼 필요가 있습니다. 재배치안 만들기를 눌러 확인한 뒤 적용하세요.</small></div>'
+          : '<div class="plannerEmpty"><b>검토할 주간 재배치안이 없어요.</b><small>고정 일정이나 가능 시간이 바뀌면 Planner가 이번 주 안에서 다시 맞출 수 있어요.</small></div>';
         return;
       }
       const moves=run.moves||[];

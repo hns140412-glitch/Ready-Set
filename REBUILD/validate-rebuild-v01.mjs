@@ -641,3 +641,11 @@ assert('weekly-validity-range-ui',
   plannerAdminValiditySource.includes('valid_from:weekly?') &&
   plannerAdminValiditySource.includes('valid_until:weekly?')
 );
+
+const plannerReflowReviewSource=loadSource('ready-planner-v01.js');
+assert('planner-reflow-review-dirty-flag',
+  plannerReflowReviewSource.includes('markReflowReview') &&
+  plannerReflowReviewSource.includes("reflow_review:{needed:false") &&
+  plannerReflowReviewSource.includes("'SCHEDULE_CHANGED'") &&
+  plannerReflowReviewSource.includes("'AVAILABILITY_CHANGED'")
+);
