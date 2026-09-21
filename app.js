@@ -20,6 +20,7 @@ const rebuildPersistence=globalThis.ReadyRebuildAppPersistence||null;
 const rebuildMissionView=globalThis.ReadyRebuildMissionView||null;
 const rebuildFocusView=globalThis.ReadyRebuildFocusView||null;
 const rebuildPlannerAdminView=globalThis.ReadyRebuildPlannerAdminView||null;
+const rebuildPlannerAdminController=globalThis.ReadyRebuildPlannerAdminController||null;
 const rebuildParentIntakeView=globalThis.ReadyRebuildParentIntakeView||null;
 const rebuildCaptureService=globalThis.ReadyRebuildCaptureService||null;
 const rebuildCaptureOrchestrator=globalThis.ReadyRebuildCaptureOrchestrator||null;
@@ -41,7 +42,7 @@ const rebuildPlannerScreenView=globalThis.ReadyRebuildPlannerScreenView||null;
 const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -131,7 +132,7 @@ const appNavigation=rebuildNavigation.create({
     history:()=>resultHistoryRuntime.renderHistory(),
     calendar:()=>resultHistoryRuntime.renderCalendar(),
     planner:()=>renderPlanner(),
-    'planner-admin':()=>renderPlannerAdmin(),
+    'planner-admin':()=>plannerAdminRuntime.render(),
     profile:()=>profileRuntime.renderProfile(),
     settings:()=>settingsRuntime.renderSettings(),
     result:()=>resultHistoryRuntime.renderResult()
@@ -633,58 +634,26 @@ function renderPlanner(){
     isParent:!!window.ReadyFamilySession?.isParent?.()
   });
 }
-function clearScheduleForm(){
-  $('#scheduleId').value='';
-  $('#scheduleTitle').value='';
-  $('#scheduleCategory').value='';
-  $('#scheduleDate').value=localDateKey();
-  $('#scheduleStart').value='';
-  $('#scheduleEnd').value='';
-  $('#scheduleMovable').checked=false;
-}
-function clearAvailabilityForm(){
-  $('#availabilityId').value='';
-  $('#availabilityDate').value=localDateKey();
-  $('#availabilityWeekly').checked=false;
-  $('#availabilityWeekday').value='1';
-  $('#availabilityStart').value='';
-  $('#availabilityEnd').value='';
-}
 const plannerAdminView=rebuildPlannerAdminView.create({
   query:$,
   escapeHtml
 });
-function renderPlannerAdmin(){
-  if(!requireParentUi()){nav('planner');return}
-  const snap=plannerSnapshot();
-  const scheduleRoot=$('#scheduleAdminList');
-  if(!scheduleRoot)return;
-  plannerAdminView.render(snap);
-  if(!$('#scheduleDate').value) $('#scheduleDate').value=localDateKey();
-  if(!$('#availabilityDate').value) $('#availabilityDate').value=localDateKey();
-  renderParentIntake();
-}
-function editSchedule(id){
-  const x=plannerSnapshot().schedule_commitments.find(v=>v.commitment_id===id); if(!x)return;
-  $('#scheduleId').value=x.commitment_id;
-  $('#scheduleTitle').value=x.title||'';
-  $('#scheduleCategory').value=x.category||'';
-  $('#scheduleDate').value=String(x.start_at||'').slice(0,10);
-  $('#scheduleStart').value=String(x.start_at||'').slice(11,16);
-  $('#scheduleEnd').value=String(x.end_at||'').slice(11,16);
-  $('#scheduleMovable').checked=!!x.planner_movable;
-}
-function editAvailability(id){
-  const x=plannerSnapshot().daily_availability_windows.find(v=>v.availability_id===id); if(!x)return;
-  $('#availabilityId').value=x.availability_id;
-  $('#availabilityWeekly').checked=x.recurrence==='WEEKLY';
-  $('#availabilityDate').value=x.date||localDateKey();
-  $('#availabilityWeekday').value=String(x.weekday??1);
-  $('#availabilityStart').value=x.start||'';
-  $('#availabilityEnd').value=x.end||'';
-}
-document.getElementById('scheduleClearBtn')?.addEventListener('click',clearScheduleForm);
-document.getElementById('availabilityClearBtn')?.addEventListener('click',clearAvailabilityForm);
+const plannerAdminRuntime=rebuildPlannerAdminController.create({
+  view:plannerAdminView,
+  planner:()=>window.ReadySetPlanner,
+  integration:()=>window.ReadyIntegrationV1,
+  query:$,
+  eventTarget:document,
+  requireParentUi,
+  localDateKey,
+  addDays,
+  nav,
+  toast,
+  renderParentIntake,
+  renderPlanner
+});
+plannerAdminRuntime.bind();
+
 document.addEventListener('click',e=>{
   const childConfirm=e.target.closest('[data-child-fact-confirm]');
   if(childConfirm){
@@ -694,7 +663,7 @@ document.addEventListener('click',e=>{
       const processed=reviewed?.ok?window.ReadyIntegrationV1?.processAssignment?.(childConfirm.dataset.childFactConfirm,{start_date:localDateKey()}):null;
       toast(processed?.ok?'숙제를 확인했고 Planner가 TODAY 후보를 만들었어요.':reviewed?.ok?'숙제를 확인했어요. Planner 배정 조건을 더 확인해야 합니다.':'숙제 확인을 완료하지 못했어요.');
     }catch(error){toast(error?.message||'숙제 확인을 완료하지 못했어요.')}
-    renderPlannerAdmin();renderPlanner();renderMission();return;
+    plannerAdminRuntime.render();renderPlanner();renderMission();return;
   }
   const childReject=e.target.closest('[data-child-fact-reject]');
   if(childReject){
@@ -703,78 +672,8 @@ document.addEventListener('click',e=>{
       window.ReadyAssignments?.reviewChildFact?.(childReject.dataset.childFactReject,{actor:'PARENT',decision:'REJECT',reason:'PARENT_REJECTED_CHILD_INPUT'});
       toast('이 CHILD 숙제 제안은 Planner에 보내지 않았어요.');
     }catch(error){toast(error?.message||'숙제 제외를 완료하지 못했어요.')}
-    renderPlannerAdmin();renderPlanner();renderMission();return;
+    plannerAdminRuntime.render();renderPlanner();renderMission();return;
   }
-  const s=e.target.closest('[data-edit-schedule]'); if(s){editSchedule(s.dataset.editSchedule);return;}
-  const a=e.target.closest('[data-edit-availability]'); if(a){editAvailability(a.dataset.editAvailability);return;}
-  const ad=e.target.closest('[data-delete-availability]');
-  if(ad){
-    if(!requireParentUi())return;
-    const removed=window.ReadySetPlanner?.removeDailyAvailabilityWindow?.(ad.dataset.deleteAvailability);
-    toast(removed?.ok?'학습 가능 시간을 삭제했어요. Planner가 다음 배정부터 사용하지 않습니다.':'학습 가능 시간을 삭제하지 못했어요.');
-    clearAvailabilityForm();renderPlannerAdmin();renderPlanner();return;
-  }
-  const review=e.target.closest('[data-carry-review]');
-  if(review){
-    if(!requireParentUi())return;
-    const result=window.ReadyIntegrationV1?.reviewEscalatedCarryOver?.(review.dataset.carryReview,{start_date:localDateKey()});
-    toast(result?.ok?'학습 패턴을 다시 분석하고 Planner를 갱신했어요.':'학습 재검토를 완료하지 못했어요.');
-    renderPlannerAdmin();renderPlanner();return;
-  }
-  const ready=e.target.closest('[data-carry-ready]');
-  if(ready){
-    if(!requireParentUi())return;
-    const id=ready.dataset.carryReady;
-    const resolved=window.ReadySetPlanner?.resolveCarryOver?.(id,{resolution:'READY_FOR_REPLAN',actor:'PARENT'});
-    if(resolved?.ok){
-      const tomorrow=localDateKey(addDays(new Date(),1));
-      const replanned=window.ReadySetPlanner?.replanCarryOver?.({carry_over_id:id,date:tomorrow});
-      toast(replanned?.ok?'남은 탐험을 다음 일정으로 옮겼어요.':'다시 계획 가능한 상태로 바꿨어요.');
-    }else toast('남은 탐험 상태를 변경하지 못했어요.');
-    renderPlannerAdmin();renderPlanner();return;
-  }
-  const cancel=e.target.closest('[data-carry-cancel]');
-  if(cancel){
-    if(!requireParentUi())return;
-    const resolved=window.ReadySetPlanner?.resolveCarryOver?.(cancel.dataset.carryCancel,{resolution:'CANCEL',actor:'PARENT'});
-    toast(resolved?.ok?'이 남은 탐험은 종료했어요.':'종료 처리하지 못했어요.');
-    renderPlannerAdmin();renderPlanner();return;
-  }
-});
-document.getElementById('saveScheduleBtn')?.addEventListener('click',()=>{
-  if(!requireParentUi())return;
-  const title=$('#scheduleTitle').value.trim(), date=$('#scheduleDate').value, start=$('#scheduleStart').value, end=$('#scheduleEnd').value;
-  if(!title||!date||!start||!end){toast('일정명·날짜·시작·종료 시간을 확인해 주세요.');return;}
-  if(end<=start){toast('종료 시간은 시작 시간보다 늦어야 해요.');return;}
-  window.ReadySetPlanner.upsertScheduleCommitment({
-    commitment_id:$('#scheduleId').value||undefined,
-    title,
-    category:$('#scheduleCategory').value.trim()||'OTHER',
-    start_at:`${date}T${start}:00`,
-    end_at:`${date}T${end}:00`,
-    confirmed:true,
-    planner_movable:$('#scheduleMovable').checked,
-    parent_editable:true,
-    source:'PARENT_ADMIN_UI'
-  });
-  toast('고정 일정을 저장했어요.');
-  renderPlannerAdmin(); renderPlanner();
-});
-document.getElementById('saveAvailabilityBtn')?.addEventListener('click',()=>{
-  if(!requireParentUi())return;
-  const weekly=$('#availabilityWeekly').checked;
-  const date=$('#availabilityDate').value,start=$('#availabilityStart').value,end=$('#availabilityEnd').value;
-  if((!weekly&&!date)||!start||!end){toast('날짜·시작·종료 시간을 확인해 주세요.');return;}
-  if(end<=start){toast('종료 시간은 시작 시간보다 늦어야 해요.');return;}
-  window.ReadySetPlanner.upsertDailyAvailabilityWindow({
-    availability_id:$('#availabilityId').value||undefined,
-    date,start,end,
-    recurrence:weekly?'WEEKLY':null,
-    weekday:weekly?Number($('#availabilityWeekday').value):null,
-    confirmed:true,parent_editable:true,source:'PARENT_ADMIN_UI'
-  });
-  toast('학습 가능 시간을 확인했어요. Planner가 배정 근거로 사용합니다.');
-  renderPlannerAdmin(); renderPlanner();
 });
 const captureApi=window.ReadyCaptureV01;
 const captureService=rebuildCaptureService.create({captureApi});

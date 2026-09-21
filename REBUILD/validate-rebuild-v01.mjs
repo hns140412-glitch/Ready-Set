@@ -326,3 +326,28 @@ assert('auth-sync-inline-handlers-removed',
   !appSource.includes('async function renderSyncStatus()') &&
   !appSource.includes('function renderAuthStatus()')
 );
+
+const plannerAdminControllerSource=loadSource('src/views/planner-admin-controller-runtime.js');
+assert('planner-admin-controller-owner',plannerAdminControllerSource.includes('ReadyRebuildPlannerAdminController'));
+assert('planner-admin-controller-loaded-before-app',
+  indexSource.indexOf('src/views/planner-admin-controller-runtime.js')>0 &&
+  indexSource.indexOf('src/views/planner-admin-controller-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('planner-admin-controller-wired',
+  appSource.includes('rebuildPlannerAdminController.create') &&
+  appSource.includes('plannerAdminRuntime.bind()') &&
+  appSource.includes("'planner-admin':()=>plannerAdminRuntime.render()")
+);
+assert('planner-admin-authority-stays-external',
+  plannerAdminControllerSource.includes('requireParentUi()') &&
+  plannerAdminControllerSource.includes("planner()?.upsertScheduleCommitment") &&
+  plannerAdminControllerSource.includes("planner()?.resolveCarryOver")
+);
+assert('planner-admin-inline-crud-removed',
+  !appSource.includes('function clearScheduleForm()') &&
+  !appSource.includes('function clearAvailabilityForm()') &&
+  !appSource.includes('function editSchedule(') &&
+  !appSource.includes('function editAvailability(') &&
+  !appSource.includes("getElementById('saveScheduleBtn')") &&
+  !appSource.includes("getElementById('saveAvailabilityBtn')")
+);
