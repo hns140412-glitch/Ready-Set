@@ -45,4 +45,40 @@ assert.equal(noWindow.reason,'NO_CONFIRMED_REVIEW_WINDOW');
 const forged=review.interpretHideMemorySummary({...packet,authority:'HIDE_SCHEDULER'});
 assert.equal(forged.ok,false);
 
+
+
+const directiveFromTodo=review.directiveForPlannerTodo(planned.todo,'task-review-1');
+assert.equal(directiveFromTodo.authority,'EXPLICIT_READY_PLANNER_REVIEW_DIRECTIVE');
+assert.equal(directiveFromTodo.taskId,'task-review-1');
+assert.deepEqual(directiveFromTodo.lexicalIds,['word-a','word-b']);
+
+const normalizedResult=review.normalizeHideSpecialistResult({
+  activeSheetId:'sheet-1',
+  sheetStatus:'COMPLETED',
+  taskState:'COMPLETED',
+  learningPhase:'final',
+  trailMastery:88,
+  memorySummary:{
+    authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
+    reviewPolicyOwner:'READY_LEARNING_ENGINE',
+    scheduleOwner:'READY_SET_PLANNER',
+    prioritySemantics:'ADVISORY_SIGNAL_NOT_DATE',
+    reviewAdvisories:[{lexicalId:'word-a',advisoryOnly:true,evidenceBasis:'HIDE_MEMORY_EVIDENCE'}]
+  }
+});
+assert.equal(normalizedResult.sourceApp,'hide-seek');
+assert.equal(normalizedResult.trailMastery,88);
+assert.equal(normalizedResult.memorySummary.authority,'SPECIALIST_MEMORY_ADVISORY_ONLY');
+
+assert.equal(review.normalizeHideSpecialistResult({
+  memorySummary:{authority:'FORGED',reviewPolicyOwner:'READY_LEARNING_ENGINE',scheduleOwner:'READY_SET_PLANNER'}
+}),null);
+
+const fs=require('fs');
+const runtime=fs.readFileSync(require('path').join(__dirname,'..','ready-runtime-v07.js'),'utf8');
+assert(runtime.includes("url.searchParams.set('review_directive',JSON.stringify(task.review_directive))"));
+assert(runtime.includes("result_payload: e.payload||null"));
+assert(runtime.includes("task.specialist_result=specialistResult"));
+assert(runtime.includes("specialistResult:task.specialist_result||null"));
+
 console.log('PASS: Hide memory advisory -> Ready policy -> Planner directive roundtrip');
