@@ -11,7 +11,7 @@ Disposition set: PRESERVE / MERGE / SUPERSEDE / ARCHIVE / OPEN
 | RDY-C2S-003 | Parent/Learning Master/Planner/Child authority split | PRESERVE | Product Contract |
 | RDY-C2S-004 | one-session multi-task/lap | MERGE | Runtime State Model |
 | RDY-C2S-005 | SESSION_END != TASK_COMPLETE | PRESERVE | Runtime State Model |
-| RDY-C2S-006 | REV_07 per-task finalize + legacy bulk complete conflict | PRESERVE | R1 / PR #70 closed overwrite path; runtime consolidation remains open |
+| RDY-C2S-006 | REV_07 per-task finalize + legacy bulk complete conflict | PRESERVE | R1 / PR #70 closed overwrite path; PR #97 consolidated one Planner-active task/runtime ownership |
 | RDY-C2S-007 | timestamp timing | PRESERVE | Product Contract |
 | RDY-C2S-008 | Hide & Seek / Snap & Pop continuity | MERGE | Product Contract |
 | RDY-C2S-009 | voice wrap-up for unresolved states | MERGE | Runtime State Model |
