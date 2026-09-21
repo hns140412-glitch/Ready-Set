@@ -1,0 +1,38 @@
+{
+  "registry_version": "2026-09-21.1",
+  "product": "Ready & Set",
+  "current_authority": [
+    "READY_SET_CANONICAL_PRODUCT_CONTRACT.md",
+    "READY_SET_RUNTIME_STATE_MODEL.md",
+    "READY_SET_DECISION_LEDGER.md",
+    "READY_SET_VERSION_REGISTRY.json",
+    "READY_SET_VALIDATION_STATUS.json"
+  ],
+  "legacy_authority": [
+    {
+      "path": "Ready_Set_Ui_Master_Logic_REV_06.md",
+      "class": "LEGACY_PROVENANCE",
+      "current_authority": false,
+      "preservation_rule": "Specific content may remain active only when explicitly preserved by current canonical."
+    },
+    {
+      "path": "Ready_Set_Ui_Master_Logic_REV_07.md",
+      "class": "LEGACY_PROVENANCE",
+      "current_authority": false,
+      "preservation_rule": "Specific content may remain active only when explicitly preserved by current canonical."
+    },
+    {
+      "path": "Ready_Set_Focus_Golden_Reference_REV_01.md",
+      "class": "PRESERVED_VISUAL_REFERENCE",
+      "current_authority": false,
+      "semantic_authority": false,
+      "preservation_rule": "Visual composition reference only; semantic behavior follows current Ready canonical."
+    }
+  ],
+  "invariants": [
+    "LEGACY FILE != CURRENT AUTHORITY",
+    "VISUAL REFERENCE != SEMANTIC AUTHORITY",
+    "CURRENT CANONICAL OVERRIDES LEGACY SOURCE-OF-TRUTH LABELS",
+    "HISTORICAL DETAIL REQUIRES EXPLICIT CURRENT PRESERVATION"
+  ]
+}
