@@ -170,3 +170,20 @@ assert('planner-screen-display-only',
   !plannerScreenSource.includes('allocate') &&
   !plannerScreenSource.includes('recordTaskState')
 );
+
+const recordingViewSource=loadSource('src/views/recording-view-runtime.js');
+assert('recording-view-owner',recordingViewSource.includes('ReadyRebuildRecordingView'));
+assert('recording-view-loaded-before-app',
+  indexSource.indexOf('src/views/recording-view-runtime.js')>0 &&
+  indexSource.indexOf('src/views/recording-view-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('recording-view-wired',appSource.includes('recordingView.renderContext')&&appSource.includes('recordingView.renderReview'));
+assert('recording-inline-review-ui-removed',
+  !appSource.includes("$('#duoText').textContent=") &&
+  !appSource.includes("$('#formatNote').textContent=rebuildRecordingService.formatNote")
+);
+
+const captureDraftSource=loadSource('src/assignment/capture-draft-runtime.js');
+assert('capture-draft-owner',captureDraftSource.includes('ReadyRebuildCaptureDraft'));
+assert('capture-draft-stable-review-event',captureDraftSource.includes('PARENT_APPLIED_DRAFT'));
+assert('capture-draft-wired',appSource.includes('captureDraftController.apply(draft)'));
