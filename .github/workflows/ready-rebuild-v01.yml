@@ -1,0 +1,26 @@
+name: ready-set Rebuild V01 Foundation
+
+on:
+  push:
+    branches:
+      - taky/ready-rebuild-v01-2026-09-21
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rebuild-foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate rebuild foundation
+        run: node REBUILD/validate-rebuild-v01.mjs
+      - name: Guard legacy entrypoints remain untouched in R0
+        run: |
+          test -f app.js
+          test -f index.html
