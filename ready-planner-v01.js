@@ -1083,6 +1083,26 @@
           if(todo.state!=='PLANNED'&&todo.state!=='IN_PROGRESS'){
             return {ok:false,reason:'TODO_NOT_STARTABLE',todo_id:todoId,state:todo.state};
           }
+
+          const otherActive=s.dated_todos.filter(x=>x.todo_id!==todoId&&x.state==='IN_PROGRESS');
+          const foreignActive=otherActive.find(x=>x.active_session_id&&x.active_session_id!==sessionId);
+          if(foreignActive){
+            return {
+              ok:false,
+              reason:'ACTIVE_TASK_OWNERSHIP_CONFLICT',
+              todo_id:todoId,
+              active_todo_id:foreignActive.todo_id,
+              active_session_id:foreignActive.active_session_id
+            };
+          }
+
+          for(const active of otherActive){
+            active.state='PLANNED';
+            active.active_session_id=null;
+            active.active_task_id=null;
+            active.updated_at=input.at||new Date().toISOString();
+          }
+
           todo.state='IN_PROGRESS';
           todo.active_session_id=sessionId;
           todo.active_task_id=cleanText(input.task_id)||null;
