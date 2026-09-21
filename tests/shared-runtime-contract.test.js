@@ -6,6 +6,7 @@ const pwa=require('../vendor/taky/pwa-update-state.js');
 const eventEnvelope=require('../vendor/taky/event-envelope.js');
 const localQueue=require('../vendor/taky/local-queue.js');
 const visionIngest=require('../vendor/taky/vision-ingest.js');
+const httpJson=require('../vendor/taky/http-json.js');
 
 delete globalThis.ReadySetReleaseDescriptor;
 require('../ready-release-v01.js');
@@ -43,6 +44,7 @@ assert(index.includes('./vendor/taky/pwa-update-state.js'));
 assert(index.includes('./vendor/taky/event-envelope.js'));
 assert(index.includes('./vendor/taky/local-queue.js'));
 assert(index.includes('./vendor/taky/vision-ingest.js'));
+assert(index.includes('./vendor/taky/http-json.js'));
 assert(index.includes('./ready-release-v01.js'));
 assert(index.includes('./ready-pwa-update-v01.js'));
 assert(app.includes('globalThis.ReadySetReleaseDescriptor'));
@@ -113,3 +115,12 @@ assert(captureAnalysis.includes('VisionIngest.buildRequest'));
 assert(captureAnalysis.includes('VisionIngest.validateEvidence'));
 assert(captureAnalysis.includes('ANALYSIS_EVIDENCE_INVALID'));
 console.log('PASS: Ready consumes shared vision ingest mechanics while retaining Ready capture/FACT semantics');
+
+
+assert.equal(httpJson.normalizeStatus(429,{retry_after:'2',now_ms:0}).category,'RATE_LIMITED');
+assert.equal(httpJson.normalizeStatus(429,{retry_after:'2',now_ms:0}).retry_after_ms,2000);
+assert(syncAdapter.includes('HttpJson.request'));
+assert(syncAdapter.includes("credentials:'same-origin'"));
+assert(syncAdapter.includes("res.status===409"));
+assert(syncAdapter.includes("ReadyFamilySession"));
+console.log('PASS: Ready consumes shared HTTP transport while retaining family auth and conflict semantics');
