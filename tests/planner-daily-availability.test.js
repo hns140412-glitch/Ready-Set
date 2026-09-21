@@ -28,6 +28,14 @@ planner.upsertDailyAvailabilityWindow({
   confirmed:true,
   source:'TEST_FIXTURE'
 });
+planner.upsertDailyAvailabilityWindow({
+  availability_id:'avail-3',
+  date:'2026-09-23',
+  start:'17:00',
+  end:'20:00',
+  confirmed:true,
+  source:'TEST_FIXTURE'
+});
 planner.upsertScheduleCommitment({
   commitment_id:'academy-day-1',
   title:'영어학원',
@@ -40,7 +48,10 @@ planner.upsertScheduleCommitment({
 
 assert.deepEqual(planner.candidateWindowsByDate(['2026-09-22','2026-09-23']),{
   '2026-09-22':[{start:'15:00',end:'20:00',availability_id:'avail-1',source:'TEST_FIXTURE'}],
-  '2026-09-23':[{start:'15:00',end:'20:00',availability_id:'avail-2',source:'TEST_FIXTURE'}]
+  '2026-09-23':[
+    {start:'15:00',end:'20:00',availability_id:'avail-2',source:'TEST_FIXTURE'},
+    {start:'17:00',end:'20:00',availability_id:'avail-3',source:'TEST_FIXTURE'}
+  ]
 });
 
 const domain={
@@ -88,7 +99,7 @@ assert.equal(allocation.free_window_by_date['2026-09-23'].total_free_minutes,300
 assert.equal(allocation.proposals[0].date,'2026-09-23');
 
 const snap=planner.snapshot();
-assert.equal(snap.daily_availability_windows.length,2);
+assert.equal(snap.daily_availability_windows.length,3);
 assert.equal(snap.schedule_commitments.length,1);
 
 console.log('PASS: Planner automatically derives candidate_windows_by_date from Parent-confirmed daily availability and subtracts fixed commitments');
