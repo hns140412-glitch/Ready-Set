@@ -359,8 +359,7 @@ const recordingView=rebuildRecordingView.create({
   query:$,
   formatTime:fmt,
   applyAvatar,
-  applyGuide,
-  loadRecording:id=>rebuildRecordingService.loadAudio(id)
+  applyGuide
 });
 const recordingRuntime=rebuildRecordingOrchestrator.create({
   recordingService:rebuildRecordingService
@@ -393,7 +392,8 @@ const resultHistoryView=rebuildResultHistoryView.create({
   escapeHtml,
   formatTime:fmt,
   applyAvatar,
-  applyGuide
+  applyGuide,
+  loadRecording:id=>rebuildRecordingService.loadAudio(id)
 });
 const resultHistoryRuntime=rebuildResultHistoryController.create({
   view:resultHistoryView,
