@@ -336,7 +336,8 @@
       const ids=new Set((todoIds||[]).map(cleanText).filter(Boolean));
       const allowedStates=new Set(Array.isArray(options.allowed_states)&&options.allowed_states.length?options.allowed_states:['PLANNED']);
       return load().dated_todos.filter(x=>ids.has(x.todo_id)&&x.date===date&&allowedStates.has(x.state)).map(x=>({
-        todo_id:x.todo_id,label:x.label,date:x.date,source:x.source,
+        todo_id:x.todo_id,label:x.label,date:x.date,source:x.source,subject:x.subject||null,
+        matched_domain:x.matched_domain||null,method_variant:x.method_variant||null,
         assignment_id:x.assignment_id,analysis_id:x.analysis_id,learning_unit_id:x.learning_unit_id,
         template_id:x.template_id,allocation_run_id:x.allocation_run_id,
         activity_types:Array.isArray(x.activity_types)?x.activity_types:[],
@@ -551,6 +552,8 @@
             learning_unit_id:unit.learning_unit_id,template_id:templateId,
             activity_types:unit.activity_types,
             activity_sequence:unit.activity_sequence||[],
+            matched_domain:unit.analysis_provenance?.learning_reference?.matched_domain||null,
+            method_variant:unit.analysis_provenance?.learning_reference?.method_variant||null,
             cognitive_load_profile:unit.cognitive_load_profile,
             activity_load_score:unitScore,
             difficulty:unitDifficulty,
@@ -585,6 +588,7 @@
             fact_revision:Number(p.fact_revision)||Number(run.fact_revision)||1,
             learning_unit_id:p.learning_unit_id,template_id:p.template_id,allocation_run_id:runId,
             activity_types:p.activity_types,activity_sequence:p.activity_sequence||[],
+            matched_domain:p.matched_domain||null,method_variant:p.method_variant||null,
             cognitive_load_profile:p.cognitive_load_profile,
             activity_load_score:p.activity_load_score,difficulty:p.difficulty,recovery_need:p.recovery_need,
             free_window_evidence:p.free_window_evidence||null,
@@ -1435,6 +1439,9 @@
         template_id:x.template_id||null,
         allocation_run_id:x.allocation_run_id||null,
         label:x.label,
+        subject:x.subject||null,
+        matched_domain:x.matched_domain||null,
+        method_variant:x.method_variant||null,
         state:x.state,
         source:x.source,
         estimated_minutes:Number.isFinite(x.estimated_minutes)?x.estimated_minutes:null,
