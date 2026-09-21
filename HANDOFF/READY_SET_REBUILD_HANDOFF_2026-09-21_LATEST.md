@@ -25,10 +25,17 @@ Observed HEAD at handoff preparation:
 Foundation at observed HEAD:
 - run `35599385239` SUCCESS
 
-Runtime at observed HEAD:
+Runtime at observed code HEAD:
 - run `35599385063`
-- status was IN_PROGRESS at C2S closure
-- recheck live before claiming PASS
+- FAILURE
+- primary error: `ReferenceError: Cannot access 'homeView' before initialization`
+- cascading navigation / Planner Admin / Mission failures followed
+
+FIRST TASK IN NEXT CHAT:
+1. inspect initialization order around Home View extraction / navigation bootstrap
+2. repair the TDZ/ordering regression with the smallest change
+3. run Rebuild Foundation + exact-head Runtime E2E
+4. continue extraction only after both pass
 
 ## Current rebuild shape
 The branch already contains migrated modules for:
@@ -68,7 +75,7 @@ Before each edit:
 - do not redo modules already migrated
 
 ## Next sequence
-After exact-head Runtime PASS is confirmed:
+After repairing the current exact-head Runtime FAIL and confirming PASS:
 1. re-audit remaining `app.js` responsibilities
 2. finish share-card wiring if still shadow-only
 3. finish residual Capture orchestration split
