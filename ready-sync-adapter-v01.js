@@ -57,8 +57,8 @@
     const config=readConfig();
     if(!config.enabled||!config.endpoint) return {ok:false,reason:'SYNC_NOT_CONFIGURED'};
     const payload={
-      event_id:event.id,
-      idempotency_key:event.idempotency_key||event.id,
+      event_id:event.event_id||event.id,
+      idempotency_key:event.idempotency_key||event.event_id||event.id,
       scope:event.scope,
       digest:event.digest,
       payload:event.payload,
@@ -91,7 +91,7 @@
     }
     runtime={state:'CONNECTED',last_check_at:now(),last_error:null};
     window.dispatchEvent(new CustomEvent('readyset-sync-status',{detail:status()}));
-    return {ok:true,remote_version:body.remote_version??null};
+    return {ok:true,ack_token:body.ack_token??null,remote_version:body.remote_version??null};
   }
 
   function bindFamilySession(){
