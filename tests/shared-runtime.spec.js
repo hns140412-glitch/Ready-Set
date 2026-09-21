@@ -128,3 +128,19 @@ test('Ready loads shared vision ingest and rejects unknown OCR evidence ids', as
   expect(result.reason).toBe('ANALYSIS_EVIDENCE_INVALID');
   expect(result.unknown_evidence[0].source_id).toBe('unknown-source');
 });
+
+
+test('Ready loads shared HTTP transport without moving auth authority',async({page})=>{
+  await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+  const out=await page.evaluate(()=>({
+    http:!!globalThis.TakyHttpJson,
+    rate:globalThis.TakyHttpJson?.normalizeStatus?.(429,{retry_after:'2',now_ms:0}),
+    sync:!!globalThis.ReadySetSyncAdapter,
+    family:!!globalThis.ReadyFamilySession
+  }));
+  expect(out.http).toBe(true);
+  expect(out.rate.category).toBe('RATE_LIMITED');
+  expect(out.rate.retry_after_ms).toBe(2000);
+  expect(out.sync).toBe(true);
+  expect(out.family).toBe(true);
+});
