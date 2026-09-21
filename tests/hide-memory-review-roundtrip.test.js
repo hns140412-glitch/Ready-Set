@@ -59,7 +59,7 @@ const normalizedResult=review.normalizeHideSpecialistResult({
   missionStatus:'COMPLETED',
   taskState:'COMPLETED',
   learningPhase:'COMPLETE',
-  trailMastery:null,
+  trailMastery:100,
   memorySummary:{
     authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
     reviewPolicyOwner:'READY_LEARNING_ENGINE',
@@ -73,7 +73,7 @@ assert.equal(normalizedResult.resultContract,'HIDE_SPECIALIST_RESULT_V2');
 assert.equal(normalizedResult.activeMissionId,'mission-1');
 assert.equal(normalizedResult.missionStatus,'COMPLETED');
 assert.equal(normalizedResult.activeSheetId,null);
-assert.equal(normalizedResult.trailMastery,null);
+assert.equal(normalizedResult.trailMastery,100);
 assert.equal(normalizedResult.memorySummary.authority,'SPECIALIST_MEMORY_ADVISORY_ONLY');
 
 const normalizedReturnEvent=review.normalizeHideV2ReturnEvent({
@@ -92,7 +92,7 @@ const normalizedReturnEvent=review.normalizeHideV2ReturnEvent({
     missionStatus:'COMPLETED',
     taskState:'COMPLETED',
     learningPhase:'COMPLETE',
-    trailMastery:null,
+    trailMastery:100,
     memorySummary:{
       authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
       reviewPolicyOwner:'READY_LEARNING_ENGINE',
@@ -109,6 +109,13 @@ assert.equal(normalizedReturnEvent.task_state,'COMPLETED');
 assert.equal(normalizedReturnEvent.from_app,'hide-seek');
 assert.equal(normalizedReturnEvent.event_id,'evt-hide-v2-1');
 assert.equal(normalizedReturnEvent.result_payload.resultContract,'HIDE_SPECIALIST_RESULT_V2');
+assert.equal(normalizedReturnEvent.result_payload.trailMastery,100);
+assert.equal(review.normalizeHideSpecialistResult({
+  resultContract:'HIDE_SPECIALIST_RESULT_V2',
+  runtime:'V2',
+  trailMastery:140,
+  memorySummary:{authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',reviewPolicyOwner:'READY_LEARNING_ENGINE',scheduleOwner:'READY_SET_PLANNER'}
+}).trailMastery,null);
 assert.equal(review.normalizeHideV2ReturnEvent({source:'hide-seek',event_type:'TASK_COMPLETED',payload:{resultContract:'HIDE_SPECIALIST_RESULT_V2',runtime:'V2'}}),null);
 
 assert.equal(review.normalizeHideSpecialistResult({
