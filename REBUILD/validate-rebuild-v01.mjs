@@ -403,3 +403,25 @@ assert('app-bootstrap-inline-shell-wiring-removed',
   !appSource.includes("window.addEventListener('visibilitychange'") &&
   !appSource.includes("window.addEventListener('load'")
 );
+
+const missionFocusControllerSource=loadSource('src/session/mission-focus-controller-runtime.js');
+assert('mission-focus-controller-owner',missionFocusControllerSource.includes('ReadyRebuildMissionFocusController'));
+assert('mission-focus-controller-loaded-before-app',
+  indexSource.indexOf('src/session/mission-focus-controller-runtime.js')>0 &&
+  indexSource.indexOf('src/session/mission-focus-controller-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('mission-focus-controller-wired',
+  appSource.includes('rebuildMissionFocusController.create') &&
+  appSource.includes('missionFocusRuntime.bind()')
+);
+assert('mission-focus-authority-stays-external',
+  missionFocusControllerSource.includes('sessionService.start') &&
+  missionFocusControllerSource.includes('planner:planner()') &&
+  missionFocusControllerSource.includes('completeSession(stateValue)')
+);
+assert('mission-focus-inline-handlers-removed',
+  !appSource.includes("$('#startBtn').onclick") &&
+  !appSource.includes("$('#pauseBtn').onclick") &&
+  !appSource.includes("$('#soundBtn').onclick") &&
+  !appSource.includes("$$('[data-outcome-state]').forEach")
+);

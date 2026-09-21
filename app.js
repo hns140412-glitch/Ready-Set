@@ -20,6 +20,7 @@ const rebuildNavigation=globalThis.ReadyRebuildNavigation||null;
 const rebuildPersistence=globalThis.ReadyRebuildAppPersistence||null;
 const rebuildMissionView=globalThis.ReadyRebuildMissionView||null;
 const rebuildFocusView=globalThis.ReadyRebuildFocusView||null;
+const rebuildMissionFocusController=globalThis.ReadyRebuildMissionFocusController||null;
 const rebuildPlannerAdminView=globalThis.ReadyRebuildPlannerAdminView||null;
 const rebuildPlannerAdminController=globalThis.ReadyRebuildPlannerAdminController||null;
 const rebuildPlannerQueryController=globalThis.ReadyRebuildPlannerQueryController||null;
@@ -45,7 +46,7 @@ const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildAppBootstrapController=globalThis.ReadyRebuildAppBootstrapController||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -330,65 +331,25 @@ function updateBgmStatus(custom=''){
   if(custom){el.textContent=custom;return}
   el.textContent=`${s.sound} · ${bgm()?.paused?'일시정지':'재생 중'}`;
 }
-function openSound(){
-  const sh=$('#soundSheet');
-  $$('[data-sheet-sound]').forEach(b=>{
-    const active=b.dataset.sheetSound===state.sound;
-    b.classList.toggle('on',active);
-    b.setAttribute('aria-pressed',active?'true':'false');
-  });
-  sh.hidden=false;
-  queueMicrotask(()=>{(sh.querySelector('[data-sheet-sound].on')||sh.querySelector('[data-close-sound],[data-sheet-sound]'))?.focus({preventScroll:true})});
-}
-$('#soundBtn').onclick=openSound;
-$('#focusSoundBtn').onclick=openSound;
-$('#changeBgm').onclick=openSound;
-$$('[data-close-sound]').forEach(b=>b.onclick=()=>{
-  $('#soundSheet').hidden=true;
-  if(!state.activeSession)pauseBgm();
+const missionFocusRuntime=rebuildMissionFocusController.create({
+  query:$,
+  queryAll:$$,
+  getState:()=>state,
+  save,
+  sessionService:rebuildSessionService,
+  sessionDomain:rebuildSession,
+  planner:()=>window.ReadySetPlanner,
+  nav,
+  toast,
+  renderMission,
+  renderFocus:()=>renderFocus(),
+  renderSettings:()=>settingsRuntime.renderSettings(),
+  playBgm,
+  pauseBgm,
+  resumeBgm,
+  completeSession:stateValue=>completeSession(stateValue)
 });
-$$('[data-sheet-sound]').forEach(b=>b.onclick=async()=>{
-  const sound=b.dataset.sheetSound;
-  state.sound=sound;
-  if(state.activeSession)state.activeSession.sound=sound;
-  save();
-  $$('[data-sheet-sound]').forEach(x=>x.classList.toggle('on',x===b));
-  $('#soundName').textContent=sound;
-  settingsRuntime.renderSettings();
-  if(sound==='OFF')pauseBgm();
-  else{
-    clearTimeout(previewTimer);
-    await playBgm(sound,{preview:!state.activeSession});
-    if(!state.activeSession)previewTimer=setTimeout(()=>pauseBgm(),5000);
-  }
-  renderFocus();
-});
-
-$('#startBtn').onclick=async()=>{
-  const now=Date.now(),sessionId=`s_${now}`;
-  const started=rebuildSessionService.start({
-    sessionDomain:rebuildSession,
-    planner:window.ReadySetPlanner,
-    activeSession:state.activeSession,
-    selectedTodoIds:state.selectedTodoIds,
-    sessionId,
-    now,
-    targetMin:state.targetMin,
-    sound:state.sound
-  });
-  if(!started.ok){
-    if(started.reason==='SESSION_ALREADY_ACTIVE'){toast('이미 진행 중인 작전이 있어요. 먼저 진행 중인 작전으로 돌아가 주세요.');nav('focus');return}
-    if(started.reason==='NO_SELECTED_TODO'){toast('먼저 Planner가 준비한 오늘의 탐험을 선택해 주세요.');return}
-    if(started.reason==='NO_STARTABLE_PLANNER_TODO'){toast('지금 시작할 수 있는 Planner TODO가 없어요. TODAY를 다시 확인해 주세요.');return}
-    toast('다른 세션에서 이미 진행 중인 할 일이 있어 시작하지 않았어요.');
-    renderMission();
-    return;
-  }
-  state.activeSession=started.session;
-  save();
-  nav('focus');
-  if(state.sound!=='OFF')await resumeBgm(state.sound);
-};
+missionFocusRuntime.bind();
 
 function sessionTimes(){
   if(rebuildSession?.times)return rebuildSession.times(state.activeSession,{now:Date.now(),fallbackTargetMin:state.targetMin});
@@ -424,24 +385,7 @@ function tickFocus(){
   focusView.renderTick(s,sessionTimes(),new Date());
   if(!s.completed&&$('#focusView').classList.contains('active'))requestAnimationFrame(tickFocus);
 }
-$('#pauseBtn').onclick=async()=>{
-  const s=state.activeSession;if(!s)return;
-  if(s.pausedAt){await resumePausedSession();return}
-  s.pausedAt=Date.now();s.pauseReason='';await pauseBgm();save();renderFocus();$('#pauseSheet').hidden=false;
-};
-async function resumePausedSession(){
-  const s=state.activeSession;if(!s||!s.pausedAt)return;
-  s.issueMs+=(Date.now()-s.pausedAt);s.pausedAt=null;save();$('#pauseSheet').hidden=true;renderFocus();
-  if(s.sound!=='OFF')await resumeBgm(s.sound);
-}
-$$('[data-pause-reason]').forEach(b=>b.onclick=()=>{
-  const s=state.activeSession;if(!s)return;
-  s.pauseReason=b.dataset.pauseReason;s.pauseEvents=s.pauseEvents||[];s.pauseEvents.push({reason:s.pauseReason,at:Date.now()});
-  $$('[data-pause-reason]').forEach(x=>x.classList.toggle('on',x===b));save();
-});
-$$('[data-close-pause]').forEach(b=>b.onclick=()=>$('#pauseSheet').hidden=true);
-$('#resumeFromSheetBtn').onclick=resumePausedSession;
-$('#completeBtn').onclick=()=>{$('#outcomeModal').hidden=false};
+
 function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOutcomes=[]}={}){
   const s=state.activeSession;if(!s)return null;
   pauseBgm();
@@ -581,12 +525,6 @@ $('#saveRecordingBtn').onclick=async()=>{
 };
 
 
-$$('[data-outcome-state]').forEach(b=>b.onclick=()=>{
-  const stateValue=b.dataset.outcomeState;
-  $('#outcomeModal').hidden=true;
-  completeSession(stateValue);
-});
-$$('[data-close-outcome]').forEach(b=>b.onclick=()=>{$('#outcomeModal').hidden=true});
 
 const resultHistoryView=rebuildResultHistoryView.create({
   query:$,
