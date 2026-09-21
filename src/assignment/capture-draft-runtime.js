@@ -5,7 +5,7 @@
     const q=options.query||((s)=>document.querySelector(s));
     const qa=options.queryAll||((s)=>[...document.querySelectorAll(s)]);
     const parsePrints=options.parsePrints||(()=>({}));
-    const recordCaptureReview=options.recordCaptureReview||async()=>null;
+    const recordCaptureReview=options.recordCaptureReview||(async()=>null);
     const toast=options.toast||(()=>{});
 
     async function apply(draft){
