@@ -33,6 +33,8 @@ for (const token of [
   'event_id: event_id',
   'raw_state: task_state',
   'normalized_state: normalized',
+  'source_event_type: source_event_type',
+  'source_event_type: e.type',
   'specialist_event_id: event_id'
 ]) {
   assert(source.includes(token), `missing specialist provenance token: ${token}`);
