@@ -1,0 +1,28 @@
+name: Ready Child FACT Confirmation Gate
+
+on:
+  pull_request:
+    paths:
+      - 'ready-assignment-domain-v2.js'
+      - 'app.js'
+      - 'tests/child-fact-confirmation.test.js'
+      - '.github/workflows/child-fact-confirmation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  child-fact-confirmation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check JavaScript syntax
+        run: |
+          node --check ready-assignment-domain-v2.js
+          node --check app.js
+      - name: Verify CHILD → Parent review → FACT confirmation boundary
+        run: node tests/child-fact-confirmation.test.js
