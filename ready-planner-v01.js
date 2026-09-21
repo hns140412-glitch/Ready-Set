@@ -154,7 +154,9 @@
             return x.date===date;
           })
           .sort((a,b)=>String(a.start).localeCompare(String(b.start)))
-          .map(x=>({start:x.start,end:x.end,availability_id:x.availability_id,source:x.source,recurrence:x.recurrence||null,weekday:x.weekday??null}));
+          .map(x=>x.recurrence==='WEEKLY'
+            ? {start:x.start,end:x.end,availability_id:x.availability_id,source:x.source,recurrence:'WEEKLY',weekday:Number(x.weekday)}
+            : {start:x.start,end:x.end,availability_id:x.availability_id,source:x.source});
       }
       return out;
     }
