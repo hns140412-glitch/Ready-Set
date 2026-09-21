@@ -77,7 +77,7 @@
     async function saveEnglish(input={}){
       const {
         name,range,nextAcademy,weekdayPrints,components={},teacherInstruction='',
-        sourceDate=localDateKey()
+        sourceDate=localDateKey(),captureReviews=[]
       }=input;
       if(!String(name||'').trim()||!String(range||'').trim())return {ok:false,reason:'ENGLISH_NAME_OR_RANGE_MISSING'};
 
@@ -132,7 +132,9 @@
         next_academy:nextAcademy,
         artifact_refs:source,
         answer_reference_ids:answers,
-        provenance:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE',capture_linked:source.length+answers.length>0}
+        provenance:Array.isArray(captureReviews)&&captureReviews.length
+          ?{kind:'PARENT_REVIEWED_CAPTURE',surface:'PARENT_INTAKE',capture_linked:true,capture_reviews:captureReviews}
+          :{kind:'PARENT_INPUT',surface:'PARENT_INTAKE',capture_linked:source.length+answers.length>0}
       });
 
       assignments.confirmFact(fact.assignment_id,{actor:'PARENT'});
