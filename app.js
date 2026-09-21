@@ -24,7 +24,8 @@ const rebuildParentIntakeView=globalThis.ReadyRebuildParentIntakeView||null;
 const rebuildCaptureService=globalThis.ReadyRebuildCaptureService||null;
 const rebuildCaptureView=globalThis.ReadyRebuildCaptureView||null;
 const rebuildAssignmentService=globalThis.ReadyRebuildAssignmentService||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView||!rebuildAssignmentService){
+const rebuildRecordingService=globalThis.ReadyRebuildRecordingService||null;
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -523,8 +524,7 @@ async function startRecording(){
   if(!navigator.mediaDevices?.getUserMedia){toast('이 브라우저는 마이크 녹음을 지원하지 않습니다.');return}
   try{
     mediaStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-    const candidates=['audio/mp4;codecs=mp4a.40.2','audio/mp4','audio/webm;codecs=opus','audio/webm'];
-    const mime=candidates.find(m=>window.MediaRecorder&&MediaRecorder.isTypeSupported?.(m))||'';
+    const mime=rebuildRecordingService.chooseMime(window.MediaRecorder);
     mediaRecorder=new MediaRecorder(mediaStream,mime?{mimeType:mime}:undefined);
     chunks=[];
     mediaRecorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
@@ -566,10 +566,7 @@ function finishRecording(){
   applyGuide($('#duoGuestGuide'),currentGuestType);
   $('#guideDialogue').textContent='잠깐만. 같이 들어줄 친구 좀 잡아올게!';
   $('#duoText').textContent=`${state.guide.name}: 잡아왔다!  ·  ${GUIDE_TYPES[currentGuestType].defaultName}: 좋아, 끝까지 들어보자. 지금은 자동 평가보다 녹음을 끝까지 완료한 사실을 먼저 확인할게.`;
-  const isM4A=/audio\/(mp4|m4a)/.test(type);
-  $('#formatNote').textContent=isM4A
-    ?'실제 MP4/M4A 계열 오디오로 저장할 수 있는 브라우저입니다.'
-    :'이 브라우저의 원본 녹음 포맷은 WebM입니다. .m4a로 이름만 바꾸지 않으며, M4A 제출이 필요하면 별도 변환 계층이 필요합니다.';
+  $('#formatNote').textContent=rebuildRecordingService.formatNote(type);
   state.recordingMeta={mime:type,durationMs:Date.now()-recordStartedAt,guestType:currentGuestType};
   save();
 }
@@ -581,11 +578,8 @@ $('#rerecordBtn').onclick=()=>{
 $('#saveRecordingBtn').onclick=async()=>{
   if(!currentAudio)return;
   const type=currentAudio.type||'audio/webm';
-  const ext=/audio\/(mp4|m4a)/.test(type)?'m4a':'webm';
-  const d=new Date(),date=`${d.getFullYear()} ${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getDate()).padStart(2,'0')}`;
-  const base=(state.profile.name||'Judy').replace(/[\\/:*?"<>|]/g,'_');
-  const filename=`${base}'s grammar recording ${date}.${ext}`;
-  await storeAudio(currentAudio,filename,type);
+  const filename=rebuildRecordingService.filenameFor({profileName:state.profile.name||'Judy',date:new Date(),type});
+  await rebuildRecordingService.storeAudio(currentAudio,filename,type);
   if(state.activeSession){state.activeSession.recordingDone=true;state.activeSession.guestType=currentGuestType;state.activeSession.recordingMime=type}
   save();toast(`저장 완료 · ${filename}`);
   setTimeout(async()=>{
@@ -593,20 +587,7 @@ $('#saveRecordingBtn').onclick=async()=>{
     if(state.activeSession?.sound!=='OFF')await resumeBgm(state.activeSession.sound);
   },450);
 };
-function storeAudio(blob,name,type){
-  return new Promise((resolve,reject)=>{
-    const req=indexedDB.open('readyset_audio',1);
-    req.onupgradeneeded=()=>{
-      if(!req.result.objectStoreNames.contains('audio'))req.result.createObjectStore('audio',{keyPath:'id'});
-    };
-    req.onerror=()=>reject(req.error);
-    req.onsuccess=()=>{
-      const tx=req.result.transaction('audio','readwrite');
-      tx.objectStore('audio').put({id:`a_${Date.now()}`,name,type,blob,createdAt:Date.now()});
-      tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
-    };
-  });
-}
+
 
 $$('[data-outcome-state]').forEach(b=>b.onclick=()=>{
   const stateValue=b.dataset.outcomeState;
