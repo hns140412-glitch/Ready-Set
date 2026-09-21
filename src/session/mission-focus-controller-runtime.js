@@ -86,6 +86,7 @@
       }
       state.activeSession=started.session;
       save();
+      root.dispatchEvent?.(new CustomEvent('readyset-session-started',{detail:{session_id:started.session?.id||null}}));
       nav('focus');
       if(state.sound!=='OFF')await resumeBgm(state.sound);
       return started;

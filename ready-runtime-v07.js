@@ -485,25 +485,15 @@
     return { ok:Object.values(checks).every(Boolean), checks };
   }
 
-  const originalStart = document.getElementById('startBtn')?.onclick;
   const originalNav = nav;
 
   function patchHandlers() {
-    const start = document.getElementById('startBtn');
-    if (start && originalStart) {
-      start.onclick = async function patchedStart(event) {
-        const pending = originalStart.call(this, event);
-        if (state.activeSession) {
-          ensureContract();
-          renderContractUI();
-        }
-        await pending;
-        if (state.activeSession && !state.activeSession.rev07) {
-          ensureContract();
-          renderContractUI();
-        }
-      };
-    }
+    window.addEventListener('readyset-session-started',()=>{
+      if (state.activeSession) {
+        ensureContract();
+        renderContractUI();
+      }
+    });
     const end = document.getElementById('completeBtn');
     if (end) {
       end.textContent = '세션 종료';

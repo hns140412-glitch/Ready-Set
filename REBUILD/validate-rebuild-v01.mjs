@@ -425,3 +425,10 @@ assert('mission-focus-inline-handlers-removed',
   !appSource.includes("$('#soundBtn').onclick") &&
   !appSource.includes("$$('[data-outcome-state]').forEach")
 );
+
+const rev07Source=loadSource('ready-runtime-v07.js');
+assert('rev07-session-start-event',
+  missionFocusControllerSource.includes("readyset-session-started") &&
+  rev07Source.includes("window.addEventListener('readyset-session-started'") &&
+  !rev07Source.includes("const originalStart = document.getElementById('startBtn')?.onclick")
+);
