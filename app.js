@@ -180,7 +180,7 @@ function currentPlannerMissionItems(){
 function currentMissionLabels(){
   return currentPlannerMissionItems().map(x=>x.label).filter(Boolean);
 }
-const homeView=rebuildHomeView.create({
+const homeViewRuntime=rebuildHomeView.create({
   query:$,
   formatTime:fmt,
   applyAvatar,
@@ -188,10 +188,10 @@ const homeView=rebuildHomeView.create({
   guideData
 });
 function renderHome(){
-  homeView.render({state,missionLabels:currentMissionLabels()});
+  homeViewRuntime.render({state,missionLabels:currentMissionLabels()});
 }
 function renderChips(root){
-  homeView.renderChips(root,currentMissionLabels());
+  homeViewRuntime.renderChips(root,currentMissionLabels());
 }
 let sheetCategory='';
 function openCategory(cat){
