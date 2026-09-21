@@ -1,5 +1,9 @@
 # Ready & Set Ui Master Logic — REV_07
 
+> **ARCHIVED LEGACY AUTHORITY — NOT CURRENT SOURCE OF TRUTH**
+> Current Ready authority: `READY_SET_CANONICAL_PRODUCT_CONTRACT.md` → `READY_SET_RUNTIME_STATE_MODEL.md` → `READY_SET_DECISION_LEDGER.md`.
+> This file is preserved for provenance/recovery only. Specific content is active only when explicitly preserved by the current canonical.
+
 > Status: FORMAL BASELINE / SOURCE OF TRUTH
 > Date: 2026-09-06
 > Previous Baseline: `Ready_Set_Ui_Master_Logic_REV_06.md`
