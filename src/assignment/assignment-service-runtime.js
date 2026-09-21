@@ -77,7 +77,7 @@
     async function saveEnglish(input={}){
       const {
         name,range,nextAcademy,weekdayPrints,components={},teacherInstruction='',
-        sourceDate=localDateKey(),captureReviews=[]
+        sourceDate=localDateKey()
       }=input;
       if(!String(name||'').trim()||!String(range||'').trim())return {ok:false,reason:'ENGLISH_NAME_OR_RANGE_MISSING'};
 
@@ -102,13 +102,6 @@
         }
       }
 
-      for(const groupKey of groupKeys){
-        const closure=await capture.reviewClosureForGroup?.(groupKey);
-        if(closure&&closure.unresolved_count>0){
-          return {ok:false,reason:'CAPTURE_REVIEW_UNRESOLVED',groupKey,unresolved_count:closure.unresolved_count};
-        }
-      }
-
       const ref=assignments.upsertWorkbookRef({
         workbook_ref_id:existing?.workbook_ref_id||undefined,
         name,
@@ -119,6 +112,24 @@
       const groups=await Promise.all(groupKeys.map(k=>captureService.capturedRefs(k)));
       const source=groups.flatMap(x=>x.source);
       const answers=groups.flatMap(x=>x.answers);
+      const reviewedValue={
+        workbook_name:name,
+        source_range:range,
+        weekday_prints:weekdayPrints,
+        components,
+        teacher_instruction:teacherInstruction
+      };
+      const captureReviews=[];
+      for(const groupKey of groupKeys){
+        const review=await captureService.recordCaptureReview(groupKey,reviewedValue,'PARENT_REVIEWED');
+        if(review)captureReviews.push(review);
+      }
+      for(const groupKey of groupKeys){
+        const closure=await capture.reviewClosureForGroup?.(groupKey);
+        if(closure&&closure.unresolved_count>0){
+          return {ok:false,reason:'CAPTURE_REVIEW_UNRESOLVED',groupKey,unresolved_count:closure.unresolved_count};
+        }
+      }
 
       const fact=assignments.upsertEnglishAssignment({
         actor:'PARENT',
@@ -132,7 +143,7 @@
         next_academy:nextAcademy,
         artifact_refs:source,
         answer_reference_ids:answers,
-        provenance:Array.isArray(captureReviews)&&captureReviews.length
+        provenance:captureReviews.length
           ?{kind:'PARENT_REVIEWED_CAPTURE',surface:'PARENT_INTAKE',capture_linked:true,capture_reviews:captureReviews}
           :{kind:'PARENT_INPUT',surface:'PARENT_INTAKE',capture_linked:source.length+answers.length>0}
       });
