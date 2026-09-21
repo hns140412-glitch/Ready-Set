@@ -7,7 +7,7 @@ from __future__ import annotations
 import argparse, fnmatch, json, subprocess
 from pathlib import Path
 
-CORE=["index.html","styles.css","ready-planner-v01.js","app.js","ready-runtime-v07.js","ready-release-v01.js","ready-pwa-update-v01.js","vendor/taky/release-contract.js","vendor/taky/pwa-update-state.js","config.js","sw.js","manifest.webmanifest"]
+CORE=["index.html","styles.css","ready-planner-v01.js","app.js","ready-runtime-v07.js","ready-release-v01.js","ready-pwa-update-v01.js","vendor/taky/release-contract.js","vendor/taky/pwa-update-state.js","config.js","sw.js","manifest.webmanifest","src/views/settings-controller-runtime.js"]
 
 def allowed(path, rules):
     return any(path==r or path.startswith(r.rstrip("/")+"/") or fnmatch.fnmatch(path,r) for r in rules)
@@ -36,9 +36,13 @@ def validate(task, changed_files):
             "function completeSession(",
             "function renderPlannerToday(",
             "function startRecording(",
-            "function speakGuide(",
             "globalThis.ReadySetPwaSafePoint=readyPwaSafePoint",
             "globalThis.ReadySetReleaseDescriptor",
+        ],
+        "src/views/settings-controller-runtime.js":[
+            "ReadyRebuildSettingsController",
+            "function speakGuide(",
+            "function setSound(",
         ],
         "ready-pwa-update-v01.js":[
             "navigator.serviceWorker.register('./sw.js')",
