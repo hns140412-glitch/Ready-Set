@@ -7,6 +7,15 @@
     SUPERSEDED:'대체됨',FIXED:'고정'
   });
   function stateLabel(value){return STATE_LABELS[value]||clean(value)}
+  function allocationReason(todo={},snapshot={}){
+    if(todo.source==='PLANNER_V2_CARRY_OVER'||todo.provenance?.carry_over_id)return '남은 탐험 다시 배정';
+    const template=(snapshot.homework_templates||[]).find(x=>x.template_id===todo.template_id);
+    const parts=[];
+    if(todo.free_window_evidence?.known)parts.push('확인된 학습 가능 시간');
+    if(template?.deadline_date)parts.push('마감 '+template.deadline_date);
+    if(Number.isFinite(template?.planner_estimated_minutes))parts.push('실제 수행시간 반영');
+    return parts.join(' · ')||(/^PLANNER/.test(todo.source||'')?'Planner 배정':'직접 추가');
+  }
   function itemsForDate(date,snapshot={}){
     const todos=(snapshot.dated_todos||[]).filter(x=>x.date===date).map(x=>({
       kind:'TODO',
@@ -15,7 +24,8 @@
       state:x.state||'PLANNED',
       minutes:Number.isFinite(x.estimated_minutes)?x.estimated_minutes:null,
       order:Number.isFinite(x.order)?x.order:999,
-      meta:/^PLANNER/.test(x.source||'')?'플래너':'직접 추가'
+      meta:/^PLANNER/.test(x.source||'')?'플래너':'직접 추가',
+      reason:allocationReason(x,snapshot)
     }));
     const commitments=(snapshot.schedule_commitments||[])
       .filter(x=>String(x.start_at||'').slice(0,10)===date)
@@ -39,6 +49,7 @@
     version:'READY_REBUILD_PLANNER_VIEW_V01',
     STATE_LABELS,
     stateLabel,
+    allocationReason,
     itemsForDate,
     dayModel
   });

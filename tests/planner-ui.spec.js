@@ -29,3 +29,21 @@ test('planner week/day UI renders real planner entities and switches views', asy
   await expect(page.locator('[data-planner-tab="day"]')).toHaveClass(/on/);
   await expect(page.locator('#plannerDayCount')).not.toHaveText('0개');
 });
+
+test('planner explains assignment evidence without inventing hidden rationale', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'load' });
+  await page.evaluate(()=>{
+    const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');
+    const today=y+'-'+m+'-'+dd;
+    const p=window.ReadySetPlanner;
+    p.upsertHomeworkTemplate({template_id:'reason_template',title:'설명 가능한 배정',subject:'수학',deadline_date:today,planner_estimated_minutes:25,confirmation_state:'CONFIRMED'});
+    p.upsertDatedTodo({todo_id:'reason_todo',date:today,label:'설명 가능한 배정',template_id:'reason_template',source:'PLANNER_V2_ALLOCATION',state:'PLANNED'});
+    const raw=JSON.parse(localStorage.getItem('readyset_planner_v1'));
+    const todo=raw.dated_todos.find(x=>x.todo_id==='reason_todo');
+    todo.free_window_evidence={known:true,total_free_minutes:120,largest_contiguous_minutes:120};
+    localStorage.setItem('readyset_planner_v1',JSON.stringify(raw));
+  });
+  await page.locator('[data-nav="planner"]').first().click();
+  await expect(page.locator('#plannerWeekDetail')).toContainText('확인된 학습 가능 시간');
+  await expect(page.locator('#plannerWeekDetail')).toContainText('실제 수행시간 반영');
+});

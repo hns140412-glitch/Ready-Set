@@ -585,3 +585,11 @@ assert('planner-adaptive-human-approval',
   plannerAdminControllerSource.includes("decision,'CONFIRM'") ||
   plannerAdminControllerSource.includes("'CONFIRM'")
 );
+
+const plannerViewReasonSource=loadSource('src/planner/planner-view-runtime.js');
+assert('planner-assignment-reason-evidence',
+  plannerViewReasonSource.includes('allocationReason') &&
+  plannerViewReasonSource.includes('free_window_evidence') &&
+  plannerViewReasonSource.includes('planner_estimated_minutes') &&
+  plannerViewReasonSource.includes('carry_over_id')
+);
