@@ -11,6 +11,7 @@ on:
       - 'ready-planner-v01.js'
       - 'ready-runtime-v07.js'
       - 'app.js'
+      - 'src/views/settings-controller-runtime.js'
       - 'index.html'
       - 'sw.js'
   push:
@@ -23,6 +24,7 @@ on:
       - 'ready-planner-v01.js'
       - 'ready-runtime-v07.js'
       - 'app.js'
+      - 'src/views/settings-controller-runtime.js'
       - 'index.html'
       - 'sw.js'
 
@@ -43,6 +45,7 @@ jobs:
           python -m py_compile .github/scripts/taky_ready_validation.py
           node --check ready-planner-v01.js
           node --check app.js
+          node --check src/views/settings-controller-runtime.js
           node --check ready-runtime-v07.js
       - name: Verify Planner entity/runtime contract
         run: node .github/scripts/ready_planner_contract_test.js
@@ -81,7 +84,8 @@ jobs:
           grep -q "function nav(" app.js
           grep -q "function completeSession(" app.js
           grep -q "function startRecording(" app.js
-          grep -q "function speakGuide(" app.js
+          grep -q "ReadyRebuildSettingsController" src/views/settings-controller-runtime.js
+          grep -q "function speakGuide(" src/views/settings-controller-runtime.js
           grep -q "window.ReadySetRev07" ready-runtime-v07.js
           test "$(wc -c < app.js)" -ge 20000
       - name: Verify validation rejects out-of-scope materialization
