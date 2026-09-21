@@ -359,7 +359,8 @@ const recordingView=rebuildRecordingView.create({
   query:$,
   formatTime:fmt,
   applyAvatar,
-  applyGuide
+  applyGuide,
+  loadRecording:id=>rebuildRecordingService.loadAudio(id)
 });
 const recordingRuntime=rebuildRecordingOrchestrator.create({
   recordingService:rebuildRecordingService

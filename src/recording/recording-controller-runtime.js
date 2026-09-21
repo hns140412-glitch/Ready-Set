@@ -120,11 +120,19 @@
       if(!currentAudio)return {ok:false,reason:'NO_AUDIO'};
       const type=currentAudio.type||'audio/webm';
       const filename=service.filenameFor({profileName:state.profile.name||'Judy',date:nowDate(),type});
-      await service.storeAudio(currentAudio,filename,type);
+      const stored=await service.storeAudio(currentAudio,filename,type);
       if(state.activeSession){
         state.activeSession.recordingDone=true;
         state.activeSession.guestType=guestType;
         state.activeSession.recordingMime=type;
+        state.activeSession.recordingRef={
+          audio_id:stored?.id||null,
+          name:stored?.name||filename,
+          type:stored?.type||type,
+          created_at:stored?.createdAt||nowDate().getTime(),
+          size:Number(stored?.size)||Number(currentAudio?.size)||0,
+          duration_ms:Number(state.recordingMeta?.durationMs)||null
+        };
       }
       save();
       toast(`저장 완료 · ${filename}`);

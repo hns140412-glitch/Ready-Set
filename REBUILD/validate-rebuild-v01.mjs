@@ -718,3 +718,13 @@ assert('sync-conflict-resolution-ui',
   authSyncConflictView.includes('data-sync-conflict-resolution="KEEP_LOCAL"') &&
   authSyncConflictView.includes('data-sync-conflict-resolution="ACCEPT_REMOTE"')
 );
+
+const recordingServiceArtifactSource=loadSource('src/recording/recording-service-runtime.js');
+const recordingControllerArtifactSource=loadSource('src/recording/recording-controller-runtime.js');
+const resultHistoryArtifactSource=loadSource('src/views/result-history-view-runtime.js');
+assert('recording-artifact-result-history-link',
+  recordingServiceArtifactSource.includes('loadAudio') &&
+  recordingControllerArtifactSource.includes('state.activeSession.recordingRef') &&
+  resultHistoryArtifactSource.includes('record.recordingRef') &&
+  indexSource.includes('resultRecordingAudio')
+);

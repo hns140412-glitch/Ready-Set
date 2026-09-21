@@ -33,6 +33,24 @@
     const applyAvatar=options.applyAvatar||(()=>{});
     const applyGuide=options.applyGuide||(()=>{});
     const sceneFor=options.resultSceneFor||resultSceneFor;
+    const loadRecording=options.loadRecording||(async()=>null);
+    let resultAudioUrl=null;
+    let historyAudioUrls=[];
+
+    function revokeUrl(url){if(url){try{URL.revokeObjectURL(url)}catch{}}}
+    function clearResultAudio(){revokeUrl(resultAudioUrl);resultAudioUrl=null;}
+    function clearHistoryAudio(){for(const url of historyAudioUrls)revokeUrl(url);historyAudioUrls=[];}
+
+    async function hydrateAudio(audio,recordingRef,bucket='history'){
+      if(!audio||!recordingRef?.audio_id)return false;
+      const row=await loadRecording(recordingRef.audio_id).catch(()=>null);
+      if(!row?.blob)return false;
+      const url=URL.createObjectURL(row.blob);
+      audio.src=url;
+      if(bucket==='result'){clearResultAudio();resultAudioUrl=url}
+      else historyAudioUrls.push(url);
+      return true;
+    }
 
     function renderResult(record){
       if(!record)return {ok:false,reason:'NO_RESULT'};
@@ -51,11 +69,23 @@
       const focus=q('#resultFocus');if(focus)focus.textContent=fmt(record.focusMs);
       const dl=q('#deltaLabel');if(dl)dl.textContent=scene.label;
       const delta=q('#resultDelta');if(delta)delta.textContent=fmt(Math.abs(record.deltaMs||0));
+      const recording=q('#resultRecordingCard'),recordingName=q('#resultRecordingName'),recordingAudio=q('#resultRecordingAudio');
+      clearResultAudio();
+      if(recording){
+        const ref=record.recordingRef||null;
+        recording.hidden=!ref?.audio_id;
+        if(recordingName)recordingName.textContent=ref?.name||'저장된 녹음';
+        if(recordingAudio){
+          recordingAudio.removeAttribute('src');
+          if(ref?.audio_id)hydrateAudio(recordingAudio,ref,'result');
+        }
+      }
       return {ok:true};
     }
 
     function renderHistory(records=[]){
       const el=q('#historyList');if(!el)return;
+      clearHistoryAudio();
       el.innerHTML='';
       if(!records.length){
         el.innerHTML='<div class="historyItem"><b>아직 기록이 없어요.</b><p>첫 탐험을 마치면 여기에 쌓입니다.</p></div>';
@@ -64,8 +94,11 @@
       for(const record of records){
         const x=document.createElement('article');x.className='historyItem';
         const profile=outcomeProfile(record);
-        x.innerHTML=`<header><b>${new Date(record.endAt).toLocaleDateString('ko-KR')}</b><small>${escapeHtml(profile.historyLabel)} · ${fmt(record.focusMs)} / ${fmt(record.targetMs)}</small></header><p>${escapeHtml([...(record.selected||[]),...(record.tasks||[])].join(' · '))}</p>`;
+        const ref=record.recordingRef||null;
+        x.innerHTML=`<header><b>${new Date(record.endAt).toLocaleDateString('ko-KR')}</b><small>${escapeHtml(profile.historyLabel)} · ${fmt(record.focusMs)} / ${fmt(record.targetMs)}</small></header><p>${escapeHtml([...(record.selected||[]),...(record.tasks||[])].join(' · '))}</p>${ref?.audio_id?`<div class="historyRecording"><small>VOICE · ${escapeHtml(ref.name||'저장된 녹음')}</small><audio controls data-history-recording-audio="${escapeHtml(ref.audio_id)}"></audio></div>`:''}`;
         el.appendChild(x);
+        const audio=x.querySelector('[data-history-recording-audio]');
+        if(audio&&ref?.audio_id)hydrateAudio(audio,ref,'history');
       }
     }
 

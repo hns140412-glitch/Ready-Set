@@ -40,10 +40,33 @@
       };
       req.onerror=()=>reject(req.error);
       req.onsuccess=()=>{
-        const tx=req.result.transaction('audio','readwrite');
-        tx.objectStore('audio').put({id:`a_${now()}`,name,type,blob,createdAt:now()});
-        tx.oncomplete=resolve;
-        tx.onerror=()=>reject(tx.error);
+        const db=req.result;
+        const createdAt=now();
+        const row={id:`a_${createdAt}_${Math.random().toString(36).slice(2,8)}`,name,type,blob,createdAt};
+        const tx=db.transaction('audio','readwrite');
+        tx.objectStore('audio').put(row);
+        tx.oncomplete=()=>{db.close();resolve({id:row.id,name:row.name,type:row.type,createdAt:row.createdAt,size:Number(blob?.size)||0});};
+        tx.onerror=()=>{db.close();reject(tx.error)};
+      };
+    });
+  }
+
+  function loadAudio(id,{indexedDBImpl=root.indexedDB}={}){
+    const key=String(id||'').trim();
+    if(!key)return Promise.resolve(null);
+    return new Promise((resolve,reject)=>{
+      const req=indexedDBImpl.open('readyset_audio',1);
+      req.onupgradeneeded=()=>{
+        if(!req.result.objectStoreNames.contains('audio'))req.result.createObjectStore('audio',{keyPath:'id'});
+      };
+      req.onerror=()=>reject(req.error);
+      req.onsuccess=()=>{
+        const db=req.result;
+        const tx=db.transaction('audio','readonly');
+        const get=tx.objectStore('audio').get(key);
+        get.onsuccess=()=>resolve(get.result||null);
+        get.onerror=()=>reject(get.error);
+        tx.oncomplete=()=>db.close();
       };
     });
   }
@@ -56,6 +79,7 @@
     safeBaseName,
     filenameFor,
     formatNote,
-    storeAudio
+    storeAudio,
+    loadAudio
   });
 })(typeof globalThis!=='undefined'?globalThis:this);
