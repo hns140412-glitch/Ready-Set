@@ -67,3 +67,24 @@ test('planner UI honors weekly schedule skip and replacement exceptions', async 
   expect(piano.time).toBe('18:00');
   expect(piano.meta).toContain('이번 주 변경');
 });
+
+
+test('planner shows evidence-backed morning daypart without inventing a clock time', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', {waitUntil:'load'});
+  await page.evaluate(()=>{
+    const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');
+    const today=y+'-'+m+'-'+dd;
+    const p=window.ReadySetPlanner;
+    p.upsertDatedTodo({todo_id:'morning_vocab_ui',date:today,label:'영어 단어 복습',source:'PLANNER_V2_ALLOCATION',state:'PLANNED'});
+    const raw=JSON.parse(localStorage.getItem('readyset_planner_v1'));
+    const todo=raw.dated_todos.find(x=>x.todo_id==='morning_vocab_ui');
+    todo.preferred_daypart='MORNING';
+    todo.operating_rule='ENGLISH_ACADEMY_MORNING_VOCAB_REVIEW';
+    localStorage.setItem('readyset_planner_v1',JSON.stringify(raw));
+  });
+  await page.locator('[data-nav="planner"]').first().click();
+  await expect(page.locator('#plannerWeekDetail')).toContainText('아침');
+  await expect(page.locator('#plannerWeekDetail')).toContainText('영어학원 날 아침 단어 복습');
+  await page.locator('[data-planner-tab="day"]').click();
+  await expect(page.locator('#plannerDayTimeline')).toContainText('아침 · MISSION');
+});

@@ -26,6 +26,7 @@
       minutes:Number.isFinite(x.estimated_minutes)?x.estimated_minutes:null,
       order:Number.isFinite(x.order)?x.order:999,
       meta:/^PLANNER/.test(x.source||'')?'플래너':'직접 추가',
+      daypart:x.preferred_daypart||null,
       reason:allocationReason(x,snapshot)
     }));
     const dow=new Date(date+'T12:00:00').getDay();

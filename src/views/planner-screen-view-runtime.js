@@ -9,6 +9,7 @@
     const weekStart=options.weekStart;
     const itemsForDate=options.itemsForDate;
     const stateLabel=options.stateLabel;
+    const daypartLabel=value=>value==='MORNING'?'아침':value==='AFTER_SCHOOL'?'방과 후':value==='EVENING'?'저녁':'';
 
     function render({selectedDate,tab,snapshot,isParent=false}={}){
       const chosen=selectedDate||localDateKey();
@@ -41,12 +42,12 @@
       const selectedItems=itemsForDate(chosen,snapshot);
       detail.innerHTML=selectedItems.length?selectedItems.map(x=>`
         <article class="plannerWeekItem ${x.kind==='SCHEDULE'?'fixed':''}">
-          <span class="plannerDot"></span><div><b>${escapeHtml(x.label)}</b><small>${x.time?x.time+' · ':''}${x.meta}${x.minutes?' · '+x.minutes+'분':''}${x.reason&&x.kind==='TODO'?' · '+escapeHtml(x.reason):''}</small></div><em>${stateLabel(x.state)}</em>
+          <span class="plannerDot"></span><div><b>${escapeHtml(x.label)}</b><small>${x.daypart?daypartLabel(x.daypart)+' · ':''}${x.time?x.time+' · ':''}${x.meta}${x.minutes?' · '+x.minutes+'분':''}${x.reason&&x.kind==='TODO'?' · '+escapeHtml(x.reason):''}</small></div><em>${stateLabel(x.state)}</em>
         </article>`).join(''):'<div class="plannerEmpty"><b>비어 있는 날이에요.</b><small>필요한 탐험만 가볍게 추가해요.</small></div>';
 
       const timeline=q('#plannerDayTimeline');
       if(timeline)timeline.innerHTML=selectedItems.length?selectedItems.map((x,i)=>`
-        <article class="plannerRouteItem"><i>${String(i+1).padStart(2,'0')}</i><div><small>${x.kind==='SCHEDULE'?'FIXED ROUTE':'MISSION'}</small><b>${escapeHtml(x.label)}</b><span>${x.time?x.time+' · ':''}${x.minutes?x.minutes+'분 · ':''}${stateLabel(x.state)}${x.reason&&x.kind==='TODO'?' · '+escapeHtml(x.reason):''}</span></div></article>`).join(''):'<div class="plannerEmpty tall"><b>오늘 예정된 탐험이 없어요.</b><small>Mission에서 오늘 할 일을 골라 시작할 수 있어요.</small></div>';
+        <article class="plannerRouteItem"><i>${String(i+1).padStart(2,'0')}</i><div><small>${x.kind==='SCHEDULE'?'FIXED ROUTE':(x.daypart?daypartLabel(x.daypart)+' · MISSION':'MISSION')}</small><b>${escapeHtml(x.label)}</b><span>${x.time?x.time+' · ':''}${x.minutes?x.minutes+'분 · ':''}${stateLabel(x.state)}${x.reason&&x.kind==='TODO'?' · '+escapeHtml(x.reason):''}</span></div></article>`).join(''):'<div class="plannerEmpty tall"><b>오늘 예정된 탐험이 없어요.</b><small>Mission에서 오늘 할 일을 골라 시작할 수 있어요.</small></div>';
 
       const dd=new Date(chosen+'T12:00:00');
       const title=q('#plannerDayTitle');if(title)title.textContent=`${dd.getMonth()+1}월 ${dd.getDate()}일 탐험`;

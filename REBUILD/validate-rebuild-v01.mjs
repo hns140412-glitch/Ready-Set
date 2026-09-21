@@ -657,3 +657,11 @@ assert('planner-view-uses-expanded-schedule-contract',
   plannerViewScheduleSource.includes('options.commitments') &&
   plannerViewScheduleSource.includes('schedule_exception')
 );
+
+const plannerDaypartViewSource=loadSource('src/planner/planner-view-runtime.js');
+const plannerDaypartScreenSource=loadSource('src/views/planner-screen-view-runtime.js');
+assert('planner-daypart-evidence-ui',
+  plannerDaypartViewSource.includes('preferred_daypart') &&
+  plannerDaypartScreenSource.includes("value==='MORNING'?'아침'") &&
+  plannerDaypartScreenSource.includes('daypartLabel')
+);
