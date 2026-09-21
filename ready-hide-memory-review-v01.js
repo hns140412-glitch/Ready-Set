@@ -80,7 +80,7 @@
       sheetStatus:!isV2?(clean(payload.sheetStatus)||null):null,
       taskState:clean(payload.taskState)||null,
       learningPhase:clean(payload.learningPhase)||null,
-      trailMastery:Number.isFinite(Number(payload.trailMastery))?Number(payload.trailMastery):null,
+      trailMastery:payload.trailMastery===null||payload.trailMastery===undefined||payload.trailMastery===''?null:(Number.isFinite(Number(payload.trailMastery))?Number(payload.trailMastery):null),
       memorySummary:JSON.parse(JSON.stringify(memory))
     });
   }
