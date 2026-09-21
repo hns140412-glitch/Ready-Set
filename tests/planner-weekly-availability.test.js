@@ -43,7 +43,7 @@ planner.upsertScheduleCommitment({
 });
 
 const domain={
-  assignmentFacts:{a1:{assignment_id:'a1',confirmation_state:'FACT_CONFIRMED',deadline_state:'VERIFIED',deadline_boundary:'2026-09-28',analysis_state:'INTERPRETED',current_analysis_id:'an1',fact_revision:1}},
+  assignmentFacts:{a1:{assignment_id:'a1',confirmation_state:'FACT_CONFIRMED',deadline_state:'VERIFIED',deadline_boundary:'2026-09-29',analysis_state:'INTERPRETED',current_analysis_id:'an1',fact_revision:1}},
   analyses:{an1:{analysis_id:'an1',learning_unit_ids:['u1']}},
   learningUnits:{u1:{learning_unit_id:'u1',analysis_id:'an1',assignment_id:'a1',subject:'수학',source_range:'개념',concept_skill_target:'개념',activity_types:['CONCEPT'],activity_sequence:['UNDERSTAND'],cognitive_load_profile:['REASONING'],activity_load:{score:4,difficulty:4,recovery_need:'MEDIUM'},review_policy:'RESULT_DEPENDENT',parent_help_dependency:'UNRESOLVED',state:'INTERPRETED'}}
 };
