@@ -12,7 +12,10 @@ test('family capture server keeps Ready and Hide authorization/domain boundaries
   expect(src).toContain('function readyAssignmentSchema()');
   expect(src).toContain('function hideVocabularySchema()');
   expect(src).toContain("analysis_domain:{type:'string',enum:[HIDE_DOMAIN]}");
-  expect(src).toContain("required:['eng','kor','confidence','evidence_item_id','warnings']");
+  expect(src).toContain("required:['eng','kor','confidence','evidence_item_id','source_column','source_row_index','source_column_index','warnings']");
+  expect(src).toContain("source_column:{type:'string',enum:['LEFT','RIGHT','CENTER','UNKNOWN']}");
+  expect(src).toContain("source_row_index:{type:'integer',minimum:0}");
+  expect(src).toContain("source_column_index:{type:'integer',minimum:0}");
 
   expect(src).toContain("const analysisDomain=String(form.get('analysis_domain')||READY_DOMAIN)");
   expect(src).toContain("if(!SUPPORTED_DOMAINS.has(analysisDomain))");
