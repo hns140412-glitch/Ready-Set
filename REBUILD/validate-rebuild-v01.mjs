@@ -128,3 +128,10 @@ assert('capture-service-print-parser',captureServiceSource.includes("day.trim().
 assert('capture-service-stable-signature',captureServiceSource.includes("Object.keys(v).sort()"));
 assert('capture-service-answer-split',captureServiceSource.includes("x.kind==='ANSWER_REFERENCE'"));
 assert('capture-service-review-provenance',captureServiceSource.includes("reviewProvenanceForGroup"));
+
+const assignmentServiceSource=loadSource('src/assignment/assignment-service-runtime.js');
+assert('assignment-service-owner',assignmentServiceSource.includes('ReadyRebuildAssignmentService'));
+assert('assignment-service-duplicate-guards',assignmentServiceSource.includes('DUPLICATE_TALENT_FACT')&&assignmentServiceSource.includes('DUPLICATE_ENGLISH_FACT'));
+assert('assignment-service-no-silent-loss',assignmentServiceSource.includes('CAPTURE_REVIEW_UNRESOLVED'));
+assert('assignment-service-parent-confirm',assignmentServiceSource.includes("confirmFact(assignmentId,{actor:'PARENT'})")&&assignmentServiceSource.includes("confirmFact(fact.assignment_id,{actor:'PARENT'})"));
+assert('assignment-service-planner-routing',assignmentServiceSource.includes('processAssignment?.'));
