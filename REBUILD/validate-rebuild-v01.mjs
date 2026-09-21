@@ -113,3 +113,11 @@ assert('planner-projection-no-self-recursion',
 assert('planner-projection-live-owner',
   appSource.includes("window.ReadySetPlanner?.todayProjection?.()")
 );
+
+const persistenceSource=loadSource('src/persistence/app-state-runtime.js');
+assert('app-persistence-owner-exists',persistenceSource.includes('ReadyRebuildAppPersistence'));
+assert('app-persistence-migrate',persistenceSource.includes("x.schemaVersion<5")&&persistenceSource.includes("x.schemaVersion=5"));
+assert('app-persistence-localfirst',persistenceSource.includes("capture?.('app_state',payload)"));
+assert('app-persistence-safe-event',persistenceSource.includes("'readyset-safe-point'"));
+assert('app-persistence-no-legacy-load-in-app',!appSource.includes("function load(){"));
+assert('app-persistence-no-legacy-migrate-in-app',!appSource.includes("function migrate(x){"));
