@@ -1,5 +1,5 @@
 {
-  "status_version": "READY_C2S_REWRITE_01.5",
+  "status_version": "READY_C2S_REWRITE_01.6",
   "product": "Ready & Set",
   "evidence_policy": "Validation belongs to an exact code SHA; product/version labels alone never imply validation.",
   "current_main_sha_at_r0": "c82109651609440d2e9e08486f2ef5a042a68e46",
@@ -17,7 +17,7 @@
   },
   "rewrite_gates": {
     "R0_CANONICAL_SKELETON": "COMPLETE",
-    "R1_SINGLE_SESSION_ENGINE": "PARTIAL_IMPLEMENTED_TARGETED_VERIFIED",
+    "R1_SINGLE_SESSION_ENGINE": "IMPLEMENTED_TARGETED_VERIFIED__SINGLE_PLANNER_ACTIVE_TASK_CONSOLIDATED",
     "R2_PRODUCT_LANGUAGE_AUTHORITY": "PARTIAL_IMPLEMENTED_CANONICAL_IDENTITY_AND_README_ALIGNED",
     "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "PARTIAL_IMPLEMENTED_SHARED_RELEASE_RUNTIME_VERIFIED",
     "R4_CHILD_FACT_CONFIRMATION_PATH": "IMPLEMENTED_TARGETED_VERIFIED",
@@ -27,44 +27,45 @@
   },
   "release_state": "REWRITE_IN_PROGRESS_NOT_RELEASE_VERIFIED",
   "latest_targeted_evidence": {
-    "sha": "81279b3f747c6e7c7f7407dda029b59f3f6542c4",
-    "pr": 94,
-    "scope": "Weekly recurring Parent-confirmed availability templates + one-off compatibility + Planner free-window integration",
+    "sha": "5bdbaa3169e3e05ee2d4b5aba2938f4808fa42d7",
+    "pr": 97,
+    "scope": "Single Ready session runtime ownership consolidation: one Planner IN_PROGRESS task, one active task pointer, at most one active lap",
     "result": "TARGETED_BEHAVIOR_VERIFIED",
     "gates": {
-      "weekly_availability": {
-        "run_id": 35570340833,
-        "status": "PASS"
-      },
-      "daily_availability": {
-        "run_id": 35570340750,
-        "status": "PASS"
-      },
-      "planner_free_window": {
-        "run_id": 35570340803,
-        "status": "PASS"
-      },
-      "child_fact_confirmation": {
-        "run_id": 35570340840,
+      "single_active_task": {
+        "run_id": 35570813596,
         "status": "PASS"
       },
       "integration_ci": {
-        "run_id": 35570340871,
+        "run_id": 35570813571,
         "status": "PASS"
       },
       "runtime_e2e": {
-        "run_id": 35570340829,
+        "run_id": 35570813631,
         "status": "PASS"
       },
       "codex_selftest": {
-        "run_id": 35570340785,
+        "run_id": 35570813606,
+        "status": "PASS"
+      },
+      "child_fact_confirmation": {
+        "run_id": 35570813626,
+        "status": "PASS"
+      },
+      "daily_availability": {
+        "run_id": 35570813621,
+        "status": "PASS"
+      },
+      "weekly_availability": {
+        "run_id": 35570813598,
         "status": "PASS"
       }
     },
     "claim_boundary": "PR_HEAD_VERIFIED_AND_MERGED; exact-main/device/production not asserted",
-    "merged_main_sha": "b3f46b5b6ee36349e79bd240d4f6fa6580599b90"
+    "merged_main_sha": "1150afb2e1b443ece37b3722b614c379a8602655"
   },
   "open_product_gaps": [
+    "R1 single session runtime ownership is implemented/targeted verified and merged; exact device/production behavior remains separate.",
     "R4 child FACT confirmation path is implemented/targeted verified on merged main; exact device/production behavior remains separate.",
     "R5 confirmed daily + weekly recurring availability is implemented/targeted verified and merged; exact device/production behavior remains separate.",
     "R6 legacy authority is isolated/targeted verified and merged; historical files remain preserved as provenance/visual references only.",
@@ -72,8 +73,8 @@
   ],
   "head_policy": "STATUS_FILE_CANNOT_SELF_ASSERT_EVENTUAL_MERGE_SHA; repository head is volatile and must be live-refreshed when material.",
   "runtime_code_basis": {
-    "sha": "b3f46b5b6ee36349e79bd240d4f6fa6580599b90",
-    "relation": "CURRENT_RUNTIME_CODE_BASIS_AFTER_R5_WEEKLY_MERGE",
-    "note": "Includes R4 Parent-only child FACT confirmation, R5 one-off availability, and weekly recurring availability feeding Planner free-window evidence."
+    "sha": "1150afb2e1b443ece37b3722b614c379a8602655",
+    "relation": "CURRENT_RUNTIME_CODE_BASIS_AFTER_R1_CONSOLIDATION",
+    "note": "Includes R1 single active Planner-task/session ownership consolidation plus merged R4/R5/R6 work."
   }
 }
