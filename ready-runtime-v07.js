@@ -77,6 +77,11 @@
         activity_types:Array.isArray(link.activity_types)?[...link.activity_types]:[],
         activity_sequence:Array.isArray(link.activity_sequence)?[...link.activity_sequence]:[],
         method_sequence:Array.isArray(link.method_sequence)?[...link.method_sequence]:[],
+        concept_skill_target:link.concept_skill_target||null,
+        cognitive_load_profile:Array.isArray(link.cognitive_load_profile)?[...link.cognitive_load_profile]:[],
+        divisible_boundary:link.divisible_boundary||null,
+        confidence:Number.isFinite(link.confidence)?link.confidence:null,
+        unresolved_flags:Array.isArray(link.unresolved_flags)?[...link.unresolved_flags]:[],
         route_plan:routeTask(link),
         laps: []
       }));
@@ -254,6 +259,11 @@
     url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
     url.searchParams.set('snap_target', SNAP_URL);
     url.searchParams.set('from_app', 'ready-set');
+    url.searchParams.set('handoff_scope', app==='hide-seek'?'MEMORY_RETRIEVAL':'LEARNER_PRODUCTION');
+    url.searchParams.set('route_authority','READY_LEARNING_ENGINE_ROUTING');
+    if(app==='snap-pop'&&window.ReadySpecialistHandoffContract?.encodeLearningContext){
+      url.searchParams.set('learning_context',window.ReadySpecialistHandoffContract.encodeLearningContext(task));
+    }
     location.assign(url.href);
   }
 
@@ -264,12 +274,17 @@
     return null;
   }
 
-  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null }) {
+  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null, payload = null }) {
     const c = ensureContract();
     if (!c || !session_id || session_id !== c.session_id) return false;
     if (event_id && c.applied_event_ids?.includes(event_id)) return false;
     const task = c.tasks.find(t => t.task_id === task_id);
     if (!task) return false;
+    const sourceApp=window.ReadySpecialistHandoffContract?.sourceApp?.(from_app)||null;
+    if(sourceApp&&!window.ReadySpecialistHandoffContract?.authorized?.(task,sourceApp)){
+      emit('SPECIALIST_RETURN_DENIED',{from_app:sourceApp,event_id:event_id||null,route_plan:task.route_plan||null});
+      return false;
+    }
 
     const normalized = normalizeInboundState(task_state);
     c.active_app = 'ready-set';
@@ -278,7 +293,7 @@
     if (normalized) setTaskState(task.task_id, normalized, from_app || 'SPECIALIST');
     if (['COMPLETED','BLOCKED'].includes(normalized)) endActiveLap('SPECIALIST_RESULT', normalized);
     if (event_id) c.applied_event_ids = [...(c.applied_event_ids || []), event_id].slice(-200);
-    emit('APP_RETURN', { from: from_app || 'specialist', task_state: normalized || task_state || null });
+    emit('APP_RETURN', { from: sourceApp || from_app || 'specialist', task_state: normalized || task_state || null, specialist_payload:payload||null });
     save();
     renderContractUI();
     return true;
@@ -286,15 +301,24 @@
 
   function consumeReturnQuery() {
     const p = new URLSearchParams(location.search);
-    const args = {
+    let eventArgs=null;
+    const rawEvent=p.get('learning_event');
+    if(rawEvent&&window.ReadySpecialistHandoffContract?.normalizeReturnEvent){
+      try{
+        eventArgs=window.ReadySpecialistHandoffContract.normalizeReturnEvent(JSON.parse(rawEvent));
+      }catch{}
+    }
+    const args = eventArgs || {
       session_id: p.get('session_id'),
       task_id: p.get('task_id'),
       lap_id: p.get('lap_id'),
       task_state: p.get('task_state'),
-      from_app: p.get('from_app')
+      from_app: p.get('from_app'),
+      event_id: p.get('event_id'),
+      payload:null
     };
-    if (!args.session_id || !args.task_id || !applyInboundResult(args)) return;
-    ['session_id','goal_id','task_id','lap_id','task_state','from_app'].forEach(k => p.delete(k));
+    if (!args?.session_id || !args?.task_id || !applyInboundResult(args)) return;
+    ['session_id','goal_id','task_id','lap_id','task_state','from_app','event_id','learning_event','memory_summary','specialist_report'].forEach(k => p.delete(k));
     const clean = `${location.pathname}${p.toString() ? `?${p}` : ''}${location.hash}`;
     history.replaceState(null, '', clean);
   }
@@ -303,19 +327,9 @@
     if (!TRUSTED_APP_ORIGINS.has(messageEvent.origin)) return;
     const e = messageEvent.data?.type === 'TAKY_LEARNING_EVENT' ? messageEvent.data.event : null;
     if (!e) return;
-    const taskState = e.type === 'TASK_COMPLETED' ? 'COMPLETED'
-      : e.type === 'TASK_BLOCKED' ? 'BLOCKED'
-      : e.type === 'HELP_NEEDED' ? 'BLOCKED'
-      : e.type === 'TASK_PARTIAL' ? 'PARTIAL'
-      : null;
-    applyInboundResult({
-      session_id: e.session_id,
-      task_id: e.task_id,
-      lap_id: e.lap_id,
-      task_state: taskState,
-      from_app: e.app,
-      event_id: e.event_id
-    });
+    const normalized=window.ReadySpecialistHandoffContract?.normalizeReturnEvent?.(e);
+    if(!normalized)return;
+    applyInboundResult(normalized);
   }
 
   function labelState(value) {
