@@ -191,7 +191,12 @@ assert('recording-view-loaded-before-app',
   indexSource.indexOf('src/views/recording-view-runtime.js')>0 &&
   indexSource.indexOf('src/views/recording-view-runtime.js')<indexSource.indexOf('app.js')
 );
-assert('recording-view-wired',appSource.includes('recordingView.renderContext')&&appSource.includes('recordingView.renderReview'));
+const recordingControllerSourceForView=loadSource('src/recording/recording-controller-runtime.js');
+assert('recording-view-wired',
+  appSource.includes('rebuildRecordingView.create') &&
+  recordingControllerSourceForView.includes('view.renderContext') &&
+  recordingControllerSourceForView.includes('view.renderReview')
+);
 assert('recording-inline-review-ui-removed',
   !appSource.includes("$('#duoText').textContent=") &&
   !appSource.includes("$('#formatNote').textContent=rebuildRecordingService.formatNote")
