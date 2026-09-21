@@ -53,11 +53,13 @@ assert.equal(directiveFromTodo.taskId,'task-review-1');
 assert.deepEqual(directiveFromTodo.lexicalIds,['word-a','word-b']);
 
 const normalizedResult=review.normalizeHideSpecialistResult({
-  activeSheetId:'sheet-1',
-  sheetStatus:'COMPLETED',
+  resultContract:'HIDE_SPECIALIST_RESULT_V2',
+  runtime:'V2',
+  activeMissionId:'mission-1',
+  missionStatus:'COMPLETED',
   taskState:'COMPLETED',
-  learningPhase:'final',
-  trailMastery:88,
+  learningPhase:'COMPLETE',
+  trailMastery:null,
   memorySummary:{
     authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
     reviewPolicyOwner:'READY_LEARNING_ENGINE',
@@ -67,7 +69,11 @@ const normalizedResult=review.normalizeHideSpecialistResult({
   }
 });
 assert.equal(normalizedResult.sourceApp,'hide-seek');
-assert.equal(normalizedResult.trailMastery,88);
+assert.equal(normalizedResult.resultContract,'HIDE_SPECIALIST_RESULT_V2');
+assert.equal(normalizedResult.activeMissionId,'mission-1');
+assert.equal(normalizedResult.missionStatus,'COMPLETED');
+assert.equal(normalizedResult.activeSheetId,null);
+assert.equal(normalizedResult.trailMastery,null);
 assert.equal(normalizedResult.memorySummary.authority,'SPECIALIST_MEMORY_ADVISORY_ONLY');
 
 assert.equal(review.normalizeHideSpecialistResult({
@@ -77,6 +83,10 @@ assert.equal(review.normalizeHideSpecialistResult({
 const fs=require('fs');
 const runtime=fs.readFileSync(require('path').join(__dirname,'..','ready-runtime-v07.js'),'utf8');
 assert(runtime.includes("url.searchParams.set('review_directive',JSON.stringify(task.review_directive))"));
+assert(runtime.includes("HIDE_V2_TARGET_REQUIRED"));
+assert(runtime.includes("configuredHideV2Url"));
+assert(runtime.includes("p.get('learning_event')"));
+assert(runtime.includes("payload?.resultContract==='HIDE_SPECIALIST_RESULT_V2'"));
 assert(runtime.includes("result_payload: e.payload||null"));
 assert(runtime.includes("task.specialist_result=specialistResult"));
 assert(runtime.includes("specialistResult:task.specialist_result||null"));
