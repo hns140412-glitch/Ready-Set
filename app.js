@@ -811,6 +811,8 @@ function clearScheduleForm(){
 function clearAvailabilityForm(){
   $('#availabilityId').value='';
   $('#availabilityDate').value=localDateKey();
+  $('#availabilityWeekly').checked=false;
+  $('#availabilityWeekday').value='1';
   $('#availabilityStart').value='';
   $('#availabilityEnd').value='';
 }
@@ -830,9 +832,9 @@ function renderPlannerAdmin(){
   const availabilityRoot=$('#availabilityAdminList');
   if(availabilityRoot){
     availabilityRoot.innerHTML=(snap.daily_availability_windows||[]).length
-      ? [...snap.daily_availability_windows].sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)).map(x=>`
+      ? [...snap.daily_availability_windows].sort((a,b)=>String((a.date||a.weekday)+a.start).localeCompare(String((b.date||b.weekday)+b.start))).map(x=>`
         <div class="adminListItem">
-          <button type="button" data-edit-availability="${x.availability_id}"><span><b>${escapeHtml(x.date)} 학습 가능</b><small>${escapeHtml(x.start)} → ${escapeHtml(x.end)} · Parent 확인</small></span><strong>수정</strong></button>
+          <button type="button" data-edit-availability="${x.availability_id}"><span><b>${x.recurrence==='WEEKLY'?'매주 '+['일','월','화','수','목','금','토'][Number(x.weekday)]+'요일':escapeHtml(x.date)} 학습 가능</b><small>${escapeHtml(x.start)} → ${escapeHtml(x.end)} · Parent 확인</small></span><strong>수정</strong></button>
           <button class="miniAction" type="button" data-delete-availability="${x.availability_id}">삭제</button>
         </div>`).join('')
       : '<div class="plannerEmpty"><b>확인된 학습 가능 시간이 없어요.</b><small>Planner는 시간을 추정하지 않고, 확인된 범위가 있을 때만 가용시간 근거로 사용해요.</small></div>';
@@ -871,7 +873,9 @@ function editSchedule(id){
 function editAvailability(id){
   const x=plannerSnapshot().daily_availability_windows.find(v=>v.availability_id===id); if(!x)return;
   $('#availabilityId').value=x.availability_id;
+  $('#availabilityWeekly').checked=x.recurrence==='WEEKLY';
   $('#availabilityDate').value=x.date||localDateKey();
+  $('#availabilityWeekday').value=String(x.weekday??1);
   $('#availabilityStart').value=x.start||'';
   $('#availabilityEnd').value=x.end||'';
 }
@@ -954,12 +958,16 @@ document.getElementById('saveScheduleBtn')?.addEventListener('click',()=>{
 });
 document.getElementById('saveAvailabilityBtn')?.addEventListener('click',()=>{
   if(!requireParentUi())return;
+  const weekly=$('#availabilityWeekly').checked;
   const date=$('#availabilityDate').value,start=$('#availabilityStart').value,end=$('#availabilityEnd').value;
-  if(!date||!start||!end){toast('날짜·시작·종료 시간을 확인해 주세요.');return;}
+  if((!weekly&&!date)||!start||!end){toast('날짜·시작·종료 시간을 확인해 주세요.');return;}
   if(end<=start){toast('종료 시간은 시작 시간보다 늦어야 해요.');return;}
   window.ReadySetPlanner.upsertDailyAvailabilityWindow({
     availability_id:$('#availabilityId').value||undefined,
-    date,start,end,confirmed:true,parent_editable:true,source:'PARENT_ADMIN_UI'
+    date,start,end,
+    recurrence:weekly?'WEEKLY':null,
+    weekday:weekly?Number($('#availabilityWeekday').value):null,
+    confirmed:true,parent_editable:true,source:'PARENT_ADMIN_UI'
   });
   toast('학습 가능 시간을 확인했어요. Planner가 배정 근거로 사용합니다.');
   renderPlannerAdmin(); renderPlanner();
