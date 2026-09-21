@@ -511,3 +511,25 @@ assert('recording-inline-handlers-removed',
   !appSource.includes("function chooseGuest()") &&
   !appSource.includes("$('#saveRecordingBtn').onclick")
 );
+
+const sessionCompletionControllerSource=loadSource('src/session/session-completion-controller-runtime.js');
+assert('session-completion-controller-owner',sessionCompletionControllerSource.includes('ReadyRebuildSessionCompletionController'));
+assert('session-completion-controller-loaded-before-app',
+  indexSource.indexOf('src/session/session-completion-controller-runtime.js')>0 &&
+  indexSource.indexOf('src/session/session-completion-controller-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('session-completion-controller-wired',
+  appSource.includes('rebuildSessionCompletionController.create') &&
+  appSource.includes('sessionCompletionRuntime.finishRecord') &&
+  appSource.includes('sessionCompletionRuntime.completeFromTaskOutcomes') &&
+  appSource.includes('sessionCompletionRuntime.complete(outcomeState)')
+);
+assert('session-completion-authority-stays-external',
+  sessionCompletionControllerSource.includes('sessionService.outcome') &&
+  sessionCompletionControllerSource.includes('planner:planner()')
+);
+assert('session-completion-state-mutation-removed-from-app',
+  !appSource.includes('state.records.unshift(rec)') &&
+  !appSource.includes('state.activeSession=null;state.lastResult=rec') &&
+  !appSource.includes('const outcome=rebuildSessionService.outcome')
+);

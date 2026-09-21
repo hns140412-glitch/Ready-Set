@@ -14,6 +14,7 @@ const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const rebuildSession=globalThis.ReadyRebuildSessionDomain||null;
 const rebuildSessionService=globalThis.ReadyRebuildSessionService||null;
 const rebuildSessionRecoveryController=globalThis.ReadyRebuildSessionRecoveryController||null;
+const rebuildSessionCompletionController=globalThis.ReadyRebuildSessionCompletionController||null;
 const rebuildPlannerProjection=globalThis.ReadyRebuildPlannerProjection||null;
 const rebuildPlannerView=globalThis.ReadyRebuildPlannerView||null;
 const rebuildNavigation=globalThis.ReadyRebuildNavigation||null;
@@ -49,7 +50,7 @@ const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildAppBootstrapController=globalThis.ReadyRebuildAppBootstrapController||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -389,47 +390,25 @@ function tickFocus(){
   if(!s.completed&&$('#focusView').classList.contains('active'))requestAnimationFrame(tickFocus);
 }
 
-function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOutcomes=[]}={}){
-  const s=state.activeSession;if(!s)return null;
-  pauseBgm();
-  if(s.pausedAt){s.issueMs+=Date.now()-s.pausedAt;s.pausedAt=null}
-  s.endAt=Date.now();s.completed=true;
-  const t=sessionTimes();
-  const endedTodoIds=new Set((plannerOutcomes||[]).filter(x=>x?.ok).map(x=>x.todo_id));
-  if(endedTodoIds.size)state.selectedTodoIds=state.selectedTodoIds.filter(id=>!endedTodoIds.has(id));
-  const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs,outcomeState,plannerOutcomes,taskOutcomes};
-  state.records.unshift(rec);state.records=state.records.slice(0,200);
-  state.activeSession=null;state.lastResult=rec;save();nav('result');
-  return rec;
+const sessionCompletionRuntime=rebuildSessionCompletionController.create({
+  getState:()=>state,
+  save,
+  pauseBgm,
+  sessionTimes,
+  sessionService:rebuildSessionService,
+  sessionDomain:rebuildSession,
+  planner:()=>window.ReadySetPlanner,
+  nav,
+  toast
+});
+function finishSessionRecord(options={}){
+  return sessionCompletionRuntime.finishRecord(options);
 }
 function completeSessionFromTaskOutcomes(taskOutcomes=[]){
-  const rows=Array.isArray(taskOutcomes)?taskOutcomes.filter(x=>x&&x.state):[];
-  if(!rows.length)return null;
-  const unique=[...new Set(rows.map(x=>x.state))];
-  const outcomeState=unique.length===1?unique[0]:'MIXED';
-  const plannerOutcomes=rows.map(x=>x.plannerOutcome).filter(Boolean);
-  return finishSessionRecord({outcomeState,plannerOutcomes,taskOutcomes:rows});
+  return sessionCompletionRuntime.completeFromTaskOutcomes(taskOutcomes);
 }
-
 function completeSession(outcomeState='COMPLETED'){
-  const s=state.activeSession;if(!s)return;
-  pauseBgm();
-  if(s.pausedAt){s.issueMs+=Date.now()-s.pausedAt;s.pausedAt=null}
-  s.endAt=Date.now();s.completed=true;
-  const t=sessionTimes();
-  const outcome=rebuildSessionService.outcome({
-    sessionDomain:rebuildSession,
-    planner:window.ReadySetPlanner,
-    session:s,
-    focusMs:t.focus,
-    outcomeState,
-    endAt:s.endAt
-  });
-  if(!outcome.ok){
-    toast('작전 결과를 Planner에 반영하지 못했어요.');
-    return null;
-  }
-  return finishSessionRecord({outcomeState,plannerOutcomes:outcome.plannerOutcomes,taskOutcomes:[]});
+  return sessionCompletionRuntime.complete(outcomeState);
 }
 
 const recordingView=rebuildRecordingView.create({
