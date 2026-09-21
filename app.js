@@ -32,13 +32,14 @@ const rebuildRecordingView=globalThis.ReadyRebuildRecordingView||null;
 const rebuildResultHistoryView=globalThis.ReadyRebuildResultHistoryView||null;
 const rebuildResultHistoryController=globalThis.ReadyRebuildResultHistoryController||null;
 const rebuildProfileSettingsView=globalThis.ReadyRebuildProfileSettingsView||null;
+const rebuildProfileController=globalThis.ReadyRebuildProfileController||null;
 const rebuildAuthSyncView=globalThis.ReadyRebuildAuthSyncView||null;
 const rebuildHomeView=globalThis.ReadyRebuildHomeView||null;
 const rebuildPlannerScreenView=globalThis.ReadyRebuildPlannerScreenView||null;
 const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -129,7 +130,7 @@ const appNavigation=rebuildNavigation.create({
     calendar:()=>resultHistoryRuntime.renderCalendar(),
     planner:()=>renderPlanner(),
     'planner-admin':()=>renderPlannerAdmin(),
-    profile:()=>renderProfile(),
+    profile:()=>profileRuntime.renderProfile(),
     settings:()=>renderSettings(),
     result:()=>resultHistoryRuntime.renderResult()
   }
@@ -1051,25 +1052,20 @@ const profileSettingsView=rebuildProfileSettingsView.create({
   renderAuthStatus,
   renderSyncStatus
 });
-function renderProfile(){
-  profileSettingsView.renderProfile(state);
-}
-function photoLoad(file){
-  if(!file)return;
-  const r=new FileReader();
-  r.onload=()=>{state.profile.photo=r.result;save();renderProfile()};
-  r.readAsDataURL(file);
-}
-$('#cameraInput').onchange=e=>photoLoad(e.target.files[0]);
-$('#galleryInput').onchange=e=>photoLoad(e.target.files[0]);
-$$('[data-style]').forEach(b=>b.onclick=()=>{
-  state.profile.style=b.dataset.style;save();renderProfile();
+const profileRuntime=rebuildProfileController.create({
+  view:profileSettingsView,
+  getState:()=>state,
+  save,
+  toast,
+  renderHome
 });
-$('#saveProfileBtn').onclick=()=>{
-  state.profile.name=$('#profileName').value.trim();
-  state.profile.shareAvatar=$('#shareAvatarOptIn').checked;
-  save();toast('프로필을 저장했어요.');renderHome();
-};
+$('#cameraInput').onchange=e=>profileRuntime.loadPhoto(e.target.files[0]);
+$('#galleryInput').onchange=e=>profileRuntime.loadPhoto(e.target.files[0]);
+$('[data-style]').forEach(b=>b.onclick=()=>profileRuntime.setStyle(b.dataset.style));
+$('#saveProfileBtn').onclick=()=>profileRuntime.saveProfile({
+  name:$('#profileName').value,
+  shareAvatar:$('#shareAvatarOptIn').checked
+});
 
 
 

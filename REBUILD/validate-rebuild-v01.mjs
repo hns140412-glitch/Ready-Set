@@ -261,3 +261,21 @@ assert('result-history-inline-handlers-removed',
   !appSource.includes('function renderHistory()') &&
   !appSource.includes('function renderCalendar()')
 );
+
+const profileControllerSource=loadSource('src/views/profile-controller-runtime.js');
+assert('profile-controller-owner',profileControllerSource.includes('ReadyRebuildProfileController'));
+assert('profile-controller-loaded-before-app',
+  indexSource.indexOf('src/views/profile-controller-runtime.js')>0 &&
+  indexSource.indexOf('src/views/profile-controller-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('profile-controller-wired',
+  appSource.includes('rebuildProfileController.create') &&
+  appSource.includes('profileRuntime.loadPhoto') &&
+  appSource.includes('profileRuntime.setStyle') &&
+  appSource.includes('profileRuntime.saveProfile')
+);
+assert('profile-inline-handlers-removed',
+  !appSource.includes('function renderProfile()') &&
+  !appSource.includes('function photoLoad(') &&
+  !appSource.includes('new FileReader()')
+);
