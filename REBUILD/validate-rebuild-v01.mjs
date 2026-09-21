@@ -76,6 +76,18 @@ assert('planner-wired-finishability',plannerSource.includes('rebuildPolicy?.canF
 assert('planner-wired-carry-policy',plannerSource.includes('rebuildPolicy?.carryPolicyForState'));
 assert('planner-wired-carry-escalation',plannerSource.includes('rebuildPolicy?.carryEscalation'));
 
+
+const projectionSource=loadSource('src/planner/planner-projection-runtime.js');
+const projectionContext={};vm.createContext(projectionContext);vm.runInContext(projectionSource,projectionContext);
+const projection=projectionContext.ReadyRebuildPlannerProjection;
+const projected=projection.todayItem({todo_id:'t1',label:'숙제',state:'PLANNED',source:'PLANNER_V2_ALLOCATION',estimated_minutes:null,activity_types:['RECALL']});
+assert('planner-projection-runtime-live',projected.todo_id==='t1'&&projected.planner_owned===true&&projected.activity_types[0]==='RECALL');
+const weekly=projection.availabilityWindow({availability_id:'a1',recurrence:'WEEKLY',weekday:2,start:'15:00',end:'17:00'},{id:'a1',now:'2026-09-21T00:00:00.000Z'});
+assert('planner-availability-runtime-live',weekly.date===null&&weekly.weekday===2&&weekly.recurrence==='WEEKLY');
+assert('planner-projection-loaded-before-planner',indexSource.indexOf('src/planner/planner-projection-runtime.js')>0&&indexSource.indexOf('src/planner/planner-projection-runtime.js')<indexSource.indexOf('ready-planner-v01.js'));
+assert('planner-wired-projection',plannerSource.includes('rebuildProjection?.todayItem'));
+assert('planner-wired-schedule',plannerSource.includes('rebuildProjection?.scheduleCommitment')&&plannerSource.includes('rebuildProjection?.availabilityWindow'));
+
 console.log('REBUILD_DOMAIN_PARITY_PASS');
 
 console.log('REBUILD_V01_FOUNDATION_PASS ready-set');
