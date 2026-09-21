@@ -743,3 +743,13 @@ assert('learner-age-does-not-infer-grade-or-schedule',
   learnerContextSource.includes("'SCHEDULE_DATE'") &&
   learnerContextSource.includes("'PLANNER_DATE'")
 );
+
+const memberScopeSource=loadSource('src/persistence/member-scope-runtime.js');
+assert('member-scope-storage-contract',
+  memberScopeSource.includes('READY_MEMBER_SCOPE_V01') &&
+  memberScopeSource.includes('::member::') &&
+  memberScopeSource.includes('syncScope') &&
+  indexSource.includes('src/persistence/member-scope-runtime.js') &&
+  loadSource('ready-planner-v01.js').includes('ReadyMemberScope?.storageKey') &&
+  loadSource('ready-assignment-domain-v2.js').includes('ReadyMemberScope?.storageKey')
+);

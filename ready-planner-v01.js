@@ -72,10 +72,11 @@
 
   function createPlanner(storage){
     const isOpenTodo=t=>t&&t.state!=='COMPLETED'&&t.state!=='SUPERSEDED';
+    function storageKey(){return globalThis.ReadyMemberScope?.storageKey?.(STORAGE_KEY)||STORAGE_KEY}
     function load(){
-      try{return normalize(JSON.parse(storage.getItem(STORAGE_KEY)||'null'))}catch{return blank()}
+      try{return normalize(JSON.parse(storage.getItem(storageKey())||'null'))}catch{return blank()}
     }
-    function save(s){const payload=JSON.stringify(normalize(s));storage.setItem(STORAGE_KEY,payload);globalThis.ReadySetLocalFirst?.capture?.('planner',payload).catch?.(()=>{})}
+    function save(s){const payload=JSON.stringify(normalize(s));storage.setItem(storageKey(),payload);globalThis.ReadySetLocalFirst?.capture?.('planner',payload).catch?.(()=>{})}
     function mutate(fn){const s=load();const out=fn(s);save(s);return out}
 
     function markReflowReview(state,reason){
