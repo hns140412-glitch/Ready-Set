@@ -1297,47 +1297,6 @@ async function drawAvatar(ctx,cx,cy,r){
   ctx.fillStyle='#fff8f1';ctx.font=`900 ${Math.floor(r*.75)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(initials(),cx,cy+3);
 }
 function loadImage(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src})}
-async function shareCard(kind='result'){
-  const r=kind==='result'?resultSource():null;
-  const c=document.createElement('canvas');c.width=1080;c.height=1350;
-  const x=c.getContext('2d');
-  const grad=x.createLinearGradient(0,0,0,1350);grad.addColorStop(0,'#f7b297');grad.addColorStop(1,'#ffe0cf');
-  x.fillStyle=grad;x.fillRect(0,0,c.width,c.height);
-  x.fillStyle='#fff9f2';roundRect(x,70,70,940,1210,54);x.fill();
-  x.fillStyle='#2a231f';x.textAlign='left';x.textBaseline='alphabetic';
-  x.font='900 54px sans-serif';x.fillText('Ready & Set',120,160);
-  const sc=r?resultSceneFor(r):null;
-  x.font='900 68px sans-serif';
-  wrapText(x,kind==='result'?sc.headline:'작전 개시 전, 응원 요청!',120,260,820,82);
-
-  await drawAvatar(x,300,620,150);
-  const expression=r&&r.deltaMs<=-120000?'wow':'smile';
-  drawGuide(x,770,660,92,state.guide.type,expression);
-  if(kind==='result'&&r?.recordingDone&&r?.guestType)drawGuide(x,665,745,62,r.guestType,'smile');
-
-  x.fillStyle='#fff';roundRect(x,555,405,350,125,28);x.fill();
-  x.fillStyle='#2b2521';x.font='700 29px sans-serif';
-  wrapText(x,kind==='result'?sc.line:`${state.guide.name}: 응원 한 스푼만 부탁해요!`,585,455,290,38);
-
-  const text=kind==='result'?[...(r?.selected||[]),...(r?.tasks||[])].join(' · '):currentMissionLabels().join(' · ');
-  x.fillStyle='#2a231f';x.font='700 32px sans-serif';wrapText(x,text||'오늘의 작전',120,925,820,46);
-  x.font='900 48px sans-serif';
-  if(kind==='result'&&r)x.fillText(`목표 ${fmt(r.targetMs)}   집중 ${fmt(r.focusMs)}`,120,1110);
-  else x.fillText(`목표 ${state.targetMin}:00`,120,1110);
-  x.font='700 29px sans-serif';x.fillStyle='#7c665c';
-  x.fillText(kind==='result'?'오늘 우리에게 이런 일이 있었다.':'곧 작전 들어갑니다.',120,1180);
-
-  const blob=await new Promise(res=>c.toBlob(res,'image/png'));
-  const file=new File([blob],`Ready_Set_${kind}_${Date.now()}.png`,{type:'image/png'});
-  try{
-    if(navigator.canShare?.({files:[file]})){
-      const shareProfile=kind==='result'?resultOutcomeProfile(r||{}):null;
-      await navigator.share({files:[file],text:kind==='result'?shareProfile.shareText:'Ready & Set 작전 시작!'});return;
-    }
-    const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=file.name;a.click();
-    setTimeout(()=>URL.revokeObjectURL(url),1000);toast('공유 카드를 이미지로 저장했어요.');
-  }catch(e){if(e.name!=='AbortError')toast('공유를 완료하지 못했어요.')}
-}
 function roundRect(ctx,x,y,w,h,r){
   ctx.beginPath();
   if(ctx.roundRect)ctx.roundRect(x,y,w,h,r);
@@ -1351,9 +1310,6 @@ function wrapText(ctx,text,x,y,maxW,lineH){
   }
   if(line)ctx.fillText(line,x,y);
 }
-$('#preShareBtn').onclick=()=>shareCard('pre');
-$('#missionShareBtn').onclick=()=>shareCard('pre');
-$('#shareResultBtn').onclick=()=>shareCard('result');
 
 $('#exportDataBtn').onclick=()=>{
   const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
