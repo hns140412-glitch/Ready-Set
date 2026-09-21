@@ -121,3 +121,10 @@ assert('app-persistence-localfirst',persistenceSource.includes("capture?.('app_s
 assert('app-persistence-safe-event',persistenceSource.includes("'readyset-safe-point'"));
 assert('app-persistence-no-legacy-load-in-app',!appSource.includes("function load(){"));
 assert('app-persistence-no-legacy-migrate-in-app',!appSource.includes("function migrate(x){"));
+
+const captureServiceSource=loadSource('src/assignment/capture-service-runtime.js');
+assert('capture-service-owner',captureServiceSource.includes('ReadyRebuildCaptureService'));
+assert('capture-service-print-parser',captureServiceSource.includes("day.trim().toUpperCase()"));
+assert('capture-service-stable-signature',captureServiceSource.includes("Object.keys(v).sort()"));
+assert('capture-service-answer-split',captureServiceSource.includes("x.kind==='ANSWER_REFERENCE'"));
+assert('capture-service-review-provenance',captureServiceSource.includes("reviewProvenanceForGroup"));
