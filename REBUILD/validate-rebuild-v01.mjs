@@ -248,8 +248,8 @@ assert('recording-orchestrator-loaded-before-app',
 );
 assert('recording-orchestrator-wired',
   appSource.includes('rebuildRecordingOrchestrator.create') &&
-  appSource.includes('recordingRuntime.start') &&
-  appSource.includes('recordingRuntime.currentAudio')
+  recordingControllerSourceForView.includes('runtime.start') &&
+  recordingControllerSourceForView.includes('runtime.currentAudio')
 );
 assert('recording-inline-media-lifecycle-removed',
   !appSource.includes('navigator.mediaDevices?.getUserMedia') &&
