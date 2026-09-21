@@ -132,6 +132,30 @@
       split_policy:{kind:'NONE',max_span:null},
       default_goal:'프린트 과제 완수'
     },
+    'grammar':{
+      activity_types:['GRAMMAR_CHECK','QUIZ','SELF_CHECK'],
+      activity_sequence:['GRAMMAR_CHECK','QUIZ','REVIEW'],
+      cognitive_load:['RULE_RETRIEVAL','FORM_MEANING_INTEGRATION'],
+      default_boundary:'GRAMMAR_UNIT',
+      base_difficulty:3,
+      activity_load_score:3,
+      recovery_need:'LOW',
+      parent_help_dependency:'LOW',
+      split_policy:{kind:'NONE',max_span:null},
+      default_goal:'문법 규칙을 확인하고 짧은 퀴즈로 점검'
+    },
+    'reading':{
+      activity_types:['READING','COMPREHENSION','SENTENCE_BUILDING','SELF_CHECK'],
+      activity_sequence:['READ_STORY','COMPREHENSION_CHECK','SENTENCE_BUILDING','REVIEW'],
+      cognitive_load:['READING_COMPREHENSION','LANGUAGE_PRODUCTION'],
+      default_boundary:'READING_UNIT',
+      base_difficulty:3,
+      activity_load_score:4,
+      recovery_need:'MEDIUM',
+      parent_help_dependency:'LOW',
+      split_policy:{kind:'NONE',max_span:null},
+      default_goal:'읽고 이해한 뒤 문장으로 표현하고 확인'
+    },
     'vocabulary':{
       activity_types:['MEMORY','RECALL','SELF_CHECK'],
       activity_sequence:['ENCODE','RECALL','CHECK'],
@@ -297,6 +321,10 @@
     const subjectMethodSequence=Array.isArray(learningRef?.subject_master?.learning_loop)
       ? learningRef.subject_master.learning_loop
       : null;
+    const componentSpecificProfile=Object.prototype.hasOwnProperty.call(PROFILE,kind)&&kind!=='WORKBOOK_RANGE'&&kind!==subjectKey;
+    const preferredActivitySequence=componentSpecificProfile
+      ? profile.activity_sequence
+      : (subjectMethodSequence||profile.activity_sequence||[]);
     const unresolved=[...(extra.unresolved_flags||[])];
     if(!clean(fact.teacher_instruction)&&!extra.concept_skill_target)unresolved.push('CONCEPT_TARGET_INFERRED_FROM_SUBJECT_PROFILE');
     if(desc.kind==='AMBIGUOUS_NUMERIC_RANGE')unresolved.push('RANGE_SEMANTICS_AMBIGUOUS_NOT_SPLIT');
@@ -312,7 +340,7 @@
       source_range:extra.source_range??fact.source_range??null,
       range_descriptor:clone(desc),
       activity_types:clone(extra.activity_types||profile.activity_types),
-      activity_sequence:clone(reviewAdjustedSequence(extra.activity_sequence||subjectMethodSequence||profile.activity_sequence||[],reviewPolicy)),
+      activity_sequence:clone(reviewAdjustedSequence(extra.activity_sequence||preferredActivitySequence,reviewPolicy)),
       cognitive_load_profile:clone(extra.cognitive_load_profile||profile.cognitive_load),
       activity_load:{
         score:extra.activity_load_score??profile.activity_load_score??3,
