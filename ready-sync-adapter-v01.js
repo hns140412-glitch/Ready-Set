@@ -91,7 +91,9 @@
     }
     runtime={state:'CONNECTED',last_check_at:now(),last_error:null};
     window.dispatchEvent(new CustomEvent('readyset-sync-status',{detail:status()}));
-    return {ok:true,ack_token:body.ack_token??null,remote_version:body.remote_version??null};
+    const result={ok:true,remote_version:body.remote_version??null};
+    if(body.ack_token!=null) result.ack_token=body.ack_token;
+    return result;
   }
 
   function bindFamilySession(){
