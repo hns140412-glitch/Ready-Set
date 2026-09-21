@@ -24,6 +24,8 @@ jobs:
         run: node .github/scripts/ready_learning_master_contract_test.js
       - name: Learning App Family return-state regression
         run: node .github/scripts/learning_app_family_return_state_test.js
+      - name: Ready learning-context producer contract
+        run: node .github/scripts/ready_learning_context_contract_test.js
 
   learning-master-contract:
     runs-on: ubuntu-latest
