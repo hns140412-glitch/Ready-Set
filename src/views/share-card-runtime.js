@@ -2,7 +2,7 @@
   'use strict';
 
   function create(options={}){
-    const drawAvatar=options.drawAvatar||async()=>{};
+    const drawAvatar=options.drawAvatar||(async()=>{});
     const currentMissionLabels=options.currentMissionLabels||(()=>[]);
     const resultSource=options.resultSource||(()=>null);
     const resultOutcomeProfile=options.resultOutcomeProfile||(()=>({done:false,label:'결과',shareTitle:'오늘의 탐험',historyLabel:'결과',shareText:'Ready & Set'}));

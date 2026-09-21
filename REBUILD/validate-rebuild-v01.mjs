@@ -187,3 +187,21 @@ const captureDraftSource=loadSource('src/assignment/capture-draft-runtime.js');
 assert('capture-draft-owner',captureDraftSource.includes('ReadyRebuildCaptureDraft'));
 assert('capture-draft-stable-review-event',captureDraftSource.includes('PARENT_APPLIED_DRAFT'));
 assert('capture-draft-wired',appSource.includes('captureDraftController.apply(draft)'));
+
+const shareCardSource=loadSource('src/views/share-card-runtime.js');
+assert('share-card-runtime-owner',shareCardSource.includes('ReadyRebuildShareCard'));
+assert('share-card-runtime-loaded-before-app',
+  indexSource.indexOf('src/views/share-card-runtime.js')>0 &&
+  indexSource.indexOf('src/views/share-card-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('share-card-runtime-wired',
+  appSource.includes('rebuildShareCard.create') &&
+  appSource.includes('shareCardRuntime.render') &&
+  appSource.includes('shareCardRuntime.share')
+);
+assert('share-card-inline-duplicate-removed',
+  !appSource.includes('function readyThemeCopy(') &&
+  !appSource.includes('function readyDrawIslandScene(') &&
+  !appSource.includes('async function renderCompactShareCard(') &&
+  !appSource.includes('async function compactShareCard(')
+);

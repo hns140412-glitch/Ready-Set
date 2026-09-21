@@ -34,7 +34,8 @@ const rebuildHomeView=globalThis.ReadyRebuildHomeView||null;
 const rebuildPlannerScreenView=globalThis.ReadyRebuildPlannerScreenView||null;
 const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility){
+const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -1340,72 +1341,31 @@ window.addEventListener('load',()=>{
 });
 
 
-/* REV_07 compact themed share overlay — preserves the full Ready runtime above. */
+/* REV_07 compact themed share overlay — runtime-owned after rebuild migration. */
 function readyShareTheme(){return state.share?.theme==='sail'?'sail':'drop'}
-function readyThemeCopy(theme,kind,r=null){
-  if(kind==='result'){
-    const profile=resultOutcomeProfile(r||{});
-    if(!profile.done)return {title:profile.shareTitle,sub:profile.historyLabel};
-    return theme==='sail'
-      ?{title:'멋진 항해였어요!',sub:'오늘의 섬 탐험 완료'}
-      :{title:'오늘의 할 일이 도착했어요!',sub:'오늘의 섬 탐험 완료'};
-  }
-  return theme==='sail'
-    ?{title:'오늘의 할 일을 찾아 항해해볼까?',sub:'바다를 따라 오늘의 섬으로'}
-    :{title:'오늘의 할 일을 발견하러 가볼까?',sub:'아래로 내려가 오늘의 섬으로'};
-}
-function readyDrawIslandScene(x,theme){
-  const sky=x.createLinearGradient(0,0,0,430);sky.addColorStop(0,'#64c9ff');sky.addColorStop(1,'#dff7ff');
-  x.fillStyle=sky;x.fillRect(0,0,900,430);x.fillStyle='#25aee8';x.fillRect(0,300,900,130);
-  x.fillStyle='#55b96a';x.beginPath();x.ellipse(560,300,245,100,0,0,Math.PI*2);x.fill();
-  x.fillStyle='#87735e';x.beginPath();x.moveTo(370,305);x.lineTo(750,305);x.lineTo(670,410);x.lineTo(430,410);x.closePath();x.fill();
-  x.fillStyle='#fff';x.fillRect(545,220,28,105);x.fillStyle='#ff6a45';x.beginPath();x.moveTo(570,225);x.lineTo(630,245);x.lineTo(570,258);x.fill();
-  if(theme==='sail'){
-    x.fillStyle='#8a5b35';x.fillRect(145,320,210,18);x.fillStyle='#fff7dc';x.beginPath();x.moveTo(245,150);x.lineTo(245,318);x.lineTo(110,295);x.closePath();x.fill();x.strokeStyle='#7a5a3c';x.lineWidth=7;x.stroke();
-  }else{
-    x.fillStyle='rgba(255,255,255,.88)';
-    for(let i=0;i<5;i++){x.beginPath();x.ellipse(100+i*165,75+(i%2)*45,105,38,0,0,Math.PI*2);x.fill()}
-  }
-}
-async function renderCompactShareCard(kind='result'){
-  const r=kind==='result'?resultSource():null,theme=readyShareTheme(),copy=readyThemeCopy(theme,kind,r);
-  const c=document.createElement('canvas');c.width=900;c.height=600;const x=c.getContext('2d');
-  x.fillStyle='#fff';x.fillRect(0,0,900,600);readyDrawIslandScene(x,theme);
-  x.fillStyle='rgba(255,255,255,.92)';roundRect(x,28,24,238,54,27);x.fill();x.fillStyle='#102d55';x.font='900 27px sans-serif';x.textAlign='left';x.fillText('Ready & Set',55,60);
-  x.fillStyle='#0a3265';x.font='900 46px sans-serif';x.fillText(copy.title,40,145);x.font='700 23px sans-serif';x.fillText(copy.sub,42,182);
-  await drawAvatar(x,theme==='sail'?300:245,theme==='sail'?325:285,58);
-  const tasks=kind==='result'?[...(r?.selected||[]),...(r?.tasks||[])]:currentMissionLabels();
-  const profile=kind==='result'?resultOutcomeProfile(r||{}):null;
-  const total=Math.max(1,tasks.length),done=kind==='result'&&profile?.done?total:0,focus=kind==='result'&&r?fmt(r.focusMs||0):'00:00',stars=kind==='result'&&profile?.done?Math.max(1,Math.min(30,done*5)):0;
-  x.fillStyle='#fff';roundRect(x,0,430,900,170,0);x.fill();x.strokeStyle='#e5edf5';x.lineWidth=2;x.beginPath();x.moveTo(0,430);x.lineTo(900,430);x.stroke();
-  const stats=[[kind==='result'?(profile?.done?done+'/'+total:profile.label):total+'개',kind==='result'?(profile?.done?'완료 미션':'결과 상태'):'오늘의 미션'],[focus,'집중 시간'],['+'+stars,'획득 별']];
-  stats.forEach((v,i)=>{const cx=150+i*300;x.textAlign='center';x.fillStyle='#0d3569';x.font='900 35px sans-serif';x.fillText(v[0],cx,495);x.fillStyle='#718098';x.font='700 18px sans-serif';x.fillText(v[1],cx,528);if(i<2){x.strokeStyle='#e2e8ef';x.beginPath();x.moveTo(cx+150,458);x.lineTo(cx+150,540);x.stroke()}});
-  x.textAlign='left';x.fillStyle='#223d62';x.font='700 18px sans-serif';x.fillText(tasks.slice(0,3).join(' · ')||'오늘의 탐험',35,574);
-  return c;
-}
-async function compactShareCard(kind='result'){
-  const c=await renderCompactShareCard(kind);
-  const blob=await new Promise(res=>c.toBlob(res,'image/png',.94));
-  const file=new File([blob],`Ready_Set_${readyShareTheme()}_${kind}_${Date.now()}.png`,{type:'image/png'});
-  const text=kind==='result'?resultOutcomeProfile(resultSource()||{}).shareText:'Ready & Set · 오늘의 탐험을 시작해요!';
-  try{
-    if(navigator.canShare?.({files:[file]})){await navigator.share({files:[file],title:'Ready & Set',text});return}
-    const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=file.name;a.click();
-    setTimeout(()=>URL.revokeObjectURL(url),1000);toast('공유 카드를 이미지로 저장했어요.');
-  }catch(e){if(e.name!=='AbortError')toast('공유를 완료하지 못했어요.')}
-}
+const shareCardRuntime=rebuildShareCard.create({
+  drawAvatar,
+  currentMissionLabels,
+  resultSource,
+  resultOutcomeProfile,
+  shareTheme:readyShareTheme,
+  formatTime:fmt,
+  roundRect,
+  toast
+});
 function buildKakaoFeed({imageUrl,webUrl,kind='result'}={}){
-  const r=kind==='result'?resultSource():null,theme=readyShareTheme(),copy=readyThemeCopy(theme,kind,r);
-  return {objectType:'feed',content:{title:copy.title,description:kind==='result'?`${copy.sub} · 집중 ${fmt(r?.focusMs||0)}`:copy.sub,imageUrl,link:{mobileWebUrl:webUrl,webUrl}},buttons:[{title:kind==='result'?'탐험 기록 보기':'탐험 응원하기',link:{mobileWebUrl:webUrl,webUrl}}]};
+  const r=kind==='result'?resultSource():null,theme=readyShareTheme(),copy=shareCardRuntime.themeCopy(theme,kind,r);
+  const description=kind==='result'?copy.sub+' · 집중 '+fmt(r?.focusMs||0):copy.sub;
+  return {objectType:'feed',content:{title:copy.title,description,imageUrl,link:{mobileWebUrl:webUrl,webUrl}},buttons:[{title:kind==='result'?'탐험 기록 보기':'탐험 응원하기',link:{mobileWebUrl:webUrl,webUrl}}]};
 }
 window.ReadySetShare={
-  renderShareCard:renderCompactShareCard,
-  shareCard:compactShareCard,
+  renderShareCard:kind=>shareCardRuntime.render(kind),
+  shareCard:kind=>shareCardRuntime.share(kind),
   buildKakaoFeed,
   setTheme(theme){state.share={...(state.share||{}),theme:theme==='sail'?'sail':'drop'};save();}
 };
-$('#preShareBtn').onclick=()=>compactShareCard('pre');
-$('#missionShareBtn').onclick=()=>compactShareCard('pre');
-$('#shareResultBtn').onclick=()=>compactShareCard('result');
+$('#preShareBtn').onclick=()=>shareCardRuntime.share('pre');
+$('#missionShareBtn').onclick=()=>shareCardRuntime.share('pre');
+$('#shareResultBtn').onclick=()=>shareCardRuntime.share('result');
 
 rebuildAccessibility.install();
