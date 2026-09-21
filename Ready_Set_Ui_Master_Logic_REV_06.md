@@ -1,5 +1,9 @@
 # Ready & Set Ui Master Logic — REV_06
 
+> **ARCHIVED LEGACY AUTHORITY — NOT CURRENT SOURCE OF TRUTH**
+> Current Ready authority: `READY_SET_CANONICAL_PRODUCT_CONTRACT.md` → `READY_SET_RUNTIME_STATE_MODEL.md` → `READY_SET_DECISION_LEDGER.md`.
+> This file is preserved for provenance/recovery only. Specific content is active only when explicitly preserved by the current canonical.
+
 # MASTER FILE NAMING RULE — HARD LOCK
 
 MASTER 및 배포 산출물의 실제 파일명에는 공백(space)과 퍼센트 기호(`%`)를 사용하지 않는다.
@@ -21,7 +25,7 @@ MASTER 및 배포 산출물의 실제 파일명에는 공백(space)과 퍼센트
 - 사용자에게 제공하는 다운로드 파일 역시 이 규칙을 지켜야 한다.
 
 
-> **Document Status:** FORMAL BASELINE / SOURCE OF TRUTH / PRODUCT·UI·GUIDE·RECORDING·SHARE INTEGRATED MASTER  
+> **Historical Document Status:** FORMAL BASELINE / SOURCE OF TRUTH / PRODUCT·UI·GUIDE·RECORDING·SHARE INTEGRATED MASTER; superseded by current Ready canonical.  
 > **Official File Name:** `## Ready & Set Ui Master Logic REV_06 ##.md`  
 > **Revision:** REV_06  
 > **Date:** 2026-09-02  

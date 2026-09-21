@@ -1,9 +1,13 @@
 # Ready & Set Focus Golden Reference — REV_01
 
-> Status: CANONICAL PROJECT UI REFERENCE / HARD LOCK
+> **ARCHIVED LEGACY AUTHORITY — NOT CURRENT SOURCE OF TRUTH**
+> Current Ready authority: `READY_SET_CANONICAL_PRODUCT_CONTRACT.md` → `READY_SET_RUNTIME_STATE_MODEL.md` → `READY_SET_DECISION_LEDGER.md`.
+> This file is preserved for provenance/recovery only. Specific content is active only when explicitly preserved by the current canonical.
+
+> Status: PRESERVED VISUAL REFERENCE / LEGACY AUTHORITY ISOLATED
 > Date: 2026-09-14
 > Applies to: Ready & Set Focus / Time Attack screen
-> Parent authority: `Ready_Set_Ui_Master_Logic_REV_07.md` inheriting REV_06
+> Current semantic authority: `READY_SET_CANONICAL_PRODUCT_CONTRACT.md` + `READY_SET_RUNTIME_STATE_MODEL.md`; this file remains a visual reference only. Historical parent lineage: REV_07 → REV_06.
 > Brand line: **그냥! 지금 하면 돼!**
 
 ## 0. CANONICAL VISUAL SOURCE — HARD LOCK
