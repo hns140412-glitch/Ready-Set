@@ -214,11 +214,29 @@
       priority: Math.max(0, Math.min(200, Math.round(Number(x?.priority) || 0))),
       reason: reasons.includes(String(x?.reason || '').trim()) ? String(x.reason).trim() : 'stable'
     })).filter(x => x.lexicalId);
+    const mockRaw=raw.morningMockTest?.resultCounts||{};
+    const mockResultCounts={
+      CORRECT:Math.max(0,Math.floor(Number(mockRaw.CORRECT)||0)),
+      CONFUSED:Math.max(0,Math.floor(Number(mockRaw.CONFUSED)||0)),
+      WRONG:Math.max(0,Math.floor(Number(mockRaw.WRONG)||0)),
+      ASSISTED_CORRECT:Math.max(0,Math.floor(Number(mockRaw.ASSISTED_CORRECT)||0)),
+      RECOVERED_CORRECT:Math.max(0,Math.floor(Number(mockRaw.RECOVERED_CORRECT)||0))
+    };
     return {
+      authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
       averageMemoryStrength: Math.max(0, Math.min(100, Math.round(Number(raw.averageMemoryStrength) || 0))),
       reasonCounts,
       needsUnassistedRecallCount: Math.max(0, Math.floor(Number(raw.needsUnassistedRecallCount) || 0)),
-      topReviewPriorities: top
+      topReviewPriorities: top,
+      missionComposition:{
+        newCount:Math.max(0,Math.floor(Number(raw.missionComposition?.newCount)||0)),
+        reviewCount:Math.max(0,Math.floor(Number(raw.missionComposition?.reviewCount)||0))
+      },
+      morningMockTest:{
+        recordedCount:Object.values(mockResultCounts).reduce((a,n)=>a+n,0),
+        resultCounts:mockResultCounts
+      },
+      thinkingSceneAssistanceCount:Math.max(0,Math.floor(Number(raw.thinkingSceneAssistanceCount)||0))
     };
   }
 
@@ -240,7 +258,10 @@
       trailMastery: Number(payload.trailMastery || 0),
       learningPhase: payload.learningPhase || null,
       finalSeekAttemptCount: Number(payload.finalSeekAttemptCount || 0),
-      seekAgainRemainingCount: Number(payload.seekAgainRemainingCount || 0)
+      seekAgainRemainingCount: Number(payload.seekAgainRemainingCount || 0),
+      missionComposition: payload.missionComposition || null,
+      morningMockTestSummary: payload.morningMockTestSummary || null,
+      specialistAuthority:'SPECIALIST_MEMORY_ADVISORY_ONLY'
     } : null);
     c.active_app = 'ready-set';
     c.active_task_id = task.task_id;
@@ -340,7 +361,10 @@
         trailMastery:Number(e.payload.trailMastery||0),
         learningPhase:e.payload.learningPhase||null,
         finalSeekAttemptCount:Number(e.payload.finalSeekAttemptCount||0),
-        seekAgainRemainingCount:Number(e.payload.seekAgainRemainingCount||0)
+        seekAgainRemainingCount:Number(e.payload.seekAgainRemainingCount||0),
+        missionComposition:e.payload.missionComposition||null,
+        morningMockTestSummary:e.payload.morningMockTestSummary||null,
+        specialistAuthority:'SPECIALIST_MEMORY_ADVISORY_ONLY'
       } : null
     });
   }
