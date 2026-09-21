@@ -59,7 +59,7 @@ test('HTTP sync adapter contract uses authenticated same-origin session and hand
   expect(conflict.remote_payload).toBe('{"remote":true}');
   expect(seen).toHaveLength(2);
   expect(seen[0].idem).toBe('evt_ok');
-  expect(seen[0].body.client.adapter_version).toBe('0.2.0');
+  expect(seen[0].body.client.adapter_version).toBe('0.3.0');
   expect(seen[0].authorization).toBeNull();
 });
 
