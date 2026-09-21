@@ -148,14 +148,29 @@ Do NOT overwrite or redo these blindly.
 Always live-refresh branch HEAD before the next edit.
 
 ## 9. Latest validation state at closure
-At the time of C2S closure:
-- HEAD `59a0619a4e0369fbc935a1fc7de05cb65a73fd9c`
-- Rebuild Foundation workflow run `35599385239`: SUCCESS
-- Ready Runtime E2E run `35599385063`: IN_PROGRESS at last check
+Final recheck before handoff:
+- code HEAD `59a0619a4e0369fbc935a1fc7de05cb65a73fd9c`
+- Rebuild Foundation run `35599385239`: SUCCESS
+- Ready Runtime E2E run `35599385063`: FAILURE
+
+Primary runtime symptom:
+- `ReferenceError: Cannot access 'homeView' before initialization`
+
+Cascading failures included:
+- Planner Admin entry remaining hidden
+- planner day-tab focus failure
+- Mission minute-button state not initialized
+- planner / mission navigation not activating
+- multiple click/fill timeouts
+
+Interpretation:
+- latest code is STRUCTURE/CI verified but NOT Runtime verified.
+- first task in the next chat is to diagnose initialization / bootstrap order around the newly extracted Home View / navigation ownership.
+- do not continue new extraction until exact-head Runtime is restored.
 
 Therefore:
-- STRUCTURE / CI for latest HEAD: verified
-- latest exact-head Runtime E2E: DO NOT CLAIM PASS until live rechecked
+- STRUCTURE / CI latest code head: PASS
+- RUNTIME latest code head: FAIL
 - DEVICE_VERIFIED: 0 / not run
 - PRODUCTION_VERIFIED: not applicable / not deployed
 
@@ -199,7 +214,7 @@ Recovered scope:
 - regression/correction evidence: mapped
 - verified PASS checkpoints: mapped
 - parallel-branch conflict risk: mapped
-- latest exact-head runtime uncertainty: explicitly OPEN
+- latest exact-head runtime failure: explicitly recorded
 - next actions: mapped
 
 UNMAPPED_MATERIAL = 0 within this Ready rebuild conversation scope.
