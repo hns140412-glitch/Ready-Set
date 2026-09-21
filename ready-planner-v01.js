@@ -118,6 +118,19 @@
       });
     }
 
+    function removeDailyAvailabilityWindow(id){
+      const target=cleanText(id); if(!target)return {ok:false,reason:'AVAILABILITY_ID_REQUIRED'};
+      if(globalThis.ReadyFamilySession){
+        const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
+        if(!gate?.ok) throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
+      }
+      return mutate(s=>{
+        const before=s.daily_availability_windows.length;
+        s.daily_availability_windows=s.daily_availability_windows.filter(x=>x.availability_id!==target);
+        return before===s.daily_availability_windows.length?{ok:false,reason:'AVAILABILITY_NOT_FOUND'}:{ok:true,availability_id:target};
+      });
+    }
+
     function candidateWindowsByDate(dates=[]){
       const s=load(),out={};
       for(const date of dates||[]){
@@ -1155,6 +1168,7 @@
       todayProjection,
       upsertScheduleCommitment,
       upsertDailyAvailabilityWindow,
+      removeDailyAvailabilityWindow,
       candidateWindowsByDate,
       upsertHomeworkTemplate,
       upsertDatedTodo,
