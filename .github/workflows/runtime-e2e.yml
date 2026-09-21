@@ -25,6 +25,8 @@ jobs:
         run: node tests/learning-app-family-return-contract.test.js
       - name: Ready learning-context producer regression
         run: node tests/learning-context-producer-contract.test.js
+      - name: Atomic single Planner IN_PROGRESS regression
+        run: node tests/planner-single-active-runtime.test.js
       - name: Validate shared runtime contract
         run: node tests/shared-runtime-contract.test.js
       - name: Install Playwright
