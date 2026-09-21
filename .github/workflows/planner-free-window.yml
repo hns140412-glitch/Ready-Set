@@ -1,0 +1,27 @@
+name: Planner Free Window Gate
+
+on:
+  pull_request:
+    paths:
+      - 'ready-planner-v01.js'
+      - 'ready-integration-v1.js'
+      - 'tests/planner-free-window.test.js'
+      - '.github/workflows/planner-free-window.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  planner-free-window:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check syntax
+        run: |
+          node --check ready-planner-v01.js
+          node --check ready-integration-v1.js
+      - name: Run Planner V2 free-window regression
+        run: node tests/planner-free-window.test.js
