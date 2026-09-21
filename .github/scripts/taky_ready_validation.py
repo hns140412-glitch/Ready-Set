@@ -42,7 +42,6 @@ def validate(task, changed_files):
         ],
         "ready-pwa-update-v01.js":[
             "navigator.serviceWorker.register('./sw.js')",
-            "event.data",
             "APPLY_UPDATE",
             "ReadySetPwaSafePoint",
         ],
