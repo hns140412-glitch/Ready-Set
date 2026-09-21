@@ -84,3 +84,47 @@ test('Ready local-first creates immutable event identity distinct from state dig
   expect(captures.ra.domain_conflict).toBe(null);
   expect(captures.rb.domain_conflict).toBe(null);
 });
+
+
+test('Ready loads shared vision ingest and rejects unknown OCR evidence ids', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded' });
+  const loaded=await page.evaluate(()=>({
+    vision:!!globalThis.TakyVisionIngest,
+    adapter:!!globalThis.ReadyCaptureAnalysisAdapter
+  }));
+  expect(loaded.vision).toBe(true);
+  expect(loaded.adapter).toBe(true);
+
+  const result=await page.evaluate(async()=>{
+    const originalFetch=window.fetch;
+    window.fetch=async()=>({
+      ok:true,
+      json:async()=>({
+        provider:'TEST',
+        model:'fixture',
+        result:{
+          analysis_version:'TEST_V1',
+          drafts:[{group_key:'TALENT:연산',evidence_item_ids:['unknown-source'],confidence:'high'}]
+        }
+      })
+    });
+    try{
+      return await globalThis.ReadyCaptureAnalysisAdapter.analyze({
+        session:{capture_session_id:'capture-test'},
+        manifest:[{
+          capture_item_id:'known-source',
+          group_key:'TALENT:연산',
+          kind:'RANGE',
+          visibility:'FAMILY',
+          mime_type:'image/jpeg',
+          file_name:'known.jpg',
+          size:4
+        }],
+        getBlob:async()=>new Blob(['test'],{type:'image/jpeg'})
+      });
+    }finally{window.fetch=originalFetch}
+  });
+  expect(result.ok).toBe(false);
+  expect(result.reason).toBe('ANALYSIS_EVIDENCE_INVALID');
+  expect(result.unknown_evidence[0].source_id).toBe('unknown-source');
+});
