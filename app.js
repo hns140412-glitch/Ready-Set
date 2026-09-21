@@ -43,8 +43,9 @@ const rebuildHomeView=globalThis.ReadyRebuildHomeView||null;
 const rebuildPlannerScreenView=globalThis.ReadyRebuildPlannerScreenView||null;
 const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
+const rebuildAppBootstrapController=globalThis.ReadyRebuildAppBootstrapController||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -143,9 +144,6 @@ const appNavigation=rebuildNavigation.create({
 function nav(name){
   return appNavigation.show(name);
 }
-document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.nav)));
-document.addEventListener('click',e=>{const tab=e.target.closest('[data-planner-tab]');if(tab){plannerTab=tab.dataset.plannerTab;renderPlanner();return}const day=e.target.closest('[data-planner-date]');if(day){plannerSelectedDate=day.dataset.plannerDate;renderPlanner();}});
-document.getElementById('plannerTodayJump')?.addEventListener('click',()=>{plannerSelectedDate=localDateKey();plannerTab='day';renderPlanner();});
 
 function initials(){return (state.profile.name||'RS').trim().slice(0,2).toUpperCase()}
 function styleFilter(s){
@@ -1069,9 +1067,6 @@ function escapeHtml(s){
   return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 }
 
-window.addEventListener('visibilitychange',()=>{
-  if(!document.hidden&&state.activeSession)renderFocus();
-});
 const sessionRecoveryRuntime=rebuildSessionRecoveryController.create({
   getState:()=>state,
   save,
@@ -1080,15 +1075,27 @@ const sessionRecoveryRuntime=rebuildSessionRecoveryController.create({
   localDateKey
 });
 
-window.addEventListener('load',()=>{
-  renderHome();settingsRuntime.renderSettings();
-  const versionInfo=document.getElementById('readyVersionInfo');
-  if(versionInfo) versionInfo.textContent=`APP ${VERSION.app} · MASTER ${VERSION.master} · SCHEMA ${VERSION.schema} · RELEASE ${VERSION.cache}`;
-  const recovery=sessionRecoveryRuntime.reconcile();
-  if(recovery.resumed)nav('focus');
-  if(readyPwaSafePoint()) window.dispatchEvent(new CustomEvent('readyset-safe-point'));
+const appBootstrapRuntime=rebuildAppBootstrapController.create({
+  query:$,
+  queryAll:$$,
+  eventTarget:window,
+  documentTarget:document,
+  nav,
+  renderPlanner,
+  renderFocus,
+  getActiveSession:()=>state.activeSession,
+  localDateKey,
+  getPlannerTab:()=>plannerTab,
+  setPlannerTab:value=>{plannerTab=value;},
+  getPlannerSelectedDate:()=>plannerSelectedDate,
+  setPlannerSelectedDate:value=>{plannerSelectedDate=value;},
+  renderHome,
+  renderSettings:()=>settingsRuntime.renderSettings(),
+  versionText:()=>`APP ${VERSION.app} · MASTER ${VERSION.master} · SCHEMA ${VERSION.schema} · RELEASE ${VERSION.cache}`,
+  recovery:()=>sessionRecoveryRuntime.reconcile(),
+  readyPwaSafePoint
 });
-
+appBootstrapRuntime.bind();
 
 /* REV_07 compact themed share overlay — runtime-owned after rebuild migration. */
 function readyShareTheme(){return state.share?.theme==='sail'?'sail':'drop'}

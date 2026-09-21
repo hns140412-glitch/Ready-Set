@@ -386,3 +386,20 @@ assert('session-recovery-inline-removed',
   !appSource.includes('sessionRuntimeStatus?.(state.activeSession.id)') &&
   !appSource.includes("ready_state:'IN_PROGRESS',\n          session_id:state.activeSession.id")
 );
+
+const appBootstrapControllerSource=loadSource('src/shell/app-bootstrap-controller-runtime.js');
+assert('app-bootstrap-controller-owner',appBootstrapControllerSource.includes('ReadyRebuildAppBootstrapController'));
+assert('app-bootstrap-controller-loaded-before-app',
+  indexSource.indexOf('src/shell/app-bootstrap-controller-runtime.js')>0 &&
+  indexSource.indexOf('src/shell/app-bootstrap-controller-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('app-bootstrap-controller-wired',
+  appSource.includes('rebuildAppBootstrapController.create') &&
+  appSource.includes('appBootstrapRuntime.bind()')
+);
+assert('app-bootstrap-inline-shell-wiring-removed',
+  !appSource.includes("document.querySelectorAll('[data-nav]').forEach") &&
+  !appSource.includes("document.getElementById('plannerTodayJump')") &&
+  !appSource.includes("window.addEventListener('visibilitychange'") &&
+  !appSource.includes("window.addEventListener('load'")
+);
