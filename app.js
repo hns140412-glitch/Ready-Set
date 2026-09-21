@@ -29,7 +29,8 @@ const rebuildResultHistoryView=globalThis.ReadyRebuildResultHistoryView||null;
 const rebuildProfileSettingsView=globalThis.ReadyRebuildProfileSettingsView||null;
 const rebuildAuthSyncView=globalThis.ReadyRebuildAuthSyncView||null;
 const rebuildHomeView=globalThis.ReadyRebuildHomeView||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView){
+const rebuildPlannerScreenView=globalThis.ReadyRebuildPlannerScreenView||null;
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -642,47 +643,26 @@ function plannerItemsForDate(date,snap=plannerSnapshot()){
 function plannerStateLabel(v){
   return rebuildPlannerView.stateLabel(v);
 }
+const plannerScreenView=rebuildPlannerScreenView.create({
+  query:$,
+  queryAll:$$,
+  escapeHtml,
+  localDateKey,
+  addDays,
+  weekStart,
+  itemsForDate:plannerItemsForDate,
+  stateLabel:plannerStateLabel
+});
 function renderPlanner(){
   plannerSelectedDate=plannerSelectedDate||localDateKey();
   window.ReadySetPlanner?.replanReadyCarryOvers?.({date:localDateKey()});
-  const adminJump=document.querySelector('.plannerAdminJump');
-  if(adminJump)adminJump.hidden=!window.ReadyFamilySession?.isParent?.();
-  const snap=plannerSnapshot(), start=weekStart(new Date(plannerSelectedDate+'T12:00:00'));
-  const strip=$('#plannerWeekStrip'), detail=$('#plannerWeekDetail');
-  if(!strip||!detail)return;
-  document.querySelectorAll('[data-planner-tab]').forEach(b=>{
-    const active=b.dataset.plannerTab===plannerTab;
-    b.classList.toggle('on',active);
-    b.setAttribute('aria-selected',active?'true':'false');
-    b.setAttribute('tabindex',active?'0':'-1');
+  plannerScreenView.render({
+    selectedDate:plannerSelectedDate,
+    tab:plannerTab,
+    snapshot:plannerSnapshot(),
+    isParent:!!window.ReadyFamilySession?.isParent?.()
   });
-  $('#plannerWeekPanel').hidden=plannerTab!=='week';
-  $('#plannerDayPanel').hidden=plannerTab!=='day';
-  const weekDates=Array.from({length:7},(_,i)=>addDays(start,i));
-  strip.innerHTML='';
-  const names=['월','화','수','목','금','토','일'];
-  weekDates.forEach((d,i)=>{
-    const key=localDateKey(d),items=plannerItemsForDate(key,snap);
-    const btn=document.createElement('button');
-    btn.type='button';btn.className='plannerDayChip'+(key===plannerSelectedDate?' on':'');
-    btn.dataset.plannerDate=key;
-    btn.innerHTML=`<small>${names[i]}</small><b>${d.getDate()}</b><span>${items.length?items.length+'개':'·'}</span>`;
-    strip.appendChild(btn);
-  });
-  const selectedItems=plannerItemsForDate(plannerSelectedDate,snap);
-  detail.innerHTML=selectedItems.length?selectedItems.map(x=>`
-    <article class="plannerWeekItem ${x.kind==='SCHEDULE'?'fixed':''}">
-      <span class="plannerDot"></span><div><b>${escapeHtml(x.label)}</b><small>${x.time?x.time+' · ':''}${x.meta}${x.minutes?' · '+x.minutes+'분':''}</small></div><em>${plannerStateLabel(x.state)}</em>
-    </article>`).join(''):`<div class="plannerEmpty"><b>비어 있는 날이에요.</b><small>필요한 탐험만 가볍게 추가해요.</small></div>`;
-  const day=$('#plannerDayTimeline'); day.innerHTML=selectedItems.length?selectedItems.map((x,i)=>`
-    <article class="plannerRouteItem"><i>${String(i+1).padStart(2,'0')}</i><div><small>${x.kind==='SCHEDULE'?'FIXED ROUTE':'MISSION'}</small><b>${escapeHtml(x.label)}</b><span>${x.time?x.time+' · ':''}${x.minutes?x.minutes+'분 · ':''}${plannerStateLabel(x.state)}</span></div></article>`).join(''):`<div class="plannerEmpty tall"><b>오늘 예정된 탐험이 없어요.</b><small>Mission에서 오늘 할 일을 골라 시작할 수 있어요.</small></div>`;
-  const dd=new Date(plannerSelectedDate+'T12:00:00');
-  $('#plannerDayTitle').textContent=`${dd.getMonth()+1}월 ${dd.getDate()}일 탐험`;
-  $('#plannerDayCount').textContent=`${selectedItems.length}개`;
-  $('#plannerHeroTitle').textContent=plannerTab==='week'?'이번 주 탐험 지도':'오늘의 탐험 루트';
 }
-
-
 function clearScheduleForm(){
   $('#scheduleId').value='';
   $('#scheduleTitle').value='';
