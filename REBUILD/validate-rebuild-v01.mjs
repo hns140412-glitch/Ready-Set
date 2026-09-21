@@ -432,3 +432,27 @@ assert('rev07-session-start-event',
   rev07Source.includes("window.addEventListener('readyset-session-started'") &&
   !rev07Source.includes("const originalStart = document.getElementById('startBtn')?.onclick")
 );
+
+const captureIntakeControllerSource=loadSource('src/assignment/capture-intake-controller-runtime.js');
+assert('capture-intake-controller-owner',captureIntakeControllerSource.includes('ReadyRebuildCaptureIntakeController'));
+assert('capture-intake-controller-loaded-before-app',
+  indexSource.indexOf('src/assignment/capture-intake-controller-runtime.js')>0 &&
+  indexSource.indexOf('src/assignment/capture-intake-controller-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('capture-intake-controller-wired',
+  appSource.includes('rebuildCaptureIntakeController.create') &&
+  appSource.includes('captureIntakeRuntime.bind()') &&
+  appSource.includes('captureIntakeRuntime.render()')
+);
+assert('capture-intake-authority-stays-external',
+  captureIntakeControllerSource.includes('runtime.addFiles') &&
+  captureIntakeControllerSource.includes('runtime.requestAnalysis') &&
+  captureIntakeControllerSource.includes('runtime.resolveDisposition') &&
+  captureIntakeControllerSource.includes('applyDraft(')
+);
+assert('capture-intake-inline-handlers-removed',
+  !appSource.includes("getElementById('homeworkCameraInput')") &&
+  !appSource.includes("getElementById('captureAnalyzeBtn')") &&
+  !appSource.includes("function captureFiles(") &&
+  !appSource.includes("data-link-capture-item")
+);

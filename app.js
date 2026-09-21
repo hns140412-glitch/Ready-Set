@@ -27,6 +27,7 @@ const rebuildPlannerQueryController=globalThis.ReadyRebuildPlannerQueryControlle
 const rebuildParentIntakeView=globalThis.ReadyRebuildParentIntakeView||null;
 const rebuildCaptureService=globalThis.ReadyRebuildCaptureService||null;
 const rebuildCaptureOrchestrator=globalThis.ReadyRebuildCaptureOrchestrator||null;
+const rebuildCaptureIntakeController=globalThis.ReadyRebuildCaptureIntakeController||null;
 const rebuildCaptureDraft=globalThis.ReadyRebuildCaptureDraft||null;
 const rebuildCaptureView=globalThis.ReadyRebuildCaptureView||null;
 const rebuildAssignmentService=globalThis.ReadyRebuildAssignmentService||null;
@@ -46,7 +47,7 @@ const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildAppBootstrapController=globalThis.ReadyRebuildAppBootstrapController||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -615,11 +616,6 @@ function parsePrints(value=''){return captureService.parsePrints(value)}
 function stableFactSignature(value){return captureService.stableFactSignature(value)}
 
 
-let capturePreviewUrls=[];
-function clearCapturePreviewUrls(){
-  for(const url of capturePreviewUrls){try{URL.revokeObjectURL(url)}catch{}}
-  capturePreviewUrls=[];
-}
 function captureDraftLabel(groupKey=''){
   return String(groupKey).replace('TALENT:','').replace('ENGLISH:','영어 · ');
 }
@@ -651,133 +647,20 @@ const captureView=rebuildCaptureView.create({
   captureDraftConfidence
 });
 
+const captureIntakeRuntime=rebuildCaptureIntakeController.create({
+  query:$,
+  eventTarget:document,
+  runtime:captureRuntime,
+  view:captureView,
+  applyDraft:applyCaptureDraft,
+  requireParentUi,
+  toast,
+  escapeHtml
+});
+captureIntakeRuntime.bind();
 async function renderCaptureIntake(){
-  const summaryRoot=$('#captureGroupSummary'),previewRoot=$('#capturePreviewList');
-  if(!summaryRoot||!previewRoot)return;
-
-  clearCapturePreviewUrls();
-  const {session,groups,items}=await captureRuntime.loadReview();
-  captureView.renderStatus(session);
-
-  if(!session){
-    summaryRoot.innerHTML='<div class="plannerEmpty"><b>촬영한 자료가 없어요.</b><small>자료 그룹을 고르고 촬영을 시작하세요.</small></div>';
-    previewRoot.innerHTML='';
-    captureView.renderReview(null);
-    return;
-  }
-
-  captureView.renderGroups(groups);
-
-  previewRoot.innerHTML='';
-  for(const item of items){
-    const card=document.createElement('article');
-    card.className='capturePreviewItem';
-    const url=item.preview_url;
-    if(url)capturePreviewUrls.push(url);
-    const label=String(item.group_key||'').replace('TALENT:','').replace('ENGLISH:','영어 · ');
-    card.innerHTML=`
-      ${url?`<img src="${url}" alt="${escapeHtml(label)} 촬영 미리보기">`:'<div class="capturePreviewPlaceholder">IMAGE</div>'}
-      <div><b>${escapeHtml(label)}</b><small>${escapeHtml(item.kind)} · ${Math.max(1,Math.round((item.size||0)/1024))}KB</small></div>
-      ${session.status==='TEMP_CAPTURE'?`<button type="button" data-remove-capture="${item.capture_item_id}" aria-label="촬영 삭제">×</button>`:''}
-    `;
-    previewRoot.appendChild(card);
-  }
-  captureView.renderReview(session);
+  return captureIntakeRuntime.render();
 }
-
-
-
-
-async function captureFiles(files){
-  if(!files?.length)return;
-  if(!requireParentUi())return;
-  const group=$('#captureGroupSelect')?.value||'TALENT:연산';
-  const kind=$('#captureKindSelect')?.value||'RANGE';
-  const created=await captureRuntime.addFiles(files,{group_key:group,kind});
-  toast(created.length===1?'촬영 자료를 임시저장했어요.':`${created.length}장 임시저장했어요.`);
-  await renderCaptureIntake();
-}
-
-document.getElementById('homeworkCameraInput')?.addEventListener('change',async e=>{
-  const files=e.target.files;
-  await captureFiles(files);
-  e.target.value='';
-});
-document.getElementById('homeworkGalleryInput')?.addEventListener('change',async e=>{
-  const files=e.target.files;
-  await captureFiles(files);
-  e.target.value='';
-});
-document.getElementById('captureGroupSelect')?.addEventListener('change',async()=>{
-  await captureRuntime.setTarget($('#captureGroupSelect').value,$('#captureKindSelect').value);
-});
-document.getElementById('captureKindSelect')?.addEventListener('change',async()=>{
-  await captureRuntime.setTarget($('#captureGroupSelect').value,$('#captureKindSelect').value);
-});
-document.addEventListener('click',async e=>{
-  const linkItem=e.target.closest('[data-link-capture-item]');
-  if(linkItem){
-    const result=await captureRuntime.resolveDisposition(linkItem.dataset.linkCaptureItem,{
-      disposition:'LINKED_TO_REVIEW_DRAFT',
-      review_draft_id:linkItem.dataset.reviewDraftId
-    });
-    toast(result?.ok?'촬영 원본을 현재 검토 초안에 연결했어요.':'촬영 원본 연결을 완료하지 못했습니다.');
-    await renderCaptureIntake();
-    return;
-  }
-  const ignoreItem=e.target.closest('[data-ignore-capture-item]');
-  if(ignoreItem){
-    const result=await captureRuntime.resolveDisposition(ignoreItem.dataset.ignoreCaptureItem,{
-      disposition:'IGNORED_WITH_REASON',
-      reason:'PARENT_MARKED_NOT_ASSIGNMENT_SOURCE'
-    });
-    toast(result?.ok?'숙제 FACT에 사용하지 않는 원본으로 기록했어요.':'분석 제외 처리를 완료하지 못했습니다.');
-    await renderCaptureIntake();
-    return;
-  }
-  const apply=e.target.closest('[data-apply-capture-draft]');
-  if(apply){
-    const drafts=$('#captureReviewDrafts')?._drafts||[];
-    await applyCaptureDraft(drafts[Number(apply.dataset.applyCaptureDraft)]);
-    return;
-  }
-  const btn=e.target.closest('[data-remove-capture]');
-  if(!btn)return;
-  await captureRuntime.removeItem(btn.dataset.removeCapture);
-  toast('촬영 자료를 삭제했어요.');
-  await renderCaptureIntake();
-});
-document.getElementById('captureReanalyzeBtn')?.addEventListener('click',async()=>{
-  if(!requireParentUi())return;
-  const result=await captureRuntime.requestAnalysis();
-  if(!result?.ok){
-    toast('재분석에 실패했습니다. 기존 초안과 원본은 그대로 보존돼요.');
-    await renderCaptureIntake();
-    return;
-  }
-  toast('새 분석 초안을 만들었어요. 이전 초안은 이력으로 보존됩니다.');
-  await renderCaptureIntake();
-});
-
-document.getElementById('captureAnalyzeBtn')?.addEventListener('click',async()=>{
-  if(!requireParentUi())return;
-  const result=await captureRuntime.requestAnalysis();
-  if(!result?.ok){
-    const reason=result?.result?.reason||result?.reason;
-    const message=reason==='ANALYSIS_PROVIDER_NOT_CONFIGURED'
-      ? '분석 서버 키가 아직 설정되지 않았습니다. 원본은 그대로 보존했어요.'
-      : reason==='PARENT_AUTH_REQUIRED'
-        ? 'Parent 로그인 후 분석할 수 있습니다.'
-        : reason==='NO_CAPTURE_ITEMS'
-          ? '먼저 자료를 촬영해 주세요.'
-          : '분석에 실패했습니다. 원본은 보존되어 다시 시도할 수 있어요.';
-    toast(message);
-    await renderCaptureIntake();
-    return;
-  }
-  toast(result.analysis_state==='ANALYSIS_COMPLETE'?'분석 초안이 준비됐어요. Parent 검토가 필요합니다.':'저장하고 분석을 시작했어요.');
-  await renderCaptureIntake();
-});
 
 async function capturedRefs(groupKey){
   return captureService.capturedRefs(groupKey);
