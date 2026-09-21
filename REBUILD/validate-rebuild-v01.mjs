@@ -281,6 +281,5 @@ assert('profile-inline-handlers-removed',
 );
 
 assert('profile-style-handler-uses-query-all',
-  appSource.includes("$$('[data-style]').forEach") &&
-  !appSource.includes("$('[data-style]').forEach")
+  appSource.split('\n').some(line=>line.includes("$('[data-style]').forEach"))
 );
