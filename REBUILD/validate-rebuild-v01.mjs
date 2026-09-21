@@ -365,3 +365,24 @@ assert('planner-admin-inline-crud-removed',
   !appSource.includes("getElementById('saveScheduleBtn')") &&
   !appSource.includes("getElementById('saveAvailabilityBtn')")
 );
+
+const sessionRecoveryControllerSource=loadSource('src/session/session-recovery-controller-runtime.js');
+assert('session-recovery-controller-owner',sessionRecoveryControllerSource.includes('ReadyRebuildSessionRecoveryController'));
+assert('session-recovery-controller-loaded-before-app',
+  indexSource.indexOf('src/session/session-recovery-controller-runtime.js')>0 &&
+  indexSource.indexOf('src/session/session-recovery-controller-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('session-recovery-controller-wired',
+  appSource.includes('rebuildSessionRecoveryController.create') &&
+  appSource.includes('sessionRecoveryRuntime.reconcile()')
+);
+assert('session-recovery-planner-ownership',
+  sessionRecoveryControllerSource.includes('sessionRuntimeStatus') &&
+  sessionRecoveryControllerSource.includes('recordTaskState') &&
+  sessionRecoveryControllerSource.includes('plannerQuery.snapshot()')
+);
+assert('session-recovery-inline-removed',
+  !appSource.includes('function reconcileReadyRuntimeState()') &&
+  !appSource.includes('sessionRuntimeStatus?.(state.activeSession.id)') &&
+  !appSource.includes("ready_state:'IN_PROGRESS',\n          session_id:state.activeSession.id")
+);

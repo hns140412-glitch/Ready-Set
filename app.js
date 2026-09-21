@@ -13,6 +13,7 @@ const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const rebuildSession=globalThis.ReadyRebuildSessionDomain||null;
 const rebuildSessionService=globalThis.ReadyRebuildSessionService||null;
+const rebuildSessionRecoveryController=globalThis.ReadyRebuildSessionRecoveryController||null;
 const rebuildPlannerProjection=globalThis.ReadyRebuildPlannerProjection||null;
 const rebuildPlannerView=globalThis.ReadyRebuildPlannerView||null;
 const rebuildNavigation=globalThis.ReadyRebuildNavigation||null;
@@ -1071,54 +1072,19 @@ function escapeHtml(s){
 window.addEventListener('visibilitychange',()=>{
   if(!document.hidden&&state.activeSession)renderFocus();
 });
-function reconcileReadyRuntimeState(){
-  const snap=plannerQueryRuntime.snapshot();
-  const todayKey=localDateKey();
-  const openToday=new Set((snap.dated_todos||[])
-    .filter(x=>x.date===todayKey&&x.state==='PLANNED')
-    .map(x=>x.todo_id));
-  const beforeSelected=state.selectedTodoIds.length;
-  state.selectedTodoIds=state.selectedTodoIds.filter(id=>openToday.has(id));
-
-  let resumed=false;
-  if(state.activeSession?.id){
-    let status=window.ReadySetPlanner?.sessionRuntimeStatus?.(state.activeSession.id)||null;
-    const sessionIds=new Set((state.activeSession.plannerLinks||[]).map(x=>x.todo_id).filter(Boolean));
-    let inProgress=(status?.in_progress||[]).filter(x=>sessionIds.has(x.todo_id));
-    if(!inProgress.length&&sessionIds.size){
-      const legacyInProgress=(snap.dated_todos||[]).filter(x=>sessionIds.has(x.todo_id)&&x.state==='IN_PROGRESS');
-      for(const todo of legacyInProgress){
-        window.ReadySetPlanner?.recordTaskState?.({
-          todo_id:todo.todo_id,
-          ready_state:'IN_PROGRESS',
-          session_id:state.activeSession.id,
-          task_id:todo.learning_unit_id||todo.todo_id,
-          at:todo.started_at||new Date(state.activeSession.startAt||Date.now()).toISOString()
-        });
-      }
-      status=window.ReadySetPlanner?.sessionRuntimeStatus?.(state.activeSession.id)||null;
-      inProgress=(status?.in_progress||[]).filter(x=>sessionIds.has(x.todo_id));
-    }
-    if(inProgress.length){
-      resumed=true;
-      const liveById=new Map(inProgress.map(x=>[x.todo_id,x]));
-      state.activeSession.plannerLinks=(state.activeSession.plannerLinks||[])
-        .filter(x=>liveById.has(x.todo_id))
-        .map(x=>({...x,state:'IN_PROGRESS'}));
-    }else{
-      state.activeSession=null;
-    }
-  }
-
-  if(beforeSelected!==state.selectedTodoIds.length||!state.activeSession||resumed)save();
-  return {resumed};
-}
+const sessionRecoveryRuntime=rebuildSessionRecoveryController.create({
+  getState:()=>state,
+  save,
+  planner:()=>window.ReadySetPlanner,
+  plannerQuery:plannerQueryRuntime,
+  localDateKey
+});
 
 window.addEventListener('load',()=>{
   renderHome();settingsRuntime.renderSettings();
   const versionInfo=document.getElementById('readyVersionInfo');
   if(versionInfo) versionInfo.textContent=`APP ${VERSION.app} · MASTER ${VERSION.master} · SCHEMA ${VERSION.schema} · RELEASE ${VERSION.cache}`;
-  const recovery=reconcileReadyRuntimeState();
+  const recovery=sessionRecoveryRuntime.reconcile();
   if(recovery.resumed)nav('focus');
   if(readyPwaSafePoint()) window.dispatchEvent(new CustomEvent('readyset-safe-point'));
 });
