@@ -43,6 +43,41 @@
     }};
   }
 
+  function directiveForPlannerTodo(todo={},taskId=null){
+    const p=todo?.provenance||{};
+    const lexicalIds=uniq(p.lexical_ids);
+    if(todo?.source!=='PLANNER_SPECIALIST_MEMORY_REVIEW')return null;
+    if(p.kind!=='HIDE_MEMORY_REVIEW')return null;
+    if(p.review_policy_authority!=='READY_LEARNING_ENGINE')return null;
+    if(p.schedule_authority!=='READY_SET_PLANNER')return null;
+    if(!lexicalIds.length)return null;
+    return Object.freeze({
+      authority:'EXPLICIT_READY_PLANNER_REVIEW_DIRECTIVE',
+      reviewPolicyOwner:'READY_LEARNING_ENGINE',
+      scheduleOwner:'READY_SET_PLANNER',
+      lexicalIds,
+      directiveId:'hide-review:'+clean(todo.todo_id),
+      taskId:clean(taskId)||clean(todo.todo_id)||null,
+      scheduledDate:clean(todo.date)||null
+    });
+  }
+
+  function normalizeHideSpecialistResult(payload={}){
+    const memory=payload?.memorySummary;
+    if(!memory||memory.authority!=='SPECIALIST_MEMORY_ADVISORY_ONLY')return null;
+    if(memory.reviewPolicyOwner!=='READY_LEARNING_ENGINE'||memory.scheduleOwner!=='READY_SET_PLANNER')return null;
+    return Object.freeze({
+      sourceApp:'hide-seek',
+      evidenceAuthority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
+      activeSheetId:clean(payload.activeSheetId)||null,
+      sheetStatus:clean(payload.sheetStatus)||null,
+      taskState:clean(payload.taskState)||null,
+      learningPhase:clean(payload.learningPhase)||null,
+      trailMastery:Number.isFinite(Number(payload.trailMastery))?Number(payload.trailMastery):null,
+      memorySummary:JSON.parse(JSON.stringify(memory))
+    });
+  }
+
   function planReview(decision,planner,options={}){
     if(decision?.authority!=='READY_LEARNING_ENGINE_REVIEW_POLICY')return {ok:false,reason:'READY_REVIEW_DECISION_REQUIRED'};
     if(decision?.scheduleOwner!=='READY_SET_PLANNER')return {ok:false,reason:'PLANNER_SCHEDULE_OWNER_REQUIRED'};
@@ -79,5 +114,5 @@
     return {ok:true,todo,directive};
   }
 
-  return Object.freeze({version:VERSION,interpretHideMemorySummary,planReview});
+  return Object.freeze({version:VERSION,interpretHideMemorySummary,planReview,directiveForPlannerTodo,normalizeHideSpecialistResult});
 });
