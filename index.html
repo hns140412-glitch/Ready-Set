@@ -104,10 +104,12 @@
         <div class="adminSectionHead"><div><small>FIXED SCHEDULE</small><h2>고정 일정</h2></div><button class="miniAction" id="scheduleClearBtn">새 일정</button></div>
         <input id="scheduleId" type="hidden">
         <label class="inputBlock">일정명<input id="scheduleTitle" placeholder="예) 영어학원"></label>
+        <label class="adminToggle"><input id="scheduleWeekly" type="checkbox"><span><b>매주 반복</b><small>학원·피아노·태권도처럼 매주 같은 요일의 고정 일정</small></span></label>
         <div class="adminGrid two">
           <label class="inputBlock">분류<input id="scheduleCategory" placeholder="예) 영어"></label>
           <label class="inputBlock">날짜<input id="scheduleDate" type="date"></label>
         </div>
+        <label class="inputBlock">요일<select id="scheduleWeekday"><option value="1">월</option><option value="2">화</option><option value="3">수</option><option value="4">목</option><option value="5">금</option><option value="6">토</option><option value="0">일</option></select></label>
         <div class="adminGrid two">
           <label class="inputBlock">시작<input id="scheduleStart" type="time"></label>
           <label class="inputBlock">종료<input id="scheduleEnd" type="time"></label>

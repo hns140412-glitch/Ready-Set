@@ -26,6 +26,8 @@
       query('#scheduleTitle').value='';
       query('#scheduleCategory').value='';
       query('#scheduleDate').value=localDateKey();
+      query('#scheduleWeekly').checked=false;
+      query('#scheduleWeekday').value='1';
       query('#scheduleStart').value='';
       query('#scheduleEnd').value='';
       query('#scheduleMovable').checked=false;
@@ -58,9 +60,11 @@
       query('#scheduleId').value=item.commitment_id;
       query('#scheduleTitle').value=item.title||'';
       query('#scheduleCategory').value=item.category||'';
-      query('#scheduleDate').value=String(item.start_at||'').slice(0,10);
-      query('#scheduleStart').value=String(item.start_at||'').slice(11,16);
-      query('#scheduleEnd').value=String(item.end_at||'').slice(11,16);
+      query('#scheduleWeekly').checked=item.recurrence==='WEEKLY';
+      query('#scheduleWeekday').value=String(item.weekday??1);
+      query('#scheduleDate').value=item.recurrence==='WEEKLY'?localDateKey():String(item.start_at||'').slice(0,10);
+      query('#scheduleStart').value=item.recurrence==='WEEKLY'?(item.start||''):String(item.start_at||'').slice(11,16);
+      query('#scheduleEnd').value=item.recurrence==='WEEKLY'?(item.end||''):String(item.end_at||'').slice(11,16);
       query('#scheduleMovable').checked=!!item.planner_movable;
       return true;
     }
@@ -124,17 +128,22 @@
     function saveSchedule(){
       if(!requireParentUi())return {ok:false,reason:'PARENT_REQUIRED'};
       const title=query('#scheduleTitle').value.trim();
+      const weekly=query('#scheduleWeekly').checked;
       const date=query('#scheduleDate').value;
       const start=query('#scheduleStart').value;
       const end=query('#scheduleEnd').value;
-      if(!title||!date||!start||!end){toast('일정명·날짜·시작·종료 시간을 확인해 주세요.');return {ok:false,reason:'INVALID_INPUT'};}
+      if(!title||(!weekly&&!date)||!start||!end){toast('일정명·날짜/요일·시작·종료 시간을 확인해 주세요.');return {ok:false,reason:'INVALID_INPUT'};}
       if(end<=start){toast('종료 시간은 시작 시간보다 늦어야 해요.');return {ok:false,reason:'INVALID_RANGE'};}
       const result=planner()?.upsertScheduleCommitment?.({
         commitment_id:query('#scheduleId').value||undefined,
         title,
         category:query('#scheduleCategory').value.trim()||'OTHER',
-        start_at:`${date}T${start}:00`,
-        end_at:`${date}T${end}:00`,
+        start_at:weekly?null:(date+'T'+start+':00'),
+        end_at:weekly?null:(date+'T'+end+':00'),
+        recurrence:weekly?'WEEKLY':null,
+        weekday:weekly?Number(query('#scheduleWeekday').value):null,
+        start:weekly?start:null,
+        end:weekly?end:null,
         confirmed:true,
         planner_movable:query('#scheduleMovable').checked,
         parent_editable:true,

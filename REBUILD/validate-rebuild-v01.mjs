@@ -612,3 +612,13 @@ assert('english-academy-morning-vocab-rule',
   plannerOperatingRuleSource.includes('operatingRuleForUnit') &&
   plannerOperatingRuleSource.includes('isEnglishAcademyCommitment')
 );
+
+const plannerProjectionWeeklySchedule=loadSource('src/planner/planner-projection-runtime.js');
+const plannerAdminWeeklySchedule=loadSource('src/views/planner-admin-controller-runtime.js');
+assert('weekly-schedule-commitment-supported',
+  plannerProjectionWeeklySchedule.includes("recurrence==='WEEKLY'") &&
+  loadSource('ready-planner-v01.js').includes('scheduleCommitmentsForDate') &&
+  indexSource.includes('scheduleWeekly') &&
+  indexSource.includes('scheduleWeekday') &&
+  plannerAdminWeeklySchedule.includes("recurrence:weekly?'WEEKLY':null")
+);

@@ -10,7 +10,7 @@
       el.innerHTML=rows.length
         ? [...rows].sort((a,b)=>String(a.start_at||'').localeCompare(String(b.start_at||''))).map(x=>`
           <button class="adminListItem" type="button" data-edit-schedule="${x.commitment_id}">
-            <span><b>${escapeHtml(x.title)}</b><small>${String(x.start_at||'').slice(0,16).replace('T',' ')} → ${String(x.end_at||'').slice(11,16)} · ${escapeHtml(x.category||'OTHER')}</small></span><strong>수정</strong>
+            <span><b>${escapeHtml(x.title)}</b><small>${x.recurrence==='WEEKLY'?'매주 '+['일','월','화','수','목','금','토'][Number(x.weekday)]+'요일 '+escapeHtml(x.start)+' → '+escapeHtml(x.end):String(x.start_at||'').slice(0,16).replace('T',' ')+' → '+String(x.end_at||'').slice(11,16)} · ${escapeHtml(x.category||'OTHER')}</small></span><strong>수정</strong>
           </button>`).join('')
         : '<div class="plannerEmpty"><b>등록된 고정 일정이 없어요.</b><small>학원·피아노·태권도처럼 움직이지 않는 일정을 먼저 넣어요.</small></div>';
     }

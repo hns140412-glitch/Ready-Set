@@ -96,3 +96,27 @@ test('Parent can approve weekly reflow without moving active or completed tasks'
   expect(out.moved.date).toBe(seeded.d1);
   expect(out.locked.date).toBe(seeded.d0);
 });
+
+
+test('weekly fixed schedule expands into planner dates', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__READY_AUTH_BOOTSTRAP__={authenticated:true,family_id:'TEST_FAMILY',member_id:'TEST_PARENT',role:'PARENT',session_id:'TEST_SESSION',expires_at:'2099-01-01T00:00:00.000Z',source:'TEST_ONLY'};
+  });
+  await page.goto('http://127.0.0.1:4173/', {waitUntil:'load'});
+  await page.locator('[data-nav="planner"]').first().click();
+  await page.locator('[data-nav="planner-admin"]').click();
+  await page.locator('#scheduleTitle').fill('영어학원');
+  await page.locator('#scheduleCategory').fill('영어');
+  await page.locator('#scheduleWeekly').check();
+  await page.locator('#scheduleWeekday').selectOption('1');
+  await page.locator('#scheduleStart').fill('17:00');
+  await page.locator('#scheduleEnd').fill('19:00');
+  await page.locator('#saveScheduleBtn').click();
+  await expect(page.locator('#scheduleAdminList')).toContainText('매주 월요일');
+  const out=await page.evaluate(()=>window.ReadySetPlanner.scheduleCommitmentsForDate('2026-09-28'));
+  expect(out).toHaveLength(1);
+  expect(out[0].start_at).toBe('2026-09-28T17:00:00');
+  await page.locator('[data-nav="planner"]').first().click();
+  await page.locator('[data-planner-date="2026-09-28"]').click();
+  await expect(page.locator('#plannerWeekDetail')).toContainText('영어학원');
+});
