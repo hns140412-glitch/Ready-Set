@@ -149,3 +149,14 @@ assert('recording-service-mime-priority',
 );
 assert('recording-service-no-fake-m4a',recordingServiceSource.includes("extensionFor")&&recordingServiceSource.includes("'webm'"));
 assert('recording-service-indexeddb',recordingServiceSource.includes("indexedDBImpl.open('readyset_audio',1)"));
+
+const resultHistorySource=loadSource('src/views/result-history-view-runtime.js');
+assert('result-history-owner',resultHistorySource.includes('ReadyRebuildResultHistoryView'));
+assert('result-history-state-coverage',
+  ['COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED','MIXED'].every(x=>resultHistorySource.includes(x))
+);
+const profileSettingsSource=loadSource('src/views/profile-settings-view-runtime.js');
+assert('profile-settings-owner',profileSettingsSource.includes('ReadyRebuildProfileSettingsView'));
+const authSyncSource=loadSource('src/views/auth-sync-view-runtime.js');
+assert('auth-sync-owner',authSyncSource.includes('ReadyRebuildAuthSyncView'));
+assert('auth-sync-no-authority-transfer',!authSyncSource.includes('requireRole')&&!authSyncSource.includes('linkChild'));
