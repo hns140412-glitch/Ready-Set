@@ -15,7 +15,8 @@ const rebuildSession=globalThis.ReadyRebuildSessionDomain||null;
 const rebuildSessionService=globalThis.ReadyRebuildSessionService||null;
 const rebuildPlannerProjection=globalThis.ReadyRebuildPlannerProjection||null;
 const rebuildPlannerView=globalThis.ReadyRebuildPlannerView||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView){
+const rebuildNavigation=globalThis.ReadyRebuildNavigation||null;
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -116,25 +117,33 @@ function requireParentUi(){
   toast('부모 인증이 필요한 화면입니다.');
   return false;
 }
-function nav(name){
-  if(name!=='result'&&$('#resultView')?.classList.contains('active')&&state.lastResult){
-    state.lastResult=null;
-    save();
+const appNavigation=rebuildNavigation.create({
+  guard(name){
+    if(name==='planner-admin'&&!requireParentUi())return {ok:true,name:'planner'};
+    return {ok:true,name};
+  },
+  before(name){
+    if(name!=='result'&&$('#resultView')?.classList.contains('active')&&state.lastResult){
+      state.lastResult=null;
+      save();
+    }
+  },
+  views:{
+    home:()=>renderHome(),
+    mission:()=>renderMission(),
+    focus:()=>renderFocus(),
+    recording:()=>renderRecordingContext(),
+    history:()=>renderHistory(),
+    calendar:()=>renderCalendar(),
+    planner:()=>renderPlanner(),
+    'planner-admin':()=>renderPlannerAdmin(),
+    profile:()=>renderProfile(),
+    settings:()=>renderSettings(),
+    result:()=>renderResult()
   }
-  if(name==='planner-admin'&&!requireParentUi())name='planner';
-  $$('.view').forEach(v=>v.classList.toggle('active',v.dataset.view===name));
-  window.scrollTo(0,0);
-  if(name==='home')renderHome();
-  if(name==='mission')renderMission();
-  if(name==='focus')renderFocus();
-  if(name==='recording')renderRecordingContext();
-  if(name==='history')renderHistory();
-  if(name==='calendar')renderCalendar();
-  if(name==='planner')renderPlanner();
-  if(name==='planner-admin')renderPlannerAdmin();
-  if(name==='profile')renderProfile();
-  if(name==='settings')renderSettings();
-  if(name==='result')renderResult();
+});
+function nav(name){
+  return appNavigation.show(name);
 }
 document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.nav)));
 document.addEventListener('click',e=>{const tab=e.target.closest('[data-planner-tab]');if(tab){plannerTab=tab.dataset.plannerTab;renderPlanner();return}const day=e.target.closest('[data-planner-date]');if(day){plannerSelectedDate=day.dataset.plannerDate;renderPlanner();}});
