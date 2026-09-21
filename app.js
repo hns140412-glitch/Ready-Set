@@ -181,7 +181,7 @@ function applyGuide(el,type=state.guide.type){
 function guideData(type=state.guide.type){return GUIDE_TYPES[type]||GUIDE_TYPES.lumi}
 
 function plannerTodayProjection(){
-  return (plannerTodayProjection()).map(x=>rebuildPlannerProjection.todayItem(x));
+  return (window.ReadySetPlanner?.todayProjection?.()||[]).map(x=>rebuildPlannerProjection.todayItem(x));
 }
 function currentPlannerMissionItems(){
   const today=plannerTodayProjection();
