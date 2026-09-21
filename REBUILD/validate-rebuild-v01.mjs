@@ -682,3 +682,19 @@ assert('capture-failed-reanalysis-preserves-current',
   captureRuntimeSource.includes("analysis_state:'ANALYSIS_COMPLETE'") &&
   captureRuntimeSource.includes('last_analysis_failure')
 );
+
+
+const learningMasterSource=loadSource('ready-learning-master-v01.js');
+const assignmentIntakeSource=loadSource('src/assignment/assignment-intake-controller-runtime.js');
+assert('english-component-specific-grammar-reading',
+  learningMasterSource.includes("'grammar':{") &&
+  learningMasterSource.includes("['GRAMMAR_CHECK','QUIZ','REVIEW']") &&
+  learningMasterSource.includes("'reading':{") &&
+  learningMasterSource.includes("['READ_STORY','COMPREHENSION_CHECK','SENTENCE_BUILDING','REVIEW']") &&
+  learningMasterSource.includes('componentSpecificProfile') &&
+  learningMasterSource.includes('preferredActivitySequence') &&
+  assignmentIntakeSource.includes("grammar:query('#englishGrammar')") &&
+  assignmentIntakeSource.includes("reading:query('#englishReading')") &&
+  indexSource.includes('id="englishGrammar"') &&
+  indexSource.includes('id="englishReading"')
+);
