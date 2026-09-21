@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const RUNTIME_VERSION = '2026.09.07-rev07-b';
+  const RUNTIME_VERSION = '2026.09.21-rev07-c';
   const HIDE_URL = 'https://dainty-froyo-a6e427.netlify.app';
   const SNAP_URL = 'https://cheerful-pothos-d1c3ee.netlify.app';
   const VALID_TASK_STATES = new Set(['PENDING','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
@@ -233,7 +233,7 @@
   function normalizeInboundState(raw) {
     if (!raw) return null;
     if (VALID_TASK_STATES.has(raw)) return raw;
-    if (raw === 'HELP_NEEDED') return 'BLOCKED';
+    if (raw === 'HELP_NEEDED') return 'WAITING_FOR_PARENT';
     return null;
   }
 
@@ -245,13 +245,27 @@
     if (!task) return false;
 
     const normalized = normalizeInboundState(task_state);
+    const specialistProvenance = {
+      source_app: from_app || 'specialist',
+      event_id: event_id || null,
+      raw_state: task_state || null,
+      normalized_state: normalized || null,
+      lap_id: lap_id || null,
+      received_at: iso()
+    };
+    task.specialist_provenance = [...(task.specialist_provenance || []), specialistProvenance].slice(-50);
     c.active_app = 'ready-set';
     c.active_task_id = task.task_id;
     if (lap_id) c.active_lap_id = lap_id;
     if (normalized) setTaskState(task.task_id, normalized, from_app || 'SPECIALIST');
     if (['COMPLETED','BLOCKED'].includes(normalized)) endActiveLap('SPECIALIST_RESULT', normalized);
     if (event_id) c.applied_event_ids = [...(c.applied_event_ids || []), event_id].slice(-200);
-    emit('APP_RETURN', { from: from_app || 'specialist', task_state: normalized || task_state || null });
+    emit('APP_RETURN', {
+      from: from_app || 'specialist',
+      task_state: normalized || task_state || null,
+      specialist_event_id: event_id || null,
+      specialist_provenance: specialistProvenance
+    });
     save();
     renderContractUI();
     return true;
@@ -264,10 +278,11 @@
       task_id: p.get('task_id'),
       lap_id: p.get('lap_id'),
       task_state: p.get('task_state'),
-      from_app: p.get('from_app')
+      from_app: p.get('from_app'),
+      event_id: p.get('event_id')
     };
     if (!args.session_id || !args.task_id || !applyInboundResult(args)) return;
-    ['session_id','goal_id','task_id','lap_id','task_state','from_app'].forEach(k => p.delete(k));
+    ['session_id','goal_id','task_id','lap_id','task_state','from_app','event_id'].forEach(k => p.delete(k));
     const clean = `${location.pathname}${p.toString() ? `?${p}` : ''}${location.hash}`;
     history.replaceState(null, '', clean);
   }
@@ -278,7 +293,7 @@
     if (!e) return;
     const taskState = e.type === 'TASK_COMPLETED' ? 'COMPLETED'
       : e.type === 'TASK_BLOCKED' ? 'BLOCKED'
-      : e.type === 'HELP_NEEDED' ? 'BLOCKED'
+      : e.type === 'HELP_NEEDED' ? 'WAITING_FOR_PARENT'
       : e.type === 'TASK_PARTIAL' ? 'PARTIAL'
       : null;
     applyInboundResult({
