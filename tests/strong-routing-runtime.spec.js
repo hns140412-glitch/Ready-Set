@@ -3,6 +3,26 @@ const { test, expect } = require('@playwright/test');
 test('Ready enforces Hide -> Snap ordered specialist roundtrip without external deploy', async ({ page }) => {
   await page.addInitScript(() => {
     const now=Date.now();
+    const d=new Date(now);
+    const today=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const todoId='todo_eng_e2e';
+    const sessionId='e2e_session_1';
+    localStorage.setItem('readyset_planner_v1', JSON.stringify({
+      schema_version:1,
+      dated_todos:[{
+        todo_id:todoId,date:today,label:'영어 · 단어와 문장',subject:'영어',
+        matched_domain:'표현',method_variant:null,
+        assignment_id:'assignment_eng_e2e',analysis_id:'analysis_eng_e2e',learning_unit_id:'unit_eng_e2e',
+        activity_types:['RECALL','WRITING'],
+        activity_sequence:['INPUT','BIDIRECTIONAL_RECALL','COMPREHEND','PRODUCE','SELF_REVIEW'],
+        concept_skill_target:'단어 회상 후 자기 문장 표현',
+        cognitive_load_profile:['RETRIEVAL_LOAD','LANGUAGE_PRODUCTION'],
+        divisible_boundary:'LEARNING_ACTIVITY_BOUNDARY',
+        confidence:0.8,unresolved_flags:[],
+        state:'IN_PROGRESS',source:'PLANNER_V2_ALLOCATION',
+        active_session_id:sessionId,active_task_id:'unit_eng_e2e'
+      }]
+    }));
     localStorage.setItem('readyset_state', JSON.stringify({
       schemaVersion:5,
       profile:{name:'',photo:'',style:'editorial',shareAvatar:false},
@@ -15,7 +35,7 @@ test('Ready enforces Hide -> Snap ordered specialist roundtrip without external 
       targetMin:25,
       sound:'OFF',
       activeSession:{
-        id:'e2e_session_1',
+        id:sessionId,
         startAt:now,
         targetMs:25*60*1000,
         pausedAt:null,
@@ -24,7 +44,7 @@ test('Ready enforces Hide -> Snap ordered specialist roundtrip without external 
         selected:[],
         tasks:['영어 · 단어와 문장'],
         plannerLinks:[{
-          todo_id:null,
+          todo_id:todoId,
           label:'영어 · 단어와 문장',
           subject:'영어',
           matched_domain:'표현',
@@ -156,16 +176,31 @@ test('Ready enforces Hide -> Snap ordered specialist roundtrip without external 
 test('Ready rejects specialist return that does not match active ordered handoff', async ({ page }) => {
   await page.addInitScript(() => {
     const now=Date.now();
+    const d=new Date(now);
+    const today=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const todoId='todo_hanja_e2e';
+    const sessionId='e2e_session_spoof';
+    localStorage.setItem('readyset_planner_v1', JSON.stringify({
+      schema_version:1,
+      dated_todos:[{
+        todo_id:todoId,date:today,label:'한자 기억',subject:'한자',
+        learning_unit_id:'unit_hanja',
+        activity_types:['MEMORY','RECALL'],
+        activity_sequence:['FORM','SOUND','CORE_MEANING','RECALL'],
+        state:'IN_PROGRESS',source:'PLANNER_V2_ALLOCATION',
+        active_session_id:sessionId,active_task_id:'unit_hanja'
+      }]
+    }));
     localStorage.setItem('readyset_state', JSON.stringify({
       schemaVersion:5,
       profile:{name:'',photo:'',style:'editorial',shareAvatar:false},
       guide:{type:'lumi',name:'루미',voice:'warm'},
       guestHistory:[],records:[],selected:[],tasks:['한자 기억'],selectedTodoIds:[],targetMin:25,sound:'OFF',
       activeSession:{
-        id:'e2e_session_spoof',
+        id:sessionId,
         startAt:now,targetMs:1500000,pausedAt:null,issueMs:0,completed:false,selected:[],tasks:['한자 기억'],
         plannerLinks:[{
-          label:'한자 기억',subject:'한자',learning_unit_id:'unit_hanja',
+          todo_id:todoId,label:'한자 기억',subject:'한자',learning_unit_id:'unit_hanja',
           activity_types:['MEMORY','RECALL'],
           activity_sequence:['FORM','SOUND','CORE_MEANING','RECALL']
         }],
