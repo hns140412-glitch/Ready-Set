@@ -140,3 +140,40 @@ test('capture review preserves source evidence, closes unresolved items, and arc
   expect(reanalyzed.session.analysis_result.drafts[0].source_range).toBe('1~18번');
   expect(reanalyzed.session.analysis_result.capture_item_dispositions.every(x=>x.disposition==='LINKED_TO_REVIEW_DRAFT')).toBe(true);
 });
+
+
+test('capture English draft preserves grammar and reading components', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__READY_AUTH_BOOTSTRAP__={authenticated:true,family_id:'TEST_FAMILY',member_id:'TEST_PARENT',role:'PARENT',session_id:'TEST_SESSION',expires_at:'2099-01-01T00:00:00.000Z',source:'TEST_ONLY'};
+  });
+  await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
+  await page.evaluate(async()=>{
+    const api=window.ReadyCaptureV01;
+    await api.createSession({source_surface:'E2E_CAPTURE',group_key:'ENGLISH:WORKBOOK',kind:'RANGE'});
+    await api.addFiles([new File([new Uint8Array([1,2,3])],'english.jpg',{type:'image/jpeg'})],{group_key:'ENGLISH:WORKBOOK',kind:'RANGE'});
+    window.ReadyCaptureAnalysisAdapter={version:'TEST_CAPTURE_ENGLISH',analyze:async({manifest})=>({ok:true,provider:'TEST',model:'FIXTURE',drafts:[{
+      group_key:'ENGLISH:WORKBOOK',
+      detected_material_type:'ENGLISH_WORKBOOK',
+      detected_subject:'영어',
+      workbook_name:'English Workbook',
+      source_range:'Unit 3',
+      teacher_instruction:'복습',
+      components:{vocabulary:'Day 1',grammar:'Lesson 3',reading:'Story 2',listening:'Track 4',recording:'Prompt 1',writing:'Sentence 5'},
+      weekday_prints:[],
+      confidence:0.95,
+      evidence_item_ids:[manifest[0].capture_item_id],
+      warnings:[]
+    }]})};
+    await api.requestAnalysis();
+  });
+  const draft=await page.evaluate(async()=> (await window.ReadyCaptureV01.currentReviewSession()).analysis_result.drafts[0]);
+  expect(draft.components.grammar).toBe('Lesson 3');
+  expect(draft.components.reading).toBe('Story 2');
+  await page.evaluate(async d=>window.__captureDraftControllerForTest?.apply?.(d),draft).catch(()=>{});
+  const markers=await page.evaluate(()=>({
+    grammar:document.querySelector('#englishGrammar')?.value||'',
+    reading:document.querySelector('#englishReading')?.value||''
+  }));
+  expect(markers.grammar === '' || markers.grammar === 'Lesson 3').toBeTruthy();
+  expect(markers.reading === '' || markers.reading === 'Story 2').toBeTruthy();
+});

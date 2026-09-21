@@ -38,6 +38,8 @@
         const components=draft.components||{};
         const componentMap={
           vocabulary:'#englishVocabulary',
+          grammar:'#englishGrammar',
+          reading:'#englishReading',
           listening:'#englishListening',
           recording:'#englishRecording',
           writing:'#englishWriting'
@@ -59,6 +61,8 @@
           weekday_prints:parsePrints(prints?.value||''),
           components:{
             vocabulary:q('#englishVocabulary')?.value.trim()||'',
+            grammar:q('#englishGrammar')?.value.trim()||'',
+            reading:q('#englishReading')?.value.trim()||'',
             listening:q('#englishListening')?.value.trim()||'',
             recording:q('#englishRecording')?.value.trim()||'',
             writing:q('#englishWriting')?.value.trim()||''

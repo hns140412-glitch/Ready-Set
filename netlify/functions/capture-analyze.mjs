@@ -47,9 +47,11 @@ function schema(){
             components:{
               type:'object',
               additionalProperties:false,
-              required:['vocabulary','listening','recording','writing'],
+              required:['vocabulary','grammar','reading','listening','recording','writing'],
               properties:{
                 vocabulary:{type:'string'},
+                grammar:{type:'string'},
+                reading:{type:'string'},
                 listening:{type:'string'},
                 recording:{type:'string'},
                 writing:{type:'string'}
@@ -119,6 +121,7 @@ export default async function handler(req){
         'Preserve the provided group_key exactly.',
         'Do not treat physical page count as a learning-unit split rule.',
         'Extract only observable assignment facts: subject/material type/workbook name/range/teacher instruction/components/weekday prints.',
+        'For English components, preserve vocabulary, grammar, reading, listening, recording, and writing separately when visible.',
         'Use empty strings for unknown fields and add a warning explaining uncertainty.',
         'Do not output answer contents even if an answer sheet is visible.'
       ].join('\n')

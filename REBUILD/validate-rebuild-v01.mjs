@@ -698,3 +698,13 @@ assert('english-component-specific-grammar-reading',
   indexSource.includes('id="englishGrammar"') &&
   indexSource.includes('id="englishReading"')
 );
+
+const captureDraftEnglishSource=loadSource('src/assignment/capture-draft-runtime.js');
+const captureAnalyzeEnglishSource=loadSource('netlify/functions/capture-analyze.mjs');
+assert('capture-english-grammar-reading-contract',
+  captureDraftEnglishSource.includes("grammar:'#englishGrammar'") &&
+  captureDraftEnglishSource.includes("reading:'#englishReading'") &&
+  captureAnalyzeEnglishSource.includes("'grammar','reading'") &&
+  captureAnalyzeEnglishSource.includes('grammar:{type:\'string\'}') &&
+  captureAnalyzeEnglishSource.includes('reading:{type:\'string\'}')
+);
