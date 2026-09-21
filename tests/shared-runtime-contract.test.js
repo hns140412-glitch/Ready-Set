@@ -5,6 +5,7 @@ const release=require('../vendor/taky/release-contract.js');
 const pwa=require('../vendor/taky/pwa-update-state.js');
 const eventEnvelope=require('../vendor/taky/event-envelope.js');
 const localQueue=require('../vendor/taky/local-queue.js');
+const visionIngest=require('../vendor/taky/vision-ingest.js');
 
 delete globalThis.ReadySetReleaseDescriptor;
 require('../ready-release-v01.js');
@@ -21,6 +22,7 @@ const index=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
 const app=fs.readFileSync(path.join(__dirname,'..','app.js'),'utf8');
 const localFirst=fs.readFileSync(path.join(__dirname,'..','ready-local-first-v01.js'),'utf8');
 const syncAdapter=fs.readFileSync(path.join(__dirname,'..','ready-sync-adapter-v01.js'),'utf8');
+const captureAnalysis=fs.readFileSync(path.join(__dirname,'..','ready-capture-analysis-adapter-v01.js'),'utf8');
 
 assert.equal(versionMirror.authoritativeSource,'ready-release-v01.js');
 assert.equal(versionMirror.appVersion,descriptor.app_version);
@@ -40,6 +42,7 @@ assert(index.includes('./vendor/taky/release-contract.js'));
 assert(index.includes('./vendor/taky/pwa-update-state.js'));
 assert(index.includes('./vendor/taky/event-envelope.js'));
 assert(index.includes('./vendor/taky/local-queue.js'));
+assert(index.includes('./vendor/taky/vision-ingest.js'));
 assert(index.includes('./ready-release-v01.js'));
 assert(index.includes('./ready-pwa-update-v01.js'));
 assert(app.includes('globalThis.ReadySetReleaseDescriptor'));
@@ -88,3 +91,25 @@ assert(!localFirst.includes("id='evt_'+scope+'_'+digest"),'Ready must not derive
 assert(syncAdapter.includes("event.event_id||event.id"),'sync adapter must accept shared immutable event identity');
 
 console.log('PASS: Ready consumes shared event envelope/local queue mechanics without absorbing Ready conflict/auth semantics');
+
+
+const visionReq=visionIngest.buildRequest({
+  source:'ready-set:test',
+  manifest:[
+    {source_id:'src-1',mime_type:'image/jpeg'},
+    {source_id:'answer-1',mime_type:'image/jpeg',exclude_from_analysis:true}
+  ]
+});
+assert.equal(visionReq.ok,true);
+assert.deepEqual([...visionReq.request.analyzable_source_ids],['src-1']);
+const visionResult=visionIngest.normalizeResult({
+  request_id:visionReq.request.request_id,
+  items:[{evidence_source_ids:['src-1'],provider_payload:{domain:'opaque'}}]
+});
+assert.equal(visionResult.ok,true);
+assert.equal(visionIngest.validateEvidence(visionResult.result,['src-1','answer-1']).ok,true);
+assert(captureAnalysis.includes("item.kind==='ANSWER_REFERENCE'"));
+assert(captureAnalysis.includes('VisionIngest.buildRequest'));
+assert(captureAnalysis.includes('VisionIngest.validateEvidence'));
+assert(captureAnalysis.includes('ANALYSIS_EVIDENCE_INVALID'));
+console.log('PASS: Ready consumes shared vision ingest mechanics while retaining Ready capture/FACT semantics');

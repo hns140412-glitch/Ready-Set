@@ -1,8 +1,8 @@
 {
-  "version": "2026-09-21.2",
+  "version": "2026-09-21.3",
   "canonical_source": {
     "repository": "hns140412-glitch/TAKY",
-    "commit": "03408730815faa033486852a44febfbfcae3197c"
+    "commit": "79e62baf73313278d1b77c93139a9a7a2bebd608"
   },
   "vendored_files": [
     {
@@ -28,7 +28,13 @@
       "source_path": "SHARED/runtime/local-queue.js",
       "source_blob_sha": "e573bd64387ad271b40d981519071339f95edddb",
       "capability_id": "CAP-LOCAL-QUEUE-001"
+    },
+    {
+      "consumer_path": "vendor/taky/vision-ingest.js",
+      "source_path": "SHARED/runtime/vision-ingest.js",
+      "source_blob_sha": "49391dde656f2142a2cd1769126822794b7399e7",
+      "capability_id": "CAP-OCR-INGEST-001"
     }
   ],
-  "policy": "Vendored copies must stay byte-equivalent to the recorded canonical source. Ready owns scope meaning, family auth, conflict resolution and storage schema; shared primitives own only semantic-light event/queue mechanics."
+  "policy": "Vendored copies must stay byte-equivalent to the recorded canonical source. Ready owns capture grouping, ANSWER_REFERENCE exclusion semantics, Parent review/FACT confirmation, provider auth/transport and commit meaning; shared primitives own only semantic-light release/PWA/event/queue/vision-ingest mechanics."
 }
