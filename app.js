@@ -21,6 +21,7 @@ const rebuildMissionView=globalThis.ReadyRebuildMissionView||null;
 const rebuildFocusView=globalThis.ReadyRebuildFocusView||null;
 const rebuildPlannerAdminView=globalThis.ReadyRebuildPlannerAdminView||null;
 const rebuildPlannerAdminController=globalThis.ReadyRebuildPlannerAdminController||null;
+const rebuildPlannerQueryController=globalThis.ReadyRebuildPlannerQueryController||null;
 const rebuildParentIntakeView=globalThis.ReadyRebuildParentIntakeView||null;
 const rebuildCaptureService=globalThis.ReadyRebuildCaptureService||null;
 const rebuildCaptureOrchestrator=globalThis.ReadyRebuildCaptureOrchestrator||null;
@@ -42,7 +43,7 @@ const rebuildPlannerScreenView=globalThis.ReadyRebuildPlannerScreenView||null;
 const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -176,11 +177,13 @@ function applyGuide(el,type=state.guide.type){
 }
 function guideData(type=state.guide.type){return GUIDE_TYPES[type]||GUIDE_TYPES.lumi}
 
-function plannerTodayProjection(){
-  return (window.ReadySetPlanner?.todayProjection?.()||[]).map(x=>rebuildPlannerProjection.todayItem(x));
-}
+const plannerQueryRuntime=rebuildPlannerQueryController.create({
+  planner:()=>window.ReadySetPlanner,
+  projection:rebuildPlannerProjection,
+  plannerView:rebuildPlannerView
+});
 function currentPlannerMissionItems(){
-  const today=plannerTodayProjection();
+  const today=plannerQueryRuntime.todayProjection();
   const selected=today.filter(x=>x.state==='PLANNED'&&state.selectedTodoIds.includes(x.todo_id));
   return selected.length?selected:today.filter(x=>x.state==='PLANNED');
 }
@@ -255,7 +258,7 @@ function toggleMissionTodo(todoId,wasSelected){
 
 function renderPlannerToday(){
   missionView.renderPlannerToday({
-    items:plannerTodayProjection(),
+    items:plannerQueryRuntime.todayProjection(),
     selectedTodoIds:state.selectedTodoIds,
     onToggle:toggleMissionTodo
   });
@@ -264,7 +267,7 @@ function renderPlannerToday(){
 function renderMission(){
   missionView.render({
     state,
-    todayItems:plannerTodayProjection(),
+    todayItems:plannerQueryRuntime.todayProjection(),
     renderChips,
     onToggleTodo:toggleMissionTodo
   });
@@ -606,14 +609,7 @@ function addDays(base,n){const d=new Date(base);d.setDate(d.getDate()+n);return 
 function weekStart(base=new Date()){
   const d=new Date(base); const dow=d.getDay(); const delta=dow===0?-6:1-dow; d.setDate(d.getDate()+delta); d.setHours(12,0,0,0); return d;
 }
-function plannerSnapshot(){return window.ReadySetPlanner?.snapshot?.()||{dated_todos:[],schedule_commitments:[],daily_availability_windows:[],carry_over_queue:[]}}
 plannerSelectedDate=plannerSelectedDate||localDateKey();
-function plannerItemsForDate(date,snap=plannerSnapshot()){
-  return rebuildPlannerView.itemsForDate(date,snap);
-}
-function plannerStateLabel(v){
-  return rebuildPlannerView.stateLabel(v);
-}
 const plannerScreenView=rebuildPlannerScreenView.create({
   query:$,
   queryAll:$$,
@@ -621,8 +617,8 @@ const plannerScreenView=rebuildPlannerScreenView.create({
   localDateKey,
   addDays,
   weekStart,
-  itemsForDate:plannerItemsForDate,
-  stateLabel:plannerStateLabel
+  itemsForDate:(date,snap)=>plannerQueryRuntime.itemsForDate(date,snap),
+  stateLabel:value=>plannerQueryRuntime.stateLabel(value)
 });
 function renderPlanner(){
   plannerSelectedDate=plannerSelectedDate||localDateKey();
@@ -630,7 +626,7 @@ function renderPlanner(){
   plannerScreenView.render({
     selectedDate:plannerSelectedDate,
     tab:plannerTab,
-    snapshot:plannerSnapshot(),
+    snapshot:plannerQueryRuntime.snapshot(),
     isParent:!!window.ReadyFamilySession?.isParent?.()
   });
 }
@@ -1076,7 +1072,7 @@ window.addEventListener('visibilitychange',()=>{
   if(!document.hidden&&state.activeSession)renderFocus();
 });
 function reconcileReadyRuntimeState(){
-  const snap=plannerSnapshot();
+  const snap=plannerQueryRuntime.snapshot();
   const todayKey=localDateKey();
   const openToday=new Set((snap.dated_todos||[])
     .filter(x=>x.date===todayKey&&x.state==='PLANNED')

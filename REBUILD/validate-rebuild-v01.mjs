@@ -110,8 +110,22 @@ const appSource=loadSource('app.js');
 assert('planner-projection-no-self-recursion',
   !appSource.includes("function plannerTodayProjection(){\n  return (plannerTodayProjection())")
 );
-assert('planner-projection-live-owner',
-  appSource.includes("window.ReadySetPlanner?.todayProjection?.()")
+const plannerQueryControllerSource=loadSource('src/planner/planner-query-controller-runtime.js');
+assert('planner-query-controller-owner',plannerQueryControllerSource.includes('ReadyRebuildPlannerQueryController'));
+assert('planner-query-controller-loaded-before-app',
+  indexSource.indexOf('src/planner/planner-query-controller-runtime.js')>0 &&
+  indexSource.indexOf('src/planner/planner-query-controller-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('planner-query-controller-wired',
+  appSource.includes('rebuildPlannerQueryController.create') &&
+  appSource.includes('plannerQueryRuntime.todayProjection()') &&
+  appSource.includes('plannerQueryRuntime.snapshot()')
+);
+assert('planner-query-direct-read-reduced',
+  !appSource.includes('window.ReadySetPlanner?.todayProjection?.()') &&
+  !appSource.includes('window.ReadySetPlanner?.snapshot?.()') &&
+  !appSource.includes('function plannerTodayProjection()') &&
+  !appSource.includes('function plannerSnapshot()')
 );
 
 const persistenceSource=loadSource('src/persistence/app-state-runtime.js');
