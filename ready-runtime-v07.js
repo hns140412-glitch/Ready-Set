@@ -15,11 +15,28 @@
     return uniq([...(session?.selected || []), ...(session?.tasks || [])]);
   }
 
-  function suggestedApp(label = '') {
-    const x = String(label).toLowerCase();
-    if (/단어|vocab|word|철자|뜻/.test(x)) return 'hide-seek';
-    if (/라이팅|글쓰기|문장|말하기|녹음|표현|writing|speaking|sentence/.test(x)) return 'snap-pop';
-    return 'ready-set';
+  function routeTask(link = {}) {
+    const router=window.ReadySpecialistRouter;
+    if(router?.classify){
+      return router.classify({
+        subject:link.subject||null,
+        matched_domain:link.matched_domain||link.domain||null,
+        activity_types:Array.isArray(link.activity_types)?link.activity_types:[],
+        activity_sequence:Array.isArray(link.activity_sequence)?link.activity_sequence:[],
+        method_sequence:Array.isArray(link.method_sequence)?link.method_sequence:[]
+      });
+    }
+    return Object.freeze({
+      router_version:'LEGACY_FAIL_CLOSED',
+      authority:'READY_LEARNING_ENGINE_ROUTING',
+      mode:'READY_ORCHESTRATED',
+      primary_app:'ready-set',
+      ready_owned:true,
+      handoffs:[],
+      allowed_specialists:[],
+      denied_by_default:true,
+      reason:{fallback:'ROUTER_UNAVAILABLE_NO_LABEL_GUESS'}
+    });
   }
 
   function emit(type, payload = {}) {
@@ -55,7 +72,12 @@
         learning_unit_id:link.learning_unit_id||null,
         template_id:link.template_id||null,
         allocation_run_id:link.allocation_run_id||null,
-        suggested_app: suggestedApp(link.label),
+        subject:link.subject||null,
+        matched_domain:link.matched_domain||link.domain||null,
+        activity_types:Array.isArray(link.activity_types)?[...link.activity_types]:[],
+        activity_sequence:Array.isArray(link.activity_sequence)?[...link.activity_sequence]:[],
+        method_sequence:Array.isArray(link.method_sequence)?[...link.method_sequence]:[],
+        route_plan:routeTask(link),
         laps: []
       }));
       session.rev07 = {
@@ -214,6 +236,11 @@
     const task = currentTask(c);
     const lap = currentLap(c) || (task ? startLap(task, 'SPECIALIST_ROUTE', session) : null);
     if (!session || !c || !task || !lap || !['hide-seek','snap-pop'].includes(app)) return;
+    const plan=task.route_plan||routeTask(task);
+    if(!window.ReadySpecialistRouter?.canLaunch?.(plan,app)){
+      emit('SPECIALIST_ROUTE_DENIED',{requested_app:app,route_plan:plan});
+      return false;
+    }
 
     c.active_app = app;
     emit('APP_SWITCH', { from: 'ready-set', to: app, lap_ended: false });
@@ -337,8 +364,7 @@
       <small>ONE SESSION · CONTINUOUS TIMER</small>
       <h3>${task ? escapeHtml(task.label) : '현재 과제 없음'} · ${task ? labelState(task.state) : ''}</h3>
       <div class="rev07-row">
-        <button class="primary" data-rev07-app="hide-seek">Hide & Seek</button>
-        <button class="primary" data-rev07-app="snap-pop">Snap & Pop</button>
+        ${(task?.route_plan?.allowed_specialists||[]).map(app=>`<button class="primary" data-rev07-app="${app}">${app==='hide-seek'?'Hide & Seek':'Snap & Pop'}</button>`).join('')}
       </div>
       <div class="rev07-tasks">${c.tasks.map(t => `<button class="rev07-task ${t.task_id===c.active_task_id?'active':''}" data-rev07-task="${t.task_id}"><span>${escapeHtml(t.label)}</span><strong>${labelState(t.state)}</strong></button>`).join('')}</div>`;
     const mission = document.getElementById('focusMission');
