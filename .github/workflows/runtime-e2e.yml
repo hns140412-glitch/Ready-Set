@@ -23,6 +23,8 @@ jobs:
           node-version: '20'
       - name: Validate Learning App Family return-state contract
         run: node tests/learning-app-family-return-contract.test.js
+      - name: Ready learning-context producer regression
+        run: node tests/learning-context-producer-contract.test.js
       - name: Validate shared runtime contract
         run: node tests/shared-runtime-contract.test.js
       - name: Install Playwright
