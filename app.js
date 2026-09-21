@@ -528,7 +528,7 @@ function completeSession(outcomeState='COMPLETED'){
   s.endAt=Date.now();s.completed=true;
   const t=sessionTimes();
   const attribution=rebuildSession?.attribution?.(s,t.focus)||null;
-  const links=attribution?.links||Array.isArray(s.plannerLinks)?s.plannerLinks.filter(x=>x?.todo_id):[];
+  const links=attribution?.links||(Array.isArray(s.plannerLinks)?s.plannerLinks.filter(x=>x?.todo_id):[]);
   const taskCount=attribution?.taskCount||Math.max(1,links.length);
   const attributedMs=Number.isFinite(attribution?.attributedMs)?attribution.attributedMs:(links.length?Math.floor(t.focus/taskCount):0);
   const plannerOutcomes=[];
