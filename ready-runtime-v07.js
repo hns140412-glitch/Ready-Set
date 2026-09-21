@@ -238,16 +238,18 @@
     return app === 'hide-seek' ? HIDE_URL : app === 'snap-pop' ? SNAP_URL : location.href;
   }
 
-  function launchSpecialist(app) {
+  function prepareSpecialistLaunch(app) {
     const session = state.activeSession;
     const c = ensureContract(session);
     const task = currentTask(c);
     const lap = currentLap(c) || (task ? startLap(task, 'SPECIALIST_ROUTE', session) : null);
-    if (!session || !c || !task || !lap || !['hide-seek','snap-pop'].includes(app)) return;
+    if (!session || !c || !task || !lap || !['hide-seek','snap-pop'].includes(app)) {
+      return {ok:false,reason:'SPECIALIST_LAUNCH_CONTEXT_INVALID'};
+    }
     const plan=task.route_plan||routeTask(task);
     if(!window.ReadySpecialistRouter?.canLaunch?.(plan,app,task.completed_specialists||[])){
       emit('SPECIALIST_ROUTE_DENIED',{requested_app:app,route_plan:plan});
-      return false;
+      return {ok:false,reason:'SPECIALIST_ROUTE_DENIED',requested_app:app};
     }
 
     c.active_app = app;
@@ -268,7 +270,14 @@
     if(app==='snap-pop'&&window.ReadySpecialistHandoffContract?.encodeLearningContext){
       url.searchParams.set('learning_context',window.ReadySpecialistHandoffContract.encodeLearningContext(task));
     }
-    location.assign(url.href);
+    return {ok:true,app,url:url.href,task_id:task.task_id,lap_id:lap.lap_id};
+  }
+
+  function launchSpecialist(app) {
+    const prepared=prepareSpecialistLaunch(app);
+    if(!prepared?.ok)return false;
+    location.assign(prepared.url);
+    return true;
   }
 
   function normalizeInboundState(raw) {
@@ -597,6 +606,7 @@
       contract: () => state.activeSession?.rev07 ? structuredClone(state.activeSession.rev07) : null,
       validate: validateContract,
       launchSpecialist,
+      prepareSpecialistLaunch,
       setTaskState,
       switchTask,
       openWrapUp
