@@ -1,0 +1,28 @@
+name: Ready Weekly Availability Gate
+
+on:
+  pull_request:
+    paths:
+      - 'ready-planner-v01.js'
+      - 'app.js'
+      - 'index.html'
+      - 'tests/planner-weekly-availability.test.js'
+      - '.github/workflows/planner-weekly-availability.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  planner-weekly-availability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check syntax
+        run: |
+          node --check ready-planner-v01.js
+          node --check app.js
+      - name: Run weekly availability regression
+        run: node tests/planner-weekly-availability.test.js

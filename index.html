@@ -121,7 +121,11 @@
         <div class="adminSectionHead"><div><small>CONFIRMED AVAILABILITY</small><h2>학습 가능 시간</h2></div><button class="miniAction" id="availabilityClearBtn">새 시간</button></div>
         <p class="muted">부모는 가능한 시간만 확인합니다. 실제 숙제 날짜 배정은 Planner가 결정합니다.</p>
         <input id="availabilityId" type="hidden">
-        <label class="inputBlock">날짜<input id="availabilityDate" type="date"></label>
+        <label class="adminToggle"><input id="availabilityWeekly" type="checkbox"><span><b>매주 반복</b><small>요일별 기본 학습 가능시간으로 사용합니다.</small></span></label>
+        <div class="adminGrid two">
+          <label class="inputBlock">날짜<input id="availabilityDate" type="date"></label>
+          <label class="inputBlock">요일<select id="availabilityWeekday"><option value="1">월</option><option value="2">화</option><option value="3">수</option><option value="4">목</option><option value="5">금</option><option value="6">토</option><option value="0">일</option></select></label>
+        </div>
         <div class="adminGrid two">
           <label class="inputBlock">시작<input id="availabilityStart" type="time"></label>
           <label class="inputBlock">종료<input id="availabilityEnd" type="time"></label>
