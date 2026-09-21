@@ -21,6 +21,8 @@ jobs:
           node-version: '20'
       - name: Learning App Family return-state regression
         run: node tests/learning-app-family-return-contract.test.js
+      - name: Ready learning-context producer regression
+        run: node tests/learning-context-producer-contract.test.js
       - name: Existing planner contract
         run: node .github/scripts/ready_planner_contract_test.js
       - name: Assignment and Learning Master contract
