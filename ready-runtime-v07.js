@@ -237,7 +237,7 @@
     return null;
   }
 
-  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null }) {
+  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null, source_event_type = null }) {
     const c = ensureContract();
     if (!c || !session_id || session_id !== c.session_id) return false;
     if (event_id && c.applied_event_ids?.includes(event_id)) return false;
@@ -250,6 +250,7 @@
       event_id: event_id || null,
       raw_state: task_state || null,
       normalized_state: normalized || null,
+      source_event_type: source_event_type || null,
       lap_id: lap_id || null,
       received_at: iso()
     };
@@ -279,10 +280,11 @@
       lap_id: p.get('lap_id'),
       task_state: p.get('task_state'),
       from_app: p.get('from_app'),
-      event_id: p.get('event_id')
+      event_id: p.get('event_id'),
+      source_event_type: p.get('event_type')
     };
     if (!args.session_id || !args.task_id || !applyInboundResult(args)) return;
-    ['session_id','goal_id','task_id','lap_id','task_state','from_app','event_id'].forEach(k => p.delete(k));
+    ['session_id','goal_id','task_id','lap_id','task_state','from_app','event_id','event_type'].forEach(k => p.delete(k));
     const clean = `${location.pathname}${p.toString() ? `?${p}` : ''}${location.hash}`;
     history.replaceState(null, '', clean);
   }
@@ -302,7 +304,8 @@
       lap_id: e.lap_id,
       task_state: taskState,
       from_app: e.app,
-      event_id: e.event_id
+      event_id: e.event_id,
+      source_event_type: e.type
     });
   }
 
