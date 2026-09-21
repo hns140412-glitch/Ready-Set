@@ -30,6 +30,8 @@
       query('#scheduleWeekday').value='1';
       query('#scheduleStart').value='';
       query('#scheduleEnd').value='';
+      query('#scheduleValidFrom').value='';
+      query('#scheduleValidUntil').value='';
       query('#scheduleMovable').checked=false;
     }
 
@@ -49,6 +51,8 @@
       query('#availabilityWeekday').value='1';
       query('#availabilityStart').value='';
       query('#availabilityEnd').value='';
+      query('#availabilityValidFrom').value='';
+      query('#availabilityValidUntil').value='';
     }
 
     function render(){
@@ -75,6 +79,8 @@
       query('#scheduleDate').value=item.recurrence==='WEEKLY'?localDateKey():String(item.start_at||'').slice(0,10);
       query('#scheduleStart').value=item.recurrence==='WEEKLY'?(item.start||''):String(item.start_at||'').slice(11,16);
       query('#scheduleEnd').value=item.recurrence==='WEEKLY'?(item.end||''):String(item.end_at||'').slice(11,16);
+      query('#scheduleValidFrom').value=item.valid_from||'';
+      query('#scheduleValidUntil').value=item.valid_until||'';
       query('#scheduleMovable').checked=!!item.planner_movable;
       return true;
     }
@@ -88,6 +94,8 @@
       query('#availabilityWeekday').value=String(item.weekday??1);
       query('#availabilityStart').value=item.start||'';
       query('#availabilityEnd').value=item.end||'';
+      query('#availabilityValidFrom').value=item.valid_from||'';
+      query('#availabilityValidUntil').value=item.valid_until||'';
       return true;
     }
 
@@ -144,6 +152,8 @@
       const end=query('#scheduleEnd').value;
       if(!title||(!weekly&&!date)||!start||!end){toast('일정명·날짜/요일·시작·종료 시간을 확인해 주세요.');return {ok:false,reason:'INVALID_INPUT'};}
       if(end<=start){toast('종료 시간은 시작 시간보다 늦어야 해요.');return {ok:false,reason:'INVALID_RANGE'};}
+      const validFrom=query('#scheduleValidFrom').value,validUntil=query('#scheduleValidUntil').value;
+      if(weekly&&validFrom&&validUntil&&validUntil<validFrom){toast('반복 일정 종료일은 시작일보다 뒤여야 해요.');return {ok:false,reason:'INVALID_VALIDITY_RANGE'};}
       const result=planner()?.upsertScheduleCommitment?.({
         commitment_id:query('#scheduleId').value||undefined,
         title,
@@ -154,6 +164,8 @@
         weekday:weekly?Number(query('#scheduleWeekday').value):null,
         start:weekly?start:null,
         end:weekly?end:null,
+        valid_from:weekly?(validFrom||null):null,
+        valid_until:weekly?(validUntil||null):null,
         confirmed:true,
         planner_movable:query('#scheduleMovable').checked,
         parent_editable:true,
@@ -198,11 +210,15 @@
       const end=query('#availabilityEnd').value;
       if((!weekly&&!date)||!start||!end){toast('날짜·시작·종료 시간을 확인해 주세요.');return {ok:false,reason:'INVALID_INPUT'};}
       if(end<=start){toast('종료 시간은 시작 시간보다 늦어야 해요.');return {ok:false,reason:'INVALID_RANGE'};}
+      const validFrom=query('#availabilityValidFrom').value,validUntil=query('#availabilityValidUntil').value;
+      if(weekly&&validFrom&&validUntil&&validUntil<validFrom){toast('반복 가능시간 종료일은 시작일보다 뒤여야 해요.');return {ok:false,reason:'INVALID_VALIDITY_RANGE'};}
       const result=planner()?.upsertDailyAvailabilityWindow?.({
         availability_id:query('#availabilityId').value||undefined,
         date,start,end,
         recurrence:weekly?'WEEKLY':null,
         weekday:weekly?Number(query('#availabilityWeekday').value):null,
+        valid_from:weekly?(validFrom||null):null,
+        valid_until:weekly?(validUntil||null):null,
         confirmed:true,parent_editable:true,source:'PARENT_ADMIN_UI'
       });
       toast('학습 가능 시간을 확인했어요. Planner가 배정 근거로 사용합니다.');

@@ -143,3 +143,37 @@ test('weekly schedule exception supports skip and replacement without mutating b
   expect(out.base.start).toBe('16:00');
   expect(out.base.end).toBe('17:00');
 });
+
+
+test('weekly schedule and availability honor validity ranges', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__READY_AUTH_BOOTSTRAP__={authenticated:true,family_id:'TEST_FAMILY',member_id:'TEST_PARENT',role:'PARENT',session_id:'TEST_SESSION',expires_at:'2099-01-01T00:00:00.000Z',source:'TEST_ONLY'};
+  });
+  await page.goto('http://127.0.0.1:4173/', {waitUntil:'load'});
+  const out=await page.evaluate(()=>{
+    const p=window.ReadySetPlanner;
+    p.upsertScheduleCommitment({
+      commitment_id:'term_taekwondo',title:'태권도',category:'태권도',
+      recurrence:'WEEKLY',weekday:3,start:'17:00',end:'18:00',
+      valid_from:'2026-09-01',valid_until:'2026-10-31',
+      confirmed:true,source:'PARENT_ADMIN_UI'
+    });
+    p.upsertDailyAvailabilityWindow({
+      availability_id:'term_available',recurrence:'WEEKLY',weekday:3,start:'16:00',end:'20:00',
+      valid_from:'2026-09-01',valid_until:'2026-10-31',
+      confirmed:true,source:'PARENT_ADMIN_UI'
+    });
+    return {
+      before:p.scheduleCommitmentsForDate('2026-08-26'),
+      inside:p.scheduleCommitmentsForDate('2026-09-23'),
+      after:p.scheduleCommitmentsForDate('2026-11-04'),
+      windows:p.candidateWindowsByDate(['2026-08-26','2026-09-23','2026-11-04'])
+    };
+  });
+  expect(out.before).toHaveLength(0);
+  expect(out.inside).toHaveLength(1);
+  expect(out.after).toHaveLength(0);
+  expect(out.windows['2026-08-26']).toHaveLength(0);
+  expect(out.windows['2026-09-23']).toHaveLength(1);
+  expect(out.windows['2026-11-04']).toHaveLength(0);
+});

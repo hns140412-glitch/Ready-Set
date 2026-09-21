@@ -114,6 +114,10 @@
           <label class="inputBlock">시작<input id="scheduleStart" type="time"></label>
           <label class="inputBlock">종료<input id="scheduleEnd" type="time"></label>
         </div>
+        <div class="adminGrid two">
+          <label class="inputBlock">반복 시작일<input id="scheduleValidFrom" type="date"></label>
+          <label class="inputBlock">반복 종료일<input id="scheduleValidUntil" type="date"></label>
+        </div>
         <label class="adminToggle"><input id="scheduleMovable" type="checkbox"><span><b>플래너가 이동 가능</b><small>기본은 고정 일정으로 유지합니다.</small></span></label>
         <button class="btn dark" id="saveScheduleBtn">고정 일정 저장</button>
         <div id="scheduleAdminList" class="adminList"></div>
@@ -148,6 +152,10 @@
         <div class="adminGrid two">
           <label class="inputBlock">시작<input id="availabilityStart" type="time"></label>
           <label class="inputBlock">종료<input id="availabilityEnd" type="time"></label>
+        </div>
+        <div class="adminGrid two">
+          <label class="inputBlock">반복 시작일<input id="availabilityValidFrom" type="date"></label>
+          <label class="inputBlock">반복 종료일<input id="availabilityValidUntil" type="date"></label>
         </div>
         <button class="btn dark" id="saveAvailabilityBtn">가능 시간 저장</button>
         <div id="availabilityAdminList" class="adminList"></div>

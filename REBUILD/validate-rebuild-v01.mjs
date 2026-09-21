@@ -631,3 +631,13 @@ assert('weekly-schedule-exception-overlay',
   plannerScheduleExceptionSource.includes("exception?.type==='REPLACE'") &&
   indexSource.includes('scheduleExceptionCard')
 );
+
+const plannerAdminValiditySource=loadSource('src/views/planner-admin-controller-runtime.js');
+assert('weekly-validity-range-ui',
+  indexSource.includes('scheduleValidFrom') &&
+  indexSource.includes('scheduleValidUntil') &&
+  indexSource.includes('availabilityValidFrom') &&
+  indexSource.includes('availabilityValidUntil') &&
+  plannerAdminValiditySource.includes('valid_from:weekly?') &&
+  plannerAdminValiditySource.includes('valid_until:weekly?')
+);
