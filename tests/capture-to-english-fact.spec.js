@@ -98,12 +98,14 @@ test('Parent capture draft becomes confirmed English FACT, Learning Units, and P
     const planner=window.ReadySetPlanner.snapshot();
     const todos=planner.dated_todos.filter(x=>x.assignment_id===fact.assignment_id);
     const capture=await window.ReadyCaptureV01.latestSession();
-    return {fact,analysis,units,todos,capture};
+    const captureClaim=[...(fact.claims||[])].reverse().find(x=>x.provenance?.kind==='PARENT_REVIEWED_CAPTURE')||null;
+    return {fact,analysis,units,todos,capture,captureClaim};
   });
 
   expect(result.fact.confirmation_state).toBe('FACT_CONFIRMED');
-  expect(result.fact.provenance.kind).toBe('PARENT_REVIEWED_CAPTURE');
-  expect(result.fact.provenance.capture_linked).toBe(true);
+  expect(result.captureClaim).toBeTruthy();
+  expect(result.captureClaim.provenance.kind).toBe('PARENT_REVIEWED_CAPTURE');
+  expect(result.captureClaim.provenance.capture_linked).toBe(true);
   expect(result.fact.components.grammar).toBe('Grammar Check 3');
   expect(result.fact.components.reading).toBe('Story 3 / Comprehension');
 
