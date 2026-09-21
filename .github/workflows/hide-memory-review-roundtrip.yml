@@ -1,0 +1,21 @@
+name: Hide Memory Review Roundtrip
+
+on:
+  pull_request:
+    paths:
+      - 'ready-hide-memory-review-v01.js'
+      - 'ready-planner-v01.js'
+      - 'index.html'
+      - 'tests/hide-memory-review-roundtrip.test.js'
+      - '.github/workflows/hide-memory-review-roundtrip.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Hide memory review roundtrip
+        run: node tests/hide-memory-review-roundtrip.test.js
