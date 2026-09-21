@@ -160,3 +160,13 @@ assert('profile-settings-owner',profileSettingsSource.includes('ReadyRebuildProf
 const authSyncSource=loadSource('src/views/auth-sync-view-runtime.js');
 assert('auth-sync-owner',authSyncSource.includes('ReadyRebuildAuthSyncView'));
 assert('auth-sync-no-authority-transfer',!authSyncSource.includes('requireRole')&&!authSyncSource.includes('linkChild'));
+
+const homeViewSource=loadSource('src/views/home-view-runtime.js');
+assert('home-view-owner',homeViewSource.includes('ReadyRebuildHomeView'));
+const plannerScreenSource=loadSource('src/views/planner-screen-view-runtime.js');
+assert('planner-screen-owner',plannerScreenSource.includes('ReadyRebuildPlannerScreenView'));
+assert('planner-screen-display-only',
+  !plannerScreenSource.includes('upsertDatedTodo') &&
+  !plannerScreenSource.includes('allocate') &&
+  !plannerScreenSource.includes('recordTaskState')
+);
