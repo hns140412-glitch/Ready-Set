@@ -1,6 +1,7 @@
 (() => {
   'use strict';
   const STORAGE_KEY='readyset_sync_config_v1';
+  const HttpJson=globalThis.TakyHttpJson;
   const now=()=>new Date().toISOString();
   let runtime={state:'LOCAL_ONLY',last_check_at:null,last_error:null};
 
@@ -23,7 +24,7 @@
   function status(){
     const config=readConfig();
     return Object.freeze({
-      version:'0.2.0',
+      version:'0.3.0',
       configured:!!config.endpoint,
       enabled:!!config.enabled,
       endpoint:config.endpoint||null,
@@ -39,19 +40,24 @@
       window.dispatchEvent(new CustomEvent('readyset-sync-status',{detail:status()}));
       return {ok:false,reason:'SYNC_NOT_CONFIGURED',status:status()};
     }
-    try{
-      const res=await fetch(config.endpoint+'/health',{method:'GET',headers:{Accept:'application/json'},cache:'no-store'});
-      if(!res.ok) throw new Error('HEALTH_HTTP_'+res.status);
-      const body=await res.json().catch(()=>({}));
-      if(body?.ok===false) throw new Error(body.reason||'HEALTH_REJECTED');
-      runtime={state:'CONNECTED',last_check_at:now(),last_error:null};
+    if(!HttpJson?.request)return {ok:false,reason:'SHARED_HTTP_TRANSPORT_UNAVAILABLE',status:status()};
+    const res=await HttpJson.request(config.endpoint+'/health',{
+      method:'GET',
+      headers:{Accept:'application/json'},
+      cache:'no-store',
+      credentials:'same-origin',
+      timeout_ms:10000
+    });
+    const body=res.data||{};
+    if(!res.ok||body?.ok===false){
+      const reason=body?.reason||(res.status?('HEALTH_HTTP_'+res.status):(res.category||'HEALTH_NETWORK_ERROR'));
+      runtime={state:'ERROR',last_check_at:now(),last_error:reason};
       window.dispatchEvent(new CustomEvent('readyset-sync-status',{detail:status()}));
-      return {ok:true,status:status(),remote:body};
-    }catch(error){
-      runtime={state:'ERROR',last_check_at:now(),last_error:String(error?.message||error)};
-      window.dispatchEvent(new CustomEvent('readyset-sync-status',{detail:status()}));
-      return {ok:false,reason:runtime.last_error,status:status()};
+      return {ok:false,reason,status:status(),transport_category:res.category,retry_after_ms:res.retry_after_ms??null};
     }
+    runtime={state:'CONNECTED',last_check_at:now(),last_error:null};
+    window.dispatchEvent(new CustomEvent('readyset-sync-status',{detail:status()}));
+    return {ok:true,status:status(),remote:body};
   }
   async function send(event){
     const config=readConfig();
@@ -64,11 +70,12 @@
       payload:event.payload,
       created_at:event.created_at,
       updated_at:event.updated_at,
-      client:{app:'Ready & Set',adapter_version:'0.2.0'}
+      client:{app:'Ready & Set',adapter_version:'0.3.0'}
     };
     const family=window.ReadyFamilySession?.current?.();
     if(!family?.authenticated) return {ok:false,reason:'AUTH_SESSION_REQUIRED'};
-    const res=await fetch(config.endpoint+'/events',{
+    if(!HttpJson?.request) return {ok:false,reason:'SHARED_HTTP_TRANSPORT_UNAVAILABLE'};
+    const res=await HttpJson.request(config.endpoint+'/events',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
@@ -76,18 +83,19 @@
         'Idempotency-Key':payload.idempotency_key
       },
       credentials:'same-origin',
-      body:JSON.stringify(payload)
+      body:payload,
+      timeout_ms:15000
     });
-    const body=await res.json().catch(()=>({}));
+    const body=res.data||{};
     if(res.status===409){
       runtime={state:'CONNECTED',last_check_at:now(),last_error:null};
       return {ok:false,conflict:true,remote_payload:body.remote_payload??null,reason:body.reason||'REMOTE_CONFLICT'};
     }
     if(!res.ok||body?.ok===false){
-      const reason=body?.reason||('SYNC_HTTP_'+res.status);
+      const reason=body?.reason||(res.status?('SYNC_HTTP_'+res.status):(res.category||'SYNC_NETWORK_ERROR'));
       runtime={state:'ERROR',last_check_at:now(),last_error:reason};
       window.dispatchEvent(new CustomEvent('readyset-sync-status',{detail:status()}));
-      return {ok:false,reason};
+      return {ok:false,reason,transport_category:res.category,retry_after_ms:res.retry_after_ms??null};
     }
     runtime={state:'CONNECTED',last_check_at:now(),last_error:null};
     window.dispatchEvent(new CustomEvent('readyset-sync-status',{detail:status()}));
