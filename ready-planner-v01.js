@@ -32,7 +32,8 @@
     allocation_runs:[],
     execution_observations:[],
     carry_over_queue:[],
-    adaptive_estimate_proposals:[]
+    adaptive_estimate_proposals:[],
+    weekly_reflow_runs:[]
   });
 
   const cleanText=x=>String(x??'').trim();
@@ -58,7 +59,8 @@
       allocation_runs:Array.isArray(x.allocation_runs)?x.allocation_runs:[],
       execution_observations:Array.isArray(x.execution_observations)?x.execution_observations:[],
       carry_over_queue:Array.isArray(x.carry_over_queue)?x.carry_over_queue:[],
-      adaptive_estimate_proposals:Array.isArray(x.adaptive_estimate_proposals)?x.adaptive_estimate_proposals:[]
+      adaptive_estimate_proposals:Array.isArray(x.adaptive_estimate_proposals)?x.adaptive_estimate_proposals:[],
+      weekly_reflow_runs:Array.isArray(x.weekly_reflow_runs)?x.weekly_reflow_runs:[]
     };
   }
 
@@ -1073,6 +1075,132 @@
       return load().adaptive_estimate_proposals.filter(x=>x.status==='PENDING').map(x=>({...x}));
     }
 
+    function planWeeklyReflow(input={}){
+      const start=cleanText(input.start_date)||dateKey();
+      const days=Number.isFinite(input.days)?Math.max(1,Math.min(14,Math.floor(input.days))):7;
+      const dates=Array.from({length:days},(_,i)=>addDays(start,i));
+      const windowsByDate=candidateWindowsByDate(dates);
+      return mutate(s=>{
+        const existingPending=s.weekly_reflow_runs.find(x=>x.status==='PENDING'&&x.start_date===start&&x.days===days);
+        if(existingPending)return {ok:true,reused:true,run:{...existingPending}};
+
+        const templateById=new Map((s.homework_templates||[]).map(x=>[x.template_id,x]));
+        const evidenceByDate=Object.fromEntries(dates.map(d=>[d,freeWindowEvidence(s,d,windowsByDate[d]||[])]));
+        const protectedTodos=(s.dated_todos||[]).filter(t=>dates.includes(t.date)&&(
+          t.state!=='PLANNED'||!/^PLANNER/.test(t.source||'')||!!t.active_session_id
+        ));
+        const movable=(s.dated_todos||[]).filter(t=>dates.includes(t.date)&&t.state==='PLANNED'&&/^PLANNER/.test(t.source||'')&&!t.active_session_id);
+
+        const load=Object.fromEntries(dates.map(d=>[d,{minutes:0,semantic:0,count:0}]));
+        for(const t of protectedTodos){
+          const template=templateById.get(t.template_id);
+          const est=Number.isFinite(t.estimated_minutes)?t.estimated_minutes:(Number.isFinite(template?.planner_estimated_minutes)?template.planner_estimated_minutes:null);
+          if(est!==null)load[t.date].minutes+=est;
+          load[t.date].semantic+=Number.isFinite(t.activity_load_score)?t.activity_load_score:(Number.isFinite(t.difficulty)?t.difficulty:3);
+          load[t.date].count++;
+        }
+
+        const ordered=[...movable].sort((a,b)=>{
+          const ta=templateById.get(a.template_id),tb=templateById.get(b.template_id);
+          const ad=ta?.deadline_date||'9999-12-31',bd=tb?.deadline_date||'9999-12-31';
+          if(ad!==bd)return ad.localeCompare(bd);
+          const ac=Number(a.provenance?.carry_over_depth)||0,bc=Number(b.provenance?.carry_over_depth)||0;
+          if(ac!==bc)return bc-ac;
+          return (a.order??999)-(b.order??999)||String(a.label||'').localeCompare(String(b.label||''),'ko');
+        });
+
+        const moves=[];
+        for(const todo of ordered){
+          const template=templateById.get(todo.template_id);
+          const deadline=cleanText(template?.deadline_date)||null;
+          const est=Number.isFinite(todo.estimated_minutes)?todo.estimated_minutes:(Number.isFinite(template?.planner_estimated_minutes)?template.planner_estimated_minutes:null);
+          const semantic=Number.isFinite(todo.activity_load_score)?todo.activity_load_score:(Number.isFinite(todo.difficulty)?todo.difficulty:3);
+          const eligible=dates.filter(d=>!deadline||d<=deadline);
+          if(!eligible.length)continue;
+          const anyKnown=eligible.some(d=>evidenceByDate[d]?.known);
+          const ranked=eligible.map(d=>{
+            const ev=evidenceByDate[d];
+            const capacityPenalty=(anyKnown&&!ev.known)?100000:0;
+            const overflow=(ev?.known&&est!==null)?Math.max(0,(load[d].minutes+est)-(ev.total_free_minutes||0)):0;
+            const overflowPenalty=overflow*1000;
+            const semanticPenalty=load[d].semantic*100;
+            const countPenalty=load[d].count*10;
+            const churnPenalty=d===todo.date?0:1;
+            return {date:d,score:capacityPenalty+overflowPenalty+semanticPenalty+countPenalty+churnPenalty,ev};
+          }).sort((a,b)=>a.score-b.score||a.date.localeCompare(b.date));
+          const chosen=ranked[0]?.date||todo.date;
+          if(est!==null)load[chosen].minutes+=est;
+          load[chosen].semantic+=semantic;
+          load[chosen].count++;
+          if(chosen!==todo.date){
+            moves.push({
+              todo_id:todo.todo_id,
+              label:todo.label,
+              from_date:todo.date,
+              to_date:chosen,
+              template_id:todo.template_id||null,
+              deadline_date:deadline,
+              estimated_minutes:est,
+              semantic_load:semantic,
+              reason:evidenceByDate[chosen]?.known?'FREE_WINDOW_AND_LOAD_BALANCE':'SEMANTIC_LOAD_BALANCE'
+            });
+          }
+        }
+
+        const run={
+          reflow_run_id:makeId('reflow'),
+          start_date:start,
+          days,
+          status:'PENDING',
+          authority:'PLANNER_PROPOSAL_HUMAN_APPROVAL_REQUIRED',
+          movable_count:movable.length,
+          protected_count:protectedTodos.length,
+          moves,
+          evidence_by_date:evidenceByDate,
+          created_at:new Date().toISOString()
+        };
+        s.weekly_reflow_runs.push(run);
+        s.weekly_reflow_runs=s.weekly_reflow_runs.slice(-50);
+        return {ok:true,reused:false,run:{...run}};
+      });
+    }
+
+    function decideWeeklyReflow(runId,input={}){
+      const id=cleanText(runId);if(!id)return {ok:false,reason:'REFLOW_RUN_ID_REQUIRED'};
+      const decision=cleanText(input.decision).toUpperCase();
+      if(!['CONFIRM','REJECT'].includes(decision))return {ok:false,reason:'INVALID_DECISION'};
+      return mutate(s=>{
+        const run=s.weekly_reflow_runs.find(x=>x.reflow_run_id===id);
+        if(!run)return {ok:false,reason:'REFLOW_RUN_NOT_FOUND'};
+        if(run.status!=='PENDING')return {ok:false,reason:'REFLOW_ALREADY_DECIDED',status:run.status};
+        run.status=decision==='CONFIRM'?'CONFIRMED':'REJECTED';
+        run.decision_actor=cleanText(input.actor)||'PARENT';
+        run.decided_at=new Date().toISOString();
+        const applied=[],skipped=[];
+        if(decision==='CONFIRM'){
+          for(const move of run.moves||[]){
+            const todo=s.dated_todos.find(x=>x.todo_id===move.todo_id);
+            if(!todo||todo.state!=='PLANNED'||todo.active_session_id||todo.date!==move.from_date){
+              skipped.push({todo_id:move.todo_id,reason:'TODO_CHANGED_SINCE_PROPOSAL'});
+              continue;
+            }
+            todo.date=move.to_date;
+            todo.reflow_run_id=run.reflow_run_id;
+            todo.reflow_reason=move.reason;
+            todo.updated_at=new Date().toISOString();
+            applied.push({todo_id:todo.todo_id,from_date:move.from_date,to_date:move.to_date});
+          }
+        }
+        run.applied=applied;
+        run.skipped=skipped;
+        return {ok:true,decision,status:run.status,applied,skipped,run:{...run}};
+      });
+    }
+
+    function pendingWeeklyReflows(){
+      return load().weekly_reflow_runs.filter(x=>x.status==='PENDING').map(x=>({...x}));
+    }
+
     function recordTaskState(input={}){
       const todoId=cleanText(input.todo_id); if(!todoId) return null;
       const requested=cleanText(input.ready_state);
@@ -1178,6 +1306,9 @@
       for(const e of s.progress_events){
         if(e.todo_id&&!todoIds.has(e.todo_id))issues.push('ORPHAN_PROGRESS_EVENT');
       }
+      for(const r of s.weekly_reflow_runs){
+        if(!['PENDING','CONFIRMED','REJECTED'].includes(r.status))issues.push('WEEKLY_REFLOW_STATUS_INVALID');
+      }
       for(const p of s.adaptive_estimate_proposals){
         if(!['PENDING','CONFIRMED','REJECTED'].includes(p.status))issues.push('ADAPTIVE_ESTIMATE_STATUS_INVALID');
         if(!s.homework_templates.some(x=>x.template_id===p.template_id))issues.push('ORPHAN_ADAPTIVE_ESTIMATE_PROPOSAL');
@@ -1215,7 +1346,10 @@
       learningHistory,
       proposeEstimateAdjustment,
       decideEstimateAdjustment,
-      pendingEstimateAdjustments
+      pendingEstimateAdjustments,
+      planWeeklyReflow,
+      decideWeeklyReflow,
+      pendingWeeklyReflows
     };
   }
 

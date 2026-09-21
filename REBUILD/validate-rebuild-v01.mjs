@@ -593,3 +593,14 @@ assert('planner-assignment-reason-evidence',
   plannerViewReasonSource.includes('planner_estimated_minutes') &&
   plannerViewReasonSource.includes('carry_over_id')
 );
+
+const plannerAdminViewSourceForReflow=loadSource('src/views/planner-admin-view-runtime.js');
+const plannerCoreReflowSource=loadSource('ready-planner-v01.js');
+assert('planner-weekly-reflow-human-approval',
+  plannerCoreReflowSource.includes('planWeeklyReflow') &&
+  plannerCoreReflowSource.includes('decideWeeklyReflow') &&
+  plannerCoreReflowSource.includes("authority:'PLANNER_PROPOSAL_HUMAN_APPROVAL_REQUIRED'") &&
+  indexSource.includes('weeklyReflowPlanBtn') &&
+  plannerAdminControllerSource.includes('planWeeklyReflow') &&
+  plannerAdminViewSourceForReflow.includes('data-reflow-confirm')
+);

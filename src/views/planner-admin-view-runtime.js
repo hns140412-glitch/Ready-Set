@@ -27,6 +27,20 @@
         : '<div class="plannerEmpty"><b>확인된 학습 가능 시간이 없어요.</b><small>Planner는 시간을 추정하지 않고, 확인된 범위가 있을 때만 가용시간 근거로 사용해요.</small></div>';
     }
 
+    function renderReflow(snapshot={}){
+      const el=q('#weeklyReflowAdminList'); if(!el)return;
+      const run=[...(snapshot.weekly_reflow_runs||[])].filter(x=>x.status==='PENDING').at(-1);
+      if(!run){
+        el.innerHTML='<div class="plannerEmpty"><b>검토할 주간 재배치안이 없어요.</b><small>고정 일정이나 가능 시간이 바뀌면 Planner가 이번 주 안에서 다시 맞출 수 있어요.</small></div>';
+        return;
+      }
+      const moves=run.moves||[];
+      el.innerHTML=moves.length
+        ? `<div class="adminListItem"><span><b>이번 주 ${moves.length}개 탐험 재배치 제안</b><small>진행 중·완료 항목은 잠금 · 시작 전 Planner TODO만 이동</small></span><div class="adminInlineActions"><button class="miniAction" data-reflow-confirm="${run.reflow_run_id}">적용</button><button class="miniAction" data-reflow-reject="${run.reflow_run_id}">유지</button></div></div>`+
+          moves.map(x=>`<div class="adminListItem"><span><b>${escapeHtml(x.label)}</b><small>${escapeHtml(x.from_date)} → ${escapeHtml(x.to_date)} · ${x.reason==='FREE_WINDOW_AND_LOAD_BALANCE'?'가용시간·부하 균형':'학습 부하 균형'}</small></span></div>`).join('')
+        : '<div class="plannerEmpty"><b>현재 배치를 유지해도 좋아요.</b><small>이번 주에는 옮길 필요가 있는 탐험이 없습니다.</small></div>';
+    }
+
     function renderAdaptive(snapshot={}){
       const el=q('#adaptiveEstimateAdminList'); if(!el)return;
       const rows=(snapshot.adaptive_estimate_proposals||[]).filter(x=>x.status==='PENDING');
@@ -59,12 +73,13 @@
     function render(snapshot={}){
       renderSchedule(snapshot);
       renderAvailability(snapshot);
+      renderReflow(snapshot);
       renderAdaptive(snapshot);
       renderCarry(snapshot);
       return {ok:true};
     }
 
-    return Object.freeze({render,renderSchedule,renderAvailability,renderAdaptive,renderCarry});
+    return Object.freeze({render,renderSchedule,renderAvailability,renderReflow,renderAdaptive,renderCarry});
   }
 
   root.ReadyRebuildPlannerAdminView=Object.freeze({

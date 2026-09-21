@@ -63,3 +63,36 @@ test('Parent can create and approve adaptive estimate proposal from observed exe
   const value=await page.evaluate(()=>window.ReadySetPlanner.snapshot().homework_templates.find(x=>x.template_id==='adaptive_template')?.planner_estimated_minutes);
   expect(value).toBe(35);
 });
+
+
+test('Parent can approve weekly reflow without moving active or completed tasks', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__READY_AUTH_BOOTSTRAP__={
+      authenticated:true,family_id:'TEST_FAMILY',member_id:'TEST_PARENT',role:'PARENT',
+      session_id:'TEST_SESSION',expires_at:'2099-01-01T00:00:00.000Z',source:'TEST_ONLY'
+    };
+  });
+  await page.goto('http://127.0.0.1:4173/', {waitUntil:'load'});
+  const seeded=await page.evaluate(()=>{
+    const p=window.ReadySetPlanner;
+    const d=new Date(),fmt=x=>x.toLocaleDateString('sv-SE');
+    const d0=fmt(d),d1=fmt(new Date(d.getFullYear(),d.getMonth(),d.getDate()+1));
+    p.upsertDailyAvailabilityWindow({date:d0,start:'16:00',end:'17:00',confirmed:true,source:'TEST'});
+    p.upsertDailyAvailabilityWindow({date:d1,start:'16:00',end:'20:00',confirmed:true,source:'TEST'});
+    p.upsertHomeworkTemplate({template_id:'reflow_t',title:'주간 재배치 과제',planner_estimated_minutes:60,confirmation_state:'CONFIRMED'});
+    p.upsertDatedTodo({todo_id:'reflow_move',date:d0,label:'주간 재배치 과제',template_id:'reflow_t',source:'PLANNER_V2_ALLOCATION',state:'PLANNED'});
+    p.upsertDatedTodo({todo_id:'reflow_locked',date:d0,label:'진행 중 잠금',template_id:'reflow_t',source:'PLANNER_V2_ALLOCATION',state:'IN_PROGRESS'});
+    return {d0,d1};
+  });
+  await page.locator('[data-nav="planner"]').first().click();
+  await page.locator('[data-nav="planner-admin"]').click();
+  await page.locator('#weeklyReflowPlanBtn').click();
+  await expect(page.locator('#weeklyReflowAdminList')).toContainText('주간 재배치 과제');
+  await page.locator('[data-reflow-confirm]').click();
+  const out=await page.evaluate(()=>({
+    moved:window.ReadySetPlanner.snapshot().dated_todos.find(x=>x.todo_id==='reflow_move'),
+    locked:window.ReadySetPlanner.snapshot().dated_todos.find(x=>x.todo_id==='reflow_locked')
+  }));
+  expect(out.moved.date).toBe(seeded.d1);
+  expect(out.locked.date).toBe(seeded.d0);
+});

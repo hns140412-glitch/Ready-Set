@@ -165,6 +165,26 @@
       return result;
     }
 
+    function planWeeklyReflow(){
+      if(!requireParentUi())return {ok:false,reason:'PARENT_REQUIRED'};
+      const result=planner()?.planWeeklyReflow?.({start_date:localDateKey(),days:7});
+      if(result?.ok){
+        const count=result.run?.moves?.length||0;
+        toast(count?`이번 주 ${count}개 탐험 재배치안을 만들었어요. 확인 후 적용해 주세요.`:'이번 주 배치는 그대로 유지해도 좋아요.');
+      }else toast('이번 주 재배치안을 만들지 못했어요.');
+      refresh();
+      return result;
+    }
+
+    function decideWeeklyReflow(id,decision){
+      if(!requireParentUi())return {ok:false,reason:'PARENT_REQUIRED'};
+      const result=planner()?.decideWeeklyReflow?.(id,{decision,actor:'PARENT'});
+      if(result?.ok)toast(decision==='CONFIRM'?`주간 재배치 ${result.applied?.length||0}건을 반영했어요.`:'현재 주간 배치를 유지했어요.');
+      else toast('주간 재배치 결정을 반영하지 못했어요.');
+      refresh();
+      return result;
+    }
+
     function refreshAdaptiveSuggestions(){
       if(!requireParentUi())return {ok:false,reason:'PARENT_REQUIRED'};
       const snap=snapshot();
@@ -206,6 +226,10 @@
       if(ready){readyCarry(ready.dataset.carryReady);return;}
       const cancel=event.target.closest?.('[data-carry-cancel]');
       if(cancel){cancelCarry(cancel.dataset.carryCancel);return;}
+      const reflowConfirm=event.target.closest?.('[data-reflow-confirm]');
+      if(reflowConfirm){decideWeeklyReflow(reflowConfirm.dataset.reflowConfirm,'CONFIRM');return;}
+      const reflowReject=event.target.closest?.('[data-reflow-reject]');
+      if(reflowReject){decideWeeklyReflow(reflowReject.dataset.reflowReject,'REJECT');return;}
       const estimateConfirm=event.target.closest?.('[data-estimate-confirm]');
       if(estimateConfirm){decideAdaptive(estimateConfirm.dataset.estimateConfirm,'CONFIRM');return;}
       const estimateReject=event.target.closest?.('[data-estimate-reject]');
@@ -219,6 +243,7 @@
       query('#availabilityClearBtn')?.addEventListener('click',clearAvailabilityForm);
       query('#saveScheduleBtn')?.addEventListener('click',saveSchedule);
       query('#saveAvailabilityBtn')?.addEventListener('click',saveAvailability);
+      query('#weeklyReflowPlanBtn')?.addEventListener('click',planWeeklyReflow);
       query('#adaptiveEstimateRefreshBtn')?.addEventListener('click',refreshAdaptiveSuggestions);
       eventTarget.addEventListener?.('click',onDocumentClick);
       return true;
@@ -227,7 +252,7 @@
     return Object.freeze({
       snapshot,render,clearScheduleForm,clearAvailabilityForm,editSchedule,editAvailability,
       removeAvailability,reviewCarry,readyCarry,cancelCarry,saveSchedule,saveAvailability,
-      refreshAdaptiveSuggestions,decideAdaptive,bind
+      planWeeklyReflow,decideWeeklyReflow,refreshAdaptiveSuggestions,decideAdaptive,bind
     });
   }
 
