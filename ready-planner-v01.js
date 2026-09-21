@@ -369,6 +369,7 @@
             activity_types:p.activity_types,activity_sequence:p.activity_sequence||[],
             cognitive_load_profile:p.cognitive_load_profile,
             activity_load_score:p.activity_load_score,difficulty:p.difficulty,recovery_need:p.recovery_need,
+            free_window_evidence:p.free_window_evidence||null,
             review_policy:p.review_policy,parent_help_dependency:p.parent_help_dependency,
             source:'PLANNER_V2_ALLOCATION',source_actor:'PLANNER_MAIN',
             provenance:{assignment_id:p.assignment_id,analysis_id:p.analysis_id,learning_unit_id:p.learning_unit_id,allocation_run_id:runId,fact_revision:Number(p.fact_revision)||Number(run.fact_revision)||1},
