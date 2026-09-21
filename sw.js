@@ -1,20 +1,64 @@
-const CACHE='ready-set-v097-full-unit-map-v02';
+importScripts('./ready-release-v01.js');
+const RELEASE=globalThis.ReadySetReleaseDescriptor;
+const CACHE='ready-set:'+RELEASE.release_id;
 const CORE=[
-'./','./index.html','./styles.css','./ready-sync-adapter-v01.js','./ready-local-first-v01.js','./ready-assignment-domain-v2.js','./ready-subject-master-v01.js','./ready-official-standard-registry-v01.js','./ready-official-unit-map-v01.js','./ready-learning-standard-matcher-v01.js','./ready-learning-reference-v01.js','./ready-learning-master-v01.js','./ready-planner-v01.js','./ready-integration-v1.js','./app.js','./ready-runtime-v07.js','./manifest.webmanifest','./VERSION.json',
+'./','./index.html','./styles.css',
+'./vendor/taky/release-contract.js','./vendor/taky/pwa-update-state.js',
+'./ready-release-v01.js','./ready-pwa-update-v01.js',
+'./ready-sync-adapter-v01.js','./ready-local-first-v01.js','./ready-assignment-domain-v2.js','./ready-subject-master-v01.js','./ready-official-standard-registry-v01.js','./ready-official-unit-map-v01.js','./ready-learning-standard-matcher-v01.js','./ready-learning-reference-v01.js','./ready-learning-master-v01.js','./ready-planner-v01.js','./ready-integration-v1.js','./app.js','./ready-runtime-v07.js','./manifest.webmanifest','./VERSION.json',
 './Ready_Set_Ui_Master_Logic_REV_06.md','./Ready_Set_Ui_Master_Logic_REV_07.md',
 './assets/icon-192.png','./assets/icon-512.png',
 './assets/guide-lumi.png','./assets/guide-pico.png','./assets/guide-mori.png',
 './assets/bgm-piano.wav','./assets/bgm-nature.wav','./assets/bgm-water.wav','./assets/bgm-lofi.wav'
 ];
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',e=>{
- if(e.request.method!=='GET')return;
- const u=new URL(e.request.url);
- if(u.origin!==location.origin)return;
- if(e.request.mode==='navigate'){
-   e.respondWith(fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put('./index.html',copy));return r}).catch(()=>caches.match('./index.html')));
-   return;
- }
- e.respondWith(fetch(e.request).then(r=>{if(r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));}return r}).catch(()=>caches.match(e.request)));
+
+self.addEventListener('install',event=>{
+  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)));
+});
+
+self.addEventListener('message',event=>{
+  if(event.data?.type==='APPLY_UPDATE'){
+    event.waitUntil(self.skipWaiting());
+  }
+});
+
+self.addEventListener('activate',event=>{
+  event.waitUntil(
+    caches.keys()
+      .then(keys=>Promise.all(
+        keys
+          .filter(key=>(key.startsWith('ready-set-')||key.startsWith('ready-set:'))&&key!==CACHE)
+          .map(key=>caches.delete(key))
+      ))
+      .then(()=>self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch',event=>{
+  if(event.request.method!=='GET')return;
+  const url=new URL(event.request.url);
+  if(url.origin!==location.origin)return;
+  if(event.request.mode==='navigate'){
+    event.respondWith(
+      fetch(event.request)
+        .then(response=>{
+          const copy=response.clone();
+          caches.open(CACHE).then(cache=>cache.put('./index.html',copy));
+          return response;
+        })
+        .catch(()=>caches.match('./index.html'))
+    );
+    return;
+  }
+  event.respondWith(
+    fetch(event.request)
+      .then(response=>{
+        if(response.ok){
+          const copy=response.clone();
+          caches.open(CACHE).then(cache=>cache.put(event.request,copy));
+        }
+        return response;
+      })
+      .catch(()=>caches.match(event.request))
+  );
 });
