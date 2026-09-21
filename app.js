@@ -25,6 +25,7 @@ const rebuildCaptureService=globalThis.ReadyRebuildCaptureService||null;
 const rebuildCaptureView=globalThis.ReadyRebuildCaptureView||null;
 const rebuildAssignmentService=globalThis.ReadyRebuildAssignmentService||null;
 const rebuildRecordingService=globalThis.ReadyRebuildRecordingService||null;
+const rebuildRecordingView=globalThis.ReadyRebuildRecordingView||null;
 const rebuildResultHistoryView=globalThis.ReadyRebuildResultHistoryView||null;
 const rebuildProfileSettingsView=globalThis.ReadyRebuildProfileSettingsView||null;
 const rebuildAuthSyncView=globalThis.ReadyRebuildAuthSyncView||null;
@@ -32,7 +33,7 @@ const rebuildHomeView=globalThis.ReadyRebuildHomeView||null;
 const rebuildPlannerScreenView=globalThis.ReadyRebuildPlannerScreenView||null;
 const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility){
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService||!rebuildAccessibility){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -490,13 +491,18 @@ $('#recordBackBtn').onclick=async()=>{
   if(state.activeSession?.sound!=='OFF')await resumeBgm(state.activeSession.sound);
 };
 
+const recordingView=rebuildRecordingView.create({
+  query:$,
+  formatTime:fmt,
+  applyAvatar,
+  applyGuide
+});
 function renderRecordingContext(){
-  const t=sessionTimes();
-  $('#recordTimerContext').textContent=t.remaining>=0?fmt(t.remaining):`+${fmt(-t.remaining)}`;
-  applyAvatar($('#recordAvatar'));
-  applyGuide($('#recordGuidePortrait'));
-  applyGuide($('#recIntroGuide'));
-  $('#guideDialogue').textContent=`${state.guide.name}: ${guideData().intro}`;
+  recordingView.renderContext({
+    sessionTimes,
+    state,
+    guideData:guideData()
+  });
 }
 $('#recordAction').onclick=async()=>{
   if(mediaRecorder&&mediaRecorder.state==='recording'){mediaRecorder.stop();return}
@@ -514,12 +520,9 @@ async function startRecording(){
     mediaRecorder.onstop=finishRecording;
     mediaRecorder.start(250);
     recordStartedAt=Date.now();
-    $('#recordAction').classList.add('recording');
-    $('#recordAction span').textContent='녹음 끝내기';
-    $('#recordState').textContent='RECORDING';
-    $('#waveform').classList.add('active');
+    recordingView.setRecordingActive(true);
     recordTicker=setInterval(()=>{
-      $('#recordClock').textContent=fmt(Date.now()-recordStartedAt);
+      recordingView.renderClock(Date.now()-recordStartedAt);
       renderRecordingContext();
     },250);
   }catch(e){
@@ -536,27 +539,23 @@ function chooseGuest(){
 function finishRecording(){
   clearInterval(recordTicker);
   mediaStream?.getTracks().forEach(t=>t.stop());
-  $('#recordAction').classList.remove('recording');
-  $('#recordAction span').textContent='녹음 시작';
-  $('#recordState').textContent='REVIEW';
-  $('#waveform').classList.remove('active');
   const type=mediaRecorder.mimeType||chunks[0]?.type||'audio/webm';
   currentAudio=new Blob(chunks,{type});
-  $('#audioPreview').src=URL.createObjectURL(currentAudio);
-  $('#reviewPanel').hidden=false;
   chooseGuest();
-  applyGuide($('#duoMainGuide'),state.guide.type);
-  applyGuide($('#duoGuestGuide'),currentGuestType);
-  $('#guideDialogue').textContent='잠깐만. 같이 들어줄 친구 좀 잡아올게!';
-  $('#duoText').textContent=`${state.guide.name}: 잡아왔다!  ·  ${GUIDE_TYPES[currentGuestType].defaultName}: 좋아, 끝까지 들어보자. 지금은 자동 평가보다 녹음을 끝까지 완료한 사실을 먼저 확인할게.`;
-  $('#formatNote').textContent=rebuildRecordingService.formatNote(type);
+  recordingView.renderReview({
+    audioUrl:URL.createObjectURL(currentAudio),
+    mainGuideType:state.guide.type,
+    guestGuideType:currentGuestType,
+    mainGuideName:state.guide.name,
+    guestGuideName:GUIDE_TYPES[currentGuestType].defaultName,
+    formatNote:rebuildRecordingService.formatNote(type)
+  });
   state.recordingMeta={mime:type,durationMs:Date.now()-recordStartedAt,guestType:currentGuestType};
   save();
 }
 $('#rerecordBtn').onclick=()=>{
-  $('#reviewPanel').hidden=true;currentAudio=null;
-  $('#recordClock').textContent='00:00';$('#recordState').textContent='READY';
-  $('#guideDialogue').textContent=`${state.guide.name}: 좋아, 이번엔 네 속도로 다시 해보자.`;
+  currentAudio=null;
+  recordingView.resetReview({guideName:state.guide.name});
 };
 $('#saveRecordingBtn').onclick=async()=>{
   if(!currentAudio)return;
