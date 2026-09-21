@@ -40,4 +40,17 @@ assert('contract-allow',gate.validateContract({contract_version:'READY_LEARNING_
 assert('contract-fail-closed',gate.validateContract({contract_version:'UNKNOWN'}).ok===false);
 assert('contract-no-object',gate.validateContract(null).ok===false);
 
+
+const legacyPlanner=loadSource('ready-planner-v01.js');
+const plannerMod=await importSource('src/planner/planner-domain.js');
+assert('planner-map-help',plannerMod.mapReadyState('WAITING_FOR_PARENT')==='WAITING_FOR_PARENT');
+assert('planner-map-blocked',plannerMod.mapReadyState('BLOCKED')==='BLOCKED');
+assert('planner-invalid-state',plannerMod.mapReadyState('NOPE')===null);
+assert('planner-session-conflict',plannerMod.validateSessionOwnership({active_session_id:'A'},'B').reason==='SESSION_OWNERSHIP_CONFLICT');
+assert('planner-finishability',plannerMod.canFinishTodo({state:'IN_PROGRESS'})===true&&plannerMod.canFinishTodo({state:'PLANNED'})===false);
+assert('planner-parity-ready-map',legacyPlanner.includes("WAITING_FOR_PARENT:'WAITING_FOR_PARENT'")&&legacyPlanner.includes("BLOCKED:'BLOCKED'"));
+assert('planner-parity-ownership',legacyPlanner.includes("'SESSION_OWNERSHIP_CONFLICT'"));
+
+console.log('REBUILD_DOMAIN_PARITY_PASS');
+
 console.log('REBUILD_V01_FOUNDATION_PASS ready-set');
