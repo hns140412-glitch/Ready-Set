@@ -26,7 +26,9 @@ const rebuildCaptureView=globalThis.ReadyRebuildCaptureView||null;
 const rebuildAssignmentService=globalThis.ReadyRebuildAssignmentService||null;
 const rebuildRecordingService=globalThis.ReadyRebuildRecordingService||null;
 const rebuildResultHistoryView=globalThis.ReadyRebuildResultHistoryView||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildResultHistoryView){
+const rebuildProfileSettingsView=globalThis.ReadyRebuildProfileSettingsView||null;
+const rebuildAuthSyncView=globalThis.ReadyRebuildAuthSyncView||null;
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -1142,17 +1144,20 @@ document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=
   renderParentIntake();renderPlanner();renderMission();
 });
 
+const authSyncView=rebuildAuthSyncView.create({query:$});
+const profileSettingsView=rebuildProfileSettingsView.create({
+  query:$,
+  queryAll:$$,
+  initials,
+  styleFilter,
+  guideData,
+  applyGuide,
+  renderNameSuggestions,
+  renderAuthStatus,
+  renderSyncStatus
+});
 function renderProfile(){
-  const img=$('#profileImage'),ph=$('#profilePlaceholder');
-  $('#profileName').value=state.profile.name;
-  $('#shareAvatarOptIn').checked=!!state.profile.shareAvatar;
-  if(state.profile.photo){
-    img.src=state.profile.photo;img.hidden=false;ph.hidden=true;img.style.filter=styleFilter(state.profile.style);
-  }else{
-    img.hidden=true;ph.hidden=false;ph.textContent=initials();
-  }
-  $$('[data-style]').forEach(b=>b.classList.toggle('on',b.dataset.style===state.profile.style));
-  document.documentElement.style.setProperty('--avatar-bg',state.profile.photo?`url(${state.profile.photo})`:'linear-gradient(145deg,#ffe7d6,#eaa789)');
+  profileSettingsView.renderProfile(state);
 }
 function photoLoad(file){
   if(!file)return;
@@ -1174,18 +1179,7 @@ $('#saveProfileBtn').onclick=()=>{
 
 
 function renderAuthStatus(){
-  const session=familySession();
-  const badge=$('#authStateBadge'),text=$('#authStatusText');
-  const loginControls=$('#authLoginControls'),loggedInControls=$('#authLoggedInControls'),link=$('#familyLinkChildSection');
-  if(badge)badge.textContent=session.authenticated?(session.role==='PARENT'?'보호자':'학생'):'로컬 모드';
-  if(text){
-    text.textContent=session.authenticated
-      ? `${session.role==='PARENT'?'PARENT':'CHILD'} 계정으로 로그인됨 · 가족 ${session.family_id||'-'}`
-      : '로그인하지 않아도 이 기기에서 CHILD 로컬 모드로 사용할 수 있습니다.';
-  }
-  if(loginControls)loginControls.hidden=!!session.authenticated;
-  if(loggedInControls)loggedInControls.hidden=!session.authenticated;
-  if(link)link.hidden=!(session.authenticated&&session.role==='PARENT');
+  authSyncView.renderAuth(familySession());
 }
 window.addEventListener('readyset-family-session',()=>{
   renderAuthStatus();
@@ -1245,24 +1239,11 @@ async function renderSyncStatus(){
   const adapter=window.ReadySetSyncAdapter;
   const local=window.ReadySetLocalFirst;
   if(!adapter||!local)return;
-  const s=adapter.status();
+  const status=adapter.status();
   const [outbox,conflicts]=await Promise.all([local.outbox(),local.conflicts()]);
   const pending=outbox.filter(x=>!['SENT','SUPERSEDED'].includes(x.status)).length;
   const openConflicts=conflicts.filter(x=>x.status==='OPEN').length;
-  const badge=$('#syncStateBadge'),text=$('#syncStatusText');
-  if(badge){
-    badge.textContent=s.state==='CONNECTED'?'클라우드 연결':s.state==='ERROR'?'연결 오류':'로컬 저장';
-    badge.dataset.state=s.state;
-  }
-  if(text){
-    text.textContent=s.state==='CONNECTED'
-      ? '클라우드 동기화 서버와 연결되어 Outbox를 전송할 수 있습니다.'
-      : s.state==='ERROR'
-        ? '클라우드 연결에 문제가 있어 로컬 저장을 유지하고 있습니다. 데이터는 지워지지 않습니다.'
-        : '현재 이 기기에 안전하게 저장 중이에요. 클라우드 동기화는 아직 연결되지 않았습니다.';
-  }
-  if($('#syncPendingCount'))$('#syncPendingCount').textContent=String(pending);
-  if($('#syncConflictCount'))$('#syncConflictCount').textContent=String(openConflicts);
+  authSyncView.renderSync({status,pending,conflicts:openConflicts});
 }
 window.addEventListener('readyset-sync-status',()=>renderSyncStatus().catch(()=>{}));
 document.getElementById('checkSyncBtn')?.addEventListener('click',async()=>{
@@ -1280,16 +1261,7 @@ document.getElementById('checkSyncBtn')?.addEventListener('click',async()=>{
 });
 
 function renderSettings(){
-  $('#guideNameInput').value=state.guide.name;
-  $('#guideNameLabel').textContent=state.guide.name;
-  $('#guidePersonalityLabel').textContent=guideData().personality;
-  applyGuide($('#settingsGuidePortrait'));
-  $$('[data-guide-type]').forEach(b=>b.classList.toggle('on',b.dataset.guideType===state.guide.type));
-  $$('[data-guide-voice]').forEach(b=>b.classList.toggle('on',b.dataset.guideVoice===state.guide.voice));
-  renderNameSuggestions(false);
-  document.querySelectorAll('[data-sound]').forEach(b=>b.classList.toggle('on',b.dataset.sound===state.sound));
-  renderAuthStatus();
-  renderSyncStatus().catch(()=>{});
+  profileSettingsView.renderSettings(state).catch(()=>{});
 }
 $('#guideNameInput').onchange=e=>{
   state.guide.name=e.target.value.trim()||guideData().defaultName;
