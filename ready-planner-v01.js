@@ -23,6 +23,7 @@
     schema_version:SCHEMA_VERSION,
     storage_backend:'LOCALSTORAGE_COMPATIBILITY_SCAFFOLD',
     schedule_commitments:[],
+    daily_availability_windows:[],
     homework_templates:[],
     dated_todos:[],
     progress_events:[],
@@ -48,6 +49,7 @@
       ...x,
       schema_version:SCHEMA_VERSION,
       schedule_commitments:Array.isArray(x.schedule_commitments)?x.schedule_commitments:[],
+      daily_availability_windows:Array.isArray(x.daily_availability_windows)?x.daily_availability_windows:[],
       homework_templates:Array.isArray(x.homework_templates)?x.homework_templates:[],
       dated_todos:Array.isArray(x.dated_todos)?x.dated_todos:[],
       progress_events:Array.isArray(x.progress_events)?x.progress_events:[],
@@ -91,6 +93,40 @@
         if(i>=0)s.schedule_commitments[i]=item;else s.schedule_commitments.push(item);
         return item;
       });
+    }
+
+    function upsertDailyAvailabilityWindow(input={}){
+      if(globalThis.ReadyFamilySession && cleanText(input.source)==='PARENT_ADMIN_UI'){
+        const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
+        if(!gate?.ok) throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
+      }
+      const date=cleanText(input.date),start=cleanText(input.start),end=cleanText(input.end);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('date required');
+      if(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start) throw new Error('valid start/end required');
+      return mutate(s=>{
+        const id=cleanText(input.availability_id)||makeId('availability');
+        const item={
+          availability_id:id,date,start,end,
+          confirmed:input.confirmed!==false,
+          source:cleanText(input.source)||'READY_LOCAL',
+          parent_editable:input.parent_editable!==false,
+          updated_at:new Date().toISOString()
+        };
+        const i=s.daily_availability_windows.findIndex(x=>x.availability_id===id);
+        if(i>=0)s.daily_availability_windows[i]=item;else s.daily_availability_windows.push(item);
+        return item;
+      });
+    }
+
+    function candidateWindowsByDate(dates=[]){
+      const s=load(),out={};
+      for(const date of dates||[]){
+        out[date]=(s.daily_availability_windows||[])
+          .filter(x=>x.confirmed!==false&&x.date===date)
+          .sort((a,b)=>String(a.start).localeCompare(String(b.start)))
+          .map(x=>({start:x.start,end:x.end,availability_id:x.availability_id,source:x.source}));
+      }
+      return out;
     }
 
     function upsertHomeworkTemplate(input={}){
@@ -260,7 +296,9 @@
       const dates=allocationDates(fact,input);if(!dates.length)return {ok:false,reason:'NO_ALLOCATION_WINDOW'};
       return mutate(s=>{
         const runId=makeId('allocation_v2');
-        const windowsByDate=(input.candidate_windows_by_date&&typeof input.candidate_windows_by_date==='object')?input.candidate_windows_by_date:{};
+        const storedWindowsByDate=candidateWindowsByDate(dates);
+        const explicitWindowsByDate=(input.candidate_windows_by_date&&typeof input.candidate_windows_by_date==='object')?input.candidate_windows_by_date:{};
+        const windowsByDate={...storedWindowsByDate,...explicitWindowsByDate};
         const freeWindowByDate=Object.fromEntries(dates.map(d=>[d,freeWindowEvidence(s,d,windowsByDate[d]||[])]));
         const freeWindowCoverage=dates.filter(d=>freeWindowByDate[d].known).length;
         const loadByDate=Object.fromEntries(dates.map(d=>[d,(s.dated_todos||[])
@@ -1106,6 +1144,8 @@
       today,
       todayProjection,
       upsertScheduleCommitment,
+      upsertDailyAvailabilityWindow,
+      candidateWindowsByDate,
       upsertHomeworkTemplate,
       upsertDatedTodo,
       linkTodayItems,
