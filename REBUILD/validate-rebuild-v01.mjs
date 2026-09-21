@@ -279,3 +279,8 @@ assert('profile-inline-handlers-removed',
   !appSource.includes('function photoLoad(') &&
   !appSource.includes('new FileReader()')
 );
+
+assert('profile-style-handler-uses-query-all',
+  appSource.includes("$$('[data-style]').forEach") &&
+  !appSource.includes("$('[data-style]').forEach")
+);
