@@ -118,8 +118,8 @@ assert('planner-query-controller-loaded-before-app',
 );
 assert('planner-query-controller-wired',
   appSource.includes('rebuildPlannerQueryController.create') &&
-  appSource.includes('plannerQueryRuntime.todayProjection()') &&
-  appSource.includes('plannerQueryRuntime.snapshot()')
+  loadSource('src/views/mission-controller-runtime.js').includes('plannerQuery.todayProjection()') &&
+  loadSource('src/views/planner-screen-controller-runtime.js').includes('plannerQuery.snapshot()')
 );
 assert('planner-query-direct-read-reduced',
   !appSource.includes('window.ReadySetPlanner?.todayProjection?.()') &&
