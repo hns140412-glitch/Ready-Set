@@ -140,3 +140,12 @@ assert('assignment-service-review-provenance',
   assignmentServiceSource.includes("PARENT_REVIEWED_CAPTURE") &&
   assignmentServiceSource.includes("capture_reviews:captureReviews")
 );
+
+const recordingServiceSource=loadSource('src/recording/recording-service-runtime.js');
+assert('recording-service-owner',recordingServiceSource.includes('ReadyRebuildRecordingService'));
+assert('recording-service-mime-priority',
+  recordingServiceSource.includes("'audio/mp4;codecs=mp4a.40.2'") &&
+  recordingServiceSource.indexOf("'audio/mp4;codecs=mp4a.40.2'") < recordingServiceSource.indexOf("'audio/webm;codecs=opus'")
+);
+assert('recording-service-no-fake-m4a',recordingServiceSource.includes("extensionFor")&&recordingServiceSource.includes("'webm'"));
+assert('recording-service-indexeddb',recordingServiceSource.includes("indexedDBImpl.open('readyset_audio',1)"));
