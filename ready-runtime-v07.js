@@ -302,19 +302,9 @@
     if(rawEvent){
       let e=null;
       try{e=JSON.parse(rawEvent)}catch{}
-      const payload=e?.payload||null;
-      const taskContext=payload?.taskContext||{};
-      const eventType=e?.event_type||e?.type||null;
-      if(e?.source==='hide-seek'&&eventType==='TASK_COMPLETED'&&payload?.resultContract==='HIDE_SPECIALIST_RESULT_V2'){
-        const applied=applyInboundResult({
-          session_id:taskContext.session_id,
-          task_id:taskContext.task_id,
-          lap_id:taskContext.lap_id,
-          task_state:payload.taskState||'COMPLETED',
-          from_app:'hide-seek',
-          event_id:e.event_id||null,
-          result_payload:payload
-        });
+      const normalizedEvent=window.ReadyHideMemoryReviewV01?.normalizeHideV2ReturnEvent?.(e)||null;
+      if(normalizedEvent){
+        const applied=applyInboundResult(normalizedEvent);
         if(applied){
           p.delete('learning_event');
           const clean=`${location.pathname}${p.toString()?`?${p}`:''}${location.hash}`;
