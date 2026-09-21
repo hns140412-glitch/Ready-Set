@@ -45,6 +45,13 @@ const english=Router.classify({
 });
 assert.equal(english.mode,'READY_ORCHESTRATED');
 assert.deepEqual(apps(english),['hide-seek','snap-pop']);
+assert.deepEqual(english.handoff_queue,['hide-seek','snap-pop']);
+assert.equal(Router.nextSpecialist(english,[]),'hide-seek');
+assert.equal(Router.canLaunch(english,'snap-pop',[]),false);
+assert.equal(Router.canLaunch(english,'hide-seek',[]),true);
+assert.equal(Router.nextSpecialist(english,['hide-seek']),'snap-pop');
+assert.equal(Router.canLaunch(english,'snap-pop',['hide-seek']),true);
+assert.equal(Router.nextSpecialist(english,['hide-seek','snap-pop']),null);
 
 const labelOnly=Router.classify({
   label:'단어 글쓰기',
