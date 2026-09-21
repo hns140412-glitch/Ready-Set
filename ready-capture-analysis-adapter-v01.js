@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION='0.1.0';
+  const VERSION='0.2.0';
   const ENDPOINT='/api/capture/analyze';
 
   async function analyze(input={}){
@@ -13,7 +13,9 @@
     if(typeof getBlob!=='function')return {ok:false,reason:'BLOB_RESOLVER_REQUIRED'};
 
     const form=new FormData();
+    const analysisDomain=String(input.analysis_domain||session.analysis_domain||'READY_ASSIGNMENT_FACT').trim()||'READY_ASSIGNMENT_FACT';
     form.set('capture_session_id',session.capture_session_id);
+    form.set('analysis_domain',analysisDomain);
     form.set('manifest',JSON.stringify(manifest));
 
     let attached=0;
@@ -60,6 +62,7 @@
       provider:body.provider||'UNKNOWN',
       model:body.model||null,
       family_id:body.family_id||null,
+      analysis_domain:body.analysis_domain||result.analysis_domain||analysisDomain,
       analysis_version:result.analysis_version||'CAPTURE_OCR_V1',
       drafts:result.drafts,
       received_at:new Date().toISOString()

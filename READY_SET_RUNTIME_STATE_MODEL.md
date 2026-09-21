@@ -1,7 +1,7 @@
 # READY_SET_RUNTIME_STATE_MODEL
 
-Status: ACTIVE_REWRITE_CANONICAL
-Generation: READY_C2S_REWRITE_01
+Status: ACTIVE_RENEWED_CANONICAL
+Generation: READY_RENEWAL_01
 
 ## Identity
 assignment_id → analysis_id → learning_unit_id → allocation_run_id → todo_id → session_id → task_id → lap_id → progress/observation/carry_over_id
@@ -40,6 +40,16 @@ WAITING_FOR_PARENT/BLOCKED require resolution.
 Repeated/deadline-risk carry escalates.
 Preserve root_todo_id/source_todo_id/carry_over_id lineage.
 
-## Rewrite target
-Absorb ready-runtime-v07 compatibility behavior into one canonical session runtime.
-Never call a legacy bulk completion routine after per-task finalization.
+## Current runtime relation
+Current exact-main runtime has a single per-task outcome finalization path verified by Runtime E2E.
+
+The remaining runtime renewal work is not to recreate the session engine. It is to close:
+- real cross-app Ready ↔ Hide & Seek / Snap & Pop roundtrip;
+- device background/lock continuity on physical iPhone;
+- child-input confirmation handoff into FACT;
+- Planner real-life availability/replan inputs.
+
+Hard:
+- never restore a legacy bulk completion path after per-task finalization;
+- do not convert device-only uncertainty into a reason to reopen already verified browser runtime behavior;
+- do not claim cross-app/device continuity from browser-only evidence.

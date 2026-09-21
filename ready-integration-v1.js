@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION='2026.09.20-cross-revision-signal-v1';
+  const VERSION='2026.09.20-specialist-memory-v1';
   function processAssignment(assignmentId,input={}){
     if(!window.ReadyAssignments||!window.ReadyLearningMasterV01||!window.ReadySetPlanner)return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
     let state=window.ReadyAssignments.load(),fact=state.assignmentFacts[assignmentId];
@@ -33,13 +33,25 @@
         activity_types:profile?.activity_types||[],
         allow_subject_generalization:true
       })||null;
+      const specialistMemorySignal=window.ReadySetPlanner.specialistMemorySignal?.(
+        assignmentId,
+        {current_revision:Number(fact.fact_revision)||1}
+      )||null;
       window.ReadyLearningMasterV01.interpretConfirmed(assignmentId,{
         actor:'LEARNING_MASTER_RUNTIME',
-        learning_signal:learningSignal
+        learning_signal:learningSignal,
+        specialist_memory_signal:specialistMemorySignal
       });
       state=window.ReadyAssignments.load();fact=state.assignmentFacts[assignmentId];
     }
-    const allocation=window.ReadySetPlanner.allocateLearningUnits({assignment_id:assignmentId,domain_state:state,start_date:input.start_date,candidate_dates:input.candidate_dates});
+    const allocation=window.ReadySetPlanner.allocateLearningUnits({
+      assignment_id:assignmentId,
+      domain_state:state,
+      start_date:input.start_date,
+      candidate_dates:input.candidate_dates,
+      availability_profile_id:input.availability_profile_id,
+      candidate_windows_by_date:input.candidate_windows_by_date
+    });
     if(!allocation.ok)return {...allocation,revision_impact:revisionImpact};
     const committed=window.ReadySetPlanner.commitLearningAllocation(allocation.allocation_run_id);
     if(committed.ok&&fact.planner_revision_pending){
@@ -48,7 +60,17 @@
         allocation_run_id:allocation.allocation_run_id
       });
     }
-    return {ok:committed.ok,assignment_id:assignmentId,analysis_id:fact.current_analysis_id,allocation_run_id:allocation.allocation_run_id,todos:committed.created||[],revision_impact:revisionImpact};
+    return {
+      ok:committed.ok,
+      assignment_id:assignmentId,
+      analysis_id:fact.current_analysis_id,
+      allocation_run_id:allocation.allocation_run_id,
+      availability_role:allocation.availability_role||null,
+      availability_by_date:allocation.availability_by_date||null,
+      specialist_memory_signal:window.ReadySetPlanner.specialistMemorySignal?.(assignmentId,{current_revision:Number(fact.fact_revision)||1})||null,
+      todos:committed.created||[],
+      revision_impact:revisionImpact
+    };
   }
   function reviewEscalatedCarryOver(carryOverId,input={}){
     if(!window.ReadyAssignments||!window.ReadyLearningMasterV01||!window.ReadySetPlanner)return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
@@ -91,10 +113,27 @@
     };
   }
 
+  function reviewAndProcessChildFact(assignmentId,input={}){
+    if(!window.ReadyAssignments||!window.ReadySetPlanner||!window.ReadyLearningMasterV01)return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
+    const state=window.ReadyAssignments.load(),fact=state.assignmentFacts?.[assignmentId];
+    if(!fact)return {ok:false,reason:'ASSIGNMENT_FACT_NOT_FOUND'};
+    if(fact.source_actor!=='CHILD')return {ok:false,reason:'CHILD_FACT_REQUIRED'};
+    try{
+      window.ReadyAssignments.confirmFact(assignmentId,{
+        actor:'PARENT',
+        reviewed_value:input.reviewed_value||{},
+        provenance:input.provenance||{kind:'PARENT_REVIEW',surface:'PARENT_INTAKE'}
+      });
+    }catch(error){
+      return {ok:false,reason:error?.message||'PARENT_CONFIRMATION_FAILED'};
+    }
+    return processAssignment(assignmentId,input);
+  }
+
   function processConfirmed(input={}){
     const state=window.ReadyAssignments?.load?.();if(!state)return [];
     return Object.values(state.assignmentFacts).filter(f=>f.confirmation_state==='FACT_CONFIRMED').map(f=>processAssignment(f.assignment_id,input));
   }
-  window.ReadyIntegrationV1={version:VERSION,processAssignment,processConfirmed,reviewEscalatedCarryOver};
+  window.ReadyIntegrationV1={version:VERSION,processAssignment,processConfirmed,reviewAndProcessChildFact,reviewEscalatedCarryOver};
   document.documentElement.dataset.readyIntegration=VERSION;
 })();

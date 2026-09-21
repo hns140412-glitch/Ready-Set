@@ -1,36 +1,357 @@
 {
-  "status_version": "READY_C2S_REWRITE_01",
+  "status_version": "READY_RENEWAL_01",
   "product": "Ready & Set",
   "evidence_policy": "Validation belongs to an exact code SHA; product/version labels alone never imply validation.",
-  "current_main_sha_at_r0": "c82109651609440d2e9e08486f2ef5a042a68e46",
+  "exact_main_sha": "6142cfeb5599a625d61ffa1faca866b2b6817cc8",
   "current_main": {
     "coded": true,
-    "ci_verified": false,
-    "runtime_verified": false,
+    "ci_verified": true,
+    "runtime_verified": true,
     "device_verified": false,
     "production_verified": false,
-    "reason": "PR #70 targeted per-task session-end behavior is verified, but exact-main Ready Runtime E2E and TAKY Codex Worker Self-Test remain failing; global CI/runtime verification is false."
-  },
-  "historical_verified_evidence": {
-    "status": "HISTORICAL_REFERENCE_ONLY"
+    "evidence": {
+      "ready_integration_ci": {
+        "run_number": 119,
+        "result": "PASS"
+      },
+      "ready_runtime_e2e": {
+        "run_number": 205,
+        "result": "PASS",
+        "tests": "42/42"
+      },
+      "taky_codex_worker_self_test": {
+        "run_number": 322,
+        "result": "PASS"
+      }
+    },
+    "reason": "Exact main is CODED + CI_VERIFIED + RUNTIME_VERIFIED. Physical-device and production deployment verification remain separate gates."
   },
   "rewrite_gates": {
     "R0_CANONICAL_SKELETON": "COMPLETE",
-    "R1_SINGLE_SESSION_ENGINE": "PARTIAL_IMPLEMENTED_TARGETED_VERIFIED_PR70",
-    "R2_PRODUCT_LANGUAGE_AUTHORITY": "NOT_STARTED",
-    "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "NOT_STARTED",
-    "R4_CHILD_FACT_CONFIRMATION_PATH": "NOT_STARTED",
-    "R5_PLANNER_FREE_WINDOW": "NOT_STARTED",
-    "R6_LEGACY_AUTHORITY_ARCHIVE": "NOT_STARTED",
-    "R7_EXACT_MAIN_VERIFICATION": "IN_PROGRESS_FAILURE_CLASSIFICATION"
+    "R1_SINGLE_SESSION_ENGINE": "COMPLETE_RUNTIME_VERIFIED",
+    "R2_PRODUCT_LANGUAGE_AUTHORITY": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
+    "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
+    "R4_CHILD_FACT_CONFIRMATION_PATH": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
+    "R5_PLANNER_FREE_WINDOW": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
+    "R6_LEGACY_AUTHORITY_ARCHIVE": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
+    "R7_EXACT_MAIN_VERIFICATION": "COMPLETE"
   },
-  "release_state": "REWRITE_IN_PROGRESS_NOT_RELEASE_VERIFIED",
-  "latest_targeted_evidence": {
-    "sha": "c82109651609440d2e9e08486f2ef5a042a68e46",
-    "pr": 70,
-    "scope": "per-task session-end single authority",
-    "result": "TARGETED_BEHAVIOR_VERIFIED",
-    "global_ci_verified": false,
-    "global_runtime_verified": false
+  "current_open_product_gates": [
+    "WHOLE_PRODUCT_REQUIREMENT_RECOVERY",
+    "REAL_RECURRING_TIMETABLE",
+    "WEEK_TIME_AXIS_UI",
+    "DAY_TIME_AXIS_UI",
+    "TIMETABLE_EXCEPTIONS_AND_MAKEUP",
+    "PLANNER_TIMETABLE_AWARE_ALLOCATION",
+    "PLANNER_AUTOMATIC_REPLAN",
+    "OCR_CONTINUOUS_CAPTURE_UX",
+    "OCR_RETAKE_AND_QUALITY_RECOVERY",
+    "OCR_REVIEW_CORRECTION_UX",
+    "LEARNING_ENGINE_GRADE_UNIT_MAPPING",
+    "LEARNING_ENGINE_SUBJECT_DEPTH",
+    "PARENT_MANAGEMENT_UX",
+    "TODAY_END_TO_END_PRODUCT_FLOW",
+    "REAL_SYNC_AND_FAMILY_ONBOARDING",
+    "DEVICE_VERIFICATION",
+    "PRODUCTION_VERIFICATION"
+  ],
+  "release_state": "ACTIVE_IMPLEMENTATION_PRODUCT_COMPLETENESS_REASSESSMENT",
+  "deployment_policy": {
+    "branch_first": true,
+    "netlify_not_debug_surface": true,
+    "device_deploy_only_after_exact_candidate_selected": true
+  },
+  "continuity_basis": {
+    "drive_handoff": "READY_SET_HANDOFF_2026-09-20_LATEST",
+    "handoff_role": "CONTINUITY_EVIDENCE_NOT_CANONICAL_AUTHORITY",
+    "latest_taky_main_at_integration": "a449b88b6faae1169a8cc771da3f3721f9a4ab48",
+    "ready_main_at_integration": "6142cfeb5599a625d61ffa1faca866b2b6817cc8"
+  },
+  "external_resource_gate": {
+    "policy": "LOCAL_BRANCH_TO_CI_RUNTIME_TO_ONE_FROZEN_CANDIDATE_TO_EXTERNAL",
+    "candidate_sha_frozen": false,
+    "external_deploy_allowed": false,
+    "reason": "Previous frozen tuple represented selected subsystem/runtime closure only. Whole-product completeness reassessment found material timetable, Planner, OCR, Learning Engine, Parent UX and sync gaps; release candidate freeze is revoked until those product features are functional.",
+    "default_external_call_budget": 1,
+    "user_as_debugger": false
+  },
+  "renewal_review_closure": {
+    "reviewed_head": "450caf84b23788b40a93e070742d86edc0165baa",
+    "draft_pr": 73,
+    "integration_ci": {
+      "run_number": 130,
+      "result": "PASS"
+    },
+    "worker_self_test": {
+      "run_number": 331,
+      "result": "PASS"
+    },
+    "runtime_e2e": {
+      "run_number": 216,
+      "result": "PASS",
+      "tests": "45/45"
+    },
+    "p1_planner_reality_engine": "CODED_CI_VERIFIED_RUNTIME_VERIFIED_CANDIDATE",
+    "review_snapshot_frozen": true,
+    "deployment_candidate_frozen": false,
+    "next_unresolved_gate": "WHOLE_PRODUCT_IMPLEMENTATION_REBUILD",
+    "hosting_called_during_review": false
+  },
+  "p2_child_fact_confirmation_closure": {
+    "candidate_head": "60bc3ba2fea851f1951866111f2561d17339e08f",
+    "draft_pr": 73,
+    "coded": true,
+    "ci_verified": true,
+    "runtime_verified": true,
+    "device_verified": false,
+    "production_verified": false,
+    "integration_ci": {
+      "run_number": 136,
+      "result": "PASS"
+    },
+    "worker_self_test": {
+      "run_number": 338,
+      "result": "PASS"
+    },
+    "runtime_e2e": {
+      "run_number": 222,
+      "result": "PASS",
+      "tests": "46/46"
+    },
+    "flow": "CHILD_INPUT -> PARENT_REVIEW_CONFIRM -> FACT -> LEARNING_MASTER -> PLANNER -> TODAY",
+    "child_direct_confirmation_blocked": "PARENT_CONFIRMATION_REQUIRED",
+    "p1_reworked": false,
+    "p1_regression_evidence": "NONE; P1 regression tests remained PASS",
+    "deployment_candidate_frozen": false,
+    "hosting_called": false
+  },
+  "p3_cross_app_runtime_closure": {
+    "ready_candidate_head": "dec81f5bc3f133e5af25bd105a170dc1da6bb510",
+    "hide_candidate_head": "5e4a4fca4338b146a49e10e4151d4f45753e5cdf",
+    "hide_draft_pr": 5,
+    "coded": true,
+    "ci_verified": true,
+    "runtime_verified": true,
+    "device_verified": false,
+    "production_verified": false,
+    "ready_integration_ci": {
+      "run_number": 140,
+      "result": "PASS"
+    },
+    "ready_worker_self_test": {
+      "run_number": 343,
+      "result": "PASS"
+    },
+    "ready_runtime_e2e": {
+      "run_number": 226,
+      "result": "PASS",
+      "tests": "47/47"
+    },
+    "hide_validation": {
+      "result": "PASS"
+    },
+    "preserved_identity": [
+      "session_id",
+      "goal_id",
+      "task_id",
+      "lap_id",
+      "return_target"
+    ],
+    "timing_contract": "SAME_LAP_CONTINUOUS_UNTIL_COMPLETED_OR_BLOCKED",
+    "wrong_goal_rejected": true,
+    "hosting_called": false,
+    "deployment_candidate_frozen": false
+  },
+  "p4_product_language_closure": {
+    "candidate_head": "c4f68d2fc0a86c9e2c6abc8034185026f31d8d45",
+    "coded": true,
+    "ci_verified": true,
+    "runtime_verified": true,
+    "device_verified": false,
+    "production_verified": false,
+    "integration_ci": {
+      "run_number": 150,
+      "result": "PASS"
+    },
+    "worker_self_test": {
+      "run_number": 359,
+      "result": "PASS"
+    },
+    "runtime_e2e": {
+      "run_number": 236,
+      "result": "PASS",
+      "tests": "48/48"
+    },
+    "active_ui_terms_removed": [
+      "타임어택",
+      "FOCUS MODE",
+      "길잡이"
+    ],
+    "active_ui_terms_adopted": [
+      "BASE CAMP",
+      "탐험",
+      "탐험대원"
+    ],
+    "internal_legacy_identifiers_preserved": true,
+    "hosting_called": false,
+    "deployment_candidate_frozen": false
+  },
+  "p3_memory_summary_roundtrip": {
+    "ready_candidate_head": "bc31ef9dc5a9f6087ef584f26448e48f30ccc98e",
+    "hide_candidate_head": "62feaff70a7f250e8cf92b12925cd86b9cc30574",
+    "hide_branch": "implementation/hide-seek-capture-session-v02",
+    "coded": true,
+    "ci_verified": true,
+    "runtime_verified": true,
+    "device_verified": false,
+    "production_verified": false,
+    "ready_integration_ci": {
+      "run_number": 151,
+      "result": "PASS"
+    },
+    "ready_worker_self_test": {
+      "run_number": 360,
+      "result": "PASS"
+    },
+    "ready_runtime_e2e": {
+      "run_number": 237,
+      "result": "PASS",
+      "tests": "49/49"
+    },
+    "hide_validation": {
+      "run_number": 111,
+      "result": "PASS"
+    },
+    "transport": [
+      "SAME_WINDOW_RETURN_QUERY",
+      "POSTMESSAGE_WHEN_AVAILABLE"
+    ],
+    "authority": "SPECIALIST_MEMORY_ADVISORY_ONLY",
+    "planner_idempotency": "EVENT_ID_DEDUPED",
+    "today_projection": true,
+    "learning_master_advisory": true,
+    "cannot_influence": [
+      "ASSIGNMENT_FACT",
+      "SOURCE_RANGE",
+      "DEADLINE",
+      "REQUIRED_TODAY",
+      "STUDY_VOLUME",
+      "FACT_CONFIRMATION"
+    ],
+    "hosting_called": false,
+    "deployment_candidate_frozen": false
+  },
+  "family_capture_ocr_domain_sharing": {
+    "coded": true,
+    "ready_assignment_domain": "READY_ASSIGNMENT_FACT",
+    "hide_vocabulary_domain": "HIDE_VOCABULARY",
+    "ready_assignment_roles": [
+      "PARENT"
+    ],
+    "hide_vocabulary_roles": [
+      "PARENT",
+      "CHILD"
+    ],
+    "transport": "/api/capture/analyze",
+    "provider_client_location": "SERVER_ONLY",
+    "hide_direct_provider_client": false,
+    "evidence_link_required": true,
+    "assignment_draft_as_hide_rows_forbidden": true,
+    "mismatch_policy": "FAIL_CLOSED",
+    "hide_ci": {
+      "run_number": 134,
+      "result": "PASS"
+    },
+    "ready_integration_ci": {
+      "run_number": 172,
+      "result": "PASS"
+    },
+    "ready_worker_self_test": {
+      "run_number": 388,
+      "result": "PASS"
+    },
+    "ready_runtime_e2e": {
+      "run_number": 258,
+      "result": "PASS",
+      "tests": "54/54"
+    },
+    "device_verified": false,
+    "production_verified": false,
+    "hosting_called": false,
+    "ci_verified": true,
+    "runtime_verified": true,
+    "ready_candidate_head": "110f58fb1f98500f89a45e1c1bc25be1039a87cc",
+    "hide_candidate_head": "7b8decf45151f736245f3b3c54ee2b81bfdc83ae"
+  },
+  "p5_legacy_version_cleanup_closure": {
+    "candidate_head": "78350a93d32d9ad2d6dba5817e8d7007c70c48a8",
+    "coded": true,
+    "ci_verified": true,
+    "runtime_verified": true,
+    "device_verified": false,
+    "production_verified": false,
+    "integration_ci": {
+      "run_number": 166,
+      "result": "PASS"
+    },
+    "worker_self_test": {
+      "run_number": 381,
+      "result": "PASS"
+    },
+    "runtime_e2e": {
+      "run_number": 252,
+      "result": "PASS",
+      "tests": "50/50"
+    },
+    "normalized": [
+      "manifest.json -> Ready & Set identity",
+      "VERSION.json -> non-authoritative compatibility snapshot",
+      "READY_SET_VERSION_REGISTRY.json -> active version authority",
+      "package.json -> 1.0.0-alpha.2",
+      "service-worker cache -> non-feature generation/version namespace",
+      "README.md -> canonical authority semantics",
+      "README_DEPLOY.md -> deployment gate document",
+      "PC_TEST_README.txt -> Ready & Set local-check language"
+    ],
+    "historical_rev_docs": "PROVENANCE_ONLY",
+    "hosting_called": false,
+    "deployment_candidate_frozen": false,
+    "note": "P5 exact candidate is closed, but branch head later advanced for P3c; do not transfer P5 validation to that newer SHA."
+  },
+  "frozen_candidate_tuple": {
+    "frozen": false,
+    "frozen_at_basis": "POST_P1_P5_AND_P3C_BRANCH_RUNTIME_CLOSURE",
+    "ready": {
+      "repo": "hns140412-glitch/Ready-Set",
+      "sha": "110f58fb1f98500f89a45e1c1bc25be1039a87cc"
+    },
+    "hide_seek": {
+      "repo": "hns140412-glitch/Hide-Seek",
+      "sha": "7b8decf45151f736245f3b3c54ee2b81bfdc83ae",
+      "branch": "implementation/hide-seek-capture-session-v02"
+    },
+    "snap_pop": {
+      "repo": "hns140412-glitch/Snap-Pop",
+      "sha": "0e2b5bee094045dc03656ab22b4bed630d4d670f",
+      "ref": "main"
+    },
+    "validation": {
+      "ready_integration_ci": "#172 PASS",
+      "ready_worker": "#388 PASS",
+      "ready_runtime_e2e": "#258 PASS 54/54",
+      "hide_validate": "#134 PASS"
+    },
+    "external_deploy_allowed": false,
+    "next_gate": "WHOLE_PRODUCT_IMPLEMENTATION_REBUILD",
+    "netlify_calls_during_renewal": 0,
+    "status": "REVOKED_AS_RELEASE_CANDIDATE",
+    "reason": "Selected subsystem tuple remains useful as historical exact-SHA evidence, but it is not a whole-product release/device candidate."
+  },
+  "product_completeness": {
+    "authority_file": "READY_SET_PRODUCT_IMPLEMENTATION_INVENTORY.md",
+    "numeric_percent_status": "UNRESOLVED_PENDING_WEIGHTED_REQUIREMENT_RECOVERY",
+    "device_gate_status": "BLOCKED_BY_MATERIAL_PRODUCT_GAPS",
+    "production_gate_status": "BLOCKED",
+    "correction": "Subsystem CLOSED / CI PASS / Runtime PASS must not be interpreted as whole-product completion."
   }
 }

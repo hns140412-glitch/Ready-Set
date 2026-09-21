@@ -1,13 +1,12 @@
 {
-  "name": "타임어택 · 과제 집중",
-  "short_name": "타임어택",
-  "description": "아이의 과제 목표 설정, 집중 타이머, ISSUE 기록, 부모 공유와 캘린더 기록을 돕는 PWA",
+  "name": "Ready & Set",
+  "short_name": "Ready & Set",
+  "description": "준비는 가볍게. 시작은 자신 있게.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#fff7ed",
-  "theme_color": "#ffbf2e",
+  "background_color": "#fff8f0",
+  "theme_color": "#f5ad92",
   "icons": [
     {"src":"./assets/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
     {"src":"./assets/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}

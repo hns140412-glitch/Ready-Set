@@ -1,37 +1,55 @@
 {
-  "registry_version":"1",
-  "product":"Ready & Set",
-  "product_generation":"READY_C2S_REWRITE_01",
-  "product_version":"1.0.0-alpha.1",
-  "product_version_status":"REWRITE_IN_PROGRESS",
-  "data_schema_version":5,
-  "data_schema_change_status":"UNCHANGED_PENDING_ACTUAL_MIGRATION",
-  "session_schema_version":2,
-  "session_schema_status":"TARGET_CANONICAL_NOT_YET_MIGRATED",
-  "learning_engine_version_ref":{
-    "ownership":"EXTERNAL_SUBSYSTEM",
-    "status":"MANAGED_IN_PARALLEL_THREAD"
+  "registry_version": "2",
+  "product": "Ready & Set",
+  "product_generation": "READY_RENEWAL_01",
+  "product_version": "1.0.0-alpha.2",
+  "product_version_status": "RENEWAL_IN_PROGRESS",
+  "data_schema_version": 5,
+  "data_schema_change_status": "CURRENT_IMPLEMENTATION_COMPATIBLE_NO_NEW_MIGRATION_CLAIM",
+  "session_schema_version": 2,
+  "session_schema_status": "CURRENT_RUNTIME_CONTRACT_ACTIVE",
+  "learning_engine_version_ref": {
+    "ownership": "READY_SUBSYSTEM_WITH_TAKY_GOVERNANCE",
+    "subject_master": "0.2.1",
+    "official_standard_registry": "0.3.0",
+    "official_unit_map": "0.2.2",
+    "standard_matcher": "0.4.1",
+    "learning_reference": "0.3.0",
+    "learning_master": "0.5.1",
+    "current_main_sha": "6142cfeb5599a625d61ffa1faca866b2b6817cc8"
   },
-  "build_identity":{
-    "main_sha":"8ce88c23a07af9e6cccb2145f5634e463adc7841",
-    "build_id_policy":"ready-set-<short-main-sha-or-ci-build-id>",
-    "feature_named_cache_versions_forbidden":true
+  "build_identity": {
+    "main_sha": "6142cfeb5599a625d61ffa1faca866b2b6817cc8",
+    "build_id_policy": "ready-set-<short-main-sha-or-ci-build-id>",
+    "feature_named_cache_versions_forbidden": true,
+    "cache_identity_policy": "PRODUCT_GENERATION_AND_VERSION_ONLY_UNTIL_EXACT_RELEASE_BUILD_ID_IS_INJECTED",
+    "branch_candidate_cache": "ready-set-renewal-01-alpha2",
+    "branch_candidate_not_release_identity": true
   },
-  "active_authority":{
-    "product_contract":"READY_SET_CANONICAL_PRODUCT_CONTRACT.md",
-    "runtime_state_model":"READY_SET_RUNTIME_STATE_MODEL.md",
-    "decision_ledger":"READY_SET_DECISION_LEDGER.md",
-    "validation_status":"READY_SET_VALIDATION_STATUS.json"
+  "active_authority": {
+    "product_contract": "READY_SET_CANONICAL_PRODUCT_CONTRACT.md",
+    "runtime_state_model": "READY_SET_RUNTIME_STATE_MODEL.md",
+    "decision_ledger": "READY_SET_DECISION_LEDGER.md",
+    "validation_status": "READY_SET_VALIDATION_STATUS.json"
   },
-  "historical_authority":[
-    {"path":"Ready_Set_Ui_Master_Logic_REV_06.md","status":"PROVENANCE_ONLY_AFTER_REWRITE_CLOSURE"},
-    {"path":"Ready_Set_Ui_Master_Logic_REV_07.md","status":"PROVENANCE_ONLY_AFTER_REWRITE_CLOSURE"},
-    {"path":"Ready_Set_Focus_Golden_Reference_REV_01.md","status":"PROVENANCE_ONLY_AFTER_REWRITE_CLOSURE"}
+  "historical_authority": [
+    {
+      "path": "Ready_Set_Ui_Master_Logic_REV_06.md",
+      "status": "PROVENANCE_ONLY"
+    },
+    {
+      "path": "Ready_Set_Ui_Master_Logic_REV_07.md",
+      "status": "PROVENANCE_ONLY"
+    },
+    {
+      "path": "Ready_Set_Focus_Golden_Reference_REV_01.md",
+      "status": "PROVENANCE_ONLY"
+    }
   ],
-  "legacy_version_sources":{
-    "VERSION.json":"SUPERSEDE_PENDING_R3",
-    "package.json.version":"SUPERSEDE_PENDING_R3",
-    "service_worker_cache_feature_label":"SUPERSEDE_PENDING_R3",
-    "manifest.json":"ARCHIVE_PENDING_R3"
+  "legacy_version_sources": {
+    "VERSION.json": "CLEANED_BRANCH_CANDIDATE",
+    "package.json.version": "CLEANED_BRANCH_CANDIDATE",
+    "service_worker_cache_feature_label": "CLEANED_BRANCH_CANDIDATE",
+    "manifest.webmanifest": "CURRENT_PRODUCT_IDENTITY"
   }
 }

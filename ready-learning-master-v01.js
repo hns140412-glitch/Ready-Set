@@ -233,21 +233,37 @@
   }
 
   function adaptiveReviewPolicy(analysis,profile){
-    const signal=analysis?.escalation_review_signal;
-    if(!signal||signal.authority!=='ESCALATION_ADVISORY_ONLY')return null;
-    const states=(signal.states||[]).map(clean).filter(Boolean);
+    const escalation=analysis?.escalation_review_signal;
+    const memory=analysis?.specialist_memory_signal;
+    const hasEscalation=escalation?.authority==='ESCALATION_ADVISORY_ONLY';
+    const hasMemory=memory?.authority==='SPECIALIST_MEMORY_ADVISORY_ONLY';
+    if(!hasEscalation&&!hasMemory)return null;
+    const states=hasEscalation?(escalation.states||[]).map(clean).filter(Boolean):[];
     const repeatedFriction=states.filter(x=>['PARTIAL','DEFERRED','BLOCKED','WAITING_FOR_PARENT'].includes(x)).length;
     const helpBlocked=states.some(x=>['BLOCKED','WAITING_FOR_PARENT'].includes(x));
-    const depth=Math.max(0,Number(signal.carry_over_depth)||0);
+    const depth=hasEscalation?Math.max(0,Number(escalation.carry_over_depth)||0):0;
+    const memoryRisk=hasMemory?clean(memory.risk_band):'LOW';
+    const memoryNeeds=hasMemory?Math.max(0,Number(memory.needs_unassisted_recall_count)||0):0;
     const baseSpan=Number(profile?.split_policy?.max_span)||null;
+    const memoryCheckpoint=hasMemory&&(memoryNeeds>0||['MEDIUM','HIGH'].includes(memoryRisk));
     return {
       authority:'ADAPTIVE_REVIEW_ONLY',
       reduce_unit_span:!!(baseSpan&&repeatedFriction>=2&&depth>=3),
       max_span:baseSpan?Math.max(1,Math.ceil(baseSpan/2)):null,
-      add_checkpoint:repeatedFriction>=2,
-      recovery_floor:(depth>=4||repeatedFriction>=3)?'HIGH':repeatedFriction>=2?'MEDIUM':null,
+      add_checkpoint:repeatedFriction>=2||memoryCheckpoint,
+      recovery_floor:(depth>=4||repeatedFriction>=3||memoryRisk==='HIGH')?'HIGH':(repeatedFriction>=2||memoryRisk==='MEDIUM'||memoryNeeds>0)?'MEDIUM':null,
       parent_help_floor:helpBlocked?'HIGH':repeatedFriction>=3?'MEDIUM':null,
-      evidence:{repeated_friction_count:repeatedFriction,carry_over_depth:depth,states:[...states]}
+      evidence:{
+        repeated_friction_count:repeatedFriction,
+        carry_over_depth:depth,
+        states:[...states],
+        specialist_memory:hasMemory?{
+          risk_band:memoryRisk,
+          average_memory_strength:Number(memory.average_memory_strength)||0,
+          needs_unassisted_recall_count:memoryNeeds,
+          reason_counts:clone(memory.reason_counts||{})
+        }:null
+      }
     };
   }
 
@@ -322,6 +338,7 @@
         source_claim_ids:(fact.claims||[]).filter(x=>x.status!=='SUPERSEDED').map(x=>x.claim_id),
         cross_revision_learning_signal:analysis.cross_revision_learning_signal?clone(analysis.cross_revision_learning_signal):null,
         escalation_review_signal:analysis.escalation_review_signal?clone(analysis.escalation_review_signal):null,
+        specialist_memory_signal:analysis.specialist_memory_signal?clone(analysis.specialist_memory_signal):null,
         adaptive_review_policy:reviewPolicy?clone(reviewPolicy):null,
         learning_reference:(()=>{
           const ref=referenceApi()?.resolve?.(subjectKey,{
@@ -401,6 +418,7 @@
       provenance:{kind:'LEARNING_MASTER',actor:input.actor||'SYSTEM',source_fact_updated_at:fact.updated_at||null,fact_revision:Number(fact.fact_revision)||1,previous_analysis_ids:[...(fact.previous_analysis_ids||[])]},
       cross_revision_learning_signal:input.learning_signal?clone(input.learning_signal):null,
       escalation_review_signal:input.escalation_review_signal?clone(input.escalation_review_signal):null,
+      specialist_memory_signal:input.specialist_memory_signal?clone(input.specialist_memory_signal):null,
       review_reason:clean(input.review_reason)||null,
       confidence:clean(fact.teacher_instruction)?0.78:0.62,
       unresolved_flags:[]

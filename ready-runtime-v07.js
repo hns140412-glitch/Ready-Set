@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const RUNTIME_VERSION = '2026.09.07-rev07-b';
+  const RUNTIME_VERSION = '2026.09.20-p3-memory-roundtrip-v1';
   const HIDE_URL = 'https://dainty-froyo-a6e427.netlify.app';
   const SNAP_URL = 'https://cheerful-pothos-d1c3ee.netlify.app';
   const VALID_TASK_STATES = new Set(['PENDING','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
@@ -159,26 +159,44 @@
     return app === 'hide-seek' ? HIDE_URL : app === 'snap-pop' ? SNAP_URL : location.href;
   }
 
-  function launchSpecialist(app) {
+  function buildSpecialistHandoff(app) {
     const session = state.activeSession;
     const c = ensureContract(session);
     const task = currentTask(c);
     const lap = currentLap(c) || (task ? startLap(task, 'SPECIALIST_ROUTE', session) : null);
-    if (!session || !c || !task || !lap || !['hide-seek','snap-pop'].includes(app)) return;
-
-    c.active_app = app;
-    emit('APP_SWITCH', { from: 'ready-set', to: app, lap_ended: false });
-    save();
-
+    if (!session || !c || !task || !lap || !['hide-seek','snap-pop'].includes(app)) return null;
+    const returnTarget = `${location.origin}${location.pathname}`;
     const url = new URL(appUrl(app));
     url.searchParams.set('session_id', c.session_id);
     url.searchParams.set('goal_id', c.goal_id);
     url.searchParams.set('task_id', task.task_id);
     url.searchParams.set('lap_id', lap.lap_id);
-    url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
+    url.searchParams.set('return_target', returnTarget);
     url.searchParams.set('snap_target', SNAP_URL);
+    const actorRole = (() => { try { return familySession()?.role || null; } catch { return null; } })();
+    if (actorRole) url.searchParams.set('actor_role', actorRole);
     url.searchParams.set('from_app', 'ready-set');
-    location.assign(url.href);
+    return {
+      app,
+      url: url.href,
+      return_target: returnTarget,
+      session_id: c.session_id,
+      goal_id: c.goal_id,
+      task_id: task.task_id,
+      lap_id: lap.lap_id,
+      actor_role: actorRole,
+      lap_started_ms: lap.started_ms
+    };
+  }
+
+  function launchSpecialist(app) {
+    const handoff = buildSpecialistHandoff(app);
+    if (!handoff) return;
+    const c = ensureContract();
+    c.active_app = app;
+    emit('APP_SWITCH', { from: 'ready-set', to: app, lap_ended: false });
+    save();
+    location.assign(handoff.url);
   }
 
   function normalizeInboundState(raw) {
@@ -187,22 +205,81 @@
     if (raw === 'HELP_NEEDED') return 'BLOCKED';
     return null;
   }
+  function normalizeMemorySummary(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const reasons = ['recovery','confusion','orthographic','latency','hint','decay','stable'];
+    const reasonCounts = Object.fromEntries(reasons.map(k => [k, Math.max(0, Math.floor(Number(raw.reasonCounts?.[k]) || 0))]));
+    const top = (Array.isArray(raw.topReviewPriorities) ? raw.topReviewPriorities : []).slice(0,5).map(x => ({
+      lexicalId: String(x?.lexicalId || '').trim() || null,
+      priority: Math.max(0, Math.min(200, Math.round(Number(x?.priority) || 0))),
+      reason: reasons.includes(String(x?.reason || '').trim()) ? String(x.reason).trim() : 'stable'
+    })).filter(x => x.lexicalId);
+    return {
+      averageMemoryStrength: Math.max(0, Math.min(100, Math.round(Number(raw.averageMemoryStrength) || 0))),
+      reasonCounts,
+      needsUnassistedRecallCount: Math.max(0, Math.floor(Number(raw.needsUnassistedRecallCount) || 0)),
+      topReviewPriorities: top
+    };
+  }
 
-  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null }) {
+  function applyInboundResult({ session_id, goal_id = null, task_id, lap_id, task_state, from_app, event_id = null, payload = null, memory_summary = null, specialist_report = null }) {
     const c = ensureContract();
     if (!c || !session_id || session_id !== c.session_id) return false;
+    if (goal_id && goal_id !== c.goal_id) return false;
     if (event_id && c.applied_event_ids?.includes(event_id)) return false;
     const task = c.tasks.find(t => t.task_id === task_id);
     if (!task) return false;
 
     const normalized = normalizeInboundState(task_state);
+    const memorySummary = normalizeMemorySummary(memory_summary || payload?.memorySummary || null);
+    const specialistReport = specialist_report || (payload ? {
+      explorationMissionId: payload.explorationMissionId || null,
+      explorationMissionTitle: payload.explorationMissionTitle || null,
+      inputActorRole: payload.inputActorRole || null,
+      validWordCount: Number(payload.validWordCount || 0),
+      trailMastery: Number(payload.trailMastery || 0),
+      learningPhase: payload.learningPhase || null,
+      finalSeekAttemptCount: Number(payload.finalSeekAttemptCount || 0),
+      seekAgainRemainingCount: Number(payload.seekAgainRemainingCount || 0)
+    } : null);
     c.active_app = 'ready-set';
     c.active_task_id = task.task_id;
     if (lap_id) c.active_lap_id = lap_id;
+    if (specialistReport) {
+      task.specialist_report = {...specialistReport};
+      task.exploration_mission_id = specialistReport.explorationMissionId || null;
+      task.exploration_mission_title = specialistReport.explorationMissionTitle || null;
+      task.input_actor_role = specialistReport.inputActorRole || null;
+      task.specialist_report_received_at = iso();
+    }
+    if (memorySummary) {
+      task.specialist_memory_summary = memorySummary;
+      task.specialist_memory_source = from_app || 'specialist';
+      task.specialist_memory_received_at = iso();
+      if (task.planner_todo_id && window.ReadySetPlanner?.recordSpecialistMemorySummary) {
+        window.ReadySetPlanner.recordSpecialistMemorySummary({
+          todo_id: task.planner_todo_id,
+          assignment_id: task.assignment_id || null,
+          session_id,
+          task_id: task.task_id,
+          lap_id: lap_id || c.active_lap_id || null,
+          source_app: from_app || 'specialist',
+          event_id,
+          memory_summary: memorySummary,
+          specialist_report: specialistReport,
+          at: task.specialist_memory_received_at
+        });
+      }
+    }
     if (normalized) setTaskState(task.task_id, normalized, from_app || 'SPECIALIST');
     if (['COMPLETED','BLOCKED'].includes(normalized)) endActiveLap('SPECIALIST_RESULT', normalized);
     if (event_id) c.applied_event_ids = [...(c.applied_event_ids || []), event_id].slice(-200);
-    emit('APP_RETURN', { from: from_app || 'specialist', task_state: normalized || task_state || null });
+    emit('APP_RETURN', {
+      from: from_app || 'specialist',
+      task_state: normalized || task_state || null,
+      memory_summary_received: !!memorySummary,
+      specialist_report_received: !!specialistReport
+    });
     save();
     renderContractUI();
     return true;
@@ -210,16 +287,29 @@
 
   function consumeReturnQuery() {
     const p = new URLSearchParams(location.search);
+    let memorySummary = null, specialistReport = null;
+    try {
+      const raw = p.get('memory_summary');
+      if (raw) memorySummary = JSON.parse(raw);
+    } catch {}
+    try {
+      const raw = p.get('specialist_report');
+      if (raw) specialistReport = JSON.parse(raw);
+    } catch {}
     const args = {
       session_id: p.get('session_id'),
+      goal_id: p.get('goal_id'),
       task_id: p.get('task_id'),
       lap_id: p.get('lap_id'),
       task_state: p.get('task_state'),
-      from_app: p.get('from_app')
+      from_app: p.get('from_app'),
+      event_id: p.get('event_id'),
+      memory_summary: memorySummary,
+      specialist_report: specialistReport
     };
     if (!args.session_id || !args.task_id || !applyInboundResult(args)) return;
-    ['session_id','goal_id','task_id','lap_id','task_state','from_app'].forEach(k => p.delete(k));
-    const clean = `${location.pathname}${p.toString() ? `?${p}` : ''}${location.hash}`;
+    ['session_id','goal_id','task_id','lap_id','task_state','from_app','event_id','memory_summary','specialist_report'].forEach(k => p.delete(k));
+    const clean = String(location.pathname) + (p.toString() ? '?' + p.toString() : '') + String(location.hash || '');
     history.replaceState(null, '', clean);
   }
 
@@ -234,11 +324,24 @@
       : null;
     applyInboundResult({
       session_id: e.session_id,
+      goal_id: e.goal_id,
       task_id: e.task_id,
       lap_id: e.lap_id,
       task_state: taskState,
       from_app: e.app,
-      event_id: e.event_id
+      event_id: e.event_id,
+      payload: e.payload || null,
+      memory_summary: e.payload?.memorySummary || null,
+      specialist_report: e.payload ? {
+        explorationMissionId:e.payload.explorationMissionId||null,
+        explorationMissionTitle:e.payload.explorationMissionTitle||null,
+        inputActorRole:e.payload.inputActorRole||e.actor_role||null,
+        validWordCount:Number(e.payload.validWordCount||0),
+        trailMastery:Number(e.payload.trailMastery||0),
+        learningPhase:e.payload.learningPhase||null,
+        finalSeekAttemptCount:Number(e.payload.finalSeekAttemptCount||0),
+        seekAgainRemainingCount:Number(e.payload.seekAgainRemainingCount||0)
+      } : null
     });
   }
 
@@ -323,8 +426,8 @@
     if (!c) return;
     const unresolved = c.tasks.filter(t => t.state === 'PENDING');
     document.getElementById('rev07GuideLine').textContent = unresolved.length
-      ? `${state.guide?.name || '길잡이'}: ${unresolved.map(t => t.label).join(', ')} 상태만 짧게 알려줘.`
-      : `${state.guide?.name || '길잡이'}: 좋아. 빠진 상태 없이 정리됐어.`;
+      ? `${state.guide?.name || '탐험대원'}: ${unresolved.map(t => t.label).join(', ')} 상태만 짧게 알려줘.`
+      : `${state.guide?.name || '탐험대원'}: 좋아. 빠진 상태 없이 정리됐어.`;
     document.getElementById('rev07WrapTasks').innerHTML = c.tasks.map(t => `
       <div class="rev07-wrap-task"><b>${escapeHtml(t.label)} · ${labelState(t.state)}</b><div class="rev07-state-grid">
       ${['COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].map(s => `<button class="${t.state===s?'on':''}" data-wrap-state="${s}" data-task-id="${t.task_id}">${labelState(s)}</button>`).join('')}
@@ -463,8 +566,8 @@
 
   function normalizeVersionText() {
     document.querySelectorAll('#settingsView .muted').forEach(el => {
-      if (/APP_VERSION\s+0\.9\.2/.test(el.textContent || '')) {
-        el.textContent = 'APP_VERSION 0.9.3-rc1 · MASTER REV_07 · SCHEMA 5 + REV_07 SESSION CONTRACT';
+      if (/APP_VERSION\s+(?:0\.9\.2|0\.9\.3-rc1)/.test(el.textContent || '')) {
+        el.textContent = 'APP_VERSION 1.0.0-alpha.2 · READY_RENEWAL_01 · SCHEMA 5 · SESSION 2';
       }
     });
   }
@@ -486,6 +589,10 @@
       contract: () => state.activeSession?.rev07 ? structuredClone(state.activeSession.rev07) : null,
       validate: validateContract,
       launchSpecialist,
+      buildSpecialistHandoff,
+      applyInboundResult,
+      normalizeMemorySummary,
+      consumeReturnQuery,
       setTaskState,
       switchTask,
       openWrapUp

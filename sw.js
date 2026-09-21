@@ -1,4 +1,4 @@
-const CACHE='ready-set-v097-full-unit-map-v02';
+const CACHE='ready-set-renewal-01-alpha2';
 const CORE=[
 './','./index.html','./styles.css','./ready-sync-adapter-v01.js','./ready-local-first-v01.js','./ready-assignment-domain-v2.js','./ready-subject-master-v01.js','./ready-official-standard-registry-v01.js','./ready-official-unit-map-v01.js','./ready-learning-standard-matcher-v01.js','./ready-learning-reference-v01.js','./ready-learning-master-v01.js','./ready-planner-v01.js','./ready-integration-v1.js','./app.js','./ready-runtime-v07.js','./manifest.webmanifest','./VERSION.json',
 './Ready_Set_Ui_Master_Logic_REV_06.md','./Ready_Set_Ui_Master_Logic_REV_07.md',
