@@ -30,7 +30,8 @@ const rebuildProfileSettingsView=globalThis.ReadyRebuildProfileSettingsView||nul
 const rebuildAuthSyncView=globalThis.ReadyRebuildAuthSyncView||null;
 const rebuildHomeView=globalThis.ReadyRebuildHomeView||null;
 const rebuildPlannerScreenView=globalThis.ReadyRebuildPlannerScreenView||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView){
+const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildResultHistoryView||!rebuildProfileSettingsView||!rebuildAuthSyncView||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildAudioService){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -290,40 +291,23 @@ $('#customMinutes').onchange=e=>{
 function bgm(){
   return $('#bgmPlayer');
 }
-function setBgmSource(sound){
-  const player=bgm(); if(!player)return;
-  const src=SOUND_MAP[sound]||'';
-  const resolved=src?new URL(src,location.href).href:'';
-  if(player.src!==resolved){
-    player.pause();
-    if(src){player.src=src;player.load()}else{player.removeAttribute('src');player.load()}
-  }
-}
+const audioService=rebuildAudioService.create({
+  player:bgm(),
+  soundMap:SOUND_MAP,
+  onStatus:message=>updateBgmStatus(message||'')
+});
+function setBgmSource(sound){return audioService.setSource(sound)}
 async function playBgm(sound=state.activeSession?.sound||state.sound,{preview=false}={}){
-  const player=bgm(); if(!player)return false;
-  if(sound==='OFF'){player.pause();updateBgmStatus();return true}
-  setBgmSource(sound);
-  player.volume=preview?.26:.34;
-  try{
-    await player.play();
-    updateBgmStatus();
-    return true;
-  }catch{
-    updateBgmStatus('재생하려면 음악 버튼을 한 번 눌러주세요');
-    return false;
-  }
+  return audioService.play(sound,{preview});
 }
 async function fadeAudio(target=0,duration=260){
-  const p=bgm();if(!p)return;
-  const from=Number.isFinite(p.volume)?p.volume:.34;
-  const steps=8,delay=Math.max(20,Math.floor(duration/steps));
-  for(let i=1;i<=steps;i++){p.volume=from+(target-from)*(i/steps);await new Promise(r=>setTimeout(r,delay))}
-  p.volume=target;
+  return audioService.fade(target,duration);
 }
-async function pauseBgm({fade=true}={}){const p=bgm();if(!p)return;if(fade&&!p.paused)await fadeAudio(0,220);p.pause();p.volume=.34;updateBgmStatus()}
+async function pauseBgm({fade=true}={}){
+  return audioService.pause({fadeOut:fade});
+}
 async function resumeBgm(sound=state.activeSession?.sound||state.sound){
-  const p=bgm();if(!p||sound==='OFF')return false;setBgmSource(sound);p.volume=.05;
-  try{await p.play();await fadeAudio(.34,260);updateBgmStatus();return true}catch{updateBgmStatus('재생하려면 음악 버튼을 한 번 눌러주세요');return false}
+  return audioService.resume(sound);
 }
 function updateBgmStatus(custom=''){
   const el=$('#bgmStatus');if(!el)return;
