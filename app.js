@@ -25,7 +25,8 @@ const rebuildCaptureService=globalThis.ReadyRebuildCaptureService||null;
 const rebuildCaptureView=globalThis.ReadyRebuildCaptureView||null;
 const rebuildAssignmentService=globalThis.ReadyRebuildAssignmentService||null;
 const rebuildRecordingService=globalThis.ReadyRebuildRecordingService||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService){
+const rebuildResultHistoryView=globalThis.ReadyRebuildResultHistoryView||null;
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView||!rebuildAssignmentService||!rebuildRecordingService||!rebuildResultHistoryView){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -598,15 +599,7 @@ $$('[data-close-outcome]').forEach(b=>b.onclick=()=>{$('#outcomeModal').hidden=t
 
 function resultSource(){return state.lastResult||null}
 function resultOutcomeProfile(r={}){
-  const state=r.outcomeState||'COMPLETED';
-  return ({
-    COMPLETED:{state,label:'완료',historyLabel:'작전 완료',shareTitle:'오늘의 탐험 완료',shareText:'Ready & Set · 오늘의 탐험 완료!',done:true},
-    PARTIAL:{state,label:'일부 남음',historyLabel:'일부 남음',shareTitle:'오늘은 여기까지',shareText:'Ready & Set · 오늘은 여기까지 했어요.',headline:'여기까지 했어요.',line:'남은 건 Planner가 이어서 정리해둘게.',done:false},
-    DEFERRED:{state,label:'다음에',historyLabel:'다음에 이어서',shareTitle:'다음 탐험으로 이어가요',shareText:'Ready & Set · 다음 탐험으로 이어가요.',headline:'오늘은 여기까지.',line:'다음 탐험으로 넘겨둘게.',done:false},
-    WAITING_FOR_PARENT:{state,label:'부모 도움',historyLabel:'부모 도움 필요',shareTitle:'도움이 필요한 탐험',shareText:'Ready & Set · 도움이 필요한 지점을 남겼어요.',headline:'도움이 필요해요.',line:'부모님 확인이 필요한 일로 표시했어요.',done:false},
-    BLOCKED:{state,label:'막힘',historyLabel:'막힘',shareTitle:'막힌 지점을 찾았어요',shareText:'Ready & Set · 해결이 필요한 지점을 찾았어요.',headline:'막힌 지점 발견.',line:'그냥 넘기지 않고 해결이 필요한 일로 남겼어요.',done:false},
-    MIXED:{state,label:'과제별 결과',historyLabel:'과제별 결과',shareTitle:'오늘 탐험을 정리했어요',shareText:'Ready & Set · 오늘 탐험 결과를 과제별로 정리했어요.',headline:'오늘 탐험을 정리했어요.',line:'과제마다 끝난 상태를 그대로 기록했어요.',done:false}
-  })[state]||{state:'COMPLETED',label:'완료',historyLabel:'작전 완료',shareTitle:'오늘의 탐험 완료',shareText:'Ready & Set · 오늘의 탐험 완료!',done:true};
+  return rebuildResultHistoryView.outcomeProfile(r);
 }
 function resultSceneFor(r){
   const profile=resultOutcomeProfile(r);
@@ -618,45 +611,25 @@ function resultSceneFor(r){
   if(r.issueMs>120000)return{headline:'오늘은 사건이 좀 많았습니다.',line:'그래도 다시 돌아와서 끝냈네.',label:'차이'};
   return{headline:'작전 완료!',line:'오늘도 끝까지 잘 돌아왔어요.',label:'차이'};
 }
+const resultHistoryView=rebuildResultHistoryView.create({
+  query:$,
+  escapeHtml,
+  formatTime:fmt,
+  applyAvatar,
+  applyGuide,
+  resultSceneFor
+});
 function renderResult(){
   const r=resultSource();
   if(!r){nav('history');return}
-  applyAvatar($('#resultAvatar'));
-  applyGuide($('#resultGuidePortrait'));
-  const guest=$('#resultGuestPortrait');
-  if(r.recordingDone&&r.guestType){guest.hidden=false;applyGuide(guest,r.guestType);guest.classList.add('guest')}else guest.hidden=true;
-  const sc=resultSceneFor(r);
-  const outcomeCopy=sc;
-  $('#resultHeadline').textContent=outcomeCopy.headline;
-  $('#resultLine').textContent=outcomeCopy.line;
-  $('#resultTasks').textContent=[...r.selected,...r.tasks].join(' · ');
-  $('#resultTarget').textContent=fmt(r.targetMs);
-  $('#resultFocus').textContent=fmt(r.focusMs);
-  $('#deltaLabel').textContent=sc.label;
-  $('#resultDelta').textContent=fmt(Math.abs(r.deltaMs));
+  resultHistoryView.renderResult(r);
 }
 function renderHistory(){
-  const root=$('#historyList');root.innerHTML='';
-  if(!state.records.length){root.innerHTML='<div class="historyItem"><b>아직 기록이 없어요.</b><p>첫 탐험을 마치면 여기에 쌓입니다.</p></div>';return}
-  state.records.forEach(r=>{
-    const x=document.createElement('article');x.className='historyItem';
-    const profile=resultOutcomeProfile(r);
-    x.innerHTML=`<header><b>${new Date(r.endAt).toLocaleDateString('ko-KR')}</b><small>${escapeHtml(profile.historyLabel)} · ${fmt(r.focusMs)} / ${fmt(r.targetMs)}</small></header><p>${escapeHtml([...r.selected,...r.tasks].join(' · '))}</p>`;
-    root.appendChild(x);
-  });
+  resultHistoryView.renderHistory(state.records);
 }
 function renderCalendar(){
-  const root=$('#calendarList');root.innerHTML='';
-  state.records.slice(0,31).forEach(r=>{
-    const x=document.createElement('article');x.className='historyItem';
-    const profile=resultOutcomeProfile(r);
-    x.innerHTML=`<header><b>${new Date(r.endAt).toLocaleDateString('ko-KR')}</b><small>${escapeHtml(profile.historyLabel)}</small></header><p>${escapeHtml([...r.selected,...r.tasks].join(' · '))}</p>`;
-    root.appendChild(x);
-  });
-  if(!root.children.length)root.innerHTML='<div class="historyItem"><b>이번 달 작전 기록이 없어요.</b></div>';
+  resultHistoryView.renderCalendar(state.records);
 }
-
-
 function localDateKey(d=new Date()){
   const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
