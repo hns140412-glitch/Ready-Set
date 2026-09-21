@@ -1,8 +1,8 @@
 {
-  "version": "2026-09-21.1",
+  "version": "2026-09-21.2",
   "canonical_source": {
     "repository": "hns140412-glitch/TAKY",
-    "commit": "c53ee827c03133576f1f9c6e0c6480991f470207"
+    "commit": "03408730815faa033486852a44febfbfcae3197c"
   },
   "vendored_files": [
     {
@@ -16,7 +16,19 @@
       "source_path": "SHARED/runtime/pwa-update-state.js",
       "source_blob_sha": "05e4294cc2260ef05b7b6ba7ce95bdfcceeb7e5b",
       "capability_id": "CAP-PWA-UPDATE-001"
+    },
+    {
+      "consumer_path": "vendor/taky/event-envelope.js",
+      "source_path": "SHARED/runtime/event-envelope.js",
+      "source_blob_sha": "3be904506c997fa222ace9ddb69cc21cf4936b87",
+      "capability_id": "CAP-EVENT-ENVELOPE-001"
+    },
+    {
+      "consumer_path": "vendor/taky/local-queue.js",
+      "source_path": "SHARED/runtime/local-queue.js",
+      "source_blob_sha": "e573bd64387ad271b40d981519071339f95edddb",
+      "capability_id": "CAP-LOCAL-QUEUE-001"
     }
   ],
-  "policy": "Vendored copies must stay byte-equivalent to the recorded canonical source until an explicitly validated consumer adaptation is required. Domain semantics stay in Ready-owned adapters."
+  "policy": "Vendored copies must stay byte-equivalent to the recorded canonical source. Ready owns scope meaning, family auth, conflict resolution and storage schema; shared primitives own only semantic-light event/queue mechanics."
 }
