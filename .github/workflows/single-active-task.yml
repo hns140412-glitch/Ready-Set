@@ -1,0 +1,27 @@
+name: Ready Single Active Task Gate
+
+on:
+  pull_request:
+    paths:
+      - 'app.js'
+      - 'ready-runtime-v07.js'
+      - 'tests/single-active-task-contract.test.js'
+      - '.github/workflows/single-active-task.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  single-active-task:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check syntax
+        run: |
+          node --check app.js
+          node --check ready-runtime-v07.js
+      - name: Validate one-active-task ownership contract
+        run: node tests/single-active-task-contract.test.js
