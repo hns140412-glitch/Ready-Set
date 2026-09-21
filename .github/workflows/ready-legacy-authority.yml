@@ -1,0 +1,27 @@
+name: Ready Legacy Authority Gate
+
+on:
+  pull_request:
+    paths:
+      - 'READY_SET_LEGACY_AUTHORITY_REGISTRY.json'
+      - 'Ready_Set_Ui_Master_Logic_REV_06.md'
+      - 'Ready_Set_Ui_Master_Logic_REV_07.md'
+      - 'Ready_Set_Focus_Golden_Reference_REV_01.md'
+      - 'AGENTS.md'
+      - 'README.md'
+      - 'tests/ready_legacy_authority_validator.py'
+      - '.github/workflows/ready-legacy-authority.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  legacy-authority:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate legacy authority isolation
+        run: python tests/ready_legacy_authority_validator.py
