@@ -105,3 +105,11 @@ assert('session-loaded-before-app',indexSource.indexOf('src/session/session-doma
 console.log('REBUILD_DOMAIN_PARITY_PASS');
 
 console.log('REBUILD_V01_FOUNDATION_PASS ready-set');
+
+const appSource=loadSource('app.js');
+assert('planner-projection-no-self-recursion',
+  !appSource.includes("function plannerTodayProjection(){\n  return (plannerTodayProjection())")
+);
+assert('planner-projection-live-owner',
+  appSource.includes("window.ReadySetPlanner?.todayProjection?.()")
+);
