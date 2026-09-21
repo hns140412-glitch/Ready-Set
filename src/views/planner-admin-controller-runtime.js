@@ -33,6 +33,15 @@
       query('#scheduleMovable').checked=false;
     }
 
+    function clearScheduleExceptionForm(){
+      query('#scheduleExceptionCommitment').value='';
+      query('#scheduleExceptionDate').value=localDateKey();
+      query('#scheduleExceptionType').value='SKIP';
+      query('#scheduleExceptionStart').value='';
+      query('#scheduleExceptionEnd').value='';
+      query('#scheduleExceptionNote').value='';
+    }
+
     function clearAvailabilityForm(){
       query('#availabilityId').value='';
       query('#availabilityDate').value=localDateKey();
@@ -50,6 +59,7 @@
       view.render(snap);
       if(!query('#scheduleDate').value)query('#scheduleDate').value=localDateKey();
       if(!query('#availabilityDate').value)query('#availabilityDate').value=localDateKey();
+      if(!query('#scheduleExceptionDate').value)query('#scheduleExceptionDate').value=localDateKey();
       renderParentIntake();
       return {ok:true,snapshot:snap};
     }
@@ -154,6 +164,32 @@
       return result;
     }
 
+    function saveScheduleException(){
+      if(!requireParentUi())return {ok:false,reason:'PARENT_REQUIRED'};
+      const commitmentId=query('#scheduleExceptionCommitment').value;
+      const date=query('#scheduleExceptionDate').value;
+      const type=query('#scheduleExceptionType').value;
+      const start=query('#scheduleExceptionStart').value;
+      const end=query('#scheduleExceptionEnd').value;
+      const note=query('#scheduleExceptionNote').value.trim();
+      const result=planner()?.upsertScheduleException?.({
+        commitment_id:commitmentId,date,type,start,end,note,source:'PARENT_ADMIN_UI'
+      });
+      if(result?.ok)toast(type==='SKIP'?'이번 날짜만 휴강으로 반영했어요.':'이번 날짜만 변경 시간으로 반영했어요.');
+      else if(result?.reason==='VALID_REPLACEMENT_TIME_REQUIRED')toast('변경 시작·종료 시간을 확인해 주세요.');
+      else toast('반복 일정 예외를 저장하지 못했어요.');
+      if(result?.ok){clearScheduleExceptionForm();refresh();}
+      return result;
+    }
+
+    function removeScheduleException(id){
+      if(!requireParentUi())return {ok:false,reason:'PARENT_REQUIRED'};
+      const result=planner()?.removeScheduleException?.({exception_id:id});
+      toast(result?.ok?'일정 예외를 삭제했어요. 다시 기본 반복 일정이 적용됩니다.':'일정 예외를 삭제하지 못했어요.');
+      refresh();
+      return result;
+    }
+
     function saveAvailability(){
       if(!requireParentUi())return {ok:false,reason:'PARENT_REQUIRED'};
       const weekly=query('#availabilityWeekly').checked;
@@ -225,6 +261,8 @@
     function onDocumentClick(event){
       const schedule=event.target.closest?.('[data-edit-schedule]');
       if(schedule){editSchedule(schedule.dataset.editSchedule);return;}
+      const exceptionRemove=event.target.closest?.('[data-delete-schedule-exception]');
+      if(exceptionRemove){removeScheduleException(exceptionRemove.dataset.deleteScheduleException);return;}
       const availability=event.target.closest?.('[data-edit-availability]');
       if(availability){editAvailability(availability.dataset.editAvailability);return;}
       const remove=event.target.closest?.('[data-delete-availability]');
@@ -249,8 +287,10 @@
       if(bound)return false;
       bound=true;
       query('#scheduleClearBtn')?.addEventListener('click',clearScheduleForm);
+      query('#scheduleExceptionClearBtn')?.addEventListener('click',clearScheduleExceptionForm);
       query('#availabilityClearBtn')?.addEventListener('click',clearAvailabilityForm);
       query('#saveScheduleBtn')?.addEventListener('click',saveSchedule);
+      query('#saveScheduleExceptionBtn')?.addEventListener('click',saveScheduleException);
       query('#saveAvailabilityBtn')?.addEventListener('click',saveAvailability);
       query('#weeklyReflowPlanBtn')?.addEventListener('click',planWeeklyReflow);
       query('#adaptiveEstimateRefreshBtn')?.addEventListener('click',refreshAdaptiveSuggestions);
@@ -259,8 +299,8 @@
     }
 
     return Object.freeze({
-      snapshot,render,clearScheduleForm,clearAvailabilityForm,editSchedule,editAvailability,
-      removeAvailability,reviewCarry,readyCarry,cancelCarry,saveSchedule,saveAvailability,
+      snapshot,render,clearScheduleForm,clearScheduleExceptionForm,clearAvailabilityForm,editSchedule,editAvailability,
+      removeAvailability,removeScheduleException,reviewCarry,readyCarry,cancelCarry,saveSchedule,saveScheduleException,saveAvailability,
       planWeeklyReflow,decideWeeklyReflow,refreshAdaptiveSuggestions,decideAdaptive,bind
     });
   }

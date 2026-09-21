@@ -120,3 +120,26 @@ test('weekly fixed schedule expands into planner dates', async ({ page }) => {
   await page.locator('[data-planner-date="2026-09-21"]').click();
   await expect(page.locator('#plannerWeekDetail')).toContainText('영어학원');
 });
+
+
+test('weekly schedule exception supports skip and replacement without mutating base recurrence', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__READY_AUTH_BOOTSTRAP__={authenticated:true,family_id:'TEST_FAMILY',member_id:'TEST_PARENT',role:'PARENT',session_id:'TEST_SESSION',expires_at:'2099-01-01T00:00:00.000Z',source:'TEST_ONLY'};
+  });
+  await page.goto('http://127.0.0.1:4173/', {waitUntil:'load'});
+  const out=await page.evaluate(()=>{
+    const p=window.ReadySetPlanner;
+    p.upsertScheduleCommitment({commitment_id:'weekly_piano',title:'피아노',category:'피아노',recurrence:'WEEKLY',weekday:2,start:'16:00',end:'17:00',confirmed:true,source:'PARENT_ADMIN_UI'});
+    p.upsertScheduleException({commitment_id:'weekly_piano',date:'2026-09-22',type:'SKIP',note:'휴강',source:'PARENT_ADMIN_UI'});
+    const skipped=p.scheduleCommitmentsForDate('2026-09-22');
+    p.upsertScheduleException({commitment_id:'weekly_piano',date:'2026-09-29',type:'REPLACE',start:'18:00',end:'19:00',note:'보강',source:'PARENT_ADMIN_UI'});
+    const replaced=p.scheduleCommitmentsForDate('2026-09-29');
+    const base=p.snapshot().schedule_commitments.find(x=>x.commitment_id==='weekly_piano');
+    return {skipped,replaced,base};
+  });
+  expect(out.skipped).toHaveLength(0);
+  expect(out.replaced).toHaveLength(1);
+  expect(out.replaced[0].start_at).toBe('2026-09-29T18:00:00');
+  expect(out.base.start).toBe('16:00');
+  expect(out.base.end).toBe('17:00');
+});

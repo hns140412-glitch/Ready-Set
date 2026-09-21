@@ -25,6 +25,7 @@
     schema_version:SCHEMA_VERSION,
     storage_backend:'LOCALSTORAGE_COMPATIBILITY_SCAFFOLD',
     schedule_commitments:[],
+    schedule_exceptions:[],
     daily_availability_windows:[],
     homework_templates:[],
     dated_todos:[],
@@ -52,6 +53,7 @@
       ...x,
       schema_version:SCHEMA_VERSION,
       schedule_commitments:Array.isArray(x.schedule_commitments)?x.schedule_commitments:[],
+      schedule_exceptions:Array.isArray(x.schedule_exceptions)?x.schedule_exceptions:[],
       daily_availability_windows:Array.isArray(x.daily_availability_windows)?x.daily_availability_windows:[],
       homework_templates:Array.isArray(x.homework_templates)?x.homework_templates:[],
       dated_todos:Array.isArray(x.dated_todos)?x.dated_todos:[],
@@ -74,6 +76,9 @@
 
     function scheduleCommitmentsForDate(date,state=load()){
       const dow=parseLocal(date,'12:00').getDay();
+      const exceptionByCommitment=new Map((state.schedule_exceptions||[])
+        .filter(x=>x.date===date)
+        .map(x=>[x.commitment_id,x]));
       return (state.schedule_commitments||[])
         .filter(x=>x.confirmed!==false)
         .filter(x=>{
@@ -85,9 +90,16 @@
           }
           return x.start_at&&x.end_at&&String(x.start_at).slice(0,10)===date&&String(x.end_at).slice(0,10)===date;
         })
-        .map(x=>x.recurrence==='WEEKLY'
-          ? {...x,start_at:date+'T'+x.start+':00',end_at:date+'T'+x.end+':00',occurrence_date:date}
-          : {...x,occurrence_date:date});
+        .flatMap(x=>{
+          const exception=exceptionByCommitment.get(x.commitment_id)||null;
+          if(exception?.type==='SKIP')return [];
+          if(x.recurrence==='WEEKLY'){
+            const start=exception?.type==='REPLACE'?(exception.start||x.start):x.start;
+            const end=exception?.type==='REPLACE'?(exception.end||x.end):x.end;
+            return [{...x,start_at:date+'T'+start+':00',end_at:date+'T'+end+':00',occurrence_date:date,schedule_exception:exception}];
+          }
+          return [{...x,occurrence_date:date,schedule_exception:exception}];
+        });
     }
 
     function upsertScheduleCommitment(input={}){
@@ -127,6 +139,54 @@
         const i=s.schedule_commitments.findIndex(x=>x.commitment_id===id);
         if(i>=0)s.schedule_commitments[i]=item;else s.schedule_commitments.push(item);
         return item;
+      });
+    }
+
+    function upsertScheduleException(input={}){
+      if(globalThis.ReadyFamilySession){
+        const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
+        if(!gate?.ok)throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
+      }
+      const commitmentId=cleanText(input.commitment_id);
+      const date=cleanText(input.date);
+      const type=cleanText(input.type).toUpperCase();
+      if(!commitmentId||!/^\d{4}-\d{2}-\d{2}$/.test(date))return {ok:false,reason:'COMMITMENT_AND_DATE_REQUIRED'};
+      if(!['SKIP','REPLACE'].includes(type))return {ok:false,reason:'INVALID_EXCEPTION_TYPE'};
+      const start=cleanText(input.start)||null,end=cleanText(input.end)||null;
+      if(type==='REPLACE'&&(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start))return {ok:false,reason:'VALID_REPLACEMENT_TIME_REQUIRED'};
+      return mutate(s=>{
+        const commitment=s.schedule_commitments.find(x=>x.commitment_id===commitmentId&&x.recurrence==='WEEKLY');
+        if(!commitment)return {ok:false,reason:'WEEKLY_COMMITMENT_NOT_FOUND'};
+        const key=commitmentId+'@'+date;
+        const item={
+          exception_id:cleanText(input.exception_id)||key,
+          commitment_id:commitmentId,
+          date,
+          type,
+          start:type==='REPLACE'?start:null,
+          end:type==='REPLACE'?end:null,
+          note:cleanText(input.note)||null,
+          source:cleanText(input.source)||'PARENT_ADMIN_UI',
+          updated_at:new Date().toISOString()
+        };
+        const i=s.schedule_exceptions.findIndex(x=>x.commitment_id===commitmentId&&x.date===date);
+        if(i>=0)s.schedule_exceptions[i]=item;else s.schedule_exceptions.push(item);
+        return {ok:true,item:{...item}};
+      });
+    }
+
+    function removeScheduleException(input={}){
+      if(globalThis.ReadyFamilySession){
+        const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
+        if(!gate?.ok)throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
+      }
+      const id=cleanText(input.exception_id);
+      const commitmentId=cleanText(input.commitment_id);
+      const date=cleanText(input.date);
+      return mutate(s=>{
+        const before=s.schedule_exceptions.length;
+        s.schedule_exceptions=s.schedule_exceptions.filter(x=>id?x.exception_id!==id:!(x.commitment_id===commitmentId&&x.date===date));
+        return before===s.schedule_exceptions.length?{ok:false,reason:'SCHEDULE_EXCEPTION_NOT_FOUND'}:{ok:true};
       });
     }
 
@@ -1381,6 +1441,9 @@
       for(const e of s.progress_events){
         if(e.todo_id&&!todoIds.has(e.todo_id))issues.push('ORPHAN_PROGRESS_EVENT');
       }
+      for(const e of s.schedule_exceptions){
+        if(!['SKIP','REPLACE'].includes(e.type))issues.push('SCHEDULE_EXCEPTION_TYPE_INVALID');
+      }
       for(const r of s.weekly_reflow_runs){
         if(!['PENDING','CONFIRMED','REJECTED'].includes(r.status))issues.push('WEEKLY_REFLOW_STATUS_INVALID');
       }
@@ -1398,6 +1461,8 @@
       todayProjection,
       upsertScheduleCommitment,
       scheduleCommitmentsForDate,
+      upsertScheduleException,
+      removeScheduleException,
       upsertDailyAvailabilityWindow,
       removeDailyAvailabilityWindow,
       candidateWindowsByDate,

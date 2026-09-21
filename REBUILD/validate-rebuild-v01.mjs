@@ -622,3 +622,12 @@ assert('weekly-schedule-commitment-supported',
   indexSource.includes('scheduleWeekday') &&
   plannerAdminWeeklySchedule.includes("recurrence:weekly?'WEEKLY':null")
 );
+
+const plannerScheduleExceptionSource=loadSource('ready-planner-v01.js');
+assert('weekly-schedule-exception-overlay',
+  plannerScheduleExceptionSource.includes('schedule_exceptions') &&
+  plannerScheduleExceptionSource.includes('upsertScheduleException') &&
+  plannerScheduleExceptionSource.includes("exception?.type==='SKIP'") &&
+  plannerScheduleExceptionSource.includes("exception?.type==='REPLACE'") &&
+  indexSource.includes('scheduleExceptionCard')
+);

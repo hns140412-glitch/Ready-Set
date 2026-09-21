@@ -15,6 +15,25 @@
         : '<div class="plannerEmpty"><b>등록된 고정 일정이 없어요.</b><small>학원·피아노·태권도처럼 움직이지 않는 일정을 먼저 넣어요.</small></div>';
     }
 
+    function renderScheduleExceptions(snapshot={}){
+      const select=q('#scheduleExceptionCommitment');
+      const el=q('#scheduleExceptionList');
+      const weekly=(snapshot.schedule_commitments||[]).filter(x=>x.recurrence==='WEEKLY');
+      if(select){
+        const current=select.value;
+        select.innerHTML='<option value="">반복 일정 선택</option>'+weekly.map(x=>`<option value="${x.commitment_id}">${escapeHtml(x.title)}</option>`).join('');
+        if(weekly.some(x=>x.commitment_id===current))select.value=current;
+      }
+      if(!el)return;
+      const byId=new Map((snapshot.schedule_commitments||[]).map(x=>[x.commitment_id,x]));
+      const rows=snapshot.schedule_exceptions||[];
+      el.innerHTML=rows.length?rows.map(x=>{
+        const schedule=byId.get(x.commitment_id);
+        const desc=x.type==='SKIP'?'휴강':`시간 변경 ${escapeHtml(x.start)} → ${escapeHtml(x.end)}`;
+        return `<div class="adminListItem"><span><b>${escapeHtml(schedule?.title||'반복 일정')} · ${escapeHtml(x.date)}</b><small>${desc}${x.note?' · '+escapeHtml(x.note):''}</small></span><button class="miniAction" data-delete-schedule-exception="${x.exception_id}">삭제</button></div>`;
+      }).join(''):'<div class="plannerEmpty"><b>이번 주 예외 일정이 없어요.</b><small>휴강·보강·시간 변경이 있을 때만 추가하면 됩니다.</small></div>';
+    }
+
     function renderAvailability(snapshot={}){
       const el=q('#availabilityAdminList'); if(!el)return;
       const rows=snapshot.daily_availability_windows||[];
@@ -72,6 +91,7 @@
 
     function render(snapshot={}){
       renderSchedule(snapshot);
+      renderScheduleExceptions(snapshot);
       renderAvailability(snapshot);
       renderReflow(snapshot);
       renderAdaptive(snapshot);
@@ -79,7 +99,7 @@
       return {ok:true};
     }
 
-    return Object.freeze({render,renderSchedule,renderAvailability,renderReflow,renderAdaptive,renderCarry});
+    return Object.freeze({render,renderSchedule,renderScheduleExceptions,renderAvailability,renderReflow,renderAdaptive,renderCarry});
   }
 
   root.ReadyRebuildPlannerAdminView=Object.freeze({

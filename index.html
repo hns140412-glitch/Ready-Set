@@ -119,6 +119,23 @@
         <div id="scheduleAdminList" class="adminList"></div>
       </section>
 
+      <section class="glassCard adminCard" id="scheduleExceptionCard">
+        <div class="adminSectionHead"><div><small>SCHEDULE EXCEPTION</small><h2>휴강 · 보강 · 이번 주만 변경</h2></div><button class="miniAction" id="scheduleExceptionClearBtn">새 예외</button></div>
+        <p class="muted">기본 반복 일정은 그대로 두고 특정 날짜만 건너뛰거나 시간을 바꿉니다.</p>
+        <label class="inputBlock">반복 일정<select id="scheduleExceptionCommitment"><option value="">반복 일정 선택</option></select></label>
+        <div class="adminGrid two">
+          <label class="inputBlock">날짜<input id="scheduleExceptionDate" type="date"></label>
+          <label class="inputBlock">처리<select id="scheduleExceptionType"><option value="SKIP">휴강 / 없음</option><option value="REPLACE">보강 / 시간 변경</option></select></label>
+        </div>
+        <div class="adminGrid two">
+          <label class="inputBlock">변경 시작<input id="scheduleExceptionStart" type="time"></label>
+          <label class="inputBlock">변경 종료<input id="scheduleExceptionEnd" type="time"></label>
+        </div>
+        <label class="inputBlock">메모<input id="scheduleExceptionNote" placeholder="예) 추석 휴강 / 보강"></label>
+        <button class="btn dark" id="saveScheduleExceptionBtn">이번 날짜만 반영</button>
+        <div id="scheduleExceptionList" class="adminList"></div>
+      </section>
+
       <section class="glassCard">
         <div class="adminSectionHead"><div><small>CONFIRMED AVAILABILITY</small><h2>학습 가능 시간</h2></div><button class="miniAction" id="availabilityClearBtn">새 시간</button></div>
         <p class="muted">부모는 가능한 시간만 확인합니다. 실제 숙제 날짜 배정은 Planner가 결정합니다.</p>
