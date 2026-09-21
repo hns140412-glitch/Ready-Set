@@ -21,7 +21,8 @@ const rebuildMissionView=globalThis.ReadyRebuildMissionView||null;
 const rebuildFocusView=globalThis.ReadyRebuildFocusView||null;
 const rebuildPlannerAdminView=globalThis.ReadyRebuildPlannerAdminView||null;
 const rebuildParentIntakeView=globalThis.ReadyRebuildParentIntakeView||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView){
+const rebuildCaptureService=globalThis.ReadyRebuildCaptureService||null;
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -873,17 +874,10 @@ document.getElementById('saveAvailabilityBtn')?.addEventListener('click',()=>{
   toast('학습 가능 시간을 확인했어요. Planner가 배정 근거로 사용합니다.');
   renderPlannerAdmin(); renderPlanner();
 });
-function parsePrints(value=''){
-  const out={};for(const token of String(value).split(',')){const [day,...rest]=token.split(':');if(day?.trim()&&rest.join(':').trim())out[day.trim().toUpperCase()]=rest.join(':').trim()}return out;
-}
-function stableFactSignature(value){
-  const sortObject=v=>{
-    if(Array.isArray(v))return v.map(sortObject);
-    if(v&&typeof v==='object')return Object.fromEntries(Object.keys(v).sort().map(k=>[k,sortObject(v[k])]));
-    return v;
-  };
-  return JSON.stringify(sortObject(value));
-}
+const captureService=rebuildCaptureService.create({captureApi:window.ReadyCaptureV01});
+function parsePrints(value=''){return captureService.parsePrints(value)}
+function stableFactSignature(value){return captureService.stableFactSignature(value)}
+
 
 let capturePreviewUrls=[];
 function clearCapturePreviewUrls(){
@@ -954,20 +948,7 @@ async function applyCaptureDraft(draft){
   }
 }
 async function recordCaptureReview(groupKey,reviewedValue,event='PARENT_REVIEWED'){
-  const api=window.ReadyCaptureV01;
-  if(!api?.updateReviewDraft)return null;
-  const session=await api.currentReviewSession?.();
-  const drafts=Array.isArray(session?.analysis_result?.drafts)?session.analysis_result.drafts:[];
-  const draft=[...drafts].reverse().find(x=>x.group_key===groupKey);
-  if(!draft?.review_draft_id)return null;
-  await api.updateReviewDraft(draft.review_draft_id,{
-    actor:'PARENT',
-    event,
-    review_state:event==='FACT_CONFIRMED'?'FACT_CONFIRMED':'PARENT_REVIEWED',
-    reviewed_value:reviewedValue,
-    fields:Object.keys(reviewedValue||{})
-  });
-  return api.reviewProvenanceForGroup?.(groupKey)||null;
+  return captureService.recordCaptureReview(groupKey,reviewedValue,event);
 }
 async function renderCaptureReview(session){
   const section=$('#captureReviewSection'),root=$('#captureReviewDrafts'),reanalyze=$('#captureReanalyzeBtn');
@@ -1159,11 +1140,7 @@ document.getElementById('captureAnalyzeBtn')?.addEventListener('click',async()=>
 });
 
 async function capturedRefs(groupKey){
-  const refs=await window.ReadyCaptureV01?.artifactsForGroup?.(groupKey)||[];
-  return {
-    source:refs.filter(x=>x.kind!=='ANSWER_REFERENCE'),
-    answers:refs.filter(x=>x.kind==='ANSWER_REFERENCE')
-  };
+  return captureService.capturedRefs(groupKey);
 }
 
 const parentIntakeView=rebuildParentIntakeView.create({
