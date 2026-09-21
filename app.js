@@ -23,7 +23,8 @@ const rebuildPlannerAdminView=globalThis.ReadyRebuildPlannerAdminView||null;
 const rebuildParentIntakeView=globalThis.ReadyRebuildParentIntakeView||null;
 const rebuildCaptureService=globalThis.ReadyRebuildCaptureService||null;
 const rebuildCaptureView=globalThis.ReadyRebuildCaptureView||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView){
+const rebuildAssignmentService=globalThis.ReadyRebuildAssignmentService||null;
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureView||!rebuildAssignmentService){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -1096,6 +1097,14 @@ async function capturedRefs(groupKey){
   return captureService.capturedRefs(groupKey);
 }
 
+const assignmentService=rebuildAssignmentService.create({
+  assignments:window.ReadyAssignments,
+  capture:window.ReadyCaptureV01,
+  integration:window.ReadyIntegrationV1,
+  captureService,
+  localDateKey,
+  talentBooks:TALENT_BOOKS
+});
 const parentIntakeView=rebuildParentIntakeView.create({
   query:$,
   escapeHtml,
@@ -1127,67 +1136,19 @@ document.getElementById('saveTalentFactsBtn')?.addEventListener('click',async()=
       ...reviewedValue,
       artifact_refs:captured.source,
       answer_reference_ids:captured.answers,
-      provenance:reviewProvenance?{kind:'PARENT_REVIEWED_CAPTURE',surface:'PARENT_INTAKE',capture_review:reviewProvenance}:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}
+      provenance:reviewProvenance
+        ?{kind:'PARENT_REVIEWED_CAPTURE',surface:'PARENT_INTAKE',capture_review:reviewProvenance}
+        :{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}
     });
   }
-  if(books.some(x=>!x.source_range)){toast('재능 6권의 숙제 범위를 모두 입력해 주세요.');return}
-  for(const subject of TALENT_BOOKS){
-    const closure=await window.ReadyCaptureV01?.reviewClosureForGroup?.('TALENT:'+subject);
-    if(closure&&closure.unresolved_count>0){
-      toast(`${subject} 촬영 원본 ${closure.unresolved_count}건을 먼저 연결하거나 분석 제외로 처리해 주세요.`);
-      return;
-    }
+  const result=await assignmentService.saveTalent({source,deadline,books});
+  if(!result.ok){
+    if(result.reason==='TALENT_RANGE_MISSING'){toast('재능 6권의 숙제 범위를 모두 입력해 주세요.');return}
+    if(result.reason==='CAPTURE_REVIEW_UNRESOLVED'){toast(`${result.subject||'재능'} 촬영 원본 ${result.unresolved_count||0}건을 먼저 연결하거나 분석 제외로 처리해 주세요.`);return}
+    if(result.reason==='DUPLICATE_TALENT_FACT'){toast('같은 재능 FACT가 이미 저장·확정되어 있어 중복 생성하지 않았어요.');return}
+    toast('재능 FACT 저장 조건을 확인해 주세요.');return;
   }
-  const talentLinks={};
-  const talentSignatures={};
-  for(const book of books){
-    talentLinks[book.subject]=await window.ReadyCaptureV01?.factLinkForGroup?.('TALENT:'+book.subject);
-    talentSignatures[book.subject]=stableFactSignature({
-      source_date:source,
-      deadline_boundary:deadline,
-      source_range:book.source_range,
-      teacher_instruction:book.teacher_instruction
-    });
-  }
-  const activeLinkedSubjects=TALENT_BOOKS.filter(subject=>talentLinks[subject]?.assignment_id);
-  const closedTalentLinks={};
-  if(activeLinkedSubjects.length===0){
-    for(const subject of TALENT_BOOKS){
-      closedTalentLinks[subject]=await window.ReadyCaptureV01?.lastClosedFactLinkForGroup?.('TALENT:'+subject);
-    }
-    const closedSubjects=TALENT_BOOKS.filter(subject=>closedTalentLinks[subject]?.assignment_id);
-    if(closedSubjects.length===TALENT_BOOKS.length&&closedSubjects.every(subject=>closedTalentLinks[subject]?.payload_signature===talentSignatures[subject])){
-      toast('같은 재능 FACT가 이미 저장·확정되어 있어 중복 생성하지 않았어요.');
-      return;
-    }
-  }
-  const existingPackageId=Object.values(talentLinks).map(x=>x?.package_id).find(Boolean)||undefined;
-  const pkg=window.ReadyAssignments.upsertTalentPackage({
-    actor:'PARENT',
-    package_id:existingPackageId,
-    source_date:source,
-    deadline_boundary:deadline,
-    books:books.map(b=>({...b,assignment_id:talentLinks[b.subject]?.assignment_id||undefined})),
-    provenance:{kind:'PARENT_INPUT',surface:'PARENT_INTAKE'}
-  });
-  let todoCount=0,held=0;
-  for(let i=0;i<pkg.fact_ids.length;i++){
-    const assignmentId=pkg.fact_ids[i];
-    const subject=TALENT_BOOKS[i];
-    window.ReadyAssignments.confirmFact(assignmentId,{actor:'PARENT'});
-    await window.ReadyCaptureV01?.recordFactLink?.('TALENT:'+subject,{
-      assignment_id:assignmentId,
-      package_id:pkg.package_id,
-      fact_confirmation_state:'FACT_CONFIRMED',
-      payload_signature:talentSignatures[subject]
-    });
-    const processed=window.ReadyIntegrationV1?.processAssignment?.(assignmentId,{start_date:localDateKey()});
-    if(processed?.ok)todoCount+=(processed.todos||[]).length;
-    else if(processed?.reason==='FACT_REVISION_IN_PROGRESS_HOLD')held++;
-    else held++;
-  }
-  await window.ReadyCaptureV01?.finalizeFactLinkage?.();
-  toast(`재능 6권 분석 완료 · Planner가 ${todoCount}개 탐험을 배정했어요${held?` · 보류 ${held}건`:''}.`);
+  toast(`재능 6권 분석 완료 · Planner가 ${result.todoCount}개 탐험을 배정했어요${result.held?` · 보류 ${result.held}건`:''}.`);
   renderParentIntake();renderPlanner();renderMission();
 });
 document.getElementById('saveEnglishFactBtn')?.addEventListener('click',async()=>{
