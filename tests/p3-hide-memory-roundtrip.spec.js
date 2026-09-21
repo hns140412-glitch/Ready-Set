@@ -39,6 +39,12 @@ test('P3 Hide Memory Summary returns into Ready Planner, TODAY, and Learning Mas
     averageMemoryStrength:58,
     reasonCounts:{recovery:1,confusion:1,orthographic:2,latency:0,hint:1,decay:0,stable:3},
     needsUnassistedRecallCount:1,
+    missionComposition:{newCount:12,reviewCount:24},
+    morningMockTest:{
+      recordedCount:36,
+      resultCounts:{CORRECT:30,CONFUSED:2,WRONG:2,ASSISTED_CORRECT:1,RECOVERED_CORRECT:1}
+    },
+    thinkingSceneAssistanceCount:4,
     topReviewPriorities:[
       {lexicalId:'essential::필수적인',priority:94,reason:'orthographic'},
       {lexicalId:'benefit::혜택',priority:81,reason:'confusion'}
@@ -53,7 +59,10 @@ test('P3 Hide Memory Summary returns into Ready Planner, TODAY, and Learning Mas
     trailMastery:64,
     learningPhase:'weak',
     finalSeekAttemptCount:7,
-    seekAgainRemainingCount:2
+    seekAgainRemainingCount:2,
+    missionComposition:{expectedNew:12,expectedReview:24,layoutIndependent:true},
+    morningMockTestSummary:{recordedCount:36},
+    specialistAuthority:'SPECIALIST_MEMORY_ADVISORY_ONLY'
   };
 
   const returned=await page.evaluate(({handoff,summary,specialistReport})=>{
@@ -105,6 +114,13 @@ test('P3 Hide Memory Summary returns into Ready Planner, TODAY, and Learning Mas
   expect(returned.signal.cannot_influence).toContain('ASSIGNMENT_FACT');
   expect(returned.signal.cannot_influence).toContain('STUDY_VOLUME');
   expect(returned.task.specialist_memory_summary.averageMemoryStrength).toBe(58);
+  expect(returned.task.specialist_memory_summary.authority).toBe('SPECIALIST_MEMORY_ADVISORY_ONLY');
+  expect(returned.task.specialist_memory_summary.missionComposition).toEqual({newCount:12,reviewCount:24});
+  expect(returned.task.specialist_memory_summary.morningMockTest.recordedCount).toBe(36);
+  expect(returned.task.specialist_memory_summary.morningMockTest.resultCounts.WRONG).toBe(2);
+  expect(returned.task.specialist_memory_summary.thinkingSceneAssistanceCount).toBe(4);
+  expect(returned.task.specialist_report.missionComposition).toEqual({expectedNew:12,expectedReview:24,layoutIndependent:true});
+  expect(returned.task.specialist_report.specialistAuthority).toBe('SPECIALIST_MEMORY_ADVISORY_ONLY');
 
   const learning=await page.evaluate(signal=>{
     const fact={
