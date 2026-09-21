@@ -59,6 +59,18 @@ assert('carry-completed-resolves',outcomeMod.carryPolicyForState('COMPLETED').re
 assert('carry-escalate-deadline',outcomeMod.carryEscalation({nextDepth:1,deadline:'2026-09-20',targetDate:'2026-09-21'}).reason==='DEADLINE_EXCEEDED');
 assert('carry-parity-policy',legacyPlanner.includes("const carryEligible=['PARTIAL','DEFERRED'].includes(mapped)")&&legacyPlanner.includes("const carryNeedsResolution=['BLOCKED','WAITING_FOR_PARENT'].includes(mapped)"));
 
+
+const plannerRuntime=loadSource('src/planner/planner-policy-runtime.js');
+const plannerSource=loadSource('ready-planner-v01.js');
+const indexSource=loadSource('index.html');
+assert('planner-runtime-global',plannerRuntime.includes('ReadyRebuildPlannerPolicy'));
+assert('planner-runtime-loaded-before-planner',indexSource.indexOf('src/planner/planner-policy-runtime.js')>0&&indexSource.indexOf('src/planner/planner-policy-runtime.js')<indexSource.indexOf('ready-planner-v01.js'));
+assert('planner-wired-map-state',plannerSource.includes('rebuildPolicy?.mapReadyState'));
+assert('planner-wired-session-ownership',plannerSource.includes('rebuildPolicy?.validateSessionOwnership'));
+assert('planner-wired-finishability',plannerSource.includes('rebuildPolicy?.canFinishTodo'));
+assert('planner-wired-carry-policy',plannerSource.includes('rebuildPolicy?.carryPolicyForState'));
+assert('planner-wired-carry-escalation',plannerSource.includes('rebuildPolicy?.carryEscalation'));
+
 console.log('REBUILD_DOMAIN_PARITY_PASS');
 
 console.log('REBUILD_V01_FOUNDATION_PASS ready-set');
