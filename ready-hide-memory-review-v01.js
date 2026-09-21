@@ -69,6 +69,8 @@
     const contract=clean(payload.resultContract)||'HIDE_SPECIALIST_RESULT_V1';
     if(!['HIDE_SPECIALIST_RESULT_V1','HIDE_SPECIALIST_RESULT_V2'].includes(contract))return null;
     const isV2=contract==='HIDE_SPECIALIST_RESULT_V2'||clean(payload.runtime)==='V2';
+    const rawTrail=payload.trailMastery===null||payload.trailMastery===undefined||payload.trailMastery===''?null:Number(payload.trailMastery);
+    const trailMastery=Number.isFinite(rawTrail)&&rawTrail>=0&&rawTrail<=100?rawTrail:null;
     return Object.freeze({
       sourceApp:'hide-seek',
       resultContract:isV2?'HIDE_SPECIALIST_RESULT_V2':'HIDE_SPECIALIST_RESULT_V1',
@@ -80,7 +82,7 @@
       sheetStatus:!isV2?(clean(payload.sheetStatus)||null):null,
       taskState:clean(payload.taskState)||null,
       learningPhase:clean(payload.learningPhase)||null,
-      trailMastery:payload.trailMastery===null||payload.trailMastery===undefined||payload.trailMastery===''?null:(Number.isFinite(Number(payload.trailMastery))?Number(payload.trailMastery):null),
+      trailMastery,
       memorySummary:JSON.parse(JSON.stringify(memory))
     });
   }
