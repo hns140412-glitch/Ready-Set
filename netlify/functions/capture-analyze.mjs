@@ -94,12 +94,15 @@ function hideVocabularySchema(){
         items:{
           type:'object',
           additionalProperties:false,
-          required:['eng','kor','confidence','evidence_item_id','warnings'],
+          required:['eng','kor','confidence','evidence_item_id','source_column','source_row_index','source_column_index','warnings'],
           properties:{
             eng:{type:'string'},
             kor:{type:'string'},
             confidence:{type:'string',enum:['high','medium','low']},
             evidence_item_id:{type:'string'},
+            source_column:{type:'string',enum:['LEFT','RIGHT','CENTER','UNKNOWN']},
+            source_row_index:{type:'integer',minimum:0},
+            source_column_index:{type:'integer',minimum:0},
             warnings:{type:'array',items:{type:'string'}}
           }
         }
@@ -117,6 +120,8 @@ function domainConfig(domain){
         'You transcribe printed English vocabulary material for Hide & Seek.',
         'Return only English-word and Korean-meaning rows that are visibly supported by the image.',
         'Pair each English word with its visible Korean meaning while preserving source order.',
+        'Also preserve physical layout: source_column is LEFT/RIGHT/CENTER/UNKNOWN, source_row_index is top-to-bottom row within the page, and source_column_index is top-to-bottom index within that physical column.',
+        'For multi-column vocabulary sheets, identify the actual left and right blocks from the image; do not infer columns from semantic content.',
         'Never invent missing words, meanings, examples, hints, or answers.',
         'Ignore headers, page numbers, decorative text, and unrelated instructions.',
         'If either side is ambiguous, preserve the visible text as best as possible and use confidence=low with a short warning.',
@@ -276,6 +281,10 @@ export default async function handler(req){
         confidence:['high','medium','low'].includes(String(x.confidence||'').toLowerCase())
           ?String(x.confidence).toLowerCase():'low',
         evidence_item_id:String(x.evidence_item_id||''),
+        source_column:['LEFT','RIGHT','CENTER','UNKNOWN'].includes(String(x.source_column||'').toUpperCase())
+          ?String(x.source_column).toUpperCase():'UNKNOWN',
+        source_row_index:Math.max(0,Number.parseInt(x.source_row_index,10)||0),
+        source_column_index:Math.max(0,Number.parseInt(x.source_column_index,10)||0),
         warnings:Array.isArray(x.warnings)?x.warnings.map(String):[]
       }));
   }
