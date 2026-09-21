@@ -1061,7 +1061,7 @@ const profileRuntime=rebuildProfileController.create({
 });
 $('#cameraInput').onchange=e=>profileRuntime.loadPhoto(e.target.files[0]);
 $('#galleryInput').onchange=e=>profileRuntime.loadPhoto(e.target.files[0]);
-$('[data-style]').forEach(b=>b.onclick=()=>profileRuntime.setStyle(b.dataset.style));
+$$('[data-style]').forEach(b=>b.onclick=()=>profileRuntime.setStyle(b.dataset.style));
 $('#saveProfileBtn').onclick=()=>profileRuntime.saveProfile({
   name:$('#profileName').value,
   shareAvatar:$('#shareAvatarOptIn').checked
