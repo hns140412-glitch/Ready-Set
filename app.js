@@ -20,7 +20,8 @@ const rebuildPersistence=globalThis.ReadyRebuildAppPersistence||null;
 const rebuildMissionView=globalThis.ReadyRebuildMissionView||null;
 const rebuildFocusView=globalThis.ReadyRebuildFocusView||null;
 const rebuildPlannerAdminView=globalThis.ReadyRebuildPlannerAdminView||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView){
+const rebuildParentIntakeView=globalThis.ReadyRebuildParentIntakeView||null;
+if(!rebuildSession||!rebuildSessionService||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildFocusView||!rebuildPlannerAdminView||!rebuildParentIntakeView){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -1165,41 +1166,17 @@ async function capturedRefs(groupKey){
   };
 }
 
+const parentIntakeView=rebuildParentIntakeView.create({
+  query:$,
+  escapeHtml,
+  talentBooks:TALENT_BOOKS,
+  localDateKey
+});
 function renderParentIntake(){
-  const root=$('#talentBookFacts');if(root&&!root.children.length)root.innerHTML=TALENT_BOOKS.map(subject=>`
-    <div class="adminGrid two" data-talent-book="${subject}">
-      <label class="inputBlock">${subject} 범위<input data-range placeholder="숙제 범위"></label>
-      <label class="inputBlock">${subject} 교사 지시<input data-instruction placeholder="지시사항"></label>
-      <input data-answer type="hidden" value="">
-    </div>`).join('');
-  const status=$('#assignmentFactStatus'),projection=window.ReadyAssignments?.project?.('PARENT');
-  if(status&&projection){
-    const pending=window.ReadyAssignments?.pendingChildFacts?.()||[];
-    const pendingIds=new Set(pending.map(x=>x.assignment_id));
-    status.innerHTML=projection.facts.slice(-20).reverse().map(f=>{
-      const childPending=pendingIds.has(f.assignment_id);
-      const actions=childPending?`<div class="adminInlineActions"><button class="miniAction" data-child-fact-confirm="${f.assignment_id}">확인</button><button class="miniAction" data-child-fact-reject="${f.assignment_id}">제외</button></div>`:'';
-      const label=f.title||f.book_subject||f.subject||'숙제 제안';
-      return `<div class="adminListItem"><span><b>${escapeHtml(label)}</b><small>${childPending?'CHILD 제안 · Parent 확인 대기':escapeHtml(f.confirmation_state)} · ${escapeHtml(f.analysis_state)}</small></span>${actions}</div>`;
-    }).join('');
-  }
-
-  const lmRoot=$('#learningMasterSummary');
-  const domain=window.ReadyAssignments?.load?.();
-  if(lmRoot&&domain){
-    const rows=Object.values(domain.assignmentFacts||{}).filter(f=>f.current_analysis_id).slice(-12).reverse();
-    lmRoot.innerHTML=rows.length?rows.map(f=>{
-      const analysis=domain.analyses?.[f.current_analysis_id];
-      const units=(analysis?.learning_unit_ids||[]).map(id=>domain.learningUnits?.[id]).filter(Boolean);
-      const maxDifficulty=units.reduce((m,u)=>Math.max(m,u.activity_load?.difficulty||0),0);
-      const maxLoad=units.reduce((m,u)=>Math.max(m,u.activity_load?.score||0),0);
-      const recovery=units.some(u=>u.activity_load?.recovery_need==='HIGH')?'회복 필요 높음':units.some(u=>u.activity_load?.recovery_need==='MEDIUM')?'회복 필요 보통':'회복 부담 낮음';
-      const unresolved=[...new Set(units.flatMap(u=>u.unresolved_flags||[]))];
-      return `<div class="adminListItem"><span><b>${escapeHtml(f.book_subject||f.subject)} · ${units.length}개 학습단위</b><small>난이도 ${maxDifficulty||'-'} · 부하 ${maxLoad||'-'} · ${recovery}${unresolved.length?` · 확인 ${unresolved.length}건`:''}</small></span></div>`;
-    }).join(''):'<div class="plannerEmpty"><b>아직 해석된 숙제가 없어요.</b><small>FACT 확인 후 Learning Master가 학습단위를 만듭니다.</small></div>';
-  }
-  if($('#learningMasterVersion'))$('#learningMasterVersion').textContent='v'+(window.ReadyLearningMasterV01?.version||'0.5.1');
-  if($('#talentSourceDate')&&!$('#talentSourceDate').value)$('#talentSourceDate').value=localDateKey();
+  parentIntakeView.render({
+    assignments:window.ReadyAssignments,
+    learningMasterVersion:window.ReadyLearningMasterV01?.version||'0.5.1'
+  });
   renderCaptureIntake().catch(()=>{});
 }
 document.getElementById('saveTalentFactsBtn')?.addEventListener('click',async()=>{
