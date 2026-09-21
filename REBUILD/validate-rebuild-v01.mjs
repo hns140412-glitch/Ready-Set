@@ -753,3 +753,14 @@ assert('member-scope-storage-contract',
   loadSource('ready-planner-v01.js').includes('ReadyMemberScope?.storageKey') &&
   loadSource('ready-assignment-domain-v2.js').includes('ReadyMemberScope?.storageKey')
 );
+
+const appPersistenceMemberSource=loadSource('src/persistence/app-state-runtime.js');
+const localFirstMemberSource=loadSource('ready-local-first-v01.js');
+assert('member-scoped-app-and-local-first',
+  appPersistenceMemberSource.includes('keyProvider') &&
+  appSource.includes("ReadyMemberScope?.storageKey?.('readyset_state')") &&
+  appSource.includes("readyset-family-session") &&
+  localFirstMemberSource.includes('scopedScope') &&
+  localFirstMemberSource.includes('localStorageKeyForScope') &&
+  localFirstMemberSource.includes('effectiveScope')
+);

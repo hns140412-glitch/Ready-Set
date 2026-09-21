@@ -7,6 +7,13 @@
 
   const DB_NAME='readyset_local_v1', DB_VERSION=1;
   const SCOPE_KEYS={planner:'readyset_planner_v1',app_state:'readyset_state',assignments:'readyset_assignments_v2'};
+  const memberScope=()=>globalThis.ReadyMemberScope||null;
+  function scopedScope(scope){return memberScope()?.syncScope?.(scope)||scope}
+  function localStorageKeyForScope(scope){
+    const parsed=memberScope()?.parseSyncScope?.(scope)||{member_id:null,scope};
+    const base=SCOPE_KEYS[parsed.scope];if(!base)return null;
+    return parsed.member_id?`${base}::member::${encodeURIComponent(parsed.member_id)}`:base;
+  }
   const SHARED_STATES=new Set(['PENDING','IN_FLIGHT','RETRY','ACKED','DEAD_LETTER','SUPERSEDED']);
   let dbPromise=null;
   const now=()=>new Date().toISOString();
@@ -59,7 +66,7 @@
       created_at:shared.created_at,
       updated_at:shared.updated_at,
       acked_at:shared.acked_at||null,
-      scope:scope??null,
+      scope:effectiveScope??null,
       digest:digest??null,
       payload:payload??null,
       envelope:envelope??null,
@@ -98,6 +105,7 @@
 
   async function capture(scope,payload,options={}){
     const db=await openDb();
+    const effectiveScope=scopedScope(scope);
     const text=typeof payload==='string'?payload:JSON.stringify(payload);
     const digest=EventEnvelope.digest(text);
     const updated_at=now();
@@ -105,7 +113,7 @@
       source:'ready-set',
       event_type:'READY_SCOPE_SNAPSHOT_CAPTURED',
       occurred_at:updated_at,
-      payload:{scope,digest,payload:text}
+      payload:{scope:effectiveScope,digest,payload:text}
     });
     const shared=LocalQueue.create({
       event_id:envelope.event_id,
@@ -116,12 +124,12 @@
     });
 
     const tx=db.transaction(['snapshots','outbox'],'readwrite');
-    tx.objectStore('snapshots').put({scope,payload:text,digest,updated_at});
+    tx.objectStore('snapshots').put({scope:effectiveScope,payload:text,digest,updated_at});
     if(options.enqueue!==false){
       tx.objectStore('outbox').put(toStoredQueue(shared,{scope,digest,payload:text,envelope}));
     }
     return new Promise((resolve,reject)=>{
-      tx.oncomplete=()=>resolve({scope,digest,event_id:envelope.event_id});
+      tx.oncomplete=()=>resolve({scope:effectiveScope,digest,event_id:envelope.event_id});
       tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
     });
   }
@@ -130,7 +138,7 @@
     const rows=await all('snapshots');
     let recovered=0;
     for(const row of rows){
-      const key=SCOPE_KEYS[row.scope];
+      const key=localStorageKeyForScope(row.scope);
       if(!key) continue;
       if(localStorage.getItem(key)==null && row.payload!=null){
         localStorage.setItem(key,row.payload);
@@ -155,7 +163,7 @@
       });
       await put('outbox',toStoredQueue(base,{...domainFields(outbox),domain_conflict:null}));
     } else if(resolution==='ACCEPT_REMOTE'){
-      const key=SCOPE_KEYS[conflict.scope];
+      const key=localStorageKeyForScope(conflict.scope);
       const remote=typeof conflict.remote_payload==='string'
         ? conflict.remote_payload
         : JSON.stringify(conflict.remote_payload??null);

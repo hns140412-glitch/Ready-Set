@@ -94,7 +94,7 @@ const initial={
 
 const appPersistence=rebuildPersistence.create({
   initial,
-  storageKey:'readyset_state',
+  storageKey:()=>globalThis.ReadyMemberScope?.storageKey?.('readyset_state')||'readyset_state',
   localFirst:window.ReadySetLocalFirst,
   safePoint:appState=>!appState?.activeSession
 });
@@ -677,7 +677,9 @@ $('#exportDataBtn').onclick=()=>{
 };
 $('#resetDataBtn').onclick=()=>{
   if(confirm('모든 로컬 Ready & Set 기록을 초기화할까요?')){
-    localStorage.removeItem('readyset_state');location.reload();
+    const scoped=globalThis.ReadyMemberScope?.storageKey?.bind(globalThis.ReadyMemberScope)||((x)=>x);
+    ['readyset_state','readyset_planner_v1','readyset_assignments_v2'].forEach(k=>localStorage.removeItem(scoped(k)));
+    location.reload();
   }
 };
 function escapeHtml(s){
@@ -713,6 +715,20 @@ const appBootstrapRuntime=rebuildAppBootstrapController.create({
   readyPwaSafePoint
 });
 appBootstrapRuntime.bind();
+
+let activeAppStateKey=appPersistence.currentKey();
+window.addEventListener('readyset-family-session',()=>{
+  const nextKey=appPersistence.currentKey();
+  if(nextKey===activeAppStateKey)return;
+  activeAppStateKey=nextKey;
+  state=appPersistence.load();
+  plannerSelectedDate=null;
+  sessionRecoveryRuntime.reconcile();
+  renderHome();
+  if(document.querySelector('#plannerView')?.classList.contains('active'))renderPlanner();
+  if(document.querySelector('#profileView')?.classList.contains('active'))profileRuntime.renderProfile();
+  if(document.querySelector('#settingsView')?.classList.contains('active'))settingsRuntime.renderSettings();
+});
 
 /* REV_07 compact themed share overlay — runtime-owned after rebuild migration. */
 function readyShareTheme(){return state.share?.theme==='sail'?'sail':'drop'}

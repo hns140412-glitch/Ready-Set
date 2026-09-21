@@ -29,7 +29,7 @@
   }
 
   function create(options={}){
-    const key=options.storageKey||'readyset_state';
+    const keyProvider=typeof options.storageKey==='function'?options.storageKey:()=>options.storageKey||'readyset_state';
     const initial=clone(options.initial||{});
     const storage=options.storage||root.localStorage;
     const localFirst=options.localFirst||root.ReadySetLocalFirst||null;
@@ -37,7 +37,7 @@
 
     function load(){
       try{
-        const raw=JSON.parse(storage.getItem(key)||'null');
+        const raw=JSON.parse(storage.getItem(keyProvider())||'null');
         if(!raw)return clone(initial);
         return migrate(raw,initial);
       }catch{return clone(initial)}
@@ -45,7 +45,7 @@
 
     function save(state){
       const payload=JSON.stringify(state);
-      storage.setItem(key,payload);
+      storage.setItem(keyProvider(),payload);
       localFirst?.capture?.('app_state',payload).catch?.(()=>{});
       const isSafe=!!safePoint(state);
       root.dispatchEvent?.(new CustomEvent('readyset-state-saved',{detail:{pwa_safe_point:isSafe}}));
@@ -53,7 +53,7 @@
       return {ok:true,payload,pwa_safe_point:isSafe};
     }
 
-    return Object.freeze({load,save,migrate:(raw)=>migrate(raw,initial)});
+    return Object.freeze({load,save,currentKey:()=>keyProvider(),migrate:(raw)=>migrate(raw,initial)});
   }
 
   root.ReadyRebuildAppPersistence=Object.freeze({
