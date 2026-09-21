@@ -20,6 +20,8 @@ jobs:
           node-version: '24'
       - name: Validate rebuild foundation
         run: node REBUILD/validate-rebuild-v01.mjs
+      - name: Validate subject method routing
+        run: node tests/subject-method-routing.test.js
       - name: Guard JavaScript parseability
         run: |
           node --check app.js
