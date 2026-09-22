@@ -200,9 +200,23 @@
       return result;
     }
 
+    async function generateMasterSheet(){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const result=await remote.generateMasterSheet({visual_id:p.visualId});
+      if(!result?.ok)return result;
+      p.characterRemoteJob=result.job||null;
+      p.characterMasterSheet={
+        asset_url:remote.assetUrl(p.visualId,'MASTER_SHEET'),
+        asset_key:result.job?.master_sheet?.asset_key||null
+      };
+      save();
+      return result;
+    }
+
     return Object.freeze({
       render,begin,choose,generationPayload,prepareRemoteJob,startGeneration,
-      refreshRemoteJob,generateAllCandidates,selectCandidate,correctLikeness,lockMaster
+      refreshRemoteJob,generateAllCandidates,selectCandidate,correctLikeness,lockMaster,generateMasterSheet
     });
   }
 
