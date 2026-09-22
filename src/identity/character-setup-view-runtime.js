@@ -108,8 +108,13 @@
           }else if(job.status==='CORRECTED'){
             note='닮기 보정 완료 · 이 캐릭터를 Visual ID로 확정할 수 있어요.';
             controls='<button class="btn dark" id="lockCharacterMasterBtn">이 캐릭터로 확정</button>';
-          }else if(job.status==='MASTER_LOCKED'){
-            note='Character Master / Visual ID가 잠겼습니다. 이후 앱에서는 이 Identity를 기준으로 사용합니다.';
+          }else if(job.status==='VISUAL_ID_LOCKED'){
+            note='Visual ID가 잠겼습니다. 마지막으로 일관성 확인용 Character Master Sheet를 만들 수 있어요.';
+            controls=job.provider_generation_enabled
+              ? '<button class="btn dark" id="generateCharacterMasterSheetBtn">Character Master 만들기</button>'
+              : '';
+          }else if(job.status==='MASTER_ASSETS_READY'){
+            note='Visual ID와 Character Master Sheet가 준비됐습니다.';
           }
           const displayCandidates=(job?.directions||candidates).map(x=>({slot:x.slot||'',...x}));
           candidateWrap.innerHTML=
@@ -117,15 +122,19 @@
               (job?.status==='READY_FOR_SELECTION'?'후보를 골라줘':
                job?.status==='SELECTED'?'후보 선택 완료':
                job?.status==='CORRECTED'?'닮기 보정 완료':
-               job?.status==='MASTER_LOCKED'?'Visual ID 확정':'후보 생성 준비')+
+               job?.status==='VISUAL_ID_LOCKED'?'Visual ID 확정':
+               job?.status==='MASTER_ASSETS_READY'?'Character Master 완료':'후보 생성 준비')+
             '</h3></div>'+
             '<div class="characterCandidateGrid">'+
               (job?displayCandidates.map(x=>remoteCandidateCard(profile,job,x)).join(''):candidates.map(candidateCard).join(''))+
             '</div>'+
-            ((job?.status==='SELECTED'||job?.status==='CORRECTED'||job?.status==='MASTER_LOCKED')
+            ((job?.status==='SELECTED'||job?.status==='CORRECTED'||job?.status==='VISUAL_ID_LOCKED'||job?.status==='MASTER_ASSETS_READY')
               ? '<div class="selectedCharacterPreview"><img src="/api/character/asset?visual_id='+encodeURIComponent(String(profile?.visualId||''))+'&slot='+
-                (job?.status==='CORRECTED'||job?.status==='MASTER_LOCKED'&&job?.corrected_asset?'CORRECTED':'SELECTED')+
+                (job?.status==='CORRECTED'||(job?.status==='VISUAL_ID_LOCKED'||job?.status==='MASTER_ASSETS_READY')&&job?.corrected_asset?'CORRECTED':'SELECTED')+
                 '" alt="선택한 캐릭터"></div>'
+              : '')+
+            (job?.status==='MASTER_ASSETS_READY'
+              ? '<div class="characterMasterSheetPreview"><img src="/api/character/asset?visual_id='+encodeURIComponent(String(profile?.visualId||''))+'&slot=MASTER_SHEET" alt="Character Master Sheet"></div>'
               : '')+
             '<p class="muted">'+escapeHtml(note)+'</p>'+controls+
             '<p class="muted" id="characterRemoteStatus">'+escapeHtml(job?.status||'아직 서버 등록 전')+'</p>';
