@@ -213,3 +213,44 @@ Still NOT_RUN:
 - real child source-photo flow
 - device validation
 - Ready / Hide / Snap integration
+
+
+## Signature Item handoff update
+
+Latest validated code checkpoint:
+`f337c29dd7e855d19e868a2b7758c885ea59534b`
+
+CI:
+`35683452887` SUCCESS
+
+New canonical formation stage:
+`MOOD 1 -> MOOD 2 -> SIGNATURE ITEM -> A/B/C`
+
+Signature Item is intentionally minimal.
+Do not turn this into a broad avatar editor.
+
+Rule:
+`IDENTITY > EXPRESSION DIRECTION > SIGNATURE ITEM`
+
+Exactly one item is selected from three contextually suggested options.
+
+Canonical catalog:
+MAGNIFIER / EXPLORER_HAT / ROUND_GLASSES / COMPASS / MINI_FIELD_BAG / FIELD_NOTEBOOK.
+
+The item:
+- is identical across A/B/C;
+- survives likeness correction;
+- becomes part of Character Master;
+- is exposed downstream only as `id + label`;
+- must not obscure face/eyes or replace identity cues.
+
+Projection:
+`CHARACTER_VISUAL_ID_PROJECTION_V02`
+
+V01 is superseded before consumer integration.
+
+Still do not claim:
+- final UI design complete;
+- real item rendering quality verified;
+- real A/B/C generation verified;
+- device runtime verified.
