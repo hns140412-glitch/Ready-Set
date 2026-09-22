@@ -1,0 +1,98 @@
+{
+  "version": "2026-09-22",
+  "branch": "taky/character-visual-id-core-2026-09-22",
+  "status": "C2S_COMPILE_CLOSED",
+  "atoms": [
+    {
+      "id": "CHAR-001",
+      "type": "DECISION",
+      "statement": "Character Visual ID is independently developed and Ready is a later consumer.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "REFLECTED"
+    },
+    {
+      "id": "CHAR-002",
+      "type": "DECISION",
+      "statement": "Source photo is the highest identity authority.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "CODED"
+    },
+    {
+      "id": "CHAR-003",
+      "type": "DECISION",
+      "statement": "Child makes exactly two direct direction selections; C is system auto contrast.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "CODED"
+    },
+    {
+      "id": "CHAR-004",
+      "type": "DECISION",
+      "statement": "All A/B/C candidates represent the same child with different direction.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "CODED"
+    },
+    {
+      "id": "CHAR-005",
+      "type": "DECISION",
+      "statement": "Candidate selection is direction preference and is not same-identity approval.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "CODED"
+    },
+    {
+      "id": "CHAR-006",
+      "type": "REQUIREMENT",
+      "statement": "Visual ID lock requires structural PASS, selected visual PASS and human same-identity PASS.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "CODED_CI_VERIFIED"
+    },
+    {
+      "id": "CHAR-007",
+      "type": "CORRECTION",
+      "statement": "Per-candidate evidence outranks aggregate model claims.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "CODED_CI_VERIFIED"
+    },
+    {
+      "id": "CHAR-008",
+      "type": "CORRECTION",
+      "statement": "Visual ID lock and derivative asset readiness are separate states.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "CODED_CI_VERIFIED"
+    },
+    {
+      "id": "CHAR-009",
+      "type": "CORRECTION",
+      "statement": "A single image must not masquerade as avatar, portrait and full-character assets.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "CODED_CI_VERIFIED"
+    },
+    {
+      "id": "CHAR-010",
+      "type": "DECISION",
+      "statement": "Downstream apps consume CHARACTER_VISUAL_ID_PROJECTION_V01 only.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "CODED_CI_VERIFIED"
+    },
+    {
+      "id": "CHAR-011",
+      "type": "OPEN",
+      "statement": "Paid candidate generation runtime evidence remains NOT_RUN.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "EXTERNAL_RESOURCE_GATE"
+    },
+    {
+      "id": "CHAR-012",
+      "type": "OPEN",
+      "statement": "Paid visual consistency review runtime evidence remains NOT_RUN.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "EXTERNAL_RESOURCE_GATE"
+    },
+    {
+      "id": "CHAR-013",
+      "type": "OPEN",
+      "statement": "Device validation remains NOT_RUN.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "DEFERRED"
+    }
+  ]
+}
