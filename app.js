@@ -625,7 +625,8 @@ $('#characterSetupView').addEventListener('click',async e=>{
   const select=e.target.closest?.('[data-select-character-candidate]');
   const correct=e.target.closest?.('#correctCharacterLikenessBtn');
   const lockMaster=e.target.closest?.('#lockCharacterMasterBtn');
-  const button=prepare||generate||select||correct||lockMaster;
+  const masterSheet=e.target.closest?.('#generateCharacterMasterSheetBtn');
+  const button=prepare||generate||select||correct||lockMaster||masterSheet;
   if(!button)return;
   const status=$('#characterRemoteStatus');
   button.disabled=true;
@@ -664,6 +665,13 @@ $('#characterSetupView').addEventListener('click',async e=>{
       result=await characterSetupRuntime.lockMaster();
       if(result?.ok){
         toast('내 캐릭터 Visual ID가 확정됐어요.');
+        characterSetupRuntime.render();
+      }
+    }else if(masterSheet){
+      if(status)status.textContent='Character Master 일관성 시트를 만드는 중…';
+      result=await characterSetupRuntime.generateMasterSheet();
+      if(result?.ok){
+        toast('Character Master가 준비됐어요.');
         characterSetupRuntime.render();
       }
     }
