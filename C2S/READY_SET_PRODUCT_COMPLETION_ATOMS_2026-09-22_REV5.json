@@ -1,0 +1,101 @@
+{
+  "schema": "TKY-C2S-001",
+  "date": "2026-09-22",
+  "repo": "hns140412-glitch/Ready-Set",
+  "branch": "taky/ready-rebuild-v01-2026-09-21",
+  "validated_product_head": "10d93c0ce437733182950f42344fd730af586c0b",
+  "atoms": [
+    {
+      "id": "RS-REV5-001",
+      "type": "VALIDATION",
+      "domain": "MULTI_MEMBER",
+      "text": "Member-scoped Profile/Planner/Assignment/app-state/local-first/remote-sync boundaries pass exact-head runtime and contract validation.",
+      "disposition": "CLOSED_PREDEPLOY"
+    },
+    {
+      "id": "RS-REV5-002",
+      "type": "EVIDENCE",
+      "domain": "TIMETABLE",
+      "text": "Notion Ready & Set timetable contains six confirmed execution-eligible rows and six confirmation-required rows.",
+      "disposition": "CONFIRMED_SUBSET_BOUND"
+    },
+    {
+      "id": "RS-REV5-003",
+      "type": "CONSTRAINT",
+      "domain": "TIMETABLE",
+      "text": "Only Notion rows marked confirmed are execution-eligible; missing end times and uncertain source values must not be inferred.",
+      "disposition": "LOCKED"
+    },
+    {
+      "id": "RS-REV5-004",
+      "type": "STRATEGY",
+      "domain": "PRIVACY_DATA",
+      "text": "Family-specific timetable evidence is test fixture data, not deploy-time product data.",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "RS-REV5-005",
+      "type": "VALIDATION",
+      "domain": "RECORDING",
+      "text": "Unsupported media APIs, microphone denial, real MIME selection and non-renaming format contract are predeploy regression protected.",
+      "disposition": "VALIDATED_BROWSER_CONTRACT"
+    },
+    {
+      "id": "RS-REV5-006",
+      "type": "VALIDATION",
+      "domain": "CAPTURE",
+      "text": "Parent auth, fail-closed provider config/error, review-only output, answer-reference protection and upload limits are predeploy regression protected.",
+      "disposition": "VALIDATED_BROWSER_CONTRACT"
+    },
+    {
+      "id": "RS-REV5-007",
+      "type": "CORRECTION",
+      "domain": "ACCESSIBILITY",
+      "text": "Mission duration selection now synchronizes class and aria-pressed immediately.",
+      "disposition": "IMPLEMENTED_AND_RUNTIME_VALIDATED"
+    },
+    {
+      "id": "RS-REV5-008",
+      "type": "CORRECTION",
+      "domain": "TEST",
+      "text": "Runtime duration locator is scoped to the visible Mission surface; hidden duplicate control no longer causes false timeout.",
+      "disposition": "STALE_VALIDATOR_FIXED"
+    },
+    {
+      "id": "RS-REV5-009",
+      "type": "EVIDENCE",
+      "domain": "VALIDATION",
+      "text": "Validated product HEAD 10d93c0... passes Runtime E2E 82/82 and all required CI/Planner gates.",
+      "disposition": "FROZEN_PRODUCT_CANDIDATE"
+    },
+    {
+      "id": "RS-REV5-010",
+      "type": "OPEN",
+      "domain": "DEVICE_EXTERNAL",
+      "text": "Real OCR/Vision, microphone/camera physical device, production Identity/sync and physical-device UX remain external/device work.",
+      "disposition": "HOLD"
+    },
+    {
+      "id": "RS-REV5-011",
+      "type": "OPEN",
+      "domain": "TIMETABLE",
+      "text": "Six real timetable rows remain confirmation-required and are excluded from execution.",
+      "disposition": "HOLD"
+    },
+    {
+      "id": "RS-REV5-012",
+      "type": "OPEN",
+      "domain": "REFERENCE_BINDING",
+      "text": "Actual workbook/textbook/unit binding remains evidence-dependent; missing unit mappings must remain explicit gaps.",
+      "disposition": "EVIDENCE_REQUIRED"
+    }
+  ],
+  "closure": {
+    "unmapped_material": 0,
+    "silent_loss": 0,
+    "false_convergence": false,
+    "reflection_complete": true,
+    "predeploy_internal_execution_complete": true,
+    "downstream_external_execution_complete": false
+  }
+}
