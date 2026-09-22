@@ -134,9 +134,11 @@ recurringPlanner.upsertScheduleException({
   end:'20:00',
   source:'TEST_FIXTURE'
 });
+const exceptionDomain=JSON.parse(JSON.stringify(domain));
+exceptionDomain.assignmentFacts.a1.deadline_boundary='2026-09-29';
 const exceptionAllocation=recurringPlanner.allocateLearningUnits({
   assignment_id:'a1',
-  domain_state:JSON.parse(JSON.stringify(domain)),
+  domain_state:exceptionDomain,
   candidate_dates:['2026-09-28']
 });
 assert.equal(exceptionAllocation.ok,true);
