@@ -58,10 +58,18 @@
         ? '<img class="candidateGeneratedImage" src="'+url+'" alt="캐릭터 후보 '+escapeHtml(slot)+'">'
         : '<div class="candidateVisual">'+escapeHtml(slot)+'</div>';
       const select=job?.status==='READY_FOR_SELECTION'
-        ? '<button class="miniAction" data-select-character-candidate="'+escapeHtml(slot)+'">이 친구 선택</button>'
+        ? '<button class="miniAction" data-select-character-candidate="'+escapeHtml(slot)+'">이 방향 선택</button>'
         : '';
-      return '<article class="characterCandidatePlaceholder">'+visual+
-        '<div><small>'+escapeHtml(source)+'</small><b>'+escapeHtml(label)+'</b>'+select+'</div>'+
+      const review=(job?.consistency_gate?.visual?.candidates||[]).find(x=>String(x?.slot||'')===String(slot));
+      const reviewLine=review
+        ? '<span class="candidateReview '+(review.same_child_identity?'pass':'fail')+'">'+
+          (review.same_child_identity?'같은 나':'Identity drift')+
+          ' · '+escapeHtml(review.identity_drift_risk||'')+
+          '</span>'
+        : '';
+      const selected=String(job?.selected_slot||'')===String(slot);
+      return '<article class="characterCandidatePlaceholder" data-selected="'+(selected?'true':'false')+'">'+visual+
+        '<div><small>'+escapeHtml(source)+'</small><b>'+escapeHtml(label)+'</b>'+reviewLine+select+'</div>'+
       '</article>';
     }
 
