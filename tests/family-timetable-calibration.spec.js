@@ -1,3 +1,5 @@
+const fs=require('fs');
+const familyTimetable=JSON.parse(fs.readFileSync('data/ready-family-timetable-notion-2026-09-22.json','utf8'));
 const { test, expect } = require('@playwright/test');
 
 test('representative family timetable produces non-overlapping free windows across a school week', async ({page})=>{
@@ -102,4 +104,64 @@ test('date exception recalibrates one day without mutating the weekly family tim
   expect(out.free.total_free_minutes).toBe(210);
   expect(out.base.start).toBe('17:00');
   expect(out.base.end).toBe('19:00');
+});
+
+
+test('actual Notion family timetable binds confirmed rows only and keeps uncertain rows out of Planner', async ({page})=>{
+  await page.addInitScript(()=>{
+    window.__READY_AUTH_BOOTSTRAP__={
+      authenticated:true,family_id:'CAL_FAMILY',member_id:'CAL_PARENT',role:'PARENT',
+      session_id:'CAL_SESSION',expires_at:'2099-01-01T00:00:00.000Z',source:'TEST_ONLY'
+    };
+  });
+  await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
+
+  const out=await page.evaluate((dataset)=>{
+    const p=window.ReadySetPlanner;
+    dataset.confirmed.forEach(x=>p.upsertScheduleCommitment({
+      commitment_id:x.id,
+      title:x.title,
+      category:x.category,
+      recurrence:'WEEKLY',
+      weekday:x.weekday,
+      start:x.start,
+      end:x.end,
+      confirmed:true,
+      source:'NOTION_READY_SET_TIMETABLE_CONFIRMED'
+    }));
+    const dates=['2026-09-21','2026-09-22','2026-09-23','2026-09-24','2026-09-25'];
+    return {
+      dates:Object.fromEntries(dates.map(date=>[date,p.scheduleCommitmentsForDate(date).map(x=>({
+        title:x.title,start:x.start,end:x.end,source:x.source
+      }))])),
+      snapshot:p.snapshot()
+    };
+  },familyTimetable);
+
+  expect(familyTimetable.source.authority_rule).toBe('ONLY_ROWS_WITH_CONFIRMATION_STATUS_CONFIRMED_ARE_EXECUTION_ELIGIBLE');
+  expect(familyTimetable.confirmed).toHaveLength(6);
+  expect(familyTimetable.pending).toHaveLength(6);
+
+  expect(out.dates['2026-09-21']).toEqual([
+    expect.objectContaining({title:'영어학원',start:'16:00',end:'18:00'}),
+    expect.objectContaining({title:'과학학원',start:'19:00',end:'20:00'})
+  ]);
+  expect(out.dates['2026-09-22']).toEqual([
+    expect.objectContaining({title:'피아노',start:'14:00',end:'16:00'})
+  ]);
+  expect(out.dates['2026-09-23']).toEqual([
+    expect.objectContaining({title:'영어학원',start:'16:00',end:'18:00'})
+  ]);
+  expect(out.dates['2026-09-24']).toEqual([
+    expect.objectContaining({title:'태권도',start:'16:30',end:'18:00'})
+  ]);
+  expect(out.dates['2026-09-25']).toEqual([
+    expect.objectContaining({title:'영어학원',start:'16:00',end:'18:00'})
+  ]);
+
+  for(const pending of familyTimetable.pending){
+    expect(out.snapshot.schedule_commitments.some(x=>
+      x.title===pending.title && x.start===pending.start && (pending.end==null || x.end===pending.end)
+    )).toBe(false);
+  }
 });
