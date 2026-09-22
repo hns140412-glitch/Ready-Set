@@ -106,8 +106,14 @@
       matched_domain:standardMatch?.selected?.domain||null,
       standard_domain:standardMatch?.selected?.domain||null
     })||null;
+    const verifiedStandard=standardMatch?.status==='MATCHED_VERIFIED_STANDARD'&&!!standardMatch?.official_standard_code;
+    const rowUnresolved=(row.unresolved||[]).filter(flag=>{
+      if(verifiedStandard&&flag==='GRADE_STANDARD_MAPPING_NOT_YET_BOUND')return false;
+      if(verifiedStandard&&flag==='OFFICIAL_CURRICULUM_SOURCE_POINTER_NOT_YET_BOUND')return false;
+      return true;
+    });
     const unresolved=[
-      ...row.unresolved,
+      ...rowUnresolved,
       ...(subjectMaster?.unresolved||[]),
       ...(standardMatch?.unresolved||[])
     ];
