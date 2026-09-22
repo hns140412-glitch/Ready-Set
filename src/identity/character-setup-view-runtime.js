@@ -17,7 +17,9 @@
 
     function candidateCard(item){
       const label=item?.direction?.label||item?.direction_label||item?.direction_id||item?.slot;
-      const source=item?.source==='SYSTEM_AUTO_CONTRAST'?'시스템 대비 방향':'내 선택';
+      const source=item?.source==='SYSTEM_AUTO_CONTRAST'
+        ? '시스템이 만든 대비 방향'
+        : item?.source==='USER_SELECTION_1'?'내 첫 번째 선택':'내 두 번째 선택';
       return '<article class="characterCandidatePlaceholder">'+
         '<div class="candidateVisual">'+escapeHtml(item.slot||'')+'</div>'+
         '<div><small>'+escapeHtml(source)+'</small><b>'+escapeHtml(label)+'</b></div>'+
@@ -28,7 +30,9 @@
       const slot=item?.slot||'';
       const direction=(job?.directions||[]).find(x=>x.slot===slot)||item;
       const label=direction?.direction_label||direction?.direction_id||slot;
-      const source=direction?.source==='SYSTEM_AUTO_CONTRAST'?'시스템 대비 방향':'내 선택';
+      const source=direction?.source==='SYSTEM_AUTO_CONTRAST'
+        ? '시스템이 만든 대비 방향'
+        : direction?.source==='USER_SELECTION_1'?'내 첫 번째 선택':'내 두 번째 선택';
       const asset=job?.candidate_assets?.[slot];
       const visualId=encodeURIComponent(String(profile?.visualId||''));
       const url='/api/character/asset?visual_id='+visualId+'&slot='+encodeURIComponent(slot);
@@ -64,7 +68,7 @@
         if(begin)begin.hidden=true;
         if(step)step.textContent='1 / 2';
         if(title)title.textContent='첫 번째 분위기를 골라줘';
-        if(copy)copy.textContent='얼굴은 그대로 유지하고, 캐릭터가 주는 첫인상만 골라요.';
+        if(copy)copy.textContent='사진 속 나는 그대로예요. 여기서는 얼굴이 아니라 캐릭터가 주는 분위기만 골라요.';
         if(grid){grid.hidden=false;grid.innerHTML=options.map(card).join('');}
         if(candidateWrap)candidateWrap.hidden=true;
         return;
@@ -74,7 +78,7 @@
         if(begin)begin.hidden=true;
         if(step)step.textContent='2 / 2';
         if(title)title.textContent='이번엔 다른 느낌을 하나 더 골라줘';
-        if(copy)copy.textContent='첫 선택과 겹치지 않는 세 방향을 보여줘요. 두 번만 직접 고르면 끝이에요.';
+        if(copy)copy.textContent='같은 나를 유지한 채 다른 분위기 세 가지를 보여줘요. 두 번만 직접 고르면 끝이에요.';
         if(grid){grid.hidden=false;grid.innerHTML=options.map(card).join('');}
         if(candidateWrap)candidateWrap.hidden=true;
         return;
@@ -84,7 +88,7 @@
         if(begin)begin.hidden=true;
         if(step)step.textContent='READY';
         if(title)title.textContent='세 가지 방향이 준비됐어';
-        if(copy)copy.textContent='두 개는 네 선택, 하나는 시스템이 대비되도록 만든 방향이에요.';
+        if(copy)copy.textContent='세 후보 모두 같은 나예요. 달라지는 건 분위기와 표현 방향뿐이에요.';
         if(grid)grid.hidden=true;
         if(candidateWrap){
           candidateWrap.hidden=false;
@@ -123,7 +127,7 @@
           }
           const displayCandidates=(job?.directions||candidates).map(x=>({slot:x.slot||'',...x}));
           candidateWrap.innerHTML=
-            '<div class="characterCandidateHead"><small>A / B / C DIRECTION CONTRACT</small><h3>'+
+            '<div class="characterCandidateHead"><small>SAME ME · THREE DIRECTIONS</small><h3>'+
               (job?.status==='READY_FOR_SELECTION'?'후보를 골라줘':
                job?.status==='SELECTED'?'후보 선택 완료':
                job?.status==='CORRECTED'?'닮기 보정 완료':
@@ -141,7 +145,7 @@
             (job?.status==='MASTER_ASSETS_READY'&&job?.master_sheet?.asset_key
               ? '<div class="characterMasterSheetPreview"><img src="/api/character/asset?visual_id='+encodeURIComponent(String(profile?.visualId||''))+'&slot=MASTER_SHEET" alt="Character Master Sheet"></div>'
               : '')+
-            '<p class="muted">'+escapeHtml(note)+'</p>'+controls+
+            '<div class="characterIdentityRule"><b>같은 나, 다른 분위기</b><span>얼굴·나이 인상·기본 체형은 유지하고 표정·포즈·탐험 분위기만 달라져요.</span></div><p class="muted">'+escapeHtml(note)+'</p>'+controls+
             '<p class="muted" id="characterRemoteStatus">'+escapeHtml(job?.status||'아직 서버 등록 전')+'</p>';
         }
         return;
