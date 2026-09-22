@@ -828,7 +828,7 @@ assert('character-asset-keys-loaded-before-app',
   indexSource.indexOf('src/identity/character-asset-keys-runtime.js')<indexSource.indexOf('app.js')
 );
 const keys=assetKeys.keys('child_1','visual_1');
-assert('character-asset-key-shape',keys.source==='child_1/visual_1/source/source.jpg'&&keys.candidateC.endsWith('/candidates/C.jpg'));
+assert('character-asset-key-shape',keys.source==='child_1/visual_1/source/source.jpg'&&keys.candidateC.endsWith('/candidates/C.webp'));
 assert('character-profile-source-wired',appSource.includes('sourcePhoto:null'));
 assert('character-profile-job-wired',appSource.includes('characterGenerationJob:null'));
 assert('profile-controller-uses-source-photo-intake',profileControllerSource.includes('photoIntake.normalize'));
