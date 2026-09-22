@@ -259,7 +259,7 @@
 
   window.addEventListener('online',()=>flush().catch(()=>{}));
   window.ReadySetLocalFirst=Object.freeze({
-    version:'0.4.0',
+    version:'0.3.0',
     mode:'INDEXEDDB_RECOVERY_WITH_SHARED_EVENT_QUEUE',
     capabilities:Object.freeze(['CAP-EVENT-ENVELOPE-001','CAP-LOCAL-QUEUE-001']),
     capture:(scope,payload)=>capture(scope,payload),
