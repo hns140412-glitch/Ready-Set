@@ -155,3 +155,9 @@ They must consume the locked Visual ID and may not redefine the character identi
 - `MASTER_ASSETS_READY`: consistency master sheet has been generated from source identity + locked character.
 - Character Master sheet generation is provider-gated and NOT_RUN until external-resource approval.
 - Intro / Drop / Voyage remain unrelated deferred expansion work.
+
+
+### Legacy UI correction
+- Legacy profile style chooser (`Signature 2.5D / Soft Storybook / Clean Graphic / Natural Soft`) is SUPERSEDED as a user decision path.
+- The canonical user decision path is source photo -> direction round 1 -> direction round 2 -> system automatic contrast.
+- The product art system may still use the 2.5D editorial rendering language internally; the child is not asked to choose a separate rendering engine/style family before mood consultation.
