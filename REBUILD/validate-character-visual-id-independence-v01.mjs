@@ -3,6 +3,8 @@ import fs from 'node:fs';
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const direction=read('src/identity/character-direction-runtime.js');
 const identity=read('src/identity/character-identity-consistency-runtime.js');
+const signatureItem=read('src/identity/character-signature-item-runtime.js');
+const signatureItemServer=read('netlify/functions/character-signature-item-core.mjs');
 const consistency=read('src/identity/character-consistency-gate-runtime.js');
 const consistencyReview=read('netlify/functions/character-consistency-review.mjs');
 const jobServer=read('netlify/functions/character-job.mjs');
@@ -28,7 +30,10 @@ const checks=[
   ['Visual ID lock distinct from derivatives',master.includes("state:'VISUAL_ID_LOCKED'")&&master.includes("derivative_state:'DERIVATIVES_PENDING'")],
   ['derived assets explicit readiness',master.includes("state:'MASTER_ASSETS_READY'")&&master.includes('attachDerivedAssets')],
   ['controller prefers Character namespace',controller.includes('root.CharacterVisualIdMaster||root.ReadyCharacterMaster')],
-  ['projection contract exists',projection.includes("CHARACTER_VISUAL_ID_PROJECTION_V01")],
+  ['projection contract exists',projection.includes("CHARACTER_VISUAL_ID_PROJECTION_V02")],
+  ['signature item independent contract',signatureItem.includes('CHARACTER_EXPLORATION_SIGNATURE_ITEM_V01')&&signatureItem.includes('EXACTLY_ONE_SIGNATURE_ITEM')],
+  ['signature item server validation',signatureItemServer.includes('normalizeSignatureItem')&&signatureItemServer.includes('SAME_ITEM_ACROSS_A_B_C')],
+  ['projection exposes only minimal signature item',projection.includes('signature_item:')&&projection.includes('label:clean')],
   ['projection exposes identity vs derivative readiness',projection.includes('identity_locked')&&projection.includes('derivatives_ready')],
   ['projection assurance is required',projection.includes('CHARACTER_VISUAL_ID_ASSURANCE_NOT_PASS')&&projection.includes('assurance')],
   ['server does not fake portrait derivative',serverMaster.includes('portrait_card:null')],
