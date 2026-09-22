@@ -1,7 +1,7 @@
 (function(root){
   'use strict';
 
-  const VERSION='READY_CHARACTER_DIRECTION_V01';
+  const VERSION='CHARACTER_VISUAL_ID_DIRECTION_V01';
 
   const DIRECTIONS=Object.freeze({
     LIVELY:Object.freeze({id:'LIVELY',label:'신나!',keywords:['활발','씩씩','장난꾸러기'],visual:['dynamic-pose','bright-expression','playful-motion']}),
@@ -127,8 +127,9 @@
     });
   }
 
-  root.ReadyCharacterDirection=Object.freeze({
+  const api=Object.freeze({
     version:VERSION,
+    owner:'CHARACTER_VISUAL_ID',
     DIRECTIONS,
     firstRound,
     secondRound,
@@ -138,4 +139,6 @@
     select,
     identityContract
   });
+  root.CharacterVisualIdDirection=api;
+  root.ReadyCharacterDirection=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
