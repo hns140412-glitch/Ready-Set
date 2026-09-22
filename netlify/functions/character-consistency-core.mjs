@@ -13,7 +13,9 @@ function structural(job={}){
     slots_abc:slots==='A|B|C',
     provenance_valid:sources==='USER_SELECTION_1|USER_SELECTION_2|SYSTEM_AUTO_CONTRAST',
     directions_distinct:ids.length===3&&new Set(ids).size===3,
-    assets_complete:!!(assets.A?.asset_key&&assets.B?.asset_key&&assets.C?.asset_key)
+    assets_complete:!!(assets.A?.asset_key&&assets.B?.asset_key&&assets.C?.asset_key),
+    signature_item_present:!!job.signature_item?.id,
+    signature_item_same_metadata:['A','B','C'].every(slot=>assets?.[slot]?.signature_item_id===job.signature_item?.id)
   };
   const pass=Object.values(checks).every(Boolean);
   return {state:pass?'PASS':'FAIL',checks,reason:pass?null:'STRUCTURAL_CONSISTENCY_FAILED'};
@@ -87,7 +89,9 @@ function applyVisual(job,evidence={}){
     allFacesUnobstructed &&
     allDirectionsReadable &&
     evidence.direction_distinctness===true &&
-    evidence.sensitive_trait_change_detected===false;
+    evidence.sensitive_trait_change_detected===false &&
+    evidence.signature_item_consistent===true &&
+    evidence.signature_item_not_obstructing_face===true;
   const selectedPass=!!selected &&
     selected.same_child_identity===true &&
     selected.face_unobstructed===true &&
@@ -103,6 +107,8 @@ function applyVisual(job,evidence={}){
     direction_distinctness:evidence.direction_distinctness===true&&allDirectionsReadable,
     face_unobstructed:selected?.face_unobstructed===true,
     sensitive_trait_change_detected:evidence.sensitive_trait_change_detected===true,
+    signature_item_consistent:evidence.signature_item_consistent===true,
+    signature_item_not_obstructing_face:evidence.signature_item_not_obstructing_face===true,
     candidates,
     notes:evidence.notes?String(evidence.notes):null
   };
