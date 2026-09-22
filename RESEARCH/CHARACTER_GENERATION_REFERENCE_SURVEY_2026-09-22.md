@@ -236,3 +236,20 @@ DEFERRED:
 - intro
 - drop/voyage
 - world entry
+
+
+## 2026-09-22 provider refresh
+Official current OpenAI references reviewed:
+- https://developers.openai.com/api/docs/guides/image-generation
+- https://developers.openai.com/api/docs/guides/image-prompting
+- https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst
+
+Updated implementation decision:
+- default precise-edit model: `gpt-image-2.5-sunburst`
+- candidate generation uses Images Edit with source photo as the identity anchor
+- likeness correction uses multiple `image[]` inputs: source photo + selected character
+- Character Master sheet also uses source photo + locked character as references
+- output format: WebP
+- candidate generation is one slot per server request (A -> B -> C) to reduce synchronous-function timeout risk
+- all provider execution remains protected by `READY_CHARACTER_PAID_GENERATION`
+- older GPT Image 1 references are historical reference only and are not the current default implementation target
