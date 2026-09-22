@@ -178,7 +178,8 @@
         let model=masterApi.create({
           visual_id:p.visualId,
           source_hash:p.sourcePhoto.source_hash,
-          candidates
+          candidates,
+          signature_item:p.characterSignatureItem?.selected||p.characterSignatureItemContract?.selected
         });
         model=masterApi.select(model,slot);
         p.characterMaster=model;
