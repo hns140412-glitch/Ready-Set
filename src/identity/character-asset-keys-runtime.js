@@ -1,7 +1,7 @@
 (function(root){
   'use strict';
 
-  const VERSION='READY_CHARACTER_ASSET_KEYS_V01';
+  const VERSION='CHARACTER_VISUAL_ID_ASSET_KEYS_V01';
 
   function clean(value,label){
     const v=String(value||'').trim();
@@ -24,13 +24,16 @@
       candidateC:b+'/candidates/C.webp',
       selected:b+'/selected/selected.webp',
       corrected:b+'/selected/corrected.webp',
-      masterFront:b+'/master/front.webp',
-      masterPortrait:b+'/master/portrait.webp',
+      masterIdentity:b+'/master/identity.webp',
+      masterFull:b+'/master/full-character.webp',
+      masterPortrait:b+'/master/portrait-card.webp',
       masterAvatar:b+'/master/avatar-square.webp',
       masterMeta:b+'/master/meta.json',
       job:b+'/job/state.json'
     });
   }
 
-  root.ReadyCharacterAssetKeys=Object.freeze({version:VERSION,keys});
+  const api=Object.freeze({version:VERSION,owner:'CHARACTER_VISUAL_ID',keys});
+  root.CharacterVisualIdAssetKeys=api;
+  root.ReadyCharacterAssetKeys=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
