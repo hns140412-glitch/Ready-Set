@@ -38,7 +38,8 @@
         const scopeLabel={planner:'Planner',assignments:'숙제',app_state:'앱 상태'};
         list.hidden=!conflictRows.length;
         list.innerHTML=conflictRows.length?conflictRows.map(row=>{
-          const label=scopeLabel[row.scope]||row.scope||'데이터';
+          const parsed=root.ReadyMemberScope?.parseSyncScope?.(row.scope)||{scope:row.scope};
+          const label=scopeLabel[parsed.scope]||parsed.scope||'데이터';
           const at=row.created_at?new Date(row.created_at).toLocaleString('ko-KR'):'';
           return `<div class="adminListItem syncConflictItem">
             <span><b>${escapeHtml(label)} 충돌</b><small>${escapeHtml(at)} · 어느 내용을 유지할지 선택해 주세요.</small></span>
