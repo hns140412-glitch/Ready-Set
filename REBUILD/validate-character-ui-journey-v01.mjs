@@ -26,7 +26,7 @@ assert(controller.includes("status:'ROUND_2'"),'ROUND_2_UI_STATE_MISSING');
 assert(controller.includes('SYSTEM_AUTO_CONTRAST')===false,'CONTROLLER_MUST_NOT_INVENT_AUTO_CONTRAST');
 assert(core.includes('p.characterDirection.candidates'),'CORE_MUST_OWN_CANDIDATE_DIRECTION_RESULT');
 assert(view.includes('두 번만 직접 고르면 끝이에요.'),'TWO_SELECTION_COPY_MISSING');
-assert(view.includes('시스템이 대비되도록 만든 방향'),'AUTO_CONTRAST_COPY_MISSING');
+assert(view.includes('시스템이 만든 대비 방향'),'AUTO_CONTRAST_PROVENANCE_COPY_MISSING');
 assert(view.includes('세 후보 모두 같은 나예요.'),'SAME_CHILD_COMPARISON_COPY_MISSING');
 
 console.log('CHARACTER_VISUAL_ID_UI_JOURNEY_V01_PASS');
