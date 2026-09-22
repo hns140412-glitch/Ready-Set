@@ -17,7 +17,9 @@
       slots_abc:slots==='A|B|C',
       provenance_valid:sources==='USER_SELECTION_1|USER_SELECTION_2|SYSTEM_AUTO_CONTRAST',
       directions_distinct:directionIds.length===3&&new Set(directionIds).size===3,
-      assets_complete:!!(assets.A?.asset_key&&assets.B?.asset_key&&assets.C?.asset_key)
+      assets_complete:!!(assets.A?.asset_key&&assets.B?.asset_key&&assets.C?.asset_key),
+      signature_item_present:!!job.signature_item?.id,
+      signature_item_same_metadata:['A','B','C'].every(slot=>assets?.[slot]?.signature_item_id===job.signature_item?.id)
     });
     const pass=Object.values(checks).every(Boolean);
     return Object.freeze({
@@ -62,7 +64,10 @@
     const allFacesUnobstructed=candidateEvidenceComplete&&candidates.every(x=>x?.face_unobstructed===true);
     const allDirectionsReadable=candidateEvidenceComplete&&candidates.every(x=>x?.direction_readable!==false);
     const candidateSetPass=allSameIdentity&&allFacesUnobstructed&&allDirectionsReadable&&
-      evidence.direction_distinctness===true&&evidence.sensitive_trait_change_detected===false;
+      evidence.direction_distinctness===true&&
+      evidence.sensitive_trait_change_detected===false&&
+      evidence.signature_item_consistent===true&&
+      evidence.signature_item_not_obstructing_face===true;
     const selectedPass=evidence.selected_candidate_state==='PASS'||
       (evidence.source_identity_match===true&&evidence.face_unobstructed===true&&evidence.sensitive_trait_change_detected===false);
     const visual=Object.freeze({
@@ -76,6 +81,8 @@
       direction_distinctness:evidence.direction_distinctness===true&&allDirectionsReadable,
       face_unobstructed:evidence.face_unobstructed===true,
       sensitive_trait_change_detected:evidence.sensitive_trait_change_detected===true,
+      signature_item_consistent:evidence.signature_item_consistent===true,
+      signature_item_not_obstructing_face:evidence.signature_item_not_obstructing_face===true,
       candidates,
       notes:evidence.notes?String(evidence.notes):null
     });
