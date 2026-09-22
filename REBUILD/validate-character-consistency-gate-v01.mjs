@@ -18,10 +18,11 @@ const job={
     {slot:'C',source:'SYSTEM_AUTO_CONTRAST',direction_id:'FOCUSED'}
   ],
   candidate_assets:{
-    A:{asset_key:'a.webp'},
-    B:{asset_key:'b.webp'},
-    C:{asset_key:'c.webp'}
+    A:{asset_key:'a.webp',signature_item_id:'MAGNIFIER'},
+    B:{asset_key:'b.webp',signature_item_id:'MAGNIFIER'},
+    C:{asset_key:'c.webp',signature_item_id:'MAGNIFIER'}
   },
+  signature_item:{id:'MAGNIFIER'},
   identity_contract:{
     contract_version:'CHARACTER_VISUAL_IDENTITY_CONSISTENCY_V01',
     identity_authority:'SOURCE_PHOTO'
@@ -45,10 +46,12 @@ gate=api.applyVisual(gate,{
   face_unobstructed:true,
   sensitive_trait_change_detected:false,
   candidates:[
-    {slot:'A',same_child_identity:true,face_unobstructed:true},
-    {slot:'B',same_child_identity:true,face_unobstructed:true},
-    {slot:'C',same_child_identity:true,face_unobstructed:true}
-  ]
+    {slot:'A',same_child_identity:true,face_unobstructed:true,direction_readable:true},
+    {slot:'B',same_child_identity:true,face_unobstructed:true,direction_readable:true},
+    {slot:'C',same_child_identity:true,face_unobstructed:true,direction_readable:true}
+  ],
+  signature_item_consistent:true,
+  signature_item_not_obstructing_face:true
 });
 assert(gate.visual.state==='PASS','SELECTED_VISUAL_GATE_MUST_PASS');
 assert(gate.lock_allowed===false,'HUMAN_CONFIRMATION_MUST_STILL_BE_REQUIRED');
@@ -71,7 +74,9 @@ fail=api.applyVisual(fail,{
   candidate_identity_consistent:false,
   direction_distinctness:true,
   face_unobstructed:true,
-  sensitive_trait_change_detected:false
+  sensitive_trait_change_detected:false,
+  signature_item_consistent:true,
+  signature_item_not_obstructing_face:true
 });
 assert(fail.visual.state==='FAIL','IDENTITY_DRIFT_MUST_FAIL_VISUAL_GATE');
 assert(fail.lock_allowed===false,'IDENTITY_DRIFT_MUST_BLOCK_LOCK');
