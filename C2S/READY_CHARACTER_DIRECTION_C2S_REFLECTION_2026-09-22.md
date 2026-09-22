@@ -147,3 +147,11 @@ Core completion requires:
 ### Deferred expansion
 Intro / Drop / Voyage / World Arrival remain `DEFERRED_EXPANSION`.
 They must consume the locked Visual ID and may not redefine the character identity pipeline.
+
+
+### Character Master completion extension
+- Visual ID lock and Character Master asset completion are now separate states.
+- `VISUAL_ID_LOCKED`: identity/provenance is fixed after selection and optional likeness correction.
+- `MASTER_ASSETS_READY`: consistency master sheet has been generated from source identity + locked character.
+- Character Master sheet generation is provider-gated and NOT_RUN until external-resource approval.
+- Intro / Drop / Voyage remain unrelated deferred expansion work.
