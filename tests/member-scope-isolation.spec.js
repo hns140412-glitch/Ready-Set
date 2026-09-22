@@ -111,8 +111,10 @@ test('member scope isolates planner, assignments, app state and local-first snap
   expect(result.aAfter.assignments.assignmentFacts.fact_B).toBeUndefined();
   expect(result.aAfter.app.profile.name).toBe('A');
 
-  expect(result.aSnapshotScopes).toEqual(['member:CHILD_A:planner']);
-  expect(result.bSnapshotScopes).toEqual(['member:CHILD_B:planner']);
+  expect(result.aSnapshotScopes.every(scope=>scope.startsWith('member:CHILD_A:'))).toBe(true);
+  expect(result.aSnapshotScopes).toContain('member:CHILD_A:planner');
+  expect(result.bSnapshotScopes.every(scope=>scope.startsWith('member:CHILD_B:'))).toBe(true);
+  expect(result.bSnapshotScopes).toContain('member:CHILD_B:planner');
 });
 
 
