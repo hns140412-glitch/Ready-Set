@@ -625,11 +625,13 @@ $('#characterSetupView').addEventListener('click',async e=>{
   const prepare=e.target.closest?.('#prepareCharacterJobBtn');
   const generate=e.target.closest?.('#generateCharacterCandidatesBtn');
   const select=e.target.closest?.('[data-select-character-candidate]');
+  const reviewConsistency=e.target.closest?.('#reviewCharacterConsistencyBtn');
+  const confirmSameIdentity=e.target.closest?.('#confirmSameIdentityBtn');
   const correct=e.target.closest?.('#correctCharacterLikenessBtn');
   const lockMaster=e.target.closest?.('#lockCharacterMasterBtn');
   const derivatives=e.target.closest?.('#buildCharacterDerivativesBtn');
   const masterSheet=e.target.closest?.('#generateCharacterMasterSheetBtn');
-  const button=prepare||generate||select||correct||lockMaster||derivatives||masterSheet;
+  const button=prepare||generate||select||reviewConsistency||confirmSameIdentity||correct||lockMaster||derivatives||masterSheet;
   if(!button)return;
   const status=$('#characterRemoteStatus');
   button.disabled=true;
@@ -654,6 +656,20 @@ $('#characterSetupView').addEventListener('click',async e=>{
       result=await characterSetupRuntime.selectCandidate(slot);
       if(result?.ok){
         toast('이 후보를 기준 캐릭터로 선택했어요.');
+        characterSetupRuntime.render();
+      }
+    }else if(reviewConsistency){
+      if(status)status.textContent='원본 사진과 후보들을 비교해 같은 나인지 검사하는 중…';
+      result=await characterSetupRuntime.reviewConsistency();
+      if(result?.ok){
+        toast(result.state==='PASS'?'같은 나로 일관되게 보여요.':'일관성 보정이 더 필요해요.');
+        characterSetupRuntime.render();
+      }
+    }else if(confirmSameIdentity){
+      if(status)status.textContent='같은 나 확인을 저장하는 중…';
+      result=await characterSetupRuntime.confirmSameIdentity({accepted:true});
+      if(result?.ok){
+        toast('같은 나로 확인했어요.');
         characterSetupRuntime.render();
       }
     }else if(correct){
@@ -690,6 +706,8 @@ $('#characterSetupView').addEventListener('click',async e=>{
       if(status)status.textContent='처리 중단 · '+reason;
       if(reason==='UNAUTHENTICATED')toast('로그인 후 서버 기능을 사용할 수 있어요.');
       else if(reason==='CHARACTER_GENERATION_PROVIDER_LOCKED')toast('이미지 생성은 외부 리소스 게이트로 잠겨 있어요.');
+      else if(reason==='CHARACTER_VISUAL_REVIEW_PROVIDER_LOCKED')toast('시각 일관성 검사는 외부 리소스 게이트로 잠겨 있어요.');
+      else if(reason==='CHARACTER_CONSISTENCY_GATE_NOT_PASS')toast('일관성 확인이 끝나야 Visual ID를 확정할 수 있어요.');
       else toast('캐릭터 작업을 완료하지 못했어요.');
     }
   }catch(err){
