@@ -112,3 +112,110 @@ test('member scope isolates planner, assignments, app state and local-first snap
   expect(result.snapshotScopes).toContain('member:CHILD_A:planner');
   expect(result.snapshotScopes).toContain('member:CHILD_B:planner');
 });
+
+
+test('active member gates local-first recovery, flush and conflict handling', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', {waitUntil:'load'});
+
+  const result=await page.evaluate(async()=>{
+    const originalFamily=window.ReadyFamilySession;
+    const originalAdapter=window.ReadySetSyncAdapter;
+    const makeSession=id=>({
+      current:()=>({authenticated:true,family_id:'FAMILY_TEST',member_id:id,role:'CHILD'}),
+      requireRole:()=>({ok:true})
+    });
+    const setMember=id=>{ window.ReadyFamilySession=makeSession(id); };
+
+    setMember('CHILD_A');
+    await window.ReadySetLocalFirst.capture('planner',JSON.stringify({owner:'A'}));
+    setMember('CHILD_B');
+    await window.ReadySetLocalFirst.capture('planner',JSON.stringify({owner:'B'}));
+
+    const sent=[];
+    window.ReadySetSyncAdapter={
+      status:()=>({configured:true,enabled:true,state:'CONNECTED'}),
+      send:async row=>{ sent.push(row.scope); return {ok:true,remote_version:1}; }
+    };
+    const flushB=await window.ReadySetLocalFirst.flush();
+
+    const aPlannerKey='readyset_planner_v1::member::CHILD_A';
+    const bPlannerKey='readyset_planner_v1::member::CHILD_B';
+    localStorage.removeItem(aPlannerKey);
+    localStorage.removeItem(bPlannerKey);
+
+    setMember('CHILD_B');
+    const recoverB=await window.ReadySetLocalFirst.recoverMissingScopes();
+    const afterRecoverB={
+      a:localStorage.getItem(aPlannerKey),
+      b:localStorage.getItem(bPlannerKey)
+    };
+
+    setMember('CHILD_A');
+    const recoverA=await window.ReadySetLocalFirst.recoverMissingScopes();
+    const afterRecoverA={
+      a:localStorage.getItem(aPlannerKey),
+      b:localStorage.getItem(bPlannerKey)
+    };
+
+    window.ReadySetSyncAdapter={
+      status:()=>({configured:true,enabled:true,state:'CONNECTED'}),
+      send:async row=>({conflict:true,remote_payload:JSON.stringify({remote_for:row.scope})})
+    };
+
+    setMember('CHILD_A');
+    await window.ReadySetLocalFirst.capture('assignments',JSON.stringify({owner:'A-conflict'}));
+    await window.ReadySetLocalFirst.flush();
+
+    setMember('CHILD_B');
+    await window.ReadySetLocalFirst.capture('assignments',JSON.stringify({owner:'B-conflict'}));
+    await window.ReadySetLocalFirst.flush();
+
+    async function visibleConflictScopes(memberId){
+      setMember(memberId);
+      const controller=window.ReadyRebuildAuthSyncController.create({
+        view:{renderAuth:()=>{},renderSync:()=>{}},
+        familySession:()=>window.ReadyFamilySession.current(),
+        syncAdapter:()=>window.ReadySetSyncAdapter,
+        localFirst:()=>window.ReadySetLocalFirst,
+        requireParentUi:()=>false,
+        renderPlanner:()=>{},
+        toast:()=>{},
+        eventTarget:{addEventListener:()=>{}}
+      });
+      const status=await controller.renderSyncStatus();
+      return status.conflictRows.map(x=>x.scope);
+    }
+
+    const aVisible=await visibleConflictScopes('CHILD_A');
+    const bVisible=await visibleConflictScopes('CHILD_B');
+    const allConflicts=await window.ReadySetLocalFirst.conflicts();
+    const aConflict=allConflicts.find(x=>window.ReadyMemberScope.parseSyncScope(x.scope).member_id==='CHILD_A'&&x.status==='OPEN');
+
+    setMember('CHILD_B');
+    const crossResolve=aConflict
+      ?await window.ReadySetLocalFirst.resolveConflict(aConflict.id,'KEEP_LOCAL')
+      :{ok:false,reason:'A_CONFLICT_MISSING'};
+
+    window.ReadyFamilySession=originalFamily;
+    window.ReadySetSyncAdapter=originalAdapter;
+    return {sent,flushB,recoverB,afterRecoverB,recoverA,afterRecoverA,aVisible,bVisible,crossResolve};
+  });
+
+  expect(result.sent.length).toBeGreaterThan(0);
+  expect(result.sent.every(scope=>scope.startsWith('member:CHILD_B:'))).toBe(true);
+  expect(result.flushB.sent).toBe(result.sent.length);
+
+  expect(result.recoverB.recovered).toBeGreaterThanOrEqual(1);
+  expect(result.afterRecoverB.a).toBeNull();
+  expect(result.afterRecoverB.b).toContain('"owner":"B"');
+
+  expect(result.recoverA.recovered).toBeGreaterThanOrEqual(1);
+  expect(result.afterRecoverA.a).toContain('"owner":"A"');
+  expect(result.afterRecoverA.b).toContain('"owner":"B"');
+
+  expect(result.aVisible.length).toBeGreaterThan(0);
+  expect(result.aVisible.every(scope=>scope.startsWith('member:CHILD_A:'))).toBe(true);
+  expect(result.bVisible.length).toBeGreaterThan(0);
+  expect(result.bVisible.every(scope=>scope.startsWith('member:CHILD_B:'))).toBe(true);
+  expect(result.crossResolve).toEqual({ok:false,reason:'MEMBER_SCOPE_FORBIDDEN'});
+});
