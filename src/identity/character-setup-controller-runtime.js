@@ -77,7 +77,38 @@
       return core.generationPayload(profile());
     }
 
-    return Object.freeze({render,begin,choose,generationPayload});
+    function ensureRemoteProfile(){
+      const p=profile();
+      if(!p.visualId)throw new Error('CHARACTER_VISUAL_ID_REQUIRED');
+      if(!p.sourcePhoto?.source_hash||!p.photo)throw new Error('CHARACTER_SOURCE_PHOTO_REQUIRED');
+      if(!p.characterGenerationJob)throw new Error('CHARACTER_GENERATION_JOB_REQUIRED');
+      return p;
+    }
+
+    async function prepareRemoteJob(){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const upload=await remote.uploadSource({
+        visual_id:p.visualId,
+        source_hash:p.sourcePhoto.source_hash,
+        data_url:p.photo
+      });
+      if(!upload?.ok)return upload;
+      const created=await remote.createJob(generationPayload());
+      if(created?.ok){
+        p.characterRemoteJob=created.job||null;
+        save();
+      }
+      return created;
+    }
+
+    async function startGeneration(){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      return remote.startGeneration({visual_id:p.visualId});
+    }
+
+    return Object.freeze({render,begin,choose,generationPayload,prepareRemoteJob,startGeneration});
   }
 
   root.ReadyCharacterSetupController=Object.freeze({
