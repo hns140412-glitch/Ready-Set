@@ -20,6 +20,10 @@ jobs:
           node-version: '24'
       - name: Validate rebuild foundation
         run: node REBUILD/validate-rebuild-v01.mjs
+      - name: Validate character direction contract
+        run: node REBUILD/validate-character-direction-v01.mjs
+      - name: Validate character UI journey
+        run: node REBUILD/validate-character-ui-journey-v01.mjs
       - name: Validate subject method routing
         run: node tests/subject-method-routing.test.js
       - name: Validate specialist routing
@@ -44,6 +48,22 @@ jobs:
           node --check src/planner/planner-policy-runtime.js
           node --check src/planner/planner-projection-runtime.js
           node --check src/session/session-domain-runtime.js
+          node --check src/identity/source-photo-intake-runtime.js
+          node --check src/identity/character-direction-runtime.js
+          node --check src/identity/character-generation-job-runtime.js
+          node --check src/identity/character-asset-keys-runtime.js
+          node --check src/identity/character-core-orchestrator-runtime.js
+          node --check src/identity/character-remote-adapter-runtime.js
+          node --check src/identity/character-master-runtime.js
+          node --check src/identity/character-setup-view-runtime.js
+          node --check src/identity/character-setup-controller-runtime.js
+          node --check netlify/functions/character-source.mjs
+          node --check netlify/functions/character-job.mjs
+          node --check netlify/functions/character-generate.mjs
+          node --check netlify/functions/character-asset.mjs
+          node --check netlify/functions/character-action.mjs
+          node --check netlify/functions/character-correct.mjs
+          node --check netlify/functions/character-master.mjs
       - name: Guard legacy entrypoints remain available during migration
         run: |
           test -f app.js
