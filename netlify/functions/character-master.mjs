@@ -39,7 +39,7 @@ export default async function handler(req){
 
   const lockedAt=new Date().toISOString();
   const master={
-    contract_version:'READY_CHARACTER_MASTER_V01',
+    contract_version:'CHARACTER_VISUAL_ID_MASTER_V01',
     visual_id:visualId,
     family_id:mapped.session.family_id,
     member_id:memberId,
@@ -49,10 +49,11 @@ export default async function handler(req){
     correction_revision:Number(job.correction_revision||0),
     assets:{
       full_character:identity.asset_key,
-      portrait_card:identity.asset_key,
-      avatar_square:identity.asset_key
+      portrait_card:null,
+      avatar_square:null
     },
-    normalization_state:'SINGLE_IDENTITY_ASSET_LOCKED__DERIVATIVE_CROP_PENDING',
+    derivative_state:'DERIVATIVES_PENDING',
+    normalization_state:'IDENTITY_LOCKED__DERIVATIVES_PENDING',
     locked_at:lockedAt
   };
   await store.set(prefix+'/master/meta.json',JSON.stringify(master));
