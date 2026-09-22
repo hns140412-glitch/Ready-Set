@@ -608,7 +608,8 @@ const characterSetupRuntime=rebuildCharacterSetupController.create({
   save,
   familySession,
   toast,
-  remote:characterRemoteRuntime
+  remote:characterRemoteRuntime,
+  masterApi:characterMasterApi
 });
 $('#openCharacterSetupBtn').onclick=()=>{
   if(!state.profile?.sourcePhoto?.source_hash){toast('먼저 사진을 등록해 주세요.');return;}
@@ -619,25 +620,47 @@ $('#beginCharacterSetupBtn').onclick=()=>{
   if(result?.ok)$('#beginCharacterSetupBtn').hidden=true;
 };
 $('#characterSetupView').addEventListener('click',async e=>{
-  const button=e.target.closest?.('#prepareCharacterJobBtn');
+  const prepare=e.target.closest?.('#prepareCharacterJobBtn');
+  const generate=e.target.closest?.('#generateCharacterCandidatesBtn');
+  const select=e.target.closest?.('[data-select-character-candidate]');
+  const button=prepare||generate||select;
   if(!button)return;
   const status=$('#characterRemoteStatus');
   button.disabled=true;
-  if(status)status.textContent='원본 사진과 생성 계약을 서버에 등록하는 중…';
   try{
-    const result=await characterSetupRuntime.prepareRemoteJob();
-    if(result?.ok){
-      if(status)status.textContent=result.next==='PROVIDER_LOCKED'
-        ?'서버 등록 완료 · 이미지 생성은 안전 잠금 상태'
-        :'서버 등록 완료 · 생성 어댑터 연결 준비';
-      toast('캐릭터 생성 준비를 서버에 저장했어요.');
-    }else{
-      if(status)status.textContent='서버 준비 실패 · '+String(result?.reason||'UNKNOWN');
-      toast(result?.reason==='UNAUTHENTICATED'?'로그인 후 서버 생성을 준비할 수 있어요.':'서버 준비를 완료하지 못했어요.');
+    let result=null;
+    if(prepare){
+      if(status)status.textContent='원본 사진과 생성 계약을 서버에 등록하는 중…';
+      result=await characterSetupRuntime.prepareRemoteJob();
+      if(result?.ok){
+        toast('캐릭터 생성 준비를 서버에 저장했어요.');
+        characterSetupRuntime.render();
+      }
+    }else if(generate){
+      if(status)status.textContent='A/B/C 후보를 순서대로 생성하는 중…';
+      result=await characterSetupRuntime.generateAllCandidates();
+      if(result?.ok){
+        toast('캐릭터 후보 3개가 준비됐어요.');
+        characterSetupRuntime.render();
+      }
+    }else if(select){
+      const slot=select.dataset.selectCharacterCandidate;
+      result=await characterSetupRuntime.selectCandidate(slot);
+      if(result?.ok){
+        toast('이 후보를 기준 캐릭터로 선택했어요.');
+        characterSetupRuntime.render();
+      }
+    }
+    if(result&&!result.ok){
+      const reason=String(result.reason||'UNKNOWN');
+      if(status)status.textContent='처리 중단 · '+reason;
+      if(reason==='UNAUTHENTICATED')toast('로그인 후 서버 기능을 사용할 수 있어요.');
+      else if(reason==='CHARACTER_GENERATION_PROVIDER_LOCKED')toast('이미지 생성은 외부 리소스 게이트로 잠겨 있어요.');
+      else toast('캐릭터 작업을 완료하지 못했어요.');
     }
   }catch(err){
-    if(status)status.textContent='서버 준비 실패 · '+String(err?.message||err);
-    toast('서버 준비를 완료하지 못했어요.');
+    if(status)status.textContent='처리 중단 · '+String(err?.message||err);
+    toast('캐릭터 작업을 완료하지 못했어요.');
   }finally{button.disabled=false;}
 });
 $('#characterDirectionGrid').onclick=e=>{
