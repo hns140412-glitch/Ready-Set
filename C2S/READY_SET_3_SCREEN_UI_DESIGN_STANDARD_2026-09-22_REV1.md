@@ -286,7 +286,36 @@ Rules:
 Status:
 daily = route sheet.
 
-### 5.3 TIMER
+### 4.6 Timer visual lock status — HARD LOCK
+
+The Timer is **not an open mockup/design task**.
+
+Status:
+- visual direction: CONFIRMED
+- UI composition: CONFIRMED
+- asset production: COMPLETED / EXISTING
+- redesign: FORBIDDEN unless an explicit new user correction reopens it
+
+Therefore:
+- do not generate alternate Timer concepts;
+- do not restyle the Timer to match new Weekly/Daily mockups;
+- do not replace its existing asset language with new island artwork;
+- do not add generic bottom navigation or extra reward/crew UI;
+- do not reinterpret the Timer as a new Base Camp screen.
+
+Allowed work on Timer:
+- bind existing confirmed assets to runtime;
+- preserve layout and visual hierarchy;
+- verify Weekly/Daily → Timer handoff;
+- verify task/session/BGM/REC state binding;
+- regression-check 390×844 layout and existing controls;
+- fix implementation defects without changing approved visual intent.
+
+Mockup scope from this point:
+- NEW VISUAL WORK = WEEKLY (`이번 주 여정`) + DAILY (`오늘의 탐험길`) only
+- TIMER = fixed third anchor / comparison reference only
+
+## 5.3 TIMER
 
 Purpose:
 single-minded execution.
