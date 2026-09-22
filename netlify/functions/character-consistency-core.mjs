@@ -25,11 +25,15 @@ function ensure(job={}){
   const visual=previous.visual||{
     state:'NOT_RUN',
     evaluator:null,
+    candidate_set_state:'NOT_RUN',
+    selected_slot:null,
+    selected_candidate_state:'NOT_RUN',
     source_identity_match:null,
     candidate_identity_consistent:null,
     direction_distinctness:null,
     face_unobstructed:null,
     sensitive_trait_change_detected:null,
+    candidates:[],
     notes:null
   };
   const human=previous.human_confirmation||{
@@ -69,23 +73,33 @@ function applyHuman(job,{actor_scope,accepted_same_identity,selected_slot,notes=
 
 function applyVisual(job,evidence={}){
   const gate=ensure(job);
-  const pass=
-    evidence.source_identity_match===true &&
+  const candidates=Array.isArray(evidence.candidates)?evidence.candidates:[];
+  const selectedSlot=String(job.selected_slot||'').toUpperCase();
+  const selected=candidates.find(x=>String(x?.slot||'').toUpperCase()===selectedSlot)||null;
+  const candidateSetPass=
     evidence.candidate_identity_consistent===true &&
     evidence.direction_distinctness===true &&
     evidence.face_unobstructed===true &&
     evidence.sensitive_trait_change_detected===false;
+  const selectedPass=!!selected &&
+    selected.same_child_identity===true &&
+    selected.face_unobstructed===true &&
+    evidence.sensitive_trait_change_detected===false;
   gate.visual={
-    state:pass?'PASS':'FAIL',
+    state:selectedPass?'PASS':'FAIL',
     evaluator:String(evidence.evaluator||'UNSPECIFIED'),
-    source_identity_match:evidence.source_identity_match===true,
+    candidate_set_state:candidateSetPass?'PASS':'FAIL',
+    selected_slot:selectedSlot||null,
+    selected_candidate_state:selectedPass?'PASS':'FAIL',
+    source_identity_match:selected?.same_child_identity===true,
     candidate_identity_consistent:evidence.candidate_identity_consistent===true,
     direction_distinctness:evidence.direction_distinctness===true,
-    face_unobstructed:evidence.face_unobstructed===true,
+    face_unobstructed:selected?.face_unobstructed===true,
     sensitive_trait_change_detected:evidence.sensitive_trait_change_detected===true,
+    candidates,
     notes:evidence.notes?String(evidence.notes):null
   };
-  gate.final_state=gate.structural.state==='PASS'&&pass&&gate.human_confirmation.state==='PASS'?'PASS':'PENDING';
+  gate.final_state=gate.structural.state==='PASS'&&selectedPass&&gate.human_confirmation.state==='PASS'?'PASS':'PENDING';
   gate.lock_allowed=gate.final_state==='PASS';
   return gate;
 }
