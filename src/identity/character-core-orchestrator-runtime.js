@@ -7,7 +7,8 @@
     const directionApi=options.directionApi||root.CharacterVisualIdDirection||root.ReadyCharacterDirection;
     const jobApi=options.jobApi||root.CharacterVisualIdGenerationJob||root.ReadyCharacterGenerationJob;
     const assetKeysApi=options.assetKeysApi||root.CharacterVisualIdAssetKeys||root.ReadyCharacterAssetKeys;
-    if(!directionApi||!jobApi||!assetKeysApi)throw new Error('CHARACTER_CORE_DEPENDENCY_MISSING');
+    const identityApi=options.identityApi||root.CharacterVisualIdentityConsistency||null;
+    if(!directionApi||!jobApi||!assetKeysApi||!identityApi)throw new Error('CHARACTER_CORE_DEPENDENCY_MISSING');
 
     function ensureProfile(profile){
       if(!profile||typeof profile!=='object')throw new Error('CHARACTER_PROFILE_REQUIRED');
@@ -54,9 +55,11 @@
         });
         job.assets={...job.assets,...assetKeysApi.keys(resolvedMemberScope,resolvedVisualId)};
         p.characterGenerationJob=job;
+        p.characterIdentityContract=identityApi.generationContract(p.characterDirection.candidates);
         return {
           status:'READY_FOR_CANDIDATE_GENERATION',
           job,
+          identityContract:p.characterIdentityContract,
           profile:p
         };
       }
@@ -74,6 +77,7 @@
         visual_id:job.visual_id,
         member_scope:job.member_scope,
         source_hash:job.source_hash,
+        identity_contract:p.characterIdentityContract||identityApi.generationContract(p.characterDirection.candidates),
         directions:job.directions.map(x=>({
           slot:x.slot,
           source:x.source,
