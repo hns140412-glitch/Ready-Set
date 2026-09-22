@@ -56,20 +56,27 @@
 
   function applyVisual(gate,evidence={}){
     if(!gate||gate.contract_version!==VERSION)throw new Error('CHARACTER_CONSISTENCY_GATE_REQUIRED');
+    const candidates=Array.isArray(evidence.candidates)?evidence.candidates:[];
+    const candidateEvidenceComplete=candidates.length===3&&['A','B','C'].every(slot=>candidates.some(x=>String(x?.slot||'').toUpperCase()===slot));
+    const allSameIdentity=candidateEvidenceComplete&&candidates.every(x=>x?.same_child_identity===true);
+    const allFacesUnobstructed=candidateEvidenceComplete&&candidates.every(x=>x?.face_unobstructed===true);
+    const allDirectionsReadable=candidateEvidenceComplete&&candidates.every(x=>x?.direction_readable!==false);
+    const candidateSetPass=allSameIdentity&&allFacesUnobstructed&&allDirectionsReadable&&
+      evidence.direction_distinctness===true&&evidence.sensitive_trait_change_detected===false;
     const selectedPass=evidence.selected_candidate_state==='PASS'||
       (evidence.source_identity_match===true&&evidence.face_unobstructed===true&&evidence.sensitive_trait_change_detected===false);
     const visual=Object.freeze({
       state:selectedPass?'PASS':'FAIL',
       evaluator:String(evidence.evaluator||'UNSPECIFIED'),
-      candidate_set_state:String(evidence.candidate_set_state||'NOT_RUN'),
+      candidate_set_state:candidateSetPass?'PASS':'FAIL',
       selected_slot:evidence.selected_slot?String(evidence.selected_slot):null,
       selected_candidate_state:selectedPass?'PASS':'FAIL',
       source_identity_match:evidence.source_identity_match===true,
-      candidate_identity_consistent:evidence.candidate_identity_consistent===true,
-      direction_distinctness:evidence.direction_distinctness===true,
+      candidate_identity_consistent:allSameIdentity,
+      direction_distinctness:evidence.direction_distinctness===true&&allDirectionsReadable,
       face_unobstructed:evidence.face_unobstructed===true,
       sensitive_trait_change_detected:evidence.sensitive_trait_change_detected===true,
-      candidates:Array.isArray(evidence.candidates)?evidence.candidates:[],
+      candidates,
       notes:evidence.notes?String(evidence.notes):null
     });
     const structuralPass=gate.structural?.state==='PASS';
