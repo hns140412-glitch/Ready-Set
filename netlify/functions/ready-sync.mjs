@@ -46,7 +46,10 @@ export default async function handler(req){
     const service=createSyncService({
       get:key=>store.get(key),
       set:(key,value)=>store.set(key,value)
-    },{namespace:mapped.session.family_id});
+    },{
+      namespace:mapped.session.family_id,
+      member_id:mapped.session.member_id
+    });
     const result=await service.putEvent(body);
     return Response.json(result.body,{status:result.status,headers:{'Cache-Control':'no-store'}});
   }
