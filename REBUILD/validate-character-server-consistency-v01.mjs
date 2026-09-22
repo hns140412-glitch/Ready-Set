@@ -9,10 +9,11 @@ const job={
     {slot:'C',source:'SYSTEM_AUTO_CONTRAST',direction_id:'FOCUSED'}
   ],
   candidate_assets:{
-    A:{asset_key:'A.webp'},
-    B:{asset_key:'B.webp'},
-    C:{asset_key:'C.webp'}
+    A:{asset_key:'A.webp',signature_item_id:'MAGNIFIER'},
+    B:{asset_key:'B.webp',signature_item_id:'MAGNIFIER'},
+    C:{asset_key:'C.webp',signature_item_id:'MAGNIFIER'}
   },
+  signature_item:{id:'MAGNIFIER'},
   identity_contract:{
     contract_version:'CHARACTER_VISUAL_IDENTITY_CONSISTENCY_V01',
     identity_authority:'SOURCE_PHOTO'
@@ -32,10 +33,12 @@ gate=applyVisual(job,{
   face_unobstructed:true,
   sensitive_trait_change_detected:false,
   candidates:[
-    {slot:'A',same_child_identity:false,face_unobstructed:true},
-    {slot:'B',same_child_identity:true,face_unobstructed:true},
-    {slot:'C',same_child_identity:true,face_unobstructed:true}
+    {slot:'A',same_child_identity:false,face_unobstructed:true,direction_readable:true},
+    {slot:'B',same_child_identity:true,face_unobstructed:true,direction_readable:true},
+    {slot:'C',same_child_identity:true,face_unobstructed:true,direction_readable:true}
   ],
+  signature_item_consistent:true,
+  signature_item_not_obstructing_face:true,
   notes:'fixture'
 });
 assert(gate.visual.candidate_set_state==='FAIL','CANDIDATE_SET_DRIFT_MUST_BE_RECORDED');
