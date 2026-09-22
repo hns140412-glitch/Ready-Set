@@ -1,3 +1,4 @@
+import { promptForSignatureItem } from './character-signature-item-core.mjs';
 import { getDeployStore, getStore } from '@netlify/blobs';
 import { getUser } from '@netlify/identity';
 import { mapCharacterSession } from './character-family-session-adapter.mjs';
@@ -73,6 +74,8 @@ export default async function handler(req){
     'Strengthen facial likeness, face shape, hairstyle cues, age impression and recognizable identity from image 1.',
     'Do not replace the child with another person and do not infer or alter sensitive traits.',
     'Preserve the chosen 2.5D editorial exploration character style and overall silhouette from image 2.',
+    'Preserve the exact signature exploration item: '+promptForSignatureItem(job.signature_item)+'.',
+    'Do not add another signature prop and do not move the item over the face.',
     'No text, logos, UI labels, emoji or watermark.'
   ].join(' '));
   form.append('size',String(process.env.CHARACTER_VISUAL_ID_IMAGE_SIZE||process.env.READY_CHARACTER_IMAGE_SIZE||'1024x1536'));
