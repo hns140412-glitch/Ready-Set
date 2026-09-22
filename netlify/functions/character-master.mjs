@@ -53,6 +53,11 @@ export default async function handler(req){
     member_id:memberId,
     source_hash:job.source_hash,
     selected_slot:job.selected_slot,
+    signature_item:job.signature_item?{
+      id:job.signature_item.id,
+      label:job.signature_item.label,
+      face_policy:job.signature_item.face_policy
+    }:null,
     identity_asset:identity,
     correction_revision:Number(job.correction_revision||0),
     consistency_gate:{
