@@ -19,14 +19,14 @@
     return Object.freeze({
       source:b+'/source/source.jpg',
       sourceMeta:b+'/source/meta.json',
-      candidateA:b+'/candidates/A.jpg',
-      candidateB:b+'/candidates/B.jpg',
-      candidateC:b+'/candidates/C.jpg',
-      selected:b+'/selected/selected.jpg',
-      corrected:b+'/selected/corrected.jpg',
-      masterFront:b+'/master/front.jpg',
-      masterPortrait:b+'/master/portrait.jpg',
-      masterAvatar:b+'/master/avatar-square.jpg',
+      candidateA:b+'/candidates/A.webp',
+      candidateB:b+'/candidates/B.webp',
+      candidateC:b+'/candidates/C.webp',
+      selected:b+'/selected/selected.webp',
+      corrected:b+'/selected/corrected.webp',
+      masterFront:b+'/master/front.webp',
+      masterPortrait:b+'/master/portrait.webp',
+      masterAvatar:b+'/master/avatar-square.webp',
       masterMeta:b+'/master/meta.json',
       job:b+'/job/state.json'
     });
