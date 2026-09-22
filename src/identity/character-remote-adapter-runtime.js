@@ -34,7 +34,15 @@
       return json('/api/character/job?visual_id='+encodeURIComponent(String(visualId||'')),{method:'GET'});
     }
 
-    return Object.freeze({uploadSource,createJob,getJob});
+    async function startGeneration({visual_id}={}){
+      return json('/api/character/generate',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({visual_id})
+      });
+    }
+
+    return Object.freeze({uploadSource,createJob,getJob,startGeneration});
   }
 
   root.ReadyCharacterRemoteAdapter=Object.freeze({version:VERSION,create});
