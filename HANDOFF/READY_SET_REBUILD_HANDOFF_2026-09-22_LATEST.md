@@ -1,39 +1,53 @@
-# READY & SET REBUILD HANDOFF — LATEST — 2026-09-22 REV5
+# READY & SET REBUILD HANDOFF — LATEST — 2026-09-22 REV6
 
 ## Resume
 최신 TAKY 기준으로 Ready & Set predeploy frozen candidate 후속 작업을 재개해.
 
 Repository: `hns140412-glitch/Ready-Set`
 Branch: `taky/ready-rebuild-v01-2026-09-21`
-Validated product HEAD: `10d93c0ce437733182950f42344fd730af586c0b`
+Validated product HEAD: `6287c0e4c64fbadcdaf3d7d27a291b414ccba751`
 
 ## First read
 1. `C2S/READY_SET_PRODUCT_COMPLETION_C2S_CLOSURE_2026-09-22_REV5.md`
 2. `C2S/READY_SET_PRODUCT_COMPLETION_ATOMS_2026-09-22_REV5.json`
 3. `C2S/READY_SET_PRODUCT_COMPLETION_MATRIX_2026-09-22_REV4.md`
-4. `HANDOFF/READY_SET_NEW_CHAT_START_2026-09-22_REV5.md`
+4. this handoff
 5. `REBUILD/validate-rebuild-v01.mjs`
 
 ## Frozen product validation
-At product HEAD `10d93c0...`:
-- Ready Runtime E2E: PASS / 82 of 82 / run 35679046159
-- TAKY Worker Self-Test: PASS / run 35679046087
-- Ready Integration CI: PASS / run 35679046110
-- Planner Free Window: PASS / run 35679046130
-- Daily Availability: PASS / run 35679046105
-- Weekly Availability: PASS / run 35679046099
-- Single Active Task: PASS / run 35679046114
-- Child FACT Confirmation: PASS / run 35679046089
+At product HEAD `6287c0e...`:
+- Ready Runtime E2E: PASS / 82 of 82 / run 35681187182
+- TAKY Worker Self-Test: PASS / run 35681187177
+- Ready Integration CI: PASS / run 35681187201
+- Planner Free Window: PASS / run 35681187219
+- Daily Availability: PASS / run 35681187202
+- Weekly Availability: PASS / run 35681187261
+- Single Active Task: PASS / run 35681187228
+- Child FACT Confirmation: PASS / run 35681187187
+- Release archive boundary: PASS
+- Deploy-source archive entries: 155
+- Verified deploy-source artifact: generated successfully
 - DEVICE_VERIFIED: NOT RUN
 
-## Current internal state
-- Rebuild ownership: ~98–99%
-- Planner browser/runtime productization: ~90%
-- Overall user-facing product maturity: ~73–75% conservative
-- Multi-member isolation: browser/runtime closed, production environment external
-- Netlify / Production / main merge: HOLD
+## REV6 predeploy hardening
+### Release archive boundary
+- `.gitattributes` excludes governance/test/handoff/generated audit material from `git archive`.
+- `.github/`, `tests/`, `C2S/`, `HANDOFF/`, `REBUILD/`, `ui-audit/`, Markdown, nested ZIP are excluded.
+- Runtime essentials remain required by `tests/release-package-contract.test.js`.
+- Runtime E2E now validates the archive boundary before packaging.
+- Actual deploy-source artifact was produced only after archive validation + Runtime E2E PASS.
 
-## REV5 closure
+### PWA cache / archive consistency
+- Legacy master-logic Markdown files were removed from service-worker CORE.
+- This prevents PWA install/cache.addAll from depending on files intentionally excluded from the deploy archive.
+- Regression test rejects Markdown re-entry into the service-worker core list.
+
+### Version provenance
+- `VERSION.json` remains a compatibility mirror.
+- `releaseStatus` now reflects `PREDEPLOY_FROZEN_CANDIDATE__EXTERNAL_DEVICE_PENDING`.
+- Browser/runtime and archive validation are recorded without claiming device/provider/production validation.
+
+## Previously closed
 ### Multi-member
 - member-scoped Profile / Planner / Assignment / app state
 - active-member-only local-first recovery/flush/conflict resolution
@@ -41,9 +55,7 @@ At product HEAD `10d93c0...`:
 - cross-member remote write forbidden
 
 ### Real family timetable
-Authoritative Notion source recovered.
-
-Execution-eligible confirmed rows:
+Confirmed execution-eligible rows:
 - Mon English 16:00–18:00
 - Mon Science 19:00–20:00
 - Tue Piano 14:00–16:00
@@ -74,10 +86,19 @@ Rule:
 - answer-reference protection
 - upload count/type/size guards
 
-### Accessibility/runtime
-- mission duration class + aria-pressed synchronized immediately
-- Runtime Flow locator scoped to visible Mission view
-- no behavior weakening for stale tests
+### Learning reference binding
+- official standard/unit mapping may bind only when verified source evidence exists.
+- no actual grade/semester/unit context => evidence available but not applied.
+- weak/non-unique unit context => candidate/HOLD, not invented mapping.
+
+## Current internal state
+- Rebuild ownership: ~98–99%
+- Planner browser/runtime productization: ~90%
+- Multi-member browser/runtime isolation: closed predeploy
+- Release packaging boundary: closed predeploy
+- PWA offline/archive dependency mismatch: closed
+- Overall user-facing product maturity: ~74–76% conservative
+- Netlify / Production / main merge: HOLD
 
 ## Remaining truthful gaps
 1. Confirm six HOLD timetable rows.
