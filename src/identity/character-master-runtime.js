@@ -9,8 +9,9 @@
     return s;
   }
 
-  function create({visual_id,source_hash,candidates}={}){
+  function create({visual_id,source_hash,candidates,signature_item}={}){
     if(!visual_id||!source_hash)throw new Error('CHARACTER_MASTER_IDENTITY_REQUIRED');
+    if(!signature_item?.id)throw new Error('CHARACTER_MASTER_SIGNATURE_ITEM_REQUIRED');
     if(!Array.isArray(candidates)||candidates.length!==3)throw new Error('CHARACTER_MASTER_THREE_CANDIDATES_REQUIRED');
     const slots=candidates.map(x=>assertSlot(x.slot)).join('|');
     if(slots!=='A|B|C')throw new Error('CHARACTER_MASTER_CANDIDATE_ORDER_INVALID');
@@ -18,6 +19,11 @@
       contract_version:VERSION,
       visual_id:String(visual_id),
       source_hash:String(source_hash),
+      signature_item:Object.freeze({
+        id:String(signature_item.id),
+        label:String(signature_item.label||signature_item.id),
+        face_policy:String(signature_item.face_policy||'NEVER_OBSTRUCT_FACE')
+      }),
       state:'CANDIDATES_READY',
       candidates:candidates.map(x=>({
         slot:assertSlot(x.slot),
@@ -101,6 +107,7 @@
         visual_id:model.visual_id,
         source_hash:model.source_hash,
         selected_slot:model.selected_slot,
+        signature_item:{...model.signature_item},
         identity_asset:identityAsset,
         consistency_gate:{...assurance},
         assets:{
