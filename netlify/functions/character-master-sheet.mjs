@@ -1,3 +1,4 @@
+import { promptForSignatureItem } from './character-signature-item-core.mjs';
 import { getDeployStore, getStore } from '@netlify/blobs';
 import { getUser } from '@netlify/identity';
 import { mapCharacterSession } from './character-family-session-adapter.mjs';
@@ -62,6 +63,8 @@ export default async function handler(req){
     'Create a clean character master turnaround sheet for the same child exploration character.',
     'The reference image is the already verified and locked final character identity.',
     'Preserve the exact same character identity, face, hairstyle cues, age impression, proportions, clothing language, palette and accessories.',
+    'Preserve the exact signature exploration item: '+promptForSignatureItem(job.signature_item)+'.',
+    'Keep that signature item visible but subtle; never add a second signature prop.',
     'Do not reinterpret identity from external sources; this locked character is now the visual authority for derivative consistency.',
     'Show a consistent full-body front view, three-quarter front view, side view, back view and three-quarter back view, plus a small set of natural facial expressions.',
     'Use one neutral clean board-like background with generous spacing.',
