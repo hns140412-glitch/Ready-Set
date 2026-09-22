@@ -155,7 +155,6 @@
               note='일관성 Gate를 확인하는 중이에요.';
               controls='<button class="btn outline" id="reviewCharacterConsistencyBtn">일관성 다시 확인</button>';
             }
-          }
           }else if(job.status==='VISUAL_ID_LOCKED'){
             note='Visual ID가 확정됐습니다. 이제 같은 캐릭터에서 프로필용 정사각형과 카드용 세로 이미지를 준비해요.';
             controls='<button class="btn dark" id="buildCharacterDerivativesBtn">활용 이미지 준비</button>';
