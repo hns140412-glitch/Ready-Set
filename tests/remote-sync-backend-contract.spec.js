@@ -85,6 +85,7 @@ test('Netlify Identity server functions use modern Identity verification pattern
   const session=fs.readFileSync('netlify/functions/auth-session.mjs','utf8');
   expect(sync).toContain("getUser");
   expect(sync).toContain("namespace:mapped.session.family_id");
+  expect(sync).toContain("member_id:mapped.session.member_id");
   expect(login).toContain("verifyRequestOrigin");
   expect(logout).toContain("verifyRequestOrigin");
   expect(session).toContain("getUser");
@@ -145,4 +146,37 @@ test('legacy unscoped remote sync path remains backward compatible', async ()=>{
   const key=[...store.snapshot().keys()][0];
   expect(key).toContain('families/family_legacy/events/');
   expect(key).not.toContain('/scopes/');
+});
+
+
+test('authenticated member scope rejects cross-member and unscoped writes', async ()=>{
+  const store=memoryStore();
+  const service=createSyncService(store,{namespace:'family_shared',member_id:'CHILD_A'});
+  const own=await service.putEvent({
+    event_id:'evt_own',
+    idempotency_key:'idem_own',
+    scope:'member:CHILD_A:planner',
+    digest:'digest-own',
+    payload:'{"member":"A"}'
+  });
+  const cross=await service.putEvent({
+    event_id:'evt_cross',
+    idempotency_key:'idem_cross',
+    scope:'member:CHILD_B:planner',
+    digest:'digest-cross',
+    payload:'{"member":"B"}'
+  });
+  const unscoped=await service.putEvent({
+    event_id:'evt_unscoped',
+    idempotency_key:'idem_unscoped',
+    scope:'planner',
+    digest:'digest-unscoped',
+    payload:'{}'
+  });
+  expect(own.status).toBe(200);
+  expect(cross.status).toBe(403);
+  expect(cross.body.reason).toBe('MEMBER_SCOPE_FORBIDDEN');
+  expect(unscoped.status).toBe(400);
+  expect(unscoped.body.reason).toBe('MEMBER_SCOPE_REQUIRED');
+  expect(store.snapshot().size).toBe(1);
 });
