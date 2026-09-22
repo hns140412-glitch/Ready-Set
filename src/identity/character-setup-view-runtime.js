@@ -72,7 +72,9 @@
           candidateWrap.innerHTML=
             '<div class="characterCandidateHead"><small>A / B / C DIRECTION CONTRACT</small><h3>후보 생성 준비 완료</h3></div>'+
             '<div class="characterCandidateGrid">'+candidates.map(candidateCard).join('')+'</div>'+
-            '<p class="muted">원본 사진과 A/B/C 계약을 서버에 안전하게 등록할 수 있어요. 유료 이미지 생성은 아직 잠겨 있습니다.</p>'+\n            '<button class="btn outline" id="prepareCharacterJobBtn">서버 생성 준비</button>'+\n            '<p class="muted" id="characterRemoteStatus">아직 서버 등록 전입니다.</p>';
+            '<p class="muted">원본 사진과 A/B/C 계약을 서버에 안전하게 등록할 수 있어요. 유료 이미지 생성은 아직 잠겨 있습니다.</p>'+
+            '<button class="btn outline" id="prepareCharacterJobBtn">서버 생성 준비</button>'+
+            '<p class="muted" id="characterRemoteStatus">아직 서버 등록 전입니다.</p>';
         }
         return;
       }
