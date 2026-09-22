@@ -43,12 +43,13 @@ const rebuildResultHistoryController=globalThis.ReadyRebuildResultHistoryControl
 const rebuildProfileSettingsView=globalThis.ReadyRebuildProfileSettingsView||null;
 const rebuildProfileController=globalThis.ReadyRebuildProfileController||null;
 const rebuildLearnerContext=globalThis.ReadyRebuildLearnerContext||null;
-const rebuildCharacterDirection=globalThis.ReadyCharacterDirection||null;
-const rebuildCharacterCore=globalThis.ReadyCharacterCoreOrchestrator||null;
-const rebuildCharacterRemoteAdapter=globalThis.ReadyCharacterRemoteAdapter||null;
-const rebuildCharacterMaster=globalThis.ReadyCharacterMaster||null;
-const rebuildCharacterSetupView=globalThis.ReadyCharacterSetupView||null;
-const rebuildCharacterSetupController=globalThis.ReadyCharacterSetupController||null;
+const rebuildCharacterDirection=globalThis.CharacterVisualIdDirection||globalThis.ReadyCharacterDirection||null;
+const rebuildCharacterCore=globalThis.CharacterVisualIdCoreOrchestrator||globalThis.ReadyCharacterCoreOrchestrator||null;
+const rebuildCharacterRemoteAdapter=globalThis.CharacterVisualIdRemoteAdapter||globalThis.ReadyCharacterRemoteAdapter||null;
+const rebuildCharacterMaster=globalThis.CharacterVisualIdMaster||globalThis.ReadyCharacterMaster||null;
+const rebuildCharacterDerivative=globalThis.CharacterVisualIdDerivative||null;
+const rebuildCharacterSetupView=globalThis.CharacterVisualIdSetupView||globalThis.ReadyCharacterSetupView||null;
+const rebuildCharacterSetupController=globalThis.CharacterVisualIdSetupController||globalThis.ReadyCharacterSetupController||null;
 const rebuildSettingsController=globalThis.ReadyRebuildSettingsController||null;
 const rebuildAuthSyncView=globalThis.ReadyRebuildAuthSyncView||null;
 const rebuildAuthSyncController=globalThis.ReadyRebuildAuthSyncController||null;
@@ -59,7 +60,7 @@ const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildAppBootstrapController=globalThis.ReadyRebuildAppBootstrapController||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildMissionController||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildLearnerContext||!rebuildCharacterDirection||!rebuildCharacterCore||!rebuildCharacterRemoteAdapter||!rebuildCharacterMaster||!rebuildCharacterSetupView||!rebuildCharacterSetupController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildPlannerScreenController||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildMissionController||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildLearnerContext||!rebuildCharacterDirection||!rebuildCharacterCore||!rebuildCharacterRemoteAdapter||!rebuildCharacterMaster||!rebuildCharacterDerivative||!rebuildCharacterSetupView||!rebuildCharacterSetupController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildPlannerScreenController||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -609,7 +610,8 @@ const characterSetupRuntime=rebuildCharacterSetupController.create({
   familySession,
   toast,
   remote:characterRemoteRuntime,
-  masterApi:characterMasterApi
+  masterApi:characterMasterApi,
+  derivativeApi:rebuildCharacterDerivative
 });
 $('#openCharacterSetupBtn').onclick=()=>{
   if(!state.profile?.sourcePhoto?.source_hash){toast('먼저 사진을 등록해 주세요.');return;}
@@ -625,8 +627,9 @@ $('#characterSetupView').addEventListener('click',async e=>{
   const select=e.target.closest?.('[data-select-character-candidate]');
   const correct=e.target.closest?.('#correctCharacterLikenessBtn');
   const lockMaster=e.target.closest?.('#lockCharacterMasterBtn');
+  const derivatives=e.target.closest?.('#buildCharacterDerivativesBtn');
   const masterSheet=e.target.closest?.('#generateCharacterMasterSheetBtn');
-  const button=prepare||generate||select||correct||lockMaster||masterSheet;
+  const button=prepare||generate||select||correct||lockMaster||derivatives||masterSheet;
   if(!button)return;
   const status=$('#characterRemoteStatus');
   button.disabled=true;
@@ -665,6 +668,13 @@ $('#characterSetupView').addEventListener('click',async e=>{
       result=await characterSetupRuntime.lockMaster();
       if(result?.ok){
         toast('내 캐릭터 Visual ID가 확정됐어요.');
+        characterSetupRuntime.render();
+      }
+    }else if(derivatives){
+      if(status)status.textContent='프로필/카드용 이미지를 준비하는 중…';
+      result=await characterSetupRuntime.buildDerivativeAssets();
+      if(result?.ok){
+        toast('캐릭터 활용 이미지가 준비됐어요.');
         characterSetupRuntime.render();
       }
     }else if(masterSheet){
