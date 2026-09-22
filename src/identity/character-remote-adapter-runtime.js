@@ -66,6 +66,14 @@
       });
     }
 
+    async function uploadDerivatives({visual_id,avatar_square_data_url,portrait_card_data_url}={}){
+      return json('/api/character/derivatives',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({visual_id,avatar_square_data_url,portrait_card_data_url})
+      });
+    }
+
     async function generateMasterSheet({visual_id}={}){
       return json('/api/character/master-sheet',{
         method:'POST',
@@ -78,7 +86,7 @@
       return '/api/character/asset?visual_id='+encodeURIComponent(String(visualId||''))+'&slot='+encodeURIComponent(String(slot||''));
     }
 
-    return Object.freeze({uploadSource,createJob,getJob,startGeneration,selectCandidate,correctLikeness,lockMaster,generateMasterSheet,assetUrl});
+    return Object.freeze({uploadSource,createJob,getJob,startGeneration,selectCandidate,correctLikeness,lockMaster,uploadDerivatives,generateMasterSheet,assetUrl});
   }
 
   const api=Object.freeze({version:VERSION,owner:'CHARACTER_VISUAL_ID',create});
