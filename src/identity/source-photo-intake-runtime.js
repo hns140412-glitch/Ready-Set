@@ -1,7 +1,7 @@
 (function(root){
   'use strict';
 
-  const VERSION='READY_SOURCE_PHOTO_INTAKE_V01';
+  const VERSION='CHARACTER_VISUAL_ID_SOURCE_PHOTO_V01';
   const DEFAULTS=Object.freeze({
     maxInputBytes:12*1024*1024,
     maxDimension:1280,
@@ -112,12 +112,15 @@
     };
   }
 
-  root.ReadySourcePhotoIntake=Object.freeze({
+  const api=Object.freeze({
     version:VERSION,
+    owner:'CHARACTER_VISUAL_ID',
     DEFAULTS,
     validateFile,
     fitSize,
     estimateDataUrlBytes,
     normalize
   });
+  root.CharacterVisualIdSourcePhoto=api;
+  root.ReadySourcePhotoIntake=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
