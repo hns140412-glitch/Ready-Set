@@ -517,6 +517,34 @@ Additional:
 
 No new primary Home/Mission/Result screen is introduced by default.
 
+## 14.5 Mockup Planner demo-data rule — HARD LOCK
+
+For visual/mockup review only, Planner may populate the Weekly/Daily UI with **synthetic demo schedule data**.
+
+Purpose:
+- evaluate density
+- evaluate hierarchy
+- evaluate route readability
+- evaluate commitment vs DATED TODO distinction
+- evaluate Weekly → Daily → Timer transition
+
+Rules:
+- demo data is explicitly `MOCKUP_ONLY / SYNTHETIC`;
+- it must never be treated as learner FACT, schedule truth, Planner output evidence, or runtime completion evidence;
+- no private family schedule is hardcoded into visual assets;
+- unknown real times are not filled by inference;
+- sample subjects/tasks may be generic and varied only to stress-test layout;
+- mockup demo data may be freely changed between review passes;
+- approval of the visual does not approve the sample schedule contents.
+
+Recommended visual-review sample set:
+- fixed commitments such as school / academy / activity
+- Planner DATED TODO examples such as vocabulary review / worksheet / reading
+- at least one free window
+- at least one completed item
+- at least one upcoming item
+- at least one carry/reflow indicator if density testing requires it
+
 ## 15. Mockup acceptance gate
 
 Before any mockup is approved, verify:
