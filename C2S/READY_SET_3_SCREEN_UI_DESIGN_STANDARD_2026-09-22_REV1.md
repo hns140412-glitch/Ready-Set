@@ -126,6 +126,52 @@ The child is:
 
 The exploration concept therefore comes from spatial continuity and movement, not RPG decoration or extra navigation tabs.
 
+## 2.6 Ready & Set world-surface ownership correction — HARD LOCK
+
+Ready & Set owns **BASE CAMP presentation/UI only** inside the shared fixed island.
+
+Ready & Set SHALL NOT own or redesign:
+- Explorer character creation
+- Exploration Crew construction
+- starter crew selection
+- crew naming/history
+- crew personality definition
+- crew catalog/roster construction
+- island-wide character onboarding flow
+
+Those are shared/upstream or Snap-owned domains and are being developed independently.
+
+Ready consumes only the resolved runtime identity/context, for example:
+- `Explorer_ID / character_id`
+- current profile/avatar presentation
+- current selected crew member ID
+- permitted crew reaction/presence state
+
+Ready-specific visual responsibility is limited to:
+- Base Camp spatial identity
+- Base Camp schedule/planner presentation
+- Base Camp weekly route view
+- Base Camp daily route view
+- Base Camp timer/execution surface
+- route gateways toward other island regions where needed
+
+### Visual rule
+The Base Camp may visually acknowledge the Explorer and current crew member, but:
+- it must not contain character-building UI;
+- it must not re-run crew selection;
+- it must not define new crew personalities;
+- it must not require a fixed character visual to make the layout work;
+- character/crew assets are injected after upstream identity is resolved.
+
+Therefore:
+`READY UI DESIGN != CHARACTER SYSTEM DESIGN`
+
+and:
+
+`SHARED ISLAND WORLD != READY OWNS WHOLE ISLAND UI`
+
+Ready's job is to make **Base Camp** feel like the operational home of the learner while preserving continuity with the island world defined elsewhere.
+
 ## 3. Product logic that the three screens must carry
 
 Canonical learning/planning flow remains:
