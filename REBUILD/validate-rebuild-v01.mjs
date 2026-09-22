@@ -787,3 +787,48 @@ assert('character-direction-three-distinct-candidates',characterState.candidates
 assert('character-direction-provenance',characterState.candidates.map(x=>x.source).join('|')==='USER_SELECTION_1|USER_SELECTION_2|SYSTEM_AUTO_CONTRAST');
 assert('character-direction-no-emoji-ui',characterDirection.identityContract().emojiOrEmoticonUi===false);
 assert('character-direction-wired-state',appSource.includes('characterDirection:rebuildCharacterDirection.createState()'));
+
+
+const sourcePhotoSource=loadSource('src/identity/source-photo-intake-runtime.js');
+const sourcePhotoContext={globalThis:{}};vm.createContext(sourcePhotoContext);vm.runInContext(sourcePhotoSource,sourcePhotoContext);
+const sourcePhoto=sourcePhotoContext.globalThis.ReadySourcePhotoIntake;
+assert('source-photo-intake-owner',sourcePhoto?.version==='READY_SOURCE_PHOTO_INTAKE_V01');
+assert('source-photo-intake-loaded-before-app',
+  indexSource.indexOf('src/identity/source-photo-intake-runtime.js')>0 &&
+  indexSource.indexOf('src/identity/source-photo-intake-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('source-photo-size-fit',sourcePhoto.fitSize(4000,2000,1280).width===1280&&sourcePhoto.fitSize(4000,2000,1280).height===640);
+assert('source-photo-type-guard',sourcePhoto.validateFile({type:'text/plain',size:10}).reason==='UNSUPPORTED_IMAGE_TYPE');
+
+const characterJobSource=loadSource('src/identity/character-generation-job-runtime.js');
+const characterJobContext={globalThis:{}};vm.createContext(characterJobContext);vm.runInContext(characterJobSource,characterJobContext);
+const characterJob=characterJobContext.globalThis.ReadyCharacterGenerationJob;
+assert('character-job-owner',characterJob?.version==='READY_CHARACTER_GENERATION_JOB_V01');
+assert('character-job-loaded-before-app',
+  indexSource.indexOf('src/identity/character-generation-job-runtime.js')>0 &&
+  indexSource.indexOf('src/identity/character-generation-job-runtime.js')<indexSource.indexOf('app.js')
+);
+const jobDirections=[
+ {source:'USER_SELECTION_1',direction:{id:'LIVELY',label:'신나!'}},
+ {source:'USER_SELECTION_2',direction:{id:'FOCUSED',label:'집중!'}},
+ {source:'SYSTEM_AUTO_CONTRAST',direction:{id:'IMAGINATIVE',label:'상상중'}}
+];
+const job=characterJob.create({visual_id:'visual_1',member_scope:'child_1',source_hash:'1234567890abcdef',directions:jobDirections,now:()=>0});
+assert('character-job-created',job.status==='DRAFT'&&job.directions.length===3);
+let job2=characterJob.transition(job,'SOURCE_READY',{now:()=>1});
+job2=characterJob.transition(job2,'QUEUED',{now:()=>2});
+assert('character-job-transition',job2.status==='QUEUED');
+
+const assetKeySource=loadSource('src/identity/character-asset-keys-runtime.js');
+const assetKeyContext={globalThis:{}};vm.createContext(assetKeyContext);vm.runInContext(assetKeySource,assetKeyContext);
+const assetKeys=assetKeyContext.globalThis.ReadyCharacterAssetKeys;
+assert('character-asset-keys-owner',assetKeys?.version==='READY_CHARACTER_ASSET_KEYS_V01');
+assert('character-asset-keys-loaded-before-app',
+  indexSource.indexOf('src/identity/character-asset-keys-runtime.js')>0 &&
+  indexSource.indexOf('src/identity/character-asset-keys-runtime.js')<indexSource.indexOf('app.js')
+);
+const keys=assetKeys.keys('child_1','visual_1');
+assert('character-asset-key-shape',keys.source==='child_1/visual_1/source/source.jpg'&&keys.candidateC.endsWith('/candidates/C.jpg'));
+assert('character-profile-source-wired',appSource.includes('sourcePhoto:null'));
+assert('character-profile-job-wired',appSource.includes('characterGenerationJob:null'));
+assert('profile-controller-uses-source-photo-intake',profileControllerSource.includes('photoIntake.normalize'));
