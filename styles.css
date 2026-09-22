@@ -119,3 +119,5 @@
 
 .characterGateRow{display:flex;align-items:center;justify-content:flex-start;margin:10px 0 2px}.characterGateBadge{display:inline-flex;align-items:center;min-height:28px;padding:6px 9px;border-radius:999px;font-size:8px;font-weight:900;letter-spacing:.02em}.characterGateBadge.pending{background:#f3eee8;color:#75665d}.characterGateBadge.pass{background:#e8f4eb;color:#356b47}.characterGateBadge.fail{background:#fff0ec;color:#a5483b}
 .characterConsultCard #reviewCharacterConsistencyBtn,.characterConsultCard #confirmSameIdentityBtn,.characterConsultCard #buildCharacterDerivativesBtn{width:100%;margin-top:9px}
+
+.candidateReview{display:inline-flex!important;margin-top:6px;padding:4px 6px;border-radius:999px;font-size:7px!important;font-weight:900}.candidateReview.pass{background:#e8f4eb;color:#356b47}.candidateReview.fail{background:#fff0ec;color:#a5483b}.characterCandidatePlaceholder[data-selected="true"]{outline:3px solid #2a231f;outline-offset:2px}
