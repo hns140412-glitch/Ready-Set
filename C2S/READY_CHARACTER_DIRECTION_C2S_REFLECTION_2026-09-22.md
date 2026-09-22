@@ -90,3 +90,60 @@ Integration rule:
 
 Status:
 - Intro / Drop / Voyage are DEFERRED_EXPANSION, not missing core implementation.
+
+
+## 2026-09-22 character core execution trace
+
+Current branch: `taky/ready-rebuild-v01-2026-09-21`
+
+### Implemented
+- source photo normalization and identity hash
+- two direct direction selections + system automatic contrast
+- A/B/C generation-job provenance contract
+- member-scoped Visual ID asset-key contract
+- character core orchestrator
+- profile -> character consultation UI journey
+- authenticated source-photo storage endpoint
+- authenticated generation-job registry
+- provider-gated single-slot A/B/C image edit endpoint
+- authenticated candidate asset endpoint
+- candidate comparison and selection action
+- source-photo + selected-candidate likeness correction endpoint
+- Character Master / Visual ID server lock
+- client remote adapter for source/job/generation/select/correction/master
+- rebuild CI parseability and character contract coverage
+
+### Provider contract
+Provider image calls are code-complete behind `READY_CHARACTER_PAID_GENERATION`.
+Default state remains provider locked.
+No deployment or paid image call is authorized by this C2S reflection.
+
+Current provider implementation uses Image Edit with source photo as identity authority.
+Likeness correction uses source photo + selected character as separate image references.
+Model is environment-configurable; current default in code is `gpt-image-2.5-sunburst`.
+
+### Evidence states
+- STRUCTURE: CODED
+- DOMAIN LOGIC: CODED
+- UI JOURNEY through consultation: CODED
+- SERVER BOUNDARY: CODED
+- PAID PROVIDER EXECUTION: LOCKED / NOT_RUN
+- CHARACTER CANDIDATE REAL OUTPUT: NOT_RUN
+- LIKENESS CORRECTION REAL OUTPUT: NOT_RUN
+- CHARACTER MASTER REMOTE LOCK: CODED, runtime output NOT_RUN
+- CI: RUNNING on exact branch head
+- NETLIFY DEPLOY: NOT_RUN
+- DEVICE: NOT_RUN
+
+### Completion boundary
+Core completion requires:
+1. exact-head CI green
+2. external-resource gate approval before provider execution
+3. one controlled candidate generation validation
+4. candidate comparison/select validation
+5. likeness-correction validation
+6. Character Master lock validation
+
+### Deferred expansion
+Intro / Drop / Voyage / World Arrival remain `DEFERRED_EXPANSION`.
+They must consume the locked Visual ID and may not redefine the character identity pipeline.
