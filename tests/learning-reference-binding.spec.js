@@ -52,7 +52,7 @@ test('official binding fails closed when assignment context is insufficient inst
   });
   expect(resolved.status).toBe('PARTIAL_REFERENCE');
   expect(resolved.standard_match.official_standard_code).toBeNull();
-  expect(resolved.unresolved).toContain('OFFICIAL_STANDARD_CODE_NOT_BOUND');
+  expect(resolved.unresolved).toContain('NO_DOMAIN_SIGNAL_IN_ACTUAL_CONTEXT');
 });
 
 test('English may bind verified achievement standard while keeping unit mapping explicitly unavailable', async ()=>{
@@ -63,5 +63,6 @@ test('English may bind verified achievement standard while keeping unit mapping 
   });
   expect(matched.status).toBe('MATCHED_VERIFIED_STANDARD');
   expect(matched.official_standard_code).toBe('6영02-08');
-  expect(matched.unit_mapping_evidence).toBeNull();
+  expect(matched.unit_mapping_evidence.status).toBe('UNIT_MAPPING_EVIDENCE_GAP');
+  expect(matched.unit_mapping_evidence.unresolved).toContain('NO_VERIFIED_UNIT_MAPPING_RECORD');
 });
