@@ -50,11 +50,27 @@
       });
     }
 
+    async function correctLikeness({visual_id}={}){
+      return json('/api/character/correct',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({visual_id})
+      });
+    }
+
+    async function lockMaster({visual_id}={}){
+      return json('/api/character/master',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({visual_id})
+      });
+    }
+
     function assetUrl(visualId,slot){
       return '/api/character/asset?visual_id='+encodeURIComponent(String(visualId||''))+'&slot='+encodeURIComponent(String(slot||''));
     }
 
-    return Object.freeze({uploadSource,createJob,getJob,startGeneration,selectCandidate,assetUrl});
+    return Object.freeze({uploadSource,createJob,getJob,startGeneration,selectCandidate,correctLikeness,lockMaster,assetUrl});
   }
 
   root.ReadyCharacterRemoteAdapter=Object.freeze({version:VERSION,create});
