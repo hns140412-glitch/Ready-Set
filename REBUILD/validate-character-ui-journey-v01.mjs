@@ -43,6 +43,9 @@ const correctFn=read('netlify/functions/character-correct.mjs');
 const masterFn=read('netlify/functions/character-master.mjs');
 const derivativeFn=read('netlify/functions/character-derivatives.mjs');
 const identityRuntime=read('src/identity/character-identity-consistency-runtime.js');
+const consistencyGate=read('src/identity/character-consistency-gate-runtime.js');
+const consistencyCore=read('netlify/functions/character-consistency-core.mjs');
+const consistencyReviewFn=read('netlify/functions/character-consistency-review.mjs');
 
 assert(remote.includes('/api/character/source'),'CHARACTER_REMOTE_SOURCE_ENDPOINT_MISSING');
 assert(remote.includes('/api/character/job'),'CHARACTER_REMOTE_JOB_ENDPOINT_MISSING');
@@ -51,6 +54,8 @@ assert(remote.includes('/api/character/action'),'CHARACTER_REMOTE_ACTION_ENDPOIN
 assert(remote.includes('/api/character/correct'),'CHARACTER_REMOTE_CORRECT_ENDPOINT_MISSING');
 assert(remote.includes('/api/character/master'),'CHARACTER_REMOTE_MASTER_ENDPOINT_MISSING');
 assert(remote.includes('/api/character/derivatives'),'CHARACTER_REMOTE_DERIVATIVE_ENDPOINT_MISSING');
+assert(remote.includes('/api/character/consistency-review'),'CHARACTER_REMOTE_CONSISTENCY_REVIEW_MISSING');
+assert(remote.includes('CONFIRM_SAME_IDENTITY'),'CHARACTER_REMOTE_SAME_IDENTITY_CONFIRM_MISSING');
 
 assert(sourceFn.includes("role!=='CHILD'"),'CHARACTER_SOURCE_CHILD_SCOPE_MISSING');
 assert(jobFn.includes('DIRECTION_PROVENANCE_INVALID'),'CHARACTER_JOB_PROVENANCE_GUARD_MISSING');
@@ -65,6 +70,11 @@ assert(correctFn.includes('READY_CHARACTER_PAID_GENERATION'),'LIKENESS_PROVIDER_
 assert(masterFn.includes('IDENTITY_LOCKED__DERIVATIVES_PENDING'),'MASTER_NORMALIZATION_TRUTHFUL_STATE_MISSING');
 
 assert(identityRuntime.includes('SAME_CHILD_DIFFERENT_DIRECTION'),'IDENTITY_CONSISTENCY_CONTRACT_MISSING');
+assert(consistencyGate.includes('CHARACTER_VISUAL_ID_CONSISTENCY_GATE_V01'),'CHARACTER_CONSISTENCY_GATE_RUNTIME_MISSING');
+assert(consistencyCore.includes('lock_allowed'),'CHARACTER_CONSISTENCY_SERVER_CORE_MISSING');
+assert(consistencyReviewFn.includes('CHARACTER_VISUAL_ID_PAID_REVIEW'),'CHARACTER_VISUAL_REVIEW_GATE_MISSING');
+assert(consistencyReviewFn.includes("https://api.openai.com/v1/responses"),'CHARACTER_VISUAL_REVIEW_PROVIDER_BOUNDARY_MISSING');
+assert(consistencyReviewFn.includes("type:'json_schema'"),'CHARACTER_VISUAL_REVIEW_STRUCTURED_OUTPUT_MISSING');
 assert(derivativeFn.includes("job.status='MASTER_ASSETS_READY'"),'DERIVATIVE_READY_TRANSITION_MISSING');
 assert(master.includes('CANDIDATES_READY'),'CHARACTER_MASTER_DOMAIN_MISSING');
 assert(master.includes('LIKENESS_CORRECTION_REQUESTED'),'CHARACTER_MASTER_CORRECTION_TRACE_MISSING');
@@ -75,9 +85,13 @@ assert(controller.includes('selectCandidate'),'CHARACTER_SELECT_CONTROLLER_MISSI
 assert(controller.includes('correctLikeness'),'CHARACTER_CORRECTION_CONTROLLER_MISSING');
 assert(controller.includes('lockMaster'),'CHARACTER_MASTER_LOCK_CONTROLLER_MISSING');
 assert(controller.includes('buildDerivativeAssets'),'CHARACTER_DERIVATIVE_CONTROLLER_MISSING');
+assert(controller.includes('reviewConsistency'),'CHARACTER_CONSISTENCY_REVIEW_CONTROLLER_MISSING');
+assert(controller.includes('confirmSameIdentity'),'CHARACTER_SAME_IDENTITY_CONFIRM_CONTROLLER_MISSING');
 assert(app.includes('correctCharacterLikenessBtn'),'CHARACTER_CORRECTION_UI_ACTION_MISSING');
 assert(app.includes('lockCharacterMasterBtn'),'CHARACTER_MASTER_UI_ACTION_MISSING');
 assert(app.includes('buildCharacterDerivativesBtn'),'CHARACTER_DERIVATIVE_UI_ACTION_MISSING');
+assert(app.includes('reviewCharacterConsistencyBtn'),'CHARACTER_CONSISTENCY_REVIEW_UI_ACTION_MISSING');
+assert(app.includes('confirmSameIdentityBtn'),'CHARACTER_SAME_IDENTITY_CONFIRM_UI_ACTION_MISSING');
 
 console.log('CHARACTER_VISUAL_ID_CORE_SERVER_CONTRACT_V01_PASS');
 
