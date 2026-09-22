@@ -5,6 +5,11 @@ const direction=read('src/identity/character-direction-runtime.js');
 const master=read('src/identity/character-master-runtime.js');
 const controller=read('src/identity/character-setup-controller-runtime.js');
 const projection=read('src/identity/character-visual-id-projection-runtime.js');
+const derivative=read('src/identity/character-derivative-runtime.js');
+const derivativeServer=read('netlify/functions/character-derivatives.mjs');
+const view=read('src/identity/character-setup-view-runtime.js');
+const app=read('app.js');
+const index=read('index.html');
 const serverMaster=read('netlify/functions/character-master.mjs');
 
 const checks=[
@@ -18,7 +23,14 @@ const checks=[
   ['projection exposes identity vs derivative readiness',projection.includes('identity_locked')&&projection.includes('derivatives_ready')],
   ['server does not fake portrait derivative',serverMaster.includes('portrait_card:null')],
   ['server does not fake avatar derivative',serverMaster.includes('avatar_square:null')],
-  ['server records derivative pending',serverMaster.includes("derivative_state:'DERIVATIVES_PENDING'")]
+  ['server records derivative pending',serverMaster.includes("derivative_state:'DERIVATIVES_PENDING'")],
+  ['deterministic derivative runtime exists',derivative.includes("CHARACTER_VISUAL_ID_DERIVATIVE_V01")&&derivative.includes('deriveFromUrl')],
+  ['derivative server stores real avatar and portrait assets',derivativeServer.includes("avatar-square.")&&derivativeServer.includes("portrait-card.")],
+  ['derivative server promotes MASTER_ASSETS_READY',derivativeServer.includes("job.status='MASTER_ASSETS_READY'")],
+  ['formation UI exposes derivative step',view.includes('buildCharacterDerivativesBtn')&&view.includes('활용 이미지 준비')],
+  ['app wires derivative build handler',app.includes('buildDerivativeAssets')&&app.includes('buildCharacterDerivativesBtn')],
+  ['index loads derivative runtime',index.includes('character-derivative-runtime.js')],
+  ['index loads projection runtime',index.includes('character-visual-id-projection-runtime.js')]
 ];
 
 const failed=checks.filter(([,ok])=>!ok);
