@@ -34,15 +34,27 @@
       return json('/api/character/job?visual_id='+encodeURIComponent(String(visualId||'')),{method:'GET'});
     }
 
-    async function startGeneration({visual_id}={}){
+    async function startGeneration({visual_id,slot}={}){
       return json('/api/character/generate',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({visual_id})
+        body:JSON.stringify({visual_id,slot})
       });
     }
 
-    return Object.freeze({uploadSource,createJob,getJob,startGeneration});
+    async function selectCandidate({visual_id,slot}={}){
+      return json('/api/character/action',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({visual_id,action:'SELECT_CANDIDATE',slot})
+      });
+    }
+
+    function assetUrl(visualId,slot){
+      return '/api/character/asset?visual_id='+encodeURIComponent(String(visualId||''))+'&slot='+encodeURIComponent(String(slot||''));
+    }
+
+    return Object.freeze({uploadSource,createJob,getJob,startGeneration,selectCandidate,assetUrl});
   }
 
   root.ReadyCharacterRemoteAdapter=Object.freeze({version:VERSION,create});
