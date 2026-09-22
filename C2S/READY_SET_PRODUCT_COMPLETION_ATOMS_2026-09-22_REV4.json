@@ -1,0 +1,101 @@
+{
+  "schema": "TKY-C2S-001",
+  "date": "2026-09-22",
+  "repo": "hns140412-glitch/Ready-Set",
+  "branch": "taky/ready-rebuild-v01-2026-09-21",
+  "validated_product_head": "579089d6fa0c5c59950916cbe86ddc93a65fda0c",
+  "atoms": [
+    {
+      "id": "RS-REV4-001",
+      "type": "CORRECTION",
+      "domain": "IDENTITY",
+      "text": "Local-first recovery, flush, public reads and conflict resolution must be active-member scoped, not only storage-key scoped.",
+      "disposition": "IMPLEMENTED_AND_RUNTIME_VALIDATED"
+    },
+    {
+      "id": "RS-REV4-002",
+      "type": "REQUIREMENT",
+      "domain": "SYNC",
+      "text": "Authenticated remote sync must require member-scoped scope and reject a scope owned by another member.",
+      "disposition": "IMPLEMENTED_AND_RUNTIME_VALIDATED"
+    },
+    {
+      "id": "RS-REV4-003",
+      "type": "EVIDENCE",
+      "domain": "IDENTITY",
+      "text": "Two-member browser E2E verifies independent Profile/Planner/Assignment/snapshot/conflict state and active-member-only local-first operations.",
+      "disposition": "VALIDATED"
+    },
+    {
+      "id": "RS-REV4-004",
+      "type": "CORRECTION",
+      "domain": "LEARNING_REFERENCE",
+      "text": "Verified official-standard matches must clear stale static mapping-gap flags that would otherwise leave a false PARTIAL_REFERENCE state.",
+      "disposition": "IMPLEMENTED_AND_RUNTIME_VALIDATED"
+    },
+    {
+      "id": "RS-REV4-005",
+      "type": "EVIDENCE",
+      "domain": "LEARNING_REFERENCE",
+      "text": "Math 5-1 약수와 배수 context binds to official standard 6수01-04 and verified unit mapping; insufficient context fails closed.",
+      "disposition": "VALIDATED"
+    },
+    {
+      "id": "RS-REV4-006",
+      "type": "OPEN",
+      "domain": "LEARNING_REFERENCE",
+      "text": "English achievement standards are verified but current official source has no verified unit-connection table; keep UNIT_MAPPING_EVIDENCE_GAP explicit.",
+      "disposition": "HOLD_NO_INVENTION"
+    },
+    {
+      "id": "RS-REV4-007",
+      "type": "CORRECTION",
+      "domain": "PLANNER",
+      "text": "Free-window capacity must subtract expanded recurring schedule occurrences and date exceptions, not only one-off start_at/end_at commitments.",
+      "disposition": "IMPLEMENTED_AND_VALIDATED"
+    },
+    {
+      "id": "RS-REV4-008",
+      "type": "EVIDENCE",
+      "domain": "PLANNER",
+      "text": "Representative weekly family timetable calibration harness verifies recurring schedule subtraction and replacement exceptions.",
+      "disposition": "VALIDATED_REPRESENTATIVE_FIXTURE"
+    },
+    {
+      "id": "RS-REV4-009",
+      "type": "OPEN",
+      "domain": "PLANNER",
+      "text": "Actual family timetable dataset entry/calibration remains pending and must not be inferred.",
+      "disposition": "REAL_DATA_PENDING"
+    },
+    {
+      "id": "RS-REV4-010",
+      "type": "EVIDENCE",
+      "domain": "VALIDATION",
+      "text": "Validated product HEAD passes Self-Test, Integration, Runtime E2E, Planner Free Window, Daily/Weekly Availability, Single Active Task and Child FACT gates.",
+      "disposition": "VALIDATED"
+    },
+    {
+      "id": "RS-REV4-011",
+      "type": "CONSTRAINT",
+      "domain": "DEPLOY",
+      "text": "Netlify, Production and main merge remain prohibited until frozen candidate review and TAKY external-resource gate.",
+      "disposition": "LOCKED"
+    },
+    {
+      "id": "RS-REV4-012",
+      "type": "OPEN",
+      "domain": "EXTERNAL",
+      "text": "Real OCR/Vision provider, production Identity/sync, physical microphone/camera/device UX remain externally unverified.",
+      "disposition": "HOLD"
+    }
+  ],
+  "closure": {
+    "unmapped_material": 0,
+    "silent_loss": 0,
+    "false_convergence": false,
+    "reflection_complete": true,
+    "predeploy_internal_execution_complete": true,
+    "downstream_external_execution_complete": false
+  }
+}
