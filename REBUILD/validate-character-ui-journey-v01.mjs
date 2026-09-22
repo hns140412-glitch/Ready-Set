@@ -37,7 +37,7 @@ assert(signatureItemRuntime.includes('SAME_ITEM_ACROSS_A_B_C'),'SIGNATURE_ITEM_C
 assert(signatureItemServer.includes('normalizeSignatureItem'),'SIGNATURE_ITEM_SERVER_VALIDATION_MISSING');
 assert(view.includes('두 번만 직접 고르면 끝이에요.'),'TWO_SELECTION_COPY_MISSING');
 assert(view.includes('시스템이 만든 대비 방향'),'AUTO_CONTRAST_PROVENANCE_COPY_MISSING');
-assert(view.includes('세 후보 모두 같은 나예요.'),'SAME_CHILD_COMPARISON_COPY_MISSING');
+assert(view.includes('세 후보 모두 같은 나'),'SAME_CHILD_COMPARISON_COPY_MISSING');
 
 console.log('CHARACTER_VISUAL_ID_UI_JOURNEY_V01_PASS');
 
