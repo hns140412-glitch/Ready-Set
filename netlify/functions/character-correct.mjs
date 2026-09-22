@@ -92,7 +92,14 @@ export default async function handler(req){
   }
 
   const b64=raw?.data?.[0]?.b64_json;
-  if(!b64)return Response.json({ok:false,reason:'CORRECTION_OUTPUT_MISSING'},{status:502});
+  if(!b64){
+    job.status='SELECTED';
+    job.error={reason:'CORRECTION_OUTPUT_MISSING'};
+    job.updated_at=new Date().toISOString();
+    job.trace=[...(job.trace||[]),{at:job.updated_at,event:'LIKENESS_CORRECTION_OUTPUT_MISSING',revision:job.correction_revision,status:'SELECTED'}];
+    await store.set(jobKey,JSON.stringify(job));
+    return Response.json({ok:false,reason:'CORRECTION_OUTPUT_MISSING'},{status:502});
+  }
   const bytes=Buffer.from(b64,'base64');
   const assetKey=prefix+'/selected/corrected-r'+job.correction_revision+'.webp';
   await store.set(assetKey,bytes);
