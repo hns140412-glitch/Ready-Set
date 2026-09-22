@@ -24,7 +24,26 @@
       '</article>';
     }
 
-    function render({profile,status,options=[],candidates=[]}={}){
+    function remoteCandidateCard(profile,job,item){
+      const slot=item?.slot||'';
+      const direction=(job?.directions||[]).find(x=>x.slot===slot)||item;
+      const label=direction?.direction_label||direction?.direction_id||slot;
+      const source=direction?.source==='SYSTEM_AUTO_CONTRAST'?'시스템 대비 방향':'내 선택';
+      const asset=job?.candidate_assets?.[slot];
+      const visualId=encodeURIComponent(String(profile?.visualId||''));
+      const url='/api/character/asset?visual_id='+visualId+'&slot='+encodeURIComponent(slot);
+      const visual=asset
+        ? '<img class="candidateGeneratedImage" src="'+url+'" alt="캐릭터 후보 '+escapeHtml(slot)+'">'
+        : '<div class="candidateVisual">'+escapeHtml(slot)+'</div>';
+      const select=job?.status==='READY_FOR_SELECTION'
+        ? '<button class="miniAction" data-select-character-candidate="'+escapeHtml(slot)+'">이 친구 선택</button>'
+        : '';
+      return '<article class="characterCandidatePlaceholder">'+visual+
+        '<div><small>'+escapeHtml(source)+'</small><b>'+escapeHtml(label)+'</b>'+select+'</div>'+
+      '</article>';
+    }
+
+    function render({profile,status,options=[],candidates=[],remoteJob=null,master=null}={}){
       applyAvatar(q('#characterSourceAvatar'));
       const step=q('#characterSetupStep');
       const title=q('#characterSetupTitle');
@@ -69,12 +88,32 @@
         if(grid)grid.hidden=true;
         if(candidateWrap){
           candidateWrap.hidden=false;
+          const job=remoteJob;
+          let controls='';
+          let note='원본 사진과 A/B/C 계약을 서버에 안전하게 등록할 수 있어요.';
+          if(!job){
+            controls='<button class="btn outline" id="prepareCharacterJobBtn">서버 생성 준비</button>';
+            note+=' 유료 이미지 생성은 아직 잠겨 있습니다.';
+          }else if(job.status==='QUEUED_PROVIDER_LOCKED'){
+            note='서버 등록 완료 · 이미지 생성은 외부 리소스 게이트로 잠겨 있습니다.';
+          }else if(job.status==='QUEUED'||String(job.status||'').startsWith('CANDIDATE_')){
+            controls='<button class="btn dark" id="generateCharacterCandidatesBtn">A/B/C 후보 생성</button>';
+            note='서버 계약이 준비됐습니다. 생성 게이트가 열린 환경에서만 이미지 API를 호출합니다.';
+          }else if(job.status==='READY_FOR_SELECTION'){
+            note='세 후보가 준비됐습니다. 같은 아이의 Identity를 유지하면서 분위기만 다르게 비교하세요.';
+          }else if(job.status==='SELECTED'){
+            note='후보 선택 완료 · 다음은 닮기 보정 단계입니다.';
+          }
+          const displayCandidates=(job?.directions||candidates).map(x=>({slot:x.slot||'',...x}));
           candidateWrap.innerHTML=
-            '<div class="characterCandidateHead"><small>A / B / C DIRECTION CONTRACT</small><h3>후보 생성 준비 완료</h3></div>'+
-            '<div class="characterCandidateGrid">'+candidates.map(candidateCard).join('')+'</div>'+
-            '<p class="muted">원본 사진과 A/B/C 계약을 서버에 안전하게 등록할 수 있어요. 유료 이미지 생성은 아직 잠겨 있습니다.</p>'+
-            '<button class="btn outline" id="prepareCharacterJobBtn">서버 생성 준비</button>'+
-            '<p class="muted" id="characterRemoteStatus">아직 서버 등록 전입니다.</p>';
+            '<div class="characterCandidateHead"><small>A / B / C DIRECTION CONTRACT</small><h3>'+
+              (job?.status==='READY_FOR_SELECTION'?'후보를 골라줘':job?.status==='SELECTED'?'후보 선택 완료':'후보 생성 준비')+
+            '</h3></div>'+
+            '<div class="characterCandidateGrid">'+
+              (job?displayCandidates.map(x=>remoteCandidateCard(profile,job,x)).join(''):candidates.map(candidateCard).join(''))+
+            '</div>'+
+            '<p class="muted">'+escapeHtml(note)+'</p>'+controls+
+            '<p class="muted" id="characterRemoteStatus">'+escapeHtml(job?.status||'아직 서버 등록 전')+'</p>';
         }
         return;
       }
