@@ -345,10 +345,11 @@ timer = execution cabin.
 ## 6. Exploration Crew system integration
 
 Canonical owner:
-Snap & Pop owns Exploration Crew identity, behavior rules, reaction grammar and crew system.
-Ready & Set does NOT redefine those rules.
+TAKY shared Exploration Crew canonical owns family-wide Crew identity, behavior rules, reaction grammar, relationship/memory and voice semantics.
+Snap & Pop remains an important source lineage and owns Beach-local Crew projection.
+Ready & Set does NOT redefine shared Crew rules.
 
-Ready may consume an authorized crew presence layer only.
+Ready may consume an authorized Crew presence layer only and owns only Base Camp/Planner/Timer contextual projection.
 
 Locked shared rules:
 - official terms: 탐험가 / 탐험대 / 탐험대원 / 탐험대 규칙
