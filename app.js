@@ -80,7 +80,7 @@ const SOUND_MAP={
 
 const initial={
   schemaVersion:5,
-  profile:{name:'',birthdate:'',photo:'',style:'editorial',shareAvatar:false,characterDirection:rebuildCharacterDirection.createState()},
+  profile:{name:'',birthdate:'',photo:'',style:'editorial',shareAvatar:false,sourcePhoto:null,characterDirection:rebuildCharacterDirection.createState(),characterGenerationJob:null,visualId:null},
   guide:{type:'lumi',name:'루미',voice:'warm'},
   guestHistory:[],
   selected:[],
