@@ -1,3 +1,4 @@
+import { ensure as ensureConsistencyGate } from './character-consistency-core.mjs';
 import { getDeployStore, getStore } from '@netlify/blobs';
 import { getUser } from '@netlify/identity';
 import familyCore from './ready-family-auth-core.js';
@@ -36,6 +37,14 @@ export default async function handler(req){
   if(!job)return Response.json({ok:false,reason:'CHARACTER_JOB_NOT_FOUND'},{status:404});
   const identity=job.corrected_asset||job.selected_asset;
   if(!identity?.asset_key)return Response.json({ok:false,reason:'CHARACTER_SELECTION_REQUIRED'},{status:409});
+  job.consistency_gate=ensureConsistencyGate(job);
+  if(!job.consistency_gate.lock_allowed||job.consistency_gate.final_state!=='PASS'){
+    return Response.json({
+      ok:false,
+      reason:'CHARACTER_CONSISTENCY_GATE_NOT_PASS',
+      consistency_gate:job.consistency_gate
+    },{status:409,headers:{'Cache-Control':'no-store'}});
+  }
 
   const lockedAt=new Date().toISOString();
   const master={
@@ -47,6 +56,13 @@ export default async function handler(req){
     selected_slot:job.selected_slot,
     identity_asset:identity,
     correction_revision:Number(job.correction_revision||0),
+    consistency_gate:{
+      contract_version:job.consistency_gate.contract_version,
+      structural_state:job.consistency_gate.structural?.state||'NOT_RUN',
+      visual_state:job.consistency_gate.visual?.state||'NOT_RUN',
+      human_state:job.consistency_gate.human_confirmation?.state||'NOT_RUN',
+      final_state:job.consistency_gate.final_state
+    },
     assets:{
       full_character:identity.asset_key,
       portrait_card:null,
