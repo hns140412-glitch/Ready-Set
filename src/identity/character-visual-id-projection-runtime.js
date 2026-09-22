@@ -38,7 +38,10 @@
       }),
       master_sheet:assetRef(input.master_sheet||input.characterMasterSheet?.asset_key||input.characterMasterSheet?.asset_url),
       source_provenance:Object.freeze({
-        source_hash:clean(master?.source_hash||local?.master?.source_hash||input.source_hash)||null,
+        authority:'SOURCE_PHOTO',
+        source_bound:!!clean(master?.source_hash||local?.master?.source_hash||input.source_hash),
+        raw_source_exposed:false,
+        source_fingerprint_exposed:false,
         character_core_version:clean(input.character_core_version)||'CHARACTER_VISUAL_ID_CORE_V01'
       }),
       assurance:assurance?Object.freeze({
@@ -55,10 +58,36 @@
     });
   }
 
-  function assertConsumable(projection,{requireDerivatives=false}={}){
+  function invariant(projection){
     if(!projection)return {ok:false,reason:'CHARACTER_VISUAL_ID_PROJECTION_MISSING'};
     if(projection.contract_version!==VERSION)return {ok:false,reason:'CHARACTER_VISUAL_ID_CONTRACT_VERSION_UNSUPPORTED'};
     if(!projection.visual_id)return {ok:false,reason:'CHARACTER_VISUAL_ID_MISSING'};
+    if(!Number.isInteger(projection.identity_version)||projection.identity_version<1){
+      return {ok:false,reason:'CHARACTER_VISUAL_IDENTITY_VERSION_INVALID'};
+    }
+    if(projection.source_provenance?.authority!=='SOURCE_PHOTO'){
+      return {ok:false,reason:'CHARACTER_SOURCE_AUTHORITY_INVALID'};
+    }
+    if(projection.source_provenance?.raw_source_exposed!==false||
+       projection.source_provenance?.source_fingerprint_exposed!==false){
+      return {ok:false,reason:'CHARACTER_SOURCE_PRIVACY_CONTRACT_INVALID'};
+    }
+    const locked=projection.capabilities?.identity_locked===true;
+    const derivatives=projection.capabilities?.derivatives_ready===true;
+    if(projection.status==='NOT_READY'&&locked)return {ok:false,reason:'CHARACTER_PROJECTION_STATUS_CONTRADICTION'};
+    if(projection.status==='VISUAL_ID_LOCKED'&&!locked)return {ok:false,reason:'CHARACTER_PROJECTION_STATUS_CONTRADICTION'};
+    if(projection.status==='MASTER_ASSETS_READY'&&(!locked||!derivatives)){
+      return {ok:false,reason:'CHARACTER_PROJECTION_STATUS_CONTRADICTION'};
+    }
+    if(derivatives&&!(projection.assets?.full_character&&projection.assets?.portrait_card&&projection.assets?.avatar_square)){
+      return {ok:false,reason:'CHARACTER_PROJECTION_ASSET_CONTRADICTION'};
+    }
+    return {ok:true};
+  }
+
+  function assertConsumable(projection,{requireDerivatives=false}={}){
+    const coherent=invariant(projection);
+    if(!coherent.ok)return coherent;
     if(!projection.capabilities?.identity_locked)return {ok:false,reason:'CHARACTER_VISUAL_ID_NOT_LOCKED'};
     if(!projection.assurance||projection.assurance.final_state!=='PASS'){
       return {ok:false,reason:'CHARACTER_VISUAL_ID_ASSURANCE_NOT_PASS'};
@@ -73,6 +102,7 @@
     version:VERSION,
     owner:'CHARACTER_VISUAL_ID',
     fromMaster,
+    invariant,
     assertConsumable
   });
 
