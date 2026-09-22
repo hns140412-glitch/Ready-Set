@@ -764,3 +764,26 @@ assert('member-scoped-app-and-local-first',
   localFirstMemberSource.includes('localStorageKeyForScope') &&
   localFirstMemberSource.includes('effectiveScope')
 );
+
+
+// Character identity / mood-direction correction: latest approved flow = 3-choice round 1 -> confirm -> 3-choice round 2 -> confirm -> system auto contrast.
+const characterDirectionSource=loadSource('src/identity/character-direction-runtime.js');
+const characterDirectionContext={globalThis:{}};vm.createContext(characterDirectionContext);vm.runInContext(characterDirectionSource,characterDirectionContext);
+const characterDirection=characterDirectionContext.globalThis.ReadyCharacterDirection;
+assert('character-direction-owner',characterDirection?.version==='READY_CHARACTER_DIRECTION_V01');
+assert('character-direction-loaded-before-app',
+  indexSource.indexOf('src/identity/character-direction-runtime.js')>0 &&
+  indexSource.indexOf('src/identity/character-direction-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('character-direction-photo-identity-lock',characterDirection.identityContract().sourcePhotoIsHighestAuthority===true);
+assert('character-direction-two-user-selections',characterDirection.identityContract().userSelectionsExactly===2);
+assert('character-direction-third-system-auto',characterDirection.identityContract().thirdDirection==='SYSTEM_AUTO_CONTRAST');
+const characterRound1=characterDirection.firstRound();
+let characterState=characterDirection.createState();
+characterState=characterDirection.select(characterState,characterRound1[0].id);
+const characterRound2=characterDirection.secondRound(characterState.firstSelection);
+characterState=characterDirection.select(characterState,characterRound2[0].id);
+assert('character-direction-three-distinct-candidates',characterState.candidates.length===3&&new Set(characterState.candidates.map(x=>x.direction.id)).size===3);
+assert('character-direction-provenance',characterState.candidates.map(x=>x.source).join('|')==='USER_SELECTION_1|USER_SELECTION_2|SYSTEM_AUTO_CONTRAST');
+assert('character-direction-no-emoji-ui',characterDirection.identityContract().emojiOrEmoticonUi===false);
+assert('character-direction-wired-state',appSource.includes('characterDirection:rebuildCharacterDirection.createState()'));
