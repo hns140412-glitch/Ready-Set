@@ -103,3 +103,43 @@ Because the branch advanced substantially, re-audit rebuild % before updating it
 ## Scope
 Ready & Set only.
 Snap & Pop and Hide & Seek rebuilds are owned by other conversations.
+
+
+## Character Core update — 2026-09-22
+Read first:
+- `C2S/READY_CHARACTER_DIRECTION_C2S_REFLECTION_2026-09-22.md`
+- `RESEARCH/CHARACTER_GENERATION_REFERENCE_SURVEY_2026-09-22.md`
+
+Latest rule:
+- child chooses direction exactly twice
+- third direction is system-derived contrast
+- source photo is the highest identity authority
+- A/B/C carry explicit provenance
+- likeness correction is a separate edit pass
+- Visual ID locks only after candidate selection (and optional correction)
+
+Implementation surfaces:
+- `src/identity/source-photo-intake-runtime.js`
+- `src/identity/character-direction-runtime.js`
+- `src/identity/character-generation-job-runtime.js`
+- `src/identity/character-asset-keys-runtime.js`
+- `src/identity/character-core-orchestrator-runtime.js`
+- `src/identity/character-remote-adapter-runtime.js`
+- `src/identity/character-master-runtime.js`
+- `src/identity/character-setup-view-runtime.js`
+- `src/identity/character-setup-controller-runtime.js`
+- `netlify/functions/character-source.mjs`
+- `netlify/functions/character-job.mjs`
+- `netlify/functions/character-generate.mjs`
+- `netlify/functions/character-asset.mjs`
+- `netlify/functions/character-action.mjs`
+- `netlify/functions/character-correct.mjs`
+- `netlify/functions/character-master.mjs`
+
+External resource rule:
+- no Netlify deploy in this stage
+- no paid image call until TAKY external-resource gate approval
+- `READY_CHARACTER_PAID_GENERATION` remains closed by default
+
+Deferred:
+- Intro / Drop / Voyage / World Arrival are a later expansion pack and not a core-completion blocker.
