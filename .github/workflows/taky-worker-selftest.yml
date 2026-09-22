@@ -59,6 +59,7 @@ jobs:
           node REBUILD/validate-character-independent-core-v01.mjs
           node REBUILD/validate-character-server-consistency-v01.mjs
           node REBUILD/validate-character-projection-v01.mjs
+          node REBUILD/validate-character-privacy-boundary-v01.mjs
           node REBUILD/validate-character-ui-journey-v01.mjs
           node REBUILD/validate-character-visual-id-independence-v01.mjs
       - name: Verify queue integrity and profile binding
