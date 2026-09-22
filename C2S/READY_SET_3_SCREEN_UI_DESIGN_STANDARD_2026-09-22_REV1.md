@@ -172,6 +172,27 @@ and:
 
 Ready's job is to make **Base Camp** feel like the operational home of the learner while preserving continuity with the island world defined elsewhere.
 
+## 2.7 Child-facing wording lock — HARD LOCK
+
+Primary labels:
+- WEEKLY SCHEDULE → **이번 주 여정**
+- DAILY SCHEDULE → **오늘의 탐험길**
+- TIMER headline → **그냥! 지금 하면 돼!**
+
+Language principle:
+- Ready & Set is an exploration-oriented Base Camp, not a military command center.
+- Prefer: 여정 / 탐험길 / 출발 / 다음 탐험 / 쉬어가기 / 돌아보기 / 지금 할 일.
+- De-prioritize or reject as default UI language: 작전 / 작전판 / 작전실 / 전투 / 클리어 / 보상 획득.
+- “미션” may appear only where already functionally established, but must not become the dominant naming layer across the three-screen UI.
+
+Three-screen narrative:
+`이번 주 여정 → 오늘의 탐험길 → 그냥! 지금 하면 돼!`
+
+Meaning:
+- 이번 주 여정 = far-view weekly route from Base Camp
+- 오늘의 탐험길 = today’s concrete route
+- 그냥! 지금 하면 돼! = execution moment with minimal cognitive overhead
+
 ## 3. Product logic that the three screens must carry
 
 Canonical learning/planning flow remains:
