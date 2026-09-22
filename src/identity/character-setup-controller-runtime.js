@@ -161,9 +161,48 @@
       return result;
     }
 
+    async function correctLikeness(){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const result=await remote.correctLikeness({visual_id:p.visualId});
+      if(!result?.ok)return result;
+      p.characterRemoteJob=result.job||null;
+      if(masterApi&&p.characterMaster){
+        const current=p.characterMaster.state==='CORRECTION_PENDING'
+          ? p.characterMaster
+          : masterApi.requestCorrection(p.characterMaster,'SOURCE_PHOTO_LIKENESS_STRONGER');
+        p.characterMaster=masterApi.applyCorrection(current,{
+          asset_key:result.job?.corrected_asset?.asset_key||null,
+          asset_url:remote.assetUrl(p.visualId,'CORRECTED'),
+          asset_hash:null
+        });
+      }
+      save();
+      return result;
+    }
+
+    async function lockMaster(){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const result=await remote.lockMaster({visual_id:p.visualId});
+      if(!result?.ok)return result;
+      p.characterRemoteJob=result.job||null;
+      p.characterMasterRemote=result.master||null;
+      if(masterApi&&p.characterMaster){
+        const assets={
+          avatar_square:remote.assetUrl(p.visualId,'MASTER_AVATAR'),
+          portrait_card:remote.assetUrl(p.visualId,'MASTER_PORTRAIT'),
+          full_character:remote.assetUrl(p.visualId,'MASTER_FULL')
+        };
+        p.characterMaster=masterApi.lock(p.characterMaster,{master_assets:assets,locked_at:result.master?.locked_at});
+      }
+      save();
+      return result;
+    }
+
     return Object.freeze({
       render,begin,choose,generationPayload,prepareRemoteJob,startGeneration,
-      refreshRemoteJob,generateAllCandidates,selectCandidate
+      refreshRemoteJob,generateAllCandidates,selectCandidate,correctLikeness,lockMaster
     });
   }
 
