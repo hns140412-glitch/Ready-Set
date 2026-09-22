@@ -76,7 +76,7 @@ export default async function handler(req){
     visual_id:visualId,
     source_hash:sourceHash,
     source_key:sourceMeta.source_key,
-    status:'QUEUED_PROVIDER_LOCKED',
+    status:String(process.env.READY_CHARACTER_PAID_GENERATION||'').toLowerCase()==='true'?'QUEUED':'QUEUED_PROVIDER_LOCKED',
     directions:body.directions,
     provider_generation_enabled:String(process.env.READY_CHARACTER_PAID_GENERATION||'').toLowerCase()==='true',
     created_at:created,
