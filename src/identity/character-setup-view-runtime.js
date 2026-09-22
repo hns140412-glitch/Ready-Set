@@ -153,8 +153,11 @@
     return Object.freeze({render});
   }
 
-  root.ReadyCharacterSetupView=Object.freeze({
-    version:'READY_CHARACTER_SETUP_VIEW_V01',
+  const api=Object.freeze({
+    version:'CHARACTER_VISUAL_ID_SETUP_VIEW_V01',
+    owner:'CHARACTER_VISUAL_ID',
     create
   });
+  root.CharacterVisualIdSetupView=api;
+  root.ReadyCharacterSetupView=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
