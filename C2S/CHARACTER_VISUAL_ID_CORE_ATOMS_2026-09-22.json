@@ -93,6 +93,34 @@
       "statement": "Device validation remains NOT_RUN.",
       "owner": "CHARACTER_VISUAL_ID",
       "state": "DEFERRED"
+    },
+    {
+      "id": "CHAR-014",
+      "type": "DECISION",
+      "statement": "Character formation includes exactly one minimal Signature Exploration Item selected after mood choices and before A/B/C generation.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "CODED_CI_VERIFIED"
+    },
+    {
+      "id": "CHAR-015",
+      "type": "DECISION",
+      "statement": "Signature Item hierarchy is IDENTITY > EXPRESSION DIRECTION > SIGNATURE ITEM; item must not obscure or replace identity.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "CODED_CI_VERIFIED"
+    },
+    {
+      "id": "CHAR-016",
+      "type": "REQUIREMENT",
+      "statement": "The same selected Signature Item must persist across A/B/C, likeness correction, Visual ID lock, derivatives and master assets.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "CODED_CI_VERIFIED"
+    },
+    {
+      "id": "CHAR-017",
+      "type": "CORRECTION",
+      "statement": "Projection V02 supersedes pre-integration V01 to expose only Signature Item id and label downstream.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "CODED_CI_VERIFIED"
     }
   ]
 }
