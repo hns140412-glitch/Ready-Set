@@ -325,3 +325,81 @@ Still NOT_RUN:
 - real child source-photo flow
 - device validation
 - Ready / Hide / Snap integration
+
+
+## Signature Exploration Item — 2026-09-22
+
+User correction:
+Character formation should allow a minimal unique exploration decoration such as glasses, magnifier, hat, compass, etc.
+
+This is NOT expanded into a full avatar/customization editor.
+
+Hard hierarchy:
+`IDENTITY > EXPRESSION DIRECTION > SIGNATURE ITEM`
+
+Canonical flow is now:
+```
+SOURCE PHOTO
+-> MOOD ROUND 1
+-> MOOD ROUND 2
+-> SIGNATURE ITEM 1-of-3
+-> SYSTEM AUTO CONTRAST / A-B-C CONTRACT
+-> A/B/C GENERATION
+-> SELECT
+-> CONSISTENCY / HUMAN CONFIRM
+-> OPTIONAL LIKENESS CORRECTION
+-> VISUAL ID LOCK
+-> DERIVATIVES
+-> PROJECTION V02
+```
+
+Rules:
+- catalog contains 6 restrained exploration items;
+- only 3 are suggested per formation session;
+- child selects exactly 1;
+- suggestion ranking uses selected mood directions;
+- same item must appear in A/B/C;
+- likeness correction must preserve the item;
+- item must never override or obscure identity;
+- no second major signature prop;
+- item remains part of the locked Character Master.
+
+Initial catalog:
+- MAGNIFIER / 돋보기
+- EXPLORER_HAT / 탐험 모자
+- ROUND_GLASSES / 얇은 안경
+- COMPASS / 나침반
+- MINI_FIELD_BAG / 미니 필드백
+- FIELD_NOTEBOOK / 탐험 노트
+
+Contract:
+`CHARACTER_EXPLORATION_SIGNATURE_ITEM_V01`
+
+Projection:
+`CHARACTER_VISUAL_ID_PROJECTION_V02`
+
+V02 supersedes pre-integration V01 before any Ready/Hide/Snap consumer integration.
+
+Visual consistency review now checks:
+- same selected signature item across A/B/C;
+- item remains subtle;
+- item does not obstruct face/eyes.
+
+Validated code checkpoint:
+`f337c29dd7e855d19e868a2b7758c885ea59534b`
+
+CI:
+- run `35683452887`
+- SUCCESS
+- Signature Item validator PASS
+- Character independent core PASS
+- consistency gates PASS
+- Projection V02 PASS
+- privacy boundary PASS
+- complete Worker Self-Test PASS
+
+Runtime evidence remains NOT_RUN:
+- real image generation with item
+- real item persistence across A/B/C
+- real visual-review item verification
+- device validation
