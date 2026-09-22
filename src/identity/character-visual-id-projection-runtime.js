@@ -1,7 +1,7 @@
 (function(root){
   'use strict';
 
-  const VERSION='CHARACTER_VISUAL_ID_PROJECTION_V01';
+  const VERSION='CHARACTER_VISUAL_ID_PROJECTION_V02';
 
   function clean(v){return String(v??'').trim();}
 
@@ -36,6 +36,12 @@
         portrait_card:portrait,
         avatar_square:avatar
       }),
+      signature_item:(master?.signature_item||local?.master?.signature_item)
+        ? Object.freeze({
+            id:clean((master?.signature_item||local?.master?.signature_item)?.id),
+            label:clean((master?.signature_item||local?.master?.signature_item)?.label)
+          })
+        : null,
       master_sheet:assetRef(input.master_sheet||input.characterMasterSheet?.asset_key||input.characterMasterSheet?.asset_url),
       source_provenance:Object.freeze({
         authority:'SOURCE_PHOTO',
@@ -64,6 +70,9 @@
     if(!projection.visual_id)return {ok:false,reason:'CHARACTER_VISUAL_ID_MISSING'};
     if(!Number.isInteger(projection.identity_version)||projection.identity_version<1){
       return {ok:false,reason:'CHARACTER_VISUAL_IDENTITY_VERSION_INVALID'};
+    }
+    if(!projection.signature_item?.id||!projection.signature_item?.label){
+      return {ok:false,reason:'CHARACTER_SIGNATURE_ITEM_MISSING'};
     }
     if(projection.source_provenance?.authority!=='SOURCE_PHOTO'){
       return {ok:false,reason:'CHARACTER_SOURCE_AUTHORITY_INVALID'};
