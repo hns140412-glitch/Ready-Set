@@ -64,6 +64,7 @@ jobs:
           node --check netlify/functions/character-action.mjs
           node --check netlify/functions/character-correct.mjs
           node --check netlify/functions/character-master.mjs
+          node --check netlify/functions/character-master-sheet.mjs
       - name: Guard legacy entrypoints remain available during migration
         run: |
           test -f app.js
