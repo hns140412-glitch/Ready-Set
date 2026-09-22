@@ -21,7 +21,11 @@ function createSyncService(store,options={}){
       return {status:400,body:{ok:false,reason:'INVALID_EVENT'}};
     }
 
-    const key='families/'+encodeURIComponent(namespace)+'/events/'+encodeURIComponent(idempotencyKey);
+    const scope=clean(input.scope)||'unknown';
+    const memberScoped=/^member:[^:]+:.+$/.test(scope);
+    const key=memberScoped
+      ? 'families/'+encodeURIComponent(namespace)+'/scopes/'+encodeURIComponent(scope)+'/events/'+encodeURIComponent(idempotencyKey)
+      : 'families/'+encodeURIComponent(namespace)+'/events/'+encodeURIComponent(idempotencyKey);
     const existing=await store.get(key);
     if(existing){
       const current=typeof existing==='string' ? JSON.parse(existing) : existing;
@@ -42,7 +46,7 @@ function createSyncService(store,options={}){
     const record={
       event_id:eventId,
       idempotency_key:idempotencyKey,
-      scope:clean(input.scope)||'unknown',
+      scope,
       digest,
       payload:input.payload ?? null,
       created_at:input.created_at || null,
