@@ -23,6 +23,8 @@ jobs:
           node-version: '20'
       - name: Validate shared runtime contract
         run: node tests/shared-runtime-contract.test.js
+      - name: Validate release archive boundary
+        run: node tests/release-package-contract.test.js
       - name: Install Playwright
         run: |
           npm install --no-save @playwright/test@1.55.0
