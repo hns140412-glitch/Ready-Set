@@ -8,23 +8,33 @@ const app=read('app.js');
 const view=read('src/identity/character-setup-view-runtime.js');
 const controller=read('src/identity/character-setup-controller-runtime.js');
 const core=read('src/identity/character-core-orchestrator-runtime.js');
+const signatureItemRuntime=read('src/identity/character-signature-item-runtime.js');
+const signatureItemServer=read('netlify/functions/character-signature-item-core.mjs');
 
 assert(index.includes('id="characterSetupView"'),'CHARACTER_SETUP_VIEW_MISSING');
 assert(index.includes('id="openCharacterSetupBtn"'),'CHARACTER_SETUP_ENTRY_MISSING');
 assert(index.includes('id="characterDirectionGrid"'),'CHARACTER_DIRECTION_GRID_MISSING');
 assert(index.includes('character-setup-view-runtime.js'),'CHARACTER_SETUP_VIEW_NOT_LOADED');
 assert(index.includes('character-setup-controller-runtime.js'),'CHARACTER_SETUP_CONTROLLER_NOT_LOADED');
+assert(index.includes('character-signature-item-runtime.js'),'SIGNATURE_ITEM_RUNTIME_NOT_LOADED');
 assert(index.indexOf('character-setup-view-runtime.js')<index.indexOf('app.js'),'CHARACTER_SETUP_VIEW_LOAD_ORDER_INVALID');
 assert(index.indexOf('character-setup-controller-runtime.js')<index.indexOf('app.js'),'CHARACTER_SETUP_CONTROLLER_LOAD_ORDER_INVALID');
 
 assert(app.includes("'character-setup':()=>characterSetupRuntime.render()"),'CHARACTER_SETUP_ROUTE_MISSING');
 assert(app.includes('characterSetupRuntime.begin()'),'CHARACTER_SETUP_BEGIN_NOT_WIRED');
-assert(app.includes('characterSetupRuntime.choose(button.dataset.characterDirection)'),'CHARACTER_SETUP_CHOICE_NOT_WIRED');
+assert(app.includes('characterSetupRuntime.choose(direction.dataset.characterDirection)'),'CHARACTER_SETUP_CHOICE_NOT_WIRED');
 assert(app.includes("nav('character-setup')"),'CHARACTER_SETUP_ENTRY_NAV_MISSING');
 
 assert(controller.includes("status:'ROUND_2'"),'ROUND_2_UI_STATE_MISSING');
+assert(controller.includes("status:'ITEM_SELECTION'"),'SIGNATURE_ITEM_UI_STATE_MISSING');
+assert(controller.includes('chooseItem'),'SIGNATURE_ITEM_CONTROLLER_MISSING');
+assert(app.includes('data-character-item'),'SIGNATURE_ITEM_UI_ACTION_MISSING');
 assert(controller.includes('SYSTEM_AUTO_CONTRAST')===false,'CONTROLLER_MUST_NOT_INVENT_AUTO_CONTRAST');
 assert(core.includes('p.characterDirection.candidates'),'CORE_MUST_OWN_CANDIDATE_DIRECTION_RESULT');
+assert(core.includes("status:'ITEM_SELECTION'"),'CORE_SIGNATURE_ITEM_STAGE_MISSING');
+assert(signatureItemRuntime.includes('EXACTLY_ONE_SIGNATURE_ITEM'),'SIGNATURE_ITEM_ONE_ONLY_RULE_MISSING');
+assert(signatureItemRuntime.includes('SAME_ITEM_ACROSS_A_B_C'),'SIGNATURE_ITEM_CANDIDATE_RULE_MISSING');
+assert(signatureItemServer.includes('normalizeSignatureItem'),'SIGNATURE_ITEM_SERVER_VALIDATION_MISSING');
 assert(view.includes('두 번만 직접 고르면 끝이에요.'),'TWO_SELECTION_COPY_MISSING');
 assert(view.includes('시스템이 만든 대비 방향'),'AUTO_CONTRAST_PROVENANCE_COPY_MISSING');
 assert(view.includes('세 후보 모두 같은 나예요.'),'SAME_CHILD_COMPARISON_COPY_MISSING');
@@ -62,6 +72,9 @@ assert(jobFn.includes('DIRECTION_PROVENANCE_INVALID'),'CHARACTER_JOB_PROVENANCE_
 assert(generateFn.includes('READY_CHARACTER_PAID_GENERATION'),'CHARACTER_GENERATION_GATE_MISSING');
 assert(generateFn.includes('SYSTEM_AUTO_CONTRAST')===false,'SERVER_GENERATOR_MUST_CONSUME_NOT_INVENT_CONTRAST');
 assert(generateFn.includes("https://api.openai.com/v1/images/edits"),'IMAGE_EDIT_PROVIDER_BOUNDARY_MISSING');
+assert(generateFn.includes('promptForSignatureItem'),'SIGNATURE_ITEM_GENERATION_PROMPT_MISSING');
+assert(correctFn.includes('promptForSignatureItem'),'SIGNATURE_ITEM_CORRECTION_PRESERVATION_MISSING');
+assert(masterFn.includes('signature_item:job.signature_item'),'SIGNATURE_ITEM_MASTER_LOCK_MISSING');
 assert(generateFn.includes("Reference image")===false,'CANDIDATE_GENERATION_SHOULD_USE_SINGLE_SOURCE_PHOTO');
 assert(assetFn.includes("getUser"),'CHARACTER_ASSET_AUTH_MISSING');
 assert(actionFn.includes('SELECT_CANDIDATE'),'CHARACTER_SELECT_ACTION_MISSING');
