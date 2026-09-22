@@ -44,7 +44,7 @@ const rebuildProfileSettingsView=globalThis.ReadyRebuildProfileSettingsView||nul
 const rebuildProfileController=globalThis.ReadyRebuildProfileController||null;
 const rebuildLearnerContext=globalThis.ReadyRebuildLearnerContext||null;
 const rebuildCharacterDirection=globalThis.ReadyCharacterDirection||null;
-const rebuildCharacterCore=globalThis.ReadyCharacterCoreOrchestrator||null;
+const rebuildCharacterCore=globalThis.ReadyCharacterCoreOrchestrator||null;\nconst rebuildCharacterRemoteAdapter=globalThis.ReadyCharacterRemoteAdapter||null;
 const rebuildCharacterSetupView=globalThis.ReadyCharacterSetupView||null;
 const rebuildCharacterSetupController=globalThis.ReadyCharacterSetupController||null;
 const rebuildSettingsController=globalThis.ReadyRebuildSettingsController||null;
@@ -57,7 +57,7 @@ const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildAppBootstrapController=globalThis.ReadyRebuildAppBootstrapController||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildMissionController||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildLearnerContext||!rebuildCharacterDirection||!rebuildCharacterCore||!rebuildCharacterSetupView||!rebuildCharacterSetupController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildPlannerScreenController||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildMissionController||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildLearnerContext||!rebuildCharacterDirection||!rebuildCharacterCore||!rebuildCharacterRemoteAdapter||!rebuildCharacterSetupView||!rebuildCharacterSetupController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildPlannerScreenController||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -114,7 +114,7 @@ const characterCoreRuntime=rebuildCharacterCore.create({
   jobApi:globalThis.ReadyCharacterGenerationJob,
   assetKeysApi:globalThis.ReadyCharacterAssetKeys
 });
-globalThis.ReadySetCharacterCore=characterCoreRuntime;
+globalThis.ReadySetCharacterCore=characterCoreRuntime;\nconst characterRemoteRuntime=rebuildCharacterRemoteAdapter.create();
 let previewTimer=null;
 let plannerSelectedDate=null;
 let plannerTab='week';
@@ -613,6 +613,28 @@ $('#beginCharacterSetupBtn').onclick=()=>{
   const result=characterSetupRuntime.begin();
   if(result?.ok)$('#beginCharacterSetupBtn').hidden=true;
 };
+$('#characterSetupView').addEventListener('click',async e=>{
+  const button=e.target.closest?.('#prepareCharacterJobBtn');
+  if(!button)return;
+  const status=$('#characterRemoteStatus');
+  button.disabled=true;
+  if(status)status.textContent='원본 사진과 생성 계약을 서버에 등록하는 중…';
+  try{
+    const result=await characterSetupRuntime.prepareRemoteJob();
+    if(result?.ok){
+      if(status)status.textContent=result.next==='PROVIDER_LOCKED'
+        ?'서버 등록 완료 · 이미지 생성은 안전 잠금 상태'
+        :'서버 등록 완료 · 생성 어댑터 연결 준비';
+      toast('캐릭터 생성 준비를 서버에 저장했어요.');
+    }else{
+      if(status)status.textContent='서버 준비 실패 · '+String(result?.reason||'UNKNOWN');
+      toast(result?.reason==='UNAUTHENTICATED'?'로그인 후 서버 생성을 준비할 수 있어요.':'서버 준비를 완료하지 못했어요.');
+    }
+  }catch(err){
+    if(status)status.textContent='서버 준비 실패 · '+String(err?.message||err);
+    toast('서버 준비를 완료하지 못했어요.');
+  }finally{button.disabled=false;}
+});
 $('#characterDirectionGrid').onclick=e=>{
   const button=e.target.closest?.('[data-character-direction]');
   if(!button)return;
