@@ -5,7 +5,7 @@ const source=fs.readFileSync(new URL('../src/identity/character-direction-runtim
 const context={globalThis:{}};
 vm.createContext(context);
 vm.runInContext(source,context);
-const api=context.globalThis.ReadyCharacterDirection;
+const api=context.globalThis.CharacterVisualIdDirection||context.globalThis.ReadyCharacterDirection;
 if(!api) throw new Error('CHARACTER_DIRECTION_RUNTIME_MISSING');
 
 const assert=(cond,msg)=>{if(!cond)throw new Error(msg);};
@@ -36,4 +36,4 @@ assert(s.candidates[1].source==='USER_SELECTION_2','CANDIDATE_B_PROVENANCE_INVAL
 assert(s.candidates[2].source==='SYSTEM_AUTO_CONTRAST','CANDIDATE_C_PROVENANCE_INVALID');
 assert(new Set(s.candidates.map(x=>x.direction.id)).size===3,'CANDIDATE_DIRECTIONS_MUST_BE_DISTINCT');
 
-console.log('READY_CHARACTER_DIRECTION_V01_PASS');
+console.log('CHARACTER_VISUAL_ID_DIRECTION_V01 PASS');
