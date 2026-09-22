@@ -106,3 +106,23 @@ Still NOT_RUN:
 - real child source-photo flow
 - device validation
 - Ready / Hide / Snap integration
+
+
+## Signature Item extension
+
+| Area | CODED | CI_VERIFIED | PROVIDER_RUNTIME | DEVICE |
+|---|---|---|---|---|
+| Signature Item catalog | PASS | PASS | N/A | NOT_RUN |
+| Mood-based 3-item suggestion | PASS | PASS | N/A | NOT_RUN |
+| Exactly-one item selection | PASS | PASS | N/A | NOT_RUN |
+| Same item across A/B/C contract | PASS | PASS | NOT_RUN | NOT_RUN |
+| Item preservation in likeness correction | PASS | PASS | NOT_RUN | NOT_RUN |
+| Item persistence into Visual ID Master | PASS | PASS | NOT_RUN | NOT_RUN |
+| Visual review item-consistency gate | PASS | PASS | NOT_RUN | NOT_RUN |
+| Projection V02 minimal item exposure | PASS | PASS | N/A | NOT_RUN |
+
+Validated code checkpoint:
+`f337c29dd7e855d19e868a2b7758c885ea59534b`
+
+CI run:
+`35683452887` SUCCESS
