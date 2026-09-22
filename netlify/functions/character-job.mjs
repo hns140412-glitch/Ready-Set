@@ -4,6 +4,7 @@ import familyCore from './ready-family-auth-core.js';
 
 const { familySessionFromIdentityUser }=familyCore;
 const VALID_SOURCES=['USER_SELECTION_1','USER_SELECTION_2','SYSTEM_AUTO_CONTRAST'];
+const IDENTITY_CONTRACT_VERSION='CHARACTER_VISUAL_IDENTITY_CONSISTENCY_V01';
 
 function storeFor(){
   const context=globalThis.Netlify?.context?.deploy?.context;
@@ -24,6 +25,18 @@ async function session(){
   if(mapped.session.role!=='CHILD')return {ok:false,status:403,reason:'CHILD_ROLE_REQUIRED'};
   return mapped;
 }
+function validateIdentityContract(contract){
+  if(!contract||contract.contract_version!==IDENTITY_CONTRACT_VERSION){
+    return {ok:false,reason:'IDENTITY_CONTRACT_INVALID'};
+  }
+  if(contract.identity_authority!=='SOURCE_PHOTO')return {ok:false,reason:'IDENTITY_AUTHORITY_INVALID'};
+  if(contract.candidate_rule!=='SAME_CHILD_DIFFERENT_DIRECTION')return {ok:false,reason:'IDENTITY_CANDIDATE_RULE_INVALID'};
+  if(!Array.isArray(contract.candidates)||contract.candidates.length!==3)return {ok:false,reason:'IDENTITY_CANDIDATE_CONTRACT_INVALID'};
+  const slots=contract.candidates.map(x=>String(x?.slot||'')).join('|');
+  if(slots!=='A|B|C')return {ok:false,reason:'IDENTITY_CANDIDATE_SLOTS_INVALID'};
+  return {ok:true};
+}
+
 function validateDirections(directions){
   if(!Array.isArray(directions)||directions.length!==3)return {ok:false,reason:'THREE_DIRECTIONS_REQUIRED'};
   const sources=directions.map(x=>String(x?.source||''));
@@ -60,6 +73,8 @@ export default async function handler(req){
   if(!sourceHash)return Response.json({ok:false,reason:'SOURCE_HASH_REQUIRED'},{status:400});
   const checked=validateDirections(body.directions);
   if(!checked.ok)return Response.json({ok:false,reason:checked.reason},{status:400});
+  const identityChecked=validateIdentityContract(body.identity_contract);
+  if(!identityChecked.ok)return Response.json({ok:false,reason:identityChecked.reason},{status:400});
 
   const prefix=memberId+'/'+visualId;
   const sourceMetaRaw=await store.get(prefix+'/source/meta.json');
@@ -69,7 +84,8 @@ export default async function handler(req){
 
   const created=new Date().toISOString();
   const job={
-    contract_version:'READY_CHARACTER_GENERATION_JOB_V01',
+    contract_version:'CHARACTER_VISUAL_ID_GENERATION_JOB_V01',
+    identity_contract:body.identity_contract,
     job_id:'charjob_'+visualId+'_'+sourceHash.slice(0,12),
     family_id:mapped.session.family_id,
     member_id:memberId,
