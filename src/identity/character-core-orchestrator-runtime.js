@@ -8,7 +8,8 @@
     const jobApi=options.jobApi||root.CharacterVisualIdGenerationJob||root.ReadyCharacterGenerationJob;
     const assetKeysApi=options.assetKeysApi||root.CharacterVisualIdAssetKeys||root.ReadyCharacterAssetKeys;
     const identityApi=options.identityApi||root.CharacterVisualIdentityConsistency||null;
-    if(!directionApi||!jobApi||!assetKeysApi||!identityApi)throw new Error('CHARACTER_CORE_DEPENDENCY_MISSING');
+    const itemApi=options.itemApi||root.CharacterExplorationSignatureItem||null;
+    if(!directionApi||!jobApi||!assetKeysApi||!identityApi||!itemApi)throw new Error('CHARACTER_CORE_DEPENDENCY_MISSING');
 
     function ensureProfile(profile){
       if(!profile||typeof profile!=='object')throw new Error('CHARACTER_PROFILE_REQUIRED');
@@ -20,6 +21,7 @@
     function begin(profile){
       const p=ensureProfile(profile);
       p.characterDirection=directionApi.createState();
+      p.characterSignatureItem=null;
       p.characterGenerationJob=null;
       return {
         status:'ROUND_1',
@@ -41,30 +43,51 @@
       }
 
       if(p.characterDirection.status==='READY_FOR_CANDIDATE_GENERATION'){
-        const resolvedVisualId=String(visualId||p.visualId||'').trim();
-        const resolvedMemberScope=String(memberScope||'').trim();
-        if(!resolvedVisualId)throw new Error('CHARACTER_VISUAL_ID_REQUIRED');
-        if(!resolvedMemberScope)throw new Error('CHARACTER_MEMBER_SCOPE_REQUIRED');
-
-        p.visualId=resolvedVisualId;
-        const job=jobApi.create({
-          visual_id:resolvedVisualId,
-          member_scope:resolvedMemberScope,
-          source_hash:p.sourcePhoto.source_hash,
-          directions:p.characterDirection.candidates
-        });
-        job.assets={...job.assets,...assetKeysApi.keys(resolvedMemberScope,resolvedVisualId)};
-        p.characterGenerationJob=job;
-        p.characterIdentityContract=identityApi.generationContract(p.characterDirection.candidates);
+        const directionIds=[
+          p.characterDirection.firstSelection,
+          p.characterDirection.secondSelection,
+          p.characterDirection.autoContrast
+        ].filter(Boolean);
+        p.characterSignatureItem=itemApi.createState(directionIds);
         return {
-          status:'READY_FOR_CANDIDATE_GENERATION',
-          job,
-          identityContract:p.characterIdentityContract,
+          status:'ITEM_SELECTION',
+          options:p.characterSignatureItem.offered.map(id=>itemApi.item(id)),
           profile:p
         };
       }
 
       throw new Error('CHARACTER_CORE_UNEXPECTED_DIRECTION_STATE');
+    }
+
+    function chooseItem(profile,itemId,{memberScope,visualId}={}){
+      const p=ensureProfile(profile);
+      if(!p.characterSignatureItem)throw new Error('CHARACTER_SIGNATURE_ITEM_STATE_REQUIRED');
+      p.characterSignatureItem=itemApi.select(p.characterSignatureItem,itemId);
+
+      const resolvedVisualId=String(visualId||p.visualId||'').trim();
+      const resolvedMemberScope=String(memberScope||'').trim();
+      if(!resolvedVisualId)throw new Error('CHARACTER_VISUAL_ID_REQUIRED');
+      if(!resolvedMemberScope)throw new Error('CHARACTER_MEMBER_SCOPE_REQUIRED');
+
+      p.visualId=resolvedVisualId;
+      const job=jobApi.create({
+        visual_id:resolvedVisualId,
+        member_scope:resolvedMemberScope,
+        source_hash:p.sourcePhoto.source_hash,
+        directions:p.characterDirection.candidates
+      });
+      job.assets={...job.assets,...assetKeysApi.keys(resolvedMemberScope,resolvedVisualId)};
+      p.characterGenerationJob=job;
+      p.characterIdentityContract=identityApi.generationContract(p.characterDirection.candidates);
+      p.characterSignatureItemContract=itemApi.generationContract(p.characterSignatureItem.selected);
+
+      return {
+        status:'READY_FOR_CANDIDATE_GENERATION',
+        job,
+        identityContract:p.characterIdentityContract,
+        signatureItemContract:p.characterSignatureItemContract,
+        profile:p
+      };
     }
 
     function generationPayload(profile){
@@ -78,6 +101,7 @@
         member_scope:job.member_scope,
         source_hash:job.source_hash,
         identity_contract:p.characterIdentityContract||identityApi.generationContract(p.characterDirection.candidates),
+        signature_item:p.characterSignatureItemContract||itemApi.generationContract(p.characterSignatureItem?.selected),
         directions:job.directions.map(x=>({
           slot:x.slot,
           source:x.source,
@@ -86,7 +110,7 @@
       });
     }
 
-    return Object.freeze({begin,choose,generationPayload});
+    return Object.freeze({begin,choose,chooseItem,generationPayload});
   }
 
   const api=Object.freeze({
