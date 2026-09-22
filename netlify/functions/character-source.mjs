@@ -58,7 +58,7 @@ export default async function handler(req){
   const store=storeFor();
   await store.set(sourceKey,parsed.bytes);
   await store.set(metaKey,JSON.stringify({
-    contract_version:'READY_CHARACTER_SOURCE_V01',
+    contract_version:'CHARACTER_VISUAL_ID_SOURCE_V01',
     family_id:mapped.session.family_id,
     member_id:memberId,
     visual_id:visualId,
@@ -71,7 +71,7 @@ export default async function handler(req){
 
   return Response.json({
     ok:true,
-    contract_version:'READY_CHARACTER_SOURCE_V01',
+    contract_version:'CHARACTER_VISUAL_ID_SOURCE_V01',
     visual_id:visualId,
     source_hash:computed,
     source_key:sourceKey,
