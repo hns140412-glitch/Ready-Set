@@ -26,6 +26,15 @@
       '</article>';
     }
 
+    function itemCard(item){
+      const id=escapeHtml(item?.id||'');
+      return '<button class="characterItemCard" data-character-item="'+id+'">'+
+        '<span class="characterItemArt" data-item="'+id+'"></span>'+
+        '<b>'+escapeHtml(item?.label||id)+'</b>'+
+        '<small>'+escapeHtml(item?.short||'탐험의 작은 흔적')+'</small>'+
+      '</button>';
+    }
+
     function consistencyBadge(job){
       const gate=job?.consistency_gate;
       if(!gate)return '<span class="characterGateBadge pending">일관성 검사 전</span>';
@@ -92,7 +101,7 @@
 
       if(status==='ROUND_1'){
         if(begin)begin.hidden=true;
-        if(step)step.textContent='1 / 2';
+        if(step)step.textContent='1 / 3';
         if(title)title.textContent='첫 번째 분위기를 골라줘';
         if(copy)copy.textContent='사진 속 나는 그대로예요. 여기서는 얼굴이 아니라 캐릭터가 주는 분위기만 골라요.';
         if(grid){grid.hidden=false;grid.innerHTML=options.map(card).join('');}
@@ -102,10 +111,20 @@
 
       if(status==='ROUND_2'){
         if(begin)begin.hidden=true;
-        if(step)step.textContent='2 / 2';
+        if(step)step.textContent='2 / 3';
         if(title)title.textContent='이번엔 다른 느낌을 하나 더 골라줘';
         if(copy)copy.textContent='같은 나를 유지한 채 다른 분위기 세 가지를 보여줘요. 두 번만 직접 고르면 끝이에요.';
         if(grid){grid.hidden=false;grid.innerHTML=options.map(card).join('');}
+        if(candidateWrap)candidateWrap.hidden=true;
+        return;
+      }
+
+      if(status==='ITEM_SELECTION'){
+        if(begin)begin.hidden=true;
+        if(step)step.textContent='3 / 3';
+        if(title)title.textContent='마지막으로 탐험 아이템 하나만 골라줘';
+        if(copy)copy.textContent='꾸미기 게임처럼 많이 고르지 않아요. 내 캐릭터를 기억하게 해줄 작은 시그니처 하나만 남겨요.';
+        if(grid){grid.hidden=false;grid.innerHTML=options.map(itemCard).join('');}
         if(candidateWrap)candidateWrap.hidden=true;
         return;
       }
@@ -114,7 +133,7 @@
         if(begin)begin.hidden=true;
         if(step)step.textContent='READY';
         if(title)title.textContent='세 가지 방향이 준비됐어';
-        if(copy)copy.textContent='세 후보 모두 같은 나예요. 달라지는 건 분위기와 표현 방향뿐이에요.';
+        if(copy)copy.textContent='세 후보 모두 같은 나이고, 방금 고른 탐험 아이템도 똑같이 유지돼요. 달라지는 건 분위기와 표현 방향뿐이에요.';
         if(grid)grid.hidden=true;
         if(candidateWrap){
           candidateWrap.hidden=false;
@@ -189,6 +208,9 @@
               ? '<div class="characterMasterSheetPreview"><img src="/api/character/asset?visual_id='+encodeURIComponent(String(profile?.visualId||''))+'&slot=MASTER_SHEET" alt="Character Master Sheet"></div>'
               : '')+
             '<div class="characterIdentityRule"><b>같은 나, 다른 분위기</b><span>얼굴·나이 인상·기본 체형은 유지하고 표정·포즈·탐험 분위기만 달라져요.</span></div>'+
+            (profile?.characterSignatureItem?.selected
+              ? '<div class="characterSignatureChip"><small>SIGNATURE ITEM</small><b>'+escapeHtml(profile.characterSignatureItem.selected.label)+'</b></div>'
+              : '')+
             (job?'<div class="characterGateRow">'+consistencyBadge(job)+'</div>':'')+
             '<p class="muted">'+escapeHtml(note)+'</p>'+controls+
             '<p class="muted" id="characterRemoteStatus">'+escapeHtml(job?.status||'아직 서버 등록 전')+'</p>';
