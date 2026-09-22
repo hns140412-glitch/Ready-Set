@@ -7,7 +7,8 @@
     const getState=options.getState||(()=>({}));
     const save=options.save||(()=>null);
     const familySession=options.familySession||(()=>({}));
-    const toast=options.toast||(()=>{});\n    const remote=options.remote||null;
+    const toast=options.toast||(()=>{});
+    const remote=options.remote||null;
     if(!view||!core)throw new Error('CHARACTER_SETUP_CONTROLLER_DEPENDENCY_MISSING');
 
     function profile(){return getState().profile||{};}
