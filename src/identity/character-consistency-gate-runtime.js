@@ -56,22 +56,20 @@
 
   function applyVisual(gate,evidence={}){
     if(!gate||gate.contract_version!==VERSION)throw new Error('CHARACTER_CONSISTENCY_GATE_REQUIRED');
-    const required=[
-      evidence.source_identity_match===true,
-      evidence.candidate_identity_consistent===true,
-      evidence.direction_distinctness===true,
-      evidence.face_unobstructed===true,
-      evidence.sensitive_trait_change_detected===false
-    ];
-    const pass=required.every(Boolean);
+    const selectedPass=evidence.selected_candidate_state==='PASS'||
+      (evidence.source_identity_match===true&&evidence.face_unobstructed===true&&evidence.sensitive_trait_change_detected===false);
     const visual=Object.freeze({
-      state:pass?'PASS':'FAIL',
+      state:selectedPass?'PASS':'FAIL',
       evaluator:String(evidence.evaluator||'UNSPECIFIED'),
+      candidate_set_state:String(evidence.candidate_set_state||'NOT_RUN'),
+      selected_slot:evidence.selected_slot?String(evidence.selected_slot):null,
+      selected_candidate_state:selectedPass?'PASS':'FAIL',
       source_identity_match:evidence.source_identity_match===true,
       candidate_identity_consistent:evidence.candidate_identity_consistent===true,
       direction_distinctness:evidence.direction_distinctness===true,
       face_unobstructed:evidence.face_unobstructed===true,
       sensitive_trait_change_detected:evidence.sensitive_trait_change_detected===true,
+      candidates:Array.isArray(evidence.candidates)?evidence.candidates:[],
       notes:evidence.notes?String(evidence.notes):null
     });
     const structuralPass=gate.structural?.state==='PASS';
@@ -79,8 +77,8 @@
     return {
       ...gate,
       visual,
-      final_state:structuralPass&&pass&&(humanPass||gate.human_confirmation?.state==='NOT_RUN')?'PASS':'FAIL',
-      lock_allowed:structuralPass&&pass
+      final_state:structuralPass&&selectedPass&&humanPass?'PASS':'PENDING',
+      lock_allowed:structuralPass&&selectedPass&&humanPass
     };
   }
 
