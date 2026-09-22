@@ -623,7 +623,9 @@ $('#characterSetupView').addEventListener('click',async e=>{
   const prepare=e.target.closest?.('#prepareCharacterJobBtn');
   const generate=e.target.closest?.('#generateCharacterCandidatesBtn');
   const select=e.target.closest?.('[data-select-character-candidate]');
-  const button=prepare||generate||select;
+  const correct=e.target.closest?.('#correctCharacterLikenessBtn');
+  const lockMaster=e.target.closest?.('#lockCharacterMasterBtn');
+  const button=prepare||generate||select||correct||lockMaster;
   if(!button)return;
   const status=$('#characterRemoteStatus');
   button.disabled=true;
@@ -648,6 +650,20 @@ $('#characterSetupView').addEventListener('click',async e=>{
       result=await characterSetupRuntime.selectCandidate(slot);
       if(result?.ok){
         toast('이 후보를 기준 캐릭터로 선택했어요.');
+        characterSetupRuntime.render();
+      }
+    }else if(correct){
+      if(status)status.textContent='원본 사진과 선택 후보를 비교해 닮기를 보정하는 중…';
+      result=await characterSetupRuntime.correctLikeness();
+      if(result?.ok){
+        toast('원본 사진 기준 닮기 보정이 끝났어요.');
+        characterSetupRuntime.render();
+      }
+    }else if(lockMaster){
+      if(status)status.textContent='Visual ID를 잠그는 중…';
+      result=await characterSetupRuntime.lockMaster();
+      if(result?.ok){
+        toast('내 캐릭터 Visual ID가 확정됐어요.');
         characterSetupRuntime.render();
       }
     }
