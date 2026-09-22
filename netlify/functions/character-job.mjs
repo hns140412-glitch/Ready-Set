@@ -1,3 +1,4 @@
+import { normalizeSignatureItem } from './character-signature-item-core.mjs';
 import { getDeployStore, getStore } from '@netlify/blobs';
 import { getUser } from '@netlify/identity';
 import { mapCharacterSession } from './character-family-session-adapter.mjs';
@@ -79,6 +80,8 @@ export default async function handler(req){
   if(!checked.ok)return Response.json({ok:false,reason:checked.reason},{status:400});
   const identityChecked=validateIdentityContract(body.identity_contract);
   if(!identityChecked.ok)return Response.json({ok:false,reason:identityChecked.reason},{status:400});
+  const signatureChecked=normalizeSignatureItem(body.signature_item);
+  if(!signatureChecked.ok)return Response.json({ok:false,reason:signatureChecked.reason},{status:400});
 
   const prefix=memberId+'/'+visualId;
   const sourceMetaRaw=await store.get(prefix+'/source/meta.json');
@@ -90,6 +93,7 @@ export default async function handler(req){
   const job={
     contract_version:'CHARACTER_VISUAL_ID_GENERATION_JOB_V01',
     identity_contract:body.identity_contract,
+    signature_item:signatureChecked.item,
     job_id:'charjob_'+visualId+'_'+sourceHash.slice(0,12),
     family_id:mapped.session.family_id,
     member_id:memberId,
@@ -101,7 +105,10 @@ export default async function handler(req){
     provider_generation_enabled:paidGenerationEnabled(),
     created_at:created,
     updated_at:created,
-    trace:[{at:created,event:'REMOTE_JOB_REGISTERED',status:paidGenerationEnabled()?'QUEUED':'QUEUED_PROVIDER_LOCKED'}]
+    trace:[
+      {at:created,event:'REMOTE_JOB_REGISTERED',status:paidGenerationEnabled()?'QUEUED':'QUEUED_PROVIDER_LOCKED'},
+      {at:created,event:'SIGNATURE_ITEM_LOCKED_FOR_CANDIDATES',item_id:signatureChecked.item.id,status:paidGenerationEnabled()?'QUEUED':'QUEUED_PROVIDER_LOCKED'}
+    ]
   };
   await store.set(prefix+'/job/state.json',JSON.stringify(job));
 
