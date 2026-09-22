@@ -2,6 +2,8 @@ import fs from 'node:fs';
 
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const direction=read('src/identity/character-direction-runtime.js');
+const identity=read('src/identity/character-identity-consistency-runtime.js');
+const jobServer=read('netlify/functions/character-job.mjs');
 const master=read('src/identity/character-master-runtime.js');
 const controller=read('src/identity/character-setup-controller-runtime.js');
 const projection=read('src/identity/character-visual-id-projection-runtime.js');
@@ -14,6 +16,8 @@ const serverMaster=read('netlify/functions/character-master.mjs');
 
 const checks=[
   ['independent direction namespace',direction.includes('root.CharacterVisualIdDirection=api')],
+  ['identity consistency contract',identity.includes('SAME_CHILD_DIFFERENT_DIRECTION')&&identity.includes("identity_authority:'SOURCE_PHOTO'")],
+  ['job server validates identity contract',jobServer.includes('validateIdentityContract')&&jobServer.includes('IDENTITY_CONTRACT_VERSION')],
   ['Ready direction alias compatibility retained',direction.includes('root.ReadyCharacterDirection=api')],
   ['independent master namespace',master.includes('root.CharacterVisualIdMaster=api')],
   ['Visual ID lock distinct from derivatives',master.includes("state:'VISUAL_ID_LOCKED'")&&master.includes("derivative_state:'DERIVATIVES_PENDING'")],
