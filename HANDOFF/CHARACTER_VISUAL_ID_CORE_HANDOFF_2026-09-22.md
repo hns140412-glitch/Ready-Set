@@ -254,3 +254,17 @@ Still do not claim:
 - real item rendering quality verified;
 - real A/B/C generation verified;
 - device runtime verified.
+
+
+## UI / World Style continuation pointer
+
+Character Formation UI and Character World Style decisions moved to:
+`HANDOFF/CHARACTER_FORMATION_UI_WORLD_STYLE_HANDOFF_2026-09-22_LATEST.md`
+
+Read that handoff before making any new Character Formation mockup.
+
+Important:
+- final UI is NOT_LOCKED;
+- recent generated mockups are REFERENCE_ONLY;
+- recover the approved base sample and locked companion Visual IDs before any new render;
+- use delta edit, not recreation.
