@@ -16,6 +16,7 @@ const localMaster={
     visual_id:'visual_fixture',
     source_hash:'TOP_SECRET_HASH',
     locked_at:'2026-09-22T00:00:00.000Z',
+    signature_item:{id:'MAGNIFIER',label:'돋보기'},
     consistency_gate:{
       structural_state:'PASS',
       visual_state:'PASS',
@@ -36,8 +37,9 @@ const projection=api.fromMaster({
   identity_version:1
 });
 
-assert(projection.contract_version==='CHARACTER_VISUAL_ID_PROJECTION_V01','PROJECTION_VERSION_INVALID');
+assert(projection.contract_version==='CHARACTER_VISUAL_ID_PROJECTION_V02','PROJECTION_VERSION_INVALID');
 assert(projection.status==='MASTER_ASSETS_READY','PROJECTION_STATUS_INVALID');
+assert(projection.signature_item?.id==='MAGNIFIER','PROJECTION_SIGNATURE_ITEM_MISSING');
 assert(projection.source_provenance.authority==='SOURCE_PHOTO','PROJECTION_SOURCE_AUTHORITY_INVALID');
 assert(projection.source_provenance.source_bound===true,'PROJECTION_SOURCE_BOUND_MISSING');
 assert(projection.source_provenance.raw_source_exposed===false,'PROJECTION_RAW_SOURCE_MUST_NOT_BE_EXPOSED');
@@ -61,4 +63,4 @@ const contradictory={
 };
 assert(api.invariant(contradictory).reason==='CHARACTER_PROJECTION_STATUS_CONTRADICTION','CONTRADICTORY_PROJECTION_MUST_FAIL');
 
-console.log('CHARACTER_VISUAL_ID_PROJECTION_V01 PASS');
+console.log('CHARACTER_VISUAL_ID_PROJECTION_V02 PASS');
