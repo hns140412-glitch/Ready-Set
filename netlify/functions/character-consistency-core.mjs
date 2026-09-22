@@ -76,10 +76,17 @@ function applyVisual(job,evidence={}){
   const candidates=Array.isArray(evidence.candidates)?evidence.candidates:[];
   const selectedSlot=String(job.selected_slot||'').toUpperCase();
   const selected=candidates.find(x=>String(x?.slot||'').toUpperCase()===selectedSlot)||null;
+  const candidateEvidenceComplete=
+    candidates.length===3 &&
+    ['A','B','C'].every(slot=>candidates.some(x=>String(x?.slot||'').toUpperCase()===slot));
+  const allSameIdentity=candidateEvidenceComplete&&candidates.every(x=>x?.same_child_identity===true);
+  const allFacesUnobstructed=candidateEvidenceComplete&&candidates.every(x=>x?.face_unobstructed===true);
+  const allDirectionsReadable=candidateEvidenceComplete&&candidates.every(x=>x?.direction_readable!==false);
   const candidateSetPass=
-    evidence.candidate_identity_consistent===true &&
+    allSameIdentity &&
+    allFacesUnobstructed &&
+    allDirectionsReadable &&
     evidence.direction_distinctness===true &&
-    evidence.face_unobstructed===true &&
     evidence.sensitive_trait_change_detected===false;
   const selectedPass=!!selected &&
     selected.same_child_identity===true &&
@@ -92,8 +99,8 @@ function applyVisual(job,evidence={}){
     selected_slot:selectedSlot||null,
     selected_candidate_state:selectedPass?'PASS':'FAIL',
     source_identity_match:selected?.same_child_identity===true,
-    candidate_identity_consistent:evidence.candidate_identity_consistent===true,
-    direction_distinctness:evidence.direction_distinctness===true,
+    candidate_identity_consistent:allSameIdentity,
+    direction_distinctness:evidence.direction_distinctness===true&&allDirectionsReadable,
     face_unobstructed:selected?.face_unobstructed===true,
     sensitive_trait_change_detected:evidence.sensitive_trait_change_detected===true,
     candidates,
