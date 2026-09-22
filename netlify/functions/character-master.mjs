@@ -57,9 +57,9 @@ export default async function handler(req){
   };
   await store.set(prefix+'/master/meta.json',JSON.stringify(master));
   job.master=master;
-  job.status='MASTER_LOCKED';
+  job.status='VISUAL_ID_LOCKED';
   job.updated_at=lockedAt;
-  job.trace=[...(job.trace||[]),{at:lockedAt,event:'CHARACTER_MASTER_LOCKED',status:'MASTER_LOCKED'}];
+  job.trace=[...(job.trace||[]),{at:lockedAt,event:'VISUAL_ID_LOCKED',status:'VISUAL_ID_LOCKED'}];
   await store.set(jobKey,JSON.stringify(job));
 
   return Response.json({ok:true,job,master},{status:201,headers:{'Cache-Control':'no-store'}});
