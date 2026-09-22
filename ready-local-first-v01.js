@@ -9,8 +9,15 @@
   const SCOPE_KEYS={planner:'readyset_planner_v1',app_state:'readyset_state',assignments:'readyset_assignments_v2'};
   const memberScope=()=>globalThis.ReadyMemberScope||null;
   function scopedScope(scope){return memberScope()?.syncScope?.(scope)||scope}
+  function parsedScope(scope){return memberScope()?.parseSyncScope?.(scope)||{member_id:null,scope};}
+  function activeMemberId(){return memberScope()?.memberId?.()||null;}
+  function belongsToActiveMember(scope){
+    const parsed=parsedScope(scope);
+    const active=activeMemberId();
+    return active?parsed.member_id===active:parsed.member_id==null;
+  }
   function localStorageKeyForScope(scope){
-    const parsed=memberScope()?.parseSyncScope?.(scope)||{member_id:null,scope};
+    const parsed=parsedScope(scope);
     const base=SCOPE_KEYS[parsed.scope];if(!base)return null;
     return parsed.member_id?`${base}::member::${encodeURIComponent(parsed.member_id)}`:base;
   }
@@ -135,7 +142,7 @@
   }
 
   async function recoverMissingScopes(){
-    const rows=await all('snapshots');
+    const rows=(await all('snapshots')).filter(row=>belongsToActiveMember(row.scope));
     let recovered=0;
     for(const row of rows){
       const key=localStorageKeyForScope(row.scope);
@@ -151,6 +158,7 @@
   async function resolveConflict(conflictId,resolution){
     const conflict=await get('conflicts',conflictId);
     if(!conflict || conflict.status!=='OPEN') return {ok:false,reason:'CONFLICT_NOT_FOUND'};
+    if(!belongsToActiveMember(conflict.scope)) return {ok:false,reason:'MEMBER_SCOPE_FORBIDDEN'};
     const outbox=await get('outbox',conflict.outbox_id);
     if(!outbox) return {ok:false,reason:'OUTBOX_NOT_FOUND'};
 
@@ -186,6 +194,7 @@
   async function flush(){
     const adapter=window.ReadySetSyncAdapter;
     const rows=(await all('outbox')).filter(row=>{
+      if(!belongsToActiveMember(row.scope)) return false;
       if(row.domain_conflict==='OPEN') return false;
       const q=fromStoredQueue(row);
       return LocalQueue.canAttempt(q,Date.now());
@@ -238,7 +247,7 @@
       }
     }
 
-    const remaining=await all('outbox');
+    const remaining=(await all('outbox')).filter(row=>belongsToActiveMember(row.scope));
     return {
       ok:true,
       sent,
@@ -250,7 +259,7 @@
 
   window.addEventListener('online',()=>flush().catch(()=>{}));
   window.ReadySetLocalFirst=Object.freeze({
-    version:'0.3.0',
+    version:'0.4.0',
     mode:'INDEXEDDB_RECOVERY_WITH_SHARED_EVENT_QUEUE',
     capabilities:Object.freeze(['CAP-EVENT-ENVELOPE-001','CAP-LOCAL-QUEUE-001']),
     capture:(scope,payload)=>capture(scope,payload),
