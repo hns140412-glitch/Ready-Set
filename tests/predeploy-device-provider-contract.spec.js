@@ -8,8 +8,8 @@ test('recording predeploy contract fails closed on unsupported and denied microp
     const orchestratorFactory=window.ReadyRebuildRecordingOrchestrator;
     const unsupported=orchestratorFactory.create({
       recordingService:service,
-      mediaDevices:null,
-      MediaRecorderCtor:null
+      mediaDevices:{},
+      MediaRecorderCtor:function UnsupportedRecorder(){}
     });
     const unsupportedStart=await unsupported.start();
 
@@ -62,6 +62,7 @@ test('recording service chooses a supported real mime instead of inventing a for
 
 test('capture provider contract remains fail-closed and review-only before deployment', async ()=>{
   const source=fs.readFileSync('netlify/functions/capture-analyze.mjs','utf8');
+  const captureRuntime=fs.readFileSync('ready-capture-v01.js','utf8');
   expect(source).toContain("PARENT_AUTH_REQUIRED");
   expect(source).toContain("ANALYSIS_PROVIDER_NOT_CONFIGURED");
   expect(source).toContain("ANALYSIS_PROVIDER_ERROR");
@@ -69,7 +70,8 @@ test('capture provider contract remains fail-closed and review-only before deplo
   expect(source).toContain("Do not output answer contents even if an answer sheet is visible.");
   expect(source).toContain("store:false");
   expect(source).toContain("ANSWER_REFERENCE");
-  expect(source).toContain("PARENT_ONLY");
+  expect(captureRuntime).toContain("ANSWER_REFERENCE");
+  expect(captureRuntime).toContain("PARENT_ONLY");
 });
 
 test('capture provider limits image type, count and total upload size before external call', async ()=>{
