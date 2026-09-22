@@ -104,48 +104,21 @@ Because the branch advanced substantially, re-audit rebuild % before updating it
 Ready & Set only.
 Snap & Pop and Hide & Seek rebuilds are owned by other conversations.
 
+## Character Visual ID separation — 2026-09-22
+Character generation is NOT part of Ready & Set implementation.
 
-## Character Core update — 2026-09-22
-Read first:
-- `C2S/READY_CHARACTER_DIRECTION_C2S_REFLECTION_2026-09-22.md`
-- `RESEARCH/CHARACTER_GENERATION_REFERENCE_SURVEY_2026-09-22.md`
+Independent development branch:
+- `taky/character-visual-id-core-2026-09-22`
 
-Latest rule:
-- child chooses direction exactly twice
-- third direction is system-derived contrast
-- source photo is the highest identity authority
-- A/B/C carry explicit provenance
-- likeness correction is a separate edit pass
-- Visual ID locks only after candidate selection (and optional correction)
+Ready integration contract:
+- `INTEGRATION/CHARACTER_VISUAL_ID_CONTRACT_V01.md`
 
-Implementation surfaces:
-- `src/identity/source-photo-intake-runtime.js`
-- `src/identity/character-direction-runtime.js`
-- `src/identity/character-generation-job-runtime.js`
-- `src/identity/character-asset-keys-runtime.js`
-- `src/identity/character-core-orchestrator-runtime.js`
-- `src/identity/character-remote-adapter-runtime.js`
-- `src/identity/character-master-runtime.js`
-- `src/identity/character-setup-view-runtime.js`
-- `src/identity/character-setup-controller-runtime.js`
-- `netlify/functions/character-source.mjs`
-- `netlify/functions/character-job.mjs`
-- `netlify/functions/character-generate.mjs`
-- `netlify/functions/character-asset.mjs`
-- `netlify/functions/character-action.mjs`
-- `netlify/functions/character-correct.mjs`
-- `netlify/functions/character-master.mjs`
+Ready responsibilities:
+- continue Ready planner / mission / focus / result / assignment / learning work independently
+- keep only a nullable `profile.characterVisualId` consumer slot
+- do not load Character generation runtimes
+- do not own photo identity generation, mood consultation, A/B/C candidates, likeness correction, provider calls, or Character Master generation
 
-External resource rule:
-- no Netlify deploy in this stage
-- no paid image call until TAKY external-resource gate approval
-- `READY_CHARACTER_PAID_GENERATION` remains closed by default
+Integration is deferred until Character Visual ID core is independently complete and its projection contract is frozen.
 
-Deferred:
-- Intro / Drop / Voyage / World Arrival are a later expansion pack and not a core-completion blocker.
-
-
-Character Master completion addendum:
-- `netlify/functions/character-master-sheet.mjs` generates the consistency sheet only after Visual ID lock.
-- exact state split: `VISUAL_ID_LOCKED` -> `MASTER_ASSETS_READY`.
-- Master Sheet provider call is gated exactly like candidate/correction generation.
+Intro / Drop / Voyage / World Arrival remain a separate later expansion track.
