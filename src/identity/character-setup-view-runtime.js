@@ -102,16 +102,31 @@
           }else if(job.status==='READY_FOR_SELECTION'){
             note='세 후보가 준비됐습니다. 같은 아이의 Identity를 유지하면서 분위기만 다르게 비교하세요.';
           }else if(job.status==='SELECTED'){
-            note='후보 선택 완료 · 다음은 닮기 보정 단계입니다.';
+            note='후보 선택 완료 · 원본 사진 기준으로 얼굴 닮기를 한 번 더 보정할 수 있어요.';
+            controls='<button class="btn outline" id="correctCharacterLikenessBtn">원본 사진에 더 닮게</button>'+
+              '<button class="btn dark" id="lockCharacterMasterBtn">이대로 확정</button>';
+          }else if(job.status==='CORRECTED'){
+            note='닮기 보정 완료 · 이 캐릭터를 Visual ID로 확정할 수 있어요.';
+            controls='<button class="btn dark" id="lockCharacterMasterBtn">이 캐릭터로 확정</button>';
+          }else if(job.status==='MASTER_LOCKED'){
+            note='Character Master / Visual ID가 잠겼습니다. 이후 앱에서는 이 Identity를 기준으로 사용합니다.';
           }
           const displayCandidates=(job?.directions||candidates).map(x=>({slot:x.slot||'',...x}));
           candidateWrap.innerHTML=
             '<div class="characterCandidateHead"><small>A / B / C DIRECTION CONTRACT</small><h3>'+
-              (job?.status==='READY_FOR_SELECTION'?'후보를 골라줘':job?.status==='SELECTED'?'후보 선택 완료':'후보 생성 준비')+
+              (job?.status==='READY_FOR_SELECTION'?'후보를 골라줘':
+               job?.status==='SELECTED'?'후보 선택 완료':
+               job?.status==='CORRECTED'?'닮기 보정 완료':
+               job?.status==='MASTER_LOCKED'?'Visual ID 확정':'후보 생성 준비')+
             '</h3></div>'+
             '<div class="characterCandidateGrid">'+
               (job?displayCandidates.map(x=>remoteCandidateCard(profile,job,x)).join(''):candidates.map(candidateCard).join(''))+
             '</div>'+
+            ((job?.status==='SELECTED'||job?.status==='CORRECTED'||job?.status==='MASTER_LOCKED')
+              ? '<div class="selectedCharacterPreview"><img src="/api/character/asset?visual_id='+encodeURIComponent(String(profile?.visualId||''))+'&slot='+
+                (job?.status==='CORRECTED'||job?.status==='MASTER_LOCKED'&&job?.corrected_asset?'CORRECTED':'SELECTED')+
+                '" alt="선택한 캐릭터"></div>'
+              : '')+
             '<p class="muted">'+escapeHtml(note)+'</p>'+controls+
             '<p class="muted" id="characterRemoteStatus">'+escapeHtml(job?.status||'아직 서버 등록 전')+'</p>';
         }
