@@ -1,7 +1,7 @@
 (function(root){
   'use strict';
 
-  const VERSION='READY_CHARACTER_MASTER_V01';
+  const VERSION='CHARACTER_VISUAL_ID_MASTER_V01';
 
   function assertSlot(slot){
     const s=String(slot||'').toUpperCase();
@@ -83,35 +83,59 @@
     };
   }
 
-  function lock(model,{master_assets={},locked_at=new Date().toISOString()}={}){
+  function lockIdentity(model,{locked_at=new Date().toISOString()}={}){
     if(!['SELECTED','CORRECTED'].includes(model.state))throw new Error('CHARACTER_MASTER_NOT_LOCKABLE');
     const identityAsset=model.state==='CORRECTED'?model.correction?.asset:model.selected_asset;
     if(!identityAsset)throw new Error('CHARACTER_MASTER_IDENTITY_ASSET_REQUIRED');
-    const required=['avatar_square','portrait_card','full_character'];
-    for(const key of required){
-      if(!master_assets[key])throw new Error('CHARACTER_MASTER_ASSET_REQUIRED:'+key);
-    }
     return {
       ...model,
-      state:'MASTER_LOCKED',
+      state:'VISUAL_ID_LOCKED',
       master:{
         visual_id:model.visual_id,
         source_hash:model.source_hash,
         selected_slot:model.selected_slot,
         identity_asset:identityAsset,
-        assets:{...master_assets},
+        assets:{
+          full_character:identityAsset.asset_key||identityAsset.asset_url||null,
+          portrait_card:null,
+          avatar_square:null
+        },
+        derivative_state:'DERIVATIVES_PENDING',
         locked_at
       },
-      trace:[...(model.trace||[]),{event:'CHARACTER_MASTER_LOCKED',at:locked_at}]
+      trace:[...(model.trace||[]),{event:'VISUAL_ID_LOCKED',at:locked_at}]
     };
   }
 
-  root.ReadyCharacterMaster=Object.freeze({
+  function attachDerivedAssets(model,{avatar_square,portrait_card,full_character,updated_at=new Date().toISOString()}={}){
+    if(model.state!=='VISUAL_ID_LOCKED'&&model.state!=='MASTER_ASSETS_READY')throw new Error('CHARACTER_VISUAL_ID_LOCK_REQUIRED');
+    if(!avatar_square||!portrait_card)throw new Error('CHARACTER_DERIVATIVE_ASSETS_REQUIRED');
+    const full=full_character||model.master?.assets?.full_character||null;
+    if(!full)throw new Error('CHARACTER_FULL_ASSET_REQUIRED');
+    return {
+      ...model,
+      state:'MASTER_ASSETS_READY',
+      master:{
+        ...model.master,
+        assets:{avatar_square,portrait_card,full_character:full},
+        derivative_state:'READY',
+        derivatives_updated_at:updated_at
+      },
+      trace:[...(model.trace||[]),{event:'CHARACTER_DERIVATIVE_ASSETS_READY',at:updated_at}]
+    };
+  }
+
+  const api=Object.freeze({
     version:VERSION,
+    owner:'CHARACTER_VISUAL_ID',
     create,
     select,
     requestCorrection,
     applyCorrection,
-    lock
+    lockIdentity,
+    attachDerivedAssets,
+    lock:lockIdentity
   });
+  root.CharacterVisualIdMaster=api;
+  root.ReadyCharacterMaster=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
