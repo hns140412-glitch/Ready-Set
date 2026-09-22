@@ -1,7 +1,7 @@
 (function(root){
   'use strict';
 
-  const VERSION='READY_CHARACTER_REMOTE_ADAPTER_V01';
+  const VERSION='CHARACTER_VISUAL_ID_REMOTE_ADAPTER_V01';
 
   function create(options={}){
     const fetchImpl=options.fetchImpl||root.fetch?.bind(root);
@@ -81,5 +81,7 @@
     return Object.freeze({uploadSource,createJob,getJob,startGeneration,selectCandidate,correctLikeness,lockMaster,generateMasterSheet,assetUrl});
   }
 
-  root.ReadyCharacterRemoteAdapter=Object.freeze({version:VERSION,create});
+  const api=Object.freeze({version:VERSION,owner:'CHARACTER_VISUAL_ID',create});
+  root.CharacterVisualIdRemoteAdapter=api;
+  root.ReadyCharacterRemoteAdapter=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
