@@ -143,3 +143,9 @@ External resource rule:
 
 Deferred:
 - Intro / Drop / Voyage / World Arrival are a later expansion pack and not a core-completion blocker.
+
+
+Character Master completion addendum:
+- `netlify/functions/character-master-sheet.mjs` generates the consistency sheet only after Visual ID lock.
+- exact state split: `VISUAL_ID_LOCKED` -> `MASTER_ASSETS_READY`.
+- Master Sheet provider call is gated exactly like candidate/correction generation.
