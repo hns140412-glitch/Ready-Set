@@ -6,6 +6,11 @@ const { familySessionFromIdentityUser }=familyCore;
 const VALID_SOURCES=['USER_SELECTION_1','USER_SELECTION_2','SYSTEM_AUTO_CONTRAST'];
 const IDENTITY_CONTRACT_VERSION='CHARACTER_VISUAL_IDENTITY_CONSISTENCY_V01';
 
+function paidGenerationEnabled(){
+  const raw=process.env.CHARACTER_VISUAL_ID_PAID_GENERATION ?? process.env.READY_CHARACTER_PAID_GENERATION;
+  return String(raw||'').toLowerCase()==='true';
+}
+
 function storeFor(){
   const context=globalThis.Netlify?.context?.deploy?.context;
   return context==='production'
@@ -92,12 +97,12 @@ export default async function handler(req){
     visual_id:visualId,
     source_hash:sourceHash,
     source_key:sourceMeta.source_key,
-    status:String(process.env.READY_CHARACTER_PAID_GENERATION||'').toLowerCase()==='true'?'QUEUED':'QUEUED_PROVIDER_LOCKED',
+    status:paidGenerationEnabled()?'QUEUED':'QUEUED_PROVIDER_LOCKED',
     directions:body.directions,
-    provider_generation_enabled:String(process.env.READY_CHARACTER_PAID_GENERATION||'').toLowerCase()==='true',
+    provider_generation_enabled:paidGenerationEnabled(),
     created_at:created,
     updated_at:created,
-    trace:[{at:created,event:'REMOTE_JOB_REGISTERED',status:'QUEUED_PROVIDER_LOCKED'}]
+    trace:[{at:created,event:'REMOTE_JOB_REGISTERED',status:paidGenerationEnabled()?'QUEUED':'QUEUED_PROVIDER_LOCKED'}]
   };
   await store.set(prefix+'/job/state.json',JSON.stringify(job));
 
