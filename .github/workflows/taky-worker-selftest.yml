@@ -53,9 +53,11 @@ jobs:
         run: node .github/scripts/ready_planner_contract_test.js
       - name: Verify Character Visual ID contracts
         run: |
+          find netlify/functions -maxdepth 1 -type f -name 'character-*.mjs' -print0 | xargs -0 -n1 node --check
           node REBUILD/validate-character-direction-v01.mjs
           node REBUILD/validate-character-consistency-gate-v01.mjs
           node REBUILD/validate-character-independent-core-v01.mjs
+          node REBUILD/validate-character-server-consistency-v01.mjs
           node REBUILD/validate-character-ui-journey-v01.mjs
           node REBUILD/validate-character-visual-id-independence-v01.mjs
       - name: Verify queue integrity and profile binding
