@@ -4,6 +4,11 @@ import familyCore from './ready-family-auth-core.js';
 
 const { familySessionFromIdentityUser }=familyCore;
 
+function paidGenerationEnabled(){
+  const raw=process.env.CHARACTER_VISUAL_ID_PAID_GENERATION ?? process.env.READY_CHARACTER_PAID_GENERATION;
+  return String(raw||'').toLowerCase()==='true';
+}
+
 function storeFor(){
   const context=globalThis.Netlify?.context?.deploy?.context;
   return context==='production'
@@ -23,8 +28,8 @@ export default async function handler(req){
   const mapped=familySessionFromIdentityUser(user);
   if(!mapped.ok)return Response.json({ok:false,reason:mapped.reason},{status:mapped.status});
   if(mapped.session.role!=='CHILD')return Response.json({ok:false,reason:'CHILD_ROLE_REQUIRED'},{status:403});
-  if(String(process.env.READY_CHARACTER_PAID_GENERATION||'').toLowerCase()!=='true'){
-    return Response.json({ok:false,reason:'CHARACTER_GENERATION_PROVIDER_LOCKED',gate:'READY_CHARACTER_PAID_GENERATION'},{status:423});
+  if(!paidGenerationEnabled()){
+    return Response.json({ok:false,reason:'CHARACTER_GENERATION_PROVIDER_LOCKED',gate:'CHARACTER_VISUAL_ID_PAID_GENERATION'},{status:423});
   }
   const apiKey=String(process.env.OPENAI_API_KEY||'').trim();
   if(!apiKey)return Response.json({ok:false,reason:'IMAGE_PROVIDER_NOT_CONFIGURED'},{status:503});
@@ -39,8 +44,8 @@ export default async function handler(req){
   const jobKey=prefix+'/job/state.json';
   const job=await store.get(jobKey,{type:'json'});
   if(!job)return Response.json({ok:false,reason:'CHARACTER_JOB_NOT_FOUND'},{status:404});
-  if(!['VISUAL_ID_LOCKED','MASTER_ASSETS_READY'].includes(job.status)){
-    return Response.json({ok:false,reason:'VISUAL_ID_LOCK_REQUIRED',status:job.status},{status:409});
+  if(job.status!=='MASTER_ASSETS_READY'){
+    return Response.json({ok:false,reason:'MASTER_ASSETS_REQUIRED',status:job.status},{status:409});
   }
   if(job.master_sheet?.asset_key){
     return Response.json({ok:true,job,already_ready:true,asset_url:'/api/character/asset?visual_id='+encodeURIComponent(visualId)+'&slot=MASTER_SHEET'},{status:200});
@@ -56,7 +61,7 @@ export default async function handler(req){
   const form=new FormData();
   form.append('image[]',new Blob([source],{type:sourceMeta.mime||'image/jpeg'}),'identity-source.jpg');
   form.append('image[]',new Blob([selected],{type:'image/webp'}),'locked-character.webp');
-  form.append('model',String(process.env.READY_CHARACTER_IMAGE_MODEL||'gpt-image-2.5-sunburst'));
+  form.append('model',String(process.env.CHARACTER_VISUAL_ID_IMAGE_MODEL||process.env.READY_CHARACTER_IMAGE_MODEL||'gpt-image-2.5-sunburst'));
   form.append('prompt',[
     'Create a clean character master turnaround sheet for the same child exploration character.',
     'Reference image 1 is the highest-authority real identity source. Reference image 2 is the locked final character design.',
@@ -66,8 +71,8 @@ export default async function handler(req){
     'Do not redesign the character. Do not introduce new costume variants.',
     'No text, labels, logos, UI, emoji or watermark. This is a visual consistency master asset.'
   ].join(' '));
-  form.append('size',String(process.env.READY_CHARACTER_MASTER_SIZE||'1536x1024'));
-  form.append('quality',String(process.env.READY_CHARACTER_MASTER_QUALITY||'high'));
+  form.append('size',String(process.env.CHARACTER_VISUAL_ID_MASTER_SIZE||process.env.READY_CHARACTER_MASTER_SIZE||'1536x1024'));
+  form.append('quality',String(process.env.CHARACTER_VISUAL_ID_MASTER_QUALITY||process.env.READY_CHARACTER_MASTER_QUALITY||'high'));
   form.append('output_format','webp');
   form.append('output_compression','90');
 
