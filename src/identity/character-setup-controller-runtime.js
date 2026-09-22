@@ -162,6 +162,33 @@
       return result;
     }
 
+    async function reviewConsistency(){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const result=await remote.reviewConsistency({visual_id:p.visualId});
+      if(result?.ok){
+        const refreshed=await refreshRemoteJob();
+        if(refreshed?.ok)p.characterRemoteJob=refreshed.job||p.characterRemoteJob;
+        save();
+      }
+      return result;
+    }
+
+    async function confirmSameIdentity({accepted=true,notes=null}={}){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const result=await remote.confirmSameIdentity({
+        visual_id:p.visualId,
+        accepted_same_identity:accepted,
+        notes
+      });
+      if(result?.ok){
+        p.characterRemoteJob=result.job||null;
+        save();
+      }
+      return result;
+    }
+
     async function correctLikeness(){
       if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
       const p=ensureRemoteProfile();
@@ -247,7 +274,7 @@
 
     return Object.freeze({
       render,begin,choose,generationPayload,prepareRemoteJob,startGeneration,
-      refreshRemoteJob,generateAllCandidates,selectCandidate,correctLikeness,lockMaster,buildDerivativeAssets,generateMasterSheet
+      refreshRemoteJob,generateAllCandidates,selectCandidate,reviewConsistency,confirmSameIdentity,correctLikeness,lockMaster,buildDerivativeAssets,generateMasterSheet
     });
   }
 
