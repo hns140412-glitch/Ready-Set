@@ -1,3 +1,4 @@
+import { ensure as ensureConsistencyGate, applyHuman } from './character-consistency-core.mjs';
 import { getDeployStore, getStore } from '@netlify/blobs';
 import { getUser } from '@netlify/identity';
 import familyCore from './ready-family-auth-core.js';
@@ -50,11 +51,43 @@ export default async function handler(req){
     if(!asset?.asset_key)return Response.json({ok:false,reason:'CANDIDATE_ASSET_MISSING'},{status:409});
     job.selected_slot=slot;
     job.selected_asset={...asset,slot};
+    job.consistency_gate=ensureConsistencyGate(job);
+    job.consistency_gate.human_confirmation={
+      state:'NOT_RUN',
+      actor_scope:null,
+      accepted_same_identity:null,
+      selected_slot:slot,
+      notes:null
+    };
+    job.consistency_gate.final_state='PENDING';
+    job.consistency_gate.lock_allowed=false;
     job.status='SELECTED';
     job.updated_at=new Date().toISOString();
     job.trace=[...(job.trace||[]),{at:job.updated_at,event:'CANDIDATE_SELECTED',slot,status:'SELECTED'}];
     await store.set(key,JSON.stringify(job));
     return Response.json({ok:true,job},{status:200,headers:{'Cache-Control':'no-store'}});
+  }
+
+  if(action==='CONFIRM_SAME_IDENTITY'){
+    if(!job.selected_slot||!job.selected_asset?.asset_key){
+      return Response.json({ok:false,reason:'CHARACTER_SELECTION_REQUIRED'},{status:409});
+    }
+    const accepted=body.accepted_same_identity===true;
+    job.consistency_gate=applyHuman(job,{
+      actor_scope:'CHILD',
+      accepted_same_identity:accepted,
+      selected_slot:job.selected_slot,
+      notes:body.notes||null
+    });
+    job.updated_at=new Date().toISOString();
+    job.trace=[...(job.trace||[]),{
+      at:job.updated_at,
+      event:accepted?'SAME_IDENTITY_CONFIRMED':'SAME_IDENTITY_REJECTED',
+      slot:job.selected_slot,
+      status:job.status
+    }];
+    await store.set(key,JSON.stringify(job));
+    return Response.json({ok:true,job,consistency_gate:job.consistency_gate},{status:200,headers:{'Cache-Control':'no-store'}});
   }
 
   return Response.json({ok:false,reason:'CHARACTER_ACTION_UNSUPPORTED'},{status:400});
