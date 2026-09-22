@@ -83,10 +83,17 @@
     };
   }
 
-  function lockIdentity(model,{locked_at=new Date().toISOString()}={}){
+  function lockIdentity(model,{consistency_gate=null,locked_at=new Date().toISOString()}={}){
     if(!['SELECTED','CORRECTED'].includes(model.state))throw new Error('CHARACTER_MASTER_NOT_LOCKABLE');
     const identityAsset=model.state==='CORRECTED'?model.correction?.asset:model.selected_asset;
     if(!identityAsset)throw new Error('CHARACTER_MASTER_IDENTITY_ASSET_REQUIRED');
+    const assurance=consistency_gate||model.consistency_gate||null;
+    if(!assurance||assurance.final_state!=='PASS'){
+      throw new Error('CHARACTER_CONSISTENCY_GATE_NOT_PASS');
+    }
+    if(assurance.structural_state&&assurance.structural_state!=='PASS')throw new Error('CHARACTER_STRUCTURAL_GATE_NOT_PASS');
+    if(assurance.visual_state&&assurance.visual_state!=='PASS')throw new Error('CHARACTER_VISUAL_GATE_NOT_PASS');
+    if(assurance.human_state&&assurance.human_state!=='PASS')throw new Error('CHARACTER_HUMAN_CONFIRMATION_NOT_PASS');
     return {
       ...model,
       state:'VISUAL_ID_LOCKED',
@@ -95,6 +102,7 @@
         source_hash:model.source_hash,
         selected_slot:model.selected_slot,
         identity_asset:identityAsset,
+        consistency_gate:{...assurance},
         assets:{
           full_character:identityAsset.asset_key||identityAsset.asset_url||null,
           portrait_card:null,
