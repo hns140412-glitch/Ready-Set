@@ -4,6 +4,11 @@ import familyCore from './ready-family-auth-core.js';
 
 const { familySessionFromIdentityUser }=familyCore;
 
+function paidGenerationEnabled(){
+  const raw=process.env.CHARACTER_VISUAL_ID_PAID_GENERATION ?? process.env.READY_CHARACTER_PAID_GENERATION;
+  return String(raw||'').toLowerCase()==='true';
+}
+
 function storeFor(){
   const context=globalThis.Netlify?.context?.deploy?.context;
   return context==='production'
@@ -28,8 +33,8 @@ export default async function handler(req){
   if(req.method!=='POST')return Response.json({ok:false,reason:'METHOD_NOT_ALLOWED'},{status:405});
   const mapped=await childSession();
   if(!mapped.ok)return Response.json({ok:false,reason:mapped.reason},{status:mapped.status});
-  if(String(process.env.READY_CHARACTER_PAID_GENERATION||'').toLowerCase()!=='true'){
-    return Response.json({ok:false,reason:'CHARACTER_GENERATION_PROVIDER_LOCKED',gate:'READY_CHARACTER_PAID_GENERATION'},{status:423});
+  if(!paidGenerationEnabled()){
+    return Response.json({ok:false,reason:'CHARACTER_GENERATION_PROVIDER_LOCKED',gate:'CHARACTER_VISUAL_ID_PAID_GENERATION'},{status:423});
   }
   const apiKey=String(process.env.OPENAI_API_KEY||'').trim();
   if(!apiKey)return Response.json({ok:false,reason:'IMAGE_PROVIDER_NOT_CONFIGURED'},{status:503});
@@ -61,7 +66,7 @@ export default async function handler(req){
   const form=new FormData();
   form.append('image[]',new Blob([source],{type:sourceMeta.mime||'image/jpeg'}),'identity-source.jpg');
   form.append('image[]',new Blob([selected],{type:'image/webp'}),'selected-character.webp');
-  form.append('model',String(process.env.READY_CHARACTER_IMAGE_MODEL||'gpt-image-2.5-sunburst'));
+  form.append('model',String(process.env.CHARACTER_VISUAL_ID_IMAGE_MODEL||process.env.READY_CHARACTER_IMAGE_MODEL||'gpt-image-2.5-sunburst'));
   form.append('prompt',[
     'Edit the selected exploration character to more faithfully match the child in the first reference photo.',
     'Reference image 1 is the highest-authority identity source.',
@@ -71,8 +76,8 @@ export default async function handler(req){
     'Preserve the chosen 2.5D editorial exploration character style and overall silhouette from image 2.',
     'No text, logos, UI labels, emoji or watermark.'
   ].join(' '));
-  form.append('size',String(process.env.READY_CHARACTER_IMAGE_SIZE||'1024x1536'));
-  form.append('quality',String(process.env.READY_CHARACTER_IMAGE_QUALITY||'medium'));
+  form.append('size',String(process.env.CHARACTER_VISUAL_ID_IMAGE_SIZE||process.env.READY_CHARACTER_IMAGE_SIZE||'1024x1536'));
+  form.append('quality',String(process.env.CHARACTER_VISUAL_ID_IMAGE_QUALITY||process.env.READY_CHARACTER_IMAGE_QUALITY||'medium'));
   form.append('output_format','webp');
   form.append('output_compression','85');
 
@@ -105,6 +110,19 @@ export default async function handler(req){
   await store.set(assetKey,bytes);
 
   job.corrected_asset={asset_key:assetKey,mime:'image/webp',bytes:bytes.length,revision:job.correction_revision};
+  if(job.consistency_gate){
+    job.consistency_gate.visual={
+      state:'NOT_RUN',evaluator:null,source_identity_match:null,candidate_identity_consistent:null,
+      direction_distinctness:null,face_unobstructed:null,sensitive_trait_change_detected:null,
+      notes:'RESET_AFTER_LIKENESS_CORRECTION'
+    };
+    job.consistency_gate.human_confirmation={
+      state:'NOT_RUN',actor_scope:null,accepted_same_identity:null,selected_slot:job.selected_slot||null,
+      notes:'RESET_AFTER_LIKENESS_CORRECTION'
+    };
+    job.consistency_gate.final_state='PENDING';
+    job.consistency_gate.lock_allowed=false;
+  }
   job.status='CORRECTED';
   job.error=null;
   job.updated_at=new Date().toISOString();
