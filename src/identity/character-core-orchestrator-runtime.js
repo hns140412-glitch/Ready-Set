@@ -1,12 +1,12 @@
 (function(root){
   'use strict';
 
-  const VERSION='READY_CHARACTER_CORE_ORCHESTRATOR_V01';
+  const VERSION='CHARACTER_VISUAL_ID_CORE_ORCHESTRATOR_V01';
 
   function create(options={}){
-    const directionApi=options.directionApi||root.ReadyCharacterDirection;
-    const jobApi=options.jobApi||root.ReadyCharacterGenerationJob;
-    const assetKeysApi=options.assetKeysApi||root.ReadyCharacterAssetKeys;
+    const directionApi=options.directionApi||root.CharacterVisualIdDirection||root.ReadyCharacterDirection;
+    const jobApi=options.jobApi||root.CharacterVisualIdGenerationJob||root.ReadyCharacterGenerationJob;
+    const assetKeysApi=options.assetKeysApi||root.CharacterVisualIdAssetKeys||root.ReadyCharacterAssetKeys;
     if(!directionApi||!jobApi||!assetKeysApi)throw new Error('CHARACTER_CORE_DEPENDENCY_MISSING');
 
     function ensureProfile(profile){
@@ -85,8 +85,11 @@
     return Object.freeze({begin,choose,generationPayload});
   }
 
-  root.ReadyCharacterCoreOrchestrator=Object.freeze({
+  const api=Object.freeze({
     version:VERSION,
+    owner:'CHARACTER_VISUAL_ID',
     create
   });
+  root.CharacterVisualIdCoreOrchestrator=api;
+  root.ReadyCharacterCoreOrchestrator=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
