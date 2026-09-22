@@ -43,12 +43,6 @@ const rebuildResultHistoryController=globalThis.ReadyRebuildResultHistoryControl
 const rebuildProfileSettingsView=globalThis.ReadyRebuildProfileSettingsView||null;
 const rebuildProfileController=globalThis.ReadyRebuildProfileController||null;
 const rebuildLearnerContext=globalThis.ReadyRebuildLearnerContext||null;
-const rebuildCharacterDirection=globalThis.ReadyCharacterDirection||null;
-const rebuildCharacterCore=globalThis.ReadyCharacterCoreOrchestrator||null;
-const rebuildCharacterRemoteAdapter=globalThis.ReadyCharacterRemoteAdapter||null;
-const rebuildCharacterMaster=globalThis.ReadyCharacterMaster||null;
-const rebuildCharacterSetupView=globalThis.ReadyCharacterSetupView||null;
-const rebuildCharacterSetupController=globalThis.ReadyCharacterSetupController||null;
 const rebuildSettingsController=globalThis.ReadyRebuildSettingsController||null;
 const rebuildAuthSyncView=globalThis.ReadyRebuildAuthSyncView||null;
 const rebuildAuthSyncController=globalThis.ReadyRebuildAuthSyncController||null;
@@ -59,7 +53,7 @@ const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildAppBootstrapController=globalThis.ReadyRebuildAppBootstrapController||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildMissionController||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildLearnerContext||!rebuildCharacterDirection||!rebuildCharacterCore||!rebuildCharacterRemoteAdapter||!rebuildCharacterMaster||!rebuildCharacterSetupView||!rebuildCharacterSetupController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildPlannerScreenController||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildMissionController||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildLearnerContext||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildPlannerScreenController||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -85,7 +79,7 @@ const SOUND_MAP={
 
 const initial={
   schemaVersion:5,
-  profile:{name:'',birthdate:'',photo:'',style:'editorial',shareAvatar:false,sourcePhoto:null,characterDirection:rebuildCharacterDirection.createState(),characterGenerationJob:null,characterRemoteJob:null,characterMaster:null,visualId:null},
+  profile:{name:'',birthdate:'',photo:'',style:'editorial',shareAvatar:false,characterVisualId:null},
   guide:{type:'lumi',name:'루미',voice:'warm'},
   guestHistory:[],
   selected:[],
@@ -110,15 +104,6 @@ const learnerContextRuntime=rebuildLearnerContext.create({
   dateKey:()=>new Date().toLocaleDateString('sv-SE')
 });
 globalThis.ReadySetLearnerContext=learnerContextRuntime;
-globalThis.ReadySetCharacterDirection=rebuildCharacterDirection;
-const characterCoreRuntime=rebuildCharacterCore.create({
-  directionApi:rebuildCharacterDirection,
-  jobApi:globalThis.ReadyCharacterGenerationJob,
-  assetKeysApi:globalThis.ReadyCharacterAssetKeys
-});
-globalThis.ReadySetCharacterCore=characterCoreRuntime;
-const characterRemoteRuntime=rebuildCharacterRemoteAdapter.create();
-const characterMasterApi=rebuildCharacterMaster;
 let previewTimer=null;
 let plannerSelectedDate=null;
 let plannerTab='week';
@@ -165,7 +150,6 @@ const appNavigation=rebuildNavigation.create({
     planner:()=>renderPlanner(),
     'planner-admin':()=>plannerAdminRuntime.render(),
     profile:()=>profileRuntime.renderProfile(),
-    'character-setup':()=>characterSetupRuntime.render(),
     settings:()=>settingsRuntime.renderSettings(),
     result:()=>resultHistoryRuntime.renderResult()
   }
@@ -595,106 +579,6 @@ $('#saveProfileBtn').onclick=()=>profileRuntime.saveProfile({
   birthdate:$('#profileBirthdate').value,
   shareAvatar:$('#shareAvatarOptIn').checked
 });
-
-const characterSetupView=rebuildCharacterSetupView.create({
-  query:$,
-  escapeHtml,
-  applyAvatar
-});
-const characterSetupRuntime=rebuildCharacterSetupController.create({
-  view:characterSetupView,
-  core:characterCoreRuntime,
-  getState:()=>state,
-  save,
-  familySession,
-  toast,
-  remote:characterRemoteRuntime,
-  masterApi:characterMasterApi
-});
-$('#openCharacterSetupBtn').onclick=()=>{
-  if(!state.profile?.sourcePhoto?.source_hash){toast('먼저 사진을 등록해 주세요.');return;}
-  nav('character-setup');
-};
-$('#beginCharacterSetupBtn').onclick=()=>{
-  const result=characterSetupRuntime.begin();
-  if(result?.ok)$('#beginCharacterSetupBtn').hidden=true;
-};
-$('#characterSetupView').addEventListener('click',async e=>{
-  const prepare=e.target.closest?.('#prepareCharacterJobBtn');
-  const generate=e.target.closest?.('#generateCharacterCandidatesBtn');
-  const select=e.target.closest?.('[data-select-character-candidate]');
-  const correct=e.target.closest?.('#correctCharacterLikenessBtn');
-  const lockMaster=e.target.closest?.('#lockCharacterMasterBtn');
-  const masterSheet=e.target.closest?.('#generateCharacterMasterSheetBtn');
-  const button=prepare||generate||select||correct||lockMaster||masterSheet;
-  if(!button)return;
-  const status=$('#characterRemoteStatus');
-  button.disabled=true;
-  try{
-    let result=null;
-    if(prepare){
-      if(status)status.textContent='원본 사진과 생성 계약을 서버에 등록하는 중…';
-      result=await characterSetupRuntime.prepareRemoteJob();
-      if(result?.ok){
-        toast('캐릭터 생성 준비를 서버에 저장했어요.');
-        characterSetupRuntime.render();
-      }
-    }else if(generate){
-      if(status)status.textContent='A/B/C 후보를 순서대로 생성하는 중…';
-      result=await characterSetupRuntime.generateAllCandidates();
-      if(result?.ok){
-        toast('캐릭터 후보 3개가 준비됐어요.');
-        characterSetupRuntime.render();
-      }
-    }else if(select){
-      const slot=select.dataset.selectCharacterCandidate;
-      result=await characterSetupRuntime.selectCandidate(slot);
-      if(result?.ok){
-        toast('이 후보를 기준 캐릭터로 선택했어요.');
-        characterSetupRuntime.render();
-      }
-    }else if(correct){
-      if(status)status.textContent='원본 사진과 선택 후보를 비교해 닮기를 보정하는 중…';
-      result=await characterSetupRuntime.correctLikeness();
-      if(result?.ok){
-        toast('원본 사진 기준 닮기 보정이 끝났어요.');
-        characterSetupRuntime.render();
-      }
-    }else if(lockMaster){
-      if(status)status.textContent='Visual ID를 잠그는 중…';
-      result=await characterSetupRuntime.lockMaster();
-      if(result?.ok){
-        toast('내 캐릭터 Visual ID가 확정됐어요.');
-        characterSetupRuntime.render();
-      }
-    }else if(masterSheet){
-      if(status)status.textContent='Character Master 일관성 시트를 만드는 중…';
-      result=await characterSetupRuntime.generateMasterSheet();
-      if(result?.ok){
-        toast('Character Master가 준비됐어요.');
-        characterSetupRuntime.render();
-      }
-    }
-    if(result&&!result.ok){
-      const reason=String(result.reason||'UNKNOWN');
-      if(status)status.textContent='처리 중단 · '+reason;
-      if(reason==='UNAUTHENTICATED')toast('로그인 후 서버 기능을 사용할 수 있어요.');
-      else if(reason==='CHARACTER_GENERATION_PROVIDER_LOCKED')toast('이미지 생성은 외부 리소스 게이트로 잠겨 있어요.');
-      else toast('캐릭터 작업을 완료하지 못했어요.');
-    }
-  }catch(err){
-    if(status)status.textContent='처리 중단 · '+String(err?.message||err);
-    toast('캐릭터 작업을 완료하지 못했어요.');
-  }finally{button.disabled=false;}
-});
-$('#characterDirectionGrid').onclick=e=>{
-  const button=e.target.closest?.('[data-character-direction]');
-  if(!button)return;
-  const result=characterSetupRuntime.choose(button.dataset.characterDirection);
-  if(result?.ok&&result.status==='READY_FOR_CANDIDATE_GENERATION'){
-    $('#beginCharacterSetupBtn').hidden=true;
-  }
-};
 
 
 
