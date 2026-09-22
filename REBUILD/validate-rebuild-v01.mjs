@@ -832,3 +832,11 @@ assert('character-asset-key-shape',keys.source==='child_1/visual_1/source/source
 assert('character-profile-source-wired',appSource.includes('sourcePhoto:null'));
 assert('character-profile-job-wired',appSource.includes('characterGenerationJob:null'));
 assert('profile-controller-uses-source-photo-intake',profileControllerSource.includes('photoIntake.normalize'));
+
+const authSyncControllerMemberScope=loadSource('src/views/auth-sync-controller-runtime.js');
+const authSyncViewMemberScope=loadSource('src/views/auth-sync-view-runtime.js');
+assert('member-scoped-sync-status-filter',
+  authSyncControllerMemberScope.includes('belongsToActiveMember') &&
+  authSyncControllerMemberScope.includes('parseSyncScope') &&
+  authSyncViewMemberScope.includes('parseSyncScope')
+);
