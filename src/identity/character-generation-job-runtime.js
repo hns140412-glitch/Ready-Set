@@ -1,7 +1,7 @@
 (function(root){
   'use strict';
 
-  const VERSION='READY_CHARACTER_GENERATION_JOB_V01';
+  const VERSION='CHARACTER_VISUAL_ID_GENERATION_JOB_V01';
   const STATES=Object.freeze([
     'DRAFT','SOURCE_READY','QUEUED',
     'GENERATING_A','GENERATING_B','GENERATING_C',
@@ -85,12 +85,15 @@
     return transition(job,'FAILED',{event:'JOB_FAILED',patch:{error:String(reason||'UNKNOWN')},now});
   }
 
-  root.ReadyCharacterGenerationJob=Object.freeze({
+  const api=Object.freeze({
     version:VERSION,
+    owner:'CHARACTER_VISUAL_ID',
     STATES,
     create,
     transition,
     select,
     fail
   });
+  root.CharacterVisualIdGenerationJob=api;
+  root.ReadyCharacterGenerationJob=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
