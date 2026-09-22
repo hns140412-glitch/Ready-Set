@@ -182,9 +182,9 @@ export default async function handler(req){
     direction_distinctness:evidence.direction_distinctness,
     face_unobstructed:evidence.face_unobstructed,
     sensitive_trait_change_detected:evidence.sensitive_trait_change_detected,
+    candidates:evidence.candidates,
     notes:evidence.summary
   });
-  job.consistency_gate.visual.candidates=evidence.candidates;
   job.updated_at=new Date().toISOString();
   job.trace=[...(job.trace||[]),{
     at:job.updated_at,
