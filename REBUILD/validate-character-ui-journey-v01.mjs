@@ -27,9 +27,9 @@ assert(controller.includes('SYSTEM_AUTO_CONTRAST')===false,'CONTROLLER_MUST_NOT_
 assert(core.includes('p.characterDirection.candidates'),'CORE_MUST_OWN_CANDIDATE_DIRECTION_RESULT');
 assert(view.includes('두 번만 직접 고르면 끝이에요.'),'TWO_SELECTION_COPY_MISSING');
 assert(view.includes('시스템이 대비되도록 만든 방향'),'AUTO_CONTRAST_COPY_MISSING');
-assert(view.includes('유료 이미지 호출을 하지 않습니다.'),'NO_PAID_GENERATION_DISCLOSURE_MISSING');
+assert(view.includes('세 후보 모두 같은 나예요.'),'SAME_CHILD_COMPARISON_COPY_MISSING');
 
-console.log('READY_CHARACTER_UI_JOURNEY_V01_PASS');
+console.log('CHARACTER_VISUAL_ID_UI_JOURNEY_V01_PASS');
 
 
 const remote=read('src/identity/character-remote-adapter-runtime.js');
@@ -41,6 +41,8 @@ const assetFn=read('netlify/functions/character-asset.mjs');
 const actionFn=read('netlify/functions/character-action.mjs');
 const correctFn=read('netlify/functions/character-correct.mjs');
 const masterFn=read('netlify/functions/character-master.mjs');
+const derivativeFn=read('netlify/functions/character-derivatives.mjs');
+const identityRuntime=read('src/identity/character-identity-consistency-runtime.js');
 
 assert(remote.includes('/api/character/source'),'CHARACTER_REMOTE_SOURCE_ENDPOINT_MISSING');
 assert(remote.includes('/api/character/job'),'CHARACTER_REMOTE_JOB_ENDPOINT_MISSING');
@@ -48,6 +50,7 @@ assert(remote.includes('/api/character/generate'),'CHARACTER_REMOTE_GENERATE_END
 assert(remote.includes('/api/character/action'),'CHARACTER_REMOTE_ACTION_ENDPOINT_MISSING');
 assert(remote.includes('/api/character/correct'),'CHARACTER_REMOTE_CORRECT_ENDPOINT_MISSING');
 assert(remote.includes('/api/character/master'),'CHARACTER_REMOTE_MASTER_ENDPOINT_MISSING');
+assert(remote.includes('/api/character/derivatives'),'CHARACTER_REMOTE_DERIVATIVE_ENDPOINT_MISSING');
 
 assert(sourceFn.includes("role!=='CHILD'"),'CHARACTER_SOURCE_CHILD_SCOPE_MISSING');
 assert(jobFn.includes('DIRECTION_PROVENANCE_INVALID'),'CHARACTER_JOB_PROVENANCE_GUARD_MISSING');
@@ -59,20 +62,24 @@ assert(assetFn.includes("getUser"),'CHARACTER_ASSET_AUTH_MISSING');
 assert(actionFn.includes('SELECT_CANDIDATE'),'CHARACTER_SELECT_ACTION_MISSING');
 assert(correctFn.includes("image[]"),'LIKENESS_MULTI_REFERENCE_EDIT_MISSING');
 assert(correctFn.includes('READY_CHARACTER_PAID_GENERATION'),'LIKENESS_PROVIDER_GATE_MISSING');
-assert(masterFn.includes('SINGLE_IDENTITY_ASSET_LOCKED__DERIVATIVE_CROP_PENDING'),'MASTER_NORMALIZATION_TRUTHFUL_STATE_MISSING');
+assert(masterFn.includes('IDENTITY_LOCKED__DERIVATIVES_PENDING'),'MASTER_NORMALIZATION_TRUTHFUL_STATE_MISSING');
 
+assert(identityRuntime.includes('SAME_CHILD_DIFFERENT_DIRECTION'),'IDENTITY_CONSISTENCY_CONTRACT_MISSING');
+assert(derivativeFn.includes("job.status='MASTER_ASSETS_READY'"),'DERIVATIVE_READY_TRANSITION_MISSING');
 assert(master.includes('CANDIDATES_READY'),'CHARACTER_MASTER_DOMAIN_MISSING');
 assert(master.includes('LIKENESS_CORRECTION_REQUESTED'),'CHARACTER_MASTER_CORRECTION_TRACE_MISSING');
-assert(master.includes('CHARACTER_MASTER_LOCKED'),'CHARACTER_MASTER_LOCK_TRACE_MISSING');
+assert(master.includes('VISUAL_ID_LOCKED'),'CHARACTER_VISUAL_ID_LOCK_TRACE_MISSING');
 
 assert(controller.includes('generateAllCandidates'),'CHARACTER_GENERATE_ALL_CONTROLLER_MISSING');
 assert(controller.includes('selectCandidate'),'CHARACTER_SELECT_CONTROLLER_MISSING');
 assert(controller.includes('correctLikeness'),'CHARACTER_CORRECTION_CONTROLLER_MISSING');
 assert(controller.includes('lockMaster'),'CHARACTER_MASTER_LOCK_CONTROLLER_MISSING');
+assert(controller.includes('buildDerivativeAssets'),'CHARACTER_DERIVATIVE_CONTROLLER_MISSING');
 assert(app.includes('correctCharacterLikenessBtn'),'CHARACTER_CORRECTION_UI_ACTION_MISSING');
 assert(app.includes('lockCharacterMasterBtn'),'CHARACTER_MASTER_UI_ACTION_MISSING');
+assert(app.includes('buildCharacterDerivativesBtn'),'CHARACTER_DERIVATIVE_UI_ACTION_MISSING');
 
-console.log('READY_CHARACTER_CORE_SERVER_CONTRACT_V01_PASS');
+console.log('CHARACTER_VISUAL_ID_CORE_SERVER_CONTRACT_V01_PASS');
 
 
 const masterSheetFn=read('netlify/functions/character-master-sheet.mjs');
