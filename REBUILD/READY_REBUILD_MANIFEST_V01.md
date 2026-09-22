@@ -23,7 +23,6 @@ src/
   integrations/
   persistence/
   views/
-  identity/
 
 ## Migration order
 R0 shell/store boundary
@@ -37,13 +36,7 @@ R6 old-path removal after parity regression
 ## Guard
 No feature is counted as migrated until STRUCTURE/FUNCTIONAL/JOURNEY/UI_UX/RUNTIME evidence exists.
 
-
-## Identity / Character direction migration
-- `src/identity/character-direction-runtime.js` owns the latest approved mood-direction contract.
-- Source photo remains the highest identity authority.
-- Child makes exactly two direct selections: 3-choice round 1 -> confirm -> 3-choice round 2 -> confirm.
-- Candidate C direction is system-derived as an automatic contrast; the child is not asked for a third direct selection.
-- Legacy 6-MOOD / choose-3 and 3-direct-round flows are superseded.
-- Mood/direction never replaces facial identity.
-- UI direction cards must use high-density premium illustration, not emoji/emoticon/simple-icon substitutes.
-- Ready timer yellow remains a protected functional accent, not the dominant consultation palette.
+## External character integration boundary
+- Character Visual ID is developed independently.
+- Ready owns only the future consumer adapter for `CHARACTER_VISUAL_ID_PROJECTION_V01`.
+- Integration contract: `INTEGRATION/CHARACTER_VISUAL_ID_CONTRACT_V01.md`.
