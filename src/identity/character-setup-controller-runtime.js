@@ -9,6 +9,7 @@
     const familySession=options.familySession||(()=>({}));
     const toast=options.toast||(()=>{});
     const remote=options.remote||null;
+    const masterApi=options.masterApi||root.ReadyCharacterMaster||null;
     if(!view||!core)throw new Error('CHARACTER_SETUP_CONTROLLER_DEPENDENCY_MISSING');
 
     function profile(){return getState().profile||{};}
@@ -30,15 +31,15 @@
       const p=profile();
       const s=p.characterDirection||{};
       if(s.status==='ROUND_2'){
-        return {profile:p,status:'ROUND_2',options:root.ReadyCharacterDirection.secondRound(s.firstSelection),candidates:[]};
+        return {profile:p,status:'ROUND_2',options:root.ReadyCharacterDirection.secondRound(s.firstSelection),candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
       }
       if(s.status==='READY_FOR_CANDIDATE_GENERATION'){
-        return {profile:p,status:s.status,options:[],candidates:s.candidates||[]};
+        return {profile:p,status:s.status,options:[],candidates:s.candidates||[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
       }
       if(s.status==='ROUND_1'){
-        return {profile:p,status:'ROUND_1',options:root.ReadyCharacterDirection.firstRound(),candidates:[]};
+        return {profile:p,status:'ROUND_1',options:root.ReadyCharacterDirection.firstRound(),candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
       }
-      return {profile:p,status:'START',options:[],candidates:[]};
+      return {profile:p,status:'START',options:[],candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
     }
 
     function render(){view.render(snapshot());}
@@ -102,13 +103,68 @@
       return created;
     }
 
-    async function startGeneration(){
+    async function startGeneration(slot){
       if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
       const p=ensureRemoteProfile();
-      return remote.startGeneration({visual_id:p.visualId});
+      return remote.startGeneration({visual_id:p.visualId,slot});
     }
 
-    return Object.freeze({render,begin,choose,generationPayload,prepareRemoteJob,startGeneration});
+    async function refreshRemoteJob(){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const result=await remote.getJob(p.visualId);
+      if(result?.ok){
+        p.characterRemoteJob=result.job||null;
+        save();
+      }
+      return result;
+    }
+
+    async function generateAllCandidates(){
+      const p=ensureRemoteProfile();
+      if(!p.characterRemoteJob)return {ok:false,reason:'CHARACTER_REMOTE_JOB_REQUIRED'};
+      for(const slot of ['A','B','C']){
+        const current=p.characterRemoteJob?.candidate_assets?.[slot];
+        if(current)continue;
+        const result=await startGeneration(slot);
+        if(!result?.ok)return result;
+        const refreshed=await refreshRemoteJob();
+        if(!refreshed?.ok)return refreshed;
+      }
+      return refreshRemoteJob();
+    }
+
+    async function selectCandidate(slot){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const result=await remote.selectCandidate({visual_id:p.visualId,slot});
+      if(!result?.ok)return result;
+      p.characterRemoteJob=result.job||null;
+      if(masterApi){
+        const candidates=(result.job?.directions||[]).map(x=>({
+          slot:x.slot,
+          direction_id:x.direction_id,
+          source:x.source,
+          asset_key:result.job?.candidate_assets?.[x.slot]?.asset_key||null,
+          asset_url:remote.assetUrl(p.visualId,x.slot),
+          asset_hash:null
+        }));
+        let model=masterApi.create({
+          visual_id:p.visualId,
+          source_hash:p.sourcePhoto.source_hash,
+          candidates
+        });
+        model=masterApi.select(model,slot);
+        p.characterMaster=model;
+      }
+      save();
+      return result;
+    }
+
+    return Object.freeze({
+      render,begin,choose,generationPayload,prepareRemoteJob,startGeneration,
+      refreshRemoteJob,generateAllCandidates,selectCandidate
+    });
   }
 
   root.ReadyCharacterSetupController=Object.freeze({
