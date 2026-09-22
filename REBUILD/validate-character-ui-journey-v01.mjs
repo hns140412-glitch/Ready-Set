@@ -73,3 +73,12 @@ assert(app.includes('correctCharacterLikenessBtn'),'CHARACTER_CORRECTION_UI_ACTI
 assert(app.includes('lockCharacterMasterBtn'),'CHARACTER_MASTER_UI_ACTION_MISSING');
 
 console.log('READY_CHARACTER_CORE_SERVER_CONTRACT_V01_PASS');
+
+
+const masterSheetFn=read('netlify/functions/character-master-sheet.mjs');
+assert(remote.includes('/api/character/master-sheet'),'CHARACTER_MASTER_SHEET_ENDPOINT_MISSING');
+assert(masterSheetFn.includes('READY_CHARACTER_PAID_GENERATION'),'CHARACTER_MASTER_SHEET_PROVIDER_GATE_MISSING');
+assert(masterSheetFn.includes("image[]"),'CHARACTER_MASTER_SHEET_MULTI_REFERENCE_MISSING');
+assert(masterSheetFn.includes('MASTER_ASSETS_READY'),'CHARACTER_MASTER_SHEET_READY_STATE_MISSING');
+assert(controller.includes('generateMasterSheet'),'CHARACTER_MASTER_SHEET_CONTROLLER_MISSING');
+assert(app.includes('generateCharacterMasterSheetBtn'),'CHARACTER_MASTER_SHEET_UI_ACTION_MISSING');
