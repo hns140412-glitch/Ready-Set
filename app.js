@@ -44,7 +44,9 @@ const rebuildProfileSettingsView=globalThis.ReadyRebuildProfileSettingsView||nul
 const rebuildProfileController=globalThis.ReadyRebuildProfileController||null;
 const rebuildLearnerContext=globalThis.ReadyRebuildLearnerContext||null;
 const rebuildCharacterDirection=globalThis.ReadyCharacterDirection||null;
-const rebuildCharacterCore=globalThis.ReadyCharacterCoreOrchestrator||null;\nconst rebuildCharacterRemoteAdapter=globalThis.ReadyCharacterRemoteAdapter||null;
+const rebuildCharacterCore=globalThis.ReadyCharacterCoreOrchestrator||null;
+const rebuildCharacterRemoteAdapter=globalThis.ReadyCharacterRemoteAdapter||null;
+const rebuildCharacterMaster=globalThis.ReadyCharacterMaster||null;
 const rebuildCharacterSetupView=globalThis.ReadyCharacterSetupView||null;
 const rebuildCharacterSetupController=globalThis.ReadyCharacterSetupController||null;
 const rebuildSettingsController=globalThis.ReadyRebuildSettingsController||null;
@@ -57,7 +59,7 @@ const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildAppBootstrapController=globalThis.ReadyRebuildAppBootstrapController||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildMissionController||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildLearnerContext||!rebuildCharacterDirection||!rebuildCharacterCore||!rebuildCharacterRemoteAdapter||!rebuildCharacterSetupView||!rebuildCharacterSetupController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildPlannerScreenController||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildMissionController||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildLearnerContext||!rebuildCharacterDirection||!rebuildCharacterCore||!rebuildCharacterRemoteAdapter||!rebuildCharacterMaster||!rebuildCharacterSetupView||!rebuildCharacterSetupController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildPlannerScreenController||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -83,7 +85,7 @@ const SOUND_MAP={
 
 const initial={
   schemaVersion:5,
-  profile:{name:'',birthdate:'',photo:'',style:'editorial',shareAvatar:false,sourcePhoto:null,characterDirection:rebuildCharacterDirection.createState(),characterGenerationJob:null,visualId:null},
+  profile:{name:'',birthdate:'',photo:'',style:'editorial',shareAvatar:false,sourcePhoto:null,characterDirection:rebuildCharacterDirection.createState(),characterGenerationJob:null,characterRemoteJob:null,characterMaster:null,visualId:null},
   guide:{type:'lumi',name:'루미',voice:'warm'},
   guestHistory:[],
   selected:[],
@@ -114,7 +116,9 @@ const characterCoreRuntime=rebuildCharacterCore.create({
   jobApi:globalThis.ReadyCharacterGenerationJob,
   assetKeysApi:globalThis.ReadyCharacterAssetKeys
 });
-globalThis.ReadySetCharacterCore=characterCoreRuntime;\nconst characterRemoteRuntime=rebuildCharacterRemoteAdapter.create();
+globalThis.ReadySetCharacterCore=characterCoreRuntime;
+const characterRemoteRuntime=rebuildCharacterRemoteAdapter.create();
+const characterMasterApi=rebuildCharacterMaster;
 let previewTimer=null;
 let plannerSelectedDate=null;
 let plannerTab='week';
@@ -603,7 +607,8 @@ const characterSetupRuntime=rebuildCharacterSetupController.create({
   getState:()=>state,
   save,
   familySession,
-  toast
+  toast,
+  remote:characterRemoteRuntime
 });
 $('#openCharacterSetupBtn').onclick=()=>{
   if(!state.profile?.sourcePhoto?.source_hash){toast('먼저 사진을 등록해 주세요.');return;}
