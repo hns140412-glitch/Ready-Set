@@ -9,7 +9,7 @@
     const familySession=options.familySession||(()=>({}));
     const toast=options.toast||(()=>{});
     const remote=options.remote||null;
-    const masterApi=options.masterApi||root.ReadyCharacterMaster||null;
+    const masterApi=options.masterApi||root.CharacterVisualIdMaster||root.ReadyCharacterMaster||null;
     if(!view||!core)throw new Error('CHARACTER_SETUP_CONTROLLER_DEPENDENCY_MISSING');
 
     function profile(){return getState().profile||{};}
@@ -31,13 +31,13 @@
       const p=profile();
       const s=p.characterDirection||{};
       if(s.status==='ROUND_2'){
-        return {profile:p,status:'ROUND_2',options:root.ReadyCharacterDirection.secondRound(s.firstSelection),candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
+        return {profile:p,status:'ROUND_2',options:(root.CharacterVisualIdDirection||root.ReadyCharacterDirection).secondRound(s.firstSelection),candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
       }
       if(s.status==='READY_FOR_CANDIDATE_GENERATION'){
         return {profile:p,status:s.status,options:[],candidates:s.candidates||[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
       }
       if(s.status==='ROUND_1'){
-        return {profile:p,status:'ROUND_1',options:root.ReadyCharacterDirection.firstRound(),candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
+        return {profile:p,status:'ROUND_1',options:(root.CharacterVisualIdDirection||root.ReadyCharacterDirection).firstRound(),candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
       }
       return {profile:p,status:'START',options:[],candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
     }
@@ -189,12 +189,9 @@
       p.characterRemoteJob=result.job||null;
       p.characterMasterRemote=result.master||null;
       if(masterApi&&p.characterMaster){
-        const assets={
-          avatar_square:remote.assetUrl(p.visualId,'MASTER_AVATAR'),
-          portrait_card:remote.assetUrl(p.visualId,'MASTER_PORTRAIT'),
-          full_character:remote.assetUrl(p.visualId,'MASTER_FULL')
-        };
-        p.characterMaster=masterApi.lock(p.characterMaster,{master_assets:assets,locked_at:result.master?.locked_at});
+        p.characterMaster=masterApi.lockIdentity
+          ? masterApi.lockIdentity(p.characterMaster,{locked_at:result.master?.locked_at})
+          : masterApi.lock(p.characterMaster,{locked_at:result.master?.locked_at});
       }
       save();
       return result;
@@ -220,8 +217,11 @@
     });
   }
 
-  root.ReadyCharacterSetupController=Object.freeze({
-    version:'READY_CHARACTER_SETUP_CONTROLLER_V01',
+  const api=Object.freeze({
+    version:'CHARACTER_VISUAL_ID_SETUP_CONTROLLER_V01',
+    owner:'CHARACTER_VISUAL_ID',
     create
   });
+  root.CharacterVisualIdSetupController=api;
+  root.ReadyCharacterSetupController=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
