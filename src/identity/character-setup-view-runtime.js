@@ -32,6 +32,7 @@
       const grid=q('#characterDirectionGrid');
       const candidateWrap=q('#characterCandidateContract');
       const sourceMeta=q('#characterSourceMeta');
+      const begin=q('#beginCharacterSetupBtn');
 
       if(sourceMeta){
         const p=profile?.sourcePhoto;
@@ -41,6 +42,7 @@
       }
 
       if(status==='ROUND_1'){
+        if(begin)begin.hidden=true;
         if(step)step.textContent='1 / 2';
         if(title)title.textContent='첫 번째 분위기를 골라줘';
         if(copy)copy.textContent='얼굴은 그대로 유지하고, 캐릭터가 주는 첫인상만 골라요.';
@@ -50,6 +52,7 @@
       }
 
       if(status==='ROUND_2'){
+        if(begin)begin.hidden=true;
         if(step)step.textContent='2 / 2';
         if(title)title.textContent='이번엔 다른 느낌을 하나 더 골라줘';
         if(copy)copy.textContent='첫 선택과 겹치지 않는 세 방향을 보여줘요. 두 번만 직접 고르면 끝이에요.';
@@ -59,6 +62,7 @@
       }
 
       if(status==='READY_FOR_CANDIDATE_GENERATION'){
+        if(begin)begin.hidden=true;
         if(step)step.textContent='READY';
         if(title)title.textContent='세 가지 방향이 준비됐어';
         if(copy)copy.textContent='두 개는 네 선택, 하나는 시스템이 대비되도록 만든 방향이에요.';
@@ -73,6 +77,7 @@
         return;
       }
 
+      if(begin)begin.hidden=false;
       if(step)step.textContent='START';
       if(title)title.textContent='내 캐릭터 만들기';
       if(copy)copy.textContent='원본 사진을 기준으로 두 번의 선택만 받아요.';
