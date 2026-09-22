@@ -50,6 +50,22 @@
       });
     }
 
+    async function reviewConsistency({visual_id}={}){
+      return json('/api/character/consistency-review',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({visual_id})
+      });
+    }
+
+    async function confirmSameIdentity({visual_id,accepted_same_identity=true,notes=null}={}){
+      return json('/api/character/action',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({visual_id,action:'CONFIRM_SAME_IDENTITY',accepted_same_identity,notes})
+      });
+    }
+
     async function correctLikeness({visual_id}={}){
       return json('/api/character/correct',{
         method:'POST',
@@ -86,7 +102,7 @@
       return '/api/character/asset?visual_id='+encodeURIComponent(String(visualId||''))+'&slot='+encodeURIComponent(String(slot||''));
     }
 
-    return Object.freeze({uploadSource,createJob,getJob,startGeneration,selectCandidate,correctLikeness,lockMaster,uploadDerivatives,generateMasterSheet,assetUrl});
+    return Object.freeze({uploadSource,createJob,getJob,startGeneration,selectCandidate,reviewConsistency,confirmSameIdentity,correctLikeness,lockMaster,uploadDerivatives,generateMasterSheet,assetUrl});
   }
 
   const api=Object.freeze({version:VERSION,owner:'CHARACTER_VISUAL_ID',create});
