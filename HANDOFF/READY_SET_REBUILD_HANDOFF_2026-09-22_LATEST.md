@@ -1,144 +1,100 @@
-# READY & SET REBUILD HANDOFF — LATEST — 2026-09-22 REV4
+# READY & SET REBUILD HANDOFF — LATEST — 2026-09-22 REV5
 
 ## Resume
-최신 TAKY 기준으로 Ready & Set 배포 전 작업을 재개해.
+최신 TAKY 기준으로 Ready & Set predeploy frozen candidate 후속 작업을 재개해.
 
 Repository: `hns140412-glitch/Ready-Set`
 Branch: `taky/ready-rebuild-v01-2026-09-21`
-Validated product HEAD: `579089d6fa0c5c59950916cbe86ddc93a65fda0c`
-Validation surface: PR #103 DRAFT / HOLD / DO NOT MERGE
+Validated product HEAD: `10d93c0ce437733182950f42344fd730af586c0b`
 
 ## First read
-1. `C2S/READY_SET_PRODUCT_COMPLETION_C2S_CLOSURE_2026-09-22_REV4.md`
-2. `C2S/READY_SET_PRODUCT_COMPLETION_ATOMS_2026-09-22_REV4.json`
-3. `C2S/READY_SET_PRODUCT_COMPLETION_MATRIX_2026-09-22_REV3.md`
-4. `HANDOFF/READY_SET_NEW_CHAT_START_2026-09-22_REV4.md`
+1. `C2S/READY_SET_PRODUCT_COMPLETION_C2S_CLOSURE_2026-09-22_REV5.md`
+2. `C2S/READY_SET_PRODUCT_COMPLETION_ATOMS_2026-09-22_REV5.json`
+3. `C2S/READY_SET_PRODUCT_COMPLETION_MATRIX_2026-09-22_REV4.md`
+4. `HANDOFF/READY_SET_NEW_CHAT_START_2026-09-22_REV5.md`
 5. `REBUILD/validate-rebuild-v01.mjs`
 
-## Phase
-- Rebuild structure: FROZEN PRODUCT CANDIDATE / ~98–99%
+## Frozen product validation
+At product HEAD `10d93c0...`:
+- Ready Runtime E2E: PASS / 82 of 82 / run 35679046159
+- TAKY Worker Self-Test: PASS / run 35679046087
+- Ready Integration CI: PASS / run 35679046110
+- Planner Free Window: PASS / run 35679046130
+- Daily Availability: PASS / run 35679046105
+- Weekly Availability: PASS / run 35679046099
+- Single Active Task: PASS / run 35679046114
+- Child FACT Confirmation: PASS / run 35679046089
+- DEVICE_VERIFIED: NOT RUN
+
+## Current internal state
+- Rebuild ownership: ~98–99%
 - Planner browser/runtime productization: ~90%
 - Overall user-facing product maturity: ~73–75% conservative
-- DEVICE_VERIFIED: NOT RUN
+- Multi-member isolation: browser/runtime closed, production environment external
 - Netlify / Production / main merge: HOLD
 
-## Exact validated product-head gates
-At `579089d6fa0c5c59950916cbe86ddc93a65fda0c`:
-- TAKY Codex Worker Self-Test — PASS — run 35677510686
-- Ready Integration CI — PASS — run 35677510758
-- Ready Runtime E2E — PASS — run 35677510701
-- Planner Free Window Gate — PASS — run 35677510704
-- Ready Daily Availability Gate — PASS — run 35677510688
-- Ready Weekly Availability Gate — PASS — run 35677510812
-- Ready Single Active Task Gate — PASS — run 35677510802
-- Ready Child FACT Confirmation Gate — PASS — run 35677510842
+## REV5 closure
+### Multi-member
+- member-scoped Profile / Planner / Assignment / app state
+- active-member-only local-first recovery/flush/conflict resolution
+- remote member scope required
+- cross-member remote write forbidden
 
-## REV4 completed
+### Real family timetable
+Authoritative Notion source recovered.
 
-### Multi-member isolation
-Closed in browser/runtime:
-- member-scoped Profile/app state
-- member-scoped Planner
-- member-scoped Assignment
-- member-scoped local-first snapshots
-- active-member-only recovery
-- active-member-only outbox flush
-- active-member-only public snapshot/outbox/conflict reads
-- cross-member conflict resolution blocked
-- remote sync requires authenticated member scope
-- cross-member remote write blocked
-- unscoped authenticated remote write blocked
-- two-member E2E confirms no Profile / Planner / Assignment / snapshot / conflict mixing
+Execution-eligible confirmed rows:
+- Mon English 16:00–18:00
+- Mon Science 19:00–20:00
+- Tue Piano 14:00–16:00
+- Wed English 16:00–18:00
+- Thu Taekwondo 16:30–18:00
+- Fri English 16:00–18:00
 
-Status:
-- CODED PASS
-- CI_VERIFIED PASS
-- RUNTIME_VERIFIED PASS
-- DEVICE_VERIFIED NOT RUN
+Confirmation-required HOLD:
+- Mon Taekwondo 14:30 / end missing
+- Tue Talent worksheet 19:00–21:00 / source marked uncertain
+- Wed Piano 13:30 / end missing
+- Wed Taekwondo 14:30 / end missing
+- Thu Piano 14:30 / end missing
+- Fri Piano 14:30 / end missing
 
-### Learning reference binding
-- official registry/unit evidence is consumed where verified
-- Math 5-1 `약수와 배수` -> `6수01-04` verified runtime path
-- insufficient actual context fails closed
-- stale mapping-gap flags are removed after verified match
-- English official achievement standard may bind, but unit mapping stays explicit `UNIT_MAPPING_EVIDENCE_GAP` because current source has no verified unit-connection table
-- never invent textbook/unit mapping
+Rule:
+- no inferred times
+- confirmed rows only are execution-eligible
+- family-specific evidence remains test fixture data, not deploy product data
 
-### Planner / family timetable calibration
-- representative weekly family timetable harness added
-- recurring English / piano / taekwondo / science schedule patterns covered
-- date-specific replacement covered
-- real defect fixed: free-window capacity previously ignored weekly recurring schedule occurrences
-- free-window capacity now consumes expanded `scheduleCommitmentsForDate()`, including recurring schedule and exceptions
-- dedicated Planner Free Window Gate guards the behavior
+### Provider/device contracts closed predeploy
+- unsupported recording fail-closed
+- microphone denial classification
+- actual MIME/extension handling
+- capture Parent auth
+- provider config/error fail-closed
+- review-draft only
+- answer-reference protection
+- upload count/type/size guards
 
-Important:
-- representative harness != actual family dataset calibration
-- actual family times remain DATA_PENDING and must not be inferred
+### Accessibility/runtime
+- mission duration class + aria-pressed synchronized immediately
+- Runtime Flow locator scoped to visible Mission view
+- no behavior weakening for stale tests
 
-## Major previously completed slices
-### Planner
-- one-off + weekly fixed schedule
-- schedule validity range
-- SKIP / REPLACE overlays
-- daily + weekly availability
-- availability validity + exceptions
-- weekly reflow proposal + Parent approval
-- dirty-review
-- adaptive estimate proposal + Parent approval
-- MORNING daypart evidence without invented clock time
-- evidence-backed allocation rationale
-- carry/replan
+## Remaining truthful gaps
+1. Confirm six HOLD timetable rows.
+2. Bind real workbook/textbook/unit evidence only where actual evidence exists.
+3. Real OCR/Vision provider + real images.
+4. Real microphone/camera/device.
+5. Physical-device safe-area / keyboard / audio / camera UX.
+6. Production Identity / remote sync.
+7. TAKY external-resource gate before deploy.
 
-### Learning Master
-- subject method routing
-- ordered specialist roundtrip
-- evidence ontology/handoff
-- repeated PARTIAL adaptive feedback
-- smaller units / retrieval checkpoint / recovery escalation
-- superseding analysis + Planner reallocation
-- birthdate-only learner context
-- no grade/region/curriculum inference from birthdate
-
-### Capture
-- source preservation
-- Parent review
-- reanalysis history
-- failed reanalysis preserves prior successful draft
-- English Capture -> FACT -> Learning Master -> Planner path
-
-## Remaining predeploy priorities
-Internal work, if authoritative data is available:
-1. bind/calibrate actual family timetable dataset
-2. bind actual workbook/textbook/unit reference evidence without inference
-3. keep frozen-candidate regression clean after any parallel character change
-
-External/device HOLD:
-1. real OCR/Vision provider + real image
-2. production Identity/remote sync
-3. real microphone/camera
-4. physical-device safe-area/keyboard/UX
-5. Netlify deployment
-
-## Concurrent branch warning
-Same branch can receive character work.
-Before any edit:
-- live refresh
-- classify diff
-- preserve unrelated changes
-- use fresh file SHA + sequential updates
-- never force push
-
-## TAKY constraints
-- no user-as-tester/debugger
-- no fake PASS
-- CODED / CI / RUNTIME / DEVICE always separated
-- Planner owns schedule dates
-- specialist evidence cannot schedule dates
-- birthdate cannot infer grade/region/curriculum
-- Netlify / Production / main merge only after external-resource gate
-- Snap & Pop / Hide & Seek untouched from this branch
-
-## Resume target
-Default resume target is **predeploy gap closure only**.
-Do not reopen closed structural rebuild work without new regression evidence.
+## TAKY operating constraints
+- Live refresh before edits.
+- If HEAD moves, diff first.
+- Preserve character parallel work.
+- Fresh file SHA + sequential contents updates for isolated edits.
+- No force push.
+- If exact-head gate red: stop, classify, minimal fix, rerun.
+- No user-as-tester.
+- Separate CODED / CI_VERIFIED / RUNTIME_VERIFIED / DEVICE_VERIFIED.
+- No Netlify / Production / main merge at this stage.
