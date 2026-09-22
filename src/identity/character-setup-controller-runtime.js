@@ -218,8 +218,14 @@
       p.characterMasterRemote=result.master||null;
       if(masterApi&&p.characterMaster){
         p.characterMaster=masterApi.lockIdentity
-          ? masterApi.lockIdentity(p.characterMaster,{locked_at:result.master?.locked_at})
-          : masterApi.lock(p.characterMaster,{locked_at:result.master?.locked_at});
+          ? masterApi.lockIdentity(p.characterMaster,{
+              consistency_gate:result.master?.consistency_gate||null,
+              locked_at:result.master?.locked_at
+            })
+          : masterApi.lock(p.characterMaster,{
+              consistency_gate:result.master?.consistency_gate||null,
+              locked_at:result.master?.locked_at
+            });
       }
       save();
       return result;
