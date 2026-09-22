@@ -1,15 +1,14 @@
 import { ensure as ensureConsistencyGate } from './character-consistency-core.mjs';
 import { getDeployStore, getStore } from '@netlify/blobs';
 import { getUser } from '@netlify/identity';
-import familyCore from './ready-family-auth-core.js';
+import { mapCharacterSession } from './character-family-session-adapter.mjs';
 
-const { familySessionFromIdentityUser }=familyCore;
 
 function storeFor(){
   const context=globalThis.Netlify?.context?.deploy?.context;
   return context==='production'
-    ? getStore('ready-character-assets-v1',{consistency:'strong'})
-    : getDeployStore('ready-character-assets-v1');
+    ? getStore('character-visual-id-assets-v1',{consistency:'strong'})
+    : getDeployStore('character-visual-id-assets-v1');
 }
 function clean(v,label){
   const s=String(v||'').trim();
@@ -21,7 +20,7 @@ export default async function handler(req){
   if(req.method!=='POST')return Response.json({ok:false,reason:'METHOD_NOT_ALLOWED'},{status:405});
   const user=await getUser();
   if(!user)return Response.json({ok:false,reason:'UNAUTHENTICATED'},{status:401});
-  const mapped=familySessionFromIdentityUser(user);
+  const mapped=mapCharacterSession(user);
   if(!mapped.ok)return Response.json({ok:false,reason:mapped.reason},{status:mapped.status});
   if(mapped.session.role!=='CHILD')return Response.json({ok:false,reason:'CHILD_ROLE_REQUIRED'},{status:403});
 
