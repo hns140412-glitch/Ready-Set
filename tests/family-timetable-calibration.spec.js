@@ -1,5 +1,5 @@
 const fs=require('fs');
-const familyTimetable=JSON.parse(fs.readFileSync('data/ready-family-timetable-notion-2026-09-22.json','utf8'));
+const familyTimetable=JSON.parse(fs.readFileSync('tests/fixtures/ready-family-timetable-notion-2026-09-22.json','utf8'));
 const { test, expect } = require('@playwright/test');
 
 test('representative family timetable produces non-overlapping free windows across a school week', async ({page})=>{
