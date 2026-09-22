@@ -2,11 +2,20 @@
 
 function clean(value){ return String(value ?? '').trim(); }
 
+function parseMemberScope(scope){
+  const match=/^member:([^:]+):(.+)$/.exec(clean(scope));
+  if(!match)return null;
+  let memberId=match[1];
+  try{memberId=decodeURIComponent(memberId);}catch{}
+  return {member_id:clean(memberId),scope:clean(match[2])};
+}
+
 function createSyncService(store,options={}){
   if(!store || typeof store.get !== 'function' || typeof store.set !== 'function'){
     throw new Error('store with get/set required');
   }
   const namespace=clean(options.namespace);
+  const authenticatedMemberId=clean(options.member_id);
   if(!namespace) throw new Error('namespace required');
 
   async function health(){
@@ -22,7 +31,17 @@ function createSyncService(store,options={}){
     }
 
     const scope=clean(input.scope)||'unknown';
-    const memberScoped=/^member:[^:]+:.+$/.test(scope);
+    const parsedMemberScope=parseMemberScope(scope);
+    if(authenticatedMemberId){
+      if(!parsedMemberScope){
+        return {status:400,body:{ok:false,reason:'MEMBER_SCOPE_REQUIRED'}};
+      }
+      if(parsedMemberScope.member_id!==authenticatedMemberId){
+        return {status:403,body:{ok:false,reason:'MEMBER_SCOPE_FORBIDDEN'}};
+      }
+    }
+
+    const memberScoped=!!parsedMemberScope;
     const key=memberScoped
       ? 'families/'+encodeURIComponent(namespace)+'/scopes/'+encodeURIComponent(scope)+'/events/'+encodeURIComponent(idempotencyKey)
       : 'families/'+encodeURIComponent(namespace)+'/events/'+encodeURIComponent(idempotencyKey);
@@ -54,6 +73,7 @@ function createSyncService(store,options={}){
       client:input.client || null,
       remote_version:1,
       family_namespace:namespace,
+      member_id:parsedMemberScope?.member_id||null,
       accepted_at:new Date().toISOString()
     };
     await store.set(key,JSON.stringify(record));
@@ -63,4 +83,4 @@ function createSyncService(store,options={}){
   return {health,putEvent};
 }
 
-module.exports={createSyncService};
+module.exports={createSyncService,parseMemberScope};
