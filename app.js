@@ -45,6 +45,8 @@ const rebuildProfileController=globalThis.ReadyRebuildProfileController||null;
 const rebuildLearnerContext=globalThis.ReadyRebuildLearnerContext||null;
 const rebuildCharacterDirection=globalThis.ReadyCharacterDirection||null;
 const rebuildCharacterCore=globalThis.ReadyCharacterCoreOrchestrator||null;
+const rebuildCharacterSetupView=globalThis.ReadyCharacterSetupView||null;
+const rebuildCharacterSetupController=globalThis.ReadyCharacterSetupController||null;
 const rebuildSettingsController=globalThis.ReadyRebuildSettingsController||null;
 const rebuildAuthSyncView=globalThis.ReadyRebuildAuthSyncView||null;
 const rebuildAuthSyncController=globalThis.ReadyRebuildAuthSyncController||null;
@@ -55,7 +57,7 @@ const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildAppBootstrapController=globalThis.ReadyRebuildAppBootstrapController||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildMissionController||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildLearnerContext||!rebuildCharacterDirection||!rebuildCharacterCore||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildPlannerScreenController||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildMissionController||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildLearnerContext||!rebuildCharacterDirection||!rebuildCharacterCore||!rebuildCharacterSetupView||!rebuildCharacterSetupController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildPlannerScreenController||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -159,6 +161,7 @@ const appNavigation=rebuildNavigation.create({
     planner:()=>renderPlanner(),
     'planner-admin':()=>plannerAdminRuntime.render(),
     profile:()=>profileRuntime.renderProfile(),
+    'character-setup':()=>characterSetupRuntime.render(),
     settings:()=>settingsRuntime.renderSettings(),
     result:()=>resultHistoryRuntime.renderResult()
   }
@@ -588,6 +591,36 @@ $('#saveProfileBtn').onclick=()=>profileRuntime.saveProfile({
   birthdate:$('#profileBirthdate').value,
   shareAvatar:$('#shareAvatarOptIn').checked
 });
+
+const characterSetupView=rebuildCharacterSetupView.create({
+  query:$,
+  escapeHtml,
+  applyAvatar
+});
+const characterSetupRuntime=rebuildCharacterSetupController.create({
+  view:characterSetupView,
+  core:characterCoreRuntime,
+  getState:()=>state,
+  save,
+  familySession,
+  toast
+});
+$('#openCharacterSetupBtn').onclick=()=>{
+  if(!state.profile?.sourcePhoto?.source_hash){toast('먼저 사진을 등록해 주세요.');return;}
+  nav('character-setup');
+};
+$('#beginCharacterSetupBtn').onclick=()=>{
+  const result=characterSetupRuntime.begin();
+  if(result?.ok)$('#beginCharacterSetupBtn').hidden=true;
+};
+$('#characterDirectionGrid').onclick=e=>{
+  const button=e.target.closest?.('[data-character-direction]');
+  if(!button)return;
+  const result=characterSetupRuntime.choose(button.dataset.characterDirection);
+  if(result?.ok&&result.status==='READY_FOR_CANDIDATE_GENERATION'){
+    $('#beginCharacterSetupBtn').hidden=true;
+  }
+};
 
 
 
