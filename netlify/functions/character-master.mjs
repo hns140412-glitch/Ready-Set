@@ -73,10 +73,27 @@ export default async function handler(req){
     locked_at:lockedAt
   };
   await store.set(prefix+'/master/meta.json',JSON.stringify(master));
+
+  const sourceMeta=await store.get(prefix+'/source/meta.json',{type:'json'});
+  if(sourceMeta?.source_key){
+    await store.delete(sourceMeta.source_key);
+  }
+  await store.delete(prefix+'/source/meta.json');
+  master.source_retention='PURGED_AFTER_VISUAL_ID_LOCK';
+
   job.master=master;
+  job.source_retention={
+    state:'PURGED',
+    at:lockedAt,
+    policy:'PURGED_AFTER_VISUAL_ID_LOCK'
+  };
   job.status='VISUAL_ID_LOCKED';
   job.updated_at=lockedAt;
-  job.trace=[...(job.trace||[]),{at:lockedAt,event:'VISUAL_ID_LOCKED',status:'VISUAL_ID_LOCKED'}];
+  job.trace=[
+    ...(job.trace||[]),
+    {at:lockedAt,event:'VISUAL_ID_LOCKED',status:'VISUAL_ID_LOCKED'},
+    {at:lockedAt,event:'SOURCE_PHOTO_PURGED',status:'VISUAL_ID_LOCKED'}
+  ];
   await store.set(jobKey,JSON.stringify(job));
 
   return Response.json({ok:true,job,master},{status:201,headers:{'Cache-Control':'no-store'}});
