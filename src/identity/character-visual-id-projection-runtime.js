@@ -23,6 +23,7 @@
     const avatar=assetRef(remoteAssets.avatar_square||localAssets.avatar_square);
     const locked=!!(master?.locked_at||local?.master?.locked_at);
     const derivativesReady=!!(full&&portrait&&avatar);
+    const assurance=master?.consistency_gate||local?.master?.consistency_gate||null;
 
     return Object.freeze({
       contract_version:VERSION,
@@ -40,6 +41,12 @@
         source_hash:clean(master?.source_hash||local?.master?.source_hash||input.source_hash)||null,
         character_core_version:clean(input.character_core_version)||'CHARACTER_VISUAL_ID_CORE_V01'
       }),
+      assurance:assurance?Object.freeze({
+        structural_state:clean(assurance.structural_state||assurance.structural?.state)||'NOT_RUN',
+        visual_state:clean(assurance.visual_state||assurance.visual?.state)||'NOT_RUN',
+        human_state:clean(assurance.human_state||assurance.human_confirmation?.state)||'NOT_RUN',
+        final_state:clean(assurance.final_state)||'PENDING'
+      }):null,
       capabilities:Object.freeze({
         identity_locked:locked,
         derivatives_ready:derivativesReady,
@@ -53,6 +60,9 @@
     if(projection.contract_version!==VERSION)return {ok:false,reason:'CHARACTER_VISUAL_ID_CONTRACT_VERSION_UNSUPPORTED'};
     if(!projection.visual_id)return {ok:false,reason:'CHARACTER_VISUAL_ID_MISSING'};
     if(!projection.capabilities?.identity_locked)return {ok:false,reason:'CHARACTER_VISUAL_ID_NOT_LOCKED'};
+    if(!projection.assurance||projection.assurance.final_state!=='PASS'){
+      return {ok:false,reason:'CHARACTER_VISUAL_ID_ASSURANCE_NOT_PASS'};
+    }
     if(requireDerivatives&&!projection.capabilities?.derivatives_ready){
       return {ok:false,reason:'CHARACTER_VISUAL_ID_DERIVATIVES_NOT_READY'};
     }
