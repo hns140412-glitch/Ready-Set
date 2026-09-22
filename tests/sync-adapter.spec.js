@@ -100,7 +100,7 @@ test('Settings exposes explicit KEEP_LOCAL conflict resolution', async ({page})=
     await window.ReadySetLocalFirst.capture('planner',{probe:'ui-conflict'});
     window.ReadySetSyncAdapter={
       status:()=>({configured:true,enabled:true,state:'CONNECTED'}),
-      send:async row=>row.scope==='planner'
+      send:async row=>window.ReadyMemberScope.parseSyncScope(row.scope).scope==='planner'
         ?{conflict:true,remote_payload:{schema_version:1,dated_todos:[]}}
         :{ok:true}
     };
