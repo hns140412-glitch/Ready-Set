@@ -61,3 +61,32 @@ OPEN:
 - drop/voyage entry theme after character + companion selection
 
 No paid image generation or deployment is performed by this reflection.
+
+
+## Expansion-pack boundary
+Decision locked: core character creation and world-entry presentation are developed as separate deliverables.
+
+CORE / NOW:
+- source photo
+- two-round character direction consultation
+- automatic contrast direction
+- A/B/C candidate generation contract
+- candidate selection
+- likeness correction
+- Character Master / Visual ID lock
+
+SEPARATE / LATER EXPANSION PACK:
+- intro presentation
+- drop entry mode
+- voyage entry mode
+- world-arrival presentation
+- narrative transition into the exploration world
+
+Integration rule:
+- expansion-pack work may consume the locked Character Master / Visual ID
+- expansion-pack work must not redefine character identity, candidate logic, or source-photo authority
+- core character creation must remain independently usable without the expansion pack
+- expansion pack can be attached later through a stable handoff contract instead of being embedded into the core character pipeline
+
+Status:
+- Intro / Drop / Voyage are DEFERRED_EXPANSION, not missing core implementation.
