@@ -25,8 +25,14 @@
       if(!adapter||!local)return {ok:false,reason:'SYNC_RUNTIME_MISSING'};
       const status=adapter.status();
       const [outbox,conflicts]=await Promise.all([local.outbox(),local.conflicts()]);
-      const pending=outbox.filter(x=>!['SENT','SUPERSEDED','ACKED'].includes(x.status)).length;
-      const openConflictRows=conflicts.filter(x=>x.status==='OPEN');
+      const memberScope=root.ReadyMemberScope||null;
+      const activeMember=memberScope?.memberId?.()||null;
+      const belongsToActiveMember=row=>{
+        const parsed=memberScope?.parseSyncScope?.(row.scope)||{member_id:null,scope:row.scope};
+        return activeMember?parsed.member_id===activeMember:parsed.member_id==null;
+      };
+      const pending=outbox.filter(belongsToActiveMember).filter(x=>!['SENT','SUPERSEDED','ACKED'].includes(x.status)).length;
+      const openConflictRows=conflicts.filter(belongsToActiveMember).filter(x=>x.status==='OPEN');
       view.renderSync({status,pending,conflicts:openConflictRows.length,conflictRows:openConflictRows});
       return {ok:true,status,pending,conflicts:openConflictRows.length,conflictRows:openConflictRows};
     }
