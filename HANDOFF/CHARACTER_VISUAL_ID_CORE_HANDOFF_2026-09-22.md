@@ -68,3 +68,73 @@ Next:
 2. validate independent runtime without Ready UI ownership;
 3. live-verify provider contract before any paid generation;
 4. freeze Character projection only after formation core is complete.
+
+
+## 2026-09-22 core closure update
+
+Read first:
+1. `C2S/CHARACTER_VISUAL_ID_CORE_C2S_CLOSURE_2026-09-22.md`
+2. `C2S/CHARACTER_VISUAL_ID_CORE_ATOMS_2026-09-22.json`
+3. `C2S/CHARACTER_VISUAL_ID_CORE_COMPLETION_MATRIX_2026-09-22.md`
+4. this handoff
+
+Validated code checkpoint:
+`e3786e16e68703c927d1704487a5399116775809`
+
+Validated workflow:
+- run `35679010098`
+- SUCCESS
+- Character Visual ID contracts PASS
+- independent core PASS
+- server consistency PASS
+- full Worker Self-Test PASS
+
+### Current canonical flow
+`SOURCE PHOTO -> ROUND 1 -> ROUND 2 -> AUTO CONTRAST -> A/B/C -> SELECT DIRECTION -> VISUAL CONSISTENCY REVIEW -> SAME-IDENTITY HUMAN CONFIRMATION -> OPTIONAL LIKENESS CORRECTION -> RE-REVIEW -> VISUAL_ID_LOCKED -> DERIVATIVES -> MASTER_ASSETS_READY -> OPTIONAL MASTER SHEET -> PROJECTION`
+
+### Hard lock
+Candidate selection is NOT identity approval.
+
+Visual ID lock requires:
+- structural gate PASS
+- selected candidate visual consistency PASS
+- human same-identity confirmation PASS
+
+After likeness correction, prior visual/human evidence is reset and must be reacquired.
+
+### Evidence-first rule
+`PER-CANDIDATE EVIDENCE > AGGREGATE MODEL CLAIM`
+
+Candidate-set quality and selected-candidate lock eligibility are separate.
+
+### Projection
+Downstream contract:
+`CHARACTER_VISUAL_ID_PROJECTION_V01`
+
+Projection carries assurance state.
+Consumer must reject an unassured projection.
+
+### External gates still closed
+- `CHARACTER_VISUAL_ID_PAID_GENERATION`
+- `CHARACTER_VISUAL_ID_PAID_REVIEW`
+
+No paid generation/review was executed.
+No Netlify deployment was performed.
+No device validation was performed.
+
+### Next runtime-only evidence sequence
+When external-resource execution is explicitly authorized:
+1. frozen source photo
+2. one controlled A/B/C generation
+3. select one candidate
+4. visual consistency review
+5. same-identity confirmation
+6. likeness correction only if needed
+7. visual consistency re-review after correction
+8. Visual ID lock
+9. derivative asset generation
+10. optional Character Master Sheet
+11. projection freeze review
+
+Do not integrate into Ready / Hide / Snap before the projection freeze review.
+Do not reopen Intro / Drop / Voyage as Character core work.
