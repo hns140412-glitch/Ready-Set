@@ -40,6 +40,8 @@ const REVIEW_SCHEMA={
     direction_distinctness:{type:'boolean'},
     face_unobstructed:{type:'boolean'},
     sensitive_trait_change_detected:{type:'boolean'},
+    signature_item_consistent:{type:'boolean'},
+    signature_item_not_obstructing_face:{type:'boolean'},
     summary:{type:'string'},
     candidates:{
       type:'array',
@@ -53,10 +55,11 @@ const REVIEW_SCHEMA={
           same_child_identity:{type:'boolean'},
           direction_readable:{type:'boolean'},
           face_unobstructed:{type:'boolean'},
+          signature_item_present:{type:'boolean'},
           identity_drift_risk:{type:'string',enum:['LOW','MEDIUM','HIGH']},
           note:{type:'string'}
         },
-        required:['slot','same_child_identity','direction_readable','face_unobstructed','identity_drift_risk','note']
+        required:['slot','same_child_identity','direction_readable','face_unobstructed','signature_item_present','identity_drift_risk','note']
       }
     }
   },
@@ -66,6 +69,8 @@ const REVIEW_SCHEMA={
     'direction_distinctness',
     'face_unobstructed',
     'sensitive_trait_change_detected',
+    'signature_item_consistent',
+    'signature_item_not_obstructing_face',
     'summary',
     'candidates'
   ]
@@ -133,7 +138,9 @@ export default async function handler(req){
       'Do not identify the person. Do not infer sensitive traits.',
       'Evaluate only visual consistency needed for this product contract.',
       'All candidates should read as the same child while showing clearly different expression/pose/atmosphere directions.',
-      'A PASS requires recognizable identity consistency, unobstructed face, readable direction differences, and no apparent sensitive-trait alteration.'
+      'All three candidates must preserve the same single signature exploration item: '+String(job.signature_item?.label||job.signature_item?.id||'unknown')+'.',
+      'The signature item must remain subtle and must not obstruct the face or eyes.',
+      'A PASS requires recognizable identity consistency, unobstructed face, readable direction differences, one consistent signature item, and no apparent sensitive-trait alteration.'
     ].join(' ')},
     {type:'input_image',image_url:imageDataUrl(source,sourceMeta.mime||'image/jpeg'),detail:'high'},
     {type:'input_image',image_url:imageDataUrl(candidateBuffers.A.bytes,candidateBuffers.A.mime),detail:'high'},
@@ -181,6 +188,8 @@ export default async function handler(req){
     direction_distinctness:evidence.direction_distinctness,
     face_unobstructed:evidence.face_unobstructed,
     sensitive_trait_change_detected:evidence.sensitive_trait_change_detected,
+    signature_item_consistent:evidence.signature_item_consistent,
+    signature_item_not_obstructing_face:evidence.signature_item_not_obstructing_face,
     candidates:evidence.candidates,
     notes:evidence.summary
   });
