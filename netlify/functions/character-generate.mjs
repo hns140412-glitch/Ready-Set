@@ -107,7 +107,7 @@ export default async function handler(req){
 
   const form=new FormData();
   const sourceBlob=new Blob([source],{type:sourceMeta.mime||'image/jpeg'});
-  form.append('image',sourceBlob,'source.'+(sourceMeta.mime==='image/webp'?'webp':sourceMeta.mime==='image/png'?'png':'jpg'));
+  form.append('image[]',sourceBlob,'source.'+(sourceMeta.mime==='image/webp'?'webp':sourceMeta.mime==='image/png'?'png':'jpg'));
   form.append('model',String(process.env.READY_CHARACTER_IMAGE_MODEL||'gpt-image-2.5-sunburst'));
   form.append('prompt',promptFor(direction));
   form.append('size',String(process.env.READY_CHARACTER_IMAGE_SIZE||'1024x1536'));
