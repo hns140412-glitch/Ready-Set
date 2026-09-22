@@ -132,6 +132,11 @@
       }
       const custom=query('#customTimeWrap');if(custom)custom.hidden=true;
       state.targetMin=Number(button.dataset.minutes);
+      queryAll('[data-minutes]').forEach(item=>{
+        const active=String(state.targetMin)===item.dataset.minutes;
+        item.classList.toggle('on',active);
+        item.setAttribute('aria-pressed',active?'true':'false');
+      });
       save();
       render();
     }
