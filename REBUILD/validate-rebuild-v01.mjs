@@ -840,3 +840,22 @@ assert('member-scoped-sync-status-filter',
   authSyncControllerMemberScope.includes('parseSyncScope') &&
   authSyncViewMemberScope.includes('parseSyncScope')
 );
+
+
+const characterSetupViewSource=loadSource('src/identity/character-setup-view-runtime.js');
+const characterSetupControllerSource=loadSource('src/identity/character-setup-controller-runtime.js');
+const characterCoreSource=loadSource('src/identity/character-core-orchestrator-runtime.js');
+assert('character-setup-view-owner',characterSetupViewSource.includes('ReadyCharacterSetupView'));
+assert('character-setup-controller-owner',characterSetupControllerSource.includes('ReadyCharacterSetupController'));
+assert('character-core-owner',characterCoreSource.includes('ReadyCharacterCoreOrchestrator'));
+assert('character-setup-loaded-before-app',
+  indexSource.indexOf('src/identity/character-setup-view-runtime.js')>0 &&
+  indexSource.indexOf('src/identity/character-setup-controller-runtime.js')>0 &&
+  indexSource.indexOf('src/identity/character-setup-view-runtime.js')<indexSource.indexOf('app.js') &&
+  indexSource.indexOf('src/identity/character-setup-controller-runtime.js')<indexSource.indexOf('app.js')
+);
+assert('character-setup-route-wired',appSource.includes("'character-setup':()=>characterSetupRuntime.render()"));
+assert('character-setup-two-choice-wired',
+  appSource.includes('characterSetupRuntime.begin()') &&
+  appSource.includes('characterSetupRuntime.choose(button.dataset.characterDirection)')
+);
