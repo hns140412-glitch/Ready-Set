@@ -86,9 +86,11 @@ test('member scope isolates planner, assignments, app state and local-first snap
       app:persistence.load()
     };
 
-    const snapshots=await window.ReadySetLocalFirst.snapshots();
+    const aSnapshots=await window.ReadySetLocalFirst.snapshots();
+    setMember('CHILD_B');
+    const bSnapshots=await window.ReadySetLocalFirst.snapshots();
     window.ReadyFamilySession=originalFamily;
-    return {aKeys,bKeys,bBefore,aAfter,snapshotScopes:snapshots.map(x=>x.scope)};
+    return {aKeys,bKeys,bBefore,aAfter,aSnapshotScopes:aSnapshots.map(x=>x.scope),bSnapshotScopes:bSnapshots.map(x=>x.scope)};
   });
 
   expect(result.aKeys.planner).toContain('CHILD_A');
@@ -109,8 +111,8 @@ test('member scope isolates planner, assignments, app state and local-first snap
   expect(result.aAfter.assignments.assignmentFacts.fact_B).toBeUndefined();
   expect(result.aAfter.app.profile.name).toBe('A');
 
-  expect(result.snapshotScopes).toContain('member:CHILD_A:planner');
-  expect(result.snapshotScopes).toContain('member:CHILD_B:planner');
+  expect(result.aSnapshotScopes).toEqual(['member:CHILD_A:planner']);
+  expect(result.bSnapshotScopes).toEqual(['member:CHILD_B:planner']);
 });
 
 
@@ -165,6 +167,7 @@ test('active member gates local-first recovery, flush and conflict handling', as
     setMember('CHILD_A');
     await window.ReadySetLocalFirst.capture('assignments',JSON.stringify({owner:'A-conflict'}));
     await window.ReadySetLocalFirst.flush();
+    const aConflict=(await window.ReadySetLocalFirst.conflicts()).find(x=>x.status==='OPEN');
 
     setMember('CHILD_B');
     await window.ReadySetLocalFirst.capture('assignments',JSON.stringify({owner:'B-conflict'}));
@@ -188,8 +191,6 @@ test('active member gates local-first recovery, flush and conflict handling', as
 
     const aVisible=await visibleConflictScopes('CHILD_A');
     const bVisible=await visibleConflictScopes('CHILD_B');
-    const allConflicts=await window.ReadySetLocalFirst.conflicts();
-    const aConflict=allConflicts.find(x=>window.ReadyMemberScope.parseSyncScope(x.scope).member_id==='CHILD_A'&&x.status==='OPEN');
 
     setMember('CHILD_B');
     const crossResolve=aConflict
