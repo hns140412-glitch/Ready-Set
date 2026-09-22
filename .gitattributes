@@ -1,2 +1,13 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Release archive boundary
+# Keep governance, validation, handoff and generated audit material out of deploy-source archives.
+.github/ export-ignore
+tests/ export-ignore
+C2S/ export-ignore
+HANDOFF/ export-ignore
+REBUILD/ export-ignore
+ui-audit/ export-ignore
+*.md export-ignore
+*.zip export-ignore
