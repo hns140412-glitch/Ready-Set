@@ -34,7 +34,18 @@
       if(s.status==='ROUND_2'){
         return {profile:p,status:'ROUND_2',options:(root.CharacterVisualIdDirection||root.ReadyCharacterDirection).secondRound(s.firstSelection),candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
       }
-      if(s.status==='READY_FOR_CANDIDATE_GENERATION'){
+      if(p.characterSignatureItem?.status==='ITEM_SELECTION'&&!p.characterGenerationJob){
+        const itemApi=root.CharacterExplorationSignatureItem;
+        return {
+          profile:p,
+          status:'ITEM_SELECTION',
+          options:(p.characterSignatureItem.offered||[]).map(id=>itemApi.item(id)),
+          candidates:[],
+          remoteJob:p.characterRemoteJob||null,
+          master:p.characterMaster||null
+        };
+      }
+      if(s.status==='READY_FOR_CANDIDATE_GENERATION'&&p.characterGenerationJob){
         return {profile:p,status:s.status,options:[],candidates:s.candidates||[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
       }
       if(s.status==='ROUND_1'){
@@ -62,16 +73,30 @@
       try{
         const out=core.choose(p,directionId,{memberScope:memberScope(),visualId:visualId(p)});
         save();
-        if(out.status==='ROUND_2'){
-          view.render({profile:p,status:out.status,options:out.options,candidates:[]});
+        if(out.status==='ROUND_2'||out.status==='ITEM_SELECTION'){
+          view.render({profile:p,status:out.status,options:out.options||[],candidates:[]});
+          if(out.status==='ITEM_SELECTION')toast('마지막으로 탐험 아이템 하나만 골라줘.');
         }else{
           view.render({profile:p,status:out.status,options:[],candidates:p.characterDirection?.candidates||[]});
-          toast('후보 3개 생성 준비가 끝났어요.');
         }
         return {ok:true,...out};
       }catch(err){
         toast('캐릭터 방향을 다시 확인해 주세요.');
         return {ok:false,reason:err?.message||'CHARACTER_DIRECTION_FAILED'};
+      }
+    }
+
+    function chooseItem(itemId){
+      const p=profile();
+      try{
+        const out=core.chooseItem(p,itemId,{memberScope:memberScope(),visualId:visualId(p)});
+        save();
+        view.render({profile:p,status:out.status,options:[],candidates:p.characterDirection?.candidates||[]});
+        toast('탐험 아이템까지 정했어요. 이제 세 가지 모습을 만들 수 있어요.');
+        return {ok:true,...out};
+      }catch(err){
+        toast('탐험 아이템을 다시 골라 주세요.');
+        return {ok:false,reason:err?.message||'CHARACTER_SIGNATURE_ITEM_FAILED'};
       }
     }
 
@@ -280,7 +305,7 @@
 
     return Object.freeze({
       render,begin,choose,generationPayload,prepareRemoteJob,startGeneration,
-      refreshRemoteJob,generateAllCandidates,selectCandidate,reviewConsistency,confirmSameIdentity,correctLikeness,lockMaster,buildDerivativeAssets,generateMasterSheet
+      chooseItem,refreshRemoteJob,generateAllCandidates,selectCandidate,reviewConsistency,confirmSameIdentity,correctLikeness,lockMaster,buildDerivativeAssets,generateMasterSheet
     });
   }
 
