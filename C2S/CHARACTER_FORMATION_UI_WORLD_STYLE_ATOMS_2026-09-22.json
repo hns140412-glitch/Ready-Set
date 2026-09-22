@@ -1,0 +1,140 @@
+{
+  "version": "2026-09-22",
+  "status": "C2S_COMPILE_CLOSED",
+  "scope": "CHARACTER_FORMATION_UI_WORLD_STYLE",
+  "atoms": [
+    {
+      "id": "CFUI-001",
+      "type": "CORRECTION",
+      "statement": "Existing Character Formation sample is the base UI; new mockups must delta-edit rather than recreate.",
+      "owner": "CHARACTER_FORMATION_UI",
+      "state": "REFLECTED"
+    },
+    {
+      "id": "CFUI-002",
+      "type": "DECISION",
+      "statement": "Travel-preparation/packing is a context layer, not a replacement UI language.",
+      "owner": "CHARACTER_FORMATION_UI",
+      "state": "REFLECTED"
+    },
+    {
+      "id": "CFUI-003",
+      "type": "REQUIREMENT",
+      "statement": "No completed user character appears before A/B/C candidate generation.",
+      "owner": "CHARACTER_FORMATION_UI",
+      "state": "REFLECTED"
+    },
+    {
+      "id": "CFUI-004",
+      "type": "DECISION",
+      "statement": "All six companions appear throughout formation to build familiarity.",
+      "owner": "COMPANION_CREW",
+      "state": "REFLECTED"
+    },
+    {
+      "id": "CFUI-005",
+      "type": "DECISION",
+      "statement": "One companion is selected as primary partner; the other five remain active crew and are not rejected.",
+      "owner": "COMPANION_CREW",
+      "state": "REFLECTED"
+    },
+    {
+      "id": "CFUI-006",
+      "type": "DECISION",
+      "statement": "Companion canonical_name is immutable identity; display_name may change and nickname history is preserved.",
+      "owner": "COMPANION_CREW",
+      "state": "REFLECTED"
+    },
+    {
+      "id": "CFUI-007",
+      "type": "REQUIREMENT",
+      "statement": "Nickname history, first meeting, shared adventures and notable events feed the encyclopedia/history experience.",
+      "owner": "COMPANION_CREW",
+      "state": "REFLECTED"
+    },
+    {
+      "id": "CFUI-008",
+      "type": "HARD_LOCK",
+      "statement": "Dubi, Tori, Ink, Nova, Take and Zero use their approved Visual IDs unchanged.",
+      "owner": "COMPANION_VISUAL_ID",
+      "state": "LOCKED"
+    },
+    {
+      "id": "CFUI-009",
+      "type": "CORRECTION",
+      "statement": "User mood/expression direction may affect only the user character, never companion Visual IDs.",
+      "owner": "COMPANION_VISUAL_ID",
+      "state": "LOCKED"
+    },
+    {
+      "id": "CFUI-010",
+      "type": "DECISION",
+      "statement": "Companions may vary expression, pose, gesture, action, position and dialogue while preserving locked Visual IDs.",
+      "owner": "COMPANION_CREW",
+      "state": "REFLECTED"
+    },
+    {
+      "id": "CFUI-011",
+      "type": "DECISION",
+      "statement": "Companion self-promotion should be witty, lively and character-specific rather than identical or overly animated.",
+      "owner": "COMPANION_CREW",
+      "state": "REFLECTED"
+    },
+    {
+      "id": "CFUI-012",
+      "type": "DECISION",
+      "statement": "Signature Item remains exactly-one minimal packing choice, not a broad customization editor.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "REFLECTED"
+    },
+    {
+      "id": "CFUI-013",
+      "type": "DECISION",
+      "statement": "Avoid sterile white-only backgrounds; use a warm pre-departure basecamp with layered travel-prep props and depth.",
+      "owner": "CHARACTER_FORMATION_UI",
+      "state": "REFLECTED"
+    },
+    {
+      "id": "CFUI-014",
+      "type": "DECISION",
+      "statement": "Motion is subordinate to clarity; use subtle state/attention motion only and support reduced motion.",
+      "owner": "CHARACTER_FORMATION_UI",
+      "state": "REFLECTED"
+    },
+    {
+      "id": "CFUI-015",
+      "type": "DECISION",
+      "statement": "User character and companion crew keep different anatomy but share rendering, materials, apparel grammar, equipment family, emblem language, lighting and environment palette.",
+      "owner": "CHARACTER_WORLD_STYLE",
+      "state": "DEFINED"
+    },
+    {
+      "id": "CFUI-016",
+      "type": "DECISION",
+      "statement": "Shared scene hierarchy is USER=PROTAGONIST, SELECTED_COMPANION=PARTNER, OTHER_5=CREW/WORLD_CHARACTERS.",
+      "owner": "CHARACTER_WORLD_STYLE",
+      "state": "DEFINED"
+    },
+    {
+      "id": "CFUI-017",
+      "type": "EVIDENCE",
+      "statement": "Two supplied child photos are source-reference inputs for likeness/style application, not canonical generated Visual IDs until approved.",
+      "owner": "CHARACTER_VISUAL_ID",
+      "state": "REFERENCE_ONLY"
+    },
+    {
+      "id": "CFUI-018",
+      "type": "CORRECTION",
+      "statement": "Recent generated mockups are reference-only and not canonical because some recreated layout or drifted companion Visual IDs.",
+      "owner": "CHARACTER_FORMATION_UI",
+      "state": "REJECTED_AS_CANONICAL"
+    },
+    {
+      "id": "CFUI-019",
+      "type": "OPEN",
+      "statement": "Final Character Formation UI mockup is not locked; exact approved base sample and locked companion assets must be recovered before the next mockup.",
+      "owner": "CHARACTER_FORMATION_UI",
+      "state": "OPEN"
+    }
+  ]
+}
