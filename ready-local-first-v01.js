@@ -52,6 +52,10 @@
     return request(tx.objectStore(store).get(id));
   }
 
+  async function scopedRows(store){
+    return (await all(store)).filter(row=>belongsToActiveMember(row.scope));
+  }
+
   async function put(store,row){
     const db=await openDb(); const tx=db.transaction(store,'readwrite'); tx.objectStore(store).put(row);
     return new Promise((resolve,reject)=>{tx.oncomplete=()=>resolve(row);tx.onerror=()=>reject(tx.error)});
@@ -265,9 +269,9 @@
     capture:(scope,payload)=>capture(scope,payload),
     recoverMissingScopes,
     resolveConflict,
-    outbox:()=>all('outbox'),
-    conflicts:()=>all('conflicts'),
-    snapshots:()=>all('snapshots'),
+    outbox:()=>scopedRows('outbox'),
+    conflicts:()=>scopedRows('conflicts'),
+    snapshots:()=>scopedRows('snapshots'),
     flush
   });
 
