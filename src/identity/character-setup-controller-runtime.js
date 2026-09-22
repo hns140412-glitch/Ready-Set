@@ -10,6 +10,7 @@
     const toast=options.toast||(()=>{});
     const remote=options.remote||null;
     const masterApi=options.masterApi||root.CharacterVisualIdMaster||root.ReadyCharacterMaster||null;
+    const derivativeApi=options.derivativeApi||root.CharacterVisualIdDerivative||null;
     if(!view||!core)throw new Error('CHARACTER_SETUP_CONTROLLER_DEPENDENCY_MISSING');
 
     function profile(){return getState().profile||{};}
@@ -197,6 +198,39 @@
       return result;
     }
 
+    async function buildDerivativeAssets(){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      if(!derivativeApi)return {ok:false,reason:'CHARACTER_DERIVATIVE_RUNTIME_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const locked=p.characterRemoteJob||await refreshRemoteJob().then(x=>x?.job||null);
+      if(!locked||!['VISUAL_ID_LOCKED','MASTER_ASSETS_READY'].includes(locked.status)){
+        return {ok:false,reason:'VISUAL_ID_LOCK_REQUIRED'};
+      }
+      if(locked.status==='MASTER_ASSETS_READY'&&locked.master?.assets?.avatar_square&&locked.master?.assets?.portrait_card){
+        return {ok:true,already_ready:true,job:locked,master:locked.master};
+      }
+      const sourceUrl=remote.assetUrl(p.visualId,'MASTER_FULL');
+      const derived=await derivativeApi.deriveFromUrl(sourceUrl);
+      const result=await remote.uploadDerivatives({
+        visual_id:p.visualId,
+        avatar_square_data_url:derived.avatar_square.data_url,
+        portrait_card_data_url:derived.portrait_card.data_url
+      });
+      if(!result?.ok)return result;
+      p.characterRemoteJob=result.job||null;
+      p.characterMasterRemote=result.master||null;
+      if(masterApi&&p.characterMaster){
+        p.characterMaster=masterApi.attachDerivedAssets(p.characterMaster,{
+          avatar_square:remote.assetUrl(p.visualId,'MASTER_AVATAR'),
+          portrait_card:remote.assetUrl(p.visualId,'MASTER_PORTRAIT'),
+          full_character:remote.assetUrl(p.visualId,'MASTER_FULL'),
+          updated_at:result.master?.derivatives_updated_at
+        });
+      }
+      save();
+      return result;
+    }
+
     async function generateMasterSheet(){
       if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
       const p=ensureRemoteProfile();
@@ -213,7 +247,7 @@
 
     return Object.freeze({
       render,begin,choose,generationPayload,prepareRemoteJob,startGeneration,
-      refreshRemoteJob,generateAllCandidates,selectCandidate,correctLikeness,lockMaster,generateMasterSheet
+      refreshRemoteJob,generateAllCandidates,selectCandidate,correctLikeness,lockMaster,buildDerivativeAssets,generateMasterSheet
     });
   }
 
