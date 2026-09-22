@@ -49,6 +49,12 @@ jobs:
           find src -type f -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: Verify Planner entity/runtime contract
         run: node .github/scripts/ready_planner_contract_test.js
+      - name: Verify Character Visual ID contracts
+        run: |
+          node REBUILD/validate-character-direction-v01.mjs
+          node REBUILD/validate-character-consistency-gate-v01.mjs
+          node REBUILD/validate-character-ui-journey-v01.mjs
+          node REBUILD/validate-character-visual-id-independence-v01.mjs
       - name: Verify queue integrity and profile binding
         run: |
           python - <<'PY'
