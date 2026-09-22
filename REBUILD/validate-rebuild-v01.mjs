@@ -764,3 +764,18 @@ assert('member-scoped-app-and-local-first',
   localFirstMemberSource.includes('localStorageKeyForScope') &&
   localFirstMemberSource.includes('effectiveScope')
 );
+
+const readySyncServerSource=loadSource('netlify/functions/ready-sync.mjs');
+const readySyncCoreSource=loadSource('netlify/functions/ready-sync-core.js');
+assert('member-scope-active-read-boundary',
+  localFirstMemberSource.includes('belongsToActiveMember') &&
+  localFirstMemberSource.includes("outbox:()=>scopedRows('outbox')") &&
+  localFirstMemberSource.includes("conflicts:()=>scopedRows('conflicts')") &&
+  localFirstMemberSource.includes("snapshots:()=>scopedRows('snapshots')")
+);
+assert('member-scope-remote-authorization-boundary',
+  readySyncServerSource.includes('member_id:mapped.session.member_id') &&
+  readySyncCoreSource.includes('MEMBER_SCOPE_REQUIRED') &&
+  readySyncCoreSource.includes('MEMBER_SCOPE_FORBIDDEN') &&
+  readySyncCoreSource.includes('authenticatedMemberId')
+);
