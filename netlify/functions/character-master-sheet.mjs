@@ -51,21 +51,19 @@ export default async function handler(req){
     return Response.json({ok:true,job,already_ready:true,asset_url:'/api/character/asset?visual_id='+encodeURIComponent(visualId)+'&slot=MASTER_SHEET'},{status:200});
   }
 
-  const sourceMeta=await store.get(prefix+'/source/meta.json',{type:'json'});
   const identity=job.corrected_asset||job.selected_asset;
-  if(!sourceMeta?.source_key||!identity?.asset_key)return Response.json({ok:false,reason:'MASTER_INPUT_ASSET_MISSING'},{status:409});
-  const source=await store.get(sourceMeta.source_key,{type:'arrayBuffer'});
+  if(!identity?.asset_key)return Response.json({ok:false,reason:'MASTER_INPUT_ASSET_MISSING'},{status:409});
   const selected=await store.get(identity.asset_key,{type:'arrayBuffer'});
-  if(!source||!selected)return Response.json({ok:false,reason:'MASTER_INPUT_ASSET_MISSING'},{status:409});
+  if(!selected)return Response.json({ok:false,reason:'MASTER_INPUT_ASSET_MISSING'},{status:409});
 
   const form=new FormData();
-  form.append('image[]',new Blob([source],{type:sourceMeta.mime||'image/jpeg'}),'identity-source.jpg');
   form.append('image[]',new Blob([selected],{type:'image/webp'}),'locked-character.webp');
   form.append('model',String(process.env.CHARACTER_VISUAL_ID_IMAGE_MODEL||process.env.READY_CHARACTER_IMAGE_MODEL||'gpt-image-2.5-sunburst'));
   form.append('prompt',[
     'Create a clean character master turnaround sheet for the same child exploration character.',
-    'Reference image 1 is the highest-authority real identity source. Reference image 2 is the locked final character design.',
+    'The reference image is the already verified and locked final character identity.',
     'Preserve the exact same character identity, face, hairstyle cues, age impression, proportions, clothing language, palette and accessories.',
+    'Do not reinterpret identity from external sources; this locked character is now the visual authority for derivative consistency.',
     'Show a consistent full-body front view, three-quarter front view, side view, back view and three-quarter back view, plus a small set of natural facial expressions.',
     'Use one neutral clean board-like background with generous spacing.',
     'Do not redesign the character. Do not introduce new costume variants.',
