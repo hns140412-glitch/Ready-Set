@@ -5,6 +5,11 @@ import familyCore from './ready-family-auth-core.js';
 const { familySessionFromIdentityUser }=familyCore;
 const SLOTS=['A','B','C'];
 
+function paidGenerationEnabled(){
+  const raw=process.env.CHARACTER_VISUAL_ID_PAID_GENERATION ?? process.env.READY_CHARACTER_PAID_GENERATION;
+  return String(raw||'').toLowerCase()==='true';
+}
+
 function storeFor(){
   const context=globalThis.Netlify?.context?.deploy?.context;
   return context==='production'
@@ -62,11 +67,11 @@ export default async function handler(req){
   const mapped=await childSession();
   if(!mapped.ok)return Response.json({ok:false,reason:mapped.reason},{status:mapped.status});
 
-  if(String(process.env.READY_CHARACTER_PAID_GENERATION||'').toLowerCase()!=='true'){
+  if(!paidGenerationEnabled()){
     return Response.json({
       ok:false,
       reason:'CHARACTER_GENERATION_PROVIDER_LOCKED',
-      gate:'READY_CHARACTER_PAID_GENERATION',
+      gate:'CHARACTER_VISUAL_ID_PAID_GENERATION',
       next:'EXTERNAL_RESOURCE_GATE_REQUIRED'
     },{status:423,headers:{'Cache-Control':'no-store'}});
   }
@@ -102,16 +107,16 @@ export default async function handler(req){
 
   job.status='GENERATING_'+slot;
   job.updated_at=new Date().toISOString();
-  job.trace=[...(job.trace||[]),{at:job.updated_at,event:'CANDIDATE_GENERATION_STARTED',slot,status:job.status}];
+  job.trace=[...(job.trace||[]),{at:job.updated_at,event:'CANDIDATE_GENERATION_STARTED',slot,status:job.status,identity_contract:job.identity_contract?.contract_version||null}];
   await store.set(jobKey,JSON.stringify(job));
 
   const form=new FormData();
   const sourceBlob=new Blob([source],{type:sourceMeta.mime||'image/jpeg'});
   form.append('image[]',sourceBlob,'source.'+(sourceMeta.mime==='image/webp'?'webp':sourceMeta.mime==='image/png'?'png':'jpg'));
-  form.append('model',String(process.env.READY_CHARACTER_IMAGE_MODEL||'gpt-image-2.5-sunburst'));
+  form.append('model',String(process.env.CHARACTER_VISUAL_ID_IMAGE_MODEL||process.env.READY_CHARACTER_IMAGE_MODEL||'gpt-image-2.5-sunburst'));
   form.append('prompt',promptFor(direction));
-  form.append('size',String(process.env.READY_CHARACTER_IMAGE_SIZE||'1024x1536'));
-  form.append('quality',String(process.env.READY_CHARACTER_IMAGE_QUALITY||'medium'));
+  form.append('size',String(process.env.CHARACTER_VISUAL_ID_IMAGE_SIZE||process.env.READY_CHARACTER_IMAGE_SIZE||'1024x1536'));
+  form.append('quality',String(process.env.CHARACTER_VISUAL_ID_IMAGE_QUALITY||process.env.READY_CHARACTER_IMAGE_QUALITY||'medium'));
   form.append('output_format','webp');
   form.append('output_compression','85');
 
