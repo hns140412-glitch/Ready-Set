@@ -1,3 +1,4 @@
+import { promptForSignatureItem } from './character-signature-item-core.mjs';
 import { ensure as ensureConsistencyGate } from './character-consistency-core.mjs';
 import { getDeployStore, getStore } from '@netlify/blobs';
 import { getUser } from '@netlify/identity';
@@ -41,13 +42,15 @@ function directionPrompt(direction){
   };
   return map[id]||'balanced friendly explorer presence';
 }
-function promptFor(direction){
+function promptFor(direction,signatureItem){
   return [
     'Edit the provided child photo into a premium high-density 2.5D editorial exploration character.',
     'Identity lock is the highest priority: preserve the same child, recognizable facial identity, face shape, hairstyle cues, age impression, and natural proportions.',
     'Do not turn the child into a different person. Do not infer or alter sensitive traits.',
     'This candidate direction is only an expression and styling direction, not a new identity.',
     'Direction: '+directionPrompt(direction)+'.',
+    'Signature exploration item: '+promptForSignatureItem(signatureItem)+'.',
+    'Use exactly this one signature exploration item across A/B/C; do not add a second signature prop.',
     'Use tasteful exploration clothing and subtle adventure details. Keep the face unobstructed.',
     'Full-body portrait, clean readable silhouette, premium family-learning-app quality.',
     'No text, logos, UI labels, emoji, or watermark in the image.',
@@ -114,7 +117,7 @@ export default async function handler(req){
   const sourceBlob=new Blob([source],{type:sourceMeta.mime||'image/jpeg'});
   form.append('image[]',sourceBlob,'source.'+(sourceMeta.mime==='image/webp'?'webp':sourceMeta.mime==='image/png'?'png':'jpg'));
   form.append('model',String(process.env.CHARACTER_VISUAL_ID_IMAGE_MODEL||process.env.READY_CHARACTER_IMAGE_MODEL||'gpt-image-2.5-sunburst'));
-  form.append('prompt',promptFor(direction));
+  form.append('prompt',promptFor(direction,job.signature_item));
   form.append('size',String(process.env.CHARACTER_VISUAL_ID_IMAGE_SIZE||process.env.READY_CHARACTER_IMAGE_SIZE||'1024x1536'));
   form.append('quality',String(process.env.CHARACTER_VISUAL_ID_IMAGE_QUALITY||process.env.READY_CHARACTER_IMAGE_QUALITY||'medium'));
   form.append('output_format','webp');
@@ -153,7 +156,8 @@ export default async function handler(req){
     mime:'image/webp',
     bytes:bytes.length,
     direction_id:direction.direction_id,
-    source:direction.source
+    source:direction.source,
+    signature_item_id:job.signature_item?.id||null
   }};
   const next=nextExpected(job);
   job.status=next?'CANDIDATE_'+slot+'_READY':'READY_FOR_SELECTION';
