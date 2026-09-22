@@ -3,6 +3,8 @@ import fs from 'node:fs';
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const direction=read('src/identity/character-direction-runtime.js');
 const identity=read('src/identity/character-identity-consistency-runtime.js');
+const consistency=read('src/identity/character-consistency-gate-runtime.js');
+const consistencyReview=read('netlify/functions/character-consistency-review.mjs');
 const jobServer=read('netlify/functions/character-job.mjs');
 const master=read('src/identity/character-master-runtime.js');
 const controller=read('src/identity/character-setup-controller-runtime.js');
@@ -17,14 +19,18 @@ const serverMaster=read('netlify/functions/character-master.mjs');
 const checks=[
   ['independent direction namespace',direction.includes('root.CharacterVisualIdDirection=api')],
   ['identity consistency contract',identity.includes('SAME_CHILD_DIFFERENT_DIRECTION')&&identity.includes("identity_authority:'SOURCE_PHOTO'")],
+  ['consistency gate contract',consistency.includes('CHARACTER_VISUAL_ID_CONSISTENCY_GATE_V01')&&consistency.includes('assertLockable')],
+  ['visual review remains externally gated',consistencyReview.includes('CHARACTER_VISUAL_ID_PAID_REVIEW')],
   ['job server validates identity contract',jobServer.includes('validateIdentityContract')&&jobServer.includes('IDENTITY_CONTRACT_VERSION')],
   ['Ready direction alias compatibility retained',direction.includes('root.ReadyCharacterDirection=api')],
   ['independent master namespace',master.includes('root.CharacterVisualIdMaster=api')],
+  ['local master cannot bypass gate',master.includes('CHARACTER_CONSISTENCY_GATE_NOT_PASS')],
   ['Visual ID lock distinct from derivatives',master.includes("state:'VISUAL_ID_LOCKED'")&&master.includes("derivative_state:'DERIVATIVES_PENDING'")],
   ['derived assets explicit readiness',master.includes("state:'MASTER_ASSETS_READY'")&&master.includes('attachDerivedAssets')],
   ['controller prefers Character namespace',controller.includes('root.CharacterVisualIdMaster||root.ReadyCharacterMaster')],
   ['projection contract exists',projection.includes("CHARACTER_VISUAL_ID_PROJECTION_V01")],
   ['projection exposes identity vs derivative readiness',projection.includes('identity_locked')&&projection.includes('derivatives_ready')],
+  ['projection assurance is required',projection.includes('CHARACTER_VISUAL_ID_ASSURANCE_NOT_PASS')&&projection.includes('assurance')],
   ['server does not fake portrait derivative',serverMaster.includes('portrait_card:null')],
   ['server does not fake avatar derivative',serverMaster.includes('avatar_square:null')],
   ['server records derivative pending',serverMaster.includes("derivative_state:'DERIVATIVES_PENDING'")],
