@@ -1,0 +1,117 @@
+{
+  "schema": "READY_FAMILY_TIMETABLE_SOURCE_V01",
+  "captured_at": "2026-09-22",
+  "source": {
+    "system": "NOTION",
+    "database": "Ready & Set 시간표",
+    "database_url": "https://app.notion.com/p/60fc9b3d981e4dc7b9a5357baccefd74",
+    "data_source": "collection://8864a66f-9375-4fc0-86f8-0046a5abee5a",
+    "authority_rule": "ONLY_ROWS_WITH_CONFIRMATION_STATUS_CONFIRMED_ARE_EXECUTION_ELIGIBLE"
+  },
+  "confirmed": [
+    {
+      "id": "notion_mon_english",
+      "weekday": 1,
+      "title": "영어학원",
+      "category": "영어",
+      "start": "16:00",
+      "end": "18:00",
+      "source_url": "https://app.notion.com/p/3d2fa868dc2a8165b2ebfdf048bbbdb4"
+    },
+    {
+      "id": "notion_mon_science",
+      "weekday": 1,
+      "title": "과학학원",
+      "category": "과학",
+      "start": "19:00",
+      "end": "20:00",
+      "source_url": "https://app.notion.com/p/3d2fa868dc2a815ca143d431e42ee591"
+    },
+    {
+      "id": "notion_tue_piano",
+      "weekday": 2,
+      "title": "피아노",
+      "category": "피아노",
+      "start": "14:00",
+      "end": "16:00",
+      "source_url": "https://app.notion.com/p/3d2fa868dc2a815ea29cf1bf1812eb44"
+    },
+    {
+      "id": "notion_wed_english",
+      "weekday": 3,
+      "title": "영어학원",
+      "category": "영어",
+      "start": "16:00",
+      "end": "18:00",
+      "source_url": "https://app.notion.com/p/3d2fa868dc2a8125ba85c7b3936d6e35"
+    },
+    {
+      "id": "notion_thu_taekwondo",
+      "weekday": 4,
+      "title": "태권도",
+      "category": "태권도",
+      "start": "16:30",
+      "end": "18:00",
+      "source_url": "https://app.notion.com/p/3d2fa868dc2a8158aa59fea3b4e7c8c9"
+    },
+    {
+      "id": "notion_fri_english",
+      "weekday": 5,
+      "title": "영어학원",
+      "category": "영어",
+      "start": "16:00",
+      "end": "18:00",
+      "source_url": "https://app.notion.com/p/3d2fa868dc2a8175a439fab32c3185d0"
+    }
+  ],
+  "pending": [
+    {
+      "title": "월 태권도",
+      "weekday": 1,
+      "start": "14:30",
+      "end": null,
+      "reason": "CONFIRMATION_REQUIRED_END_TIME_MISSING",
+      "source_url": "https://app.notion.com/p/3d2fa868dc2a81d7ab1dd5286e40a3c5"
+    },
+    {
+      "title": "화 재능학습지",
+      "weekday": 2,
+      "start": "19:00",
+      "end": "21:00",
+      "reason": "CONFIRMATION_REQUIRED_SOURCE_MARKED_UNCERTAIN",
+      "source_url": "https://app.notion.com/p/3d2fa868dc2a81b7aed9f1bac58d1172"
+    },
+    {
+      "title": "수 피아노",
+      "weekday": 3,
+      "start": "13:30",
+      "end": null,
+      "reason": "CONFIRMATION_REQUIRED_END_TIME_MISSING",
+      "source_url": "https://app.notion.com/p/3d2fa868dc2a81e385f2ca64b6685a3a"
+    },
+    {
+      "title": "수 태권도",
+      "weekday": 3,
+      "start": "14:30",
+      "end": null,
+      "reason": "CONFIRMATION_REQUIRED_END_TIME_MISSING",
+      "source_url": "https://app.notion.com/p/3d2fa868dc2a81d2ae73ee129946d76f"
+    },
+    {
+      "title": "목 피아노",
+      "weekday": 4,
+      "start": "14:30",
+      "end": null,
+      "reason": "CONFIRMATION_REQUIRED_END_TIME_MISSING",
+      "source_url": "https://app.notion.com/p/3d2fa868dc2a81b6805ae2f1f426caaf"
+    },
+    {
+      "title": "금 피아노",
+      "weekday": 5,
+      "start": "14:30",
+      "end": null,
+      "reason": "CONFIRMATION_REQUIRED_END_TIME_MISSING",
+      "source_url": "https://app.notion.com/p/3d2fa868dc2a8132bb51ddced7a85544"
+    }
+  ]
+}
