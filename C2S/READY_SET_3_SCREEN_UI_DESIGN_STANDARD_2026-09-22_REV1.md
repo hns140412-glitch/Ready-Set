@@ -76,6 +76,56 @@ Latest user visual correction:
 
 The reference samples are visual lineage, not data authority. Sample dates/tasks/subjects are not product defaults.
 
+## 2.5 Shared Island World Topology — HARD LOCK
+
+Cross-app canonical authority:
+TAKY `C2S/LEARNING_APP_FAMILY_SHARED_ISLAND_WORLD_TOPOLOGY_2026-09-22.md`
+
+### Fixed-world invariant
+- ONE ISLAND is literal product topology, not a loose visual metaphor.
+- Island geography is fixed across sessions and apps.
+- Ready / Hide / Snap are not disconnected worlds.
+- Random replacement forests/oceans/caves that break spatial continuity are forbidden.
+- Local atmosphere may change, but landmark position and world continuity remain recognizable.
+
+### Entry / naming sequence
+`CHARACTER / EXPLORATION CREW SETUP → DROP / VOYAGE ARRIVAL → ENTER FIXED ISLAND → NAME ISLAND → READY & SET BASE CAMP / MAP → NAME BASE CAMP → MOVE TO APP REGION`
+
+Rules:
+- Drop/Voyage is first-entry or meaningful-transition language, not an animation forced on every app switch.
+- Island name persists and may later be renamed without changing geography, history, progress, badges or crew relationship.
+- Base-camp name persists and may later be renamed without resetting Planner, Timer, goals, records, badges or crew relationship.
+- Island/Base Camp names are presentation identity, not new data owners.
+
+### Region topology
+- Ready & Set = BASE CAMP + island MAP/HUB
+- Hide & Seek = JUNGLE / WATERFALL region
+- Snap & Pop = BEACH region
+- Future learning apps join the SAME island unless explicitly re-approved.
+
+### Ready three-screen interpretation
+The three Ready screens are not three separate worlds.
+
+- WEEKLY = Base Camp에서 섬 전체의 이번 주 경로를 멀리 보는 전략 지도
+- DAILY = 오늘 섬 안에서 이동할 실제 경로를 가까이 보는 루트
+- TIMER = 선택한 탐험 지점에 도착한 뒤 수행하는 집중 공간
+
+This is a change in viewing distance, not a change of world.
+
+### Visual continuity contract
+- Weekly may reveal the strongest island/map context.
+- Daily may reveal route/landmark context more locally.
+- Timer should suppress world illustration and preserve the locked yellow analog-clock focus UI.
+- The same landmark/route language must remain spatially plausible across Weekly and Daily.
+- Character/Crew presence must persist by ID across regions but may be visually minimized by screen purpose.
+
+### Child-facing concept
+The child is not “using three planner screens.”
+The child is:
+`Base Camp에서 이번 주 길을 보고 → 오늘 갈 길을 따라가고 → 한 지점에 도착해 지금 할 일을 한다.`
+
+The exploration concept therefore comes from spatial continuity and movement, not RPG decoration or extra navigation tabs.
+
 ## 3. Product logic that the three screens must carry
 
 Canonical learning/planning flow remains:
