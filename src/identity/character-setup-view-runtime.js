@@ -26,6 +26,24 @@
       '</article>';
     }
 
+    function consistencyBadge(job){
+      const gate=job?.consistency_gate;
+      if(!gate)return '<span class="characterGateBadge pending">일관성 검사 전</span>';
+      const structural=gate.structural?.state||'NOT_RUN';
+      const visual=gate.visual?.state||'NOT_RUN';
+      const human=gate.human_confirmation?.state||'NOT_RUN';
+      const finalState=gate.final_state||'PENDING';
+      const cls=finalState==='PASS'?'pass':visual==='FAIL'||human==='FAIL'||structural==='FAIL'?'fail':'pending';
+      const label=finalState==='PASS'
+        ? 'LOCK 가능'
+        : visual==='FAIL'?'시각 일관성 재검토 필요'
+        : human==='PASS'?'확인 완료 · 시각검사 대기'
+        : visual==='PASS'?'시각검사 통과 · 내 확인 필요'
+        : structural==='PASS'?'구조검사 통과 · 시각검사 필요'
+        :'일관성 검사 대기';
+      return '<span class="characterGateBadge '+cls+'">'+escapeHtml(label)+'</span>';
+    }
+
     function remoteCandidateCard(profile,job,item){
       const slot=item?.slot||'';
       const direction=(job?.directions||[]).find(x=>x.slot===slot)||item;
@@ -104,14 +122,32 @@
             controls='<button class="btn dark" id="generateCharacterCandidatesBtn">A/B/C 후보 생성</button>';
             note='서버 계약이 준비됐습니다. 생성 게이트가 열린 환경에서만 이미지 API를 호출합니다.';
           }else if(job.status==='READY_FOR_SELECTION'){
-            note='세 후보가 준비됐습니다. 같은 아이의 Identity를 유지하면서 분위기만 다르게 비교하세요.';
-          }else if(job.status==='SELECTED'){
-            note='후보 선택 완료 · 원본 사진 기준으로 얼굴 닮기를 한 번 더 보정할 수 있어요.';
-            controls='<button class="btn outline" id="correctCharacterLikenessBtn">원본 사진에 더 닮게</button>'+
-              '<button class="btn dark" id="lockCharacterMasterBtn">이대로 확정</button>';
-          }else if(job.status==='CORRECTED'){
-            note='닮기 보정 완료 · 이 캐릭터를 Visual ID로 확정할 수 있어요.';
-            controls='<button class="btn dark" id="lockCharacterMasterBtn">이 캐릭터로 확정</button>';
+            note='세 후보가 준비됐습니다. 먼저 마음에 드는 방향을 고르세요. 선택은 분위기 선택일 뿐, 닮기 승인은 아직 아니에요.';
+          }else if(job.status==='SELECTED'||job.status==='CORRECTED'){
+            const gate=job.consistency_gate||{};
+            const visualState=gate.visual?.state||'NOT_RUN';
+            const humanState=gate.human_confirmation?.state||'NOT_RUN';
+            const canLock=gate.lock_allowed===true&&gate.final_state==='PASS';
+            if(visualState==='NOT_RUN'||visualState==='BLOCKED'){
+              note='선택한 캐릭터가 원본 사진의 같은 아이인지 시각 일관성 검사가 필요해요.';
+              controls='<button class="btn outline" id="reviewCharacterConsistencyBtn">같은 나인지 검사</button>'+
+                '<button class="btn outline" id="correctCharacterLikenessBtn">원본 사진에 더 닮게</button>';
+            }else if(visualState==='FAIL'){
+              note='선택한 캐릭터의 동일 인물성이 충분하지 않아요. 닮기 보정 후 다시 검사해야 해요.';
+              controls='<button class="btn outline" id="correctCharacterLikenessBtn">원본 사진에 더 닮게</button>'+
+                '<button class="btn outline" id="reviewCharacterConsistencyBtn">다시 검사</button>';
+            }else if(visualState==='PASS'&&humanState!=='PASS'){
+              note='시각 검사는 통과했어요. 마지막으로 네가 봐도 같은 나인지 확인해 주세요.';
+              controls='<button class="btn dark" id="confirmSameIdentityBtn">응, 나랑 닮았어</button>'+
+                '<button class="btn outline" id="correctCharacterLikenessBtn">조금 더 닮게</button>';
+            }else if(canLock){
+              note='시각 검사와 같은 나 확인이 모두 끝났습니다. 이제 Visual ID를 잠글 수 있어요.';
+              controls='<button class="btn dark" id="lockCharacterMasterBtn">Visual ID 확정</button>';
+            }else{
+              note='일관성 Gate를 확인하는 중이에요.';
+              controls='<button class="btn outline" id="reviewCharacterConsistencyBtn">일관성 다시 확인</button>';
+            }
+          }
           }else if(job.status==='VISUAL_ID_LOCKED'){
             note='Visual ID가 확정됐습니다. 이제 같은 캐릭터에서 프로필용 정사각형과 카드용 세로 이미지를 준비해요.';
             controls='<button class="btn dark" id="buildCharacterDerivativesBtn">활용 이미지 준비</button>';
@@ -145,7 +181,9 @@
             (job?.status==='MASTER_ASSETS_READY'&&job?.master_sheet?.asset_key
               ? '<div class="characterMasterSheetPreview"><img src="/api/character/asset?visual_id='+encodeURIComponent(String(profile?.visualId||''))+'&slot=MASTER_SHEET" alt="Character Master Sheet"></div>'
               : '')+
-            '<div class="characterIdentityRule"><b>같은 나, 다른 분위기</b><span>얼굴·나이 인상·기본 체형은 유지하고 표정·포즈·탐험 분위기만 달라져요.</span></div><p class="muted">'+escapeHtml(note)+'</p>'+controls+
+            '<div class="characterIdentityRule"><b>같은 나, 다른 분위기</b><span>얼굴·나이 인상·기본 체형은 유지하고 표정·포즈·탐험 분위기만 달라져요.</span></div>'+
+            (job?'<div class="characterGateRow">'+consistencyBadge(job)+'</div>':'')+
+            '<p class="muted">'+escapeHtml(note)+'</p>'+controls+
             '<p class="muted" id="characterRemoteStatus">'+escapeHtml(job?.status||'아직 서버 등록 전')+'</p>';
         }
         return;
