@@ -716,11 +716,17 @@ $('#characterSetupView').addEventListener('click',async e=>{
   }finally{button.disabled=false;}
 });
 $('#characterDirectionGrid').onclick=e=>{
-  const button=e.target.closest?.('[data-character-direction]');
-  if(!button)return;
-  const result=characterSetupRuntime.choose(button.dataset.characterDirection);
-  if(result?.ok&&result.status==='READY_FOR_CANDIDATE_GENERATION'){
-    $('#beginCharacterSetupBtn').hidden=true;
+  const direction=e.target.closest?.('[data-character-direction]');
+  if(direction){
+    characterSetupRuntime.choose(direction.dataset.characterDirection);
+    return;
+  }
+  const item=e.target.closest?.('[data-character-item]');
+  if(item){
+    const result=characterSetupRuntime.chooseItem(item.dataset.characterItem);
+    if(result?.ok&&result.status==='READY_FOR_CANDIDATE_GENERATION'){
+      $('#beginCharacterSetupBtn').hidden=true;
+    }
   }
 };
 
