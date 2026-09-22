@@ -1,3 +1,4 @@
+import { ensure as ensureConsistencyGate } from './character-consistency-core.mjs';
 import { getDeployStore, getStore } from '@netlify/blobs';
 import { getUser } from '@netlify/identity';
 import familyCore from './ready-family-auth-core.js';
@@ -158,6 +159,7 @@ export default async function handler(req){
   const next=nextExpected(job);
   job.status=next?'CANDIDATE_'+slot+'_READY':'READY_FOR_SELECTION';
   job.next_slot=next;
+  if(!next)job.consistency_gate=ensureConsistencyGate(job);
   job.updated_at=new Date().toISOString();
   job.trace=[...(job.trace||[]),{at:job.updated_at,event:'CANDIDATE_GENERATION_COMPLETED',slot,status:job.status}];
   await store.set(jobKey,JSON.stringify(job));
