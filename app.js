@@ -602,6 +602,10 @@ const characterSetupView=rebuildCharacterSetupView.create({
   escapeHtml,
   applyAvatar
 });
+const characterFormationSceneRuntime=globalThis.CharacterFormationSceneRuntime?.create({
+  query:$,
+  getState:()=>state
+});
 const characterSetupRuntime=rebuildCharacterSetupController.create({
   view:characterSetupView,
   core:characterCoreRuntime,
@@ -616,12 +620,19 @@ const characterSetupRuntime=rebuildCharacterSetupController.create({
 $('#openCharacterSetupBtn').onclick=()=>{
   if(!state.profile?.sourcePhoto?.source_hash){toast('먼저 사진을 등록해 주세요.');return;}
   nav('character-setup');
+  characterFormationSceneRuntime?.mount?.();
 };
 $('#beginCharacterSetupBtn').onclick=()=>{
   const result=characterSetupRuntime.begin();
   if(result?.ok)$('#beginCharacterSetupBtn').hidden=true;
 };
 $('#characterSetupView').addEventListener('click',async e=>{
+  const continueItem=e.target.closest?.('#continueAfterSignatureItemBtn');
+  if(continueItem){
+    const result=characterSetupRuntime.continueAfterItem();
+    if(result?.ok)characterFormationSceneRuntime?.render?.(result.status);
+    return;
+  }
   const prepare=e.target.closest?.('#prepareCharacterJobBtn');
   const generate=e.target.closest?.('#generateCharacterCandidatesBtn');
   const select=e.target.closest?.('[data-select-character-candidate]');
@@ -718,15 +729,14 @@ $('#characterSetupView').addEventListener('click',async e=>{
 $('#characterDirectionGrid').onclick=e=>{
   const direction=e.target.closest?.('[data-character-direction]');
   if(direction){
-    characterSetupRuntime.choose(direction.dataset.characterDirection);
+    const result=characterSetupRuntime.choose(direction.dataset.characterDirection);
+    if(result?.ok)characterFormationSceneRuntime?.render?.(result.status);
     return;
   }
   const item=e.target.closest?.('[data-character-item]');
   if(item){
     const result=characterSetupRuntime.chooseItem(item.dataset.characterItem);
-    if(result?.ok&&result.status==='READY_FOR_CANDIDATE_GENERATION'){
-      $('#beginCharacterSetupBtn').hidden=true;
-    }
+    if(result?.ok)characterFormationSceneRuntime?.render?.(result.status);
   }
 };
 
