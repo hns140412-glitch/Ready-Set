@@ -129,13 +129,21 @@
 /* HARD LOCK: sensor depth is CHARACTER_ONLY. Background, props, foreground, FX and live UI remain static. */
 #characterSetupView.cfView{position:relative;isolation:isolate;overflow:hidden;background:#261c17;color:#2e241f}
 #characterSetupView .cfScene{--cf-x:0;--cf-y:0;position:absolute;inset:0;z-index:0;overflow:hidden;background:linear-gradient(180deg,#3b2d24 0%,#7c5b40 43%,#3b2a21 100%)}
-#characterSetupView .cfLayer,#characterSetupView .cfCrewAsset{position:absolute;pointer-events:none;will-change:transform}
-#characterSetupView .cfFarWorld{inset:-4%;background-image:linear-gradient(180deg,rgba(10,6,4,.04),rgba(10,6,4,.28)),url('./assets/character-formation/background/prep-room-base.png');background-size:cover;background-position:center;transform:scale(1.03)}
-#characterSetupView .cfDestinationHint{inset:0;background-image:url('./assets/character-formation/background/window-island-hint.png');background-size:cover;background-position:center;transform:none}
-#characterSetupView .cfMidProps{inset:-1%;background-image:url('./assets/character-formation/foreground/mid-props.png');background-size:cover;background-position:center;transform:none}
+#characterSetupView .cfLayer,#characterSetupView .cfCrewAsset,#characterSetupView .cfTool{position:absolute;pointer-events:none;will-change:transform}
+#characterSetupView .cfFarWorld{inset:-4%;background-image:linear-gradient(180deg,rgba(10,6,4,.04),rgba(10,6,4,.28)),var(--cf-asset-url,none);background-size:cover;background-position:center;transform:scale(1.03)}
+#characterSetupView .cfDestinationHint{inset:0;background-image:var(--cf-asset-url,none);background-size:cover;background-position:center;transform:none}
+#characterSetupView .cfMidProps{inset:-1%;background-image:var(--cf-asset-url,none);background-size:cover;background-position:center;transform:none}
 #characterSetupView .cfCrewAsset{z-index:3;width:min(56vw,235px);max-height:46vh;object-fit:contain;right:-12px;top:132px;filter:drop-shadow(0 18px 16px rgba(29,17,10,.34));transform:translate(calc(var(--cf-x)*5px),calc(var(--cf-y)*4px));transform-origin:50% 85%;animation:cfCrewBreath 4.8s ease-in-out infinite}
-#characterSetupView .cfForeground{z-index:4;inset:0;background-image:url('./assets/character-formation/foreground/prep-foreground.png');background-size:cover;background-position:center bottom;transform:scale(1.02)}
-#characterSetupView .cfFxLayer{z-index:5;inset:0;background-image:url('./assets/character-formation/fx/warm-glow.png');background-size:cover;background-position:center;mix-blend-mode:screen;opacity:.66;transform:none}
+#characterSetupView .cfCommonTools{position:absolute;inset:0;z-index:2;pointer-events:none}
+#characterSetupView .cfTool{object-fit:contain;filter:drop-shadow(0 10px 12px rgba(37,21,12,.18));opacity:.96}
+#characterSetupView .cfToolMap{width:118px;left:-12px;bottom:138px;transform:rotate(-7deg)}
+#characterSetupView .cfToolLantern{width:58px;right:18px;top:176px}
+#characterSetupView .cfToolBooks{width:92px;left:22px;top:222px}
+#characterSetupView .cfToolSuitcase{width:128px;right:-24px;bottom:116px}
+#characterSetupView .cfToolPostcard{width:72px;left:48%;top:142px;transform:rotate(4deg)}
+#characterSetupView [data-cf-asset-state="missing"],#characterSetupView [data-cf-asset-state="undeclared"]{display:none!important}
+#characterSetupView .cfForeground{z-index:4;inset:0;background-image:var(--cf-asset-url,none);background-size:cover;background-position:center bottom;transform:scale(1.02)}
+#characterSetupView .cfFxLayer{z-index:5;inset:0;background-image:var(--cf-asset-url,none);background-size:cover;background-position:center;mix-blend-mode:screen;opacity:.66;transform:none}
 #characterSetupView .cfHeader,#characterSetupView .cfCharacterMain{position:relative;z-index:10}
 #characterSetupView .cfHeader{background:linear-gradient(180deg,rgba(27,18,13,.52),rgba(27,18,13,0));color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.28)}
 #characterSetupView .cfHeader button{color:#fff;background:rgba(255,255,255,.14);backdrop-filter:blur(10px)}
