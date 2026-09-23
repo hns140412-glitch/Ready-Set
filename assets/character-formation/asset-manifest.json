@@ -1,6 +1,6 @@
 {
-  "version": "CHARACTER_FORMATION_ASSET_MANIFEST_V1",
-  "status": "ACTIVE",
+  "version": "CHARACTER_FORMATION_ASSET_MANIFEST_V2_HARD_LOCK",
+  "status": "HARD_LOCK",
   "runtime_rule": "DECOMPOSED_ASSETS_ONLY_NO_FULL_SCREEN_MOCKUP_CROP",
   "baseline": {
     "width": 390,
@@ -117,5 +117,22 @@
     "sensor_depth_default": "CHARACTER_ONLY",
     "full_depth": "PROFILE_PASS_ONLY",
     "reduced_motion": "STATIC_DEPTH"
-  }
+  },
+  "reopen_policy": "EXPLICIT_USER_REOPEN_ONLY",
+  "required_pipeline": [
+    "APPROVED_VISUAL_ANCHOR",
+    "SCENE_DECOMPOSITION",
+    "HIGH_DENSITY_INDIVIDUAL_ASSETS",
+    "ASSETS_FOLDER_BINDING",
+    "LIVE_DOM_CSS_UI",
+    "MOTION_AND_DEPTH_EFFECTS",
+    "RUNTIME_SCREENSHOT_390x844",
+    "ANCHOR_REGRESSION_CHECK"
+  ],
+  "completion_rule": [
+    "FUNCTIONAL_CONTRACT_PASS",
+    "ASSET_BINDING_PASS",
+    "VISUAL_BINDING_PASS",
+    "SCREENSHOT_REGRESSION_PASS"
+  ]
 }
