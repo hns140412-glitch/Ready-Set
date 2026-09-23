@@ -27,11 +27,16 @@ jobs:
           node --check src/identity/character-core-orchestrator-runtime.js
           node --check src/identity/character-setup-controller-runtime.js
           node --check src/identity/character-setup-view-runtime.js
+          node --check src/identity/character-formation-asset-runtime.js
           node --check src/identity/character-formation-scene-runtime.js
           node --check app.js
       - name: Guard approved visual asset pipeline
         run: |
-          node -e "const m=require('./assets/character-formation/asset-manifest.json'); if(m.status!=='HARD_LOCK') process.exit(1); if(m.runtime_rule!=='DECOMPOSED_ASSETS_ONLY_NO_FULL_SCREEN_MOCKUP_CROP') process.exit(2);"
-          grep -q 'prep-room-base.png' styles.css
-          grep -q 'signature-camera.png' src/identity/character-setup-view-runtime.js
+          node -e "const m=require('./assets/character-formation/asset-manifest.json'); if(m.status!=='HARD_LOCK') process.exit(1); if(m.runtime_rule!=='DECOMPOSED_ASSETS_ONLY_NO_FULL_SCREEN_MOCKUP_CROP') process.exit(2); if(!m.asset_files?.background?.prep_room_base) process.exit(3); if(!m.asset_files?.signature_items?.CAMERA) process.exit(4); if(!m.asset_files?.common_tools?.map) process.exit(5);"
+          grep -q 'character-formation-asset-runtime.js' index.html
+          grep -q 'data-cf-asset-group="background"' index.html
+          grep -q 'data-cf-asset-group="signature_items"' src/identity/character-setup-view-runtime.js
+          grep -q 'CharacterFormationAssetRuntime' app.js
           grep -q 'continueAfterSignatureItemBtn' app.js
+          if grep -q "url('./assets/character-formation/background/prep-room-base.png')" styles.css; then exit 6; fi
+          if grep -q "signature-camera.png" src/identity/character-setup-view-runtime.js; then exit 7; fi
