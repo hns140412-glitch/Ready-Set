@@ -148,6 +148,12 @@ const manifestCrew=Object.keys(assetManifest.asset_files?.crew||{}).sort();
 const manifestItems=Object.keys(assetManifest.asset_files?.signature_items||{}).sort();
 assert(JSON.stringify(manifestCrew)===JSON.stringify([...exactCrew].sort()),'CORE6_ASSET_MANIFEST_SET_MISMATCH');
 assert(JSON.stringify(manifestItems)===JSON.stringify([...exactItems].sort()),'SIGNATURE_ITEM_ASSET_MANIFEST_SET_MISMATCH');
+assert(assetManifest.tool_contract?.signature_items_are_not_total_tool_inventory===true,'SIGNATURE_ITEMS_MUST_NOT_EQUAL_TOTAL_TOOL_INVENTORY');
+assert(assetManifest.tool_contract?.common_tools_selection_rule==='NOT_PART_OF_SIGNATURE_ITEM_CHOICE','COMMON_TOOLS_MUST_STAY_OUTSIDE_SIGNATURE_SELECTION');
+const commonTools=assetManifest.asset_groups?.common_tools||[];
+assert(commonTools.length>=5,'COMMON_TOOL_POOL_TOO_THIN');
+const signatureGroup=new Set(assetManifest.asset_groups?.signature_items||[]);
+assert(commonTools.every(x=>!signatureGroup.has(x)),'COMMON_TOOL_AND_SIGNATURE_GROUP_OVERLAP');
 assert(signatureItemRuntime.includes("Object.freeze(['CAMERA','COMPASS','FIELD_NOTEBOOK','BINOCULARS','WATER_BOTTLE'])"),'SIGNATURE_ITEM_RUNTIME_EXACT_SET_MISMATCH');
 
 const projectionV02=read('INTEGRATION/CHARACTER_VISUAL_ID_PROJECTION_V02.md');
