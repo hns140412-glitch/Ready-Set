@@ -14,16 +14,16 @@
     {id:'BLUE',label:'파랑'},
     {id:'GREEN',label:'초록'},
     {id:'PURPLE',label:'보라'},
-    {id:'PINK',label:'핑크'},
+    {id:'PINK',label:'분홍'},
     {id:'ORANGE',label:'주황'},
     {id:'YELLOW',label:'노랑'}
   ]);
 
   const crewById=id=>CREW.find(x=>x.id===String(id||'').toLowerCase())||null;
   const lockedVisualId=p=>Boolean(
-    p?.visualId ||
     ['VISUAL_ID_LOCKED','MASTER_ASSETS_READY'].includes(p?.characterRemoteJob?.status) ||
-    ['VISUAL_ID_LOCKED','MASTER_ASSETS_READY'].includes(p?.characterMaster?.status)
+    ['VISUAL_ID_LOCKED','MASTER_ASSETS_READY'].includes(p?.characterMaster?.status) ||
+    ['LOCKED','VISUAL_ID_LOCKED','MASTER_ASSETS_READY'].includes(p?.characterMaster?.state)
   );
 
   function ensure(state){
@@ -32,6 +32,7 @@
     const f=state.expedition.formation;
     if(!f.version)f.version=VERSION;
     if(typeof f.crewMet!=='boolean')f.crewMet=false;
+    if(typeof f.pendingAccent!=='string')f.pendingAccent='';
     f.worldEntry=f.worldEntry||{mode:'FIRST_JOURNEY_INTRO',variant:null,permanentBranch:false,complete:false,skipped:false};
     f.island=f.island||{discovered:false,name:''};
     f.baseCamp=f.baseCamp||{arrived:false,name:''};
@@ -105,14 +106,16 @@
         body.innerHTML='<div class="formationIntro"><small>YOUR CHARACTER</small><h2>사진 속 나는 그대로, 표현만 찾아가자</h2><p>시그니처 아이템 → 탐험 방향 1 → 탐험 방향 2 → 자동 대비 방향 → A/B/C 동일 아이 → 선택 → 닮기 보정 → Visual ID 확정 순서로 진행해.</p></div>'+
           '<button class="btn dark" data-formation-action="OPEN_CHARACTER">내 캐릭터 만들기 계속 →</button>';
       }else if(s==='SHARED_ACCENT'){
-        const selected=state.expedition.sharedAccent||'';
+        const selected=f.pendingAccent||state.expedition.sharedAccent||'';
         body.innerHTML='<div class="formationIntro"><small>SHARED EXPEDITION ACCENT</small><h2>탐험대 색을 골라줘</h2><p>아이와 탐험대의 허용된 후드·재킷·장비 포인트에만 함께 적용돼. 각 친구의 고유한 색과 Visual ID는 그대로야.</p></div>'+
           '<div class="formationAccentGrid">'+ACCENTS.map(a=>'<button class="formationAccent '+a.id.toLowerCase()+(selected===a.id?' selected':'')+'" data-formation-accent="'+a.id+'"><i></i><b>'+a.label+'</b></button>').join('')+'</div>'+
           '<button class="btn dark" data-formation-action="SAVE_ACCENT" '+(selected?'':'disabled')+'>이 색으로 할게! →</button>';
       }else if(s==='WORLD_ENTRY'){
-        body.innerHTML='<div class="formationIntro"><small>FIRST JOURNEY INTRO · VOYAGE / DROP</small><h2>이제 섬으로 출발할 시간이야</h2><p>낙하와 항해는 같은 섬으로 들어가는 첫 여정 도입 연출이야. 영구적인 사용자 분기로 저장하지 않아.</p></div>'+
-          '<div class="formationWorldEntry"><span>DROP</span><b>같은 섬</b><span>VOYAGE</span></div>'+
-          '<button class="btn dark" data-formation-action="WORLD_ENTRY_DONE">섬으로 출발하기 →</button>'+
+        body.innerHTML='<div class="formationIntro"><small>FIRST JOURNEY · VOYAGE / DROP</small><h2>어떤 방식으로 섬에 들어갈까?</h2><p>항해와 낙하는 같은 섬으로 향하는 첫 여정 연출 선택이야. 섬·기록·학습 구조를 갈라놓는 영구 분기는 아니야.</p></div>'+
+          '<div class="formationWorldEntry selectable">'+
+            '<button class="formationEntryChoice voyage" data-formation-entry="VOYAGE"><small>VOYAGE</small><b>항해모드</b><span>바다를 건너 섬으로</span></button>'+
+            '<button class="formationEntryChoice drop" data-formation-entry="DROP"><small>DROP</small><b>낙하모드</b><span>하늘을 지나 섬으로</span></button>'+
+          '</div>'+
           '<button class="linkBtn" data-formation-action="WORLD_ENTRY_SKIP">SKIP</button>';
       }else if(s==='ISLAND_DISCOVERY'){
         body.innerHTML='<div class="formationIntro"><small>ISLAND DISCOVERY</small><h2>섬을 발견했어!</h2><p>이제부터 Ready & Set, Hide & Seek, Snap & Pop은 서로 다른 섬이 아니라 이 하나의 섬 안에서 이어져.</p></div>'+
@@ -140,7 +143,8 @@
 
     function selectAccent(id){
       if(!ACCENTS.some(x=>x.id===id))return false;
-      getState().expedition.sharedAccent=id;
+      const state=getState(),f=ensure(state);
+      f.pendingAccent=id;
       save();
       render();
       return true;
@@ -160,6 +164,16 @@
         }
         const accent=e.target.closest?.('[data-formation-accent]');
         if(accent){selectAccent(accent.dataset.formationAccent);return;}
+        const entry=e.target.closest?.('[data-formation-entry]');
+        if(entry){
+          const mode=String(entry.dataset.formationEntry||'').toUpperCase();
+          if(!['VOYAGE','DROP'].includes(mode))return;
+          const state=getState(),f=ensure(state);
+          f.worldEntry.variant=mode;
+          f.worldEntry.complete=true;
+          f.worldEntry.skipped=false;
+          save();render();return;
+        }
         const action=e.target.closest?.('[data-formation-action]')?.dataset.formationAction;
         if(!action)return;
         const state=getState(),f=ensure(state);
