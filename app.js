@@ -597,14 +597,19 @@ $('#saveProfileBtn').onclick=()=>profileRuntime.saveProfile({
   shareAvatar:$('#shareAvatarOptIn').checked
 });
 
+const characterFormationAssetRegistry=globalThis.CharacterFormationAssetRuntime?.create({
+  manifestUrl:'./assets/character-formation/asset-manifest.json'
+});
 const characterSetupView=rebuildCharacterSetupView.create({
   query:$,
   escapeHtml,
-  applyAvatar
+  applyAvatar,
+  assetRegistry:characterFormationAssetRegistry
 });
 const characterFormationSceneRuntime=globalThis.CharacterFormationSceneRuntime?.create({
   query:$,
-  getState:()=>state
+  getState:()=>state,
+  assetRegistry:characterFormationAssetRegistry
 });
 const characterSetupRuntime=rebuildCharacterSetupController.create({
   view:characterSetupView,
@@ -616,6 +621,11 @@ const characterSetupRuntime=rebuildCharacterSetupController.create({
   remote:characterRemoteRuntime,
   masterApi:characterMasterApi,
   derivativeApi:rebuildCharacterDerivative
+});
+characterFormationAssetRegistry?.load?.().then(()=>{
+  characterFormationAssetRegistry?.bind?.($('#characterSetupView'));
+  characterFormationSceneRuntime?.render?.($('#characterSetupView')?.dataset.cfStatus||'START');
+  characterSetupRuntime?.render?.();
 });
 $('#openCharacterSetupBtn').onclick=()=>{
   if(!state.profile?.sourcePhoto?.source_hash){toast('먼저 사진을 등록해 주세요.');return;}
