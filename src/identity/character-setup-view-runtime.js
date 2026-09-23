@@ -99,11 +99,21 @@
           '먼저 프로필에서 사진을 등록해 주세요.';
       }
 
-      if(status==='ROUND_1'){
+      if(status==='ITEM_SELECTION'){
         if(begin)begin.hidden=true;
         if(step)step.textContent='1 / 3';
-        if(title)title.textContent='첫 번째 분위기를 골라줘';
-        if(copy)copy.textContent='사진 속 나는 그대로예요. 여기서는 얼굴이 아니라 캐릭터가 주는 분위기만 골라요.';
+        if(title)title.textContent='나만의 시그니처 아이템을 골라봐';
+        if(copy)copy.textContent='탐험할 때 늘 함께할 특별한 아이템 하나를 골라요. 어떤 걸 골라도 정답이에요.';
+        if(grid){grid.hidden=false;grid.innerHTML=options.map(itemCard).join('');}
+        if(candidateWrap)candidateWrap.hidden=true;
+        return;
+      }
+
+      if(status==='ROUND_1'){
+        if(begin)begin.hidden=true;
+        if(step)step.textContent='2 / 3';
+        if(title)title.textContent='첫 번째 탐험 방향을 골라줘';
+        if(copy)copy.textContent='사진 속 나는 그대로예요. 여기서는 얼굴이 아니라 캐릭터가 주는 첫 번째 표현 방향을 골라요.';
         if(grid){grid.hidden=false;grid.innerHTML=options.map(card).join('');}
         if(candidateWrap)candidateWrap.hidden=true;
         return;
@@ -111,20 +121,10 @@
 
       if(status==='ROUND_2'){
         if(begin)begin.hidden=true;
-        if(step)step.textContent='2 / 3';
-        if(title)title.textContent='이번엔 다른 느낌을 하나 더 골라줘';
+        if(step)step.textContent='3 / 3';
+        if(title)title.textContent='이번엔 다른 탐험 방향을 하나 더 골라줘';
         if(copy)copy.textContent='같은 나를 유지한 채 다른 분위기 세 가지를 보여줘요. 두 번만 직접 고르면 끝이에요.';
         if(grid){grid.hidden=false;grid.innerHTML=options.map(card).join('');}
-        if(candidateWrap)candidateWrap.hidden=true;
-        return;
-      }
-
-      if(status==='ITEM_SELECTION'){
-        if(begin)begin.hidden=true;
-        if(step)step.textContent='3 / 3';
-        if(title)title.textContent='마지막으로 탐험 아이템 하나만 골라줘';
-        if(copy)copy.textContent='꾸미기 게임처럼 많이 고르지 않아요. 내 캐릭터를 기억하게 해줄 작은 시그니처 하나만 남겨요.';
-        if(grid){grid.hidden=false;grid.innerHTML=options.map(itemCard).join('');}
         if(candidateWrap)candidateWrap.hidden=true;
         return;
       }
@@ -221,7 +221,7 @@
       if(begin)begin.hidden=false;
       if(step)step.textContent='START';
       if(title)title.textContent='내 캐릭터 만들기';
-      if(copy)copy.textContent='원본 사진을 기준으로 두 번의 선택만 받아요.';
+      if(copy)copy.textContent='원본 사진 다음에는 시그니처 아이템 하나와 두 번의 탐험 방향만 골라요.';
       if(grid){grid.hidden=true;grid.innerHTML='';}
       if(candidateWrap)candidateWrap.hidden=true;
     }
