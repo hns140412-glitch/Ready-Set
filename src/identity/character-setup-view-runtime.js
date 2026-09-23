@@ -5,6 +5,7 @@
     const q=options.query||((s)=>document.querySelector(s));
     const escapeHtml=options.escapeHtml||(s=>String(s));
     const applyAvatar=options.applyAvatar||(()=>{});
+    const assetRegistry=options.assetRegistry||null;
 
     function card(option){
       const keywords=(option.keywords||[]).join(' · ');
@@ -26,21 +27,12 @@
       '</article>';
     }
 
-    const ITEM_ASSETS=Object.freeze({
-      CAMERA:'./assets/character-formation/items/signature-camera.png',
-      COMPASS:'./assets/character-formation/items/signature-compass.png',
-      FIELD_NOTEBOOK:'./assets/character-formation/items/signature-explorer-notebook.png',
-      BINOCULARS:'./assets/character-formation/items/signature-binoculars.png',
-      WATER_BOTTLE:'./assets/character-formation/items/signature-water-bottle.png'
-    });
-
     function itemCard(item,selectedId=''){
       const id=escapeHtml(item?.id||'');
       const selected=String(item?.id||'')===String(selectedId||'');
-      const src=ITEM_ASSETS[item?.id]||'';
       return '<button class="characterItemCard'+(selected?' selected':'')+'" data-character-item="'+id+'" aria-pressed="'+(selected?'true':'false')+'">'+
         '<span class="characterItemArt" data-item="'+id+'">'+
-          (src?'<img src="'+escapeHtml(src)+'" alt="" loading="eager" decoding="async" onerror="this.hidden=true;this.parentElement.classList.add(\'assetMissing\')">':'')+
+          '<img data-cf-asset-group="signature_items" data-cf-asset-key="'+id+'" alt="" loading="eager" decoding="async">'+
         '</span>'+
         '<b>'+escapeHtml(item?.label||id)+'</b>'+
         '<small>'+escapeHtml(item?.short||'탐험의 작은 흔적')+'</small>'+
@@ -120,7 +112,7 @@
         if(step)step.textContent='시그니처 아이템';
         if(title)title.textContent='여행 가방에 하나만 챙긴다면?';
         if(copy)copy.textContent='네 캐릭터를 기억하게 해줄 시그니처 아이템 하나를 골라봐.';
-        if(grid){grid.hidden=false;grid.innerHTML=options.map(item=>itemCard(item,'')).join('');}
+        if(grid){grid.hidden=false;grid.innerHTML=options.map(item=>itemCard(item,'')).join('');assetRegistry?.bind?.(grid);}
         if(candidateWrap){candidateWrap.hidden=true;candidateWrap.innerHTML='';}
         return;
       }
@@ -131,7 +123,7 @@
         if(step)step.textContent='시그니처 아이템';
         if(title)title.textContent='이걸로 같이 떠날까?';
         if(copy)copy.textContent='마음에 들면 다음으로 넘어가고, 다른 아이템을 눌러 바꿔도 돼.';
-        if(grid){grid.hidden=false;grid.innerHTML=options.map(item=>itemCard(item,selectedId)).join('');}
+        if(grid){grid.hidden=false;grid.innerHTML=options.map(item=>itemCard(item,selectedId)).join('');assetRegistry?.bind?.(grid);}
         if(candidateWrap){
           candidateWrap.hidden=false;
           candidateWrap.innerHTML='<div class="cfStageActions"><button class="btn dark cfPrimaryCta" id="continueAfterSignatureItemBtn">다음으로: 탐험 방향 고르기 →</button></div>';
