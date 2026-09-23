@@ -1,0 +1,15 @@
+name: Learning Data Policy Adapter
+on:
+  push:
+    branches:
+      - taky/learning-data-policy-gate-2026-09-23
+  workflow_dispatch:
+jobs:
+  ready-policy-adapter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node tests/learning-data-policy-adapter.test.js
