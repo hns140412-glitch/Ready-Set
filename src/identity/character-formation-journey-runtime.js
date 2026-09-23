@@ -186,10 +186,16 @@
         }else if(action==='OPEN_PROFILE')nav('profile');
         else if(action==='OPEN_CHARACTER')nav('character-setup');
         else if(action==='SAVE_ACCENT'){
-          if(!state.expedition.sharedAccent){toast('탐험대 색을 하나 골라 주세요.');return;}
-          render();
-        }else if(action==='WORLD_ENTRY_DONE'||action==='WORLD_ENTRY_SKIP'){
-          f.worldEntry.complete=true;f.worldEntry.skipped=action==='WORLD_ENTRY_SKIP';save();render();
+          const chosen=f.pendingAccent||state.expedition.sharedAccent||'';
+          if(!chosen){toast('탐험대 색을 하나 골라 주세요.');return;}
+          state.expedition.sharedAccent=chosen;
+          f.pendingAccent='';
+          save();render();
+        }else if(action==='WORLD_ENTRY_SKIP'){
+          f.worldEntry.variant='SKIP';
+          f.worldEntry.complete=true;
+          f.worldEntry.skipped=true;
+          save();render();
         }else if(action==='DISCOVER_ISLAND'){f.island.discovered=true;save();render();}
         else if(action==='SAVE_ISLAND_NAME'){
           const value=String(q('#formationIslandName')?.value||'').trim();
