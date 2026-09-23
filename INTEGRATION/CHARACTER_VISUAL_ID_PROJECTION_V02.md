@@ -59,15 +59,22 @@ The item must not:
 - become a costume editor
 - introduce a second major signature prop
 
-## Current catalog
-- MAGNIFIER / 돋보기
-- EXPLORER_HAT / 탐험 모자
-- ROUND_GLASSES / 얇은 안경
+## Current catalog — HARD LOCK 2026-09-23
+Exactly one item is selected from this fixed five-item set:
+- CAMERA / 카메라
 - COMPASS / 나침반
-- MINI_FIELD_BAG / 미니 필드백
 - FIELD_NOTEBOOK / 탐험 노트
+- BINOCULARS / 쌍안경
+- WATER_BOTTLE / 물병
 
-Only 3 are suggested in one session.
+All five are the authoritative offered set for Character Formation.
+The older six-item catalog (magnifier / explorer hat / round glasses / compass / mini field bag / field notebook) is SUPERSEDED and MUST NOT be used by runtime, generation, UI, tests, or downstream consumers.
+
+Authority alignment:
+- runtime: `src/identity/character-signature-item-runtime.js`
+- UI anchor: `CF-A05-SIGNATURE-ITEM`
+- asset manifest: `assets/character-formation/asset-manifest.json`
+
 The child chooses exactly 1.
 
 ## Privacy boundary
@@ -95,3 +102,16 @@ Still NOT_RUN:
 - real visual review
 - real likeness correction
 - device validation
+
+
+## 2026-09-23 residue correction
+
+This document previously retained a stale six-item catalog while the runtime and approved Character Formation anchor had already moved to the fixed five-item set.
+
+Classification:
+- stale six-item catalog: SUPERSEDED / SEARCH-EXCLUDED
+- fixed five-item set: CURRENT / HARD_LOCK
+- Projection V02 contract shape: KEEP
+- Signature Item position before Direction Round 1: KEEP / HARD_LOCK
+
+This correction changes no Visual ID identity and no approved visual anchor.
