@@ -5,6 +5,7 @@ const assert=(cond,msg)=>{if(!cond)throw new Error(msg);};
 
 const index=read('index.html');
 const app=read('app.js');
+const styles=read('styles.css');
 const view=read('src/identity/character-setup-view-runtime.js');
 const controller=read('src/identity/character-setup-controller-runtime.js');
 const core=read('src/identity/character-core-orchestrator-runtime.js');
@@ -136,6 +137,6 @@ assert(sceneRuntime.includes('DeviceOrientationEvent'),'CHARACTER_SENSOR_DEPTH_R
 assert(sceneRuntime.includes('prefers-reduced-motion'),'CHARACTER_REDUCED_MOTION_RUNTIME_MISSING');
 assert(assetManifest.status==='HARD_LOCK','CHARACTER_ASSET_MANIFEST_NOT_HARD_LOCKED');
 assert(assetManifest.runtime_rule==='DECOMPOSED_ASSETS_ONLY_NO_FULL_SCREEN_MOCKUP_CROP','FULL_SCREEN_MOCKUP_CROP_GUARD_MISSING');
-assert(index.includes('prep-room-base.png'),'DECOMPOSED_BACKGROUND_BINDING_MISSING');
+assert(styles.includes('prep-room-base.png'),'DECOMPOSED_BACKGROUND_BINDING_MISSING');
 assert(view.includes('signature-camera.png'),'SIGNATURE_ITEM_ASSET_BINDING_MISSING');
 console.log('CHARACTER_FORMATION_ASSET_BINDING_V01_PASS');
