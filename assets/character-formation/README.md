@@ -28,7 +28,8 @@ Required pipeline:
 - `background/` — textless, characterless preparation-room/world layers.
 - `foreground/` — luggage, leaves, desk-edge, maps and depth props.
 - `crew/` — transparent locked Crew Visual ID derivatives.
-- `items/` — Signature Item illustrations.
+- `items/` — locked five Signature Item illustrations only.
+- `tools/` — common exploration tools/props such as map, lantern, books, suitcase, tags, postcard.
 - `fx/` — light, glow, dust, shadow/contact layers where required.
 - `textures/` — paper, parchment, wood, frosted-surface textures.
 - `icons/` — UI icons only; no baked labels.
@@ -69,3 +70,21 @@ Think Again, You're The Key.
 Reopen policy: `EXPLICIT_USER_REOPEN_ONLY`.
 
 Any future Character Formation UI implementation must use the approved-anchor → decomposed-assets → assets-folder → live-UI → motion/depth → 390×844 regression path. A conflicting shortcut is a regression, not an alternative implementation.
+
+
+## Manifest ownership
+
+`asset-manifest.json` is the single runtime address table for Character Formation illustration assets.
+
+Runtime code must not hardcode Character Formation asset file paths.
+
+Consumption path:
+`asset-manifest.json → CharacterFormationAssetRuntime → scene/view DOM consumers`
+
+Asset truth:
+- manifest key present + binary present = bindable;
+- manifest key present + binary missing = PENDING;
+- board/mockup filename text alone = NOT proof of a binary asset;
+- Signature Item set and common exploration-tool pool remain separate contracts.
+
+USER != DEBUGGER: missing illustration binaries degrade internally to pending/hidden assets and must not surface broken-image debugging to the user.
