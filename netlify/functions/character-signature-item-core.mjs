@@ -1,12 +1,11 @@
 const VERSION='CHARACTER_EXPLORATION_SIGNATURE_ITEM_V01';
 
 const CATALOG=Object.freeze({
-  MAGNIFIER:Object.freeze({id:'MAGNIFIER',label:'돋보기',face_policy:'NEVER_OBSTRUCT_FACE',prompt:'one small explorer magnifier carried at the side or held below the face; never covering the eyes or face'}),
-  EXPLORER_HAT:Object.freeze({id:'EXPLORER_HAT',label:'탐험 모자',face_policy:'KEEP_FACE_AND_HAIR_CUES_VISIBLE',prompt:'one simple premium explorer hat with a modest brim; keep the face and recognizable hairstyle cues visible'}),
-  ROUND_GLASSES:Object.freeze({id:'ROUND_GLASSES',label:'얇은 안경',face_policy:'EYES_FULLY_VISIBLE',prompt:'one pair of thin clear-lens round glasses; subtle frame, eyes fully visible, no tinted or oversized lenses'}),
+  CAMERA:Object.freeze({id:'CAMERA',label:'카메라',face_policy:'NEVER_OBSTRUCT_FACE',prompt:'one compact premium explorer camera carried naturally at chest or side level; never covering the face'}),
   COMPASS:Object.freeze({id:'COMPASS',label:'나침반',face_policy:'NEVER_OBSTRUCT_FACE',prompt:'one small explorer compass worn or held away from the face; understated and practical'}),
-  MINI_FIELD_BAG:Object.freeze({id:'MINI_FIELD_BAG',label:'미니 필드백',face_policy:'BODY_ONLY',prompt:'one small crossbody field bag with a clean silhouette; compact, not oversized, no logos'}),
-  FIELD_NOTEBOOK:Object.freeze({id:'FIELD_NOTEBOOK',label:'탐험 노트',face_policy:'NEVER_OBSTRUCT_FACE',prompt:'one small field notebook held naturally below chest level or tucked into the field bag; no visible text'})
+  FIELD_NOTEBOOK:Object.freeze({id:'FIELD_NOTEBOOK',label:'탐험 노트',face_policy:'NEVER_OBSTRUCT_FACE',prompt:'one small field notebook held naturally below chest level or tucked into travel gear; no visible text'}),
+  BINOCULARS:Object.freeze({id:'BINOCULARS',label:'쌍안경',face_policy:'NEVER_OBSTRUCT_FACE',prompt:'one compact pair of explorer binoculars carried at chest or side level; never covering the eyes or face'}),
+  WATER_BOTTLE:Object.freeze({id:'WATER_BOTTLE',label:'물병',face_policy:'BODY_ONLY',prompt:'one compact explorer water bottle attached to or carried with travel gear; clean silhouette, no logo'})
 });
 
 function normalizeSignatureItem(contract){
