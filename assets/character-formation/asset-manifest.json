@@ -61,13 +61,8 @@
       "desk-base"
     ],
     "foreground": [
-      "foreground-leaves",
-      "open-suitcase",
-      "map-and-compass-cluster",
-      "camera-prop",
-      "lantern-prop",
-      "book-stack",
-      "travel-tags"
+      "mid-props-composite",
+      "prep-foreground-composite"
     ],
     "crew": [
       "dubi-locked-visual-id",
@@ -108,8 +103,8 @@
     ],
     "scene_props": [
       "foreground-leaves",
-      "desk-base",
-      "shelf-and-wall-depth"
+      "shelf-and-wall-depth",
+      "desk-base"
     ]
   },
   "ui_runtime_only": [
