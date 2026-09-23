@@ -1,6 +1,6 @@
 # Character Formation Assets
 
-Status: ACTIVE / RUNTIME ASSET PIPELINE
+Status: HARD_LOCK / RUNTIME ASSET PIPELINE
 
 ## Hard rule
 
@@ -60,3 +60,12 @@ Assets must be separable enough to support:
 
 Think Again, Keep Your Key.
 Think Again, You're The Key.
+
+
+## Lock state
+
+`CHARACTER_FORMATION_ASSET_METHOD = HARD_LOCK`
+
+Reopen policy: `EXPLICIT_USER_REOPEN_ONLY`.
+
+Any future Character Formation UI implementation must use the approved-anchor → decomposed-assets → assets-folder → live-UI → motion/depth → 390×844 regression path. A conflicting shortcut is a regression, not an alternative implementation.
