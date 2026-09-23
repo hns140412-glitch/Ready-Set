@@ -43,15 +43,17 @@ const profile={
 
 const core=g.CharacterVisualIdCoreOrchestrator.create();
 let out=core.begin(profile);
+assert(out.status==='ITEM_SELECTION','INDEPENDENT_ITEM_SELECTION_STAGE_FAILED');
+assert(Array.isArray(out.options)&&out.options.length===5,'INDEPENDENT_ITEM_OPTIONS_FAILED');
+out=core.chooseItem(profile,out.options[0].id);
+assert(out.status==='ITEM_SELECTED','INDEPENDENT_ITEM_SELECTED_STAGE_FAILED');
+out=core.continueAfterItem(profile);
 assert(out.status==='ROUND_1','INDEPENDENT_ROUND_1_FAILED');
 const first=out.options[0].id;
 out=core.choose(profile,first,{memberScope:'member_fixture',visualId:'visual_fixture'});
 assert(out.status==='ROUND_2','INDEPENDENT_ROUND_2_FAILED');
 const second=out.options[0].id;
 out=core.choose(profile,second,{memberScope:'member_fixture',visualId:'visual_fixture'});
-assert(out.status==='ITEM_SELECTION','INDEPENDENT_ITEM_SELECTION_STAGE_FAILED');
-assert(Array.isArray(out.options)&&out.options.length===3,'INDEPENDENT_ITEM_OPTIONS_FAILED');
-out=core.chooseItem(profile,out.options[0].id,{memberScope:'member_fixture',visualId:'visual_fixture'});
 assert(out.status==='READY_FOR_CANDIDATE_GENERATION','INDEPENDENT_CANDIDATE_CONTRACT_FAILED');
 assert(out.identityContract?.candidate_rule==='SAME_CHILD_DIFFERENT_DIRECTION','INDEPENDENT_IDENTITY_CONTRACT_FAILED');
 assert(out.signatureItemContract?.candidate_rule==='SAME_ITEM_ACROSS_A_B_C','INDEPENDENT_SIGNATURE_ITEM_CONTRACT_FAILED');
