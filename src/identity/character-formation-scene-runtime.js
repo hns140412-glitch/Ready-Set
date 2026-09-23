@@ -2,18 +2,19 @@
   'use strict';
   const VERSION='CHARACTER_FORMATION_SCENE_RUNTIME_V01';
   const CREW=Object.freeze({
-    dubi:{name:'두비',line:'“좋아! 하나씩 챙겨보자!”',asset:'./assets/character-formation/crew/dubi-signature-item.png'},
-    lori:{name:'로리',line:'“괜찮아, 천천히 골라도 돼!”',asset:'./assets/character-formation/crew/lori-signature-item.png'},
-    ink:{name:'잉크',line:'“음… 다른 방법도 있지.”',asset:'./assets/character-formation/crew/ink-signature-item.png'},
-    nova:{name:'노바',line:'“가보자! 하면 되지!”',asset:'./assets/character-formation/crew/nova-signature-item.png'},
-    take:{name:'테이크',line:'“차근차근 같이 해보자.”',asset:'./assets/character-formation/crew/take-signature-item.png'},
-    zero:{name:'제로',line:'“언제나, 네 이야기를 응원해!”',asset:'./assets/character-formation/crew/zero-signature-item.png'}
+    dubi:{name:'두비',line:'“좋아! 하나씩 챙겨보자!”'},
+    lori:{name:'로리',line:'“괜찮아, 천천히 골라도 돼!”'},
+    ink:{name:'잉크',line:'“음… 다른 방법도 있지.”'},
+    nova:{name:'노바',line:'“가보자! 하면 되지!”'},
+    take:{name:'테이크',line:'“차근차근 같이 해보자.”'},
+    zero:{name:'제로',line:'“언제나, 네 이야기를 응원해!”'}
   });
   const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 
   function create(options={}){
     const q=options.query||((s)=>document.querySelector(s));
     const getState=options.getState||(()=>({}));
+    const assetRegistry=options.assetRegistry||null;
     const rootEl=q('#characterSetupView');
     const scene=q('#cfScene');
     const crewImg=q('#cfCrewAsset');
@@ -35,10 +36,10 @@
       if(crewName)crewName.textContent=crew.name;
       if(crewLine)crewLine.textContent=crew.line;
       if(crewImg){
-        crewImg.src=crew.asset;crewImg.hidden=false;
-        crewImg.onerror=()=>{crewImg.hidden=true;rootEl.classList.add('cfCrewAssetMissing');};
-        crewImg.onload=()=>rootEl.classList.remove('cfCrewAssetMissing');
+        crewImg.dataset.cfAssetGroup='crew';
+        crewImg.dataset.cfAssetKey=id;
       }
+      assetRegistry?.bind?.(scene);
     }
     function apply(){
       raf=0;currentX+=(targetX-currentX)*.08;currentY+=(targetY-currentY)*.08;
@@ -57,6 +58,10 @@
       if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission!=='function'){
         window.addEventListener('deviceorientation',orientation,{passive:true});
       }
+      assetRegistry?.load?.().then(()=>{
+        assetRegistry?.bind?.(scene);
+        render(rootEl.dataset.cfStatus);
+      });
       render(rootEl.dataset.cfStatus);
     }
     function unmount(){
