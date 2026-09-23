@@ -17,6 +17,9 @@ assert(index.includes('id="characterDirectionGrid"'),'CHARACTER_DIRECTION_GRID_M
 assert(index.includes('character-setup-view-runtime.js'),'CHARACTER_SETUP_VIEW_NOT_LOADED');
 assert(index.includes('character-setup-controller-runtime.js'),'CHARACTER_SETUP_CONTROLLER_NOT_LOADED');
 assert(index.includes('character-signature-item-runtime.js'),'SIGNATURE_ITEM_RUNTIME_NOT_LOADED');
+assert(index.includes('character-formation-scene-runtime.js'),'CHARACTER_FORMATION_SCENE_RUNTIME_NOT_LOADED');
+assert(index.includes('id="cfScene"'),'CHARACTER_FORMATION_SCENE_MISSING');
+assert(index.includes('id="cfCrewAsset"'),'CHARACTER_FORMATION_CREW_ASSET_SLOT_MISSING');
 assert(index.indexOf('character-setup-view-runtime.js')<index.indexOf('app.js'),'CHARACTER_SETUP_VIEW_LOAD_ORDER_INVALID');
 assert(index.indexOf('character-setup-controller-runtime.js')<index.indexOf('app.js'),'CHARACTER_SETUP_CONTROLLER_LOAD_ORDER_INVALID');
 
@@ -28,11 +31,14 @@ assert(app.includes("nav('character-setup')"),'CHARACTER_SETUP_ENTRY_NAV_MISSING
 assert(controller.includes("status:'ITEM_SELECTION'"),'SIGNATURE_ITEM_UI_STATE_MISSING');
 assert(controller.includes("status:'ROUND_2'"),'ROUND_2_UI_STATE_MISSING');
 assert(controller.includes('chooseItem'),'SIGNATURE_ITEM_CONTROLLER_MISSING');
+assert(controller.includes('continueAfterItem'),'SIGNATURE_ITEM_CONFIRM_CONTROLLER_MISSING');
 assert(app.includes('data-character-item'),'SIGNATURE_ITEM_UI_ACTION_MISSING');
 assert(controller.includes('SYSTEM_AUTO_CONTRAST')===false,'CONTROLLER_MUST_NOT_INVENT_AUTO_CONTRAST');
 assert(core.includes('p.characterDirection.candidates'),'CORE_MUST_OWN_CANDIDATE_DIRECTION_RESULT');
 assert(core.includes("status:'ITEM_SELECTION'"),'CORE_SIGNATURE_ITEM_STAGE_MISSING');
 assert(core.indexOf("status:'ITEM_SELECTION'")<core.indexOf("status:'ROUND_1'"),'SIGNATURE_ITEM_MUST_PRECEDE_DIRECTION_ROUND_1');
+assert(core.includes("status:'ITEM_SELECTED'"),'SIGNATURE_ITEM_SELECTED_STATE_MISSING');
+assert(core.includes('continueAfterItem'),'SIGNATURE_ITEM_CONFIRM_TRANSITION_MISSING');
 assert(signatureItemRuntime.includes("CAMERA"),'SIGNATURE_CAMERA_MISSING');
 assert(signatureItemRuntime.includes("COMPASS"),'SIGNATURE_COMPASS_MISSING');
 assert(signatureItemRuntime.includes("FIELD_NOTEBOOK"),'SIGNATURE_NOTEBOOK_MISSING');
@@ -123,3 +129,13 @@ assert(masterSheetFn.includes("image[]"),'CHARACTER_MASTER_SHEET_MULTI_REFERENCE
 assert(masterSheetFn.includes('MASTER_ASSETS_READY'),'CHARACTER_MASTER_SHEET_READY_STATE_MISSING');
 assert(controller.includes('generateMasterSheet'),'CHARACTER_MASTER_SHEET_CONTROLLER_MISSING');
 assert(app.includes('generateCharacterMasterSheetBtn'),'CHARACTER_MASTER_SHEET_UI_ACTION_MISSING');
+
+const sceneRuntime=read('src/identity/character-formation-scene-runtime.js');
+const assetManifest=JSON.parse(read('assets/character-formation/asset-manifest.json'));
+assert(sceneRuntime.includes('DeviceOrientationEvent'),'CHARACTER_SENSOR_DEPTH_RUNTIME_MISSING');
+assert(sceneRuntime.includes('prefers-reduced-motion'),'CHARACTER_REDUCED_MOTION_RUNTIME_MISSING');
+assert(assetManifest.status==='HARD_LOCK','CHARACTER_ASSET_MANIFEST_NOT_HARD_LOCKED');
+assert(assetManifest.runtime_rule==='DECOMPOSED_ASSETS_ONLY_NO_FULL_SCREEN_MOCKUP_CROP','FULL_SCREEN_MOCKUP_CROP_GUARD_MISSING');
+assert(index.includes('prep-room-base.png'),'DECOMPOSED_BACKGROUND_BINDING_MISSING');
+assert(view.includes('signature-camera.png'),'SIGNATURE_ITEM_ASSET_BINDING_MISSING');
+console.log('CHARACTER_FORMATION_ASSET_BINDING_V01_PASS');
