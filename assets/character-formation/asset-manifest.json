@@ -147,12 +147,12 @@
   ],
   "asset_files": {
     "background": {
-      "prep_room_base": "assets/character-formation/background/prep-room-base.png",
-      "island_hint": "assets/character-formation/background/window-island-hint.png"
+      "prep_room_base": "assets/character-formation/background/prep-room-base.svg",
+      "island_hint": "assets/character-formation/background/window-island-hint.svg"
     },
     "foreground": {
-      "mid_props": "assets/character-formation/foreground/mid-props.png",
-      "prep_foreground": "assets/character-formation/foreground/prep-foreground.png"
+      "mid_props": "assets/character-formation/foreground/mid-props.svg",
+      "prep_foreground": "assets/character-formation/foreground/prep-foreground.svg"
     },
     "crew": {
       "dubi": "assets/character-formation/crew/dubi-signature-item.png",
@@ -163,14 +163,14 @@
       "zero": "assets/character-formation/crew/zero-signature-item.png"
     },
     "signature_items": {
-      "CAMERA": "assets/character-formation/items/signature-camera.png",
-      "COMPASS": "assets/character-formation/items/signature-compass.png",
-      "FIELD_NOTEBOOK": "assets/character-formation/items/signature-explorer-notebook.png",
-      "BINOCULARS": "assets/character-formation/items/signature-binoculars.png",
-      "WATER_BOTTLE": "assets/character-formation/items/signature-water-bottle.png"
+      "CAMERA": "assets/character-formation/items/signature-camera.svg",
+      "COMPASS": "assets/character-formation/items/signature-compass.svg",
+      "FIELD_NOTEBOOK": "assets/character-formation/items/signature-explorer-notebook.svg",
+      "BINOCULARS": "assets/character-formation/items/signature-binoculars.svg",
+      "WATER_BOTTLE": "assets/character-formation/items/signature-water-bottle.svg"
     },
     "fx": {
-      "warm_glow": "assets/character-formation/fx/warm-glow.png"
+      "warm_glow": "assets/character-formation/fx/warm-glow.svg"
     },
     "common_tools": {
       "map": "assets/character-formation/tools/map.png",
@@ -213,5 +213,9 @@
       "role": "ASSET_DECOMPOSITION_REFERENCE_ONLY",
       "warning": "FILENAMES_SHOWN_ON_BOARD_DO_NOT_PROVE_SEPARATE_BINARY_FILES_EXIST"
     }
+  },
+  "asset_quality": {
+    "runtime_vector_assets": "INTERIM_APPROVED_PIPELINE",
+    "final_anchor_parity": "PENDING_HIGH_DENSITY_PNG_WEBP_AND_CORE6"
   }
 }
