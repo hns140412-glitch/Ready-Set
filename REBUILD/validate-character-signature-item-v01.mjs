@@ -10,10 +10,12 @@ if(!api)throw new Error('SIGNATURE_ITEM_RUNTIME_MISSING');
 
 const assert=(cond,msg)=>{if(!cond)throw new Error(msg);};
 
-const state=api.createState(['CURIOUS','FOCUSED','IMAGINATIVE']);
+const expected=['CAMERA','COMPASS','FIELD_NOTEBOOK','BINOCULARS','WATER_BOTTLE'];
+const state=api.createState();
 assert(state.status==='ITEM_SELECTION','SIGNATURE_ITEM_STATE_INVALID');
-assert(state.offered.length===3,'SIGNATURE_ITEM_MUST_OFFER_THREE');
-assert(new Set(state.offered).size===3,'SIGNATURE_ITEM_OPTIONS_MUST_BE_DISTINCT');
+assert(JSON.stringify(state.offered)===JSON.stringify(expected),'SIGNATURE_ITEM_MUST_OFFER_LOCKED_FIVE');
+assert(new Set(state.offered).size===5,'SIGNATURE_ITEM_OPTIONS_MUST_BE_DISTINCT');
+assert(state.rule==='EXACTLY_ONE_SIGNATURE_ITEM','SIGNATURE_ITEM_ONE_ONLY_RULE_INVALID');
 
 const selected=api.select(state,state.offered[0]);
 assert(selected.status==='ITEM_SELECTED','SIGNATURE_ITEM_SELECTION_FAILED');
@@ -26,8 +28,10 @@ assert(contract.max_visible_signature_items===1,'SIGNATURE_ITEM_MAX_COUNT_INVALI
 assert(contract.identity_priority==='IDENTITY_OVER_ITEM','SIGNATURE_ITEM_IDENTITY_PRIORITY_INVALID');
 assert(contract.selected?.face_policy,'SIGNATURE_ITEM_FACE_POLICY_REQUIRED');
 
+assert(JSON.stringify(api.OFFERED)===JSON.stringify(expected),'SIGNATURE_ITEM_API_OFFERED_SET_MISMATCH');
+assert(Object.keys(api.ITEMS).length===5,'SIGNATURE_ITEM_CATALOG_MUST_HAVE_FIVE');
 for(const item of Object.values(api.ITEMS)){
   assert(item.prompt,'SIGNATURE_ITEM_PROMPT_REQUIRED:'+item.id);
-  assert(item.affinities.length===3,'SIGNATURE_ITEM_AFFINITY_REQUIRED:'+item.id);
+  assert(item.face_policy,'SIGNATURE_ITEM_FACE_POLICY_REQUIRED:'+item.id);
 }
 console.log('CHARACTER_EXPLORATION_SIGNATURE_ITEM_V01 PASS');
