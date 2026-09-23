@@ -170,8 +170,9 @@ assert(commonTools.length>=5,'COMMON_TOOL_POOL_TOO_THIN');
 const signatureGroup=new Set(assetManifest.asset_groups?.signature_items||[]);
 assert(commonTools.every(x=>!signatureGroup.has(x)),'COMMON_TOOL_AND_SIGNATURE_GROUP_OVERLAP');
 const commonToolFiles=Object.keys(assetManifest.asset_files?.common_tools||{});
-assert(commonToolFiles.length>=8,'COMMON_TOOL_ASSET_FILE_SLOTS_INCOMPLETE');
-assert(index.includes('data-cf-asset-group="common_tools"'),'COMMON_TOOL_RUNTIME_CONSUMER_MISSING');
+assert(commonToolFiles.length===8,'COMMON_TOOL_ASSET_FILE_SLOTS_INCOMPLETE');
+const commonToolConsumers=[...index.matchAll(/data-cf-asset-group="common_tools"/g)].length;
+assert(commonToolConsumers===8,'COMMON_TOOL_RUNTIME_CONSUMER_COUNT_MISMATCH');
 assert(assetManifest.tool_contract?.binary_truth==='MANIFEST_ENTRY_DOES_NOT_PROVE_BINARY_EXISTS','BINARY_TRUTH_CONTRACT_MISSING');
 assert(signatureItemRuntime.includes("Object.freeze(['CAMERA','COMPASS','FIELD_NOTEBOOK','BINOCULARS','WATER_BOTTLE'])"),'SIGNATURE_ITEM_RUNTIME_EXACT_SET_MISMATCH');
 
@@ -215,9 +216,13 @@ function flattenAssetPaths(node,out=[]){
 const declaredAssetPaths=flattenAssetPaths(assetManifest.asset_files);
 const missingAssets=declaredAssetPaths.filter(p=>!fs.existsSync(p));
 const anchorState=String(assetManifest.current_runtime_anchor?.state||'');
+const core6Paths=Object.values(assetManifest.asset_files?.crew||{});
 if(missingAssets.length){
   assert(anchorState.includes('PENDING_BINARY_ASSETS'),'MISSING_BINARY_ASSETS_NOT_DECLARED_PENDING');
-  console.log('CHARACTER_FORMATION_ASSET_BINDING_PENDING',missingAssets.length,missingAssets.join(','));
+  assert(missingAssets.length===core6Paths.length,'NON_CORE6_ASSET_STILL_MISSING');
+  assert(missingAssets.every(p=>core6Paths.includes(p)),'ONLY_CORE6_ASSETS_MAY_REMAIN_PENDING');
+  assert((assetManifest.current_runtime_anchor?.pending_only||[]).length===6,'CORE6_PENDING_LIST_MUST_HAVE_SIX');
+  console.log('CHARACTER_FORMATION_CORE6_ONLY_PENDING',missingAssets.length,missingAssets.join(','));
 }else{
   assert(!anchorState.includes('PENDING_BINARY_ASSETS'),'ASSET_STATE_STALE_PENDING_AFTER_BINARIES_READY');
   console.log('CHARACTER_FORMATION_ASSET_BINDING_V01_PASS');
