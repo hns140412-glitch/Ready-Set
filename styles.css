@@ -137,9 +137,12 @@
 #characterSetupView .cfCommonTools{position:absolute;inset:0;z-index:2;pointer-events:none}
 #characterSetupView .cfTool{object-fit:contain;filter:drop-shadow(0 10px 12px rgba(37,21,12,.18));opacity:.96}
 #characterSetupView .cfToolMap{width:118px;left:-12px;bottom:138px;transform:rotate(-7deg)}
+#characterSetupView .cfToolCompass{width:54px;left:110px;bottom:174px;transform:rotate(8deg)}
+#characterSetupView .cfToolCamera{width:66px;left:154px;bottom:126px;transform:rotate(-4deg)}
 #characterSetupView .cfToolLantern{width:58px;right:18px;top:176px}
 #characterSetupView .cfToolBooks{width:92px;left:22px;top:222px}
 #characterSetupView .cfToolSuitcase{width:128px;right:-24px;bottom:116px}
+#characterSetupView .cfToolTags{width:58px;right:92px;bottom:186px;transform:rotate(7deg)}
 #characterSetupView .cfToolPostcard{width:72px;left:48%;top:142px;transform:rotate(4deg)}
 #characterSetupView [data-cf-asset-state="missing"],#characterSetupView [data-cf-asset-state="undeclared"]{display:none!important}
 #characterSetupView .cfForeground{z-index:4;inset:0;background-image:var(--cf-asset-url,none);background-size:cover;background-position:center bottom;transform:scale(1.02)}
