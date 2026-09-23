@@ -60,3 +60,30 @@ Only a confirmed wrong Character Formation consumer is `EXECUTION_BINDING_BYPASS
 `CORE6_VISUAL_ID -> REMAINS_HARD_LOCK`
 
 USER != DEBUGGER.
+
+
+## Defensive baseline
+
+Last-known-good:
+- commit: `f0baee88466d03f0f981ca0754f715e6778a62d6`
+- recovery branch: `taky/character-formation-lkg-2026-09-23`
+- evidence at baseline:
+  - Character Formation UI Binding = PASS
+  - TAKY Codex Worker Self-Test = PASS
+
+Protected set:
+- Core 6 canonical identity
+- CF-A01 / CF-A02 / CF-A03 / CF-A05 approved anchor hierarchy
+- fixed five Signature Items
+- photo → Signature Item → direction 1 → direction 2
+- CHARACTER_ONLY sensor depth
+- live DOM + decomposed asset architecture
+
+Current mutable delta:
+- missing decomposed binary assets
+- asset source/provenance recovery
+- asset loader/runtime consumption necessary to bind those binaries
+- visual parity correction after 390×844 runtime evidence
+
+Do not expand the blast radius merely because an unrelated legacy file is discovered.
+If a new change damages the protected set, compare against the LKG branch and restore the protected behavior before continuing.
