@@ -279,19 +279,32 @@
 <button class="btn dark" id="saveProfileBtn">프로필 저장</button><button class="btn outline" id="openCharacterSetupBtn">사진으로 내 캐릭터 만들기</button></section></main></section>
 
 
-  <section class="view cream" id="characterSetupView" data-view="character-setup">
-    <header class="safe pageHeader"><button data-nav="profile" aria-label="뒤로">←</button><div><span class="kicker">CHARACTER VISUAL ID</span><h1>내 캐릭터 만들기</h1></div><span id="characterSetupStep" class="characterStepBadge">START</span></header>
-    <main class="safe scroll characterSetupMain">
-      <section class="characterSourceCard">
+  <section class="view cfView" id="characterSetupView" data-view="character-setup" data-cf-status="START">
+    <div class="cfScene" id="cfScene" aria-hidden="true">
+      <div class="cfLayer cfFarWorld"></div>
+      <div class="cfLayer cfDestinationHint"></div>
+      <div class="cfLayer cfMidProps"></div>
+      <img class="cfCrewAsset" id="cfCrewAsset" alt="">
+      <div class="cfLayer cfForeground"></div>
+      <div class="cfLayer cfFxLayer"></div>
+    </div>
+    <header class="safe pageHeader cfHeader"><button data-nav="profile" aria-label="뒤로">←</button><div><span class="kicker">CHARACTER FORMATION</span><h1>여행 준비</h1></div><span id="characterSetupStep" class="characterStepBadge">START</span></header>
+    <main class="safe scroll characterSetupMain cfCharacterMain">
+      <section class="characterSourceCard cfIdentityChip">
         <div class="characterSourceAvatar" id="characterSourceAvatar">RS</div>
         <div><small>SOURCE PHOTO IDENTITY</small><b>사진 속 나는 그대로</b><p id="characterSourceMeta">먼저 프로필에서 사진을 등록해 주세요.</p></div>
       </section>
-      <section class="characterConsultCard">
-        <div class="characterConsultHead"><small>MOOD DIRECTION</small><h2 id="characterSetupTitle">내 캐릭터 만들기</h2><p id="characterSetupCopy">원본 사진을 기준으로 두 번의 선택만 받아요.</p></div>
+      <section class="cfCompanionCue">
+        <div><small>함께 준비하는 탐험대원</small><b id="cfCompanionName">두비</b></div>
+        <span id="cfCompanionLine">“좋아! 하나씩 챙겨보자!”</span>
+      </section>
+      <section class="characterConsultCard cfTaskSurface">
+        <div class="characterConsultHead"><small>MY SIGNATURE / DIRECTION</small><h2 id="characterSetupTitle">내 캐릭터 만들기</h2><p id="characterSetupCopy">원본 사진 다음에는 시그니처 아이템 하나와 두 번의 탐험 방향만 골라요.</p></div>
         <div id="characterDirectionGrid" class="characterDirectionGrid" hidden></div>
         <div id="characterCandidateContract" hidden></div>
-        <button class="btn dark" id="beginCharacterSetupBtn">분위기 선택 시작</button>
+        <button class="btn dark cfPrimaryCta" id="beginCharacterSetupBtn">여행 준비 시작</button>
       </section>
+      <div class="cfProgress" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
     </main>
   </section>
 
@@ -380,6 +393,7 @@
 <script src="./src/identity/character-master-runtime.js"></script>
 <script src="./src/identity/character-derivative-runtime.js"></script>
 <script src="./src/identity/character-setup-controller-runtime.js"></script>
+<script src="./src/identity/character-formation-scene-runtime.js"></script>
 <script src="./src/identity/character-setup-view-runtime.js"></script>
 <script src="./src/identity/character-generation-job-runtime.js"></script>
 <script src="./src/identity/source-photo-intake-runtime.js"></script>
