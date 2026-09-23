@@ -157,7 +157,10 @@ for(const stale of ['MAGNIFIER','EXPLORER_HAT','ROUND_GLASSES','MINI_FIELD_BAG']
 
 // CHARACTER_ONLY means no sensor variable may move world/UI layers.
 function cssRule(selector){
-  const start=styles.indexOf(selector+'{');
+  const marker='\n'+selector+'{';
+  let start=styles.indexOf(marker);
+  if(start>=0)start+=1;
+  else if(styles.startsWith(selector+'{'))start=0;
   assert(start>=0,'CSS_RULE_MISSING_'+selector);
   const end=styles.indexOf('}',start);
   assert(end>start,'CSS_RULE_UNCLOSED_'+selector);
