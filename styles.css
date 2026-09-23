@@ -169,6 +169,14 @@
 #formationJourneyView .formationWorldEntry{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:9px;margin:14px 0;padding:14px;border-radius:18px;background:linear-gradient(135deg,rgba(164,206,232,.35),rgba(255,226,166,.45))}
 #formationJourneyView .formationWorldEntry span{padding:9px 6px;border-radius:999px;background:rgba(255,255,255,.72);color:#5d7291;font-size:9px;font-weight:900;text-align:center;letter-spacing:.08em}
 #formationJourneyView .formationWorldEntry b{color:#6b573d;font-size:10px}
+#formationJourneyView .formationWorldEntry.selectable{grid-template-columns:1fr 1fr;gap:9px;padding:9px}
+#formationJourneyView .formationEntryChoice{display:grid;gap:4px;min-height:104px;padding:14px 10px;border:1px solid rgba(81,72,58,.12);border-radius:17px;background:rgba(255,255,255,.76);box-shadow:0 8px 20px rgba(47,32,22,.08);text-align:left}
+#formationJourneyView .formationEntryChoice small{font-size:7px;font-weight:900;letter-spacing:.12em;color:#7b6b58}
+#formationJourneyView .formationEntryChoice b{font-size:14px;color:#382b23}
+#formationJourneyView .formationEntryChoice span{padding:0;background:none;color:#77685b;font-size:8px;font-weight:700;letter-spacing:0;text-align:left}
+#formationJourneyView .formationEntryChoice.voyage{background:linear-gradient(145deg,rgba(222,244,250,.92),rgba(255,255,255,.78))}
+#formationJourneyView .formationEntryChoice.drop{background:linear-gradient(145deg,rgba(248,228,252,.9),rgba(255,255,255,.78))}
+#formationJourneyView .formationEntryChoice:active{transform:scale(.98)}
 #formationJourneyView .btn{width:100%}
 #formationJourneyView .linkBtn{display:block;margin:8px auto 0}
 #formationJourneyView [data-cf-asset-state="missing"],#formationJourneyView [data-cf-asset-state="undeclared"]{visibility:hidden!important}
