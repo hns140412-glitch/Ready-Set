@@ -93,13 +93,13 @@
     ],
     "common_tools": [
       "map",
-      "compass-prop",
-      "camera-prop",
-      "lantern-prop",
-      "book-stack",
-      "open-suitcase",
-      "travel-tags",
-      "island-photo-or-postcard"
+      "compass_prop",
+      "camera_prop",
+      "lantern_prop",
+      "book_stack",
+      "open_suitcase",
+      "travel_tags",
+      "island_postcard"
     ],
     "scene_props": [
       "foreground-leaves",
@@ -185,8 +185,16 @@
   },
   "current_runtime_anchor": {
     "id": "CF-A05-SIGNATURE-ITEM",
-    "state": "SCENE_ITEMS_TOOLS_BOUND_CORE6_PENDING",
-    "proof_required": "390x844_RUNTIME_SCREENSHOT"
+    "state": "SCENE_ITEMS_TOOLS_BOUND__PENDING_BINARY_ASSETS_CORE6",
+    "proof_required": "390x844_RUNTIME_SCREENSHOT",
+    "pending_only": [
+      "crew.dubi",
+      "crew.lori",
+      "crew.ink",
+      "crew.nova",
+      "crew.take",
+      "crew.zero"
+    ]
   },
   "tool_contract": {
     "signature_item_rule": "EXACTLY_ONE_FROM_LOCKED_FIVE",
