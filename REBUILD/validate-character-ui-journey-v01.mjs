@@ -11,6 +11,7 @@ const controller=read('src/identity/character-setup-controller-runtime.js');
 const core=read('src/identity/character-core-orchestrator-runtime.js');
 const signatureItemRuntime=read('src/identity/character-signature-item-runtime.js');
 const signatureItemServer=read('netlify/functions/character-signature-item-core.mjs');
+const journey=read('src/identity/character-formation-journey-runtime.js');
 
 assert(index.includes('id="characterSetupView"'),'CHARACTER_SETUP_VIEW_MISSING');
 assert(index.includes('id="openCharacterSetupBtn"'),'CHARACTER_SETUP_ENTRY_MISSING');
@@ -20,17 +21,26 @@ assert(index.includes('character-setup-controller-runtime.js'),'CHARACTER_SETUP_
 assert(index.includes('character-signature-item-runtime.js'),'SIGNATURE_ITEM_RUNTIME_NOT_LOADED');
 assert(index.includes('character-formation-asset-runtime.js'),'CHARACTER_FORMATION_ASSET_RUNTIME_NOT_LOADED');
 assert(index.includes('character-formation-scene-runtime.js'),'CHARACTER_FORMATION_SCENE_RUNTIME_NOT_LOADED');
+assert(index.includes('character-formation-journey-runtime.js'),'CHARACTER_FORMATION_JOURNEY_RUNTIME_NOT_LOADED');
+assert(index.includes('id="formationJourneyView"'),'CHARACTER_FORMATION_JOURNEY_VIEW_MISSING');
+assert(index.includes('id="formationJourneyBody"'),'CHARACTER_FORMATION_JOURNEY_BODY_MISSING');
 assert(index.indexOf('character-formation-asset-runtime.js')<index.indexOf('character-formation-scene-runtime.js'),'CHARACTER_ASSET_RUNTIME_LOAD_ORDER_INVALID');
+assert(index.indexOf('character-formation-journey-runtime.js')<index.indexOf('app.js'),'CHARACTER_FORMATION_JOURNEY_LOAD_ORDER_INVALID');
 assert(index.includes('id="cfScene"'),'CHARACTER_FORMATION_SCENE_MISSING');
 assert(index.includes('id="cfCommonTools"'),'CHARACTER_COMMON_TOOL_LAYER_MISSING');
 assert(index.includes('id="cfCrewAsset"'),'CHARACTER_FORMATION_CREW_ASSET_SLOT_MISSING');
 assert(index.indexOf('character-setup-view-runtime.js')<index.indexOf('app.js'),'CHARACTER_SETUP_VIEW_LOAD_ORDER_INVALID');
 assert(index.indexOf('character-setup-controller-runtime.js')<index.indexOf('app.js'),'CHARACTER_SETUP_CONTROLLER_LOAD_ORDER_INVALID');
 
-assert(app.includes("'character-setup':()=>characterSetupRuntime.render()"),'CHARACTER_SETUP_ROUTE_MISSING');
+assert(app.includes("'formation-journey':()=>characterFormationJourneyRuntime?.render?.()"),'CHARACTER_FORMATION_JOURNEY_ROUTE_MISSING');
+assert(app.includes("'character-setup':()=>{"),'CHARACTER_SETUP_ROUTE_MISSING');
 assert(app.includes('characterSetupRuntime.begin()'),'CHARACTER_SETUP_BEGIN_NOT_WIRED');
 assert(app.includes('characterSetupRuntime.choose(direction.dataset.characterDirection)'),'CHARACTER_SETUP_CHOICE_NOT_WIRED');
-assert(app.includes("nav('character-setup')"),'CHARACTER_SETUP_ENTRY_NAV_MISSING');
+assert(app.includes("nav('formation-journey')"),'CHARACTER_FORMATION_ENTRY_NAV_MISSING');
+assert(!app.includes("if(!state.profile?.sourcePhoto?.source_hash){toast('먼저 사진을 등록해 주세요.');return;}\n  nav('character-setup')"),'PHOTO_GATE_MUST_NOT_BYPASS_CREW_JOURNEY');
+assert(app.includes('CharacterFormationJourneyRuntime'),'CHARACTER_FORMATION_JOURNEY_BOOTSTRAP_MISSING');
+assert(app.includes('rebuildCharacterFormationJourney.create'),'CHARACTER_FORMATION_JOURNEY_CREATE_MISSING');
+assert(app.includes('syncAfterCharacterLock'),'CHARACTER_FORMATION_POST_LOCK_RETURN_MISSING');
 assert(app.includes('CharacterFormationAssetRuntime?.create'),'CHARACTER_ASSET_REGISTRY_BOOTSTRAP_MISSING');
 assert(app.includes('assetRegistry:characterFormationAssetRegistry'),'CHARACTER_ASSET_REGISTRY_NOT_INJECTED');
 assert(app.includes('characterFormationAssetRegistry?.load?.()'),'CHARACTER_ASSET_MANIFEST_LOAD_MISSING');
@@ -58,6 +68,32 @@ assert(view.includes('두 번만 직접 고르면 끝이에요.'),'TWO_SELECTION
 assert(view.includes('시그니처 아이템'),'SIGNATURE_ITEM_FIRST_COPY_MISSING');
 assert(view.includes('시스템이 만든 대비 방향'),'AUTO_CONTRAST_PROVENANCE_COPY_MISSING');
 assert(view.includes('세 후보 모두 같은 나'),'SAME_CHILD_COMPARISON_COPY_MISSING');
+
+// Previously confirmed Character Formation journey must be executable, not dead documentation.
+const journeyStages=[
+  'CREW_MEET','COMPANION_SELECT','COMPANION_NAME','PHOTO_REQUIRED','CHARACTER_FORMATION',
+  'SHARED_ACCENT','WORLD_ENTRY','ISLAND_DISCOVERY','ISLAND_NAME','BASE_CAMP_MOVE','BASE_CAMP_NAME','READY'
+];
+let lastStageIndex=-1;
+for(const stage of journeyStages){
+  const i=journey.indexOf("'"+stage+"'");
+  assert(i>=0,'CHARACTER_FORMATION_STAGE_MISSING_'+stage);
+  assert(i>lastStageIndex,'CHARACTER_FORMATION_STAGE_ORDER_REGRESSION_'+stage);
+  lastStageIndex=i;
+}
+assert(journey.includes("data-formation-entry=\"VOYAGE\""),'VOYAGE_MODE_CHOICE_MISSING');
+assert(journey.includes("data-formation-entry=\"DROP\""),'DROP_MODE_CHOICE_MISSING');
+assert(journey.includes("f.worldEntry.variant=mode"),'WORLD_ENTRY_MODE_PERSISTENCE_MISSING');
+assert(journey.includes("f.pendingAccent=id"),'EXPEDITION_ACCENT_PREVIEW_STATE_MISSING');
+assert(journey.includes("state.expedition.sharedAccent=chosen"),'EXPEDITION_ACCENT_CONFIRMATION_MISSING');
+assert(journey.includes("{id:'PINK',label:'분홍'}"),'EXPEDITION_ACCENT_PINK_LABEL_REGRESSION');
+assert(!journey.includes("p?.visualId ||"),'RAW_VISUAL_ID_MUST_NOT_COUNT_AS_LOCKED');
+assert(journey.includes("VISUAL_ID_LOCKED")&&journey.includes("MASTER_ASSETS_READY"),'VISUAL_ID_LOCK_STATE_GUARD_MISSING');
+assert(journey.includes("primaryCompanionId"),'PRIMARY_COMPANION_STATE_MISSING');
+assert(journey.includes("primaryCompanionAlias"),'PRIMARY_COMPANION_ALIAS_STATE_MISSING');
+assert(journey.includes("f.island.name"),'ISLAND_NAME_STATE_MISSING');
+assert(journey.includes("f.baseCamp.name"),'BASE_CAMP_NAME_STATE_MISSING');
+assert(styles.includes('.formationEntryChoice'),'WORLD_ENTRY_CHOICE_STYLE_MISSING');
 
 console.log('CHARACTER_VISUAL_ID_UI_JOURNEY_V01_PASS');
 
