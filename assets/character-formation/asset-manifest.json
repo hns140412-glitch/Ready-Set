@@ -173,24 +173,19 @@
       "warm_glow": "assets/character-formation/fx/warm-glow.svg"
     },
     "common_tools": {
-      "map": "assets/character-formation/tools/map.png",
-      "compass_prop": "assets/character-formation/tools/compass-prop.png",
-      "camera_prop": "assets/character-formation/tools/camera-prop.png",
-      "lantern_prop": "assets/character-formation/tools/lantern.png",
-      "book_stack": "assets/character-formation/tools/book-stack.png",
-      "open_suitcase": "assets/character-formation/tools/open-suitcase.png",
-      "travel_tags": "assets/character-formation/tools/travel-tags.png",
-      "island_postcard": "assets/character-formation/tools/island-postcard.png"
-    },
-    "scene_props": {
-      "foreground_leaves": "assets/character-formation/foreground/foreground-leaves.png",
-      "shelf_wall_depth": "assets/character-formation/background/shelf-wall-depth.png",
-      "desk_base": "assets/character-formation/foreground/desk-base.png"
+      "map": "assets/character-formation/tools/map.svg",
+      "compass_prop": "assets/character-formation/tools/compass-prop.svg",
+      "camera_prop": "assets/character-formation/tools/camera-prop.svg",
+      "lantern_prop": "assets/character-formation/tools/lantern.svg",
+      "book_stack": "assets/character-formation/tools/book-stack.svg",
+      "open_suitcase": "assets/character-formation/tools/open-suitcase.svg",
+      "travel_tags": "assets/character-formation/tools/travel-tags.svg",
+      "island_postcard": "assets/character-formation/tools/island-postcard.svg"
     }
   },
   "current_runtime_anchor": {
     "id": "CF-A05-SIGNATURE-ITEM",
-    "state": "WIRED_ASSET_SLOTS_PENDING_BINARY_ASSETS_AND_COMMON_TOOLS",
+    "state": "SCENE_ITEMS_TOOLS_BOUND_CORE6_PENDING",
     "proof_required": "390x844_RUNTIME_SCREENSHOT"
   },
   "tool_contract": {
