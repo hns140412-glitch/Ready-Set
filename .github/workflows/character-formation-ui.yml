@@ -29,6 +29,7 @@ jobs:
           node --check src/identity/character-setup-view-runtime.js
           node --check src/identity/character-formation-asset-runtime.js
           node --check src/identity/character-formation-scene-runtime.js
+          node --check src/identity/character-formation-journey-runtime.js
           node --check app.js
       - name: Guard approved visual asset pipeline
         run: |
