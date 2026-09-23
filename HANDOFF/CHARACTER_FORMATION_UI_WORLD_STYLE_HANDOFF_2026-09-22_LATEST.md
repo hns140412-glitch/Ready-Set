@@ -42,7 +42,8 @@ Only after that, produce a delta-edited mockup.
 - canonical_name is immutable; display_name may change.
 - nickname/history flows into encyclopedia/history.
 - motion is subtle and state-driven, not spectacle.
-- final UI mockup is NOT yet locked.
+- approved anchors CF-A01 / CF-A02 / CF-A03 / CF-A05 are IMPLEMENTATION ANCHORS and HARD LOCK for their bound hierarchy.
+- unapproved future screens remain open only for DELTA work; they must inherit the locked scene/world method.
 
 ## Character World Style
 
@@ -109,9 +110,11 @@ Do not let public GitHub/Netlify examples supersede the canonical UI.
 Character Core code/CI remains separate from UI status.
 
 UI:
-- final design = NOT_LOCKED
-- latest generated mockups = REFERENCE_ONLY
-- base UI recovery required before next render
+- approved anchor hierarchy = HARD_LOCK where explicitly bound
+- current runtime anchor = CF-A05 Signature Item
+- approved full-screen images = REFERENCE / REGRESSION EVIDENCE ONLY, never runtime UI
+- binary decomposed assets = PENDING where manifest paths exist without files
+- 390×844 runtime proof = REQUIRED before completion claim
 
 Character Core:
 - independent core exists
@@ -146,3 +149,20 @@ taky/character-visual-id-core-2026-09-22 브랜치를 live refresh하고 아래�
 - 사용자 캐릭터는 A/B/C 이전에 완성형으로 노출하지 않는다.
 - 최종 UI는 아직 NOT_LOCKED다.
 ```
+
+
+## LATEST RESIDUE OVERRIDE — 2026-09-23
+
+Apply before earlier UI-status wording.
+
+- Do not reopen Core 6 Visual ID.
+- Do not reinterpret approved anchors as merely optional references.
+- Do not use the stale six-item Signature Item catalog.
+- Fixed Signature Item set: 카메라 / 나침반 / 탐험 노트 / 쌍안경 / 물병.
+- Current execution authority:
+  1. `C2S/CHARACTER_FORMATION_VISUAL_TO_RUNTIME_BINDING_2026-09-23.md`
+  2. `assets/character-formation/asset-manifest.json`
+  3. current runtime source under `src/identity/`
+  4. this HANDOFF only for resume context.
+- HANDOFF != SOURCE OF TRUTH.
+- Existing contradictions from earlier text are SUPERSEDED, not alternative options.
