@@ -32,10 +32,24 @@
 
     function chooseItem(profile,itemId){
       const p=ensureProfile(profile);
-      if(!p.characterSignatureItem||p.characterSignatureItem.status!=='ITEM_SELECTION'){
+      if(!p.characterSignatureItem||!['ITEM_SELECTION','ITEM_SELECTED'].includes(p.characterSignatureItem.status)){
         p.characterSignatureItem=itemApi.createState();
       }
+      if(p.characterSignatureItem.status==='ITEM_SELECTED'){
+        p.characterSignatureItem={...itemApi.createState(),offered:[...p.characterSignatureItem.offered]};
+      }
       p.characterSignatureItem=itemApi.select(p.characterSignatureItem,itemId);
+      return {
+        status:'ITEM_SELECTED',
+        options:p.characterSignatureItem.offered.map(id=>itemApi.item(id)),
+        selected:p.characterSignatureItem.selected,
+        profile:p
+      };
+    }
+
+    function continueAfterItem(profile){
+      const p=ensureProfile(profile);
+      if(p.characterSignatureItem?.status!=='ITEM_SELECTED')throw new Error('CHARACTER_SIGNATURE_ITEM_SELECTION_REQUIRED');
       p.characterDirection=directionApi.createState();
       return {
         status:'ROUND_1',
@@ -107,7 +121,7 @@
       });
     }
 
-    return Object.freeze({begin,chooseItem,choose,generationPayload});
+    return Object.freeze({begin,chooseItem,continueAfterItem,choose,generationPayload});
   }
 
   const api=Object.freeze({
