@@ -42,6 +42,17 @@
           master:p.characterMaster||null
         };
       }
+      if(p.characterSignatureItem?.status==='ITEM_SELECTED'&&!p.characterGenerationJob){
+        const itemApi=root.CharacterExplorationSignatureItem;
+        return {
+          profile:p,
+          status:'ITEM_SELECTED',
+          options:(p.characterSignatureItem.offered||[]).map(id=>itemApi.item(id)),
+          candidates:[],
+          remoteJob:p.characterRemoteJob||null,
+          master:p.characterMaster||null
+        };
+      }
       if(s.status==='ROUND_1'&&p.characterSignatureItem?.status==='ITEM_SELECTED'){
         return {profile:p,status:'ROUND_1',options:(root.CharacterVisualIdDirection||root.ReadyCharacterDirection).firstRound(),candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
       }
@@ -92,11 +103,25 @@
         const out=core.chooseItem(p,itemId);
         save();
         view.render({profile:p,status:out.status,options:out.options||[],candidates:[]});
-        toast('좋아! 이제 첫 번째 탐험 방향을 골라줘.');
+        toast('이 아이템으로 갈까? 확인하면 다음 탐험 방향으로 넘어가요.');
         return {ok:true,...out};
       }catch(err){
         toast('탐험 아이템을 다시 골라 주세요.');
         return {ok:false,reason:err?.message||'CHARACTER_SIGNATURE_ITEM_FAILED'};
+      }
+    }
+
+    function continueAfterItem(){
+      const p=profile();
+      try{
+        const out=core.continueAfterItem(p);
+        save();
+        view.render({profile:p,status:out.status,options:out.options||[],candidates:[]});
+        toast('좋아! 이제 첫 번째 탐험 방향을 골라줘.');
+        return {ok:true,...out};
+      }catch(err){
+        toast('먼저 시그니처 아이템을 하나 골라 주세요.');
+        return {ok:false,reason:err?.message||'CHARACTER_SIGNATURE_ITEM_CONFIRM_FAILED'};
       }
     }
 
@@ -306,7 +331,7 @@
 
     return Object.freeze({
       render,begin,choose,generationPayload,prepareRemoteJob,startGeneration,
-      chooseItem,refreshRemoteJob,generateAllCandidates,selectCandidate,reviewConsistency,confirmSameIdentity,correctLikeness,lockMaster,buildDerivativeAssets,generateMasterSheet
+      chooseItem,continueAfterItem,refreshRemoteJob,generateAllCandidates,selectCandidate,reviewConsistency,confirmSameIdentity,correctLikeness,lockMaster,buildDerivativeAssets,generateMasterSheet
     });
   }
 
