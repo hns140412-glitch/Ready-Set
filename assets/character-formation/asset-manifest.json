@@ -95,6 +95,21 @@
       "parchment-note",
       "wood-grain",
       "frosted-task-surface"
+    ],
+    "common_tools": [
+      "map",
+      "compass-prop",
+      "camera-prop",
+      "lantern-prop",
+      "book-stack",
+      "open-suitcase",
+      "travel-tags",
+      "island-photo-or-postcard"
+    ],
+    "scene_props": [
+      "foreground-leaves",
+      "desk-base",
+      "shelf-and-wall-depth"
     ]
   },
   "ui_runtime_only": [
@@ -165,7 +180,28 @@
   },
   "current_runtime_anchor": {
     "id": "CF-A05-SIGNATURE-ITEM",
-    "state": "WIRED_ASSET_SLOTS_PENDING_BINARY_ASSETS",
+    "state": "WIRED_ASSET_SLOTS_PENDING_BINARY_ASSETS_AND_COMMON_TOOLS",
     "proof_required": "390x844_RUNTIME_SCREENSHOT"
+  },
+  "tool_contract": {
+    "signature_item_rule": "EXACTLY_ONE_FROM_LOCKED_FIVE",
+    "signature_items_are_not_total_tool_inventory": true,
+    "common_tools_role": "SCENE_DENSITY_AND_CONTEXTUAL_INTERACTION",
+    "common_tools_selection_rule": "NOT_PART_OF_SIGNATURE_ITEM_CHOICE",
+    "binary_truth": "MANIFEST_ENTRY_DOES_NOT_PROVE_BINARY_EXISTS"
+  },
+  "asset_sources": {
+    "approved_anchor_sources": "USE_APPROVED_ANCHOR_FILE_IDS_ONLY",
+    "core6_source": {
+      "file_id": "file_0000000022f0823090aec9a5d4c42aa3",
+      "name": "가이드☆ 여섯 친구의 찬란한 여정.png",
+      "role": "LOCKED_VISUAL_ID_SOURCE_LINEAGE"
+    },
+    "asset_board_reference": {
+      "file_id": "file_0000000032f08211ab6d7e8f09b10053",
+      "name": "두비 탐험 어드벤처 에셋 보드.png",
+      "role": "ASSET_DECOMPOSITION_REFERENCE_ONLY",
+      "warning": "FILENAMES_SHOWN_ON_BOARD_DO_NOT_PROVE_SEPARATE_BINARY_FILES_EXIST"
+    }
   }
 }
