@@ -87,3 +87,26 @@ Current mutable delta:
 
 Do not expand the blast radius merely because an unrelated legacy file is discovered.
 If a new change damages the protected set, compare against the LKG branch and restore the protected behavior before continuing.
+
+
+## Inherited approved state
+
+This app-local slice inherits the family-level previously confirmed decisions.
+It must not redefine them.
+
+Current local projection:
+- locked five Signature Items = Character Formation user-choice contract only;
+- current common-tool asset set = runtime-visible subset only;
+- Core 6 local derivatives = projections of locked canonical Visual IDs;
+- Character Formation = pre-travel preparation slice only.
+
+Not locally redefined:
+- full Core 6 character-associated tool vocabulary;
+- Snap & Pop five-tools-free-use rule;
+- island/Base Camp continuity;
+- badge / gem / wish / blessing family systems;
+- Crew relationship/history / Explorer_ID;
+- app-family world continuity.
+
+Rule:
+`LOCAL PROJECTION MAY BE INCOMPLETE; INHERITED CONFIRMED STATE REMAINS AUTHORITATIVE.`
