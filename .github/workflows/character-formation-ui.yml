@@ -1,0 +1,37 @@
+name: Character Formation UI Binding
+
+on:
+  push:
+    branches:
+      - taky/character-visual-id-core-2026-09-22
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  character-formation-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate Character Formation journey
+        run: node REBUILD/validate-character-ui-journey-v01.mjs
+      - name: Parse Character Formation runtime
+        run: |
+          node --check src/identity/character-signature-item-runtime.js
+          node --check src/identity/character-direction-runtime.js
+          node --check src/identity/character-core-orchestrator-runtime.js
+          node --check src/identity/character-setup-controller-runtime.js
+          node --check src/identity/character-setup-view-runtime.js
+          node --check src/identity/character-formation-scene-runtime.js
+          node --check app.js
+      - name: Guard approved visual asset pipeline
+        run: |
+          node -e "const m=require('./assets/character-formation/asset-manifest.json'); if(m.status!=='HARD_LOCK') process.exit(1); if(m.runtime_rule!=='DECOMPOSED_ASSETS_ONLY_NO_FULL_SCREEN_MOCKUP_CROP') process.exit(2);"
+          grep -q 'prep-room-base.png' styles.css
+          grep -q 'signature-camera.png' src/identity/character-setup-view-runtime.js
+          grep -q 'continueAfterSignatureItemBtn' app.js
