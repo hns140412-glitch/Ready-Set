@@ -1,0 +1,121 @@
+{
+  "version": "CHARACTER_FORMATION_ASSET_MANIFEST_V1",
+  "status": "ACTIVE",
+  "runtime_rule": "DECOMPOSED_ASSETS_ONLY_NO_FULL_SCREEN_MOCKUP_CROP",
+  "baseline": {
+    "width": 390,
+    "height": 844
+  },
+  "scene": {
+    "id": "BEFORE_TRAVEL_PACKING_PREPARATION_SPACE",
+    "island_role": "DESTINATION_HINT_ONLY",
+    "dominant_context": "PACKING_AND_CHARACTER_FORMATION"
+  },
+  "approved_anchors": [
+    {
+      "anchor_id": "CF-A01-CREW-FAMILIARITY",
+      "flow_step": "CREW_FAMILIARITY",
+      "approval": "USER_EXPLICIT_GOOD",
+      "source_file_id": "file_00000000e1848206b186686dfe814497",
+      "source_name": "탐험을_떠나기_전_함께할_친구들.png",
+      "binding_role": "SCENE_TONE_AND_CORE6_GROUP_ATMOSPHERE"
+    },
+    {
+      "anchor_id": "CF-A02-COMPANION-SELECT-MAIN",
+      "flow_step": "PRIMARY_COMPANION_SELECT",
+      "approval": "USER_EXPLICIT_SELECTED_ANCHOR",
+      "source_file_id": "file_0000000008b08206902ef989230f5c60",
+      "source_name": "image(20260922-224624).png",
+      "binding_role": "PRIMARY_SELECTION_COMPOSITION"
+    },
+    {
+      "anchor_id": "CF-A02B-COMPANION-SELECT-ALT",
+      "flow_step": "PRIMARY_COMPANION_SELECT",
+      "approval": "USER_EXPLICIT_GOOD",
+      "source_file_id": "file_00000000df888206932a98cf2c269382",
+      "source_name": "a_vertical_smartphone_ui_illustration_scene_cute.png",
+      "binding_role": "ALTERNATE_SELECTION_STRUCTURE_REFERENCE"
+    },
+    {
+      "anchor_id": "CF-A03-COMPANION-NAME",
+      "flow_step": "COMPANION_DISPLAY_NAME",
+      "approval": "USER_EXPLICIT_GOOD",
+      "source_file_id": "file_00000000acf48206bdc3ca4bc6d51c74",
+      "source_name": "두비와_함께_떠나는_여행_준비.png",
+      "binding_role": "NAME_AND_RELATIONSHIP_STEP"
+    },
+    {
+      "anchor_id": "CF-A05-SIGNATURE-ITEM",
+      "flow_step": "SIGNATURE_ITEM",
+      "approval": "CURRENT_IMPLEMENTATION_ANCHOR",
+      "source_file_id": "file_00000000911082309da239529b67b024",
+      "source_name": "a_vibrant_detailed_3d_illustrated_mobile_app_ui_s.png",
+      "binding_role": "SIGNATURE_ITEM_COMPOSITION"
+    }
+  ],
+  "asset_groups": {
+    "background": [
+      "prep-room-base",
+      "window-island-destination-hint",
+      "shelf-and-wall-depth",
+      "desk-base"
+    ],
+    "foreground": [
+      "foreground-leaves",
+      "open-suitcase",
+      "map-and-compass-cluster",
+      "camera-prop",
+      "lantern-prop",
+      "book-stack",
+      "travel-tags"
+    ],
+    "crew": [
+      "dubi-locked-visual-id",
+      "lori-locked-visual-id",
+      "ink-locked-visual-id",
+      "nova-locked-visual-id",
+      "take-locked-visual-id",
+      "zero-locked-visual-id"
+    ],
+    "signature_items": [
+      "signature-camera",
+      "signature-compass",
+      "signature-explorer-notebook",
+      "signature-binoculars",
+      "signature-water-bottle"
+    ],
+    "fx": [
+      "warm-window-light",
+      "contact-shadow",
+      "lantern-glow",
+      "depth-haze"
+    ],
+    "textures": [
+      "paper-panel",
+      "parchment-note",
+      "wood-grain",
+      "frosted-task-surface"
+    ]
+  },
+  "ui_runtime_only": [
+    "all_korean_copy",
+    "all_buttons",
+    "selected_check",
+    "progress_indicator",
+    "input_fields",
+    "accessibility_labels",
+    "loading_error_permission_states"
+  ],
+  "forbidden_runtime_assets": [
+    "full_screen_mockup_crop",
+    "baked_functional_text",
+    "baked_selected_state",
+    "invented_core6_character"
+  ],
+  "effect_contract": {
+    "micro_motion": true,
+    "sensor_depth_default": "CHARACTER_ONLY",
+    "full_depth": "PROFILE_PASS_ONLY",
+    "reduced_motion": "STATIC_DEPTH"
+  }
+}
