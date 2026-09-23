@@ -137,6 +137,60 @@ assert(sceneRuntime.includes('DeviceOrientationEvent'),'CHARACTER_SENSOR_DEPTH_R
 assert(sceneRuntime.includes('prefers-reduced-motion'),'CHARACTER_REDUCED_MOTION_RUNTIME_MISSING');
 assert(assetManifest.status==='HARD_LOCK','CHARACTER_ASSET_MANIFEST_NOT_HARD_LOCKED');
 assert(assetManifest.runtime_rule==='DECOMPOSED_ASSETS_ONLY_NO_FULL_SCREEN_MOCKUP_CROP','FULL_SCREEN_MOCKUP_CROP_GUARD_MISSING');
+assert(assetManifest.effect_contract?.sensor_depth_default==='CHARACTER_ONLY','CHARACTER_SENSOR_DEPTH_MUST_BE_CHARACTER_ONLY');
 assert(styles.includes('prep-room-base.png'),'DECOMPOSED_BACKGROUND_BINDING_MISSING');
 assert(view.includes('signature-camera.png'),'SIGNATURE_ITEM_ASSET_BINDING_MISSING');
-console.log('CHARACTER_FORMATION_ASSET_BINDING_V01_PASS');
+
+// Exact current identity/item contracts. Stale catalogs must not silently re-enter runtime.
+const exactCrew=['dubi','lori','ink','nova','take','zero'];
+const exactItems=['CAMERA','COMPASS','FIELD_NOTEBOOK','BINOCULARS','WATER_BOTTLE'];
+const manifestCrew=Object.keys(assetManifest.asset_files?.crew||{}).sort();
+const manifestItems=Object.keys(assetManifest.asset_files?.signature_items||{}).sort();
+assert(JSON.stringify(manifestCrew)===JSON.stringify([...exactCrew].sort()),'CORE6_ASSET_MANIFEST_SET_MISMATCH');
+assert(JSON.stringify(manifestItems)===JSON.stringify([...exactItems].sort()),'SIGNATURE_ITEM_ASSET_MANIFEST_SET_MISMATCH');
+assert(signatureItemRuntime.includes("Object.freeze(['CAMERA','COMPASS','FIELD_NOTEBOOK','BINOCULARS','WATER_BOTTLE'])"),'SIGNATURE_ITEM_RUNTIME_EXACT_SET_MISMATCH');
+
+const projectionV02=read('INTEGRATION/CHARACTER_VISUAL_ID_PROJECTION_V02.md');
+for(const stale of ['MAGNIFIER','EXPLORER_HAT','ROUND_GLASSES','MINI_FIELD_BAG']){
+  assert(!projectionV02.includes(stale),'STALE_SIGNATURE_ITEM_REENTERED_PROJECTION_'+stale);
+}
+
+// CHARACTER_ONLY means no sensor variable may move world/UI layers.
+function cssRule(selector){
+  const start=styles.indexOf(selector+'{');
+  assert(start>=0,'CSS_RULE_MISSING_'+selector);
+  const end=styles.indexOf('}',start);
+  assert(end>start,'CSS_RULE_UNCLOSED_'+selector);
+  return styles.slice(start,end+1);
+}
+for(const selector of [
+  '#characterSetupView .cfFarWorld',
+  '#characterSetupView .cfDestinationHint',
+  '#characterSetupView .cfMidProps',
+  '#characterSetupView .cfForeground',
+  '#characterSetupView .cfFxLayer'
+]){
+  const rule=cssRule(selector);
+  assert(!rule.includes('var(--cf-x)')&&!rule.includes('var(--cf-y)'),'NON_CHARACTER_SENSOR_DEPTH_REGRESSION_'+selector);
+}
+const crewRule=cssRule('#characterSetupView .cfCrewAsset');
+assert(crewRule.includes('var(--cf-x)')&&crewRule.includes('var(--cf-y)'),'CHARACTER_SENSOR_DEPTH_BINDING_MISSING');
+assert(!styles.includes("url('./assets/character-formation/_references/"),'REFERENCE_MOCKUP_USED_AS_RUNTIME_ASSET');
+assert(!index.includes('assets/character-formation/_references/'),'REFERENCE_MOCKUP_USED_IN_RUNTIME_DOM');
+
+// A manifest path is not implementation proof. Missing binaries must stay truthfully PENDING.
+function flattenAssetPaths(node,out=[]){
+  if(typeof node==='string'){out.push(node);return out;}
+  if(node&&typeof node==='object')for(const value of Object.values(node))flattenAssetPaths(value,out);
+  return out;
+}
+const declaredAssetPaths=flattenAssetPaths(assetManifest.asset_files);
+const missingAssets=declaredAssetPaths.filter(p=>!fs.existsSync(p));
+const anchorState=String(assetManifest.current_runtime_anchor?.state||'');
+if(missingAssets.length){
+  assert(anchorState.includes('PENDING_BINARY_ASSETS'),'MISSING_BINARY_ASSETS_NOT_DECLARED_PENDING');
+  console.log('CHARACTER_FORMATION_ASSET_BINDING_PENDING',missingAssets.length,missingAssets.join(','));
+}else{
+  assert(!anchorState.includes('PENDING_BINARY_ASSETS'),'ASSET_STATE_STALE_PENDING_AFTER_BINARIES_READY');
+  console.log('CHARACTER_FORMATION_ASSET_BINDING_V01_PASS');
+}
