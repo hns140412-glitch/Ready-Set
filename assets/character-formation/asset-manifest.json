@@ -155,12 +155,12 @@
       "prep_foreground": "assets/character-formation/foreground/prep-foreground.svg"
     },
     "crew": {
-      "dubi": "assets/character-formation/crew/dubi-signature-item.png",
-      "lori": "assets/character-formation/crew/lori-signature-item.png",
-      "ink": "assets/character-formation/crew/ink-signature-item.png",
-      "nova": "assets/character-formation/crew/nova-signature-item.png",
-      "take": "assets/character-formation/crew/take-signature-item.png",
-      "zero": "assets/character-formation/crew/zero-signature-item.png"
+      "dubi": "assets/character-formation/crew/dubi-locked-visual-id.webp",
+      "lori": "assets/character-formation/crew/lori-locked-visual-id.webp",
+      "ink": "assets/character-formation/crew/ink-locked-visual-id.webp",
+      "nova": "assets/character-formation/crew/nova-locked-visual-id.webp",
+      "take": "assets/character-formation/crew/take-locked-visual-id.webp",
+      "zero": "assets/character-formation/crew/zero-locked-visual-id.webp"
     },
     "signature_items": {
       "CAMERA": "assets/character-formation/items/signature-camera.svg",
@@ -185,16 +185,9 @@
   },
   "current_runtime_anchor": {
     "id": "CF-A05-SIGNATURE-ITEM",
-    "state": "SCENE_ITEMS_TOOLS_BOUND__PENDING_BINARY_ASSETS_CORE6",
+    "state": "SCENE_ITEMS_TOOLS_CORE6_BOUND__PENDING_390x844_RUNTIME_PROOF",
     "proof_required": "390x844_RUNTIME_SCREENSHOT",
-    "pending_only": [
-      "crew.dubi",
-      "crew.lori",
-      "crew.ink",
-      "crew.nova",
-      "crew.take",
-      "crew.zero"
-    ]
+    "pending_only": []
   },
   "tool_contract": {
     "signature_item_rule": "EXACTLY_ONE_FROM_LOCKED_FIVE",
@@ -215,11 +208,71 @@
       "name": "두비 탐험 어드벤처 에셋 보드.png",
       "role": "ASSET_DECOMPOSITION_REFERENCE_ONLY",
       "warning": "FILENAMES_SHOWN_ON_BOARD_DO_NOT_PROVE_SEPARATE_BINARY_FILES_EXIST"
+    },
+    "core6_runtime_derivatives": {
+      "source_file_id": "file_0000000022f0823090aec9a5d4c42aa3",
+      "source_name": "가이드☆ 여섯 친구의 찬란한 여정.png",
+      "derivation": "CANONICAL_FRONT_TURNAROUND_DIRECT_EXTRACT",
+      "redraw": false,
+      "generated_lookalike": false,
+      "background_removal": "EDGE_CONNECTED_NEAR_WHITE_TO_ALPHA",
+      "normalized_format": "WEBP_RGBA",
+      "normalized_size": [
+        160,
+        160
+      ],
+      "source_rects_px": {
+        "dubi": [
+          8,
+          450,
+          64,
+          106
+        ],
+        "lori": [
+          264,
+          450,
+          57,
+          106
+        ],
+        "ink": [
+          517,
+          450,
+          61,
+          106
+        ],
+        "nova": [
+          775,
+          450,
+          68,
+          106
+        ],
+        "take": [
+          1034,
+          450,
+          68,
+          106
+        ],
+        "zero": [
+          1290,
+          450,
+          62,
+          106
+        ]
+      },
+      "sha256": {
+        "dubi": "3961351b3047773bf868657462e1043de7c02870c7eb2902e56dbb29dd811c6c",
+        "lori": "3b392cedc9d5e0a60054ce2f9806c65814b81f680cc5a1d6bce6eac92d584f1f",
+        "ink": "7f01124d83745e048fcc8370413186c7fcc6e08d9504c8b7abd496ce98ac4794",
+        "nova": "68fe7d6d7a5762ccd20608b795726ec454a1b89a9b7de79c378a3b874648deb0",
+        "take": "900e669f68609979b607b4539eeffe39f398d7f8485b8927fbf3a48cca31f2cf",
+        "zero": "0828070779b99985011f05ce00c7e7c161529fc464b97993feb5d83af6ac532d"
+      }
     }
   },
   "asset_quality": {
     "runtime_vector_assets": "INTERIM_APPROVED_PIPELINE",
-    "final_anchor_parity": "PENDING_HIGH_DENSITY_PNG_WEBP_AND_CORE6"
+    "final_anchor_parity": "PENDING_HIGH_DENSITY_SCENE_ITEM_TOOL_AND_390x844_RUNTIME_PROOF",
+    "core6_runtime_derivatives": "BOUND_DIRECT_FROM_LOCKED_CANONICAL_SOURCE"
   },
   "projection_scope": {
     "type": "CHARACTER_FORMATION_RUNTIME_PROJECTION",
