@@ -31,9 +31,6 @@
     function snapshot(){
       const p=profile();
       const s=p.characterDirection||{};
-      if(s.status==='ROUND_2'){
-        return {profile:p,status:'ROUND_2',options:(root.CharacterVisualIdDirection||root.ReadyCharacterDirection).secondRound(s.firstSelection),candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
-      }
       if(p.characterSignatureItem?.status==='ITEM_SELECTION'&&!p.characterGenerationJob){
         const itemApi=root.CharacterExplorationSignatureItem;
         return {
@@ -45,11 +42,14 @@
           master:p.characterMaster||null
         };
       }
+      if(s.status==='ROUND_1'&&p.characterSignatureItem?.status==='ITEM_SELECTED'){
+        return {profile:p,status:'ROUND_1',options:(root.CharacterVisualIdDirection||root.ReadyCharacterDirection).firstRound(),candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
+      }
+      if(s.status==='ROUND_2'){
+        return {profile:p,status:'ROUND_2',options:(root.CharacterVisualIdDirection||root.ReadyCharacterDirection).secondRound(s.firstSelection),candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
+      }
       if(s.status==='READY_FOR_CANDIDATE_GENERATION'&&p.characterGenerationJob){
         return {profile:p,status:s.status,options:[],candidates:s.candidates||[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
-      }
-      if(s.status==='ROUND_1'){
-        return {profile:p,status:'ROUND_1',options:(root.CharacterVisualIdDirection||root.ReadyCharacterDirection).firstRound(),candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
       }
       return {profile:p,status:'START',options:[],candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
     }
@@ -65,6 +65,7 @@
       const out=core.begin(p);
       save();
       view.render({profile:p,status:out.status,options:out.options,candidates:[]});
+      toast('탐험할 때 늘 함께할 시그니처 아이템 하나를 골라줘.');
       return {ok:true,...out};
     }
 
@@ -73,9 +74,8 @@
       try{
         const out=core.choose(p,directionId,{memberScope:memberScope(),visualId:visualId(p)});
         save();
-        if(out.status==='ROUND_2'||out.status==='ITEM_SELECTION'){
+        if(out.status==='ROUND_2'){
           view.render({profile:p,status:out.status,options:out.options||[],candidates:[]});
-          if(out.status==='ITEM_SELECTION')toast('마지막으로 탐험 아이템 하나만 골라줘.');
         }else{
           view.render({profile:p,status:out.status,options:[],candidates:p.characterDirection?.candidates||[]});
         }
@@ -89,10 +89,10 @@
     function chooseItem(itemId){
       const p=profile();
       try{
-        const out=core.chooseItem(p,itemId,{memberScope:memberScope(),visualId:visualId(p)});
+        const out=core.chooseItem(p,itemId);
         save();
-        view.render({profile:p,status:out.status,options:[],candidates:p.characterDirection?.candidates||[]});
-        toast('탐험 아이템까지 정했어요. 이제 세 가지 모습을 만들 수 있어요.');
+        view.render({profile:p,status:out.status,options:out.options||[],candidates:[]});
+        toast('좋아! 이제 첫 번째 탐험 방향을 골라줘.');
         return {ok:true,...out};
       }catch(err){
         toast('탐험 아이템을 다시 골라 주세요.');
