@@ -25,17 +25,24 @@ assert(app.includes('characterSetupRuntime.begin()'),'CHARACTER_SETUP_BEGIN_NOT_
 assert(app.includes('characterSetupRuntime.choose(direction.dataset.characterDirection)'),'CHARACTER_SETUP_CHOICE_NOT_WIRED');
 assert(app.includes("nav('character-setup')"),'CHARACTER_SETUP_ENTRY_NAV_MISSING');
 
-assert(controller.includes("status:'ROUND_2'"),'ROUND_2_UI_STATE_MISSING');
 assert(controller.includes("status:'ITEM_SELECTION'"),'SIGNATURE_ITEM_UI_STATE_MISSING');
+assert(controller.includes("status:'ROUND_2'"),'ROUND_2_UI_STATE_MISSING');
 assert(controller.includes('chooseItem'),'SIGNATURE_ITEM_CONTROLLER_MISSING');
 assert(app.includes('data-character-item'),'SIGNATURE_ITEM_UI_ACTION_MISSING');
 assert(controller.includes('SYSTEM_AUTO_CONTRAST')===false,'CONTROLLER_MUST_NOT_INVENT_AUTO_CONTRAST');
 assert(core.includes('p.characterDirection.candidates'),'CORE_MUST_OWN_CANDIDATE_DIRECTION_RESULT');
 assert(core.includes("status:'ITEM_SELECTION'"),'CORE_SIGNATURE_ITEM_STAGE_MISSING');
+assert(core.indexOf("status:'ITEM_SELECTION'")<core.indexOf("status:'ROUND_1'"),'SIGNATURE_ITEM_MUST_PRECEDE_DIRECTION_ROUND_1');
+assert(signatureItemRuntime.includes("CAMERA"),'SIGNATURE_CAMERA_MISSING');
+assert(signatureItemRuntime.includes("COMPASS"),'SIGNATURE_COMPASS_MISSING');
+assert(signatureItemRuntime.includes("FIELD_NOTEBOOK"),'SIGNATURE_NOTEBOOK_MISSING');
+assert(signatureItemRuntime.includes("BINOCULARS"),'SIGNATURE_BINOCULARS_MISSING');
+assert(signatureItemRuntime.includes("WATER_BOTTLE"),'SIGNATURE_WATER_BOTTLE_MISSING');
 assert(signatureItemRuntime.includes('EXACTLY_ONE_SIGNATURE_ITEM'),'SIGNATURE_ITEM_ONE_ONLY_RULE_MISSING');
 assert(signatureItemRuntime.includes('SAME_ITEM_ACROSS_A_B_C'),'SIGNATURE_ITEM_CANDIDATE_RULE_MISSING');
 assert(signatureItemServer.includes('normalizeSignatureItem'),'SIGNATURE_ITEM_SERVER_VALIDATION_MISSING');
 assert(view.includes('두 번만 직접 고르면 끝이에요.'),'TWO_SELECTION_COPY_MISSING');
+assert(view.includes('시그니처 아이템'),'SIGNATURE_ITEM_FIRST_COPY_MISSING');
 assert(view.includes('시스템이 만든 대비 방향'),'AUTO_CONTRAST_PROVENANCE_COPY_MISSING');
 assert(view.includes('세 후보 모두 같은 나'),'SAME_CHILD_COMPARISON_COPY_MISSING');
 
