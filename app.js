@@ -50,6 +50,7 @@ const rebuildCharacterMaster=globalThis.CharacterVisualIdMaster||globalThis.Read
 const rebuildCharacterDerivative=globalThis.CharacterVisualIdDerivative||null;
 const rebuildCharacterSetupView=globalThis.CharacterVisualIdSetupView||globalThis.ReadyCharacterSetupView||null;
 const rebuildCharacterSetupController=globalThis.CharacterVisualIdSetupController||globalThis.ReadyCharacterSetupController||null;
+const rebuildCharacterFormationJourney=globalThis.CharacterFormationJourneyRuntime||null;
 const rebuildSettingsController=globalThis.ReadyRebuildSettingsController||null;
 const rebuildAuthSyncView=globalThis.ReadyRebuildAuthSyncView||null;
 const rebuildAuthSyncController=globalThis.ReadyRebuildAuthSyncController||null;
@@ -60,7 +61,7 @@ const rebuildAudioService=globalThis.ReadyRebuildAudioService||null;
 const rebuildAccessibility=globalThis.ReadyRebuildAccessibility||null;
 const rebuildAppBootstrapController=globalThis.ReadyRebuildAppBootstrapController||null;
 const rebuildShareCard=globalThis.ReadyRebuildShareCard||null;
-if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildMissionController||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildLearnerContext||!rebuildCharacterDirection||!rebuildCharacterCore||!rebuildCharacterRemoteAdapter||!rebuildCharacterMaster||!rebuildCharacterDerivative||!rebuildCharacterSetupView||!rebuildCharacterSetupController||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildPlannerScreenController||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
+if(!rebuildSession||!rebuildSessionService||!rebuildSessionCompletionController||!rebuildPlannerProjection||!rebuildPlannerView||!rebuildNavigation||!rebuildPersistence||!rebuildMissionView||!rebuildMissionController||!rebuildFocusView||!rebuildMissionFocusController||!rebuildPlannerAdminView||!rebuildPlannerAdminController||!rebuildPlannerQueryController||!rebuildParentIntakeView||!rebuildCaptureService||!rebuildCaptureOrchestrator||!rebuildCaptureIntakeController||!rebuildCaptureDraft||!rebuildCaptureView||!rebuildAssignmentService||!rebuildAssignmentIntakeController||!rebuildRecordingService||!rebuildRecordingOrchestrator||!rebuildRecordingController||!rebuildRecordingView||!rebuildResultHistoryView||!rebuildResultHistoryController||!rebuildProfileSettingsView||!rebuildProfileController||!rebuildLearnerContext||!rebuildCharacterDirection||!rebuildCharacterCore||!rebuildCharacterRemoteAdapter||!rebuildCharacterMaster||!rebuildCharacterDerivative||!rebuildCharacterSetupView||!rebuildCharacterSetupController||!rebuildCharacterFormationJourney||!rebuildSettingsController||!rebuildAuthSyncView||!rebuildAuthSyncController||!rebuildHomeView||!rebuildPlannerScreenView||!rebuildPlannerScreenController||!rebuildAudioService||!rebuildAccessibility||!rebuildAppBootstrapController||!rebuildShareCard){
   throw new Error('READY_REBUILD_RUNTIME_DEPENDENCY_MISSING');
 }
 
@@ -139,6 +140,7 @@ function toast(msg){
   clearTimeout(t._tm);t._tm=setTimeout(()=>t.hidden=true,2400);
 }
 function familySession(){return window.ReadyFamilySession?.current?.()||{authenticated:false,role:'CHILD'}}
+let characterFormationJourneyRuntime=null;
 function requireParentUi(){
   const gate=window.ReadyFamilySession?.requireRole?.('PARENT');
   if(gate?.ok)return true;
@@ -166,7 +168,11 @@ const appNavigation=rebuildNavigation.create({
     planner:()=>renderPlanner(),
     'planner-admin':()=>plannerAdminRuntime.render(),
     profile:()=>profileRuntime.renderProfile(),
-    'character-setup':()=>characterSetupRuntime.render(),
+    'formation-journey':()=>characterFormationJourneyRuntime?.render?.(),
+    'character-setup':()=>{
+      characterFormationSceneRuntime?.mount?.();
+      characterSetupRuntime.render();
+    },
     settings:()=>settingsRuntime.renderSettings(),
     result:()=>resultHistoryRuntime.renderResult()
   }
@@ -622,15 +628,24 @@ const characterSetupRuntime=rebuildCharacterSetupController.create({
   masterApi:characterMasterApi,
   derivativeApi:rebuildCharacterDerivative
 });
+characterFormationJourneyRuntime=rebuildCharacterFormationJourney.create({
+  query:$,
+  getState:()=>state,
+  save,
+  nav,
+  toast,
+  assetRegistry:characterFormationAssetRegistry
+});
 characterFormationAssetRegistry?.load?.().then(()=>{
+  characterFormationAssetRegistry?.bind?.($('#formationJourneyView'));
   characterFormationAssetRegistry?.bind?.($('#characterSetupView'));
+  characterFormationJourneyRuntime?.render?.();
   characterFormationSceneRuntime?.render?.($('#characterSetupView')?.dataset.cfStatus||'START');
   characterSetupRuntime?.render?.();
 });
 $('#openCharacterSetupBtn').onclick=()=>{
-  if(!state.profile?.sourcePhoto?.source_hash){toast('먼저 사진을 등록해 주세요.');return;}
-  nav('character-setup');
-  characterFormationSceneRuntime?.mount?.();
+  nav('formation-journey');
+  characterFormationJourneyRuntime?.render?.();
 };
 $('#beginCharacterSetupBtn').onclick=()=>{
   const result=characterSetupRuntime.begin();
@@ -705,7 +720,8 @@ $('#characterSetupView').addEventListener('click',async e=>{
       result=await characterSetupRuntime.lockMaster();
       if(result?.ok){
         toast('내 캐릭터 Visual ID가 확정됐어요.');
-        characterSetupRuntime.render();
+        nav('formation-journey');
+        characterFormationJourneyRuntime?.syncAfterCharacterLock?.();
       }
     }else if(derivatives){
       if(status)status.textContent='프로필/카드용 이미지를 준비하는 중…';
