@@ -18,8 +18,11 @@ assert(index.includes('id="characterDirectionGrid"'),'CHARACTER_DIRECTION_GRID_M
 assert(index.includes('character-setup-view-runtime.js'),'CHARACTER_SETUP_VIEW_NOT_LOADED');
 assert(index.includes('character-setup-controller-runtime.js'),'CHARACTER_SETUP_CONTROLLER_NOT_LOADED');
 assert(index.includes('character-signature-item-runtime.js'),'SIGNATURE_ITEM_RUNTIME_NOT_LOADED');
+assert(index.includes('character-formation-asset-runtime.js'),'CHARACTER_FORMATION_ASSET_RUNTIME_NOT_LOADED');
 assert(index.includes('character-formation-scene-runtime.js'),'CHARACTER_FORMATION_SCENE_RUNTIME_NOT_LOADED');
+assert(index.indexOf('character-formation-asset-runtime.js')<index.indexOf('character-formation-scene-runtime.js'),'CHARACTER_ASSET_RUNTIME_LOAD_ORDER_INVALID');
 assert(index.includes('id="cfScene"'),'CHARACTER_FORMATION_SCENE_MISSING');
+assert(index.includes('id="cfCommonTools"'),'CHARACTER_COMMON_TOOL_LAYER_MISSING');
 assert(index.includes('id="cfCrewAsset"'),'CHARACTER_FORMATION_CREW_ASSET_SLOT_MISSING');
 assert(index.indexOf('character-setup-view-runtime.js')<index.indexOf('app.js'),'CHARACTER_SETUP_VIEW_LOAD_ORDER_INVALID');
 assert(index.indexOf('character-setup-controller-runtime.js')<index.indexOf('app.js'),'CHARACTER_SETUP_CONTROLLER_LOAD_ORDER_INVALID');
@@ -28,6 +31,9 @@ assert(app.includes("'character-setup':()=>characterSetupRuntime.render()"),'CHA
 assert(app.includes('characterSetupRuntime.begin()'),'CHARACTER_SETUP_BEGIN_NOT_WIRED');
 assert(app.includes('characterSetupRuntime.choose(direction.dataset.characterDirection)'),'CHARACTER_SETUP_CHOICE_NOT_WIRED');
 assert(app.includes("nav('character-setup')"),'CHARACTER_SETUP_ENTRY_NAV_MISSING');
+assert(app.includes('CharacterFormationAssetRuntime?.create'),'CHARACTER_ASSET_REGISTRY_BOOTSTRAP_MISSING');
+assert(app.includes('assetRegistry:characterFormationAssetRegistry'),'CHARACTER_ASSET_REGISTRY_NOT_INJECTED');
+assert(app.includes('characterFormationAssetRegistry?.load?.()'),'CHARACTER_ASSET_MANIFEST_LOAD_MISSING');
 
 assert(controller.includes("status:'ITEM_SELECTION'"),'SIGNATURE_ITEM_UI_STATE_MISSING');
 assert(controller.includes("status:'ROUND_2'"),'ROUND_2_UI_STATE_MISSING');
@@ -131,6 +137,7 @@ assert(masterSheetFn.includes('MASTER_ASSETS_READY'),'CHARACTER_MASTER_SHEET_REA
 assert(controller.includes('generateMasterSheet'),'CHARACTER_MASTER_SHEET_CONTROLLER_MISSING');
 assert(app.includes('generateCharacterMasterSheetBtn'),'CHARACTER_MASTER_SHEET_UI_ACTION_MISSING');
 
+const assetRuntime=read('src/identity/character-formation-asset-runtime.js');
 const sceneRuntime=read('src/identity/character-formation-scene-runtime.js');
 const assetManifest=JSON.parse(read('assets/character-formation/asset-manifest.json'));
 assert(sceneRuntime.includes('DeviceOrientationEvent'),'CHARACTER_SENSOR_DEPTH_RUNTIME_MISSING');
@@ -138,8 +145,16 @@ assert(sceneRuntime.includes('prefers-reduced-motion'),'CHARACTER_REDUCED_MOTION
 assert(assetManifest.status==='HARD_LOCK','CHARACTER_ASSET_MANIFEST_NOT_HARD_LOCKED');
 assert(assetManifest.runtime_rule==='DECOMPOSED_ASSETS_ONLY_NO_FULL_SCREEN_MOCKUP_CROP','FULL_SCREEN_MOCKUP_CROP_GUARD_MISSING');
 assert(assetManifest.effect_contract?.sensor_depth_default==='CHARACTER_ONLY','CHARACTER_SENSOR_DEPTH_MUST_BE_CHARACTER_ONLY');
-assert(styles.includes('prep-room-base.png'),'DECOMPOSED_BACKGROUND_BINDING_MISSING');
-assert(view.includes('signature-camera.png'),'SIGNATURE_ITEM_ASSET_BINDING_MISSING');
+assert(assetRuntime.includes('asset-manifest.json'),'CHARACTER_ASSET_RUNTIME_MANIFEST_SOURCE_MISSING');
+assert(assetRuntime.includes('data-cf-asset-group'),'CHARACTER_ASSET_RUNTIME_BINDING_PROTOCOL_MISSING');
+assert(index.includes('data-cf-asset-group="background" data-cf-asset-key="prep_room_base"'),'DECOMPOSED_BACKGROUND_BINDING_MISSING');
+assert(view.includes('data-cf-asset-group="signature_items"'),'SIGNATURE_ITEM_ASSET_BINDING_MISSING');
+assert(!view.includes('ITEM_ASSETS'),'SIGNATURE_ITEM_HARDCODED_ASSET_MAP_REGRESSION');
+assert(!sceneRuntime.includes('./assets/character-formation/crew/'),'CREW_HARDCODED_ASSET_PATH_REGRESSION');
+assert(!styles.includes("url('./assets/character-formation/background/prep-room-base.png')"),'BACKGROUND_HARDCODED_ASSET_PATH_REGRESSION');
+assert(!styles.includes("url('./assets/character-formation/foreground/mid-props.png')"),'MID_PROPS_HARDCODED_ASSET_PATH_REGRESSION');
+assert(!styles.includes("url('./assets/character-formation/foreground/prep-foreground.png')"),'FOREGROUND_HARDCODED_ASSET_PATH_REGRESSION');
+assert(!styles.includes("url('./assets/character-formation/fx/warm-glow.png')"),'FX_HARDCODED_ASSET_PATH_REGRESSION');
 
 // Exact current identity/item contracts. Stale catalogs must not silently re-enter runtime.
 const exactCrew=['dubi','lori','ink','nova','take','zero'];
@@ -154,6 +169,10 @@ const commonTools=assetManifest.asset_groups?.common_tools||[];
 assert(commonTools.length>=5,'COMMON_TOOL_POOL_TOO_THIN');
 const signatureGroup=new Set(assetManifest.asset_groups?.signature_items||[]);
 assert(commonTools.every(x=>!signatureGroup.has(x)),'COMMON_TOOL_AND_SIGNATURE_GROUP_OVERLAP');
+const commonToolFiles=Object.keys(assetManifest.asset_files?.common_tools||{});
+assert(commonToolFiles.length>=8,'COMMON_TOOL_ASSET_FILE_SLOTS_INCOMPLETE');
+assert(index.includes('data-cf-asset-group="common_tools"'),'COMMON_TOOL_RUNTIME_CONSUMER_MISSING');
+assert(assetManifest.tool_contract?.binary_truth==='MANIFEST_ENTRY_DOES_NOT_PROVE_BINARY_EXISTS','BINARY_TRUTH_CONTRACT_MISSING');
 assert(signatureItemRuntime.includes("Object.freeze(['CAMERA','COMPASS','FIELD_NOTEBOOK','BINOCULARS','WATER_BOTTLE'])"),'SIGNATURE_ITEM_RUNTIME_EXACT_SET_MISMATCH');
 
 const projectionV02=read('INTEGRATION/CHARACTER_VISUAL_ID_PROJECTION_V02.md');
