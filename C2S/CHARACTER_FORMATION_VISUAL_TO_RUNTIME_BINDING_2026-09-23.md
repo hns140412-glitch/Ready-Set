@@ -1,6 +1,6 @@
 # CHARACTER FORMATION — APPROVED VISUAL → RUNTIME BINDING — 2026-09-23
 
-Status: ACTIVE / IMPLEMENTATION AUTHORITY
+Status: HARD_LOCK / IMPLEMENTATION AUTHORITY
 Branch: `taky/character-visual-id-core-2026-09-22`
 
 ## 1. Why this exists
@@ -119,3 +119,23 @@ Build in this order:
 6. continue Direction Round 1/2 only after the shell is stable.
 
 USER != DEBUGGER.
+
+
+## 8. HARD LOCK
+
+`APPROVED_VISUAL_TO_RUNTIME_BINDING = HARD_LOCK`
+
+This method may be reopened only by a later explicit user instruction.
+
+Locked execution:
+`APPROVED ANCHOR → DECOMPOSED HIGH-DENSITY ASSETS → assets/ → LIVE DOM/CSS → MOTION/DEPTH → 390×844 RUNTIME CAPTURE → ANCHOR COMPARISON → CORRECT DRIFT`.
+
+The following are regression failures:
+- re-generating a replacement mockup instead of implementing an accepted anchor;
+- full-screen crop/background substitution;
+- generic card/form UI replacing approved visual hierarchy;
+- missing Core 6 canonical asset binding;
+- showing a mockup instead of runtime proof;
+- declaring UI complete without runtime screenshot comparison.
+
+This lock inherits TAKY top-level authority and applies to subsequent Character Formation screens unless explicitly reopened.
