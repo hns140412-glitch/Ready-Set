@@ -281,12 +281,19 @@
 
   <section class="view cfView" id="characterSetupView" data-view="character-setup" data-cf-status="START">
     <div class="cfScene" id="cfScene" aria-hidden="true">
-      <div class="cfLayer cfFarWorld"></div>
-      <div class="cfLayer cfDestinationHint"></div>
-      <div class="cfLayer cfMidProps"></div>
-      <img class="cfCrewAsset" id="cfCrewAsset" alt="">
-      <div class="cfLayer cfForeground"></div>
-      <div class="cfLayer cfFxLayer"></div>
+      <div class="cfLayer cfFarWorld" data-cf-asset-group="background" data-cf-asset-key="prep_room_base"></div>
+      <div class="cfLayer cfDestinationHint" data-cf-asset-group="background" data-cf-asset-key="island_hint"></div>
+      <div class="cfLayer cfMidProps" data-cf-asset-group="foreground" data-cf-asset-key="mid_props"></div>
+      <div class="cfCommonTools" id="cfCommonTools">
+        <img class="cfTool cfToolMap" data-cf-asset-group="common_tools" data-cf-asset-key="map" alt="">
+        <img class="cfTool cfToolLantern" data-cf-asset-group="common_tools" data-cf-asset-key="lantern_prop" alt="">
+        <img class="cfTool cfToolBooks" data-cf-asset-group="common_tools" data-cf-asset-key="book_stack" alt="">
+        <img class="cfTool cfToolSuitcase" data-cf-asset-group="common_tools" data-cf-asset-key="open_suitcase" alt="">
+        <img class="cfTool cfToolPostcard" data-cf-asset-group="common_tools" data-cf-asset-key="island_postcard" alt="">
+      </div>
+      <img class="cfCrewAsset" id="cfCrewAsset" data-cf-asset-group="crew" data-cf-asset-key="dubi" alt="">
+      <div class="cfLayer cfForeground" data-cf-asset-group="foreground" data-cf-asset-key="prep_foreground"></div>
+      <div class="cfLayer cfFxLayer" data-cf-asset-group="fx" data-cf-asset-key="warm_glow"></div>
     </div>
     <header class="safe pageHeader cfHeader"><button data-nav="profile" aria-label="뒤로">←</button><div><span class="kicker">CHARACTER FORMATION</span><h1>여행 준비</h1></div><span id="characterSetupStep" class="characterStepBadge">START</span></header>
     <main class="safe scroll characterSetupMain cfCharacterMain">
@@ -393,6 +400,7 @@
 <script src="./src/identity/character-master-runtime.js"></script>
 <script src="./src/identity/character-derivative-runtime.js"></script>
 <script src="./src/identity/character-setup-controller-runtime.js"></script>
+<script src="./src/identity/character-formation-asset-runtime.js"></script>
 <script src="./src/identity/character-formation-scene-runtime.js"></script>
 <script src="./src/identity/character-setup-view-runtime.js"></script>
 <script src="./src/identity/character-generation-job-runtime.js"></script>
