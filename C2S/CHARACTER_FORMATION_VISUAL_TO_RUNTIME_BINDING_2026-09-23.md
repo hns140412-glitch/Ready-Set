@@ -139,3 +139,42 @@ The following are regression failures:
 - declaring UI complete without runtime screenshot comparison.
 
 This lock inherits TAKY top-level authority and applies to subsequent Character Formation screens unless explicitly reopened.
+
+
+## 9. Tool / prop separation
+
+Do not collapse all exploration objects into the Signature Item contract.
+
+### Signature Item
+User selection contract.
+Exactly one from the locked five:
+- 카메라
+- 나침반
+- 탐험 노트
+- 쌍안경
+- 물병
+
+### Common exploration tools
+Scene/context assets, not part of the Signature Item choice:
+- map
+- compass prop
+- camera prop
+- lantern
+- book stack
+- open suitcase
+- travel tags
+- island photo/postcard
+
+These may appear in the preparation space to preserve density, travel context and interaction affordances.
+
+### Scene props
+Non-functional environmental support:
+- foreground leaves
+- shelf/wall depth
+- desk base
+
+Rule:
+`SIGNATURE_ITEM_SET != TOTAL_TOOL_INVENTORY`
+
+Asset-board labels are decomposition references only.
+A filename printed inside a board image does not prove that a standalone binary exists.
