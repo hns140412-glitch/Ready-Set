@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" role="img" aria-hidden="true">
+<defs>
+  <linearGradient id="gWarm" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f7d79a"/><stop offset="1" stop-color="#b97548"/></linearGradient>
+  <linearGradient id="gBlue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9dd7ef"/><stop offset="1" stop-color="#315b8d"/></linearGradient>
+  <linearGradient id="gLeather" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a46d45"/><stop offset="1" stop-color="#5b3726"/></linearGradient>
+  <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#2e1d14" flood-opacity=".24"/></filter>
+  <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="18"/></filter>
+</defs>
+<rect width="390" height="844" fill="#3b2b22"/>
+<defs><linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#8e684d"/><stop offset="1" stop-color="#51392c"/></linearGradient><radialGradient id="sun" cx=".68" cy=".18" r=".6"><stop stop-color="#ffe7a6" stop-opacity=".78"/><stop offset="1" stop-color="#ffe7a6" stop-opacity="0"/></radialGradient></defs>
+<rect width="390" height="844" fill="url(#wall)"/>
+<rect x="20" y="56" width="350" height="650" rx="30" fill="#72513d" opacity=".55"/>
+<rect x="44" y="86" width="128" height="250" rx="14" fill="#3d2c26" stroke="#a98361" stroke-width="8"/>
+<rect x="218" y="78" width="132" height="250" rx="18" fill="#d9edf1" stroke="#7a5139" stroke-width="12"/>
+<line x1="284" y1="82" x2="284" y2="324" stroke="#7a5139" stroke-width="10"/>
+<line x1="222" y1="200" x2="346" y2="200" stroke="#7a5139" stroke-width="10"/>
+<rect x="46" y="358" width="298" height="28" rx="8" fill="#4a3327"/>
+<rect x="50" y="430" width="290" height="26" rx="8" fill="#4a3327"/>
+<rect x="58" y="384" width="42" height="44" rx="5" fill="#b97a4d"/><rect x="106" y="392" width="52" height="36" rx="5" fill="#d2a66b"/>
+<circle cx="312" cy="401" r="24" fill="#7f9f6a"/><path d="M307 426v-45M292 394l15 17M325 390l-18 21" stroke="#36523f" stroke-width="5"/>
+<rect x="28" y="640" width="334" height="120" rx="16" fill="#6b4935"/><path d="M38 650h314" stroke="#a57855" stroke-width="7"/>
+<circle cx="98" cy="603" r="42" fill="#c69b63" opacity=".7"/><circle cx="98" cy="603" r="30" fill="#5f7c91"/>
+<rect width="390" height="844" fill="url(#sun)"/>
+</svg>
