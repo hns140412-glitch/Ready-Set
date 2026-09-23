@@ -220,5 +220,13 @@
   "asset_quality": {
     "runtime_vector_assets": "INTERIM_APPROVED_PIPELINE",
     "final_anchor_parity": "PENDING_HIGH_DENSITY_PNG_WEBP_AND_CORE6"
+  },
+  "projection_scope": {
+    "type": "CHARACTER_FORMATION_RUNTIME_PROJECTION",
+    "canonical_redefinition": false,
+    "signature_items_scope": "USER_CHOICE_ONLY",
+    "common_tools_scope": "CURRENT_RUNTIME_VISIBLE_SUBSET",
+    "inherits_family_confirmed_state": true,
+    "warning": "DO_NOT_TREAT_LOCAL_ASSET_SET_AS_TOTAL_WORLD_OR_CHARACTER_TOOL_INVENTORY"
   }
 }
