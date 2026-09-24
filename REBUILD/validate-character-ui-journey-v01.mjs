@@ -289,3 +289,24 @@ if(missingAssets.length){
   assert(!anchorState.includes('PENDING_BINARY_ASSETS'),'ASSET_STATE_STALE_PENDING_AFTER_BINARIES_READY');
   console.log('CHARACTER_FORMATION_ASSET_BINDING_V01_PASS');
 }
+
+
+// Responsive contract: mobile source + tablet background extension.
+assert(assetManifest.responsive_contract?.mode==='MOBILE_SOURCE_TABLET_BACKGROUND_EXTENSION','CHARACTER_FORMATION_RESPONSIVE_MODE_REGRESSION');
+assert(assetManifest.responsive_contract?.source_layout?.width===390&&assetManifest.responsive_contract?.source_layout?.height===844,'CHARACTER_FORMATION_MOBILE_SOURCE_SIZE_REGRESSION');
+assert(assetManifest.responsive_contract?.tablet_behavior==='PRESERVE_CORE_UI_BLOCK_AND_TOUCH_FLOW__EXPAND_WORLD_BACKGROUND','TABLET_MUST_EXTEND_BACKGROUND_NOT_REDEFINE_UI');
+assert(assetManifest.responsive_contract?.live_ui_max_width_px===430,'TABLET_LIVE_UI_WIDTH_CONTRACT_REGRESSION');
+assert(assetManifest.responsive_contract?.forbidden_changes?.includes('NEW_TABLET_INFORMATION_ARCHITECTURE'),'TABLET_NEW_IA_GUARD_MISSING');
+assert(styles.includes('Character Formation responsive contract: MOBILE_SOURCE_TABLET_BACKGROUND_EXTENSION'),'RESPONSIVE_CSS_CONTRACT_MISSING');
+assert(styles.includes('width:min(430px,calc(100vw - 40px))'),'TABLET_PHONE_SCALE_UI_BLOCK_MISSING');
+
+const poseBank=assetManifest.asset_sources?.core6_pose_action_source_bank||{};
+assert(poseBank.canonical_source_file_id==='file_0000000022f0823090aec9a5d4c42aa3','POSE_BANK_CANONICAL_LINEAGE_REGRESSION');
+assert(poseBank.identity_rule==='CORE6_VISUAL_ID_REMAINS_HARD_LOCK','POSE_BANK_MUST_NOT_REDEFINE_VISUAL_ID');
+assert(poseBank.runtime_binding_state==='SOURCE_REFERENCE_ONLY_NOT_YET_RUNTIME_BINARY','POSE_BANK_SOURCE_MUST_NOT_PRETEND_RUNTIME_BOUND');
+assert((poseBank.source_sets?.standing_action_set||[]).length===6,'POSE_BANK_STANDING_SET_INCOMPLETE');
+assert((poseBank.source_sets?.seated_context_set||[]).length===6,'POSE_BANK_SEATED_SET_INCOMPLETE');
+for(const set of Object.values(poseBank.source_sets||{})){
+  for(const x of set)assert(exactCrew.includes(x.id),'POSE_BANK_UNKNOWN_CORE6_'+x.id);
+}
+console.log('CHARACTER_FORMATION_RESPONSIVE_AND_POSE_SOURCE_BANK_PASS');
