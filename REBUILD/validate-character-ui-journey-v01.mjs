@@ -360,3 +360,12 @@ assert(journey.includes('bindPoseBankImages'),'JOURNEY_POSE_BANK_BINDING_MISSING
 assert(journey.includes("stageName==='COMPANION_NAME'?'seated':'standing'"),'JOURNEY_STAGE_POSE_MAPPING_MISSING');
 assert(sceneRuntime.includes("CharacterFormationPoseBank?.bindImage?.(crewImg,id,'seated')"),'PREPARATION_SCENE_SEATED_POSE_BINDING_MISSING');
 console.log('CHARACTER_FORMATION_POSE_BANK_CONSUMER_CONTRACT_PASS');
+
+
+// Sole-open closure contract: transport gap must stay isolated.
+assert(assetManifest.current_runtime_anchor?.pending_only?.length===1,'CHARACTER_FORMATION_PENDING_OPEN_COUNT_REGRESSION');
+assert(assetManifest.current_runtime_anchor.pending_only[0]==='POSE_BINARY_MATERIALIZATION','CHARACTER_FORMATION_SOLE_OPEN_MUST_BE_POSE_BINARY_MATERIALIZATION');
+assert(assetManifest.asset_sources?.core6_pose_action_source_bank?.consumer_binding_state==='CONSUMER_READY_WITH_CANONICAL_FALLBACK','POSE_CONSUMER_READY_STATE_MISSING');
+assert(assetManifest.asset_sources?.core6_pose_action_source_bank?.user_action_required===false,'USER_MUST_NOT_BECOME_POSE_BINARY_DEBUGGER');
+assert(assetManifest.asset_sources?.core6_pose_action_source_bank?.fallback==='asset_files.crew canonical direct extracts','POSE_CANONICAL_FALLBACK_MISSING');
+console.log('CHARACTER_FORMATION_SOLE_OPEN_ISOLATION_PASS');
