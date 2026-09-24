@@ -362,10 +362,11 @@ assert(sceneRuntime.includes("CharacterFormationPoseBank?.bindImage?.(crewImg,id
 console.log('CHARACTER_FORMATION_POSE_BANK_CONSUMER_CONTRACT_PASS');
 
 
-// Pose binary materialization is closed. Final proof is visual/runtime only.
+// Final Character Formation completion contract.
 const poseAsset=assetManifest.asset_sources?.core6_pose_action_source_bank?.runtime_asset||{};
-assert(assetManifest.current_runtime_anchor?.pending_only?.length===1,'CHARACTER_FORMATION_PENDING_OPEN_COUNT_REGRESSION');
-assert(assetManifest.current_runtime_anchor.pending_only[0]==='POSE_RUNTIME_VISUAL_PARITY','CHARACTER_FORMATION_FINAL_OPEN_MUST_BE_POSE_RUNTIME_VISUAL_PARITY');
+assert(assetManifest.current_runtime_anchor?.state==='CHARACTER_FORMATION_RUNTIME_COMPLETE','CHARACTER_FORMATION_FINAL_STATE_REGRESSION');
+assert(assetManifest.current_runtime_anchor?.proof_required==='COMPLETE','CHARACTER_FORMATION_FINAL_PROOF_STATE_REGRESSION');
+assert(Array.isArray(assetManifest.current_runtime_anchor?.pending_only)&&assetManifest.current_runtime_anchor.pending_only.length===0,'CHARACTER_FORMATION_PENDING_OPEN_MUST_BE_EMPTY');
 assert(assetManifest.asset_sources?.core6_pose_action_source_bank?.runtime_binding_state==='RUNTIME_SPRITE_BOUND_V1','POSE_RUNTIME_SPRITE_BINDING_STATE_MISSING');
 assert(assetManifest.asset_sources?.core6_pose_action_source_bank?.consumer_binding_state==='CONSUMER_BOUND_TO_REPO_SPRITE_WITH_CANONICAL_FALLBACK','POSE_CONSUMER_SPRITE_STATE_MISSING');
 assert(assetManifest.asset_sources?.core6_pose_action_source_bank?.user_action_required===false,'USER_MUST_NOT_BECOME_POSE_BINARY_DEBUGGER');
@@ -376,4 +377,9 @@ const poseSpriteHash=crypto.createHash('sha256').update(fs.readFileSync(poseAsse
 assert(poseSpriteHash===poseAsset.sha256,'POSE_SPRITE_BINARY_HASH_MISMATCH');
 assert(poseBankRuntime.includes("SPRITE_URL='./assets/character-formation/crew/core6-pose-sprite-64.webp'"),'POSE_RUNTIME_SPRITE_URL_MISSING');
 assert(poseBankRuntime.includes("backgroundSize='600% 200%'"),'POSE_RUNTIME_SPRITE_GEOMETRY_BINDING_MISSING');
-console.log('CHARACTER_FORMATION_POSE_BINARY_MATERIALIZATION_PASS',poseSpriteHash);
+assert(assetManifest.asset_quality?.pose_action_runtime==='REPO_SPRITE_BOUND_V1__FINAL_VISUAL_PARITY_PASS','POSE_FINAL_VISUAL_PARITY_NOT_LOCKED');
+assert(assetManifest.asset_quality?.final_anchor_parity==='RESPONSIVE_POSE_BOUND_RUNTIME_VISUAL_PARITY_PASS','FINAL_ANCHOR_PARITY_NOT_LOCKED');
+assert(assetManifest.final_runtime_proof?.pose_dom_binding==='PASS','POSE_DOM_PROOF_MISSING');
+assert(assetManifest.final_runtime_proof?.responsive_geometry==='PASS','RESPONSIVE_GEOMETRY_PROOF_MISSING');
+assert(assetManifest.final_runtime_proof?.visual_review==='PASS','FINAL_VISUAL_REVIEW_PROOF_MISSING');
+console.log('CHARACTER_FORMATION_FINAL_COMPLETION_PASS',poseSpriteHash);
