@@ -71,6 +71,7 @@
         planner:planner(),
         activeSession:state.activeSession,
         selectedTodoIds:state.selectedTodoIds,
+        eventTasks:state.eventTasks,
         sessionId:`s_${ts}`,
         now:ts,
         targetMin:state.targetMin,
@@ -78,13 +79,14 @@
       });
       if(!started.ok){
         if(started.reason==='SESSION_ALREADY_ACTIVE'){toast('이미 진행 중인 작전이 있어요. 먼저 진행 중인 작전으로 돌아가 주세요.');nav('focus');return started;}
-        if(started.reason==='NO_SELECTED_TODO'){toast('먼저 Planner가 준비한 오늘의 탐험을 선택해 주세요.');return started;}
+        if(started.reason==='NO_SELECTED_TASK'){toast('Planner 탐험을 고르거나 이벤트 과제를 직접 입력해 주세요.');return started;}
         if(started.reason==='NO_STARTABLE_PLANNER_TODO'){toast('지금 시작할 수 있는 Planner TODO가 없어요. TODAY를 다시 확인해 주세요.');return started;}
         toast('다른 세션에서 이미 진행 중인 할 일이 있어 시작하지 않았어요.');
         renderMission();
         return started;
       }
       state.activeSession=started.session;
+      state.eventTasks=[];
       save();
       root.dispatchEvent?.(new CustomEvent('readyset-session-started',{detail:{session_id:started.session?.id||null}}));
       nav('focus');
