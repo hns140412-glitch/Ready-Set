@@ -1,55 +1,57 @@
 # CHARACTER FORMATION RUNTIME OPEN/CLOSURE — 2026-09-24
 
+## FINAL STATUS
+
+`CHARACTER_FORMATION_RUNTIME = COMPLETE`
+
+No remaining Character Formation OPEN remains in this slice.
+
 ## CLOSED
 
-- Core 6 canonical Visual ID hard lock preserved.
-- Six canonical direct-extract fallback binaries are bound and hash-verified.
+- Core 6 canonical Visual ID HARD LOCK preserved.
+- Six canonical direct-extract fallback binaries are bound and SHA-256 verified.
+- Twelve prior-work Core 6 pose/action derivatives are preserved as source lineage.
+- Runtime pose binary materialization is closed through:
+  - `assets/character-formation/crew/core6-pose-sprite-64.webp`
+  - 384×128 transparent WebP
+  - 6 columns × 2 rows
+  - row 0 = standing/action
+  - row 1 = seated/context
+  - columns = dubi / lori / ink / nova / take / zero
+  - SHA-256 = `da1eb2c911889c8d0bd749941708bf28bd7258bd5eb50567bb635189fe062e86`
+- Pose consumer runtime is bound with canonical direct-extract fallback.
+- CREW_MEET / COMPANION_SELECT use standing/action pose.
+- COMPANION_NAME and preparation scene use seated/context pose.
 - Full Character Formation journey is coded.
-- Stage-specific UI composition is coded for CREW_MEET / COMPANION_SELECT / COMPANION_NAME / Signature Item and downstream flow.
+- Stage-specific compositions are distinct.
 - Preparation-room high-density scene layers are manifest-bound.
-- Mobile source layout is 390×844.
-- Tablet uses MOBILE_SOURCE_TABLET_BACKGROUND_EXTENSION, preserving a phone-scale live UI block and expanding only the world/background.
-- 390×844 and 1194×834 runtime proof capture pipeline is implemented.
-- Responsive geometry assertion passes.
-- Tablet visual extension layer removes the prior blank-wide-area failure.
+- Mobile source layout remains 390×844.
+- Tablet remains MOBILE_SOURCE_TABLET_BACKGROUND_EXTENSION.
+- Tablet preserves phone-scale live UI and expands only the world/background.
+- Responsive geometry proof passes.
+- Mobile/tablet pose-bound runtime proof passes.
+- Latest pose-bound proof artifact was created from exact head `31b08c8e6174aac18198c0e0487c3f47561f8832`.
+- Proof artifact digest: `sha256:8c20870e380eed86b7e25039ec82a072516ea399e5fcfa1009231863bf7a2c02`.
+- Visual inspection confirms pose binding and tablet background-extension parity.
 - Family inheritance guards pass.
-- Character Formation UI Binding exact-head status passes.
-- TAKY Codex Worker Self-Test exact-head status passes.
-- Core 6 pose/action consumer runtime is implemented with stage mapping and canonical fallback.
+- USER != DEBUGGER remains preserved.
 
-## SOLE REMAINING OPEN
+## FINAL VISUAL PROOF
 
-`POSE_BINARY_MATERIALIZATION`
+Captured states:
+- CREW_MEET — 390×844 / 1194×834
+- COMPANION_SELECT — 390×844 / 1194×834
+- COMPANION_NAME — 390×844 / 1194×834
+- SIGNATURE_ITEM — 390×844 / 1194×834
 
-The twelve user-provided prior-work pose/action derivatives are registered as source lineage and locally normalized, but the current connected GitHub interface does not accept conversation/file-service binary references as repository blob input.
+Result:
+- Core UI block remains mobile-source composition.
+- Tablet expands environment only.
+- Pose/action assets are visible in runtime.
+- No Core 6 identity redefinition occurred.
 
-This is a transport/materialization gap only.
+## REOPEN POLICY
 
-It does **not** reopen:
-- Core 6 Visual ID,
-- Character Formation flow,
-- responsive layout,
-- family world rules,
-- Signature Item contract,
-- preparation-room visual direction.
+`EXPLICIT_USER_REOPEN_ONLY`
 
-## ACTIVE FALLBACK
-
-Until the pose binaries are materialized, runtime uses the six verified canonical direct-extract crew binaries.
-
-`CharacterFormationPoseBank` is fallback-safe:
-- pose data available -> use standing/seated stage pose;
-- pose data unavailable -> preserve manifest crew binding.
-
-## USER ACTION
-
-None required. USER != DEBUGGER.
-
-## NEXT EXECUTION
-
-When a binary-capable repository handoff path is available:
-1. materialize the twelve derivatives or an equivalent sprite bank;
-2. bind them to CharacterFormationPoseBank;
-3. rerun mobile/tablet runtime proof;
-4. perform final anchor parity check;
-5. close POSE_BINARY_MATERIALIZATION.
+A future visual refinement does not automatically reopen the Character Formation canonical contract.
