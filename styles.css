@@ -605,7 +605,6 @@
 #missionView .missionBridgeSteps span{background:transparent;color:#5e6557}
 #missionView .missionBridgeSteps .on{background:#30352d;color:#fff}
 #missionView .glassCard{background:linear-gradient(145deg,rgba(255,252,244,.88),rgba(241,237,216,.76));border-color:rgba(255,255,255,.46);box-shadow:0 13px 28px rgba(29,64,54,.12);backdrop-filter:blur(14px)}
-#missionView .missionPlannerSource{margin-top:10px}
 #missionView .missionTodayPick{border-color:rgba(224,187,89,.32)}
 #missionView .missionTimingCard{padding-bottom:15px}
 #missionView .missionSoundCard{min-height:64px}
@@ -614,10 +613,14 @@
 #missionView .missionLaunchCard small{color:#d1d2c8}
 #missionView .missionLaunchActions{margin-bottom:12px}
 #missionView .missionLaunchActions #startBtn{min-height:58px;background:#f3cf39;color:#1f211d;font-size:14px}
-#missionView .missionFactInbox{margin-top:18px;background:rgba(244,241,222,.66);box-shadow:none}
-#missionView .missionFactInboxHead{display:flex;align-items:end;justify-content:space-between;gap:12px}
-#missionView .missionFactInboxHead small{font-size:8px;font-weight:950;letter-spacing:.12em;color:#7b725d}
-#missionView .missionFactInboxHead h2{margin-top:3px}
-#missionView .missionFactInboxHead>span{padding:6px 8px;border-radius:999px;background:rgba(48,53,45,.1);font-size:8px;font-weight:900}
+#missionView .missionFactInbox{margin-top:12px;background:rgba(244,241,222,.66);box-shadow:none}
+#missionView .missionFactInbox summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}
+#missionView .missionFactInbox summary::-webkit-details-marker{display:none}
+#missionView .missionFactInbox summary span small,#missionView .missionFactInbox summary span b{display:block}
+#missionView .missionFactInbox summary span small{font-size:8px;font-weight:950;letter-spacing:.12em;color:#7b725d}
+#missionView .missionFactInbox summary span b{margin-top:3px;font-size:12px}
+#missionView .missionFactInbox summary em{font-style:normal;padding:7px 9px;border-radius:999px;background:rgba(48,53,45,.1);font-size:8px;font-weight:900;white-space:nowrap}
+#missionView .missionFactInboxBody{padding-top:12px}
+#missionView .missionFactInbox:not([open]){padding-top:13px;padding-bottom:13px}
 #missionView #voiceTaskBtn{min-width:60px;padding:0 9px;background:#ece7d7;color:#34332d}
 @media(max-width:390px){#missionView .missionBridgeMain{padding-top:78px}#missionView .missionBridgeScene{height:315px}}
