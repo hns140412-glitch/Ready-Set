@@ -6,16 +6,20 @@
 
     function renderAuth(session={}){
       const badge=q('#authStateBadge'),text=q('#authStatusText');
-      const login=q('#authLoginControls'),logged=q('#authLoggedInControls'),link=q('#familyLinkChildSection');
-      if(badge)badge.textContent=session.authenticated?(session.role==='PARENT'?'보호자':'아이'):'로컬 모드';
+      const login=q('#authLoginControls'),logged=q('#authLoggedInControls'),unbound=q('#familyUnboundSection'),link=q('#familyLinkChildSection'),guardian=q('#familyLinkGuardianSection');
+      if(badge)badge.textContent=session.authenticated?(session.state==='AUTHENTICATED_UNBOUND'?'연결 필요':session.role==='PARENT'?'보호자':'아이'):'로컬 모드';
       if(text){
         text.textContent=session.authenticated
-          ? `Google/Family 계정 · ${session.role==='PARENT'?'보호자':'아이'} · 가족 ${session.family_id||'-'}`
+          ? session.state==='AUTHENTICATED_UNBOUND'
+            ? 'Google 인증 완료 · 아직 가족 관계가 연결되지 않았습니다.'
+            : `Google/Family 계정 · ${session.role==='PARENT'?'보호자':'아이'} · 가족 ${session.family_id||'-'}`
           : '로그인하지 않아도 이 기기에서 CHILD 로컬 모드로 사용할 수 있습니다.';
       }
       if(login)login.hidden=!!session.authenticated;
       if(logged)logged.hidden=!session.authenticated;
+      if(unbound)unbound.hidden=!(session.authenticated&&session.state==='AUTHENTICATED_UNBOUND');
       if(link)link.hidden=!(session.authenticated&&session.role==='PARENT');
+      if(guardian)guardian.hidden=!(session.authenticated&&session.role==='PARENT');
     }
 
     function renderSync({status={},pending=0,conflicts=0,conflictRows=[]}={}){
