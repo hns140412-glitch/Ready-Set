@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 
 const read=p=>fs.readFileSync(p,'utf8');
 const assert=(cond,msg)=>{if(!cond)throw new Error(msg);};
@@ -211,6 +212,31 @@ const commonToolConsumers=[...index.matchAll(/data-cf-asset-group="common_tools"
 assert(commonToolConsumers===8,'COMMON_TOOL_RUNTIME_CONSUMER_COUNT_MISMATCH');
 assert(assetManifest.tool_contract?.binary_truth==='MANIFEST_ENTRY_DOES_NOT_PROVE_BINARY_EXISTS','BINARY_TRUTH_CONTRACT_MISSING');
 assert(signatureItemRuntime.includes("Object.freeze(['CAMERA','COMPASS','FIELD_NOTEBOOK','BINOCULARS','WATER_BOTTLE'])"),'SIGNATURE_ITEM_RUNTIME_EXACT_SET_MISMATCH');
+
+// Inherited family state is broader than this app-local projection. Local runtime must not redefine it.
+assert(assetManifest.projection_scope?.type==='CHARACTER_FORMATION_RUNTIME_PROJECTION','CHARACTER_FORMATION_PROJECTION_SCOPE_MISSING');
+assert(assetManifest.projection_scope?.canonical_redefinition===false,'LOCAL_PROJECTION_MUST_NOT_REDEFINE_FAMILY_CANONICAL');
+assert(assetManifest.projection_scope?.signature_items_scope==='USER_CHOICE_ONLY','SIGNATURE_ITEM_SCOPE_REGRESSION');
+assert(assetManifest.projection_scope?.common_tools_scope==='CURRENT_RUNTIME_VISIBLE_SUBSET','COMMON_TOOLS_MUST_REMAIN_VISIBLE_SUBSET');
+assert(assetManifest.projection_scope?.inherits_family_confirmed_state===true,'FAMILY_CONFIRMED_STATE_INHERITANCE_MISSING');
+assert(journey.includes('같은 섬으로 향하는 첫 여정 연출 선택'),'VOYAGE_DROP_MUST_TARGET_SAME_ISLAND');
+assert(journey.includes('Ready & Set, Hide & Seek, Snap & Pop')&&journey.includes('이 하나의 섬 안에서 이어져'),'SHARED_ISLAND_CONTINUITY_COPY_MISSING');
+for(const familyRoot of ['badges','gems','wishes','blessings','Explorer_ID','explorerId']){
+  assert(!new RegExp('state\\\\.'+familyRoot+'\\\\s*=').test(journey),'FAMILY_STATE_REDEFINED_BY_CHARACTER_FORMATION_'+familyRoot);
+}
+
+// Core 6 runtime files are direct locked-canonical derivatives, not lookalikes or re-prompts.
+const core6Provenance=assetManifest.asset_sources?.core6_runtime_derivatives||{};
+assert(core6Provenance.source_file_id==='file_0000000022f0823090aec9a5d4c42aa3','CORE6_CANONICAL_SOURCE_ID_REGRESSION');
+assert(core6Provenance.derivation==='CANONICAL_FRONT_TURNAROUND_DIRECT_EXTRACT','CORE6_DERIVATION_METHOD_REGRESSION');
+assert(core6Provenance.redraw===false&&core6Provenance.generated_lookalike===false,'CORE6_LOOKALIKE_REGENERATION_FORBIDDEN');
+for(const id of exactCrew){
+  const p=assetManifest.asset_files.crew[id];
+  assert(fs.existsSync(p),'CORE6_RUNTIME_BINARY_MISSING_'+id);
+  const actual=crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+  assert(actual===core6Provenance.sha256?.[id],'CORE6_RUNTIME_BINARY_HASH_MISMATCH_'+id);
+}
+console.log('CHARACTER_FORMATION_FAMILY_INHERITANCE_AND_CORE6_PROVENANCE_PASS');
 
 const projectionV02=read('INTEGRATION/CHARACTER_VISUAL_ID_PROJECTION_V02.md');
 for(const stale of ['MAGNIFIER','EXPLORER_HAT','ROUND_GLASSES','MINI_FIELD_BAG']){
