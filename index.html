@@ -365,11 +365,17 @@
     <label class="inputBlock">나와 아이의 관계<select id="familyCreatorRelationship"><option value="MOTHER">엄마</option><option value="FATHER">아빠</option><option value="GUARDIAN">보호자</option></select></label>
     <button class="btn dark" id="familyCreateBtn">새 가족 만들기</button>
   </section>
-  <div id="familyLinkChildSection" hidden>
-    <p class="muted">보호자 계정은 이미 가입된 CHILD 계정을 같은 가족으로 연결할 수 있습니다.</p>
-    <label class="inputBlock">CHILD 이메일<input id="familyChildEmailInput" type="email" autocomplete="email" placeholder="child@example.com"></label>
-    <button class="btn outline compactBtn" id="familyLinkChildBtn">CHILD 연결</button>
-  </div>
+  <section id="familyLinkGuardianSection" hidden>
+    <p class="muted">다른 보호자도 먼저 자기 Google 계정으로 로그인 한 번만 완료한 뒤 같은 가족으로 연결합니다.</p>
+    <label class="inputBlock">보호자 Google 이메일<input id="familyGuardianEmailInput" type="email" autocomplete="email" placeholder="guardian@gmail.com"></label>
+    <label class="inputBlock">관계<select id="familyGuardianRelationship"><option value="MOTHER">엄마</option><option value="FATHER">아빠</option><option value="GUARDIAN">보호자</option></select></label>
+    <button class="btn outline compactBtn" id="familyLinkGuardianBtn">보호자 연결</button>
+  </section>
+  <section id="familyLinkChildSection" hidden>
+    <p class="muted">아이도 먼저 자기 Google 계정으로 로그인 한 번만 완료한 뒤 같은 가족으로 연결합니다.</p>
+    <label class="inputBlock">아이 Google 이메일<input id="familyChildEmailInput" type="email" autocomplete="email" placeholder="child@gmail.com"></label>
+    <button class="btn outline compactBtn" id="familyLinkChildBtn">아이 연결</button>
+  </section>
 </div>
 </section><section class="glassCard syncStatusCard"><div class="syncStatusHead"><div><small>CLOUD SYNC</small><h2>동기화 상태</h2></div><span id="syncStateBadge">로컬 저장</span></div><p id="syncStatusText" class="muted">현재 이 기기에 안전하게 저장 중이에요. 클라우드 동기화는 아직 연결되지 않았습니다.</p><div class="syncMeta"><span>대기 중 <b id="syncPendingCount">0</b></span><span>충돌 <b id="syncConflictCount">0</b></span></div><div id="syncConflictList" class="adminList" hidden></div><button class="btn outline compactBtn" id="checkSyncBtn">연결 상태 확인</button></section><section class="glassCard"><h2>데이터</h2><button class="btn outline" id="exportDataBtn">기록 JSON 내보내기</button><button class="dangerText" id="resetDataBtn">모든 로컬 데이터 초기화</button></section><p class="muted" id="readyVersionInfo">Release information loading…</p></main></section>
 
