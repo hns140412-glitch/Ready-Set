@@ -278,6 +278,17 @@
           "evidence": "EXACT_HEAD_ACTIONS_SHA256_ALL_CORE6__ONLY_INK_MISMATCH",
           "note": "Runtime binary unchanged since canonical binding commit; corrected stale manifest digest only."
         }
+      ],
+      "provenance_corrections": [
+        {
+          "date": "2026-09-24",
+          "asset": "ink",
+          "type": "MANIFEST_HASH_METADATA_CORRECTION_ONLY",
+          "binary_changed": false,
+          "first_bound_commit": "34bb10de31e1bcbc09e4d268a3e8feb3b3d1e2dc",
+          "previous_recorded_sha256": "57293ffa027ba7bc52b1364def00e7ee0f634ac4333ad5b61456769bef9bbfa8",
+          "verified_actual_sha256": "57293ffa027ba7bc52b1364def00e7ee0f634ac4333ad5b61456769bef9bbfa8"
+        }
       ]
     },
     "core6_pose_action_source_bank": {
