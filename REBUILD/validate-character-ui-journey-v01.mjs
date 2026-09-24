@@ -13,6 +13,7 @@ const core=read('src/identity/character-core-orchestrator-runtime.js');
 const signatureItemRuntime=read('src/identity/character-signature-item-runtime.js');
 const signatureItemServer=read('netlify/functions/character-signature-item-core.mjs');
 const journey=read('src/identity/character-formation-journey-runtime.js');
+const poseBankRuntime=read('src/identity/character-formation-pose-bank-runtime.js');
 
 assert(index.includes('id="characterSetupView"'),'CHARACTER_SETUP_VIEW_MISSING');
 assert(index.includes('id="openCharacterSetupBtn"'),'CHARACTER_SETUP_ENTRY_MISSING');
@@ -348,3 +349,14 @@ assert(assetManifest.asset_files?.background?.prep_room_tablet_extension==='asse
 assert(index.includes('data-cf-asset-key="prep_room_tablet_extension"'),'TABLET_WORLD_EXTENSION_DOM_BINDING_MISSING');
 assert(styles.includes('Character Formation tablet visual parity correction V01'),'TABLET_VISUAL_PARITY_CSS_MISSING');
 assert(styles.includes('#characterSetupView .cfCommonTools{\n    left:auto;\n    right:0;\n    width:430px;'),'TABLET_COMMON_TOOLS_MUST_STAY_IN_PHONE_STAGE');
+
+
+// Pose/action derivatives are optional runtime enrichments. Canonical direct extracts remain safe fallback.
+assert(index.includes('character-formation-pose-bank-runtime.js'),'POSE_BANK_RUNTIME_NOT_LOADED');
+assert(index.indexOf('character-formation-pose-bank-runtime.js')<index.indexOf('character-formation-scene-runtime.js'),'POSE_BANK_RUNTIME_LOAD_ORDER_INVALID');
+assert(poseBankRuntime.includes("identityAuthority:'CORE6_CANONICAL_VISUAL_ID'"),'POSE_BANK_IDENTITY_AUTHORITY_REGRESSION');
+assert(poseBankRuntime.includes('changesIdentity:false'),'POSE_BANK_MUST_NOT_CHANGE_IDENTITY');
+assert(journey.includes('bindPoseBankImages'),'JOURNEY_POSE_BANK_BINDING_MISSING');
+assert(journey.includes("stageName==='COMPANION_NAME'?'seated':'standing'"),'JOURNEY_STAGE_POSE_MAPPING_MISSING');
+assert(sceneRuntime.includes("CharacterFormationPoseBank?.bindImage?.(crewImg,id,'seated')"),'PREPARATION_SCENE_SEATED_POSE_BINDING_MISSING');
+console.log('CHARACTER_FORMATION_POSE_BANK_CONSUMER_CONTRACT_PASS');
