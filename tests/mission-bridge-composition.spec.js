@@ -16,7 +16,9 @@ test('Mission Briefing preserves Planner TODO provenance and stays a lightweight
   await expect(page.locator('#plannerTodayList [data-todo-id="mission_bridge_todo"]')).toBeVisible();
   await page.locator('#plannerTodayList [data-todo-id="mission_bridge_todo"]').click();
   await expect(page.locator('#missionPreviewText')).toContainText('영어 단어 복습');
-  await expect(page.locator('#missionView .missionFactInbox')).toContainText('바로 Timer에 들어가지 않고');
+  await expect(page.locator('#missionView #missionChips')).toHaveCount(0);
+  await expect(page.locator('#missionView .missionFactInbox')).not.toHaveAttribute('open','');
+  await expect(page.locator('#missionView .missionFactInbox')).toContainText('부모 확인으로 보내기');
   await expect(page.locator('#startBtn')).toBeVisible();
   const dims=await page.locator('#missionView').evaluate(el=>({scrollWidth:el.scrollWidth,clientWidth:el.clientWidth}));
   expect(dims.scrollWidth).toBeLessThanOrEqual(dims.clientWidth+2);
