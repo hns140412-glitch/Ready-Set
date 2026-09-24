@@ -452,3 +452,47 @@
   line-height:1.35;
 }
 #formationJourneyView .formationNameInput{margin-top:2px}
+
+
+/* Character Formation tablet visual parity correction V01 */
+#formationJourneyView .formationJourneyTabletExtension,
+#characterSetupView .cfTabletExtension{display:none}
+@media (min-width:768px){
+  #formationJourneyView .formationJourneyTabletExtension,
+  #characterSetupView .cfTabletExtension{
+    display:block;
+    position:absolute;
+    inset:0;
+    z-index:0;
+    background-image:var(--cf-asset-url,none);
+    background-size:cover;
+    background-position:center;
+    pointer-events:none;
+  }
+  #formationJourneyView .formationJourneyBase,
+  #characterSetupView .cfFarWorld{
+    left:auto;
+    right:0;
+    width:430px;
+    inset-block:-4%;
+    background-size:cover;
+    background-position:center;
+  }
+  #formationJourneyView .formationJourneyIslandHint,
+  #formationJourneyView .formationJourneyMid,
+  #formationJourneyView .formationJourneyForeground,
+  #formationJourneyView .formationJourneyGlow,
+  #characterSetupView .cfDestinationHint,
+  #characterSetupView .cfMidProps,
+  #characterSetupView .cfForeground,
+  #characterSetupView .cfFxLayer{
+    left:auto;
+    right:0;
+    width:430px;
+  }
+  #characterSetupView .cfCommonTools{
+    left:auto;
+    right:0;
+    width:430px;
+  }
+}
