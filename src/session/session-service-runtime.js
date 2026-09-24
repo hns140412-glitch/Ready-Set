@@ -45,6 +45,7 @@
     const attribution=domain.attribution(session,input.focusMs||0);
     const outcomes=[];
     for(const link of attribution.links){
+      const runtimeTask=(session.rev07?.tasks||[]).find(x=>x.planner_todo_id===link.todo_id)||null;
       const result=planner.recordSessionOutcome?.({
         todo_id:link.todo_id,
         ready_state:input.outcomeState,
@@ -53,7 +54,9 @@
         session_task_count:attribution.taskCount,
         time_attribution:attribution.timeAttribution,
         session_id:session.id,
-        task_id:link.learning_unit_id||link.todo_id,
+        task_id:runtimeTask?.task_id||link.learning_unit_id||link.todo_id,
+        learning_evidence:Array.isArray(runtimeTask?.learning_evidence)?runtimeTask.learning_evidence:[],
+        completed_specialists:Array.isArray(runtimeTask?.completed_specialists)?runtimeTask.completed_specialists:[],
         at:new Date(input.endAt).toISOString()
       });
       if(result)outcomes.push(result);
