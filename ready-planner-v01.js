@@ -8,6 +8,7 @@
   'use strict';
 
   const STORAGE_KEY='readyset_planner_v1';
+  const FAMILY_STORAGE_KEY='readyset_planner_family_v1';
   const SCHEMA_VERSION=1;
   const TODO_STATES=new Set(['PLANNED','IN_PROGRESS','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED','SUPERSEDED']);
   const READY_TO_TODO={
@@ -73,11 +74,90 @@
   function createPlanner(storage){
     const isOpenTodo=t=>t&&t.state!=='COMPLETED'&&t.state!=='SUPERSEDED';
     function storageKey(){return globalThis.ReadyMemberScope?.storageKey?.(STORAGE_KEY)||STORAGE_KEY}
-    function load(){
-      try{return normalize(JSON.parse(storage.getItem(storageKey())||'null'))}catch{return blank()}
+    function familyStorageKey(){return globalThis.ReadyMemberScope?.familyStorageKey?.(FAMILY_STORAGE_KEY)||FAMILY_STORAGE_KEY}
+    function activeSession(){return globalThis.ReadyFamilySession?.current?.()||{authenticated:false,member_id:null,family_id:null,role:'CHILD'}}
+
+    function sharedBlank(){
+      return {schedule_commitments:[],schedule_exceptions:[],daily_availability_windows:[],availability_exceptions:[]};
     }
-    function save(s){const payload=JSON.stringify(normalize(s));storage.setItem(storageKey(),payload);globalThis.ReadySetLocalFirst?.capture?.('planner',payload).catch?.(()=>{})}
+    function audienceVisible(row={}){
+      const s=activeSession();
+      if(s.role==='PARENT')return true;
+      const scope=cleanText(row.audience_scope)||'FAMILY_ALL';
+      if(scope==='FAMILY_ALL')return true;
+      return scope==='MEMBER'&&cleanText(row.target_member_id)===cleanText(s.member_id);
+    }
+    function normalizeFamily(raw){
+      const x=raw&&typeof raw==='object'?raw:{};
+      return {
+        ...sharedBlank(),
+        ...x,
+        schedule_commitments:Array.isArray(x.schedule_commitments)?x.schedule_commitments:[],
+        schedule_exceptions:Array.isArray(x.schedule_exceptions)?x.schedule_exceptions:[],
+        daily_availability_windows:Array.isArray(x.daily_availability_windows)?x.daily_availability_windows:[],
+        availability_exceptions:Array.isArray(x.availability_exceptions)?x.availability_exceptions:[]
+      };
+    }
+    function loadMember(){
+      try{
+        const state=normalize(JSON.parse(storage.getItem(storageKey())||'null'));
+        state.schedule_commitments=[];
+        state.schedule_exceptions=[];
+        state.daily_availability_windows=[];
+        state.availability_exceptions=[];
+        return state;
+      }catch{return blank()}
+    }
+    function loadFamily(){
+      try{
+        const direct=storage.getItem(familyStorageKey());
+        if(direct)return normalizeFamily(JSON.parse(direct));
+        // One-time compatibility lift: existing schedule data is promoted into family scope.
+        const legacy=normalize(JSON.parse(storage.getItem(storageKey())||'null'));
+        const lifted=normalizeFamily({
+          schedule_commitments:legacy.schedule_commitments,
+          schedule_exceptions:legacy.schedule_exceptions,
+          daily_availability_windows:legacy.daily_availability_windows,
+          availability_exceptions:legacy.availability_exceptions
+        });
+        if(lifted.schedule_commitments.length||lifted.schedule_exceptions.length||lifted.daily_availability_windows.length||lifted.availability_exceptions.length){
+          storage.setItem(familyStorageKey(),JSON.stringify(lifted));
+        }
+        return lifted;
+      }catch{return sharedBlank()}
+    }
+    function load(){
+      const member=loadMember(),family=loadFamily();
+      return normalize({
+        ...member,
+        schedule_commitments:family.schedule_commitments.filter(audienceVisible),
+        schedule_exceptions:family.schedule_exceptions,
+        daily_availability_windows:family.daily_availability_windows.filter(audienceVisible),
+        availability_exceptions:family.availability_exceptions
+      });
+    }
+    function save(s){
+      const member=normalize(s);
+      member.schedule_commitments=[];
+      member.schedule_exceptions=[];
+      member.daily_availability_windows=[];
+      member.availability_exceptions=[];
+      const payload=JSON.stringify(member);
+      storage.setItem(storageKey(),payload);
+      globalThis.ReadySetLocalFirst?.capture?.('planner',payload).catch?.(()=>{});
+    }
+    function saveFamily(s){
+      const payload=JSON.stringify(normalizeFamily(s));
+      storage.setItem(familyStorageKey(),payload);
+      globalThis.ReadySetLocalFirst?.capture?.('planner_family',payload).catch?.(()=>{});
+    }
     function mutate(fn){const s=load();const out=fn(s);save(s);return out}
+    function mutateFamily(fn){
+      const s=loadFamily();
+      const out=fn(s);
+      saveFamily(s);
+      return out;
+    }
 
     function markReflowReview(state,reason){
       const reasons=new Set(Array.isArray(state.reflow_review?.reasons)?state.reflow_review.reasons:[]);
@@ -123,7 +203,7 @@
         if(!gate?.ok) throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
       }
       const title=cleanText(input.title); if(!title) throw new Error('title required');
-      return mutate(s=>{
+      return mutateFamily(s=>{
         const id=cleanText(input.commitment_id)||makeId('commitment');
         const recurrence=cleanText(input.recurrence)||null;
         const weekday=Number.isInteger(input.weekday)?input.weekday:null;
@@ -133,7 +213,7 @@
           if(!(weekday>=0&&weekday<=6))throw new Error('weekday required');
           if(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start)throw new Error('valid start/end required');
         }
-        const item=rebuildProjection?.scheduleCommitment?.(input,{id,now:new Date().toISOString()})||{
+        const item={...(rebuildProjection?.scheduleCommitment?.(input,{id,now:new Date().toISOString()})||{
           commitment_id:id,
           title,
           category:cleanText(input.category)||'OTHER',
@@ -150,6 +230,9 @@
           parent_editable:input.parent_editable!==false,
           source:cleanText(input.source)||'READY_LOCAL',
           updated_at:new Date().toISOString()
+        }),
+          audience_scope:cleanText(input.audience_scope)==='MEMBER'?'MEMBER':'FAMILY_ALL',
+          target_member_id:cleanText(input.audience_scope)==='MEMBER'?(cleanText(input.target_member_id)||null):null
         };
         const i=s.schedule_commitments.findIndex(x=>x.commitment_id===id);
         if(i>=0)s.schedule_commitments[i]=item;else s.schedule_commitments.push(item);
@@ -170,7 +253,7 @@
       if(!['SKIP','REPLACE'].includes(type))return {ok:false,reason:'INVALID_EXCEPTION_TYPE'};
       const start=cleanText(input.start)||null,end=cleanText(input.end)||null;
       if(type==='REPLACE'&&(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start))return {ok:false,reason:'VALID_REPLACEMENT_TIME_REQUIRED'};
-      return mutate(s=>{
+      return mutateFamily(s=>{
         const commitment=s.schedule_commitments.find(x=>x.commitment_id===commitmentId&&x.recurrence==='WEEKLY');
         if(!commitment)return {ok:false,reason:'WEEKLY_COMMITMENT_NOT_FOUND'};
         const key=commitmentId+'@'+date;
@@ -200,7 +283,7 @@
       const id=cleanText(input.exception_id);
       const commitmentId=cleanText(input.commitment_id);
       const date=cleanText(input.date);
-      return mutate(s=>{
+      return mutateFamily(s=>{
         const before=s.schedule_exceptions.length;
         s.schedule_exceptions=s.schedule_exceptions.filter(x=>id?x.exception_id!==id:!(x.commitment_id===commitmentId&&x.date===date));
         if(before===s.schedule_exceptions.length)return {ok:false,reason:'SCHEDULE_EXCEPTION_NOT_FOUND'};
@@ -220,9 +303,9 @@
       if(recurrence!=='WEEKLY'&&!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('date required');
       if(recurrence==='WEEKLY'&&!(weekday>=0&&weekday<=6)) throw new Error('weekday required');
       if(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start) throw new Error('valid start/end required');
-      return mutate(s=>{
+      return mutateFamily(s=>{
         const id=cleanText(input.availability_id)||makeId('availability');
-        const item=rebuildProjection?.availabilityWindow?.(input,{id,now:new Date().toISOString()})||{
+        const item={...(rebuildProjection?.availabilityWindow?.(input,{id,now:new Date().toISOString()})||{
           availability_id:id,date:recurrence==='WEEKLY'?null:date,start,end,
           recurrence:recurrence==='WEEKLY'?'WEEKLY':null,
           weekday:recurrence==='WEEKLY'?weekday:null,
@@ -232,6 +315,9 @@
           source:cleanText(input.source)||'READY_LOCAL',
           parent_editable:input.parent_editable!==false,
           updated_at:new Date().toISOString()
+        }),
+          audience_scope:cleanText(input.audience_scope)==='MEMBER'?'MEMBER':'FAMILY_ALL',
+          target_member_id:cleanText(input.audience_scope)==='MEMBER'?(cleanText(input.target_member_id)||null):null
         };
         const i=s.daily_availability_windows.findIndex(x=>x.availability_id===id);
         if(i>=0)s.daily_availability_windows[i]=item;else s.daily_availability_windows.push(item);
@@ -252,7 +338,7 @@
       if(!['SKIP','REPLACE'].includes(type))return {ok:false,reason:'INVALID_EXCEPTION_TYPE'};
       const start=cleanText(input.start)||null,end=cleanText(input.end)||null;
       if(type==='REPLACE'&&(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start))return {ok:false,reason:'VALID_REPLACEMENT_TIME_REQUIRED'};
-      return mutate(s=>{
+      return mutateFamily(s=>{
         const source=s.daily_availability_windows.find(x=>x.availability_id===availabilityId&&x.recurrence==='WEEKLY');
         if(!source)return {ok:false,reason:'WEEKLY_AVAILABILITY_NOT_FOUND'};
         const item={exception_id:cleanText(input.exception_id)||(availabilityId+'@'+date),availability_id:availabilityId,date,type,start:type==='REPLACE'?start:null,end:type==='REPLACE'?end:null,note:cleanText(input.note)||null,source:cleanText(input.source)||'PARENT_ADMIN_UI',updated_at:new Date().toISOString()};
@@ -269,7 +355,7 @@
         if(!gate?.ok)throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
       }
       const id=cleanText(input.exception_id),availabilityId=cleanText(input.availability_id),date=cleanText(input.date);
-      return mutate(s=>{
+      return mutateFamily(s=>{
         const before=s.availability_exceptions.length;
         s.availability_exceptions=s.availability_exceptions.filter(x=>id?x.exception_id!==id:!(x.availability_id===availabilityId&&x.date===date));
         if(before===s.availability_exceptions.length)return {ok:false,reason:'AVAILABILITY_EXCEPTION_NOT_FOUND'};
@@ -284,7 +370,7 @@
         const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
         if(!gate?.ok) throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
       }
-      return mutate(s=>{
+      return mutateFamily(s=>{
         const before=s.daily_availability_windows.length;
         s.daily_availability_windows=s.daily_availability_windows.filter(x=>x.availability_id!==target);
         if(before===s.daily_availability_windows.length)return {ok:false,reason:'AVAILABILITY_NOT_FOUND'};
