@@ -51,13 +51,17 @@
       detail.innerHTML=itemHtml+freeHtml||'<div class="plannerEmpty"><b>비어 있는 날이에요.</b><small>필요한 탐험만 가볍게 추가해요.</small></div>';
 
       const timeline=q('#plannerDayTimeline');
-      if(timeline)timeline.innerHTML=selectedItems.length?selectedItems.map((x,i)=>`
-        <article class="plannerRouteItem"><i>${String(i+1).padStart(2,'0')}</i><div><small>${x.kind==='SCHEDULE'?'FIXED ROUTE':(x.daypart?daypartLabel(x.daypart)+' · MISSION':'MISSION')}</small><b>${escapeHtml(x.label)}</b><span>${x.time?x.time+' · ':''}${x.minutes?x.minutes+'분 · ':''}${stateLabel(x.state)}${x.reason&&x.kind==='TODO'?' · '+escapeHtml(x.reason):''}</span></div></article>`).join(''):'<div class="plannerEmpty tall"><b>오늘 예정된 탐험이 없어요.</b><small>Mission에서 오늘 할 일을 골라 시작할 수 있어요.</small></div>';
+      if(timeline){
+        const routeHtml=selectedItems.length?selectedItems.map((x,i)=>`
+          <article class="plannerRouteItem ${x.kind==='SCHEDULE'?'fixed':'mission'}"><i>${String(i+1).padStart(2,'0')}</i><div><small>${x.kind==='SCHEDULE'?'고정 일정':(x.daypart?daypartLabel(x.daypart)+' · 할 일':'할 일')}</small><b>${escapeHtml(x.label)}</b><span>${x.time?x.time+' · ':''}${x.minutes?x.minutes+'분 · ':''}${stateLabel(x.state)}${x.reason&&x.kind==='TODO'?' · '+escapeHtml(x.reason):''}</span></div></article>`).join(''):'<div class="plannerEmpty tall"><b>오늘 예정된 탐험이 없어요.</b><small>Mission에서 오늘 할 일을 골라 시작할 수 있어요.</small></div>';
+        const dayFreeHtml=freeWindows.length?`<section class="plannerDayFree" aria-label="오늘의 자유 시간"><div class="plannerFreeHead"><b>자유 시간</b><small>고정 일정을 제외한 실제 여유 구간</small></div><div class="plannerFreeList">${freeWindows.map(w=>`<span><b>${w.start}–${w.end}</b><small>${w.minutes}분</small></span>`).join('')}</div></section>`:'';
+        timeline.innerHTML=routeHtml+dayFreeHtml;
+      }
 
       const dd=new Date(chosen+'T12:00:00');
       const title=q('#plannerDayTitle');if(title)title.textContent=`${dd.getMonth()+1}월 ${dd.getDate()}일 탐험`;
       const count=q('#plannerDayCount');if(count)count.textContent=`${selectedItems.length}개`;
-      const hero=q('#plannerHeroTitle');if(hero)hero.textContent=tab==='week'?'이번 주 탐험 지도':'오늘의 탐험 루트';
+      const hero=q('#plannerHeroTitle');if(hero)hero.textContent=tab==='week'?'이번 주 여정':'오늘의 탐험길';
       return {ok:true,selectedItems};
     }
 
