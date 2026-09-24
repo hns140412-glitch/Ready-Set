@@ -29,7 +29,7 @@
       }
     }
 
-    function render({state,todayItems=[],renderChips,onToggleTodo}={}){
+    function render({state,todayItems=[],renderChips,onToggleTodo,onRemoveEventTask}={}){
       renderChips?.(q('#missionChips'));
       renderPlannerToday({items:todayItems,selectedTodoIds:state.selectedTodoIds||[],onToggle:onToggleTodo});
 
@@ -56,10 +56,21 @@
         if(custom)custom.value=state.targetMin;
         const sound=q('#soundName');
         if(sound)sound.textContent=state.sound;
+        const eventList=q('#eventTaskList');
+        if(eventList){
+          eventList.innerHTML='';
+          for(const item of (state.eventTasks||[])){
+            const row=document.createElement('div');
+            row.className='taskRow eventTaskRow';
+            row.innerHTML=`<span><b>${escapeHtml(item.label)}</b><small>아이 입력 · 이번 이벤트에서 바로 실행</small></span><button aria-label="이벤트 과제 삭제">×</button>`;
+            row.querySelector('button').onclick=()=>onRemoveEventTask?.(item.event_task_id);
+            eventList.appendChild(row);
+          }
+        }
         const preview=q('#missionPreviewText');
         if(preview){
-          const labels=chosen.map(x=>x.label);
-          preview.textContent=`${labels.length?labels.join(' · '):'과제를 선택해 주세요'} · ${state.targetMin}분`;
+          const labels=[...chosen.map(x=>x.label),...(state.eventTasks||[]).map(x=>x?.label).filter(Boolean)];
+          preview.textContent=`${labels.length?labels.join(' · '):'과제를 선택하거나 이벤트 과제를 입력해 주세요'} · ${state.targetMin}분`;
         }
       }
     }
