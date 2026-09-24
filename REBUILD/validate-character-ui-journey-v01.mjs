@@ -326,3 +326,13 @@ assert(styles.includes('#formationJourneyView.view,')&&styles.includes('#charact
 assert(assetManifest.responsive_contract?.tablet_background_scaling==='PRESERVE_SOURCE_HEIGHT_RIGHT_ANCHORED','TABLET_BACKGROUND_SCALE_CONTRACT_MISSING');
 assert(assetManifest.responsive_contract?.tablet_extension_fill==='PREPARATION_ROOM_TONE_EXTENSION','TABLET_BACKGROUND_EXTENSION_FILL_CONTRACT_MISSING');
 assert(styles.includes('Character Formation tablet world extension without background zoom'),'TABLET_NO_ZOOM_EXTENSION_CSS_MISSING');
+
+
+// Stage-specific compositions must remain distinct.
+assert(journey.includes('formationCrewMeetStage'),'CREW_MEET_GROUP_STAGE_COMPOSITION_MISSING');
+assert(journey.includes('formationCrewMeetConstellation'),'CREW_MEET_GROUP_COMPOSITION_MISSING');
+assert(journey.includes('formationCrewGrid selectable'),'COMPANION_SELECT_CARD_COMPOSITION_MISSING');
+assert(journey.includes('formationNameStage'),'COMPANION_NAME_RELATIONSHIP_COMPOSITION_MISSING');
+assert(journey.includes('formationNameCrew'),'COMPANION_NAME_SELECTED_CREW_VISUAL_MISSING');
+assert(styles.includes('Character Formation stage-specific composition: A01 meet / A02 select / A03 name'),'STAGE_SPECIFIC_VISUAL_CSS_MISSING');
+assert(!journey.includes('<div class="formationCrewGrid">'+CREW.map(c=>crewCard(c,false)).join('')+'</div>'),'CREW_MEET_MUST_NOT_REUSE_SELECTION_CARD_GRID');
