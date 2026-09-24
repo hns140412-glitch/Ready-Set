@@ -44,7 +44,7 @@
       const selectedItems=itemsForDate(chosen,snapshot);
       const freeWindows=freeWindowsForDate(chosen);
       const itemHtml=selectedItems.map(x=>`
-        <article class="plannerWeekItem ${x.kind==='SCHEDULE'?'fixed':''} ${x.daypart==='MORNING'&&x.kind==='TODO'?'beforeSchool':''}">
+        <article class="plannerWeekItem ${x.kind==='SCHEDULE'?'fixed':''} ${x.schedule_scope==='FAMILY'?'familySchedule':''} ${x.schedule_scope==='CHILD'?'childSchedule':''} ${x.daypart==='MORNING'&&x.kind==='TODO'?'beforeSchool':''}">
           <span class="plannerDot"></span><div><b>${escapeHtml(x.label)}</b><small>${x.daypart?daypartLabel(x.daypart)+' · ':''}${x.time?x.time+' · ':''}${x.meta}${x.minutes?' · '+x.minutes+'분':''}${x.reason&&x.kind==='TODO'?' · '+escapeHtml(x.reason):''}</small></div><em>${stateLabel(x.state)}</em>
         </article>`).join('');
       const freeHtml=freeWindows.length?`<section class="plannerFreeWindows" aria-label="학습 가능 자유 시간"><div class="plannerFreeHead"><b>가능한 자유 시간</b><small>고정 일정을 제외한 실제 여유 구간</small></div><div class="plannerFreeList">${freeWindows.map(w=>`<span><b>${w.start}–${w.end}</b><small>${w.minutes}분</small></span>`).join('')}</div></section>`:'';
@@ -52,11 +52,13 @@
 
       const timeline=q('#plannerDayTimeline');
       if(timeline)timeline.innerHTML=selectedItems.length?selectedItems.map((x,i)=>`
-        <article class="plannerRouteItem"><i>${String(i+1).padStart(2,'0')}</i><div><small>${x.kind==='SCHEDULE'?'FIXED ROUTE':(x.daypart?daypartLabel(x.daypart)+' · MISSION':'MISSION')}</small><b>${escapeHtml(x.label)}</b><span>${x.time?x.time+' · ':''}${x.minutes?x.minutes+'분 · ':''}${stateLabel(x.state)}${x.reason&&x.kind==='TODO'?' · '+escapeHtml(x.reason):''}</span></div></article>`).join(''):'<div class="plannerEmpty tall"><b>오늘 예정된 탐험이 없어요.</b><small>Mission에서 오늘 할 일을 골라 시작할 수 있어요.</small></div>';
+        <article class="plannerRouteItem ${x.schedule_scope==='FAMILY'?'familySchedule':''} ${x.schedule_scope==='CHILD'?'childSchedule':''} ${x.kind==='TODO'?'missionItem':''}"><i>${String(i+1).padStart(2,'0')}</i><div><small>${x.kind==='SCHEDULE'?(x.schedule_scope==='CHILD'?'MY SCHEDULE':'FAMILY SCHEDULE'):(x.daypart?daypartLabel(x.daypart)+' · MISSION':'MISSION')}</small><b>${escapeHtml(x.label)}</b><span>${x.time?x.time+' · ':''}${x.minutes?x.minutes+'분 · ':''}${stateLabel(x.state)}${x.reason&&x.kind==='TODO'?' · '+escapeHtml(x.reason):''}</span></div></article>`).join(''):'<div class="plannerEmpty tall"><b>오늘 예정된 탐험이 없어요.</b><small>Mission에서 오늘 할 일을 골라 시작할 수 있어요.</small></div>';
 
       const dd=new Date(chosen+'T12:00:00');
       const title=q('#plannerDayTitle');if(title)title.textContent=`${dd.getMonth()+1}월 ${dd.getDate()}일 탐험`;
-      const count=q('#plannerDayCount');if(count)count.textContent=`${selectedItems.length}개`;
+      const missionCount=selectedItems.filter(x=>x.kind==='TODO').length;
+      const scheduleCount=selectedItems.filter(x=>x.kind==='SCHEDULE').length;
+      const count=q('#plannerDayCount');if(count)count.textContent=missionCount?`탐험 ${missionCount} · 일정 ${scheduleCount}`:`일정 ${scheduleCount}`;
       const hero=q('#plannerHeroTitle');if(hero)hero.textContent=tab==='week'?'이번 주 탐험 지도':'오늘의 탐험 루트';
       return {ok:true,selectedItems};
     }
