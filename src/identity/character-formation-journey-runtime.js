@@ -79,6 +79,13 @@
       '</button>';
     }
 
+    function crewMeetFigure(c,index){
+      return '<figure class="formationCrewMeetFigure figure-'+index+'">'+
+        '<img data-cf-asset-group="crew" data-cf-asset-key="'+c.id+'" alt="">'+
+        '<figcaption><b>'+esc(c.name)+'</b><small>'+esc(c.keywords.slice(0,2).join(' · '))+'</small></figcaption>'+
+      '</figure>';
+    }
+
     function render(){
       const state=getState();
       const f=ensure(state);
@@ -87,17 +94,21 @@
       if(step)step.textContent=s.replaceAll('_',' · ');
 
       if(s==='CREW_MEET'){
-        body.innerHTML='<div class="formationIntro"><small>CORE 6 · MEET THE CREW</small><h2>먼저 여섯 친구를 모두 만나볼까?</h2><p>각자의 이야기와 성격은 다르지만, 앞으로 모두 같은 탐험대 친구로 계속 함께해.</p></div>'+
-          '<div class="formationCrewGrid">'+CREW.map(c=>crewCard(c,false)).join('')+'</div>'+
+        body.innerHTML='<div class="formationIntro"><small>CORE 6 · MEET THE CREW</small><h2>먼저 여섯 친구를 모두 만나볼까?</h2><p>아직 한 명을 고르는 단계가 아니야. 같은 탐험대의 여섯 친구를 먼저 함께 만나보자.</p></div>'+
+          '<div class="formationCrewMeetStage"><div class="formationCrewMeetBanner"><span>SAME ISLAND · ONE CREW</span><b>서로 다른 여섯 친구, 하나의 탐험대</b></div>'+
+          '<div class="formationCrewMeetConstellation">'+CREW.map((c,i)=>crewMeetFigure(c,i)).join('')+'</div></div>'+
           '<button class="btn dark" data-formation-action="MEET_DONE">여섯 친구 모두 만났어 →</button>';
       }else if(s==='COMPANION_SELECT'){
-        body.innerHTML='<div class="formationIntro"><small>PRIMARY COMPANION</small><h2>누가 너와 가장 함께하고 싶어?</h2><p>한 명은 가장 가까운 동행이 되고, 나머지 다섯 친구도 계속 알고 지내는 탐험대원이야.</p></div>'+
+        body.innerHTML='<div class="formationIntro"><small>PRIMARY COMPANION</small><h2>누가 너와 가장 함께하고 싶어?</h2><p>이제 한 명을 가장 가까운 동행으로 골라. 나머지 다섯 친구도 같은 탐험대원으로 계속 함께해.</p></div>'+
           '<div class="formationCrewGrid selectable">'+CREW.map(c=>crewCard(c,true)).join('')+'</div>';
       }else if(s==='COMPANION_NAME'){
         const c=crewById(state.expedition.primaryCompanionId);
         const value=state.expedition.primaryCompanionAlias||c?.name||'';
-        body.innerHTML='<div class="formationIntro"><small>COMPANION NAME</small><h2>'+esc(c?.name||'동행 탐험대원')+'를 뭐라고 부를까?</h2><p>Visual ID는 그대로 유지하고, 너와 부를 이름이나 호칭만 정해.</p></div>'+
-          '<label class="formationInput">이름 / 호칭<input id="formationCompanionAlias" maxlength="20" value="'+esc(value)+'"></label>'+
+        body.innerHTML='<div class="formationNameStage">'+
+          '<img class="formationNameCrew" data-cf-asset-group="crew" data-cf-asset-key="'+esc(c?.id||'dubi')+'" alt="">'+
+          '<div class="formationNameCopy"><small>COMPANION NAME</small><h2>'+esc(c?.name||'동행 탐험대원')+'를 뭐라고 부를까?</h2><p>'+esc(c?.line||'같이 떠나자!')+'</p><span>Visual ID는 그대로 · 이름/호칭만 정하기</span></div>'+
+          '</div>'+
+          '<label class="formationInput formationNameInput">이름 / 호칭<input id="formationCompanionAlias" maxlength="20" value="'+esc(value)+'"></label>'+
           '<button class="btn dark" data-formation-action="SAVE_ALIAS">이 이름으로 함께할래 →</button>';
       }else if(s==='PHOTO_REQUIRED'){
         body.innerHTML='<div class="formationIntro"><small>YOUR PHOTO</small><h2>이제 너의 모습을 준비할 차례야</h2><p>사진 속 너의 정체성을 기준으로 캐릭터를 만들고, Core 6의 모습은 바꾸지 않아.</p></div>'+
