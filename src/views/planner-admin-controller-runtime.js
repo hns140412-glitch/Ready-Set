@@ -379,6 +379,8 @@
       query('#weeklyReflowPlanBtn')?.addEventListener('click',planWeeklyReflow);
       query('#adaptiveEstimateRefreshBtn')?.addEventListener('click',refreshAdaptiveSuggestions);
       eventTarget.addEventListener?.('click',onDocumentClick);
+      root.addEventListener?.('readyset-family-session',()=>refreshFamilyTargets().catch(()=>{}));
+      refreshFamilyTargets().catch(()=>{});
       return true;
     }
 
