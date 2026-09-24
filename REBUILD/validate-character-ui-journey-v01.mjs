@@ -314,3 +314,9 @@ for(const set of Object.values(poseBank.source_sets||{})){
   for(const x of set)assert(exactCrew.includes(x.id),'POSE_BANK_UNKNOWN_CORE6_'+x.id);
 }
 console.log('CHARACTER_FORMATION_RESPONSIVE_AND_POSE_SOURCE_BANK_PASS');
+
+
+// Tablet world must be full-bleed while the live UI remains phone-scale.
+assert(assetManifest.responsive_contract?.tablet_world_full_bleed===true,'TABLET_WORLD_FULL_BLEED_CONTRACT_MISSING');
+assert(assetManifest.responsive_contract?.tablet_live_ui_remains_phone_scale===true,'TABLET_LIVE_UI_PHONE_SCALE_CONTRACT_MISSING');
+assert(styles.includes('#formationJourneyView.view,')&&styles.includes('#characterSetupView.view{'),'TABLET_FULL_BLEED_VIEW_OVERRIDE_MISSING');
