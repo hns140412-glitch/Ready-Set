@@ -116,3 +116,9 @@
 .plannerFreeList{display:flex;gap:6px;overflow-x:auto;padding-top:9px;scrollbar-width:none}.plannerFreeList::-webkit-scrollbar{display:none}
 .plannerFreeList>span{flex:0 0 auto;min-width:108px;padding:9px 10px;border-radius:14px;background:rgba(255,248,231,.92);border:1px solid rgba(195,156,65,.16)}
 .plannerFreeList b,.plannerFreeList small{display:block}.plannerFreeList b{font-size:11px}.plannerFreeList small{margin-top:3px;font-size:8px;color:#8b765c}
+
+/* Daily Planner semantic completion — use existing truthful Planner windows. */
+.plannerRouteItem.fixed{border:1px solid rgba(180,137,37,.18);background:rgba(255,245,213,.88)}
+.plannerRouteItem.mission{border:1px solid rgba(42,35,31,.06)}
+.plannerDayFree{margin:4px 0 14px;padding:13px 14px;border:1px solid rgba(42,35,31,.08);border-radius:18px;background:rgba(255,255,255,.54)}
+.plannerFreeHead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.plannerFreeHead b{font-size:12px}.plannerFreeHead small{font-size:9px;color:#7a6f67}.plannerFreeList{display:flex;gap:7px;overflow-x:auto;padding-top:9px}.plannerFreeList>span{flex:0 0 auto;min-width:92px;padding:9px 10px;border-radius:13px;background:rgba(255,255,255,.9);border:1px solid rgba(42,35,31,.06)}.plannerFreeList b,.plannerFreeList small{display:block}.plannerFreeList b{font-size:11px}.plannerFreeList small{margin-top:2px;font-size:9px;color:#7a6f67}
