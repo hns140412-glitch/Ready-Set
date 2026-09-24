@@ -16,9 +16,10 @@
 <body>
 <div id="app">
   <section class="view active peach" id="homeView" data-view="home">
-    <div class="safe topbar"><div><div class="brand">Ready & Set</div><div class="tagline">준비는 가볍게. 시작은 자신 있게.</div></div><button class="avatarButton" data-nav="profile" aria-label="프로필"><span id="homeAvatar">RS</span></button></div>
+    <div class="homeWorldScene" aria-hidden="true"><div class="homeWorldIsland"></div><div class="homeWorldCamp"></div><div class="homeWorldPath"></div><div class="homeWorldGlow"></div></div>
+    <div class="safe topbar homeWorldTopbar"><div><div class="brand">Ready & Set</div><div class="tagline">준비는 가볍게. 시작은 자신 있게.</div></div><button class="avatarButton" data-nav="profile" aria-label="프로필"><span id="homeAvatar">RS</span></button></div>
     <main class="safe homeMain">
-      <section class="heroBlock"><div class="heroCopy"><span class="kicker">FOCUS CHALLENGE</span><h1>타임어택<br>이벤트</h1><p>오늘 할 일을 정하고, 한 번에 시작해요.</p></div><div class="stopwatchArt" aria-hidden="true"><div class="watchCrown"></div><div class="watchFace"><span id="heroTime">25:00</span></div></div>
+      <section class="heroBlock homeBaseCampHero"><div class="heroCopy"><span class="kicker">READY BASE CAMP</span><h1>오늘의<br>베이스캠프</h1><p>이번 주 여정과 오늘 할 일을 확인하고, 준비되면 바로 출발해요.</p><button class="homePlannerPrimary" data-nav="planner">탐험 일정 열기</button></div><div class="stopwatchArt homeTimerMarker" aria-hidden="true"><div class="watchCrown"></div><div class="watchFace"><span id="heroTime">25:00</span></div></div>
         <section class="homeGuideCard" id="homeGuideCard">
           <div class="guidePortrait" id="homeGuidePortrait" aria-hidden="true"></div>
           <div class="homeGuideCopy"><small>MY GUIDE · <span id="homeGuideName">루미</span></small><b id="homeGuideLine">오늘 작전, 내가 옆에서 같이 봐줄게.</b></div>
