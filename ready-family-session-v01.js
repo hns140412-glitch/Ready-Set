@@ -35,7 +35,7 @@
     const sessionId=String(input.session_id||'').trim()||null;
     const validRole=ROLES.has(role)?role:null;
     const candidate={
-      state:authenticated?'AUTHENTICATED':'ANONYMOUS_LOCAL',
+      state:authenticated?(familyId&&validRole?'AUTHENTICATED':'AUTHENTICATED_UNBOUND'):'ANONYMOUS_LOCAL',
       authenticated,
       account_id:accountId,
       family_id:familyId,
@@ -50,7 +50,7 @@
       auth_provider:String(input.auth_provider||'').trim().toUpperCase()||null,
       source:String(input.source||'AUTH_BOOTSTRAP')
     };
-    if(authenticated&&(!accountId||!familyId||!memberId||!sessionId||!validRole)) return null;
+    if(authenticated&&(!accountId||!memberId||!sessionId)) return null;
     if(isExpired(candidate)) return null;
     return candidate;
   }
@@ -116,9 +116,18 @@
     return result;
   }
 
-  async function linkChild(email){
-    const result=await postAuth('/api/family/link-child',{email:String(email||'').trim()});
+  async function createFamily(relationship='GUARDIAN'){
+    const result=await postAuth('/api/family/create',{relationship:String(relationship||'GUARDIAN').trim().toUpperCase()});
+    if(result.ok&&result.session)return applyBootstrap({...result.session,source:'FAMILY_CREATE'});
     return result;
+  }
+
+  async function linkChild(email){
+    return postAuth('/api/family/link-child',{email:String(email||'').trim()});
+  }
+
+  async function linkGuardian(email,relationship='GUARDIAN'){
+    return postAuth('/api/family/link-guardian',{email:String(email||'').trim(),relationship:String(relationship||'GUARDIAN').trim().toUpperCase()});
   }
 
   function clear(){
@@ -163,7 +172,9 @@
     login,
     signup,
     logout,
+    createFamily,
     linkChild,
+    linkGuardian,
     clear
   });
 
