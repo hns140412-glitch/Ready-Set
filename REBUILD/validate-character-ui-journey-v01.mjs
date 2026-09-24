@@ -230,12 +230,16 @@ const core6Provenance=assetManifest.asset_sources?.core6_runtime_derivatives||{}
 assert(core6Provenance.source_file_id==='file_0000000022f0823090aec9a5d4c42aa3','CORE6_CANONICAL_SOURCE_ID_REGRESSION');
 assert(core6Provenance.derivation==='CANONICAL_FRONT_TURNAROUND_DIRECT_EXTRACT','CORE6_DERIVATION_METHOD_REGRESSION');
 assert(core6Provenance.redraw===false&&core6Provenance.generated_lookalike===false,'CORE6_LOOKALIKE_REGENERATION_FORBIDDEN');
+const core6HashMismatches=[];
 for(const id of exactCrew){
   const p=assetManifest.asset_files.crew[id];
   assert(fs.existsSync(p),'CORE6_RUNTIME_BINARY_MISSING_'+id);
   const actual=crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
-  assert(actual===core6Provenance.sha256?.[id],'CORE6_RUNTIME_BINARY_HASH_MISMATCH_'+id+'__ACTUAL_'+actual+'__EXPECTED_'+String(core6Provenance.sha256?.[id]||''));
+  const expected=String(core6Provenance.sha256?.[id]||'');
+  console.log('CORE6_RUNTIME_BINARY_SHA256',id,actual,expected);
+  if(actual!==expected)core6HashMismatches.push({id,actual,expected});
 }
+assert(core6HashMismatches.length===0,'CORE6_RUNTIME_BINARY_HASH_MISMATCHES__'+JSON.stringify(core6HashMismatches));
 console.log('CHARACTER_FORMATION_FAMILY_INHERITANCE_AND_CORE6_PROVENANCE_PASS');
 
 const projectionV02=read('INTEGRATION/CHARACTER_VISUAL_ID_PROJECTION_V02.md');
