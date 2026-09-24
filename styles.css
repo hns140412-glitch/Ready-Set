@@ -512,3 +512,41 @@
 .plannerRouteItem.childSchedule{background:rgba(255,247,224,.92);border:1px solid rgba(181,137,53,.14)}
 .plannerRouteItem.childSchedule i{background:#8c7445}
 .plannerRouteItem.missionItem{box-shadow:0 6px 18px rgba(42,35,31,.05)}
+
+
+/* READY PLANNER WORLD COMPOSITION — Planner first, Base Camp second, one-island atmosphere retained. */
+#plannerView.plannerView{isolation:isolate;background:linear-gradient(180deg,#f1c98f 0%,#d9d7a4 19%,#9fc0a2 39%,#4f806d 58%,#244f49 100%);color:#27221e}
+#plannerView .plannerWorldScene{position:absolute;inset:0 0 auto;height:390px;z-index:0;overflow:hidden;pointer-events:none;background:
+  radial-gradient(circle at 75% 16%,rgba(255,238,174,.86) 0 8%,transparent 24%),
+  linear-gradient(180deg,rgba(255,227,174,.78),rgba(169,194,154,.38) 48%,rgba(44,93,77,.14) 100%)}
+#plannerView .plannerWorldScene:before{content:"";position:absolute;left:-12%;right:-12%;bottom:42px;height:176px;background:
+  radial-gradient(ellipse at 18% 100%,#456f5b 0 26%,transparent 27%),
+  radial-gradient(ellipse at 46% 100%,#355f51 0 33%,transparent 34%),
+  radial-gradient(ellipse at 76% 100%,#4c765d 0 29%,transparent 30%);
+  opacity:.9;filter:blur(.2px)}
+#plannerView .plannerWorldScene:after{content:"";position:absolute;left:-8%;right:-8%;bottom:-12px;height:112px;background:linear-gradient(180deg,rgba(45,90,73,.1),#315e52 68%,#294f48);clip-path:polygon(0 47%,9% 32%,19% 43%,31% 18%,44% 38%,57% 22%,68% 42%,79% 25%,91% 38%,100% 28%,100% 100%,0 100%)}
+#plannerView .plannerWorldIsland{position:absolute;right:-22px;top:98px;width:196px;height:118px;border-radius:52% 48% 44% 56%/62% 56% 44% 38%;background:
+  radial-gradient(ellipse at 48% 30%,#d7bd72 0 18%,transparent 19%),
+  radial-gradient(ellipse at 51% 48%,#6f9a68 0 52%,#3f735e 53% 70%,transparent 71%);
+  transform:rotate(-5deg);box-shadow:0 26px 38px rgba(25,63,54,.18)}
+#plannerView .plannerWorldCamp{position:absolute;right:70px;top:126px;width:62px;height:52px;background:linear-gradient(145deg,#e5b978,#9f6645);clip-path:polygon(50% 0,100% 58%,86% 58%,86% 100%,14% 100%,14% 58%,0 58%);filter:drop-shadow(0 7px 6px rgba(55,49,34,.18))}
+#plannerView .plannerWorldGlow{position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,249,232,.26) 48%,rgba(28,71,61,.08));mix-blend-mode:screen}
+#plannerView .plannerWorldHeader,#plannerView .plannerMain{position:relative;z-index:2}
+#plannerView .plannerWorldHeader{color:#2d2823;text-shadow:0 1px 10px rgba(255,245,216,.38)}
+#plannerView .plannerWorldHeader>button{background:rgba(255,251,241,.72);backdrop-filter:blur(10px)}
+#plannerView .plannerMain{margin-top:68px;padding:0 16px calc(38px + var(--safeB))}
+#plannerView .plannerHero{position:relative;padding:17px 16px 15px;border:1px solid rgba(255,255,255,.48);border-radius:24px;background:linear-gradient(145deg,rgba(255,252,244,.78),rgba(243,237,218,.61));box-shadow:0 18px 38px rgba(31,65,55,.16);backdrop-filter:blur(15px)}
+#plannerView .plannerHero small{color:#725e45;opacity:.88}
+#plannerView .plannerHero p{color:#5d5b50}
+#plannerView .plannerTabs{background:rgba(245,244,228,.7);border:1px solid rgba(255,255,255,.38);backdrop-filter:blur(13px)}
+#plannerView .plannerTabs button.on{background:rgba(255,252,244,.92)}
+#plannerView .plannerDayChip{background:rgba(255,252,244,.78);border:1px solid rgba(255,255,255,.38);backdrop-filter:blur(9px)}
+#plannerView .plannerDayChip.on{background:#2f332a;color:#fff}
+#plannerView .plannerWeekItem,#plannerView .plannerRouteItem{backdrop-filter:blur(12px);box-shadow:0 9px 24px rgba(29,64,54,.08)}
+#plannerView .plannerWeekItem:not(.fixed),#plannerView .plannerRouteItem.missionItem{background:rgba(255,252,246,.9)}
+#plannerView .plannerWeekItem.familySchedule,#plannerView .plannerRouteItem.familySchedule{background:rgba(242,234,201,.66);border-color:rgba(103,91,55,.18)}
+#plannerView .plannerWeekItem.childSchedule,#plannerView .plannerRouteItem.childSchedule{background:rgba(255,243,207,.88)}
+#plannerView .plannerDayHead{padding:10px 3px 0;color:#f8f2e6;text-shadow:0 2px 10px rgba(23,50,44,.34)}
+#plannerView .plannerDayHead span{color:#2a2822;text-shadow:none;background:rgba(255,252,244,.88)}
+#plannerView .plannerFreeWindows{background:rgba(245,242,219,.72);backdrop-filter:blur(10px)}
+@media(max-width:390px){#plannerView .plannerMain{margin-top:58px;padding-left:14px;padding-right:14px}#plannerView .plannerHero{padding:15px 14px}.plannerHero h2{font-size:24px}}
