@@ -37,6 +37,12 @@
       return {ok:true,status,pending,conflicts:openConflictRows.length,conflictRows:openConflictRows};
     }
 
+    function googleLogin(){
+      const result=familyApi()?.googleLogin?.();
+      if(!result?.ok)toast('Google 로그인을 시작하지 못했습니다.');
+      return result||{ok:false,reason:'GOOGLE_LOGIN_UNAVAILABLE'};
+    }
+
     async function login(){
       const email=query('#authEmailInput')?.value.trim();
       const password=query('#authPasswordInput')?.value||'';
@@ -150,6 +156,7 @@
       });
       eventTarget.addEventListener?.('readyset-sync-status',()=>renderSyncStatus().catch(()=>{}));
       eventTarget.addEventListener?.('click',onConflictClick);
+      query('#authGoogleLoginBtn')?.addEventListener('click',googleLogin);
       query('#authLoginBtn')?.addEventListener('click',login);
       query('#authSignupBtn')?.addEventListener('click',signup);
       query('#authLogoutBtn')?.addEventListener('click',logout);
@@ -158,7 +165,7 @@
       return true;
     }
 
-    return Object.freeze({renderAuthStatus,renderSyncStatus,resolveSyncConflict,login,signup,logout,linkChild,checkSync,bind});
+    return Object.freeze({renderAuthStatus,renderSyncStatus,resolveSyncConflict,googleLogin,login,signup,logout,linkChild,checkSync,bind});
   }
 
   root.ReadyRebuildAuthSyncController=Object.freeze({
