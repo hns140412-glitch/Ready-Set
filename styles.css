@@ -624,3 +624,12 @@
 #missionView .missionFactInbox:not([open]){padding-top:13px;padding-bottom:13px}
 #missionView #voiceTaskBtn{min-width:60px;padding:0 9px;background:#ece7d7;color:#34332d}
 @media(max-width:390px){#missionView .missionBridgeMain{padding-top:78px}#missionView .missionBridgeScene{height:315px}}
+
+#missionView .missionEventTaskCard{border-color:rgba(242,207,57,.34);background:linear-gradient(145deg,rgba(255,250,218,.94),rgba(245,238,201,.84))}
+#missionView .missionEventTaskHead{display:flex;align-items:end;justify-content:space-between;gap:12px}
+#missionView .missionEventTaskHead small{display:block;font-size:8px;font-weight:950;letter-spacing:.12em;color:#806d35}
+#missionView .missionEventTaskHead h2{margin-top:3px}
+#missionView .missionEventTaskHead>span{padding:6px 8px;border-radius:999px;background:rgba(242,207,57,.22);font-size:8px;font-weight:900;white-space:nowrap}
+#missionView .eventTaskRow{background:rgba(255,252,235,.92);border:1px solid rgba(166,137,48,.14)}
+#missionView .eventTaskRow small{display:block;margin-top:3px;color:#8b7542;font-size:9px}
+#missionView #addEventTaskBtn{min-width:76px;background:#30352d;color:#fff}
