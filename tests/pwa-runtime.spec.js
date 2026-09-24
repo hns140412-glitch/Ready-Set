@@ -26,6 +26,7 @@ test('PWA service worker controls app and supports offline reload with local sta
   expect(pwa.manifestLink).toContain('manifest.webmanifest');
 
   await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('#missionView .missionFactInbox summary').click();
   await page.locator('#taskInput').fill('오프라인 복구 검증');
   await page.locator('#addTaskBtn').click();
 
