@@ -15,6 +15,7 @@
     const requireParentUi=options.requireParentUi||(()=>false);
     const localDateKey=options.localDateKey;
     const parsePrints=options.parsePrints||(()=>[]);
+    const parseRecurringDays=options.parseRecurringDays||(()=>[]);
     const toast=options.toast||(()=>{});
     const renderPlanner=options.renderPlanner||(()=>{});
     const renderMission=options.renderMission||(()=>{});
@@ -121,6 +122,7 @@
         range,
         nextAcademy:query('#englishNextAcademy').value,
         weekdayPrints:parsePrints(query('#englishPrints').value),
+        recurringDays:parseRecurringDays(query('#englishRecurringDays')?.value||''),
         components:{
           vocabulary:query('#englishVocabulary').value.trim(),
           grammar:query('#englishGrammar').value.trim(),
