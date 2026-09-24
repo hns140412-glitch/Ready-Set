@@ -7,10 +7,10 @@
     function renderAuth(session={}){
       const badge=q('#authStateBadge'),text=q('#authStatusText');
       const login=q('#authLoginControls'),logged=q('#authLoggedInControls'),link=q('#familyLinkChildSection');
-      if(badge)badge.textContent=session.authenticated?(session.role==='PARENT'?'보호자':'학생'):'로컬 모드';
+      if(badge)badge.textContent=session.authenticated?(session.role==='PARENT'?'보호자':'아이'):'로컬 모드';
       if(text){
         text.textContent=session.authenticated
-          ? `${session.role==='PARENT'?'PARENT':'CHILD'} 계정으로 로그인됨 · 가족 ${session.family_id||'-'}`
+          ? `Google/Family 계정 · ${session.role==='PARENT'?'보호자':'아이'} · 가족 ${session.family_id||'-'}`
           : '로그인하지 않아도 이 기기에서 CHILD 로컬 모드로 사용할 수 있습니다.';
       }
       if(login)login.hidden=!!session.authenticated;
