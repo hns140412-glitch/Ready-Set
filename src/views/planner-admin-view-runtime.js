@@ -10,7 +10,7 @@
       el.innerHTML=rows.length
         ? [...rows].sort((a,b)=>String(a.start_at||'').localeCompare(String(b.start_at||''))).map(x=>`
           <button class="adminListItem" type="button" data-edit-schedule="${x.commitment_id}">
-            <span><b>${escapeHtml(x.title)}</b><small>${x.recurrence==='WEEKLY'?'매주 '+['일','월','화','수','목','금','토'][Number(x.weekday)]+'요일 '+escapeHtml(x.start)+' → '+escapeHtml(x.end):String(x.start_at||'').slice(0,16).replace('T',' ')+' → '+String(x.end_at||'').slice(11,16)} · ${escapeHtml(x.category||'OTHER')}</small></span><strong>수정</strong>
+            <span><b>${escapeHtml(x.title)}</b><small>${x.recurrence==='WEEKLY'?'매주 '+['일','월','화','수','목','금','토'][Number(x.weekday)]+'요일 '+escapeHtml(x.start)+' → '+escapeHtml(x.end):String(x.start_at||'').slice(0,16).replace('T',' ')+' → '+String(x.end_at||'').slice(11,16)} · ${escapeHtml(x.category||'OTHER')} · ${x.audience_scope==='MEMBER'?'아이 전용':'가족 전체'}</small></span><strong>수정</strong>
           </button>`).join('')
         : '<div class="plannerEmpty"><b>등록된 고정 일정이 없어요.</b><small>학원·피아노·태권도처럼 움직이지 않는 일정을 먼저 넣어요.</small></div>';
     }
@@ -40,7 +40,7 @@
       el.innerHTML=rows.length
         ? [...rows].sort((a,b)=>String((a.date||a.weekday)+a.start).localeCompare(String((b.date||b.weekday)+b.start))).map(x=>`
           <div class="adminListItem">
-            <button type="button" data-edit-availability="${x.availability_id}"><span><b>${x.recurrence==='WEEKLY'?'매주 '+['일','월','화','수','목','금','토'][Number(x.weekday)]+'요일':escapeHtml(x.date)} 학습 가능</b><small>${escapeHtml(x.start)} → ${escapeHtml(x.end)} · Parent 확인</small></span><strong>수정</strong></button>
+            <button type="button" data-edit-availability="${x.availability_id}"><span><b>${x.recurrence==='WEEKLY'?'매주 '+['일','월','화','수','목','금','토'][Number(x.weekday)]+'요일':escapeHtml(x.date)} 학습 가능</b><small>${escapeHtml(x.start)} → ${escapeHtml(x.end)} · ${x.audience_scope==='MEMBER'?'아이 전용':'가족 전체'} · Parent 확인</small></span><strong>수정</strong></button>
             <button class="miniAction" type="button" data-delete-availability="${x.availability_id}">삭제</button>
           </div>`).join('')
         : '<div class="plannerEmpty"><b>확인된 학습 가능 시간이 없어요.</b><small>Planner는 시간을 추정하지 않고, 확인된 범위가 있을 때만 가용시간 근거로 사용해요.</small></div>';
