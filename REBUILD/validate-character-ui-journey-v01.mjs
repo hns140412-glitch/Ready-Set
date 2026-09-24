@@ -341,3 +341,10 @@ const crewMeetSlice=journey.slice(
 );
 assert(crewMeetSlice.length>0,'CREW_MEET_SOURCE_SLICE_MISSING');
 assert(!crewMeetSlice.includes('formationCrewGrid'),'CREW_MEET_MUST_NOT_REUSE_SELECTION_CARD_GRID');
+
+
+// Tablet visual parity correction: world extension must be manifest-bound.
+assert(assetManifest.asset_files?.background?.prep_room_tablet_extension==='assets/character-formation/background/prep-room-tablet-extension.svg','TABLET_WORLD_EXTENSION_ASSET_MISSING');
+assert(index.includes('data-cf-asset-key="prep_room_tablet_extension"'),'TABLET_WORLD_EXTENSION_DOM_BINDING_MISSING');
+assert(styles.includes('Character Formation tablet visual parity correction V01'),'TABLET_VISUAL_PARITY_CSS_MISSING');
+assert(styles.includes('#characterSetupView .cfCommonTools{\n    left:auto;\n    right:0;\n    width:430px;'),'TABLET_COMMON_TOOLS_MUST_STAY_IN_PHONE_STAGE');
