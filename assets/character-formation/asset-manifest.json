@@ -187,9 +187,11 @@
   },
   "current_runtime_anchor": {
     "id": "CF-A05-SIGNATURE-ITEM",
-    "state": "SCENE_ITEMS_TOOLS_CORE6_BOUND__PENDING_RESPONSIVE_RUNTIME_PROOF",
-    "proof_required": "390x844_MOBILE_PLUS_TABLET_BACKGROUND_EXTENSION_RUNTIME_PROOF",
-    "pending_only": []
+    "state": "RESPONSIVE_RUNTIME_PROOF_PASS__POSE_CONSUMER_READY__POSE_BINARY_MATERIALIZATION_OPEN",
+    "proof_required": "POSE_BINARY_MATERIALIZATION_THEN_FINAL_ANCHOR_PARITY",
+    "pending_only": [
+      "POSE_BINARY_MATERIALIZATION"
+    ]
   },
   "tool_contract": {
     "signature_item_rule": "EXACTLY_ONE_FROM_LOCKED_FIVE",
@@ -298,7 +300,7 @@
       "canonical_source_file_id": "file_0000000022f0823090aec9a5d4c42aa3",
       "canonical_source_name": "가이드☆ 여섯 친구의 찬란한 여정.png",
       "identity_rule": "CORE6_VISUAL_ID_REMAINS_HARD_LOCK",
-      "runtime_binding_state": "SOURCE_REFERENCE_ONLY_NOT_YET_RUNTIME_BINARY",
+      "runtime_binding_state": "POSE_BINARY_MATERIALIZATION_OPEN__CANONICAL_FALLBACK_ACTIVE",
       "warning": "SOURCE_BANK_REGISTRATION_DOES_NOT_MEAN_RUNTIME_BINARY_BOUND",
       "source_sets": {
         "standing_action_set": [
@@ -365,13 +367,20 @@
             "role": "POSE_ACTION_DERIVATIVE_SOURCE"
           }
         ]
-      }
+      },
+      "consumer_runtime": "src/identity/character-formation-pose-bank-runtime.js",
+      "consumer_binding_state": "CONSUMER_READY_WITH_CANONICAL_FALLBACK",
+      "open_reason": "CURRENT_GITHUB_CONNECTOR_CANNOT_TRANSFER_CONVERSATION_BINARY_DIRECTLY_TO_REPOSITORY_BLOB",
+      "user_action_required": false,
+      "fallback": "asset_files.crew canonical direct extracts"
     }
   },
   "asset_quality": {
     "runtime_vector_assets": "HIGH_DENSITY_SCENE_LAYER_UPGRADE_V1",
     "final_anchor_parity": "SCENE_LAYER_UPGRADED__PENDING_RESPONSIVE_RUNTIME_PROOF_AND_ITEM_TOOL_PARITY",
-    "core6_runtime_derivatives": "BOUND_DIRECT_FROM_LOCKED_CANONICAL_SOURCE"
+    "core6_runtime_derivatives": "BOUND_DIRECT_FROM_LOCKED_CANONICAL_SOURCE",
+    "responsive_runtime_proof": "PASS_MOBILE_390x844_AND_TABLET_1194x834",
+    "pose_action_runtime": "CONSUMER_READY__BINARY_MATERIALIZATION_OPEN__CANONICAL_FALLBACK_ACTIVE"
   },
   "projection_scope": {
     "type": "CHARACTER_FORMATION_RUNTIME_PROJECTION",
