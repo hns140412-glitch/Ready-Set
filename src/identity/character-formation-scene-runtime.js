@@ -40,6 +40,7 @@
         crewImg.dataset.cfAssetKey=id;
       }
       assetRegistry?.bind?.(scene);
+      root.CharacterFormationPoseBank?.bindImage?.(crewImg,id,'seated');
     }
     function apply(){
       raf=0;currentX+=(targetX-currentX)*.08;currentY+=(targetY-currentY)*.08;
