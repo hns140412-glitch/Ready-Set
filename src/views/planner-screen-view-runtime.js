@@ -8,8 +8,9 @@
     const addDays=options.addDays;
     const weekStart=options.weekStart;
     const itemsForDate=options.itemsForDate;
+    const freeWindowsForDate=options.freeWindowsForDate||(()=>[]);
     const stateLabel=options.stateLabel;
-    const daypartLabel=value=>value==='MORNING'?'아침':value==='AFTER_SCHOOL'?'방과 후':value==='EVENING'?'저녁':'';
+    const daypartLabel=value=>value==='MORNING'?'등교 전':value==='AFTER_SCHOOL'?'방과 후':value==='EVENING'?'저녁':'';
 
     function render({selectedDate,tab,snapshot,isParent=false}={}){
       const chosen=selectedDate||localDateKey();
@@ -28,22 +29,26 @@
       if(!strip||!detail)return {ok:false,reason:'PLANNER_VIEW_MISSING'};
       const dates=Array.from({length:7},(_,i)=>addDays(start,i));
       const names=['월','화','수','목','금','토','일'];
+      const todayKey=localDateKey();
       strip.innerHTML='';
       dates.forEach((d,i)=>{
         const key=localDateKey(d),items=itemsForDate(key,snapshot);
         const button=document.createElement('button');
         button.type='button';
-        button.className='plannerDayChip'+(key===chosen?' on':'');
+        button.className='plannerDayChip'+(key===chosen?' on':'')+(key===todayKey?' today':'');
         button.dataset.plannerDate=key;
-        button.innerHTML=`<small>${names[i]}</small><b>${d.getDate()}</b><span>${items.length?items.length+'개':'·'}</span>`;
+        button.innerHTML=`<small>${names[i]}</small><b>${d.getDate()}</b><span>${items.length?items.length+'개':'·'}</span>${key===todayKey?'<i>오늘</i>':''}`;
         strip.appendChild(button);
       });
 
       const selectedItems=itemsForDate(chosen,snapshot);
-      detail.innerHTML=selectedItems.length?selectedItems.map(x=>`
-        <article class="plannerWeekItem ${x.kind==='SCHEDULE'?'fixed':''}">
+      const freeWindows=freeWindowsForDate(chosen);
+      const itemHtml=selectedItems.map(x=>`
+        <article class="plannerWeekItem ${x.kind==='SCHEDULE'?'fixed':''} ${x.daypart==='MORNING'&&x.kind==='TODO'?'beforeSchool':''}">
           <span class="plannerDot"></span><div><b>${escapeHtml(x.label)}</b><small>${x.daypart?daypartLabel(x.daypart)+' · ':''}${x.time?x.time+' · ':''}${x.meta}${x.minutes?' · '+x.minutes+'분':''}${x.reason&&x.kind==='TODO'?' · '+escapeHtml(x.reason):''}</small></div><em>${stateLabel(x.state)}</em>
-        </article>`).join(''):'<div class="plannerEmpty"><b>비어 있는 날이에요.</b><small>필요한 탐험만 가볍게 추가해요.</small></div>';
+        </article>`).join('');
+      const freeHtml=freeWindows.length?`<section class="plannerFreeWindows" aria-label="학습 가능 자유 시간"><div class="plannerFreeHead"><b>가능한 자유 시간</b><small>고정 일정을 제외한 실제 여유 구간</small></div><div class="plannerFreeList">${freeWindows.map(w=>`<span><b>${w.start}–${w.end}</b><small>${w.minutes}분</small></span>`).join('')}</div></section>`:'';
+      detail.innerHTML=itemHtml+freeHtml||'<div class="plannerEmpty"><b>비어 있는 날이에요.</b><small>필요한 탐험만 가볍게 추가해요.</small></div>';
 
       const timeline=q('#plannerDayTimeline');
       if(timeline)timeline.innerHTML=selectedItems.length?selectedItems.map((x,i)=>`
