@@ -1,13 +1,15 @@
 (() => {
   'use strict';
 
-  const VERSION='0.2.0';
+  const VERSION='0.3.0';
   const ROLES=new Set(['CHILD','PARENT']);
   let sessionRevision=0;
   let session={
     state:'ANONYMOUS_LOCAL',
     authenticated:false,
+    account_id:null,
     family_id:null,
+    membership_id:null,
     member_id:null,
     role:'CHILD',
     session_id:null,
@@ -26,22 +28,29 @@
   function normalize(input={}){
     const role=String(input.role||'').trim().toUpperCase();
     const authenticated=input.authenticated===true;
+    const accountId=String(input.account_id||input.member_id||'').trim()||null;
     const familyId=String(input.family_id||'').trim()||null;
+    const membershipId=String(input.membership_id||'').trim()||null;
     const memberId=String(input.member_id||'').trim()||null;
     const sessionId=String(input.session_id||'').trim()||null;
     const validRole=ROLES.has(role)?role:null;
     const candidate={
       state:authenticated?'AUTHENTICATED':'ANONYMOUS_LOCAL',
       authenticated,
+      account_id:accountId,
       family_id:familyId,
+      membership_id:membershipId,
       member_id:memberId,
       role:validRole||'CHILD',
       session_id:sessionId,
       issued_at:input.issued_at||null,
       expires_at:input.expires_at||null,
+      relationship:String(input.relationship||'').trim().toUpperCase()||null,
+      membership_status:String(input.membership_status||'').trim().toUpperCase()||null,
+      auth_provider:String(input.auth_provider||'').trim().toUpperCase()||null,
       source:String(input.source||'AUTH_BOOTSTRAP')
     };
-    if(authenticated&&(!familyId||!memberId||!sessionId||!validRole)) return null;
+    if(authenticated&&(!accountId||!familyId||!memberId||!sessionId||!validRole)) return null;
     if(isExpired(candidate)) return null;
     return candidate;
   }
@@ -85,6 +94,12 @@
     return body;
   }
 
+  function googleLogin(){
+    if(typeof location==='undefined')return {ok:false,reason:'BROWSER_REQUIRED'};
+    location.assign('/.netlify/identity/authorize?provider=google');
+    return {ok:true,redirect:true,provider:'google'};
+  }
+
   async function login(input={}){
     const result=await postAuth('/api/auth/login',{email:String(input.email||'').trim(),password:String(input.password||'')});
     if(result.ok&&result.session)return applyBootstrap({...result.session,source:'NETLIFY_IDENTITY_LOGIN'});
@@ -108,7 +123,7 @@
 
   function clear(){
     session={
-      state:'ANONYMOUS_LOCAL',authenticated:false,family_id:null,member_id:null,role:'CHILD',
+      state:'ANONYMOUS_LOCAL',authenticated:false,account_id:null,family_id:null,membership_id:null,member_id:null,role:'CHILD',
       session_id:null,issued_at:null,expires_at:null,source:'LOCAL_DEFAULT'
     };
     sessionRevision+=1;
@@ -143,6 +158,7 @@
     isChild,
     requireRole,
     hydrate,
+    googleLogin,
     login,
     signup,
     logout,
