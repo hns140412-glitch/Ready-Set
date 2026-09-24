@@ -227,7 +227,7 @@
           const value=String(q('#formationBaseCampName')?.value||'').trim();
           if(!value){toast('Base Camp 이름을 입력해 주세요.');return;}
           f.baseCamp.name=value;save();render();
-        }else if(action==='GO_READY')nav('home');
+        }else if(action==='GO_READY')nav('planner');
       });
     }
 
