@@ -95,9 +95,9 @@
   }
 
   function googleLogin(){
-    if(typeof location==='undefined')return {ok:false,reason:'BROWSER_REQUIRED'};
-    location.assign('/.netlify/identity/authorize?provider=google');
-    return {ok:true,redirect:true,provider:'google'};
+    const identity=globalThis.ReadyNetlifyIdentity;
+    if(!identity?.loginGoogle)return {ok:false,reason:'IDENTITY_BROWSER_RUNTIME_MISSING'};
+    return identity.loginGoogle();
   }
 
   async function login(input={}){
@@ -146,6 +146,7 @@
     if(want==='PARENT' && isParent()) return {ok:true,session:s};
     return {ok:false,reason:want==='PARENT'?'PARENT_AUTH_REQUIRED':'ROLE_NOT_ALLOWED',session:s};
   }
+  window.addEventListener('readyset-identity-callback',()=>{hydrate().catch(()=>{});});
   const bootstrap=globalThis.__READY_AUTH_BOOTSTRAP__;
   const bootstrapAllowed=typeof location!=='undefined'&&['127.0.0.1','localhost'].includes(location.hostname);
   if(bootstrapAllowed&&bootstrap&&typeof bootstrap==='object') applyBootstrap(bootstrap);
