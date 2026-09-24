@@ -78,7 +78,13 @@
     function activeSession(){return globalThis.ReadyFamilySession?.current?.()||{authenticated:false,member_id:null,family_id:null,role:'CHILD'}}
 
     function sharedBlank(){
-      return {schedule_commitments:[],schedule_exceptions:[],daily_availability_windows:[],availability_exceptions:[]};
+      return {
+        schedule_commitments:[],
+        schedule_exceptions:[],
+        daily_availability_windows:[],
+        availability_exceptions:[],
+        reflow_review:{needed:false,reasons:[],updated_at:null}
+      };
     }
     function audienceVisible(row={}){
       const s=activeSession();
@@ -95,7 +101,9 @@
         schedule_commitments:Array.isArray(x.schedule_commitments)?x.schedule_commitments:[],
         schedule_exceptions:Array.isArray(x.schedule_exceptions)?x.schedule_exceptions:[],
         daily_availability_windows:Array.isArray(x.daily_availability_windows)?x.daily_availability_windows:[],
-        availability_exceptions:Array.isArray(x.availability_exceptions)?x.availability_exceptions:[]
+        availability_exceptions:Array.isArray(x.availability_exceptions)?x.availability_exceptions:[],
+        reflow_review:(x.reflow_review&&typeof x.reflow_review==='object')
+          ?x.reflow_review:{needed:false,reasons:[],updated_at:null}
       };
     }
     function loadMember(){
@@ -118,7 +126,8 @@
           schedule_commitments:legacy.schedule_commitments,
           schedule_exceptions:legacy.schedule_exceptions,
           daily_availability_windows:legacy.daily_availability_windows,
-          availability_exceptions:legacy.availability_exceptions
+          availability_exceptions:legacy.availability_exceptions,
+          reflow_review:legacy.reflow_review
         });
         if(lifted.schedule_commitments.length||lifted.schedule_exceptions.length||lifted.daily_availability_windows.length||lifted.availability_exceptions.length){
           storage.setItem(familyStorageKey(),JSON.stringify(lifted));
@@ -128,12 +137,20 @@
     }
     function load(){
       const member=loadMember(),family=loadFamily();
+      const familyReview=family.reflow_review||{needed:false,reasons:[],updated_at:null};
+      const memberReview=member.reflow_review||{needed:false,reasons:[],updated_at:null};
+      const mergedReview={
+        needed:familyReview.needed===true||memberReview.needed===true,
+        reasons:[...new Set([...(familyReview.reasons||[]),...(memberReview.reasons||[])])],
+        updated_at:familyReview.updated_at||memberReview.updated_at||null
+      };
       return normalize({
         ...member,
         schedule_commitments:family.schedule_commitments.filter(audienceVisible),
         schedule_exceptions:family.schedule_exceptions,
         daily_availability_windows:family.daily_availability_windows.filter(audienceVisible),
-        availability_exceptions:family.availability_exceptions
+        availability_exceptions:family.availability_exceptions,
+        reflow_review:mergedReview
       });
     }
     function save(s){
