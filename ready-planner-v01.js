@@ -499,7 +499,10 @@
         difficulty:Number.isFinite(x.difficulty)?x.difficulty:null,
         recovery_need:x.recovery_need||null,
         review_policy:x.review_policy||null,
-        parent_help_dependency:x.parent_help_dependency||null
+        parent_help_dependency:x.parent_help_dependency||null,
+        preferred_days:Array.isArray(x.preferred_days)?[...x.preferred_days]:[],
+        execution_plan:x.execution_plan||null,
+        execution_app:x.execution_app||'ready-set'
       }));
     }
     function linkOrCreateTodayItems(values=[],options={}){
@@ -588,6 +591,33 @@
       return hasEnglish&&hasAcademy;
     }
 
+    function preferredDaysForUnit(unit={},fact={}){
+      const direct=Array.isArray(unit.preferred_days)?unit.preferred_days.map(Number).filter(x=>x>=0&&x<=6):[];
+      if(direct.length)return [...new Set(direct)];
+      const target=cleanText(unit.concept_skill_target).toUpperCase();
+      const token=target.match(/^(SUN|MON|TUE|WED|THU|FRI|SAT)_PRINT$/)?.[1]||null;
+      const map={SUN:0,MON:1,TUE:2,WED:3,THU:4,FRI:5,SAT:6};
+      if(token)return [map[token]];
+      if(target==='VOCABULARY'&&Array.isArray(fact.recurring_days))return [...new Set(fact.recurring_days.map(Number).filter(x=>x>=0&&x<=6))];
+      return [];
+    }
+
+    function executionPlanForUnit(unit={}){
+      const plan=globalThis.ReadySpecialistRouter?.classify?.({
+        subject:unit.subject||null,
+        matched_domain:unit.analysis_provenance?.learning_reference?.matched_domain||null,
+        activity_sequence:unit.activity_sequence||[],
+        activity_types:unit.activity_types||[]
+      })||null;
+      return plan?{
+        authority:plan.authority||'READY_LEARNING_ENGINE_ROUTING',
+        mode:plan.mode||'READY_ORCHESTRATED',
+        primary_app:plan.primary_app||'ready-set',
+        allowed_specialists:Array.isArray(plan.allowed_specialists)?[...plan.allowed_specialists]:[],
+        handoff_queue:Array.isArray(plan.handoff_queue)?[...plan.handoff_queue]:[]
+      }:{authority:'READY_LEARNING_ENGINE_ROUTING',mode:'READY_ORCHESTRATED',primary_app:'ready-set',allowed_specialists:[],handoff_queue:[]};
+    }
+
     function operatingRuleForUnit(unit={},date,scheduleByDate={}){
       const target=cleanText(unit.concept_skill_target).toUpperCase();
       const isVocabulary=target==='VOCABULARY';
@@ -645,8 +675,11 @@
           const unitScore=Number.isFinite(unitLoad.score)?unitLoad.score:3;
           const unitDifficulty=Number.isFinite(unitLoad.difficulty)?unitLoad.difficulty:3;
           const unitRecovery=unitLoad.recovery_need||'MEDIUM';
+          const preferredDays=preferredDaysForUnit(unit,fact);
+          const preferredDates=preferredDays.length?dates.filter(d=>preferredDays.includes(new Date(d+'T12:00:00').getDay())):[];
+          const executionPlan=executionPlanForUnit(unit);
           const operatingRuleByDate=Object.fromEntries(dates.map(d=>[d,operatingRuleForUnit(unit,d,scheduleByDate)]));
-          const date=[...dates].sort((a,b)=>{
+          const date=[...(preferredDates.length?preferredDates:dates)].sort((a,b)=>{
             const ar=!!operatingRuleByDate[a],br=!!operatingRuleByDate[b];
             if(ar!==br)return ar?-1:1;
             const wa=freeWindowByDate[a],wb=freeWindowByDate[b];
@@ -696,7 +729,7 @@
           const operatingRule=operatingRuleByDate[date]||null;
           const templateId=`template_${unit.learning_unit_id}`;
           const factRevision=Number(fact.fact_revision)||1;
-          const template={template_id:templateId,title:`${unit.subject} · ${unit.source_range||unit.concept_skill_target}`,subject:unit.subject,assignment_cycle:fact.assignment_cycle,learning_units:[unit.learning_unit_id],provenance:{kind:'LEARNING_MASTER_OUTPUT',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:factRevision},confirmation_state:'CONFIRMED',deadline_date:fact.deadline_boundary||null,estimated_minutes:null,planner_estimated_minutes:null,allocation_priority:operatingRule?20:100,required_today:!!operatingRule,preferred_days:[],operating_rule:operatingRule?.rule_id||null,preferred_daypart:operatingRule?.preferred_daypart||null,operating_rule_evidence:operatingRule?.evidence||null,updated_at:new Date().toISOString()};
+          const template={template_id:templateId,title:`${unit.subject} · ${unit.source_range||unit.concept_skill_target}`,subject:unit.subject,assignment_cycle:fact.assignment_cycle,learning_units:[unit.learning_unit_id],provenance:{kind:'LEARNING_MASTER_OUTPUT',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:factRevision},confirmation_state:'CONFIRMED',deadline_date:fact.deadline_boundary||null,estimated_minutes:null,planner_estimated_minutes:null,allocation_priority:operatingRule?20:100,required_today:!!operatingRule,preferred_days:preferredDays,recurring_preference:preferredDays.length>0,execution_plan:executionPlan,execution_app:executionPlan.primary_app,operating_rule:operatingRule?.rule_id||null,preferred_daypart:operatingRule?.preferred_daypart||null,operating_rule_evidence:operatingRule?.evidence||null,updated_at:new Date().toISOString()};
           const ti=s.homework_templates.findIndex(x=>x.template_id===templateId);if(ti>=0)s.homework_templates[ti]=template;else s.homework_templates.push(template);
           proposals.push({
             decision:'PROPOSE',date,label:template.title,subject:unit.subject,assignment_id:assignmentId,analysis_id:analysis.analysis_id,
@@ -708,6 +741,10 @@
             method_variant:unit.analysis_provenance?.learning_reference?.method_variant||null,
             concept_skill_target:unit.concept_skill_target||null,
             divisible_boundary:unit.divisible_boundary||null,
+            preferred_days:preferredDays,
+            recurring_occurrence:preferredDays.length>0,
+            execution_plan:executionPlan,
+            execution_app:executionPlan.primary_app,
             confidence:Number.isFinite(unit.confidence)?unit.confidence:null,
             unresolved_flags:Array.isArray(unit.unresolved_flags)?[...unit.unresolved_flags]:[],
             cognitive_load_profile:unit.cognitive_load_profile,
@@ -729,6 +766,18 @@
             }),
             free_window_evidence:freeWindowByDate[date]
           });
+          const baseProposal=proposals.at(-1);
+          const extraRecurringDates=preferredDates.filter(d=>d!==date);
+          for(const recurringDate of extraRecurringDates){
+            const existingRecurring=s.dated_todos.find(t=>t.learning_unit_id===unit.learning_unit_id&&t.date===recurringDate&&isOpenTodo(t));
+            if(existingRecurring){
+              proposals.push({decision:'REUSE',date:recurringDate,todo_id:existingRecurring.todo_id,learning_unit_id:unit.learning_unit_id,recurring_occurrence:true});
+              continue;
+            }
+            loadByDate[recurringDate].push({tags,score:unitScore,difficulty:unitDifficulty,recovery_need:unitRecovery});
+            const recurringRule=operatingRuleByDate[recurringDate]||null;
+            proposals.push({...baseProposal,date:recurringDate,recurring_occurrence:true,operating_rule:recurringRule?.rule_id||null,preferred_daypart:recurringRule?.preferred_daypart||null,operating_rule_evidence:recurringRule?.evidence||null,free_window_evidence:freeWindowByDate[recurringDate]});
+          }
         }
         const run={allocation_run_id:runId,version:'PLANNER_V2',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:Number(fact.fact_revision)||1,primary_basis:'LEARNING_UNIT_ACTIVITY_LOAD',minutes_role:'SECONDARY_SAFETY_ONLY',free_window_role:'SECONDARY_CAPACITY_SAFETY',free_window_coverage:{known_dates:freeWindowCoverage,total_dates:dates.length},free_window_by_date:freeWindowByDate,proposals,created_at:new Date().toISOString()};
         s.allocation_runs.push(run);return {ok:true,...run};
@@ -738,7 +787,7 @@
       return mutate(s=>{const run=s.allocation_runs.find(x=>x.allocation_run_id===runId&&x.version==='PLANNER_V2');if(!run)return {ok:false,reason:'ALLOCATION_RUN_NOT_FOUND'};
         const created=[];
         for(const p of run.proposals.filter(x=>x.decision==='PROPOSE')){
-          let todo=s.dated_todos.find(x=>x.learning_unit_id===p.learning_unit_id&&isOpenTodo(x));
+          let todo=s.dated_todos.find(x=>x.learning_unit_id===p.learning_unit_id&&isOpenTodo(x)&&(!p.recurring_occurrence||x.date===p.date));
           if(!todo){todo={
             todo_id:makeId('todo'),date:p.date,label:p.label,subject:p.subject||null,assignment_id:p.assignment_id,analysis_id:p.analysis_id,
             fact_revision:Number(p.fact_revision)||Number(run.fact_revision)||1,
@@ -753,6 +802,10 @@
             activity_load_score:p.activity_load_score,difficulty:p.difficulty,recovery_need:p.recovery_need,
             free_window_evidence:p.free_window_evidence||null,
             review_policy:p.review_policy,parent_help_dependency:p.parent_help_dependency,
+            preferred_days:Array.isArray(p.preferred_days)?[...p.preferred_days]:[],
+            recurring_occurrence:p.recurring_occurrence===true,
+            execution_plan:p.execution_plan||null,
+            execution_app:p.execution_app||'ready-set',
             operating_rule:p.operating_rule||null,
             preferred_daypart:p.preferred_daypart||null,
             operating_rule_evidence:p.operating_rule_evidence||null,
