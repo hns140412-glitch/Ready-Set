@@ -175,7 +175,7 @@
   radial-gradient(90% 42% at 72% 17%,rgba(255,246,218,.82) 0%,rgba(255,246,218,0) 72%),
   linear-gradient(180deg,#dce9df 0%,#e7efe6 34%,#c4dcd4 62%,#aed0cd 100%)}
 #homeView .topbar{position:relative;z-index:3}
-#homeView:before{content:"";position:absolute;left:-14%;right:-14%;top:31%;height:42%;pointer-events:none;background:
+#homeView:before{content:"";position:absolute;left:0;right:0;top:31%;height:42%;pointer-events:none;background:
   radial-gradient(62% 112% at 20% 100%,rgba(86,136,96,.70) 0 45%,transparent 46%),
   radial-gradient(70% 125% at 76% 100%,rgba(66,119,82,.67) 0 43%,transparent 44%);
   opacity:.72}
