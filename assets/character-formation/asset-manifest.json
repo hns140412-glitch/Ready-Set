@@ -394,6 +394,8 @@
       "SIGNATURE_ITEM_RULE_CHANGE"
     ],
     "tablet_world_full_bleed": true,
-    "tablet_live_ui_remains_phone_scale": true
+    "tablet_live_ui_remains_phone_scale": true,
+    "tablet_background_scaling": "PRESERVE_SOURCE_HEIGHT_RIGHT_ANCHORED",
+    "tablet_extension_fill": "PREPARATION_ROOM_TONE_EXTENSION"
   }
 }
