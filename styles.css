@@ -242,3 +242,53 @@
 @keyframes cfCrewBreath{0%,100%{translate:0 0;rotate:0deg}50%{translate:0 -3px;rotate:-.3deg}}
 @media(prefers-reduced-motion:reduce){#characterSetupView .cfCrewAsset{animation:none!important}#characterSetupView .cfLayer,#characterSetupView .cfCrewAsset{transform:none!important;transition:none!important}}
 @media(max-width:360px){#characterSetupView[data-cf-status="ITEM_SELECTION"] .characterDirectionGrid,#characterSetupView[data-cf-status="ITEM_SELECTED"] .characterDirectionGrid{grid-template-columns:repeat(2,minmax(0,1fr))}#characterSetupView[data-cf-status="ITEM_SELECTION"] .characterItemCard:last-child,#characterSetupView[data-cf-status="ITEM_SELECTED"] .characterItemCard:last-child{grid-column:auto}}
+
+
+/* Character Formation responsive contract: MOBILE_SOURCE_TABLET_BACKGROUND_EXTENSION */
+/* Phone remains the source composition. Tablet keeps the live UI block phone-sized and expands only the world around it. */
+@media (min-width:768px){
+  #formationJourneyView .formationJourneyHeader,
+  #formationJourneyView .formationJourneyMain,
+  #characterSetupView .cfHeader,
+  #characterSetupView .cfCharacterMain{
+    width:min(430px,calc(100vw - 40px));
+    box-sizing:border-box;
+    margin-left:auto;
+    margin-right:max(20px,env(safe-area-inset-right));
+  }
+  #formationJourneyView .formationJourneyMain,
+  #characterSetupView .cfCharacterMain{
+    padding-left:16px;
+    padding-right:16px;
+  }
+  #formationJourneyView .formationJourneyScene,
+  #characterSetupView .cfScene{
+    inset:0;
+  }
+  #formationJourneyView .formationJourneyBase,
+  #formationJourneyView .formationJourneyIslandHint,
+  #formationJourneyView .formationJourneyMid,
+  #formationJourneyView .formationJourneyForeground,
+  #formationJourneyView .formationJourneyGlow,
+  #characterSetupView .cfFarWorld,
+  #characterSetupView .cfDestinationHint,
+  #characterSetupView .cfMidProps,
+  #characterSetupView .cfForeground,
+  #characterSetupView .cfFxLayer{
+    background-size:cover;
+    background-position:center;
+  }
+  #characterSetupView .cfCrewAsset{
+    width:235px;
+    max-height:46vh;
+    right:max(8px,env(safe-area-inset-right));
+  }
+}
+@media (min-width:1024px){
+  #formationJourneyView .formationJourneyHeader,
+  #formationJourneyView .formationJourneyMain,
+  #characterSetupView .cfHeader,
+  #characterSetupView .cfCharacterMain{
+    margin-right:max(28px,5vw);
+  }
+}
