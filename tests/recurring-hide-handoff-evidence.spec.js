@@ -76,7 +76,8 @@ test('recurring vocabulary TODO launches Hide with Learning Engine context and r
 
   await page.waitForFunction(()=>window.ReadySetRev07.contract().tasks[0].state==='COMPLETED');
   await page.locator('#completeBtn').click();
-  await page.locator('[data-outcome-state="COMPLETED"]').click();
+  await expect(page.locator('#outcomeModal')).toBeVisible();
+  await page.locator('#outcomeModal [data-outcome-state="COMPLETED"]').click();
 
   await expect.poll(async()=>page.evaluate(()=>{
     const s=window.ReadySetPlanner.snapshot();
