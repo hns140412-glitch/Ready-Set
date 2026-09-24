@@ -262,11 +262,23 @@
       "sha256": {
         "dubi": "3961351b3047773bf868657462e1043de7c02870c7eb2902e56dbb29dd811c6c",
         "lori": "3b392cedc9d5e0a60054ce2f9806c65814b81f680cc5a1d6bce6eac92d584f1f",
-        "ink": "7f01124d83745e048fcc8370413186c7fcc6e08d9504c8b7abd496ce98ac4794",
+        "ink": "57293ffa027ba7bc52b1364def00e7ee0f634ac4333ad5b61456769bef9bbfa8",
         "nova": "68fe7d6d7a5762ccd20608b795726ec454a1b89a9b7de79c378a3b874648deb0",
         "take": "900e669f68609979b607b4539eeffe39f398d7f8485b8927fbf3a48cca31f2cf",
         "zero": "0828070779b99985011f05ce00c7e7c161529fc464b97993feb5d83af6ac532d"
-      }
+      },
+      "hash_corrections": [
+        {
+          "id": "ink",
+          "date": "2026-09-24",
+          "correction": "MANIFEST_HASH_ONLY",
+          "previous_manifest_value": "7f01124d83745e048fcc8370413186c7fcc6e08d9504c8b7abd496ce98ac4794",
+          "actual": "57293ffa027ba7bc52b1364def00e7ee0f634ac4333ad5b61456769bef9bbfa8",
+          "binary_changed": false,
+          "evidence": "EXACT_HEAD_ACTIONS_SHA256_ALL_CORE6__ONLY_INK_MISMATCH",
+          "note": "Runtime binary unchanged since canonical binding commit; corrected stale manifest digest only."
+        }
+      ]
     },
     "core6_pose_action_source_bank": {
       "authority_relation": "DERIVATIVE_POSE_ACTION_SOURCE_BANK_UNDER_LOCKED_CORE6_VISUAL_ID",
