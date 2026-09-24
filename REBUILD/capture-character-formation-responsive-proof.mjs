@@ -70,6 +70,9 @@ async function screenshotJourney(viewport,label,stage){
   }
   const state=await page.getAttribute('#formationJourneyView','data-formation-stage');
   if(state!==stage)throw new Error('JOURNEY_STAGE_MISMATCH:'+state+'!='+stage);
+  await page.waitForFunction(()=>document.querySelectorAll('#formationJourneyBody img[data-cf-pose-bank="bound"]').length>0);
+  const poseBound=await page.locator('#formationJourneyBody img[data-cf-pose-bank="bound"]').count();
+  if(poseBound<1)throw new Error('POSE_RUNTIME_BINDING_FAIL:'+stage);
   const geometry=await measure(page,'#formationJourneyView','#formationJourneyView .formationJourneyScene','#formationJourneyView .formationJourneyMain');
   await page.screenshot({path:`${outDir}/${label}.png`,fullPage:true});
   await page.close();
@@ -84,6 +87,9 @@ async function screenshotSignature(viewport,label){
   await page.waitForFunction(()=>document.querySelector('#characterSetupView')?.dataset.cfStatus==='ITEM_SELECTION');
   const state=await page.getAttribute('#characterSetupView','data-cf-status');
   if(state!=='ITEM_SELECTION')throw new Error('CHARACTER_SETUP_STAGE_MISMATCH:'+state);
+  await page.waitForSelector('#cfCrewAsset[data-cf-pose-bank="bound"]');
+  const poseKind=await page.getAttribute('#cfCrewAsset','data-cf-pose');
+  if(poseKind!=='seated')throw new Error('POSE_RUNTIME_BINDING_FAIL:SIGNATURE_ITEM:'+poseKind);
   const geometry=await measure(page,'#characterSetupView','#characterSetupView .cfScene','#characterSetupView .cfCharacterMain');
   await page.screenshot({path:`${outDir}/${label}.png`,fullPage:true});
   await page.close();
