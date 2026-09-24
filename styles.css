@@ -101,3 +101,18 @@
 .captureReviewDraft b,.captureReviewDraft small{display:block}
 .captureReviewDraft small{margin-top:4px;color:var(--muted);line-height:1.45}
 .captureReviewDraft .captureWarnings{color:#8b5a2b}
+
+
+/* Ready Weekly final-composition delta: planner-first markers, no new IA. */
+.plannerDayChip{position:relative}
+.plannerDayChip.today:not(.on){box-shadow:inset 0 0 0 2px rgba(42,35,31,.22)}
+.plannerDayChip i{position:absolute;top:-7px;left:50%;transform:translateX(-50%);font-style:normal;font-size:7px;font-weight:950;letter-spacing:.04em;background:#fff7d6;color:#5c4a22;border:1px solid rgba(92,74,34,.14);border-radius:999px;padding:2px 5px;white-space:nowrap}
+.plannerDayChip.on i{background:#ffe572;color:#2a231f}
+.plannerWeekItem.beforeSchool{border-color:rgba(79,112,143,.18);background:rgba(237,246,252,.9)}
+.plannerWeekItem.beforeSchool .plannerDot{background:#6487a7}
+.plannerFreeWindows{margin-top:4px;padding:13px 14px;border-radius:18px;background:rgba(255,255,255,.52);border:1px dashed rgba(42,35,31,.14)}
+.plannerFreeHead{display:flex;align-items:end;justify-content:space-between;gap:10px}
+.plannerFreeHead b{font-size:12px}.plannerFreeHead small{font-size:9px;color:#81756d;text-align:right}
+.plannerFreeList{display:flex;gap:6px;overflow-x:auto;padding-top:9px;scrollbar-width:none}.plannerFreeList::-webkit-scrollbar{display:none}
+.plannerFreeList>span{flex:0 0 auto;min-width:108px;padding:9px 10px;border-radius:14px;background:rgba(255,248,231,.92);border:1px solid rgba(195,156,65,.16)}
+.plannerFreeList b,.plannerFreeList small{display:block}.plannerFreeList b{font-size:11px}.plannerFreeList small{margin-top:3px;font-size:8px;color:#8b765c}
