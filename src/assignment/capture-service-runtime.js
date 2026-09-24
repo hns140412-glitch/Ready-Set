@@ -10,6 +10,12 @@
     return out;
   }
 
+  function parseRecurringDays(value=''){
+    const map={SUN:0,SUNDAY:0,'일':0,MON:1,MONDAY:1,'월':1,TUE:2,TUESDAY:2,'화':2,WED:3,WEDNESDAY:3,'수':3,THU:4,THURSDAY:4,'목':4,FRI:5,FRIDAY:5,'금':5,SAT:6,SATURDAY:6,'토':6};
+    const tokens=Array.isArray(value)?value:String(value).split(/[\s,;/]+/);
+    return [...new Set(tokens.map(v=>map[String(v||'').trim().toUpperCase()]??map[String(v||'').trim()]).filter(Number.isInteger))].sort((a,b)=>a-b);
+  }
+
   function stableFactSignature(value){
     const sortObject=v=>{
       if(Array.isArray(v))return v.map(sortObject);
@@ -47,6 +53,8 @@
     const captureApi=options.captureApi||root.ReadyCaptureV01||null;
     return Object.freeze({
       parsePrints,
+    parseRecurringDays,
+      parseRecurringDays,
       stableFactSignature,
       capturedRefs:(groupKey)=>capturedRefs(captureApi,groupKey),
       recordCaptureReview:(groupKey,reviewedValue,event)=>recordCaptureReview(captureApi,groupKey,reviewedValue,event)
