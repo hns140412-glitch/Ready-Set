@@ -191,7 +191,7 @@
   "current_runtime_anchor": {
     "id": "CF-A05-SIGNATURE-ITEM",
     "state": "POSE_BINARY_MATERIALIZED__PENDING_FINAL_POSE_RUNTIME_PROOF",
-    "proof_required": "COMPLETE",
+    "proof_required": "FINAL_POSE_RUNTIME_PROOF",
     "pending_only": [
       "FINAL_POSE_RUNTIME_PROOF"
     ]
@@ -303,7 +303,7 @@
       "canonical_source_file_id": "file_0000000022f0823090aec9a5d4c42aa3",
       "canonical_source_name": "가이드☆ 여섯 친구의 찬란한 여정.png",
       "identity_rule": "CORE6_VISUAL_ID_REMAINS_HARD_LOCK",
-      "runtime_binding_state": "BOUND_REPOSITORY_EMBEDDED_WEBP_SPRITE_2X6",
+      "runtime_binding_state": "RUNTIME_SPRITE_BOUND_V1",
       "warning": "SOURCE_BANK_REGISTRATION_DOES_NOT_MEAN_RUNTIME_BINARY_BOUND",
       "source_sets": {
         "standing_action_set": [
@@ -372,7 +372,7 @@
         ]
       },
       "consumer_runtime": "src/identity/character-formation-pose-bank-runtime.js",
-      "consumer_binding_state": "CONSUMER_BOUND_TO_EMBEDDED_SPRITE_WITH_CANONICAL_FALLBACK",
+      "consumer_binding_state": "CONSUMER_BOUND_TO_REPO_SPRITE_WITH_CANONICAL_FALLBACK",
       "open_reason": null,
       "user_action_required": false,
       "fallback": "asset_files.crew canonical direct extracts",
@@ -404,8 +404,9 @@
       },
       "materialization": {
         "format": "WEBP_RGBA",
+        "path": "assets/character-formation/crew/core6-pose-sprite-64.webp",
         "sprite": "2_ROWS_X_6_COLUMNS",
-        "cell_size_px": 48,
+        "cell_size_px": 64,
         "row_0": "standing_action",
         "row_1": "seated_context",
         "columns": [
@@ -416,7 +417,6 @@
           "take",
           "zero"
         ],
-        "storage": "src/identity/pose-data/chunk-1..5.js",
         "external_dependency": false
       }
     }
@@ -426,7 +426,7 @@
     "final_anchor_parity": "RESPONSIVE_POSE_BOUND_RUNTIME_VISUAL_PARITY_PASS",
     "core6_runtime_derivatives": "BOUND_DIRECT_FROM_LOCKED_CANONICAL_SOURCE",
     "responsive_runtime_proof": "PASS_MOBILE_390x844_AND_TABLET_1194x834",
-    "pose_action_runtime": "BOUND_REPOSITORY_EMBEDDED_WEBP_SPRITE__PENDING_FINAL_RUNTIME_PROOF"
+    "pose_action_runtime": "RUNTIME_SPRITE_BOUND_V1__PENDING_FINAL_RUNTIME_PROOF"
   },
   "projection_scope": {
     "type": "CHARACTER_FORMATION_RUNTIME_PROJECTION",
