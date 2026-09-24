@@ -58,7 +58,8 @@
       "prep-room-base",
       "window-island-destination-hint",
       "shelf-and-wall-depth",
-      "desk-base"
+      "desk-base",
+      "prep-room-tablet-extension"
     ],
     "foreground": [
       "mid-props-composite",
@@ -148,7 +149,8 @@
   "asset_files": {
     "background": {
       "prep_room_base": "assets/character-formation/background/prep-room-base.svg",
-      "island_hint": "assets/character-formation/background/window-island-hint.svg"
+      "island_hint": "assets/character-formation/background/window-island-hint.svg",
+      "prep_room_tablet_extension": "assets/character-formation/background/prep-room-tablet-extension.svg"
     },
     "foreground": {
       "mid_props": "assets/character-formation/foreground/mid-props.svg",
@@ -407,6 +409,8 @@
     "tablet_world_full_bleed": true,
     "tablet_live_ui_remains_phone_scale": true,
     "tablet_background_scaling": "PRESERVE_SOURCE_HEIGHT_RIGHT_ANCHORED",
-    "tablet_extension_fill": "PREPARATION_ROOM_TONE_EXTENSION"
+    "tablet_extension_fill": "PREPARATION_ROOM_TONE_EXTENSION",
+    "tablet_background_asset": "prep_room_tablet_extension",
+    "tablet_background_rule": "EXTEND_WORLD_LEFT_OF_PHONE_STAGE__DO_NOT_STRETCH_LIVE_UI"
   }
 }
