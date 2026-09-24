@@ -1,104 +1,88 @@
 (function(root){
   'use strict';
 
-  const VERSION='CHARACTER_FORMATION_POSE_BANK_V02_SPRITE';
+  const VERSION='CHARACTER_FORMATION_POSE_BANK_V02';
   const CORE6=Object.freeze(['dubi','lori','ink','nova','take','zero']);
-  const ALLOWED=Object.freeze(['standing','seated']);
-  const SPRITE_URL='./assets/character-formation/crew/core6-pose-sprite-64.webp';
-  const SPRITE_GEOMETRY=Object.freeze({columns:6,rows:2,cellWidth:64,cellHeight:64,width:384,height:128});
-  const TRANSPARENT_PIXEL='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+  const POSES=Object.freeze(['standing','seated']);
+  const CELL=48;
+  const COLS=6;
+  const ROWS=2;
+  const cache=new Map();
+  let spritePromise=null;
 
-  function normalizeId(value){
-    const id=String(value||'').toLowerCase();
+  function normalizeId(v){
+    const id=String(v||'').toLowerCase();
     return CORE6.includes(id)?id:null;
   }
 
-  function descriptor(id,pose='standing'){
-    const key=normalizeId(id);
-    const kind=ALLOWED.includes(pose)?pose:'standing';
-    if(!key)return null;
-    const col=CORE6.indexOf(key);
-    const row=kind==='seated'?1:0;
-    return Object.freeze({
-      id:key,
-      pose:kind,
-      sprite:SPRITE_URL,
-      col,row,
-      xPercent:col*20,
-      yPercent:row*100
-    });
+  function spriteDataUri(){
+    const b64=String(root.__cfPoseSpriteB64||'');
+    return b64.startsWith('UklGR')?('data:image/webp;base64,'+b64):null;
   }
 
-  function clearSpriteStyle(img){
-    if(!img)return;
-    img.style.removeProperty('background-image');
-    img.style.removeProperty('background-size');
-    img.style.removeProperty('background-position');
-    img.style.removeProperty('background-repeat');
-    img.style.removeProperty('background-origin');
-    img.style.removeProperty('background-clip');
+  function loadSprite(){
+    if(spritePromise)return spritePromise;
+    const uri=spriteDataUri();
+    if(!uri)return Promise.resolve(null);
+    spritePromise=new Promise(resolve=>{
+      const img=new Image();
+      img.onload=()=>resolve(img);
+      img.onerror=()=>resolve(null);
+      img.src=uri;
+    });
+    return spritePromise;
+  }
+
+  async function extract(id,pose='standing'){
+    const key=normalizeId(id);
+    const kind=POSES.includes(pose)?pose:'standing';
+    if(!key)return null;
+    const cacheKey=key+':'+kind;
+    if(cache.has(cacheKey))return cache.get(cacheKey);
+    const sprite=await loadSprite();
+    if(!sprite)return null;
+    const col=CORE6.indexOf(key);
+    const row=kind==='seated'?1:0;
+    const canvas=document.createElement('canvas');
+    canvas.width=CELL;
+    canvas.height=CELL;
+    const ctx=canvas.getContext('2d',{alpha:true});
+    if(!ctx)return null;
+    ctx.clearRect(0,0,CELL,CELL);
+    ctx.drawImage(sprite,col*CELL,row*CELL,CELL,CELL,0,0,CELL,CELL);
+    const uri=canvas.toDataURL('image/webp',.92);
+    cache.set(cacheKey,uri);
+    return uri;
   }
 
   function bindImage(img,id,pose='standing'){
     if(!img)return false;
-    const d=descriptor(id,pose);
-    if(!d)return false;
-
-    // Keep the previous manifest-bound canonical URL so it can be restored immediately.
-    const fallback=img.dataset.cfPoseFallbackSrc||img.currentSrc||img.src||'';
-    if(fallback&&!fallback.startsWith('data:image/gif;base64,'))img.dataset.cfPoseFallbackSrc=fallback;
-
-    img.src=TRANSPARENT_PIXEL;
-    img.style.backgroundImage='url("'+SPRITE_URL+'")';
-    img.style.backgroundSize='600% 200%';
-    img.style.backgroundPosition=d.xPercent+'% '+d.yPercent+'%';
-    img.style.backgroundRepeat='no-repeat';
-    img.style.backgroundOrigin='content-box';
-    img.style.backgroundClip='content-box';
-    img.dataset.cfPoseBank='bound';
-    img.dataset.cfPose=pose;
-    img.dataset.cfPoseCrew=d.id;
-    img.dataset.cfPoseSprite=SPRITE_URL;
-    return true;
-  }
-
-  function restoreFallback(img){
-    if(!img)return false;
-    const fallback=img.dataset.cfPoseFallbackSrc;
-    if(!fallback)return false;
-    clearSpriteStyle(img);
-    img.src=fallback;
-    delete img.dataset.cfPoseBank;
-    delete img.dataset.cfPose;
-    delete img.dataset.cfPoseCrew;
-    delete img.dataset.cfPoseSprite;
-    return true;
+    const key=normalizeId(id);
+    if(!key)return false;
+    extract(key,pose).then(uri=>{
+      if(!uri)return;
+      img.src=uri;
+      img.dataset.cfPoseBank='bound';
+      img.dataset.cfPose=pose;
+      img.dataset.cfPoseCrew=key;
+    }).catch(()=>{});
+    return Boolean(spriteDataUri());
   }
 
   function status(){
-    const available={};
-    for(const id of CORE6){
-      available[id]=Object.freeze({standing:true,seated:true});
-    }
     return Object.freeze({
       version:VERSION,
       identityAuthority:'CORE6_CANONICAL_VISUAL_ID',
       changesIdentity:false,
-      runtimeAsset:'REPO_SPRITE_BINARY',
-      spriteUrl:SPRITE_URL,
-      spriteGeometry:SPRITE_GEOMETRY,
-      available:Object.freeze(available)
+      materialization:'REPOSITORY_EMBEDDED_WEBP_SPRITE_2X6',
+      spriteCells:12,
+      cellSize:CELL,
+      dataAvailable:Boolean(spriteDataUri())
     });
   }
 
   root.CharacterFormationPoseBank=Object.freeze({
-    version:VERSION,
-    CORE6,
-    SPRITE_URL,
-    SPRITE_GEOMETRY,
-    descriptor,
-    bindImage,
-    restoreFallback,
-    status
+    version:VERSION,CORE6,POSES,CELL,COLS,ROWS,
+    spriteDataUri,extract,bindImage,status
   });
 })(typeof globalThis!=='undefined'?globalThis:this);
