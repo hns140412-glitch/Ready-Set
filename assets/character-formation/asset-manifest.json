@@ -190,11 +190,9 @@
   },
   "current_runtime_anchor": {
     "id": "CF-A05-SIGNATURE-ITEM",
-    "state": "POSE_BINARY_MATERIALIZED__PENDING_FINAL_POSE_RUNTIME_PROOF",
-    "proof_required": "FINAL_POSE_RUNTIME_PROOF",
-    "pending_only": [
-      "FINAL_POSE_RUNTIME_PROOF"
-    ]
+    "state": "CHARACTER_FORMATION_RUNTIME_COMPLETE",
+    "proof_required": "COMPLETE",
+    "pending_only": []
   },
   "tool_contract": {
     "signature_item_rule": "EXACTLY_ONE_FROM_LOCKED_FIVE",
@@ -426,7 +424,7 @@
     "final_anchor_parity": "RESPONSIVE_POSE_BOUND_RUNTIME_VISUAL_PARITY_PASS",
     "core6_runtime_derivatives": "BOUND_DIRECT_FROM_LOCKED_CANONICAL_SOURCE",
     "responsive_runtime_proof": "PASS_MOBILE_390x844_AND_TABLET_1194x834",
-    "pose_action_runtime": "RUNTIME_SPRITE_BOUND_V1__PENDING_FINAL_RUNTIME_PROOF"
+    "pose_action_runtime": "RUNTIME_SPRITE_BOUND_V1__FINAL_RUNTIME_PROOF_PASS"
   },
   "projection_scope": {
     "type": "CHARACTER_FORMATION_RUNTIME_PROJECTION",
@@ -469,22 +467,13 @@
     "tablet_background_rule": "EXTEND_WORLD_LEFT_OF_PHONE_STAGE__DO_NOT_STRETCH_LIVE_UI"
   },
   "final_runtime_proof": {
-    "exact_head": "31b08c8e6174aac18198c0e0487c3f47561f8832",
-    "character_formation_run_id": 35963057821,
-    "artifact_id": 10792674129,
-    "artifact_digest": "sha256:8c20870e380eed86b7e25039ec82a072516ea399e5fcfa1009231863bf7a2c02",
-    "capture_set": [
-      "CREW_MEET_390x844",
-      "CREW_MEET_1194x834",
-      "COMPANION_SELECT_390x844",
-      "COMPANION_SELECT_1194x834",
-      "COMPANION_NAME_390x844",
-      "COMPANION_NAME_1194x834",
-      "SIGNATURE_ITEM_390x844",
-      "SIGNATURE_ITEM_1194x834"
-    ],
-    "pose_dom_binding": "PASS",
-    "responsive_geometry": "PASS",
-    "visual_review": "PASS"
+    "status": "PASS",
+    "exact_head": "4e56ad3c8e5c6ec712a091a252e9c78860d142f2",
+    "workflow_run_id": 35964333088,
+    "artifact_id": 10793249383,
+    "artifact_digest": "sha256:ac28dfc0b3e56a0d9b30c0029eac972e945c658ed3020cc2badea30c834b13c8",
+    "mobile": "390x844",
+    "tablet": "1194x834",
+    "pose_runtime_source": "assets/character-formation/crew/core6-pose-sprite-64.webp"
   }
 }
