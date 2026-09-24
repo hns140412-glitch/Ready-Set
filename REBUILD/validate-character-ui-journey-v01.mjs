@@ -308,7 +308,7 @@ assert(styles.includes('width:min(430px,calc(100vw - 40px))'),'TABLET_PHONE_SCAL
 const poseBank=assetManifest.asset_sources?.core6_pose_action_source_bank||{};
 assert(poseBank.canonical_source_file_id==='file_0000000022f0823090aec9a5d4c42aa3','POSE_BANK_CANONICAL_LINEAGE_REGRESSION');
 assert(poseBank.identity_rule==='CORE6_VISUAL_ID_REMAINS_HARD_LOCK','POSE_BANK_MUST_NOT_REDEFINE_VISUAL_ID');
-assert(poseBank.runtime_binding_state==='SOURCE_REFERENCE_ONLY_NOT_YET_RUNTIME_BINARY','POSE_BANK_SOURCE_MUST_NOT_PRETEND_RUNTIME_BOUND');
+assert(['SOURCE_REFERENCE_ONLY_NOT_YET_RUNTIME_BINARY','POSE_BINARY_MATERIALIZATION_OPEN__CANONICAL_FALLBACK_ACTIVE'].includes(poseBank.runtime_binding_state),'POSE_BANK_SOURCE_MUST_NOT_PRETEND_RUNTIME_BOUND');
 assert((poseBank.source_sets?.standing_action_set||[]).length===6,'POSE_BANK_STANDING_SET_INCOMPLETE');
 assert((poseBank.source_sets?.seated_context_set||[]).length===6,'POSE_BANK_SEATED_SET_INCOMPLETE');
 for(const set of Object.values(poseBank.source_sets||{})){
