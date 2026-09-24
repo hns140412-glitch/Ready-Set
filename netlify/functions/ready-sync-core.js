@@ -48,7 +48,7 @@ function createSyncService(store,options={}){
         return {status:403,body:{ok:false,reason:'FAMILY_SCOPE_FORBIDDEN'}};
       }
       if(!parsedMemberScope&&!parsedFamilyScope){
-        return {status:400,body:{ok:false,reason:'SCOPED_EVENT_REQUIRED'}};
+        return {status:400,body:{ok:false,reason:'MEMBER_SCOPE_REQUIRED'}};
       }
     }
 
