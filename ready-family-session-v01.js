@@ -41,7 +41,7 @@
       family_id:familyId,
       membership_id:membershipId,
       member_id:memberId,
-      role:validRole||'CHILD',
+      role:authenticated?validRole:(validRole||'CHILD'),
       session_id:sessionId,
       issued_at:input.issued_at||null,
       expires_at:input.expires_at||null,
@@ -147,11 +147,11 @@
   function current(){return publicSession();}
   function role(){return current().role;}
   function isParent(){const s=current();return s.authenticated===true&&s.role==='PARENT';}
-  function isChild(){const s=current();return s.role==='CHILD';}
+  function isChild(){const s=current();return s.state==='ANONYMOUS_LOCAL'||(s.state==='AUTHENTICATED'&&s.role==='CHILD');}
   function requireRole(required){
     const want=String(required||'').toUpperCase();
     const s=current();
-    if(want==='CHILD' && s.role==='CHILD') return {ok:true,session:s};
+    if(want==='CHILD' && isChild()) return {ok:true,session:s};
     if(want==='PARENT' && isParent()) return {ok:true,session:s};
     return {ok:false,reason:want==='PARENT'?'PARENT_AUTH_REQUIRED':'ROLE_NOT_ALLOWED',session:s};
   }
