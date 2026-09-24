@@ -586,3 +586,38 @@
 #homeView .categoryGrid button{background:rgba(255,252,244,.9);box-shadow:0 10px 24px rgba(29,64,54,.1)}
 #homeView .bottomNav{background:rgba(255,250,242,.94)}
 @media(max-width:390px){#homeView .homeBaseCampHero{min-height:318px;padding-top:48px}#homeView .homeBaseCampHero .heroCopy h1{font-size:39px}#homeView .homeTimerMarker{right:0;transform:scale(.54)}}
+
+
+/* READY MISSION BRIDGE COMPOSITION — Planner provenance in, Timer execution out. */
+#missionView.missionBridgeView{isolation:isolate;background:linear-gradient(180deg,#dfc58e 0%,#bacb98 25%,#729a72 48%,#3f6c5d 68%,#2e514b 100%)}
+#missionView .missionBridgeScene{position:absolute;inset:0 0 auto;height:330px;z-index:0;overflow:hidden;pointer-events:none;background:
+  radial-gradient(circle at 80% 16%,rgba(255,235,150,.9) 0 9%,transparent 25%),
+  linear-gradient(180deg,rgba(255,226,169,.74),rgba(148,185,135,.28) 58%,rgba(41,83,70,.06))}
+#missionView .missionBridgeScene:before{content:"";position:absolute;left:-10%;right:-10%;bottom:0;height:150px;background:#416f5b;clip-path:polygon(0 62%,12% 44%,23% 55%,37% 28%,50% 49%,62% 32%,77% 54%,88% 40%,100% 50%,100% 100%,0 100%)}
+#missionView .missionBridgeIsland{position:absolute;right:-5px;top:90px;width:180px;height:104px;border-radius:52% 48% 44% 56%/62% 56% 44% 38%;background:radial-gradient(ellipse at 50% 48%,#789f6e 0 54%,#48775f 55% 72%,transparent 73%);transform:rotate(-4deg)}
+#missionView .missionBridgeCamp{position:absolute;right:65px;top:114px;width:52px;height:44px;background:linear-gradient(145deg,#e1b574,#9a6343);clip-path:polygon(50% 0,100% 58%,86% 58%,86% 100%,14% 100%,14% 58%,0 58%)}
+#missionView .missionBridgeGlow{position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,246,209,.22) 58%,transparent)}
+#missionView .missionBridgeHeader,#missionView .missionBridgeMain{position:relative;z-index:2}
+#missionView .missionBridgeHeader{color:#2c2721;text-shadow:0 1px 10px rgba(255,245,216,.35)}
+#missionView .missionBridgeHeader>button{background:rgba(255,251,241,.78);backdrop-filter:blur(10px)}
+#missionView .missionBridgeMain{padding-top:86px;padding-bottom:calc(38px + var(--safeB))}
+#missionView .missionBridgeSteps{background:rgba(244,243,224,.68);border:1px solid rgba(255,255,255,.38);border-radius:18px;padding:5px;backdrop-filter:blur(12px)}
+#missionView .missionBridgeSteps span{background:transparent;color:#5e6557}
+#missionView .missionBridgeSteps .on{background:#30352d;color:#fff}
+#missionView .glassCard{background:linear-gradient(145deg,rgba(255,252,244,.88),rgba(241,237,216,.76));border-color:rgba(255,255,255,.46);box-shadow:0 13px 28px rgba(29,64,54,.12);backdrop-filter:blur(14px)}
+#missionView .missionPlannerSource{margin-top:10px}
+#missionView .missionTodayPick{border-color:rgba(224,187,89,.32)}
+#missionView .missionTimingCard{padding-bottom:15px}
+#missionView .missionSoundCard{min-height:64px}
+#missionView .missionLaunchCard{background:linear-gradient(145deg,rgba(36,44,37,.96),rgba(25,31,27,.94));border:1px solid rgba(255,237,148,.18);box-shadow:0 16px 32px rgba(18,37,31,.22)}
+#missionView .missionLaunchCard span{color:#e9c870}
+#missionView .missionLaunchCard small{color:#d1d2c8}
+#missionView .missionLaunchActions{margin-bottom:12px}
+#missionView .missionLaunchActions #startBtn{min-height:58px;background:#f3cf39;color:#1f211d;font-size:14px}
+#missionView .missionFactInbox{margin-top:18px;background:rgba(244,241,222,.66);box-shadow:none}
+#missionView .missionFactInboxHead{display:flex;align-items:end;justify-content:space-between;gap:12px}
+#missionView .missionFactInboxHead small{font-size:8px;font-weight:950;letter-spacing:.12em;color:#7b725d}
+#missionView .missionFactInboxHead h2{margin-top:3px}
+#missionView .missionFactInboxHead>span{padding:6px 8px;border-radius:999px;background:rgba(48,53,45,.1);font-size:8px;font-weight:900}
+#missionView #voiceTaskBtn{min-width:60px;padding:0 9px;background:#ece7d7;color:#34332d}
+@media(max-width:390px){#missionView .missionBridgeMain{padding-top:78px}#missionView .missionBridgeScene{height:315px}}
