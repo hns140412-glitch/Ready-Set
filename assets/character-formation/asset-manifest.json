@@ -136,7 +136,7 @@
     "ASSETS_FOLDER_BINDING",
     "LIVE_DOM_CSS_UI",
     "MOTION_AND_DEPTH_EFFECTS",
-    "RUNTIME_SCREENSHOT_390x844",
+    "RESPONSIVE_RUNTIME_PROOF_390x844_PLUS_TABLET_BACKGROUND_EXTENSION",
     "ANCHOR_REGRESSION_CHECK"
   ],
   "completion_rule": [
@@ -185,8 +185,8 @@
   },
   "current_runtime_anchor": {
     "id": "CF-A05-SIGNATURE-ITEM",
-    "state": "SCENE_ITEMS_TOOLS_CORE6_BOUND__PENDING_390x844_RUNTIME_PROOF",
-    "proof_required": "390x844_RUNTIME_SCREENSHOT",
+    "state": "SCENE_ITEMS_TOOLS_CORE6_BOUND__PENDING_RESPONSIVE_RUNTIME_PROOF",
+    "proof_required": "390x844_MOBILE_PLUS_TABLET_BACKGROUND_EXTENSION_RUNTIME_PROOF",
     "pending_only": []
   },
   "tool_contract": {
@@ -267,11 +267,85 @@
         "take": "900e669f68609979b607b4539eeffe39f398d7f8485b8927fbf3a48cca31f2cf",
         "zero": "0828070779b99985011f05ce00c7e7c161529fc464b97993feb5d83af6ac532d"
       }
+    },
+    "core6_pose_action_source_bank": {
+      "authority_relation": "DERIVATIVE_POSE_ACTION_SOURCE_BANK_UNDER_LOCKED_CORE6_VISUAL_ID",
+      "canonical_source_file_id": "file_0000000022f0823090aec9a5d4c42aa3",
+      "canonical_source_name": "가이드☆ 여섯 친구의 찬란한 여정.png",
+      "identity_rule": "CORE6_VISUAL_ID_REMAINS_HARD_LOCK",
+      "runtime_binding_state": "SOURCE_REFERENCE_ONLY_NOT_YET_RUNTIME_BINARY",
+      "warning": "SOURCE_BANK_REGISTRATION_DOES_NOT_MEAN_RUNTIME_BINARY_BOUND",
+      "source_sets": {
+        "standing_action_set": [
+          {
+            "id": "dubi",
+            "file_id": "file_000000003868820996675b6ce4742527",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "lori",
+            "file_id": "file_000000005a5c81f8b4ec27d261dde578",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "ink",
+            "file_id": "file_00000000568c81f595656ddda188f795",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "nova",
+            "file_id": "file_0000000080348206b67aa7c4cd3c7f34",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "take",
+            "file_id": "file_0000000074188211984e574ae2cb7c54",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "zero",
+            "file_id": "file_000000006e5c81f5bd53e9f6c28d27e1",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          }
+        ],
+        "seated_context_set": [
+          {
+            "id": "dubi",
+            "file_id": "file_00000000fda0820694032a64eeb38dc2",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "lori",
+            "file_id": "file_0000000085f08206b0f3e5d693da9666",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "ink",
+            "file_id": "file_000000006e348209b367c572a6d4a372",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "nova",
+            "file_id": "file_00000000caa88208818b91dc564ea0d5",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "take",
+            "file_id": "file_000000002e1c8206b6ececf705e54138",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "zero",
+            "file_id": "file_000000000d7c820697ce8b42a6d84f03",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          }
+        ]
+      }
     }
   },
   "asset_quality": {
     "runtime_vector_assets": "HIGH_DENSITY_SCENE_LAYER_UPGRADE_V1",
-    "final_anchor_parity": "SCENE_LAYER_UPGRADED__PENDING_390x844_RUNTIME_PROOF_AND_ITEM_TOOL_PARITY",
+    "final_anchor_parity": "SCENE_LAYER_UPGRADED__PENDING_RESPONSIVE_RUNTIME_PROOF_AND_ITEM_TOOL_PARITY",
     "core6_runtime_derivatives": "BOUND_DIRECT_FROM_LOCKED_CANONICAL_SOURCE"
   },
   "projection_scope": {
@@ -281,5 +355,31 @@
     "common_tools_scope": "CURRENT_RUNTIME_VISIBLE_SUBSET",
     "inherits_family_confirmed_state": true,
     "warning": "DO_NOT_TREAT_LOCAL_ASSET_SET_AS_TOTAL_WORLD_OR_CHARACTER_TOOL_INVENTORY"
+  },
+  "responsive_contract": {
+    "mode": "MOBILE_SOURCE_TABLET_BACKGROUND_EXTENSION",
+    "source_layout": {
+      "width": 390,
+      "height": 844,
+      "role": "PRIMARY_MOBILE_COMPOSITION"
+    },
+    "phone_behavior": "PRESERVE_APPROVED_MOBILE_COMPOSITION",
+    "tablet_min_width": 768,
+    "tablet_behavior": "PRESERVE_CORE_UI_BLOCK_AND_TOUCH_FLOW__EXPAND_WORLD_BACKGROUND",
+    "live_ui_max_width_px": 430,
+    "tablet_alignment": "RIGHT_TOUCH_ZONE",
+    "allowed_changes": [
+      "BACKGROUND_CROP_EXTENSION",
+      "WORLD_PROP_VISIBILITY_EXTENSION",
+      "OUTER_MARGIN_EXTENSION",
+      "MINOR_POSITION_ADJUSTMENT_FOR_SAFE_AREA"
+    ],
+    "forbidden_changes": [
+      "NEW_TABLET_INFORMATION_ARCHITECTURE",
+      "TABLET_ONLY_FLOW_REORDER",
+      "CORE_UI_SCALE_UP_TO_FILL_SCREEN",
+      "CORE6_VISUAL_ID_CHANGE",
+      "SIGNATURE_ITEM_RULE_CHANGE"
+    ]
   }
 }
