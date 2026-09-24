@@ -360,6 +360,11 @@
 </div>
 <div id="authLoggedInControls" hidden>
   <button class="btn outline compactBtn" id="authLogoutBtn">로그아웃</button>
+  <section id="familyUnboundSection" hidden>
+    <p class="muted">처음 로그인한 계정입니다. 보호자는 새 가족을 만들고, 아이·다른 보호자는 기존 가족의 연결을 기다립니다.</p>
+    <label class="inputBlock">나와 아이의 관계<select id="familyCreatorRelationship"><option value="MOTHER">엄마</option><option value="FATHER">아빠</option><option value="GUARDIAN">보호자</option></select></label>
+    <button class="btn dark" id="familyCreateBtn">새 가족 만들기</button>
+  </section>
   <div id="familyLinkChildSection" hidden>
     <p class="muted">보호자 계정은 이미 가입된 CHILD 계정을 같은 가족으로 연결할 수 있습니다.</p>
     <label class="inputBlock">CHILD 이메일<input id="familyChildEmailInput" type="email" autocomplete="email" placeholder="child@example.com"></label>
