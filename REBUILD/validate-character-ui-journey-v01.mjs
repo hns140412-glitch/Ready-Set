@@ -378,3 +378,11 @@ assert(poseBankRuntime.includes("SPRITE_PATH='./assets/character-formation/crew/
 assert(poseBankRuntime.includes('const CELL=64'),'POSE_RUNTIME_CELL_SIZE_REGRESSION');
 assert(!index.includes('pose-data/chunk-1.js')&&!index.includes('pose-data/chunk-5.js'),'OBSOLETE_POSE_CHUNKS_MUST_NOT_LOAD');
 console.log('CHARACTER_FORMATION_RUNTIME_COMPLETE_PASS');
+
+
+// Final completion receipt must remain present on the exact head.
+const completionDoc=read('C2S/CHARACTER_FORMATION_RUNTIME_COMPLETION_2026-09-24.md');
+assert(completionDoc.includes('CHARACTER_FORMATION_RUNTIME_COMPLETE'),'CHARACTER_FORMATION_COMPLETION_RECEIPT_MISSING');
+assert(completionDoc.includes('pending_only = []'),'CHARACTER_FORMATION_COMPLETION_RECEIPT_PENDING_STATE_REGRESSION');
+assert(completionDoc.includes('4e56ad3c8e5c6ec712a091a252e9c78860d142f2'),'CHARACTER_FORMATION_PROOF_HEAD_RECEIPT_REGRESSION');
+console.log('CHARACTER_FORMATION_EXACT_HEAD_COMPLETION_RECEIPT_PASS');
