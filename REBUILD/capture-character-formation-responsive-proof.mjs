@@ -27,6 +27,35 @@ async function openPage(viewport,{withPhoto=false}={}){
   return page;
 }
 
+async function measure(page,viewSelector,sceneSelector,uiSelector){
+  return await page.evaluate(({viewSelector,sceneSelector,uiSelector})=>{
+    const view=document.querySelector(viewSelector);
+    const scene=document.querySelector(sceneSelector);
+    const ui=document.querySelector(uiSelector);
+    const vr=view.getBoundingClientRect();
+    const sr=scene.getBoundingClientRect();
+    const ur=ui.getBoundingClientRect();
+    return {
+      viewport:{width:window.innerWidth,height:window.innerHeight},
+      view:{x:vr.x,y:vr.y,width:vr.width,height:vr.height},
+      scene:{x:sr.x,y:sr.y,width:sr.width,height:sr.height},
+      ui:{x:ur.x,y:ur.y,width:ur.width,height:ur.height,right:ur.right},
+      rightGap:window.innerWidth-ur.right
+    };
+  },{viewSelector,sceneSelector,uiSelector});
+}
+
+function assertResponsivePair(name,mobile,tablet){
+  const fail=(reason)=>{throw new Error('RESPONSIVE_GEOMETRY_FAIL:'+name+':'+reason);};
+  if(Math.abs(mobile.scene.width-mobile.viewport.width)>2)fail('MOBILE_SCENE_NOT_FULL_VIEWPORT');
+  if(Math.abs(tablet.scene.width-tablet.viewport.width)>2)fail('TABLET_SCENE_NOT_FULL_VIEWPORT');
+  if(tablet.ui.width>432)fail('TABLET_UI_BLOCK_TOO_WIDE:'+tablet.ui.width);
+  if(tablet.ui.width<360)fail('TABLET_UI_BLOCK_TOO_NARROW:'+tablet.ui.width);
+  if(tablet.rightGap<18)fail('TABLET_UI_RIGHT_SAFE_GAP_TOO_SMALL:'+tablet.rightGap);
+  if(tablet.rightGap>Math.max(120,tablet.viewport.width*.12))fail('TABLET_UI_NOT_IN_RIGHT_TOUCH_ZONE:'+tablet.rightGap);
+  if(tablet.ui.width>mobile.ui.width*1.18)fail('TABLET_UI_SCALED_UP_TOO_MUCH');
+}
+
 async function screenshotJourney(viewport,label,stage){
   const page=await openPage(viewport);
   await page.evaluate(()=>window.nav('formation-journey'));
@@ -41,8 +70,10 @@ async function screenshotJourney(viewport,label,stage){
   }
   const state=await page.getAttribute('#formationJourneyView','data-formation-stage');
   if(state!==stage)throw new Error('JOURNEY_STAGE_MISMATCH:'+state+'!='+stage);
+  const geometry=await measure(page,'#formationJourneyView','#formationJourneyView .formationJourneyScene','#formationJourneyView .formationJourneyMain');
   await page.screenshot({path:`${outDir}/${label}.png`,fullPage:true});
   await page.close();
+  return geometry;
 }
 
 async function screenshotSignature(viewport,label){
@@ -53,8 +84,10 @@ async function screenshotSignature(viewport,label){
   await page.waitForFunction(()=>document.querySelector('#characterSetupView')?.dataset.cfStatus==='ITEM_SELECTION');
   const state=await page.getAttribute('#characterSetupView','data-cf-status');
   if(state!=='ITEM_SELECTION')throw new Error('CHARACTER_SETUP_STAGE_MISMATCH:'+state);
+  const geometry=await measure(page,'#characterSetupView','#characterSetupView .cfScene','#characterSetupView .cfCharacterMain');
   await page.screenshot({path:`${outDir}/${label}.png`,fullPage:true});
   await page.close();
+  return geometry;
 }
 
 const mobile={width:390,height:844};
