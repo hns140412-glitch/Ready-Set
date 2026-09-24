@@ -168,3 +168,28 @@
   .plannerView{background:#dfe9e2}
   .plannerWorldLayer{inset:0 -28vw}
 }
+
+
+/* Ready Base Camp TODAY: Planner projection first, timer secondary. */
+#homeView{background:
+  radial-gradient(90% 42% at 72% 17%,rgba(255,246,218,.82) 0%,rgba(255,246,218,0) 72%),
+  linear-gradient(180deg,#dce9df 0%,#e7efe6 34%,#c4dcd4 62%,#aed0cd 100%)}
+#homeView .topbar{position:relative;z-index:3}
+#homeView:before{content:"";position:absolute;left:-14%;right:-14%;top:31%;height:42%;pointer-events:none;background:
+  radial-gradient(62% 112% at 20% 100%,rgba(86,136,96,.70) 0 45%,transparent 46%),
+  radial-gradient(70% 125% at 76% 100%,rgba(66,119,82,.67) 0 43%,transparent 44%);
+  opacity:.72}
+#homeView .homeMain{position:relative;z-index:2}
+.baseCampHero{min-height:352px;align-items:flex-start;padding-top:30px}
+.baseCampHero .heroCopy{width:100%;max-width:100%;padding:20px 18px 118px;border:1px solid rgba(255,255,255,.50);border-radius:28px;background:linear-gradient(145deg,rgba(255,255,255,.72),rgba(248,249,239,.50));box-shadow:0 20px 44px rgba(54,78,67,.14);backdrop-filter:blur(16px) saturate(1.06)}
+.baseCampHero .heroCopy h1{max-width:86%;font-size:38px;line-height:1.02;margin:10px 0 10px;letter-spacing:-.055em}
+.baseCampHero .heroCopy p{max-width:86%;font-size:12px;line-height:1.5;color:#5f6e64}
+.homeHeroStatus{display:flex;justify-content:space-between;align-items:center;margin-top:8px}.homeHeroStatus span{font-size:10px;font-weight:900;color:#68786d}.homeHeroStatus b{padding:6px 9px;border-radius:999px;background:rgba(38,48,42,.90);color:#fff;font-size:10px}
+.homePrimaryAction{min-height:46px;margin-top:16px;border:0;border-radius:15px;padding:0 16px;background:#252d28;color:#fff;font-size:12px;font-weight:900;box-shadow:0 10px 20px rgba(38,48,42,.14)}
+.homeTimerTool{top:auto;right:18px;bottom:14px;width:104px;height:94px;filter:none;opacity:.94}
+.homeTimerTool .watchCrown{display:none}.homeTimerTool .watchFace{left:0;top:0;width:88px;height:88px;border-width:6px;box-shadow:0 8px 18px rgba(45,60,52,.12);background:linear-gradient(145deg,#d9b989,#a9875e)}
+.homeTimerTool .watchFace:before{inset:18px;border-width:3px}.homeTimerTool .watchFace span{font-size:16px}.homeTimerTool>small{position:absolute;right:0;bottom:4px;padding:5px 7px;border-radius:999px;background:rgba(255,255,255,.82);font-size:8px;font-weight:900;color:#59675e}
+#homeView .homeGuideCard{background:rgba(255,255,255,.74);border-color:rgba(255,255,255,.54);backdrop-filter:blur(14px)}
+#homeView .commandCard{background:rgba(255,255,255,.68);border-color:rgba(255,255,255,.52);backdrop-filter:blur(14px)}
+#homeView .categoryGrid button{background:rgba(255,255,255,.66);border-color:rgba(255,255,255,.48);backdrop-filter:blur(12px)}
+#homeView .bottomNav{background:rgba(246,248,241,.88);border-top-color:rgba(67,91,77,.10)}
