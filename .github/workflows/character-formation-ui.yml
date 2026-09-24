@@ -8,11 +8,12 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 jobs:
   character-formation-contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,7 +34,7 @@ jobs:
           node --check app.js
       - name: Guard approved visual asset pipeline
         run: |
-          node -e "const m=require('./assets/character-formation/asset-manifest.json'); if(m.status!=='HARD_LOCK') process.exit(1); if(m.runtime_rule!=='DECOMPOSED_ASSETS_ONLY_NO_FULL_SCREEN_MOCKUP_CROP') process.exit(2); if(!m.asset_files?.background?.prep_room_base) process.exit(3); if(!m.asset_files?.signature_items?.CAMERA) process.exit(4); if(!m.asset_files?.common_tools?.map) process.exit(5);"
+          node -e "const m=require('./assets/character-formation/asset-manifest.json'); if(m.status!=='HARD_LOCK') process.exit(1); if(m.runtime_rule!=='DECOMPOSED_ASSETS_ONLY_NO_FULL_SCREEN_MOCKUP_CROP') process.exit(2); if(!m.asset_files?.background?.prep_room_base) process.exit(3); if(!m.asset_files?.signature_items?.CAMERA) process.exit(4); if(!m.asset_files?.common_tools?.map) process.exit(5); if(m.responsive_contract?.mode!=='MOBILE_SOURCE_TABLET_BACKGROUND_EXTENSION') process.exit(8);"
           grep -q 'character-formation-asset-runtime.js' index.html
           grep -q 'data-cf-asset-group="background"' index.html
           grep -q 'data-cf-asset-group="signature_items"' src/identity/character-setup-view-runtime.js
@@ -41,3 +42,45 @@ jobs:
           grep -q 'continueAfterSignatureItemBtn' app.js
           if grep -q "url('./assets/character-formation/background/prep-room-base.png')" styles.css; then exit 6; fi
           if grep -q "signature-camera.png" src/identity/character-setup-view-runtime.js; then exit 7; fi
+      - name: Install responsive proof browser
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start static runtime
+        run: |
+          python3 -m http.server 4173 >/tmp/character-formation-http.log 2>&1 &
+          echo $! >/tmp/character-formation-http.pid
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/character-formation-http.log
+          exit 1
+      - name: Capture mobile and tablet runtime proof
+        env:
+          CF_PROOF_URL: http://127.0.0.1:4173/
+        run: node REBUILD/capture-character-formation-responsive-proof.mjs
+      - name: Upload responsive runtime proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: character-formation-responsive-proof-${{ github.sha }}
+          path: artifacts/character-formation-responsive-proof/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish exact-head Character Formation status
+        if: ${{ always() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+        shell: bash
+        run: |
+          state=success
+          description="Character Formation contract and responsive proof passed"
+          if [ "$JOB_STATUS" != "success" ]; then
+            state=failure
+            description="Character Formation contract or responsive proof failed"
+          fi
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -f state="$state" \
+            -f context="Character Formation UI Binding" \
+            -f description="$description"
