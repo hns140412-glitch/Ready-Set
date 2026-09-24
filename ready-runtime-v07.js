@@ -16,6 +16,21 @@
   }
 
   function routeTask(link = {}) {
+    const stored=link.execution_plan;
+    if(stored&&stored.authority==='READY_LEARNING_ENGINE_ROUTING'&&Array.isArray(stored.allowed_specialists)&&Array.isArray(stored.handoff_queue)){
+      return Object.freeze({
+        router_version:stored.router_version||'PLANNER_STORED_EXECUTION_PLAN',
+        authority:'READY_LEARNING_ENGINE_ROUTING',
+        mode:stored.mode||'READY_ORCHESTRATED',
+        primary_app:stored.primary_app||link.execution_app||'ready-set',
+        ready_owned:(stored.primary_app||link.execution_app||'ready-set')==='ready-set',
+        handoffs:Array.isArray(stored.handoffs)?stored.handoffs:[],
+        allowed_specialists:[...stored.allowed_specialists],
+        handoff_queue:[...stored.handoff_queue],
+        denied_by_default:true,
+        reason:{stored_execution_plan:true}
+      });
+    }
     const router=window.ReadySpecialistRouter;
     if(router?.classify){
       return router.classify({
@@ -82,6 +97,8 @@
         divisible_boundary:link.divisible_boundary||null,
         confidence:Number.isFinite(link.confidence)?link.confidence:null,
         unresolved_flags:Array.isArray(link.unresolved_flags)?[...link.unresolved_flags]:[],
+        execution_app:link.execution_app||link.execution_plan?.primary_app||'ready-set',
+        execution_plan:link.execution_plan||null,
         route_plan:routeTask(link),
         completed_specialists:[],
         active_specialist:null,
@@ -267,7 +284,7 @@
     url.searchParams.set('from_app', 'ready-set');
     url.searchParams.set('handoff_scope', app==='hide-seek'?'MEMORY_RETRIEVAL':'LEARNER_PRODUCTION');
     url.searchParams.set('route_authority','READY_LEARNING_ENGINE_ROUTING');
-    if(app==='snap-pop'&&window.ReadySpecialistHandoffContract?.encodeLearningContext){
+    if(window.ReadySpecialistHandoffContract?.encodeLearningContext){
       url.searchParams.set('learning_context',window.ReadySpecialistHandoffContract.encodeLearningContext(task));
     }
     return {ok:true,app,url:url.href,task_id:task.task_id,lap_id:lap.lap_id};
