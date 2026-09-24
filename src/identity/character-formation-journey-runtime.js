@@ -86,6 +86,15 @@
       '</figure>';
     }
 
+    function bindPoseBankImages(stageName){
+      const bank=root.CharacterFormationPoseBank;
+      if(!bank?.bindImage)return;
+      const defaultPose=stageName==='COMPANION_NAME'?'seated':'standing';
+      body.querySelectorAll?.('img[data-cf-asset-group="crew"][data-cf-asset-key]').forEach(img=>{
+        bank.bindImage(img,img.dataset.cfAssetKey,defaultPose);
+      });
+    }
+
     function render(){
       const state=getState();
       const f=ensure(state);
@@ -148,6 +157,7 @@
           '<button class="btn dark" data-formation-action="GO_READY">Ready & Set 시작 →</button>';
       }
       assetRegistry?.bind?.(body);
+      bindPoseBankImages(s);
       save();
       return s;
     }
