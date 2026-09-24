@@ -1,9 +1,11 @@
 (function(root){
   'use strict';
 
-  function preStartGuard({activeSession,selectedTodoIds=[]}={}){
+  function preStartGuard({activeSession,selectedTodoIds=[],eventTasks=[]}={}){
     if(activeSession)return {ok:false,reason:'SESSION_ALREADY_ACTIVE'};
-    if(!Array.isArray(selectedTodoIds)||selectedTodoIds.length===0)return {ok:false,reason:'NO_SELECTED_TODO'};
+    const plannerCount=Array.isArray(selectedTodoIds)?selectedTodoIds.length:0;
+    const eventCount=Array.isArray(eventTasks)?eventTasks.filter(x=>String(x?.label||x||'').trim()).length:0;
+    if(plannerCount===0&&eventCount===0)return {ok:false,reason:'NO_SELECTED_TASK'};
     return {ok:true};
   }
 
@@ -17,10 +19,15 @@
     return plannerStartGuard(input.plannerLinks);
   }
 
-  function createSession({sessionId,now,targetMin,plannerLinks=[],sound='OFF'}={}){
+  function createSession({sessionId,now,targetMin,plannerLinks=[],eventTasks=[],sound='OFF'}={}){
     if(!sessionId)throw new Error('SESSION_ID_REQUIRED');
     if(!Number.isFinite(now))throw new Error('SESSION_START_TIME_REQUIRED');
     const links=Array.isArray(plannerLinks)?plannerLinks:[];
+    const events=(Array.isArray(eventTasks)?eventTasks:[]).map((x,i)=>({
+      event_task_id:String(x?.event_task_id||`event_${now}_${i}`),
+      label:String(x?.label||x||'').trim(),
+      source:'CHILD_EVENT_INPUT'
+    })).filter(x=>x.label);
     return {
       id:sessionId,
       startAt:now,
@@ -29,8 +36,9 @@
       issueMs:0,
       completed:false,
       selected:[],
-      tasks:links.map(x=>x?.label).filter(Boolean),
+      tasks:[...links.map(x=>x?.label).filter(Boolean),...events.map(x=>x.label)],
       plannerLinks:[...links],
+      eventTasks:events,
       sound:sound||'OFF',
       recordingDone:false
     };
