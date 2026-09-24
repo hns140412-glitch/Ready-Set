@@ -36,6 +36,8 @@ jobs:
         run: node tests/google-family-membership-contract.test.js
       - name: Validate Google OAuth browser integration
         run: node tests/google-oauth-browser-integration-contract.test.js
+      - name: Validate FamilyMembership onboarding contract
+        run: node tests/family-membership-onboarding-contract.test.js
       - name: Install Playwright
         run: |
           npm install --no-save @playwright/test@1.55.0
