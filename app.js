@@ -84,6 +84,7 @@ const initial={
   guestHistory:[],
   selected:[],
   tasks:[],
+  eventTasks:[],
   selectedTodoIds:[],
   targetMin:25,
   sound:'집중 피아노',
