@@ -76,7 +76,7 @@
 
     async function saveEnglish(input={}){
       const {
-        name,range,nextAcademy,weekdayPrints,components={},teacherInstruction='',
+        name,range,nextAcademy,weekdayPrints,recurringDays=[],components={},teacherInstruction='',
         sourceDate=localDateKey()
       }=input;
       if(!String(name||'').trim()||!String(range||'').trim())return {ok:false,reason:'ENGLISH_NAME_OR_RANGE_MISSING'};
@@ -90,6 +90,7 @@
         source_range:range,
         next_academy:nextAcademy,
         weekday_prints:weekdayPrints,
+        recurring_days:recurringDays,
         components,
         teacher_instruction:teacherInstruction
       });
@@ -116,6 +117,7 @@
         workbook_name:name,
         source_range:range,
         weekday_prints:weekdayPrints,
+        recurring_days:recurringDays,
         components,
         teacher_instruction:teacherInstruction
       };
@@ -138,6 +140,7 @@
         source_date:sourceDate,
         source_range:range,
         weekday_prints:weekdayPrints,
+        recurring_days:recurringDays,
         components,
         teacher_instruction:teacherInstruction,
         next_academy:nextAcademy,
