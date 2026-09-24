@@ -13,22 +13,22 @@ test('weekly and daily planner distinguish family schedule child schedule and mi
     const p=window.ReadySetPlanner;
     p.upsertScheduleCommitment({
       commitment_id:'fam_ui',title:'가족 일정',
-      start_at:'2026-09-28T10:00:00',end_at:'2026-09-28T11:00:00',
+      start_at:'2026-09-24T10:00:00',end_at:'2026-09-24T11:00:00',
       confirmed:true,audience_scope:'FAMILY_ALL',source:'READY_LOCAL'
     });
     p.upsertScheduleCommitment({
       commitment_id:'child_ui',title:'내 영어학원',
-      start_at:'2026-09-28T16:00:00',end_at:'2026-09-28T18:00:00',
+      start_at:'2026-09-24T16:00:00',end_at:'2026-09-24T18:00:00',
       confirmed:true,audience_scope:'MEMBER',target_member_id:'CHILD_SCOPE_UI',source:'READY_LOCAL'
     });
     p.upsertDatedTodo({
-      todo_id:'todo_ui',date:'2026-09-28',label:'영어 단어 복습',
+      todo_id:'todo_ui',date:'2026-09-24',label:'영어 단어 복습',
       source:'PLANNER_ALLOCATION',state:'PLANNED'
     });
   });
 
   await page.locator('[data-nav="planner"]').first().click();
-  await page.locator('[data-planner-date="2026-09-28"]').click();
+  await page.locator('[data-planner-date="2026-09-24"]').click();
 
   const family=page.locator('#plannerWeekDetail .plannerWeekItem.familySchedule');
   const child=page.locator('#plannerWeekDetail .plannerWeekItem.childSchedule');
