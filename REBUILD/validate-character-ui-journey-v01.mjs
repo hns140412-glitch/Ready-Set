@@ -335,4 +335,9 @@ assert(journey.includes('formationCrewGrid selectable'),'COMPANION_SELECT_CARD_C
 assert(journey.includes('formationNameStage'),'COMPANION_NAME_RELATIONSHIP_COMPOSITION_MISSING');
 assert(journey.includes('formationNameCrew'),'COMPANION_NAME_SELECTED_CREW_VISUAL_MISSING');
 assert(styles.includes('Character Formation stage-specific composition: A01 meet / A02 select / A03 name'),'STAGE_SPECIFIC_VISUAL_CSS_MISSING');
-assert(!journey.includes("'<'+'div class=\\\"formationCrewGrid\\\">'"),'CREW_MEET_MUST_NOT_REUSE_SELECTION_CARD_GRID');
+const crewMeetSlice=journey.slice(
+  journey.indexOf("if(s==='CREW_MEET')"),
+  journey.indexOf("}else if(s==='COMPANION_SELECT')")
+);
+assert(crewMeetSlice.length>0,'CREW_MEET_SOURCE_SLICE_MISSING');
+assert(!crewMeetSlice.includes('formationCrewGrid'),'CREW_MEET_MUST_NOT_REUSE_SELECTION_CARD_GRID');
