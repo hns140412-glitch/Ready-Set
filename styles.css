@@ -502,3 +502,13 @@
     width:430px;
   }
 }
+
+.plannerWeekItem.familySchedule{background:rgba(255,242,207,.58);border-style:dashed}
+.plannerWeekItem.familySchedule .plannerDot{background:#c9aa67}
+.plannerWeekItem.childSchedule{background:rgba(255,242,207,.94);border-color:rgba(181,137,53,.18)}
+.plannerWeekItem.childSchedule .plannerDot{background:#e5b33c}
+.plannerRouteItem.familySchedule{background:rgba(255,255,255,.56);border:1px dashed rgba(42,35,31,.12)}
+.plannerRouteItem.familySchedule i{background:rgba(42,35,31,.58)}
+.plannerRouteItem.childSchedule{background:rgba(255,247,224,.92);border:1px solid rgba(181,137,53,.14)}
+.plannerRouteItem.childSchedule i{background:#8c7445}
+.plannerRouteItem.missionItem{box-shadow:0 6px 18px rgba(42,35,31,.05)}
