@@ -5,5 +5,11 @@
   "dependencies": {
     "@netlify/blobs": "^11.1.0",
     "@netlify/identity": "^2.0.0"
+  },
+  "scripts": {
+    "build:auth": "esbuild src/auth/netlify-identity-browser-entry.mjs --bundle --format=iife --platform=browser --target=es2020 --outfile=assets/runtime/netlify-identity-runtime.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.10"
   }
 }
