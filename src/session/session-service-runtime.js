@@ -5,27 +5,34 @@
     const planner=input.planner;
     if(!domain||!planner)return {ok:false,reason:'SESSION_SERVICE_DEPENDENCY_MISSING'};
     const selectedTodoIds=Array.isArray(input.selectedTodoIds)?input.selectedTodoIds:[];
-    const pre=domain.preStartGuard({activeSession:input.activeSession,selectedTodoIds});
+    const eventTasks=Array.isArray(input.eventTasks)?input.eventTasks:[];
+    const pre=domain.preStartGuard({activeSession:input.activeSession,selectedTodoIds,eventTasks});
     if(!pre.ok)return pre;
     const links=planner.linkTodayItems?.(selectedTodoIds,{allowed_states:['PLANNED']})||[];
-    const linkGuard=domain.plannerStartGuard(links);
-    if(!linkGuard.ok)return linkGuard;
+    if(selectedTodoIds.length&&links.length===0&&!eventTasks.length){
+      const linkGuard=domain.plannerStartGuard(links);
+      if(!linkGuard.ok)return linkGuard;
+    }
+    let started=null;
     const first=links[0];
-    const started=planner.recordTaskState?.({
-      todo_id:first.todo_id,
-      ready_state:'IN_PROGRESS',
-      session_id:input.sessionId,
-      task_id:first.learning_unit_id||first.todo_id,
-      at:new Date(input.now).toISOString()
-    });
-    if(started?.state!=='IN_PROGRESS'){
-      return {ok:false,reason:started?.reason||'FIRST_TODO_START_FAILED',planner_result:started||null};
+    if(first){
+      started=planner.recordTaskState?.({
+        todo_id:first.todo_id,
+        ready_state:'IN_PROGRESS',
+        session_id:input.sessionId,
+        task_id:first.learning_unit_id||first.todo_id,
+        at:new Date(input.now).toISOString()
+      });
+      if(started?.state!=='IN_PROGRESS'){
+        return {ok:false,reason:started?.reason||'FIRST_TODO_START_FAILED',planner_result:started||null};
+      }
     }
     const session=domain.createSession({
       sessionId:input.sessionId,
       now:input.now,
       targetMin:input.targetMin,
       plannerLinks:links,
+      eventTasks,
       sound:input.sound
     });
     return {ok:true,session,plannerLinks:links,firstPlannerResult:started};
