@@ -320,3 +320,9 @@ console.log('CHARACTER_FORMATION_RESPONSIVE_AND_POSE_SOURCE_BANK_PASS');
 assert(assetManifest.responsive_contract?.tablet_world_full_bleed===true,'TABLET_WORLD_FULL_BLEED_CONTRACT_MISSING');
 assert(assetManifest.responsive_contract?.tablet_live_ui_remains_phone_scale===true,'TABLET_LIVE_UI_PHONE_SCALE_CONTRACT_MISSING');
 assert(styles.includes('#formationJourneyView.view,')&&styles.includes('#characterSetupView.view{'),'TABLET_FULL_BLEED_VIEW_OVERRIDE_MISSING');
+
+
+// Tablet background extends without cover-zooming the phone source art.
+assert(assetManifest.responsive_contract?.tablet_background_scaling==='PRESERVE_SOURCE_HEIGHT_RIGHT_ANCHORED','TABLET_BACKGROUND_SCALE_CONTRACT_MISSING');
+assert(assetManifest.responsive_contract?.tablet_extension_fill==='PREPARATION_ROOM_TONE_EXTENSION','TABLET_BACKGROUND_EXTENSION_FILL_CONTRACT_MISSING');
+assert(styles.includes('Character Formation tablet world extension without background zoom'),'TABLET_NO_ZOOM_EXTENSION_CSS_MISSING');
