@@ -21,6 +21,29 @@
       return planner()?.snapshot?.()||{dated_todos:[],schedule_commitments:[],daily_availability_windows:[],carry_over_queue:[]};
     }
 
+    function targetInput(id){
+      const value=String(query(id)?.value||'FAMILY_ALL');
+      if(value.startsWith('MEMBER:'))return {audience_scope:'MEMBER',target_member_id:value.slice(7)};
+      return {audience_scope:'FAMILY_ALL',target_member_id:null};
+    }
+
+    async function refreshFamilyTargets(){
+      const api=root.ReadyFamilySession;
+      const result=await api?.familyMembers?.();
+      if(!result?.ok)return result||{ok:false,reason:'FAMILY_MEMBERS_UNAVAILABLE'};
+      const children=(result.members||[]).filter(x=>x.role==='CHILD');
+      for(const id of ['#scheduleAudienceTarget','#availabilityAudienceTarget']){
+        const select=query(id);if(!select)continue;
+        const current=select.value||'FAMILY_ALL';
+        select.innerHTML='<option value="FAMILY_ALL">가족 전체</option>'+children.map(x=>{
+          const label=x.name||x.email||x.member_id;
+          return '<option value="MEMBER:'+String(x.member_id)+'">'+String(label)+'</option>';
+        }).join('');
+        if([...select.options].some(o=>o.value===current))select.value=current;
+      }
+      return {ok:true,children};
+    }
+
     function clearScheduleForm(){
       query('#scheduleId').value='';
       query('#scheduleTitle').value='';
@@ -33,6 +56,7 @@
       query('#scheduleValidFrom').value='';
       query('#scheduleValidUntil').value='';
       query('#scheduleMovable').checked=false;
+      if(query('#scheduleAudienceTarget'))query('#scheduleAudienceTarget').value='FAMILY_ALL';
     }
 
     function clearScheduleExceptionForm(){
@@ -62,6 +86,7 @@
       query('#availabilityEnd').value='';
       query('#availabilityValidFrom').value='';
       query('#availabilityValidUntil').value='';
+      if(query('#availabilityAudienceTarget'))query('#availabilityAudienceTarget').value='FAMILY_ALL';
     }
 
     function render(){
@@ -75,6 +100,7 @@
       if(!query('#scheduleExceptionDate').value)query('#scheduleExceptionDate').value=localDateKey();
       if(!query('#availabilityExceptionDate').value)query('#availabilityExceptionDate').value=localDateKey();
       renderParentIntake();
+      refreshFamilyTargets().catch(()=>{});
       return {ok:true,snapshot:snap};
     }
 
@@ -92,6 +118,7 @@
       query('#scheduleValidFrom').value=item.valid_from||'';
       query('#scheduleValidUntil').value=item.valid_until||'';
       query('#scheduleMovable').checked=!!item.planner_movable;
+      if(query('#scheduleAudienceTarget'))query('#scheduleAudienceTarget').value=item.audience_scope==='MEMBER'&&item.target_member_id?'MEMBER:'+item.target_member_id:'FAMILY_ALL';
       return true;
     }
 
@@ -106,6 +133,7 @@
       query('#availabilityEnd').value=item.end||'';
       query('#availabilityValidFrom').value=item.valid_from||'';
       query('#availabilityValidUntil').value=item.valid_until||'';
+      if(query('#availabilityAudienceTarget'))query('#availabilityAudienceTarget').value=item.audience_scope==='MEMBER'&&item.target_member_id?'MEMBER:'+item.target_member_id:'FAMILY_ALL';
       return true;
     }
 
@@ -179,6 +207,7 @@
         confirmed:true,
         planner_movable:query('#scheduleMovable').checked,
         parent_editable:true,
+        ...targetInput('#scheduleAudienceTarget'),
         source:'PARENT_ADMIN_UI'
       });
       toast('고정 일정을 저장했어요.');
@@ -229,7 +258,7 @@
         weekday:weekly?Number(query('#availabilityWeekday').value):null,
         valid_from:weekly?(validFrom||null):null,
         valid_until:weekly?(validUntil||null):null,
-        confirmed:true,parent_editable:true,source:'PARENT_ADMIN_UI'
+        confirmed:true,parent_editable:true,...targetInput('#availabilityAudienceTarget'),source:'PARENT_ADMIN_UI'
       });
       toast('학습 가능 시간을 확인했어요. Planner가 배정 근거로 사용합니다.');
       refresh();
@@ -356,7 +385,7 @@
     return Object.freeze({
       snapshot,render,clearScheduleForm,clearScheduleExceptionForm,clearAvailabilityForm,clearAvailabilityExceptionForm,editSchedule,editAvailability,
       removeAvailability,removeScheduleException,removeAvailabilityException,reviewCarry,readyCarry,cancelCarry,saveSchedule,saveScheduleException,saveAvailability,saveAvailabilityException,
-      planWeeklyReflow,decideWeeklyReflow,refreshAdaptiveSuggestions,decideAdaptive,bind
+      planWeeklyReflow,decideWeeklyReflow,refreshAdaptiveSuggestions,decideAdaptive,refreshFamilyTargets,bind
     });
   }
 
