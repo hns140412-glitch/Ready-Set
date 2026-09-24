@@ -270,8 +270,8 @@
     }
   },
   "asset_quality": {
-    "runtime_vector_assets": "INTERIM_APPROVED_PIPELINE",
-    "final_anchor_parity": "PENDING_HIGH_DENSITY_SCENE_ITEM_TOOL_AND_390x844_RUNTIME_PROOF",
+    "runtime_vector_assets": "HIGH_DENSITY_SCENE_LAYER_UPGRADE_V1",
+    "final_anchor_parity": "SCENE_LAYER_UPGRADED__PENDING_390x844_RUNTIME_PROOF_AND_ITEM_TOOL_PARITY",
     "core6_runtime_derivatives": "BOUND_DIRECT_FROM_LOCKED_CANONICAL_SOURCE"
   },
   "projection_scope": {
