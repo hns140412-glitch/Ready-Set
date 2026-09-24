@@ -116,6 +116,14 @@
     return result;
   }
 
+  async function familyMembers(){
+    try{
+      const res=await fetch('/api/family/members',{method:'GET',headers:{Accept:'application/json'},cache:'no-store',credentials:'same-origin'});
+      const body=await res.json().catch(()=>({}));
+      return res.ok?body:{ok:false,reason:body?.reason||('FAMILY_MEMBERS_HTTP_'+res.status)};
+    }catch(error){return {ok:false,reason:String(error?.message||error)};}
+  }
+
   async function createFamily(relationship='GUARDIAN'){
     const result=await postAuth('/api/family/create',{relationship:String(relationship||'GUARDIAN').trim().toUpperCase()});
     if(result.ok&&result.session)return applyBootstrap({...result.session,source:'FAMILY_CREATE'});
@@ -172,6 +180,7 @@
     login,
     signup,
     logout,
+    familyMembers,
     createFamily,
     linkChild,
     linkGuardian,
