@@ -6,19 +6,25 @@
   if(!EventEnvelope?.create || !LocalQueue?.create) throw new Error('READY_SHARED_EVENT_QUEUE_UNAVAILABLE');
 
   const DB_NAME='readyset_local_v1', DB_VERSION=1;
-  const SCOPE_KEYS={planner:'readyset_planner_v1',app_state:'readyset_state',assignments:'readyset_assignments_v2'};
+  const SCOPE_KEYS={planner:'readyset_planner_v1',planner_family:'readyset_planner_family_v1',app_state:'readyset_state',assignments:'readyset_assignments_v2'};
   const memberScope=()=>globalThis.ReadyMemberScope||null;
-  function scopedScope(scope){return memberScope()?.syncScope?.(scope)||scope}
+  function scopedScope(scope){
+    if(scope==='planner_family')return memberScope()?.familySyncScope?.(scope)||scope;
+    return memberScope()?.syncScope?.(scope)||scope;
+  }
   function parsedScope(scope){return memberScope()?.parseSyncScope?.(scope)||{member_id:null,scope};}
   function activeMemberId(){return memberScope()?.memberId?.()||null;}
+  function activeFamilyId(){return memberScope()?.familyId?.()||null;}
   function belongsToActiveMember(scope){
     const parsed=parsedScope(scope);
-    const active=activeMemberId();
-    return active?parsed.member_id===active:parsed.member_id==null;
+    const member=activeMemberId(),family=activeFamilyId();
+    if(parsed.family_id)return !!family&&parsed.family_id===family;
+    return member?parsed.member_id===member:parsed.member_id==null;
   }
   function localStorageKeyForScope(scope){
     const parsed=parsedScope(scope);
     const base=SCOPE_KEYS[parsed.scope];if(!base)return null;
+    if(parsed.family_id)return `${base}::family::${encodeURIComponent(parsed.family_id)}`;
     return parsed.member_id?`${base}::member::${encodeURIComponent(parsed.member_id)}`:base;
   }
   const SHARED_STATES=new Set(['PENDING','IN_FLIGHT','RETRY','ACKED','DEAD_LETTER','SUPERSEDED']);
