@@ -9,6 +9,13 @@ function parseMemberScope(scope){
   try{memberId=decodeURIComponent(memberId);}catch{}
   return {member_id:clean(memberId),scope:clean(match[2])};
 }
+function parseFamilyScope(scope){
+  const match=/^family:([^:]+):(.+)$/.exec(clean(scope));
+  if(!match)return null;
+  let familyId=match[1];
+  try{familyId=decodeURIComponent(familyId);}catch{}
+  return {family_id:clean(familyId),scope:clean(match[2])};
+}
 
 function createSyncService(store,options={}){
   if(!store || typeof store.get !== 'function' || typeof store.set !== 'function'){
@@ -32,17 +39,21 @@ function createSyncService(store,options={}){
 
     const scope=clean(input.scope)||'unknown';
     const parsedMemberScope=parseMemberScope(scope);
+    const parsedFamilyScope=parseFamilyScope(scope);
     if(authenticatedMemberId){
-      if(!parsedMemberScope){
-        return {status:400,body:{ok:false,reason:'MEMBER_SCOPE_REQUIRED'}};
-      }
-      if(parsedMemberScope.member_id!==authenticatedMemberId){
+      if(parsedMemberScope&&parsedMemberScope.member_id!==authenticatedMemberId){
         return {status:403,body:{ok:false,reason:'MEMBER_SCOPE_FORBIDDEN'}};
+      }
+      if(parsedFamilyScope&&parsedFamilyScope.family_id!==namespace){
+        return {status:403,body:{ok:false,reason:'FAMILY_SCOPE_FORBIDDEN'}};
+      }
+      if(!parsedMemberScope&&!parsedFamilyScope){
+        return {status:400,body:{ok:false,reason:'SCOPED_EVENT_REQUIRED'}};
       }
     }
 
-    const memberScoped=!!parsedMemberScope;
-    const key=memberScoped
+    const scoped=!!parsedMemberScope||!!parsedFamilyScope;
+    const key=scoped
       ? 'families/'+encodeURIComponent(namespace)+'/scopes/'+encodeURIComponent(scope)+'/events/'+encodeURIComponent(idempotencyKey)
       : 'families/'+encodeURIComponent(namespace)+'/events/'+encodeURIComponent(idempotencyKey);
     const existing=await store.get(key);
@@ -74,6 +85,7 @@ function createSyncService(store,options={}){
       remote_version:1,
       family_namespace:namespace,
       member_id:parsedMemberScope?.member_id||null,
+      family_id:parsedFamilyScope?.family_id||namespace,
       accepted_at:new Date().toISOString()
     };
     await store.set(key,JSON.stringify(record));
@@ -83,4 +95,4 @@ function createSyncService(store,options={}){
   return {health,putEvent};
 }
 
-module.exports={createSyncService,parseMemberScope};
+module.exports={createSyncService,parseMemberScope,parseFamilyScope};
