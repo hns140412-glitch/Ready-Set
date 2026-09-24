@@ -1,12 +1,13 @@
 (function(root){
   'use strict';
 
-  const VERSION='CHARACTER_FORMATION_POSE_BANK_V02';
+  const VERSION='CHARACTER_FORMATION_POSE_BANK_V03';
   const CORE6=Object.freeze(['dubi','lori','ink','nova','take','zero']);
   const POSES=Object.freeze(['standing','seated']);
-  const CELL=48;
+  const CELL=64;
   const COLS=6;
   const ROWS=2;
+  const SPRITE_PATH='./assets/character-formation/crew/core6-pose-sprite-64.webp';
   const cache=new Map();
   let spritePromise=null;
 
@@ -15,20 +16,13 @@
     return CORE6.includes(id)?id:null;
   }
 
-  function spriteDataUri(){
-    const b64=String(root.__cfPoseSpriteB64||'');
-    return b64.startsWith('UklGR')?('data:image/webp;base64,'+b64):null;
-  }
-
   function loadSprite(){
     if(spritePromise)return spritePromise;
-    const uri=spriteDataUri();
-    if(!uri)return Promise.resolve(null);
     spritePromise=new Promise(resolve=>{
       const img=new Image();
       img.onload=()=>resolve(img);
       img.onerror=()=>resolve(null);
-      img.src=uri;
+      img.src=SPRITE_PATH;
     });
     return spritePromise;
   }
@@ -41,6 +35,7 @@
     if(cache.has(cacheKey))return cache.get(cacheKey);
     const sprite=await loadSprite();
     if(!sprite)return null;
+    if(sprite.naturalWidth!==CELL*COLS||sprite.naturalHeight!==CELL*ROWS)return null;
     const col=CORE6.indexOf(key);
     const row=kind==='seated'?1:0;
     const canvas=document.createElement('canvas');
@@ -50,7 +45,7 @@
     if(!ctx)return null;
     ctx.clearRect(0,0,CELL,CELL);
     ctx.drawImage(sprite,col*CELL,row*CELL,CELL,CELL,0,0,CELL,CELL);
-    const uri=canvas.toDataURL('image/webp',.92);
+    const uri=canvas.toDataURL('image/webp',.94);
     cache.set(cacheKey,uri);
     return uri;
   }
@@ -65,8 +60,9 @@
       img.dataset.cfPoseBank='bound';
       img.dataset.cfPose=pose;
       img.dataset.cfPoseCrew=key;
+      img.dataset.cfPoseSource='repo-sprite-64';
     }).catch(()=>{});
-    return Boolean(spriteDataUri());
+    return true;
   }
 
   function status(){
@@ -74,15 +70,15 @@
       version:VERSION,
       identityAuthority:'CORE6_CANONICAL_VISUAL_ID',
       changesIdentity:false,
-      materialization:'REPOSITORY_EMBEDDED_WEBP_SPRITE_2X6',
+      materialization:'REPOSITORY_WEBP_SPRITE_FILE',
+      spritePath:SPRITE_PATH,
       spriteCells:12,
-      cellSize:CELL,
-      dataAvailable:Boolean(spriteDataUri())
+      cellSize:CELL
     });
   }
 
   root.CharacterFormationPoseBank=Object.freeze({
-    version:VERSION,CORE6,POSES,CELL,COLS,ROWS,
-    spriteDataUri,extract,bindImage,status
+    version:VERSION,CORE6,POSES,CELL,COLS,ROWS,SPRITE_PATH,
+    extract,bindImage,status
   });
 })(typeof globalThis!=='undefined'?globalThis:this);
