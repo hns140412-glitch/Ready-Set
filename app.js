@@ -210,7 +210,8 @@ const homeViewRuntime=rebuildHomeView.create({
   guideData
 });
 function renderHome(){
-  homeViewRuntime.render({state,missionLabels:currentMissionLabels()});
+  const missionItems=currentPlannerMissionItems();
+  homeViewRuntime.render({state,missionLabels:missionItems.map(x=>x.label).filter(Boolean),missionItems});
 }
 function renderChips(root){
   homeViewRuntime.renderChips(root,currentMissionLabels());
