@@ -13,7 +13,7 @@ test('home and planner share one Base Camp world while timer remains separate fo
   await expect(page.locator('#plannerView .plannerWorldScene')).toBeVisible();
   await expect(page.locator('#plannerView .plannerWorldCamp')).toBeVisible();
 
-  await page.locator('[data-nav="home"]').first().click();
+  await page.locator('#plannerView [data-nav="home"]').click();
   await page.locator('[data-nav="mission"]').first().click();
   await expect(page.locator('#missionView')).toBeVisible();
 
