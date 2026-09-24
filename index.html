@@ -276,7 +276,65 @@
   </section>
 
   <section class="view peach" id="profileView" data-view="profile"><header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MY READY PROFILE</span><h1>내 프로필</h1></div><span></span></header><main class="safe scroll"><section class="profileCard"><div class="avatarPreviewWrap"><img id="profileImage" alt="프로필 미리보기" hidden><div id="profilePlaceholder" class="profilePlaceholder">RS</div></div><label class="inputBlock">이름<input id="profileName" placeholder="이름 또는 별명"></label><label class="inputBlock">생년월일<input id="profileBirthdate" type="date"></label><p class="muted">생년월일만 사용해 현재 만 나이와 학습 단위 크기를 조정합니다. 학년·지역·교육과정은 자동 추정하지 않습니다.</p><div class="photoActions"><label class="btn outline">사진 찍기<input id="cameraInput" type="file" accept="image/*" capture="user" hidden></label><label class="btn outline">사진 선택<input id="galleryInput" type="file" accept="image/*" hidden></label></div><label class="shareAvatarToggle"><input type="checkbox" id="shareAvatarOptIn"><span><b>공유 카드에 프로필 이미지 포함</b><small>기본은 OFF · 켜면 프로필 이미지를 공유 카드에 사용합니다.</small></span></label>
-<button class="btn dark" id="saveProfileBtn">프로필 저장</button></section></main></section>
+<button class="btn dark" id="saveProfileBtn">프로필 저장</button><button class="btn outline" id="openCharacterSetupBtn">탐험 준비 시작 · 이어가기</button></section></main></section>
+
+  <section class="view formationJourneyView" id="formationJourneyView" data-view="formation-journey" data-formation-stage="CREW_MEET">
+    <div class="formationJourneyScene" aria-hidden="true">\n      <div class="formationJourneyLayer formationJourneyTabletExtension" data-cf-asset-group="background" data-cf-asset-key="prep_room_tablet_extension"></div>
+      <div class="formationJourneyLayer formationJourneyBase" data-cf-asset-group="background" data-cf-asset-key="prep_room_base"></div>
+      <div class="formationJourneyLayer formationJourneyIslandHint" data-cf-asset-group="background" data-cf-asset-key="island_hint"></div>
+      <div class="formationJourneyLayer formationJourneyMid" data-cf-asset-group="foreground" data-cf-asset-key="mid_props"></div>
+      <div class="formationJourneyLayer formationJourneyForeground" data-cf-asset-group="foreground" data-cf-asset-key="prep_foreground"></div>
+      <div class="formationJourneyLayer formationJourneyGlow" data-cf-asset-group="fx" data-cf-asset-key="warm_glow"></div>
+    </div>
+    <header class="safe pageHeader formationJourneyHeader">
+      <button data-nav="profile" aria-label="뒤로">←</button>
+      <div><span class="kicker">CHARACTER FORMATION</span><h1>탐험 준비</h1></div>
+      <span id="formationJourneyStep" class="characterStepBadge">CREW · MEET</span>
+    </header>
+    <main class="safe scroll formationJourneyMain">
+      <section class="formationJourneyPanel" id="formationJourneyBody"></section>
+    </main>
+  </section>
+
+  <section class="view cfView" id="characterSetupView" data-view="character-setup" data-cf-status="START">
+    <div class="cfScene" id="cfScene" aria-hidden="true">\n      <div class="cfLayer cfTabletExtension" data-cf-asset-group="background" data-cf-asset-key="prep_room_tablet_extension"></div>
+      <div class="cfLayer cfFarWorld" data-cf-asset-group="background" data-cf-asset-key="prep_room_base"></div>
+      <div class="cfLayer cfDestinationHint" data-cf-asset-group="background" data-cf-asset-key="island_hint"></div>
+      <div class="cfLayer cfMidProps" data-cf-asset-group="foreground" data-cf-asset-key="mid_props"></div>
+      <div class="cfCommonTools" id="cfCommonTools">
+        <img class="cfTool cfToolMap" data-cf-asset-group="common_tools" data-cf-asset-key="map" alt="">
+        <img class="cfTool cfToolCompass" data-cf-asset-group="common_tools" data-cf-asset-key="compass_prop" alt="">
+        <img class="cfTool cfToolCamera" data-cf-asset-group="common_tools" data-cf-asset-key="camera_prop" alt="">
+        <img class="cfTool cfToolLantern" data-cf-asset-group="common_tools" data-cf-asset-key="lantern_prop" alt="">
+        <img class="cfTool cfToolBooks" data-cf-asset-group="common_tools" data-cf-asset-key="book_stack" alt="">
+        <img class="cfTool cfToolSuitcase" data-cf-asset-group="common_tools" data-cf-asset-key="open_suitcase" alt="">
+        <img class="cfTool cfToolTags" data-cf-asset-group="common_tools" data-cf-asset-key="travel_tags" alt="">
+        <img class="cfTool cfToolPostcard" data-cf-asset-group="common_tools" data-cf-asset-key="island_postcard" alt="">
+      </div>
+      <img class="cfCrewAsset" id="cfCrewAsset" data-cf-asset-group="crew" data-cf-asset-key="dubi" alt="">
+      <div class="cfLayer cfForeground" data-cf-asset-group="foreground" data-cf-asset-key="prep_foreground"></div>
+      <div class="cfLayer cfFxLayer" data-cf-asset-group="fx" data-cf-asset-key="warm_glow"></div>
+    </div>
+    <header class="safe pageHeader cfHeader"><button data-nav="profile" aria-label="뒤로">←</button><div><span class="kicker">CHARACTER FORMATION</span><h1>여행 준비</h1></div><span id="characterSetupStep" class="characterStepBadge">START</span></header>
+    <main class="safe scroll characterSetupMain cfCharacterMain">
+      <section class="characterSourceCard cfIdentityChip">
+        <div class="characterSourceAvatar" id="characterSourceAvatar">RS</div>
+        <div><small>SOURCE PHOTO IDENTITY</small><b>사진 속 나는 그대로</b><p id="characterSourceMeta">먼저 프로필에서 사진을 등록해 주세요.</p></div>
+      </section>
+      <section class="cfCompanionCue">
+        <div><small>함께 준비하는 탐험대원</small><b id="cfCompanionName">두비</b></div>
+        <span id="cfCompanionLine">“좋아! 하나씩 챙겨보자!”</span>
+      </section>
+      <section class="characterConsultCard cfTaskSurface">
+        <div class="characterConsultHead"><small>MY SIGNATURE / DIRECTION</small><h2 id="characterSetupTitle">내 캐릭터 만들기</h2><p id="characterSetupCopy">원본 사진 다음에는 시그니처 아이템 하나와 두 번의 탐험 방향만 골라요.</p></div>
+        <div id="characterDirectionGrid" class="characterDirectionGrid" hidden></div>
+        <div id="characterCandidateContract" hidden></div>
+        <button class="btn dark cfPrimaryCta" id="beginCharacterSetupBtn">여행 준비 시작</button>
+      </section>
+      <div class="cfProgress" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </main>
+  </section>
+
 
 
   <section class="view cream" id="settingsView" data-view="settings"><header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">SETTINGS</span><h1>설정</h1></div><span></span></header><main class="safe scroll"><section class="glassCard"><h2>내 길잡이</h2><div class="guideSetting"><div class="guidePortrait" id="settingsGuidePortrait"></div><div><b id="guideNameLabel">루미</b><small id="guidePersonalityLabel">포근하고 위트 있는 길잡이</small></div></div>
@@ -354,6 +412,23 @@
 <script src="./ready-learning-standard-matcher-v01.js"></script>
 <script src="./ready-learning-reference-v01.js"></script>
 <script src="./src/learning/learner-context-runtime.js"></script>
+<script src="./src/identity/character-direction-runtime.js"></script>
+<script src="./src/identity/character-identity-consistency-runtime.js"></script>
+<script src="./src/identity/character-signature-item-runtime.js"></script>
+<script src="./src/identity/character-consistency-gate-runtime.js"></script>
+<script src="./src/identity/character-asset-keys-runtime.js"></script>
+<script src="./src/identity/character-core-orchestrator-runtime.js"></script>
+<script src="./src/identity/character-remote-adapter-runtime.js"></script>
+<script src="./src/identity/character-master-runtime.js"></script>
+<script src="./src/identity/character-derivative-runtime.js"></script>
+<script src="./src/identity/character-setup-controller-runtime.js"></script>
+<script src="./src/identity/character-formation-asset-runtime.js"></script>
+<script src="./src/identity/character-formation-pose-bank-runtime.js"></script>\n<script src="./src/identity/character-formation-scene-runtime.js"></script>
+<script src="./src/identity/character-formation-journey-runtime.js"></script>
+<script src="./src/identity/character-setup-view-runtime.js"></script>
+<script src="./src/identity/character-generation-job-runtime.js"></script>
+<script src="./src/identity/source-photo-intake-runtime.js"></script>
+<script src="./src/identity/character-visual-id-projection-runtime.js"></script>
 <script src="./ready-learning-master-v01.js"></script>
 <script src="./src/planner/planner-policy-runtime.js"></script>
 <script src="./src/planner/planner-projection-runtime.js"></script>
@@ -403,6 +478,7 @@
 <script src="./src/shell/accessibility-runtime.js"></script>
 <script src="./src/shell/app-bootstrap-controller-runtime.js"></script>
 <script src="./app.js"></script>
+<script src="./src/integrations/character-intro-bridge-runtime.js"></script>
 <script src="./ready-pwa-update-v01.js"></script>
 <script src="./ready-runtime-v07.js"></script>
 </body>
