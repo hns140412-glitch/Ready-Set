@@ -383,3 +383,8 @@ assert(assetManifest.final_runtime_proof?.pose_dom_binding==='PASS','POSE_DOM_PR
 assert(assetManifest.final_runtime_proof?.responsive_geometry==='PASS','RESPONSIVE_GEOMETRY_PROOF_MISSING');
 assert(assetManifest.final_runtime_proof?.visual_review==='PASS','FINAL_VISUAL_REVIEW_PROOF_MISSING');
 console.log('CHARACTER_FORMATION_FINAL_COMPLETION_PASS',poseSpriteHash);
+
+assert(['chunk-1.js','chunk-2.js','chunk-3.js','chunk-4.js','chunk-5.js'].every(x=>index.includes('./src/identity/pose-data/'+x)),'POSE_SPRITE_CHUNKS_NOT_LOADED');
+assert(poseBankRuntime.includes("materialization:'REPOSITORY_EMBEDDED_WEBP_SPRITE_2X6'"),'POSE_SPRITE_RUNTIME_MATERIALIZATION_MISSING');
+assert(poseBankRuntime.includes('spriteCells:12'),'POSE_SPRITE_CELL_COUNT_MISSING');
+console.log('CHARACTER_FORMATION_POSE_BINARY_MATERIALIZATION_PASS');
