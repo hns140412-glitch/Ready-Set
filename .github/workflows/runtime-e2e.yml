@@ -8,6 +8,7 @@ on:
       - taky/ready-integration-v01
       - taky/unit-mapping-table-full-v02
       - taky/ready-rebuild-v01-2026-09-21
+      - taky/ready-character-intro-integration-2026-09-24
   pull_request:
     branches:
       - main
@@ -25,6 +26,8 @@ jobs:
         run: node tests/shared-runtime-contract.test.js
       - name: Validate release archive boundary
         run: node tests/release-package-contract.test.js
+      - name: Validate Character Intro to Planner integration
+        run: node tests/character-intro-integration-contract.test.js
       - name: Install Playwright
         run: |
           npm install --no-save @playwright/test@1.55.0
