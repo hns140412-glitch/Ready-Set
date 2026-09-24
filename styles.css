@@ -303,3 +303,32 @@
     margin:0;
   }
 }
+
+
+/* Character Formation tablet world extension without background zoom */
+@media (min-width:768px){
+  #formationJourneyView .formationJourneyScene,
+  #characterSetupView .cfScene{
+    background:
+      radial-gradient(circle at 72% 24%,rgba(209,167,106,.22),transparent 34%),
+      linear-gradient(90deg,#4a3025 0%,#644630 42%,#3b2d24 100%);
+  }
+  #formationJourneyView .formationJourneyBase,
+  #characterSetupView .cfFarWorld{
+    background-size:100% 100%,auto 100%;
+    background-position:center,right center;
+    background-repeat:no-repeat,no-repeat;
+  }
+  #formationJourneyView .formationJourneyIslandHint,
+  #formationJourneyView .formationJourneyMid,
+  #formationJourneyView .formationJourneyForeground,
+  #formationJourneyView .formationJourneyGlow,
+  #characterSetupView .cfDestinationHint,
+  #characterSetupView .cfMidProps,
+  #characterSetupView .cfForeground,
+  #characterSetupView .cfFxLayer{
+    background-size:auto 100%;
+    background-position:right center;
+    background-repeat:no-repeat;
+  }
+}
