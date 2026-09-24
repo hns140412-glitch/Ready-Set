@@ -292,3 +292,14 @@
     margin-right:max(28px,5vw);
   }
 }
+
+
+/* Character Formation tablet full-bleed world override */
+@media (min-width:768px){
+  #formationJourneyView.view,
+  #characterSetupView.view{
+    width:100%;
+    max-width:none;
+    margin:0;
+  }
+}
