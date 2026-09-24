@@ -1,0 +1,21 @@
+const fs=require('fs');
+const read=p=>fs.readFileSync(p,'utf8');
+const assert=(ok,msg)=>{if(!ok)throw new Error(msg)};
+const index=read('index.html');
+const bridge=read('src/integrations/character-intro-bridge-runtime.js');
+const journey=read('src/identity/character-formation-journey-runtime.js');
+const planner=read('src/views/planner-screen-view-runtime.js');
+const app=read('app.js');
+
+assert(index.includes('id="formationJourneyView"'),'FORMATION_JOURNEY_VIEW_MISSING');
+assert(index.includes('id="characterSetupView"'),'CHARACTER_SETUP_VIEW_MISSING');
+assert(index.includes('id="openCharacterSetupBtn"'),'CHARACTER_PROFILE_ENTRY_MISSING');
+assert(index.includes('character-intro-bridge-runtime.js'),'CHARACTER_INTRO_BRIDGE_NOT_LOADED');
+assert(index.includes('character-formation-journey-runtime.js'),'CHARACTER_JOURNEY_RUNTIME_NOT_LOADED');
+assert(bridge.includes('state.expedition=state.expedition||{}'),'EXPEDITION_STATE_MIGRATION_MISSING');
+assert(bridge.includes('CharacterFormationAssetRuntime'),'FORMATION_ASSET_BINDING_MISSING');
+assert(journey.includes("GO_READY')nav('planner')"),'INTRO_MUST_HANDOFF_TO_PLANNER');
+assert(planner.includes("value==='MORNING'?'등교 전'"),'CURRENT_PLANNER_DELTA_REGRESSED');
+assert(app.includes("plannerTab='week'"),'CURRENT_READY_APP_REPLACED_OR_REGRESSED');
+assert(app.includes('ReadyRebuildPlannerScreenController'),'CURRENT_READY_PLANNER_CONTROLLER_MISSING');
+console.log('READY_CHARACTER_INTRO_PLANNER_INTEGRATION_PASS');
