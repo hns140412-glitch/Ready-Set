@@ -44,6 +44,31 @@ function roleFor(user={}){
   if(parent===child)return null;
   return parent?'PARENT':'CHILD';
 }
+function accountSessionFromIdentityUser(user={}){
+  const accountId=accountIdFor(user);
+  if(!accountId)return {ok:false,status:401,reason:'IDENTITY_USER_REQUIRED'};
+  const membership=membershipFor(user);
+  if(!membership)return {
+    ok:true,
+    session:{
+      authenticated:true,
+      state:'AUTHENTICATED_UNBOUND',
+      account_id:accountId,
+      family_id:null,
+      membership_id:null,
+      member_id:accountId,
+      role:null,
+      relationship:null,
+      membership_status:'UNBOUND',
+      session_id:'netlify_identity_'+accountId,
+      source:'NETLIFY_IDENTITY',
+      auth_provider:clean(user.provider||user.appMetadata?.provider||user.app_metadata?.provider)||'NETLIFY_IDENTITY',
+      email:clean(user.email)||null,
+      name:clean(user.name)||clean(user.userMetadata?.full_name)||null
+    }
+  };
+  return familySessionFromIdentityUser(user);
+}
 function familySessionFromIdentityUser(user={}){
   const accountId=accountIdFor(user),membership=membershipFor(user);
   const role=membership?(membership.role==='GUARDIAN'?'PARENT':'CHILD'):roleFor(user);
@@ -79,4 +104,4 @@ function canLinkChild(parentUser,targetUser){
   if(targetMembership&&targetMembership.family_id!==parent.session.family_id)return {ok:false,status:409,reason:'TARGET_ALREADY_IN_OTHER_FAMILY'};
   return {ok:true,family_id:parent.session.family_id};
 }
-module.exports={normalizedRoles,accountIdFor,membershipFor,familyIdFor,roleFor,familySessionFromIdentityUser,canLinkChild};
+module.exports={normalizedRoles,accountIdFor,membershipFor,familyIdFor,roleFor,accountSessionFromIdentityUser,familySessionFromIdentityUser,canLinkChild};
