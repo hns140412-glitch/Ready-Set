@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1194 834" role="img" aria-label="tablet preparation room extension">
+<defs>
+  <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#6f4c34"/><stop offset=".52" stop-color="#8a6040"/><stop offset="1" stop-color="#4a3024"/></linearGradient>
+  <linearGradient id="light" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#e5b96d" stop-opacity=".23"/><stop offset=".7" stop-color="#ffd98a" stop-opacity=".08"/><stop offset="1" stop-color="#fff0bd" stop-opacity="0"/></linearGradient>
+  <linearGradient id="shelf" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#67442d"/><stop offset="1" stop-color="#38251d"/></linearGradient>
+  <filter id="shadow"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1c100b" flood-opacity=".24"/></filter>
+</defs>
+<rect width="1194" height="834" fill="url(#wall)"/>
+<g opacity=".28">
+  <path d="M0 92H1194M0 188H1194M0 284H1194M0 380H1194M0 476H1194M0 572H1194M0 668H1194M0 764H1194" stroke="#d7a26d" stroke-width="3"/>
+  <path d="M146 0V834M316 0V834M493 0V834M676 0V834M858 0V834M1037 0V834" stroke="#3a241a" stroke-width="4"/>
+</g>
+<rect width="850" height="834" fill="url(#light)"/>
+<g filter="url(#shadow)">
+  <g transform="translate(56 125)">
+    <rect x="0" y="0" width="250" height="20" rx="8" fill="url(#shelf)"/>
+    <rect x="12" y="-75" width="58" height="70" rx="7" fill="#405b6c"/>
+    <rect x="77" y="-62" width="46" height="57" rx="6" fill="#9f6d4d"/>
+    <rect x="130" y="-85" width="54" height="80" rx="6" fill="#d6b466"/>
+    <rect x="192" y="-65" width="44" height="60" rx="6" fill="#526d59"/>
+  </g>
+  <g transform="translate(82 312)">
+    <rect x="0" y="0" width="330" height="20" rx="8" fill="url(#shelf)"/>
+    <rect x="18" y="-95" width="62" height="90" rx="7" fill="#7e5942"/>
+    <rect x="88" y="-72" width="52" height="67" rx="7" fill="#c9a260"/>
+    <rect x="148" y="-105" width="70" height="100" rx="8" fill="#375b70"/>
+    <rect x="228" y="-78" width="82" height="73" rx="8" fill="#667963"/>
+  </g>
+  <g transform="translate(465 118)">
+    <rect width="205" height="154" rx="18" fill="#cda879" stroke="#d9bd91" stroke-width="7"/>
+    <rect x="16" y="16" width="173" height="122" rx="12" fill="#efe3c5"/>
+    <path d="M42 104C72 60 111 86 140 48" fill="none" stroke="#61876a" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="142" cy="48" r="11" fill="#d86f49"/>
+  </g>
+  <g transform="translate(430 395)">
+    <rect x="0" y="0" width="300" height="18" rx="8" fill="url(#shelf)"/>
+    <rect x="12" y="-43" width="98" height="38" rx="6" fill="#4a5268"/>
+    <rect x="22" y="-68" width="86" height="23" rx="5" fill="#c79c5b"/>
+    <rect x="135" y="-88" width="58" height="82" rx="8" fill="#56705e"/>
+    <rect x="205" y="-65" width="78" height="58" rx="8" fill="#9b6849"/>
+  </g>
+  <g transform="translate(106 520)">
+    <path d="M0 0h312v178H0z" fill="#4d3325"/>
+    <rect x="18" y="18" width="276" height="142" rx="18" fill="#6b4931"/>
+    <rect x="42" y="42" width="104" height="82" rx="10" fill="#d9c394"/>
+    <path d="M61 100c24-33 48-22 65-49" fill="none" stroke="#617a66" stroke-width="8" stroke-linecap="round"/>
+    <rect x="174" y="42" width="86" height="24" rx="6" fill="#334f66"/>
+    <rect x="174" y="75" width="86" height="24" rx="6" fill="#b57f52"/>
+    <rect x="174" y="108" width="86" height="24" rx="6" fill="#d0aa5e"/>
+  </g>
+</g>
+<g opacity=".92">
+  <path d="M24 53l42 10-15 48-43-9z" fill="#f0e1b9" stroke="#d1a673" stroke-width="4"/>
+  <path d="M340 70l48-8 10 61-47 8z" fill="#d8c18f" stroke="#c79a66" stroke-width="4"/>
+  <path d="M747 95l52 11-13 60-52-11z" fill="#edd8ad" stroke="#cb9b63" stroke-width="4"/>
+  <circle cx="780" cy="134" r="7" fill="#c56545"/>
+</g>
+<g opacity=".32">
+  <circle cx="235" cy="716" r="118" fill="#3c6d54"/>
+  <circle cx="68" cy="748" r="78" fill="#4f7f60"/>
+  <circle cx="620" cy="730" r="96" fill="#365f4a"/>
+</g>
+<rect x="830" width="364" height="834" fill="url(#light)" opacity=".18"/>
+</svg>
