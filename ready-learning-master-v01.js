@@ -384,6 +384,7 @@
         difficulty:extra.difficulty??difficulty(profile,fact.teacher_instruction,desc)
       },
       divisible_boundary:extra.divisible_boundary||profile.default_boundary,
+      preferred_days:clone(Array.isArray(extra.preferred_days)?extra.preferred_days:[]),
       prerequisite:extra.prerequisite||null,
       parent_help_dependency:maxHelp(extra.parent_help_dependency||profile.parent_help_dependency||'UNRESOLVED',reviewPolicy?.parent_help_floor||null),
       review_policy:extra.review_policy||(
@@ -432,6 +433,12 @@
     }));
   }
 
+  function weekdayNumber(value){
+    const key=String(value||'').trim().toUpperCase();
+    const map={SUN:0,SUNDAY:0,'일':0,MON:1,MONDAY:1,'월':1,TUE:2,TUESDAY:2,'화':2,WED:3,WEDNESDAY:3,'수':3,THU:4,THURSDAY:4,'목':4,FRI:5,FRIDAY:5,'금':5,SAT:6,SATURDAY:6,'토':6};
+    return Number.isInteger(map[key])?map[key]:null;
+  }
+
   function englishUnits(fact,analysis){
     const out=[];let n=0;
     if(clean(fact.source_range)){
@@ -452,13 +459,15 @@
         source_range:clean(value),
         divisible_boundary:'PRINT_UNIT',
         concept_skill_target:`${weekday}_PRINT`,
+        preferred_days:Number.isInteger(weekdayNumber(weekday))?[weekdayNumber(weekday)]:[],
         learning_goal:'해당 요일 프린트 과제 완수'
       }));
     }
     for(const [kind,value] of Object.entries(fact.components||{})){
       if(clean(value))out.push(unitBase(fact,analysis,kind,n++,{
         source_range:clean(value),
-        concept_skill_target:kind.toUpperCase()
+        concept_skill_target:kind.toUpperCase(),
+        preferred_days:Array.isArray(fact.recurring_days)?fact.recurring_days:[]
       }));
     }
     return out;
