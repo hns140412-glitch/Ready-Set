@@ -254,6 +254,7 @@ missionControllerRuntime.bind();
 function currentPlannerMissionItems(){return missionControllerRuntime.currentMissionItems();}
 function currentMissionLabels(){return missionControllerRuntime.currentMissionLabels();}
 function renderPlannerToday(){return missionControllerRuntime.renderPlannerToday();}
+function removeEventTask(eventTaskId){return missionControllerRuntime.removeEventTask(eventTaskId);}
 function renderMission(){return missionControllerRuntime.render();}
 
 function bgm(){
