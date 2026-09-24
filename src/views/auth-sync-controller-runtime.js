@@ -79,6 +79,18 @@
       return {ok:true};
     }
 
+    async function createFamily(){
+      const relationship=query('#familyCreatorRelationship')?.value||'GUARDIAN';
+      const result=await familyApi()?.createFamily?.(relationship);
+      if(result?.ok){
+        toast('가족 공간을 만들었습니다.');
+        renderAuthStatus();renderPlanner();await renderSyncStatus();
+        return result;
+      }
+      toast('가족 공간을 만들지 못했습니다.');
+      return result||{ok:false,reason:'FAMILY_CREATE_FAILED'};
+    }
+
     async function linkChild(){
       if(!requireParentUi())return {ok:false,reason:'PARENT_REQUIRED'};
       const input=query('#familyChildEmailInput');
@@ -97,6 +109,27 @@
           : 'CHILD 계정을 연결하지 못했습니다.';
       toast(message);
       return result||{ok:false,reason:'LINK_CHILD_FAILED'};
+    }
+
+    async function linkGuardian(){
+      if(!requireParentUi())return {ok:false,reason:'PARENT_REQUIRED'};
+      const input=query('#familyGuardianEmailInput');
+      const email=input?.value.trim();
+      const relationship=query('#familyGuardianRelationship')?.value||'GUARDIAN';
+      if(!email){toast('연결할 보호자 Google 이메일을 입력해 주세요.');return {ok:false,reason:'INVALID_INPUT'};}
+      const result=await familyApi()?.linkGuardian?.(email,relationship);
+      if(result?.ok){
+        toast('보호자 계정을 같은 가족에 연결했습니다.');
+        if(input)input.value='';
+        return result;
+      }
+      const message=result?.reason==='GUARDIAN_ACCOUNT_NOT_FOUND'
+        ? '먼저 해당 보호자가 Google 로그인을 한 번 완료해야 합니다.'
+        : result?.reason==='TARGET_ALREADY_IN_OTHER_FAMILY'
+          ? '이미 다른 가족에 연결된 계정입니다.'
+          : '보호자 계정을 연결하지 못했습니다.';
+      toast(message);
+      return result||{ok:false,reason:'LINK_GUARDIAN_FAILED'};
     }
 
     async function resolveSyncConflict(conflictId,resolution){
@@ -160,12 +193,14 @@
       query('#authLoginBtn')?.addEventListener('click',login);
       query('#authSignupBtn')?.addEventListener('click',signup);
       query('#authLogoutBtn')?.addEventListener('click',logout);
+      query('#familyCreateBtn')?.addEventListener('click',createFamily);
       query('#familyLinkChildBtn')?.addEventListener('click',linkChild);
+      query('#familyLinkGuardianBtn')?.addEventListener('click',linkGuardian);
       query('#checkSyncBtn')?.addEventListener('click',checkSync);
       return true;
     }
 
-    return Object.freeze({renderAuthStatus,renderSyncStatus,resolveSyncConflict,googleLogin,login,signup,logout,linkChild,checkSync,bind});
+    return Object.freeze({renderAuthStatus,renderSyncStatus,resolveSyncConflict,googleLogin,login,signup,logout,createFamily,linkChild,linkGuardian,checkSync,bind});
   }
 
   root.ReadyRebuildAuthSyncController=Object.freeze({
