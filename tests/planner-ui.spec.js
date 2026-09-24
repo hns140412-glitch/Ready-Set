@@ -86,5 +86,5 @@ test('planner shows evidence-backed morning daypart without inventing a clock ti
   await expect(page.locator('#plannerWeekDetail')).toContainText('아침');
   await expect(page.locator('#plannerWeekDetail')).toContainText('영어학원 날 아침 단어 복습');
   await page.locator('[data-planner-tab="day"]').click();
-  await expect(page.locator('#plannerDayTimeline')).toContainText('아침 · MISSION');
+  await expect(page.locator('#plannerDayTimeline')).toContainText('등교 전 · MISSION');
 });
