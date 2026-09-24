@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-hidden="true"><defs>
+<linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4d59a"/><stop offset="1" stop-color="#9b643f"/></linearGradient>
+<linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9fd9e8"/><stop offset="1" stop-color="#315d85"/></linearGradient>
+<filter id="s" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#23170f" flood-opacity=".24"/></filter>
+</defs><ellipse cx="256" cy="408" rx="150" ry="24" fill="#3b2417" opacity=".12"/><g filter="url(#s)"><path d="M196 137v-28c0-18 14-32 32-32h56c18 0 32 14 32 32v28" fill="none" stroke="#4d3328" stroke-width="15"/><rect x="87" y="142" width="338" height="251" rx="38" fill="url(#a)" stroke="#5a3c2c" stroke-width="11"/><path d="M92 217h328M183 142v251M329 142v251" stroke="#79523b" stroke-width="9"/><circle cx="256" cy="270" r="38" fill="#d8b56f"/><path d="M256 248l13 18 22 6-14 17 1 23-22-8-21 8 1-23-14-17 22-6z" fill="#6a4f35"/></g></svg>

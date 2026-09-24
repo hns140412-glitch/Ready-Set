@@ -1,0 +1,479 @@
+{
+  "version": "CHARACTER_FORMATION_ASSET_MANIFEST_V2_HARD_LOCK",
+  "status": "HARD_LOCK",
+  "runtime_rule": "DECOMPOSED_ASSETS_ONLY_NO_FULL_SCREEN_MOCKUP_CROP",
+  "baseline": {
+    "width": 390,
+    "height": 844
+  },
+  "scene": {
+    "id": "BEFORE_TRAVEL_PACKING_PREPARATION_SPACE",
+    "island_role": "DESTINATION_HINT_ONLY",
+    "dominant_context": "PACKING_AND_CHARACTER_FORMATION"
+  },
+  "approved_anchors": [
+    {
+      "anchor_id": "CF-A01-CREW-FAMILIARITY",
+      "flow_step": "CREW_FAMILIARITY",
+      "approval": "USER_EXPLICIT_GOOD",
+      "source_file_id": "file_00000000e1848206b186686dfe814497",
+      "source_name": "탐험을_떠나기_전_함께할_친구들.png",
+      "binding_role": "SCENE_TONE_AND_CORE6_GROUP_ATMOSPHERE"
+    },
+    {
+      "anchor_id": "CF-A02-COMPANION-SELECT-MAIN",
+      "flow_step": "PRIMARY_COMPANION_SELECT",
+      "approval": "USER_EXPLICIT_SELECTED_ANCHOR",
+      "source_file_id": "file_0000000008b08206902ef989230f5c60",
+      "source_name": "image(20260922-224624).png",
+      "binding_role": "PRIMARY_SELECTION_COMPOSITION"
+    },
+    {
+      "anchor_id": "CF-A02B-COMPANION-SELECT-ALT",
+      "flow_step": "PRIMARY_COMPANION_SELECT",
+      "approval": "USER_EXPLICIT_GOOD",
+      "source_file_id": "file_00000000df888206932a98cf2c269382",
+      "source_name": "a_vertical_smartphone_ui_illustration_scene_cute.png",
+      "binding_role": "ALTERNATE_SELECTION_STRUCTURE_REFERENCE"
+    },
+    {
+      "anchor_id": "CF-A03-COMPANION-NAME",
+      "flow_step": "COMPANION_DISPLAY_NAME",
+      "approval": "USER_EXPLICIT_GOOD",
+      "source_file_id": "file_00000000acf48206bdc3ca4bc6d51c74",
+      "source_name": "두비와_함께_떠나는_여행_준비.png",
+      "binding_role": "NAME_AND_RELATIONSHIP_STEP"
+    },
+    {
+      "anchor_id": "CF-A05-SIGNATURE-ITEM",
+      "flow_step": "SIGNATURE_ITEM",
+      "approval": "CURRENT_IMPLEMENTATION_ANCHOR",
+      "source_file_id": "file_00000000911082309da239529b67b024",
+      "source_name": "a_vibrant_detailed_3d_illustrated_mobile_app_ui_s.png",
+      "binding_role": "SIGNATURE_ITEM_COMPOSITION"
+    }
+  ],
+  "asset_groups": {
+    "background": [
+      "prep-room-base",
+      "window-island-destination-hint",
+      "shelf-and-wall-depth",
+      "desk-base",
+      "prep-room-tablet-extension"
+    ],
+    "foreground": [
+      "mid-props-composite",
+      "prep-foreground-composite"
+    ],
+    "crew": [
+      "dubi-locked-visual-id",
+      "lori-locked-visual-id",
+      "ink-locked-visual-id",
+      "nova-locked-visual-id",
+      "take-locked-visual-id",
+      "zero-locked-visual-id"
+    ],
+    "signature_items": [
+      "signature-camera",
+      "signature-compass",
+      "signature-explorer-notebook",
+      "signature-binoculars",
+      "signature-water-bottle"
+    ],
+    "fx": [
+      "warm-window-light",
+      "contact-shadow",
+      "lantern-glow",
+      "depth-haze"
+    ],
+    "textures": [
+      "paper-panel",
+      "parchment-note",
+      "wood-grain",
+      "frosted-task-surface"
+    ],
+    "common_tools": [
+      "map",
+      "compass_prop",
+      "camera_prop",
+      "lantern_prop",
+      "book_stack",
+      "open_suitcase",
+      "travel_tags",
+      "island_postcard"
+    ],
+    "scene_props": [
+      "foreground-leaves",
+      "shelf-and-wall-depth",
+      "desk-base"
+    ]
+  },
+  "ui_runtime_only": [
+    "all_korean_copy",
+    "all_buttons",
+    "selected_check",
+    "progress_indicator",
+    "input_fields",
+    "accessibility_labels",
+    "loading_error_permission_states"
+  ],
+  "forbidden_runtime_assets": [
+    "full_screen_mockup_crop",
+    "baked_functional_text",
+    "baked_selected_state",
+    "invented_core6_character"
+  ],
+  "effect_contract": {
+    "micro_motion": true,
+    "sensor_depth_default": "CHARACTER_ONLY",
+    "full_depth": "PROFILE_PASS_ONLY",
+    "reduced_motion": "STATIC_DEPTH"
+  },
+  "reopen_policy": "EXPLICIT_USER_REOPEN_ONLY",
+  "required_pipeline": [
+    "APPROVED_VISUAL_ANCHOR",
+    "SCENE_DECOMPOSITION",
+    "HIGH_DENSITY_INDIVIDUAL_ASSETS",
+    "ASSETS_FOLDER_BINDING",
+    "LIVE_DOM_CSS_UI",
+    "MOTION_AND_DEPTH_EFFECTS",
+    "RESPONSIVE_RUNTIME_PROOF_390x844_PLUS_TABLET_BACKGROUND_EXTENSION",
+    "ANCHOR_REGRESSION_CHECK"
+  ],
+  "completion_rule": [
+    "FUNCTIONAL_CONTRACT_PASS",
+    "ASSET_BINDING_PASS",
+    "VISUAL_BINDING_PASS",
+    "SCREENSHOT_REGRESSION_PASS"
+  ],
+  "asset_files": {
+    "background": {
+      "prep_room_base": "assets/character-formation/background/prep-room-base.svg",
+      "island_hint": "assets/character-formation/background/window-island-hint.svg",
+      "prep_room_tablet_extension": "assets/character-formation/background/prep-room-tablet-extension.svg"
+    },
+    "foreground": {
+      "mid_props": "assets/character-formation/foreground/mid-props.svg",
+      "prep_foreground": "assets/character-formation/foreground/prep-foreground.svg"
+    },
+    "crew": {
+      "dubi": "assets/character-formation/crew/dubi-locked-visual-id.webp",
+      "lori": "assets/character-formation/crew/lori-locked-visual-id.webp",
+      "ink": "assets/character-formation/crew/ink-locked-visual-id.webp",
+      "nova": "assets/character-formation/crew/nova-locked-visual-id.webp",
+      "take": "assets/character-formation/crew/take-locked-visual-id.webp",
+      "zero": "assets/character-formation/crew/zero-locked-visual-id.webp"
+    },
+    "signature_items": {
+      "CAMERA": "assets/character-formation/items/signature-camera.svg",
+      "COMPASS": "assets/character-formation/items/signature-compass.svg",
+      "FIELD_NOTEBOOK": "assets/character-formation/items/signature-explorer-notebook.svg",
+      "BINOCULARS": "assets/character-formation/items/signature-binoculars.svg",
+      "WATER_BOTTLE": "assets/character-formation/items/signature-water-bottle.svg"
+    },
+    "fx": {
+      "warm_glow": "assets/character-formation/fx/warm-glow.svg"
+    },
+    "common_tools": {
+      "map": "assets/character-formation/tools/map.svg",
+      "compass_prop": "assets/character-formation/tools/compass-prop.svg",
+      "camera_prop": "assets/character-formation/tools/camera-prop.svg",
+      "lantern_prop": "assets/character-formation/tools/lantern.svg",
+      "book_stack": "assets/character-formation/tools/book-stack.svg",
+      "open_suitcase": "assets/character-formation/tools/open-suitcase.svg",
+      "travel_tags": "assets/character-formation/tools/travel-tags.svg",
+      "island_postcard": "assets/character-formation/tools/island-postcard.svg"
+    },
+    "pose_bank": {
+      "core6_sprite": "assets/character-formation/crew/core6-pose-sprite-64.webp"
+    }
+  },
+  "current_runtime_anchor": {
+    "id": "CF-A05-SIGNATURE-ITEM",
+    "state": "CHARACTER_FORMATION_RUNTIME_COMPLETE",
+    "proof_required": "COMPLETE",
+    "pending_only": []
+  },
+  "tool_contract": {
+    "signature_item_rule": "EXACTLY_ONE_FROM_LOCKED_FIVE",
+    "signature_items_are_not_total_tool_inventory": true,
+    "common_tools_role": "SCENE_DENSITY_AND_CONTEXTUAL_INTERACTION",
+    "common_tools_selection_rule": "NOT_PART_OF_SIGNATURE_ITEM_CHOICE",
+    "binary_truth": "MANIFEST_ENTRY_DOES_NOT_PROVE_BINARY_EXISTS"
+  },
+  "asset_sources": {
+    "approved_anchor_sources": "USE_APPROVED_ANCHOR_FILE_IDS_ONLY",
+    "core6_source": {
+      "file_id": "file_0000000022f0823090aec9a5d4c42aa3",
+      "name": "가이드☆ 여섯 친구의 찬란한 여정.png",
+      "role": "LOCKED_VISUAL_ID_SOURCE_LINEAGE"
+    },
+    "asset_board_reference": {
+      "file_id": "file_0000000032f08211ab6d7e8f09b10053",
+      "name": "두비 탐험 어드벤처 에셋 보드.png",
+      "role": "ASSET_DECOMPOSITION_REFERENCE_ONLY",
+      "warning": "FILENAMES_SHOWN_ON_BOARD_DO_NOT_PROVE_SEPARATE_BINARY_FILES_EXIST"
+    },
+    "core6_runtime_derivatives": {
+      "source_file_id": "file_0000000022f0823090aec9a5d4c42aa3",
+      "source_name": "가이드☆ 여섯 친구의 찬란한 여정.png",
+      "derivation": "CANONICAL_FRONT_TURNAROUND_DIRECT_EXTRACT",
+      "redraw": false,
+      "generated_lookalike": false,
+      "background_removal": "EDGE_CONNECTED_NEAR_WHITE_TO_ALPHA",
+      "normalized_format": "WEBP_RGBA",
+      "normalized_size": [
+        160,
+        160
+      ],
+      "source_rects_px": {
+        "dubi": [
+          8,
+          450,
+          64,
+          106
+        ],
+        "lori": [
+          264,
+          450,
+          57,
+          106
+        ],
+        "ink": [
+          517,
+          450,
+          61,
+          106
+        ],
+        "nova": [
+          775,
+          450,
+          68,
+          106
+        ],
+        "take": [
+          1034,
+          450,
+          68,
+          106
+        ],
+        "zero": [
+          1290,
+          450,
+          62,
+          106
+        ]
+      },
+      "sha256": {
+        "dubi": "3961351b3047773bf868657462e1043de7c02870c7eb2902e56dbb29dd811c6c",
+        "lori": "3b392cedc9d5e0a60054ce2f9806c65814b81f680cc5a1d6bce6eac92d584f1f",
+        "ink": "57293ffa027ba7bc52b1364def00e7ee0f634ac4333ad5b61456769bef9bbfa8",
+        "nova": "68fe7d6d7a5762ccd20608b795726ec454a1b89a9b7de79c378a3b874648deb0",
+        "take": "900e669f68609979b607b4539eeffe39f398d7f8485b8927fbf3a48cca31f2cf",
+        "zero": "0828070779b99985011f05ce00c7e7c161529fc464b97993feb5d83af6ac532d"
+      },
+      "hash_corrections": [
+        {
+          "id": "ink",
+          "date": "2026-09-24",
+          "correction": "MANIFEST_HASH_ONLY",
+          "previous_manifest_value": "7f01124d83745e048fcc8370413186c7fcc6e08d9504c8b7abd496ce98ac4794",
+          "actual": "57293ffa027ba7bc52b1364def00e7ee0f634ac4333ad5b61456769bef9bbfa8",
+          "binary_changed": false,
+          "evidence": "EXACT_HEAD_ACTIONS_SHA256_ALL_CORE6__ONLY_INK_MISMATCH",
+          "note": "Runtime binary unchanged since canonical binding commit; corrected stale manifest digest only."
+        }
+      ],
+      "provenance_corrections": [
+        {
+          "date": "2026-09-24",
+          "asset": "ink",
+          "type": "MANIFEST_HASH_METADATA_CORRECTION_ONLY",
+          "binary_changed": false,
+          "first_bound_commit": "34bb10de31e1bcbc09e4d268a3e8feb3b3d1e2dc",
+          "previous_recorded_sha256": "57293ffa027ba7bc52b1364def00e7ee0f634ac4333ad5b61456769bef9bbfa8",
+          "verified_actual_sha256": "57293ffa027ba7bc52b1364def00e7ee0f634ac4333ad5b61456769bef9bbfa8"
+        }
+      ]
+    },
+    "core6_pose_action_source_bank": {
+      "authority_relation": "DERIVATIVE_POSE_ACTION_SOURCE_BANK_UNDER_LOCKED_CORE6_VISUAL_ID",
+      "canonical_source_file_id": "file_0000000022f0823090aec9a5d4c42aa3",
+      "canonical_source_name": "가이드☆ 여섯 친구의 찬란한 여정.png",
+      "identity_rule": "CORE6_VISUAL_ID_REMAINS_HARD_LOCK",
+      "runtime_binding_state": "RUNTIME_SPRITE_BOUND_V1",
+      "warning": "SOURCE_BANK_REGISTRATION_DOES_NOT_MEAN_RUNTIME_BINARY_BOUND",
+      "source_sets": {
+        "standing_action_set": [
+          {
+            "id": "dubi",
+            "file_id": "file_000000003868820996675b6ce4742527",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "lori",
+            "file_id": "file_000000005a5c81f8b4ec27d261dde578",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "ink",
+            "file_id": "file_00000000568c81f595656ddda188f795",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "nova",
+            "file_id": "file_0000000080348206b67aa7c4cd3c7f34",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "take",
+            "file_id": "file_0000000074188211984e574ae2cb7c54",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "zero",
+            "file_id": "file_000000006e5c81f5bd53e9f6c28d27e1",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          }
+        ],
+        "seated_context_set": [
+          {
+            "id": "dubi",
+            "file_id": "file_00000000fda0820694032a64eeb38dc2",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "lori",
+            "file_id": "file_0000000085f08206b0f3e5d693da9666",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "ink",
+            "file_id": "file_000000006e348209b367c572a6d4a372",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "nova",
+            "file_id": "file_00000000caa88208818b91dc564ea0d5",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "take",
+            "file_id": "file_000000002e1c8206b6ececf705e54138",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          },
+          {
+            "id": "zero",
+            "file_id": "file_000000000d7c820697ce8b42a6d84f03",
+            "role": "POSE_ACTION_DERIVATIVE_SOURCE"
+          }
+        ]
+      },
+      "consumer_runtime": "src/identity/character-formation-pose-bank-runtime.js",
+      "consumer_binding_state": "CONSUMER_BOUND_TO_REPO_SPRITE_WITH_CANONICAL_FALLBACK",
+      "open_reason": null,
+      "user_action_required": false,
+      "fallback": "asset_files.crew canonical direct extracts",
+      "runtime_asset": {
+        "path": "assets/character-formation/crew/core6-pose-sprite-64.webp",
+        "format": "WEBP_RGBA",
+        "geometry": {
+          "width": 384,
+          "height": 128,
+          "columns": 6,
+          "rows": 2,
+          "cell_width": 64,
+          "cell_height": 64
+        },
+        "row_mapping": {
+          "standing_action": 0,
+          "seated_context": 1
+        },
+        "column_order": [
+          "dubi",
+          "lori",
+          "ink",
+          "nova",
+          "take",
+          "zero"
+        ],
+        "sha256": "da1eb2c911889c8d0bd749941708bf28bd7258bd5eb50567bb635189fe062e86",
+        "git_blob_sha": "2a22bcb00879a9d40ec114e15fc90d1b784598d3"
+      },
+      "materialization": {
+        "format": "WEBP_RGBA",
+        "path": "assets/character-formation/crew/core6-pose-sprite-64.webp",
+        "sprite": "2_ROWS_X_6_COLUMNS",
+        "cell_size_px": 64,
+        "row_0": "standing_action",
+        "row_1": "seated_context",
+        "columns": [
+          "dubi",
+          "lori",
+          "ink",
+          "nova",
+          "take",
+          "zero"
+        ],
+        "external_dependency": false
+      }
+    }
+  },
+  "asset_quality": {
+    "runtime_vector_assets": "HIGH_DENSITY_SCENE_LAYER_UPGRADE_V1",
+    "final_anchor_parity": "RESPONSIVE_POSE_BOUND_RUNTIME_VISUAL_PARITY_PASS",
+    "core6_runtime_derivatives": "BOUND_DIRECT_FROM_LOCKED_CANONICAL_SOURCE",
+    "responsive_runtime_proof": "PASS_MOBILE_390x844_AND_TABLET_1194x834",
+    "pose_action_runtime": "RUNTIME_SPRITE_BOUND_V1__FINAL_RUNTIME_PROOF_PASS"
+  },
+  "projection_scope": {
+    "type": "CHARACTER_FORMATION_RUNTIME_PROJECTION",
+    "canonical_redefinition": false,
+    "signature_items_scope": "USER_CHOICE_ONLY",
+    "common_tools_scope": "CURRENT_RUNTIME_VISIBLE_SUBSET",
+    "inherits_family_confirmed_state": true,
+    "warning": "DO_NOT_TREAT_LOCAL_ASSET_SET_AS_TOTAL_WORLD_OR_CHARACTER_TOOL_INVENTORY"
+  },
+  "responsive_contract": {
+    "mode": "MOBILE_SOURCE_TABLET_BACKGROUND_EXTENSION",
+    "source_layout": {
+      "width": 390,
+      "height": 844,
+      "role": "PRIMARY_MOBILE_COMPOSITION"
+    },
+    "phone_behavior": "PRESERVE_APPROVED_MOBILE_COMPOSITION",
+    "tablet_min_width": 768,
+    "tablet_behavior": "PRESERVE_CORE_UI_BLOCK_AND_TOUCH_FLOW__EXPAND_WORLD_BACKGROUND",
+    "live_ui_max_width_px": 430,
+    "tablet_alignment": "RIGHT_TOUCH_ZONE",
+    "allowed_changes": [
+      "BACKGROUND_CROP_EXTENSION",
+      "WORLD_PROP_VISIBILITY_EXTENSION",
+      "OUTER_MARGIN_EXTENSION",
+      "MINOR_POSITION_ADJUSTMENT_FOR_SAFE_AREA"
+    ],
+    "forbidden_changes": [
+      "NEW_TABLET_INFORMATION_ARCHITECTURE",
+      "TABLET_ONLY_FLOW_REORDER",
+      "CORE_UI_SCALE_UP_TO_FILL_SCREEN",
+      "CORE6_VISUAL_ID_CHANGE",
+      "SIGNATURE_ITEM_RULE_CHANGE"
+    ],
+    "tablet_world_full_bleed": true,
+    "tablet_live_ui_remains_phone_scale": true,
+    "tablet_background_scaling": "PRESERVE_SOURCE_HEIGHT_RIGHT_ANCHORED",
+    "tablet_extension_fill": "PREPARATION_ROOM_TONE_EXTENSION",
+    "tablet_background_asset": "prep_room_tablet_extension",
+    "tablet_background_rule": "EXTEND_WORLD_LEFT_OF_PHONE_STAGE__DO_NOT_STRETCH_LIVE_UI"
+  },
+  "final_runtime_proof": {
+    "status": "PASS",
+    "exact_head": "4e56ad3c8e5c6ec712a091a252e9c78860d142f2",
+    "workflow_run_id": 35964333088,
+    "artifact_id": 10793249383,
+    "artifact_digest": "sha256:ac28dfc0b3e56a0d9b30c0029eac972e945c658ed3020cc2badea30c834b13c8",
+    "mobile": "390x844",
+    "tablet": "1194x834",
+    "pose_runtime_source": "assets/character-formation/crew/core6-pose-sprite-64.webp"
+  }
+}

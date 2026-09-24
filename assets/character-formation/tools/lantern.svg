@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-hidden="true"><defs>
+<linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4d59a"/><stop offset="1" stop-color="#9b643f"/></linearGradient>
+<linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9fd9e8"/><stop offset="1" stop-color="#315d85"/></linearGradient>
+<filter id="s" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#23170f" flood-opacity=".24"/></filter>
+</defs><ellipse cx="256" cy="408" rx="150" ry="24" fill="#3b2417" opacity=".12"/><g filter="url(#s)"><path d="M198 117h116" stroke="#5d4935" stroke-width="14" stroke-linecap="round"/><path d="M218 117c0-48 76-48 76 0" fill="none" stroke="#5d4935" stroke-width="12"/><rect x="170" y="171" width="172" height="203" rx="34" fill="#70503b" stroke="#3d2a22" stroke-width="10"/><rect x="196" y="197" width="120" height="148" rx="28" fill="#ffd886" opacity=".8"/><circle cx="256" cy="274" r="47" fill="#fff3bd" opacity=".9"/><path d="M198 171l-34 203M314 171l34 203" stroke="#493328" stroke-width="9"/></g></svg>

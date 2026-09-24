@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" role="img" aria-hidden="true">
+<defs>
+  <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#6bd0e7"/><stop offset="1" stop-color="#247ca9"/></linearGradient>
+  <linearGradient id="island" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#88b76f"/><stop offset="1" stop-color="#3f6f4d"/></linearGradient>
+  <radialGradient id="sun" cx=".72" cy=".18" r=".7"><stop stop-color="#fff1b0"/><stop offset=".35" stop-color="#ffe29a" stop-opacity=".65"/><stop offset="1" stop-color="#ffe29a" stop-opacity="0"/></radialGradient>
+  <filter id="haze"><feGaussianBlur stdDeviation="2.2"/></filter>
+  <filter id="shadow"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#183d42" flood-opacity=".26"/></filter>
+  <clipPath id="windowClip"><rect x="216" y="86" width="137" height="274" rx="8"/></clipPath>
+</defs>
+<g clip-path="url(#windowClip)">
+  <rect x="216" y="86" width="137" height="274" fill="url(#sea)"/>
+  <rect x="216" y="86" width="137" height="274" fill="url(#sun)" opacity=".88"/>
+  <g opacity=".54" filter="url(#haze)">
+    <path d="M218 230c19-17 39-18 58-3 17-12 39-14 76 4v32H218z" fill="#86a987"/>
+    <path d="M230 214l26-47 26 47zM286 225l24-37 28 43z" fill="#597f66"/>
+  </g>
+  <g filter="url(#shadow)">
+    <path d="M216 280c23-21 42-20 58-9 19-31 42-35 78-6v48H216z" fill="url(#island)"/>
+    <path d="M236 281l28-58 29 58z" fill="#527b55"/>
+    <path d="M263 279l23-42 24 42z" fill="#426746"/>
+    <path d="M216 307c44-13 93-13 137 0v53H216z" fill="#67c7dc"/>
+    <path d="M225 320c32 7 75 6 121-4" fill="none" stroke="#e8fbff" stroke-width="3" stroke-linecap="round" opacity=".7"/>
+    <path d="M250 293c7-14 14-22 22-28M302 290c6-13 14-20 24-25" stroke="#d8c386" stroke-width="4" stroke-linecap="round"/>
+    <path d="M247 269l-7-20M247 269l12-18M300 267l-5-20M300 267l14-17" stroke="#315a3a" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <circle cx="326" cy="126" r="24" fill="#ffe7a2" opacity=".9"/>
+  <path d="M229 143c13-8 27-8 39 0M292 157c9-6 17-5 25 0" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".76"/>
+</g>
+</svg>

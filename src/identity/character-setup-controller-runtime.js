@@ -1,0 +1,345 @@
+(function(root){
+  'use strict';
+
+  function create(options={}){
+    const view=options.view;
+    const core=options.core;
+    const getState=options.getState||(()=>({}));
+    const save=options.save||(()=>null);
+    const familySession=options.familySession||(()=>({}));
+    const toast=options.toast||(()=>{});
+    const remote=options.remote||null;
+    const masterApi=options.masterApi||root.CharacterVisualIdMaster||root.ReadyCharacterMaster||null;
+    const derivativeApi=options.derivativeApi||root.CharacterVisualIdDerivative||null;
+    if(!view||!core)throw new Error('CHARACTER_SETUP_CONTROLLER_DEPENDENCY_MISSING');
+
+    function profile(){return getState().profile||{};}
+
+    function memberScope(){
+      const session=familySession()||{};
+      const raw=String(session.member_id||'local_child');
+      return raw.replace(/[^A-Za-z0-9._-]/g,'_')||'local_child';
+    }
+
+    function visualId(p=profile()){
+      if(p.visualId)return p.visualId;
+      const hash=String(p.sourcePhoto?.source_hash||'').slice(0,16);
+      if(!hash)throw new Error('CHARACTER_SOURCE_PHOTO_REQUIRED');
+      return 'visual_'+hash;
+    }
+
+    function snapshot(){
+      const p=profile();
+      const s=p.characterDirection||{};
+      if(p.characterSignatureItem?.status==='ITEM_SELECTION'&&!p.characterGenerationJob){
+        const itemApi=root.CharacterExplorationSignatureItem;
+        return {
+          profile:p,
+          status:'ITEM_SELECTION',
+          options:(p.characterSignatureItem.offered||[]).map(id=>itemApi.item(id)),
+          candidates:[],
+          remoteJob:p.characterRemoteJob||null,
+          master:p.characterMaster||null
+        };
+      }
+      if(p.characterSignatureItem?.status==='ITEM_SELECTED'&&!p.characterGenerationJob){
+        const itemApi=root.CharacterExplorationSignatureItem;
+        return {
+          profile:p,
+          status:'ITEM_SELECTED',
+          options:(p.characterSignatureItem.offered||[]).map(id=>itemApi.item(id)),
+          candidates:[],
+          remoteJob:p.characterRemoteJob||null,
+          master:p.characterMaster||null
+        };
+      }
+      if(s.status==='ROUND_1'&&p.characterSignatureItem?.status==='ITEM_SELECTED'){
+        return {profile:p,status:'ROUND_1',options:(root.CharacterVisualIdDirection||root.ReadyCharacterDirection).firstRound(),candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
+      }
+      if(s.status==='ROUND_2'){
+        return {profile:p,status:'ROUND_2',options:(root.CharacterVisualIdDirection||root.ReadyCharacterDirection).secondRound(s.firstSelection),candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
+      }
+      if(s.status==='READY_FOR_CANDIDATE_GENERATION'&&p.characterGenerationJob){
+        return {profile:p,status:s.status,options:[],candidates:s.candidates||[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
+      }
+      return {profile:p,status:'START',options:[],candidates:[],remoteJob:p.characterRemoteJob||null,master:p.characterMaster||null};
+    }
+
+    function render(){view.render(snapshot());}
+
+    function begin(){
+      const p=profile();
+      if(!p.sourcePhoto?.source_hash){
+        toast('먼저 사진을 등록해 주세요.');
+        return {ok:false,reason:'CHARACTER_SOURCE_PHOTO_REQUIRED'};
+      }
+      const out=core.begin(p);
+      save();
+      view.render({profile:p,status:out.status,options:out.options,candidates:[]});
+      toast('탐험할 때 늘 함께할 시그니처 아이템 하나를 골라줘.');
+      return {ok:true,...out};
+    }
+
+    function choose(directionId){
+      const p=profile();
+      try{
+        const out=core.choose(p,directionId,{memberScope:memberScope(),visualId:visualId(p)});
+        save();
+        if(out.status==='ROUND_2'){
+          view.render({profile:p,status:out.status,options:out.options||[],candidates:[]});
+        }else{
+          view.render({profile:p,status:out.status,options:[],candidates:p.characterDirection?.candidates||[]});
+        }
+        return {ok:true,...out};
+      }catch(err){
+        toast('캐릭터 방향을 다시 확인해 주세요.');
+        return {ok:false,reason:err?.message||'CHARACTER_DIRECTION_FAILED'};
+      }
+    }
+
+    function chooseItem(itemId){
+      const p=profile();
+      try{
+        const out=core.chooseItem(p,itemId);
+        save();
+        view.render({profile:p,status:out.status,options:out.options||[],candidates:[]});
+        toast('이 아이템으로 갈까? 확인하면 다음 탐험 방향으로 넘어가요.');
+        return {ok:true,...out};
+      }catch(err){
+        toast('탐험 아이템을 다시 골라 주세요.');
+        return {ok:false,reason:err?.message||'CHARACTER_SIGNATURE_ITEM_FAILED'};
+      }
+    }
+
+    function continueAfterItem(){
+      const p=profile();
+      try{
+        const out=core.continueAfterItem(p);
+        save();
+        view.render({profile:p,status:out.status,options:out.options||[],candidates:[]});
+        toast('좋아! 이제 첫 번째 탐험 방향을 골라줘.');
+        return {ok:true,...out};
+      }catch(err){
+        toast('먼저 시그니처 아이템을 하나 골라 주세요.');
+        return {ok:false,reason:err?.message||'CHARACTER_SIGNATURE_ITEM_CONFIRM_FAILED'};
+      }
+    }
+
+    function generationPayload(){
+      return core.generationPayload(profile());
+    }
+
+    function ensureRemoteProfile(){
+      const p=profile();
+      if(!p.visualId)throw new Error('CHARACTER_VISUAL_ID_REQUIRED');
+      if(!p.sourcePhoto?.source_hash||!p.photo)throw new Error('CHARACTER_SOURCE_PHOTO_REQUIRED');
+      if(!p.characterGenerationJob)throw new Error('CHARACTER_GENERATION_JOB_REQUIRED');
+      return p;
+    }
+
+    async function prepareRemoteJob(){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const upload=await remote.uploadSource({
+        visual_id:p.visualId,
+        source_hash:p.sourcePhoto.source_hash,
+        data_url:p.photo
+      });
+      if(!upload?.ok)return upload;
+      const created=await remote.createJob(generationPayload());
+      if(created?.ok){
+        p.characterRemoteJob=created.job||null;
+        save();
+      }
+      return created;
+    }
+
+    async function startGeneration(slot){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      return remote.startGeneration({visual_id:p.visualId,slot});
+    }
+
+    async function refreshRemoteJob(){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const result=await remote.getJob(p.visualId);
+      if(result?.ok){
+        p.characterRemoteJob=result.job||null;
+        save();
+      }
+      return result;
+    }
+
+    async function generateAllCandidates(){
+      const p=ensureRemoteProfile();
+      if(!p.characterRemoteJob)return {ok:false,reason:'CHARACTER_REMOTE_JOB_REQUIRED'};
+      for(const slot of ['A','B','C']){
+        const current=p.characterRemoteJob?.candidate_assets?.[slot];
+        if(current)continue;
+        const result=await startGeneration(slot);
+        if(!result?.ok)return result;
+        const refreshed=await refreshRemoteJob();
+        if(!refreshed?.ok)return refreshed;
+      }
+      return refreshRemoteJob();
+    }
+
+    async function selectCandidate(slot){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const result=await remote.selectCandidate({visual_id:p.visualId,slot});
+      if(!result?.ok)return result;
+      p.characterRemoteJob=result.job||null;
+      if(masterApi){
+        const candidates=(result.job?.directions||[]).map(x=>({
+          slot:x.slot,
+          direction_id:x.direction_id,
+          source:x.source,
+          asset_key:result.job?.candidate_assets?.[x.slot]?.asset_key||null,
+          asset_url:remote.assetUrl(p.visualId,x.slot),
+          asset_hash:null
+        }));
+        let model=masterApi.create({
+          visual_id:p.visualId,
+          source_hash:p.sourcePhoto.source_hash,
+          candidates,
+          signature_item:p.characterSignatureItem?.selected||p.characterSignatureItemContract?.selected
+        });
+        model=masterApi.select(model,slot);
+        p.characterMaster=model;
+      }
+      save();
+      return result;
+    }
+
+    async function reviewConsistency(){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const result=await remote.reviewConsistency({visual_id:p.visualId});
+      if(result?.ok){
+        const refreshed=await refreshRemoteJob();
+        if(refreshed?.ok)p.characterRemoteJob=refreshed.job||p.characterRemoteJob;
+        save();
+      }
+      return result;
+    }
+
+    async function confirmSameIdentity({accepted=true,notes=null}={}){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const result=await remote.confirmSameIdentity({
+        visual_id:p.visualId,
+        accepted_same_identity:accepted,
+        notes
+      });
+      if(result?.ok){
+        p.characterRemoteJob=result.job||null;
+        save();
+      }
+      return result;
+    }
+
+    async function correctLikeness(){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const result=await remote.correctLikeness({visual_id:p.visualId});
+      if(!result?.ok)return result;
+      p.characterRemoteJob=result.job||null;
+      if(masterApi&&p.characterMaster){
+        const current=p.characterMaster.state==='CORRECTION_PENDING'
+          ? p.characterMaster
+          : masterApi.requestCorrection(p.characterMaster,'SOURCE_PHOTO_LIKENESS_STRONGER');
+        p.characterMaster=masterApi.applyCorrection(current,{
+          asset_key:result.job?.corrected_asset?.asset_key||null,
+          asset_url:remote.assetUrl(p.visualId,'CORRECTED'),
+          asset_hash:null
+        });
+      }
+      save();
+      return result;
+    }
+
+    async function lockMaster(){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const result=await remote.lockMaster({visual_id:p.visualId});
+      if(!result?.ok)return result;
+      p.characterRemoteJob=result.job||null;
+      p.characterMasterRemote=result.master||null;
+      if(masterApi&&p.characterMaster){
+        p.characterMaster=masterApi.lockIdentity
+          ? masterApi.lockIdentity(p.characterMaster,{
+              consistency_gate:result.master?.consistency_gate||null,
+              locked_at:result.master?.locked_at
+            })
+          : masterApi.lock(p.characterMaster,{
+              consistency_gate:result.master?.consistency_gate||null,
+              locked_at:result.master?.locked_at
+            });
+      }
+      save();
+      return result;
+    }
+
+    async function buildDerivativeAssets(){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      if(!derivativeApi)return {ok:false,reason:'CHARACTER_DERIVATIVE_RUNTIME_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const locked=p.characterRemoteJob||await refreshRemoteJob().then(x=>x?.job||null);
+      if(!locked||!['VISUAL_ID_LOCKED','MASTER_ASSETS_READY'].includes(locked.status)){
+        return {ok:false,reason:'VISUAL_ID_LOCK_REQUIRED'};
+      }
+      if(locked.status==='MASTER_ASSETS_READY'&&locked.master?.assets?.avatar_square&&locked.master?.assets?.portrait_card){
+        return {ok:true,already_ready:true,job:locked,master:locked.master};
+      }
+      const sourceUrl=remote.assetUrl(p.visualId,'MASTER_FULL');
+      const derived=await derivativeApi.deriveFromUrl(sourceUrl);
+      const result=await remote.uploadDerivatives({
+        visual_id:p.visualId,
+        avatar_square_data_url:derived.avatar_square.data_url,
+        portrait_card_data_url:derived.portrait_card.data_url
+      });
+      if(!result?.ok)return result;
+      p.characterRemoteJob=result.job||null;
+      p.characterMasterRemote=result.master||null;
+      if(masterApi&&p.characterMaster){
+        p.characterMaster=masterApi.attachDerivedAssets(p.characterMaster,{
+          avatar_square:remote.assetUrl(p.visualId,'MASTER_AVATAR'),
+          portrait_card:remote.assetUrl(p.visualId,'MASTER_PORTRAIT'),
+          full_character:remote.assetUrl(p.visualId,'MASTER_FULL'),
+          updated_at:result.master?.derivatives_updated_at
+        });
+      }
+      save();
+      return result;
+    }
+
+    async function generateMasterSheet(){
+      if(!remote)return {ok:false,reason:'CHARACTER_REMOTE_ADAPTER_UNAVAILABLE'};
+      const p=ensureRemoteProfile();
+      const result=await remote.generateMasterSheet({visual_id:p.visualId});
+      if(!result?.ok)return result;
+      p.characterRemoteJob=result.job||null;
+      p.characterMasterSheet={
+        asset_url:remote.assetUrl(p.visualId,'MASTER_SHEET'),
+        asset_key:result.job?.master_sheet?.asset_key||null
+      };
+      save();
+      return result;
+    }
+
+    return Object.freeze({
+      render,begin,choose,generationPayload,prepareRemoteJob,startGeneration,
+      chooseItem,continueAfterItem,refreshRemoteJob,generateAllCandidates,selectCandidate,reviewConsistency,confirmSameIdentity,correctLikeness,lockMaster,buildDerivativeAssets,generateMasterSheet
+    });
+  }
+
+  const api=Object.freeze({
+    version:'CHARACTER_VISUAL_ID_SETUP_CONTROLLER_V01',
+    owner:'CHARACTER_VISUAL_ID',
+    create
+  });
+  root.CharacterVisualIdSetupController=api;
+  root.ReadyCharacterSetupController=api;
+})(typeof globalThis!=='undefined'?globalThis:this);

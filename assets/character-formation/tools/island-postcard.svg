@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-hidden="true"><defs>
+<linearGradient id="a" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f4d59a"/><stop offset="1" stop-color="#9b643f"/></linearGradient>
+<linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9fd9e8"/><stop offset="1" stop-color="#315d85"/></linearGradient>
+<filter id="s" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#23170f" flood-opacity=".24"/></filter>
+</defs><ellipse cx="256" cy="408" rx="150" ry="24" fill="#3b2417" opacity=".12"/><g filter="url(#s)"><rect x="92" y="113" width="328" height="286" rx="18" fill="#f1e5c7" stroke="#75533a" stroke-width="10"/><rect x="114" y="135" width="284" height="211" rx="12" fill="url(#b)"/><path d="M118 305c56-61 99-69 143-29 36-54 82-64 133-11v81H118z" fill="#6a9975"/><path d="M173 307l57-107 54 107z" fill="#4e7457"/><circle cx="338" cy="178" r="32" fill="#ffe39a"/><path d="M121 361h198" stroke="#a48357" stroke-width="10" stroke-linecap="round"/></g></svg>

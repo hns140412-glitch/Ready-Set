@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-hidden="true">
+<defs>
+  <linearGradient id="gWarm" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f7d79a"/><stop offset="1" stop-color="#b97548"/></linearGradient>
+  <linearGradient id="gBlue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9dd7ef"/><stop offset="1" stop-color="#315b8d"/></linearGradient>
+  <linearGradient id="gLeather" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a46d45"/><stop offset="1" stop-color="#5b3726"/></linearGradient>
+  <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#2e1d14" flood-opacity=".24"/></filter>
+  <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="18"/></filter>
+</defs><ellipse cx="256" cy="402" rx="145" ry="24" fill="#523323" opacity=".14" filter="url(#soft)"/>
+<g filter="url(#shadow)">
+<path d="M197 123h118l13 49 31 30v175c0 26-21 47-47 47H200c-26 0-47-21-47-47V202l31-30z" fill="url(#gBlue)" stroke="#264a6a" stroke-width="10"/>
+<rect x="191" y="96" width="130" height="55" rx="18" fill="#2d4c66" stroke="#1c3347" stroke-width="9"/>
+<rect x="175" y="223" width="162" height="118" rx="32" fill="#5fa3b7" opacity=".55"/>
+<path d="M256 242l35 42h-70z" fill="#e4d7a4"/><path d="M218 307h76" stroke="#e4d7a4" stroke-width="9" stroke-linecap="round"/>
+<path d="M187 172h138" stroke="#b8d7e1" stroke-width="9" opacity=".6"/>
+</g></svg>

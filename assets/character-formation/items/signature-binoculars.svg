@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-hidden="true">
+<defs>
+  <linearGradient id="gWarm" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f7d79a"/><stop offset="1" stop-color="#b97548"/></linearGradient>
+  <linearGradient id="gBlue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9dd7ef"/><stop offset="1" stop-color="#315b8d"/></linearGradient>
+  <linearGradient id="gLeather" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a46d45"/><stop offset="1" stop-color="#5b3726"/></linearGradient>
+  <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#2e1d14" flood-opacity=".24"/></filter>
+  <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="18"/></filter>
+</defs><ellipse cx="256" cy="402" rx="145" ry="24" fill="#523323" opacity=".14" filter="url(#soft)"/>
+<g filter="url(#shadow)">
+<path d="M174 160h62l26 63-37 156h-93c-18 0-31-17-26-34l45-163c5-14 12-22 23-22z" fill="#354d50" stroke="#243536" stroke-width="10"/>
+<path d="M338 160h-62l-26 63 37 156h93c18 0 31-17 26-34l-45-163c-5-14-12-22-23-22z" fill="#354d50" stroke="#243536" stroke-width="10"/>
+<rect x="220" y="199" width="72" height="86" rx="24" fill="#b88a55" stroke="#654a34" stroke-width="8"/>
+<circle cx="171" cy="351" r="56" fill="#243536" stroke="#c3a273" stroke-width="12"/>
+<circle cx="341" cy="351" r="56" fill="#243536" stroke="#c3a273" stroke-width="12"/>
+<circle cx="171" cy="351" r="34" fill="url(#gBlue)"/><circle cx="341" cy="351" r="34" fill="url(#gBlue)"/>
+<rect x="159" y="132" width="75" height="48" rx="20" fill="#c6a06c"/><rect x="278" y="132" width="75" height="48" rx="20" fill="#c6a06c"/>
+</g></svg>

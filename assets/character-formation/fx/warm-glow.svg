@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" role="img" aria-hidden="true">
+<defs>
+  <radialGradient id="windowGlow" cx=".74" cy=".18" r=".58"><stop stop-color="#fff6bd" stop-opacity=".72"/><stop offset=".34" stop-color="#ffd57d" stop-opacity=".33"/><stop offset="1" stop-color="#ffd57d" stop-opacity="0"/></radialGradient>
+  <radialGradient id="lampGlow" cx=".12" cy=".13" r=".36"><stop stop-color="#fff3ad" stop-opacity=".58"/><stop offset=".4" stop-color="#f7b748" stop-opacity=".18"/><stop offset="1" stop-color="#f7b748" stop-opacity="0"/></radialGradient>
+  <linearGradient id="dust" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe5a4" stop-opacity="0"/><stop offset=".45" stop-color="#ffe5a4" stop-opacity=".12"/><stop offset="1" stop-color="#ffe5a4" stop-opacity="0"/></linearGradient>
+  <filter id="soft"><feGaussianBlur stdDeviation="11"/></filter>
+</defs>
+<rect width="390" height="844" fill="url(#windowGlow)"/>
+<rect width="390" height="844" fill="url(#lampGlow)"/>
+<path d="M205 84l173 306-68 38-147-302z" fill="url(#dust)" filter="url(#soft)" opacity=".8"/>
+<g fill="#fff1b3" opacity=".34"><circle cx="246" cy="131" r="2"/><circle cx="271" cy="169" r="1.7"/><circle cx="231" cy="205" r="1.5"/><circle cx="303" cy="231" r="2.2"/><circle cx="193" cy="254" r="1.3"/><circle cx="334" cy="282" r="1.6"/></g>
+</svg>
