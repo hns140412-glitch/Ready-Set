@@ -15,6 +15,9 @@ on:
       - 'index.html'
       - 'sw.js'
       - 'REBUILD/validate-character-*.mjs'
+      - '.github/workflows/character-formation-ui.yml'
+      - 'assets/character-formation/**'
+      - 'styles.css'
   push:
     paths:
       - '.github/workflows/taky-codex-executor.yml'
@@ -29,9 +32,13 @@ on:
       - 'index.html'
       - 'sw.js'
       - 'REBUILD/validate-character-*.mjs'
+      - '.github/workflows/character-formation-ui.yml'
+      - 'assets/character-formation/**'
+      - 'styles.css'
 
 permissions:
   contents: read
+  statuses: write
 
 jobs:
   selftest:
@@ -122,3 +129,21 @@ jobs:
           risks=out['result']['completion_report']['unresolved_risks']
           assert any(x.get('severity')=='BLOCKING' and 'PR_CREATE_FAILED' in x.get('detail','') for x in risks), risks
           PY
+
+      - name: Publish exact-head self-test status
+        if: ${{ always() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+        shell: bash
+        run: |
+          state=success
+          description="TAKY worker self-test passed"
+          if [ "$JOB_STATUS" != "success" ]; then
+            state=failure
+            description="TAKY worker self-test failed"
+          fi
+          gh api --method POST "repos/${{ github.repository }}/statuses/${{ github.sha }}" \
+            -f state="$state" \
+            -f context="TAKY Codex Worker Self-Test" \
+            -f description="$description"
