@@ -308,7 +308,7 @@ assert(styles.includes('width:min(430px,calc(100vw - 40px))'),'TABLET_PHONE_SCAL
 const poseBank=assetManifest.asset_sources?.core6_pose_action_source_bank||{};
 assert(poseBank.canonical_source_file_id==='file_0000000022f0823090aec9a5d4c42aa3','POSE_BANK_CANONICAL_LINEAGE_REGRESSION');
 assert(poseBank.identity_rule==='CORE6_VISUAL_ID_REMAINS_HARD_LOCK','POSE_BANK_MUST_NOT_REDEFINE_VISUAL_ID');
-assert(['SOURCE_REFERENCE_ONLY_NOT_YET_RUNTIME_BINARY','POSE_BINARY_MATERIALIZATION_OPEN__CANONICAL_FALLBACK_ACTIVE'].includes(poseBank.runtime_binding_state),'POSE_BANK_SOURCE_MUST_NOT_PRETEND_RUNTIME_BOUND');
+assert(['SOURCE_REFERENCE_ONLY_NOT_YET_RUNTIME_BINARY','POSE_BINARY_MATERIALIZATION_OPEN__CANONICAL_FALLBACK_ACTIVE','RUNTIME_SPRITE_BOUND_V1'].includes(poseBank.runtime_binding_state),'POSE_BANK_SOURCE_STATE_INVALID');
 assert((poseBank.source_sets?.standing_action_set||[]).length===6,'POSE_BANK_STANDING_SET_INCOMPLETE');
 assert((poseBank.source_sets?.seated_context_set||[]).length===6,'POSE_BANK_SEATED_SET_INCOMPLETE');
 for(const set of Object.values(poseBank.source_sets||{})){
@@ -362,10 +362,18 @@ assert(sceneRuntime.includes("CharacterFormationPoseBank?.bindImage?.(crewImg,id
 console.log('CHARACTER_FORMATION_POSE_BANK_CONSUMER_CONTRACT_PASS');
 
 
-// Sole-open closure contract: transport gap must stay isolated.
+// Pose binary materialization is closed. Final proof is visual/runtime only.
+const poseAsset=assetManifest.asset_sources?.core6_pose_action_source_bank?.runtime_asset||{};
 assert(assetManifest.current_runtime_anchor?.pending_only?.length===1,'CHARACTER_FORMATION_PENDING_OPEN_COUNT_REGRESSION');
-assert(assetManifest.current_runtime_anchor.pending_only[0]==='POSE_BINARY_MATERIALIZATION','CHARACTER_FORMATION_SOLE_OPEN_MUST_BE_POSE_BINARY_MATERIALIZATION');
-assert(assetManifest.asset_sources?.core6_pose_action_source_bank?.consumer_binding_state==='CONSUMER_READY_WITH_CANONICAL_FALLBACK','POSE_CONSUMER_READY_STATE_MISSING');
+assert(assetManifest.current_runtime_anchor.pending_only[0]==='POSE_RUNTIME_VISUAL_PARITY','CHARACTER_FORMATION_FINAL_OPEN_MUST_BE_POSE_RUNTIME_VISUAL_PARITY');
+assert(assetManifest.asset_sources?.core6_pose_action_source_bank?.runtime_binding_state==='RUNTIME_SPRITE_BOUND_V1','POSE_RUNTIME_SPRITE_BINDING_STATE_MISSING');
+assert(assetManifest.asset_sources?.core6_pose_action_source_bank?.consumer_binding_state==='CONSUMER_BOUND_TO_REPO_SPRITE_WITH_CANONICAL_FALLBACK','POSE_CONSUMER_SPRITE_STATE_MISSING');
 assert(assetManifest.asset_sources?.core6_pose_action_source_bank?.user_action_required===false,'USER_MUST_NOT_BECOME_POSE_BINARY_DEBUGGER');
 assert(assetManifest.asset_sources?.core6_pose_action_source_bank?.fallback==='asset_files.crew canonical direct extracts','POSE_CANONICAL_FALLBACK_MISSING');
-console.log('CHARACTER_FORMATION_SOLE_OPEN_ISOLATION_PASS');
+assert(poseAsset.path==='assets/character-formation/crew/core6-pose-sprite-64.webp','POSE_SPRITE_PATH_REGRESSION');
+assert(fs.existsSync(poseAsset.path),'POSE_SPRITE_BINARY_MISSING');
+const poseSpriteHash=crypto.createHash('sha256').update(fs.readFileSync(poseAsset.path)).digest('hex');
+assert(poseSpriteHash===poseAsset.sha256,'POSE_SPRITE_BINARY_HASH_MISMATCH');
+assert(poseBankRuntime.includes("SPRITE_URL='./assets/character-formation/crew/core6-pose-sprite-64.webp'"),'POSE_RUNTIME_SPRITE_URL_MISSING');
+assert(poseBankRuntime.includes("backgroundSize='600% 200%'"),'POSE_RUNTIME_SPRITE_GEOMETRY_BINDING_MISSING');
+console.log('CHARACTER_FORMATION_POSE_BINARY_MATERIALIZATION_PASS',poseSpriteHash);
