@@ -62,7 +62,12 @@
       minutes:null,
       order:-1,
       time:String(x.start_at||'').slice(11,16),
-      meta:x.schedule_exception?.type==='REPLACE'?'고정 일정 · 이번 주 변경':'고정 일정'
+      audience_scope:x.audience_scope||'FAMILY_ALL',
+      target_member_id:x.target_member_id||null,
+      schedule_scope:x.audience_scope==='MEMBER'?'CHILD':'FAMILY',
+      meta:x.schedule_exception?.type==='REPLACE'
+        ?(x.audience_scope==='MEMBER'?'내 일정 · 이번 주 변경':'가족 일정 · 이번 주 변경')
+        :(x.audience_scope==='MEMBER'?'내 일정':'가족 일정')
     }));
     return [...commitments,...todos].sort((a,b)=>(a.order??999)-(b.order??999)||String(a.label||'').localeCompare(String(b.label||''),'ko'));
   }
