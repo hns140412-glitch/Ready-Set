@@ -17,6 +17,7 @@ test('local-first sidecar mirrors planner/app state and keeps outbox pending wit
   });
 
   await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('#missionView .missionFactInbox summary').click();
   await page.locator('#taskInput').fill('앱 상태 미러');
   await page.locator('#addTaskBtn').click();
 
