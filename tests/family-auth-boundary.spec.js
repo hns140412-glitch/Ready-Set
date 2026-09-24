@@ -141,6 +141,7 @@ test('settings login and logout update Family role through server API responses'
 
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
   await page.locator('[data-nav="settings"]').first().click();
+  await page.locator('.legacyAuthControls summary').click();
   await page.locator('#authEmailInput').fill('parent@example.test');
   await page.locator('#authPasswordInput').fill('test-password');
   await page.locator('#authLoginBtn').click();
