@@ -392,6 +392,8 @@
       "CORE_UI_SCALE_UP_TO_FILL_SCREEN",
       "CORE6_VISUAL_ID_CHANGE",
       "SIGNATURE_ITEM_RULE_CHANGE"
-    ]
+    ],
+    "tablet_world_full_bleed": true,
+    "tablet_live_ui_remains_phone_scale": true
   }
 }
