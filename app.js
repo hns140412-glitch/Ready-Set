@@ -548,6 +548,7 @@ assignmentIntakeRuntime=rebuildAssignmentIntakeController.create({
   requireParentUi,
   localDateKey,
   parsePrints,
+  parseRecurringDays:captureService.parseRecurringDays,
   toast,
   renderPlanner,
   renderMission,
