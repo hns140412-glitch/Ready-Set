@@ -97,6 +97,32 @@
       toast('새 숙제를 부모님 확인 목록에 보냈어요. 확인 후 Planner가 TODAY에 배정합니다.');
     }
 
+    function addEventTask(){
+      const state=getState();
+      const input=query('#eventTaskInput');
+      const value=input?.value.trim();
+      if(!value)return false;
+      state.eventTasks=Array.isArray(state.eventTasks)?state.eventTasks:[];
+      state.eventTasks.push({
+        event_task_id:`event_${Date.now()}_${state.eventTasks.length}`,
+        label:value,
+        source:'CHILD_EVENT_INPUT'
+      });
+      input.value='';
+      save();
+      render();
+      toast('이벤트 과제를 이번 타임어택에 바로 넣었어요.');
+      return true;
+    }
+
+    function removeEventTask(eventTaskId){
+      const state=getState();
+      state.eventTasks=(state.eventTasks||[]).filter(x=>x?.event_task_id!==eventTaskId);
+      save();
+      render();
+      return true;
+    }
+
     function voiceTask(){
       const SR=root.SpeechRecognition||root.webkitSpeechRecognition;
       const hint=query('#voiceHint'),button=query('#voiceTaskBtn'),input=query('#taskInput');
@@ -154,6 +180,7 @@
       queryAll('[data-category]').forEach(button=>button.addEventListener('click',()=>openCategory(button.dataset.category)));
       queryAll('[data-close-sheet]').forEach(button=>button.addEventListener('click',closeCategory));
       query('#addTaskBtn')?.addEventListener('click',addChildTask);
+      query('#addEventTaskBtn')?.addEventListener('click',addEventTask);
       query('#voiceTaskBtn')?.addEventListener('click',voiceTask);
       queryAll('[data-minutes]').forEach(button=>button.addEventListener('click',()=>selectMinutes(button)));
       query('#customMinutes')?.addEventListener('change',setCustomMinutes);
@@ -161,7 +188,7 @@
     }
 
     return Object.freeze({
-      bind,render,renderPlannerToday,currentMissionItems,currentMissionLabels,toggleTodo,openCategory,addChildTask,voiceTask,selectMinutes,setCustomMinutes
+      bind,render,renderPlannerToday,currentMissionItems,currentMissionLabels,toggleTodo,openCategory,addChildTask,addEventTask,removeEventTask,voiceTask,selectMinutes,setCustomMinutes
     });
   }
 
