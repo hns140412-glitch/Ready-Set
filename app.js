@@ -423,6 +423,7 @@ const plannerScreenView=rebuildPlannerScreenView.create({
   addDays,
   weekStart,
   itemsForDate:(date,snap)=>plannerQueryRuntime.itemsForDate(date,snap),
+  freeWindowsForDate:date=>plannerQueryRuntime.freeWindowsForDate(date),
   stateLabel:value=>plannerQueryRuntime.stateLabel(value)
 });
 const plannerScreenRuntime=rebuildPlannerScreenController.create({
