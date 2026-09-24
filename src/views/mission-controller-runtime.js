@@ -47,7 +47,8 @@
         state,
         todayItems:missionItems(),
         renderChips,
-        onToggleTodo:toggleTodo
+        onToggleTodo:toggleTodo,
+        onRemoveEventTask:removeEventTask
       });
     }
 
