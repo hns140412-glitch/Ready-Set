@@ -103,6 +103,7 @@
       <section class="glassCard adminCard">
         <div class="adminSectionHead"><div><small>FIXED SCHEDULE</small><h2>고정 일정</h2></div><button class="miniAction" id="scheduleClearBtn">새 일정</button></div>
         <input id="scheduleId" type="hidden">
+        <label class="inputBlock">적용 대상<select id="scheduleAudienceTarget"><option value="FAMILY_ALL">가족 전체</option></select></label>
         <label class="inputBlock">일정명<input id="scheduleTitle" placeholder="예) 영어학원"></label>
         <label class="adminToggle"><input id="scheduleWeekly" type="checkbox"><span><b>매주 반복</b><small>학원·피아노·태권도처럼 매주 같은 요일의 고정 일정</small></span></label>
         <div class="adminGrid two">
@@ -144,6 +145,7 @@
         <div class="adminSectionHead"><div><small>CONFIRMED AVAILABILITY</small><h2>학습 가능 시간</h2></div><button class="miniAction" id="availabilityClearBtn">새 시간</button></div>
         <p class="muted">부모는 가능한 시간만 확인합니다. 실제 숙제 날짜 배정은 Planner가 결정합니다.</p>
         <input id="availabilityId" type="hidden">
+        <label class="inputBlock">적용 대상<select id="availabilityAudienceTarget"><option value="FAMILY_ALL">가족 전체</option></select></label>
         <label class="adminToggle"><input id="availabilityWeekly" type="checkbox"><span><b>매주 반복</b><small>요일별 기본 학습 가능시간으로 사용합니다.</small></span></label>
         <div class="adminGrid two">
           <label class="inputBlock">날짜<input id="availabilityDate" type="date"></label>
