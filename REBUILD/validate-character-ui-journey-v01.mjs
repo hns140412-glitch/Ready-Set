@@ -362,17 +362,19 @@ assert(sceneRuntime.includes("CharacterFormationPoseBank?.bindImage?.(crewImg,id
 console.log('CHARACTER_FORMATION_POSE_BANK_CONSUMER_CONTRACT_PASS');
 
 
-// Final pose proof gate: completion is declared only after exact-head runtime capture passes.
+// Final Character Formation completion contract after exact-head mobile/tablet pose runtime proof.
 const poseAsset=assetManifest.asset_sources?.core6_pose_action_source_bank?.runtime_asset||{};
-assert(assetManifest.current_runtime_anchor?.state==='POSE_BINARY_MATERIALIZED__PENDING_FINAL_POSE_RUNTIME_PROOF','CHARACTER_FORMATION_PRE_PROOF_STATE_REGRESSION');
-assert(assetManifest.current_runtime_anchor?.proof_required==='FINAL_POSE_RUNTIME_PROOF','CHARACTER_FORMATION_FINAL_PROOF_GATE_MISSING');
-assert(Array.isArray(assetManifest.current_runtime_anchor?.pending_only)&&assetManifest.current_runtime_anchor.pending_only.length===1&&assetManifest.current_runtime_anchor.pending_only[0]==='FINAL_POSE_RUNTIME_PROOF','CHARACTER_FORMATION_FINAL_PROOF_PENDING_STATE_INVALID');
+assert(assetManifest.current_runtime_anchor?.state==='CHARACTER_FORMATION_RUNTIME_COMPLETE','CHARACTER_FORMATION_FINAL_STATE_REGRESSION');
+assert(assetManifest.current_runtime_anchor?.proof_required==='COMPLETE','CHARACTER_FORMATION_FINAL_PROOF_STATE_REGRESSION');
+assert(Array.isArray(assetManifest.current_runtime_anchor?.pending_only)&&assetManifest.current_runtime_anchor.pending_only.length===0,'CHARACTER_FORMATION_PENDING_OPEN_MUST_BE_EMPTY');
 assert(assetManifest.asset_sources?.core6_pose_action_source_bank?.runtime_binding_state==='RUNTIME_SPRITE_BOUND_V1','POSE_RUNTIME_SPRITE_BINDING_STATE_MISSING');
 assert(assetManifest.asset_sources?.core6_pose_action_source_bank?.consumer_binding_state==='CONSUMER_BOUND_TO_REPO_SPRITE_WITH_CANONICAL_FALLBACK','POSE_CONSUMER_SPRITE_STATE_MISSING');
 assert(assetManifest.asset_sources?.core6_pose_action_source_bank?.user_action_required===false,'USER_MUST_NOT_BECOME_POSE_BINARY_DEBUGGER');
 assert(poseAsset.path==='assets/character-formation/crew/core6-pose-sprite-64.webp','POSE_RUNTIME_ASSET_PATH_REGRESSION');
 assert(poseAsset.geometry?.cell_width===64&&poseAsset.geometry?.cell_height===64,'POSE_RUNTIME_ASSET_CELL_GEOMETRY_REGRESSION');
+assert(assetManifest.final_runtime_proof?.status==='PASS','FINAL_RUNTIME_PROOF_RECEIPT_MISSING');
+assert(assetManifest.final_runtime_proof?.exact_head==='4e56ad3c8e5c6ec712a091a252e9c78860d142f2','FINAL_RUNTIME_PROOF_HEAD_REGRESSION');
 assert(poseBankRuntime.includes("SPRITE_PATH='./assets/character-formation/crew/core6-pose-sprite-64.webp'"),'POSE_RUNTIME_MUST_USE_REPO_SPRITE');
 assert(poseBankRuntime.includes('const CELL=64'),'POSE_RUNTIME_CELL_SIZE_REGRESSION');
 assert(!index.includes('pose-data/chunk-1.js')&&!index.includes('pose-data/chunk-5.js'),'OBSOLETE_POSE_CHUNKS_MUST_NOT_LOAD');
-console.log('CHARACTER_FORMATION_FINAL_POSE_PROOF_GATE_PASS');
+console.log('CHARACTER_FORMATION_RUNTIME_COMPLETE_PASS');
