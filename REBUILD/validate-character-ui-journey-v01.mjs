@@ -234,7 +234,7 @@ for(const id of exactCrew){
   const p=assetManifest.asset_files.crew[id];
   assert(fs.existsSync(p),'CORE6_RUNTIME_BINARY_MISSING_'+id);
   const actual=crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
-  assert(actual===core6Provenance.sha256?.[id],'CORE6_RUNTIME_BINARY_HASH_MISMATCH_'+id);
+  assert(actual===core6Provenance.sha256?.[id],'CORE6_RUNTIME_BINARY_HASH_MISMATCH_'+id+'__ACTUAL_'+actual+'__EXPECTED_'+String(core6Provenance.sha256?.[id]||''));
 }
 console.log('CHARACTER_FORMATION_FAMILY_INHERITANCE_AND_CORE6_PROVENANCE_PASS');
 
