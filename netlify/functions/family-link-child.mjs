@@ -29,7 +29,10 @@ export default async function handler(req){
   const nextMetadata={
     ...(target.appMetadata||{}),
     roles:['CHILD'],
-    family_id:allowed.family_id
+    family_id:allowed.family_id,
+    membership_id:String(target.appMetadata?.membership_id||'membership_'+target.id+'_'+allowed.family_id),
+    relationship:'CHILD',
+    membership_status:'ACTIVE'
   };
   const updated=await admin.updateUser(target.id,{app_metadata:nextMetadata});
   return Response.json({
