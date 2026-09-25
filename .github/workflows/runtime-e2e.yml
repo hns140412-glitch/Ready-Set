@@ -28,6 +28,8 @@ jobs:
         run: node tests/app-execution-context-bridge.test.js
       - name: Validate family member scope isolation
         run: node tests/family-member-scope-isolation.test.js
+      - name: Validate shared family context ownership
+        run: node tests/family-context-contract.test.js
       - name: Install Playwright
         run: |
           npm install --no-save @playwright/test@1.55.0
