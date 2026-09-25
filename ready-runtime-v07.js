@@ -2,10 +2,10 @@
   'use strict';
 
   const RUNTIME_VERSION = '2026.09.07-rev07-b';
-  const HIDE_URL = 'https://dainty-froyo-a6e427.netlify.app';
-  const SNAP_URL = 'https://cheerful-pothos-d1c3ee.netlify.app';
+  const specialistTargets = globalThis.ReadySetSpecialistTargets;
+  if(!specialistTargets?.resolve||!specialistTargets?.trustedOrigins) throw new Error('READY_SPECIALIST_TARGETS_UNAVAILABLE');
   const VALID_TASK_STATES = new Set(['PENDING','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
-  const TRUSTED_APP_ORIGINS = new Set([new URL(HIDE_URL).origin, new URL(SNAP_URL).origin]);
+  const TRUSTED_APP_ORIGINS = new Set(specialistTargets.trustedOrigins());
 
   const id = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
   const iso = ms => new Date(ms ?? Date.now()).toISOString();
@@ -251,7 +251,7 @@
   }
 
   function appUrl(app) {
-    return app === 'hide-seek' ? HIDE_URL : app === 'snap-pop' ? SNAP_URL : location.href;
+    return specialistTargets.resolve(app)?.url || location.href;
   }
 
   function prepareSpecialistLaunch(app) {
@@ -279,10 +279,13 @@
     url.searchParams.set('task_id', task.task_id);
     url.searchParams.set('lap_id', lap.lap_id);
     url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
-    url.searchParams.set('snap_target', SNAP_URL);
+    const snapTarget=specialistTargets.resolve('snap-pop')?.url||null;
+    if(snapTarget)url.searchParams.set('snap_target',snapTarget);
     url.searchParams.set('from_app', 'ready-set');
     url.searchParams.set('handoff_scope', app==='hide-seek'?'MEMORY_RETRIEVAL':'LEARNER_PRODUCTION');
     url.searchParams.set('route_authority','READY_LEARNING_ENGINE_ROUTING');
+    const targetDescriptor=specialistTargets.resolve(app);
+    if(targetDescriptor?.target_kind)url.searchParams.set('target_kind',targetDescriptor.target_kind);
     if(window.ReadySpecialistHandoffContract?.encodeLearningContext){
       url.searchParams.set('learning_context',window.ReadySpecialistHandoffContract.encodeLearningContext(task));
     }
