@@ -107,6 +107,15 @@
     });
     const resolved=window.ReadySetPlanner.resolveCarryOver?.(carryOverId,{resolution:'CANCEL',actor:'PARENT_LEARNING_MASTER_REVIEW'});
     const processed=processAssignment(assignmentId,{start_date:input.start_date});
+    if(processed?.ok){
+      window.ReadyAssignments.markEvidenceReview?.(assignmentId,{
+        review_key:reviewKey,
+        analysis_id:reviewed?.analysis?.analysis_id||null,
+        evidence_count:evidenceKeys.length,
+        member_id:activeMember,
+        subject:factSubject
+      });
+    }
     return {
       ok:!!processed?.ok,
       assignment_id:assignmentId,
@@ -178,6 +187,19 @@
     const specialist=specialistEvidenceSignal(recent);
     const activeMember=window.ReadyFamilySession?.current?.()?.member_id||input.member_id||null;
     const factSubject=fact.book_subject||fact.subject||null;
+    const evidenceKeys=[...new Set(recent.flatMap((row,rowIndex)=>(Array.isArray(row.learning_evidence)?row.learning_evidence:[]).map((e,eIndex)=>
+      String(e?.evidence_id||e?.event_id||e?.session_id||row?.session_id||row?.execution_observation_id||[row?.at||row?.created_at||rowIndex,e?.evidence_type,e?.memory?.average_strength,eIndex].join(':')).trim()
+    )).filter(Boolean))].sort();
+    const reviewKey=JSON.stringify({
+      assignment_id:assignmentId,
+      fact_revision:Number(fact.fact_revision)||1,
+      member_id:activeMember||null,
+      subject:factSubject||null,
+      evidence_keys:evidenceKeys
+    });
+    if(fact.learning_evidence_review?.review_key===reviewKey){
+      return {ok:false,reason:'LEARNING_EVIDENCE_ALREADY_REVIEWED',review_key:reviewKey};
+    }
     const adaptiveProfile=learnerAdaptiveProfile(recent,{
       as_of:input.as_of,
       member_id:activeMember,
