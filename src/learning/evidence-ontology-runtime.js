@@ -5,21 +5,34 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='READY_EVIDENCE_ONTOLOGY_V01';
+  const VERSION='READY_EVIDENCE_ONTOLOGY_V02';
   const clean=(v,max=160)=>String(v??'').trim().slice(0,max);
 
   function specialistEvidence({task={},from_app=null,task_state=null,payload=null,event_id=null,at=null}={}){
+    const observedAt=at||new Date().toISOString();
+    const activeMember=globalThis.ReadyFamilySession?.current?.()?.member_id||null;
+    const assistedRaw=payload?.assisted??payload?.memorySummary?.assisted??payload?.trailSummary?.memorySummary?.assisted;
+    const assistance=assistedRaw===true?'ASSISTED':assistedRaw===false?'UNASSISTED':'UNKNOWN';
     const base={
       evidence_contract:VERSION,
       event_id:clean(event_id)||null,
-      at:at||new Date().toISOString(),
+      at:observedAt,
+      observed_at:observedAt,
       learning_unit_id:clean(task.learning_unit_id)||null,
       assignment_id:clean(task.assignment_id)||null,
       analysis_id:clean(task.analysis_id)||null,
+      member_id:clean(task.member_id||payload?.member_id||activeMember)||null,
       subject:clean(task.subject,80)||null,
+      concept_skill_target:clean(task.concept_skill_target,120)||null,
       domain:clean(task.matched_domain,80)||null,
       task_state:clean(task_state,40)||null,
       source_app:clean(from_app,40)||null,
+      instrument_version:clean(payload?.instrumentVersion||payload?.instrument_version||payload?.sourceVersion,80)||'UNSPECIFIED',
+      interaction_mode:clean(payload?.interactionMode||payload?.interaction_mode||payload?.memorySummary?.interactionMode,80)||'UNKNOWN',
+      assistance,
+      assisted:assistedRaw===true?true:assistedRaw===false?false:null,
+      attempt_count:Number.isFinite(payload?.attemptCount)?Math.max(0,Math.floor(payload.attemptCount)):null,
+      response_latency_ms:Number.isFinite(payload?.responseLatencyMs)?Math.max(0,payload.responseLatencyMs):null,
       authority:'READY_EVIDENCE_RECORD',
       interpretation_owner:'READY_LEARNING_ENGINE'
     };
