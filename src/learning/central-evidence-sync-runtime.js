@@ -24,10 +24,14 @@
       for(const packet of outbox.pending()){
         try{
           const response=await tx.ingest(JSON.parse(JSON.stringify(packet)));
-          const receiptId=response?.receipt_id||response?.real_evidence_receipt_id||null;
-          if(response?.ok===true&&receiptId){
+          const receiptId=response?.receipt_id||response?.real_evidence_receipt_id||response?.observation_ingest_receipt_id||null;
+          const acknowledgementKind=response?.acknowledgement_kind||
+            (String(receiptId||'').startsWith('real-evidence:')?'REAL_EVIDENCE_RECEIPT':
+             String(receiptId||'').startsWith('observation:')?'OBSERVATION_INGEST_RECEIPT':null);
+          const validAckKind=['REAL_EVIDENCE_RECEIPT','OBSERVATION_INGEST_RECEIPT'].includes(acknowledgementKind);
+          if(response?.ok===true&&receiptId&&validAckKind){
             const ack=outbox.acknowledge(packet.packet_id,receiptId,response.acknowledged_at||new Date().toISOString());
-            results.push({packet_id:packet.packet_id,ok:ack.ok,receipt_id:receiptId,state:'ACKNOWLEDGED'});
+            results.push({packet_id:packet.packet_id,ok:ack.ok,receipt_id:receiptId,acknowledgement_kind:acknowledgementKind,state:'ACKNOWLEDGED'});
           }else{
             results.push({packet_id:packet.packet_id,ok:false,state:'RETAINED_PENDING',reason:response?.reason||'CENTRAL_ACK_REQUIRED'});
           }
@@ -43,7 +47,7 @@
       sync_version:VERSION,
       results,
       pending_count:outbox.pending().length,
-      invariant:'NO_PACKET_REMOVED_WITHOUT_REAL_EVIDENCE_RECEIPT_ACK'
+      invariant:'NO_PACKET_REMOVED_WITHOUT_IMMUTABLE_CENTRAL_INGEST_ACK'
     };
   }
 
