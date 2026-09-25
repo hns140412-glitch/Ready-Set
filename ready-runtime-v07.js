@@ -22,10 +22,11 @@
 
   function routeTask(link = {}) {
     const stored=link.execution_plan;
-    if(stored&&stored.authority==='READY_LEARNING_ENGINE_ROUTING'&&Array.isArray(stored.allowed_specialists)&&Array.isArray(stored.handoff_queue)){
+    if(stored&&['READY_EXECUTION_ROUTING','READY_LEARNING_ENGINE_ROUTING'].includes(stored.authority)&&Array.isArray(stored.allowed_specialists)&&Array.isArray(stored.handoff_queue)){
       return Object.freeze({
         router_version:stored.router_version||'PLANNER_STORED_EXECUTION_PLAN',
-        authority:'READY_LEARNING_ENGINE_ROUTING',
+        authority:stored.authority,
+        reported_authority:stored.reported_authority||null,
         mode:stored.mode||'READY_ORCHESTRATED',
         primary_app:stored.primary_app||link.execution_app||'ready-set',
         ready_owned:(stored.primary_app||link.execution_app||'ready-set')==='ready-set',
@@ -48,7 +49,8 @@
     }
     return Object.freeze({
       router_version:'LEGACY_FAIL_CLOSED',
-      authority:'READY_LEARNING_ENGINE_ROUTING',
+      authority:'READY_EXECUTION_ROUTING',
+      reported_authority:router?.authority||null,
       mode:'READY_ORCHESTRATED',
       primary_app:'ready-set',
       ready_owned:true,
@@ -288,7 +290,7 @@
     if(snapTarget)url.searchParams.set('snap_target',snapTarget);
     url.searchParams.set('from_app', 'ready-set');
     url.searchParams.set('handoff_scope', app==='hide-seek'?'MEMORY_RETRIEVAL':'LEARNER_PRODUCTION');
-    url.searchParams.set('route_authority','READY_LEARNING_ENGINE_ROUTING');
+    url.searchParams.set('route_authority',plan?.authority||'READY_EXECUTION_ROUTING');
     const targetDescriptor=specialistTargets.resolve(app);
     if(targetDescriptor?.target_kind)url.searchParams.set('target_kind',targetDescriptor.target_kind);
     if(window.ReadySpecialistHandoffContract?.encodeLearningContext){
