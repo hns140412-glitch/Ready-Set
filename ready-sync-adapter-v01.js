@@ -66,6 +66,8 @@
       event_id:event.event_id||event.id,
       idempotency_key:event.idempotency_key||event.event_id||event.id,
       scope:event.scope,
+      logical_scope:event.logical_scope||null,
+      scope_identity:event.scope_identity||null,
       digest:event.digest,
       payload:event.payload,
       created_at:event.created_at,
