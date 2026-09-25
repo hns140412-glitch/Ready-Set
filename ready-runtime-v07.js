@@ -202,15 +202,9 @@
     task.state = nextState;
     task.updated_at = iso();
     emit('TASK_STATE_CHANGED', { task_id: taskId, previous, next: nextState, source });
-    if (task.planner_todo_id && window.ReadySetPlanner) {
-      window.ReadySetPlanner.recordTaskState({
-        todo_id: task.planner_todo_id,
-        ready_state: nextState,
-        session_id: c.session_id,
-        task_id: task.task_id,
-        at: iso()
-      });
-    }
+    // Session-internal specialist / wrap-up states stay inside REV_07.
+    // Planner owns the dated TODO and receives the terminal result once, in finalizeSession().
+    // Start/switch ownership is handled separately through IN_PROGRESS transitions.
     save();
     renderContractUI();
     return true;
