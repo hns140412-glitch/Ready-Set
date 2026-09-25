@@ -276,6 +276,10 @@
     const personalDecline=adaptiveProfile?.trend==='DECLINING'&&Number(adaptiveProfile?.memory_sample_count)>=3;
     const memoryConcern=(Number.isFinite(memoryPriority)&&memoryPriority>=70)||(Number.isFinite(memoryStrength)&&memoryStrength<60)||personalDecline;
     const productionObserved=Number(specialist?.child_authored_production_count||0)>0;
+    const targetLexicalIds=memoryConcern
+      ? [...new Set((Array.isArray(specialist?.review_advisories)?specialist.review_advisories:[])
+          .map(x=>String(x?.lexicalId||x?.lexical_id||'').trim()).filter(Boolean))].slice(0,24)
+      : [];
     return {
       authority:'ADAPTIVE_REVIEW_ONLY',
       reduce_unit_span:!!(baseSpan&&((repeatedFriction>=2&&depth>=3)||(directEvidenceReview&&memoryConcern))),
@@ -283,6 +287,7 @@
       add_checkpoint:repeatedFriction>=2||memoryConcern,
       add_retrieval_checkpoint:memoryConcern,
       production_evidence_observed:productionObserved,
+      target_lexical_ids:targetLexicalIds,
       recovery_floor:(depth>=4||repeatedFriction>=3||memoryConcern)?'HIGH':repeatedFriction>=2?'MEDIUM':null,
       parent_help_floor:helpBlocked?'HIGH':repeatedFriction>=3?'MEDIUM':null,
       evidence:{repeated_friction_count:repeatedFriction,carry_over_depth:depth,states:[...states],specialist_evidence:specialist?clone(specialist):null,learner_adaptive_profile:adaptiveProfile?clone(adaptiveProfile):null},
@@ -396,6 +401,7 @@
         (profile.activity_types||[]).includes('ERROR_CORRECTION')?'ERROR_DRIVEN':
         (profile.activity_types||[]).includes('SELF_CHECK')?'SELF_CHECK_AFTER_EXECUTION':'RESULT_DEPENDENT'
       ),
+      review_lexical_ids:clone(reviewPolicy?.target_lexical_ids||[]),
       analysis_provenance:{
         engine:'READY_LEARNING_MASTER',
         version:VERSION,
