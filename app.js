@@ -55,9 +55,10 @@ let plannerTab='week';
 const TALENT_BOOKS=['연산','한자','국어','사회','수학','생각하는 피자'];
 const GUIDE_NAME_POOL=['루미','피코','모리','토리','모모','아루','리프','피즈','코코','라온','누리','보리'];
 
+function appStateStorageKey(){return window.ReadySetLocalFirst?.storageKey?.('app_state')||'readyset_state'}
 function load(){
   try{
-    const x=JSON.parse(localStorage.getItem('readyset_state')||'null');
+    const x=JSON.parse(localStorage.getItem(appStateStorageKey())||'null');
     if(!x)return structuredClone(initial);
     return migrate(x);
   }catch{return structuredClone(initial)}
@@ -92,7 +93,7 @@ function readyPwaSafePoint(){
 globalThis.ReadySetPwaSafePoint=readyPwaSafePoint;
 function save(){
   const payload=JSON.stringify(state);
-  localStorage.setItem('readyset_state',payload);
+  localStorage.setItem(appStateStorageKey(),payload);
   window.ReadySetLocalFirst?.capture?.('app_state',payload).catch?.(()=>{});
   window.dispatchEvent(new CustomEvent('readyset-state-saved',{detail:{pwa_safe_point:readyPwaSafePoint()}}));
   if(readyPwaSafePoint()) window.dispatchEvent(new CustomEvent('readyset-safe-point'));
@@ -1517,8 +1518,18 @@ function renderAuthStatus(){
   if(link)link.hidden=!(session.authenticated&&session.role==='PARENT');
 }
 window.addEventListener('readyset-family-session',()=>{
+  state=load();
   renderAuthStatus();
+  renderHome();
+  renderMission();
   renderPlanner();
+  updateAvatar();
+  window.ReadySetLocalFirst?.recoverMissingScopes?.().then(result=>{
+    if(result?.recovered>0){
+      state=load();
+      renderHome();renderMission();renderPlanner();updateAvatar();
+    }
+  }).catch(()=>{});
   renderSyncStatus().catch(()=>{});
 });
 
