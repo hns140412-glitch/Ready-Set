@@ -8,6 +8,7 @@ on:
       - taky/ready-integration-v01
       - taky/unit-mapping-table-full-v02
       - taky/app-execution-context-bridge-2026-09-25
+      - taky/family-member-scope-isolation-2026-09-25
   pull_request:
     branches:
       - main
@@ -25,6 +26,8 @@ jobs:
         run: node tests/shared-runtime-contract.test.js
       - name: Validate app execution context bridge
         run: node tests/app-execution-context-bridge.test.js
+      - name: Validate family member scope isolation
+        run: node tests/family-member-scope-isolation.test.js
       - name: Install Playwright
         run: |
           npm install --no-save @playwright/test@1.55.0
