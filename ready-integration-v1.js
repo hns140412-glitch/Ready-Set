@@ -91,10 +91,47 @@
     };
   }
 
+  function normalizeLearningAction(message={}){
+    const runtime=message.runtime||{};
+    const action=runtime.next_learning_action||message.next_learning_action||message.action||{};
+    const accepted=!!action.planner_allocation_allowed;
+    return {
+      schema:'TAKY_READY_LEARNING_ACTION_V1',
+      accepted_for_planner:accepted,
+      child_id:message.child_id||message.learner_id||null,
+      skill_id:action.skill_id||message.skill_id||null,
+      action:action.action||null,
+      intensity:action.intensity||null,
+      estimated_units:Number(action.estimated_units||1),
+      preferred_date:null,
+      planner_date:null,
+      guards:{
+        ready_planner_owns_date:true,
+        learning_action_is_candidate:true,
+        learning_engine_does_not_write_schedule:true
+      }
+    };
+  }
+
+  function consumeLearningAction(message={}){
+    const request=normalizeLearningAction(message);
+    try{
+      window.dispatchEvent(new CustomEvent('taky-ready-learning-action',{detail:request}));
+    }catch{}
+    return request;
+  }
+
   function processConfirmed(input={}){
     const state=window.ReadyAssignments?.load?.();if(!state)return [];
     return Object.values(state.assignmentFacts).filter(f=>f.confirmation_state==='FACT_CONFIRMED').map(f=>processAssignment(f.assignment_id,input));
   }
-  window.ReadyIntegrationV1={version:VERSION,processAssignment,processConfirmed,reviewEscalatedCarryOver};
+
+  window.addEventListener('message',event=>{
+    const data=event?.data;
+    if(!data||data.type!=='TAKY_LEARNING_ACTION')return;
+    consumeLearningAction(data.learning_result||data.payload||{});
+  });
+
+  window.ReadyIntegrationV1={version:VERSION,processAssignment,processConfirmed,reviewEscalatedCarryOver,normalizeLearningAction,consumeLearningAction};
   document.documentElement.dataset.readyIntegration=VERSION;
 })();
