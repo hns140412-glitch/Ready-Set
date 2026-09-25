@@ -13,25 +13,58 @@ assert.equal(core.canWrite(child,'C1').ok,true);
 assert.equal(core.canWrite(parent,'C1').ok,false);
 
 let s=World.empty('C1');
-let r=core.applyOperation(s,{type:'SET_PRIMARY_COMPANION',character_id:'crew.core.dubi'});
-assert.equal(r.ok,true);s=r.state;
-assert.equal(s.primary_companion_id,'crew.core.dubi');
+let r=core.applyEvent(s,{
+  event_id:'W1',
+  type:'SET_MAIN_COMPANION',
+  character_id:'crew.core.dubi',
+  occurred_at:'2026-09-26T00:00:00.000Z'
+});
+assert.equal(r.ok,true); s=r.world;
+assert.equal(s.crew['crew.core.dubi'].state,'MAIN_COMPANION');
 
-r=core.applyOperation(s,{type:'RAW_PRESENCE'});
-assert.equal(r.ok,true);
-assert.equal(r.state.relationships.length,0);
+r=core.applyEvent(s,{
+  event_id:'W2',
+  type:'CREW_STATE_SET',
+  character_id:'crew.core.lori',
+  state:'AT_HUB',
+  location_ref:'base-camp',
+  occurred_at:'2026-09-26T00:01:00.000Z'
+});
+assert.equal(r.ok,true); s=r.world;
+assert.equal(s.crew['crew.core.lori'].state,'AT_HUB');
 
-r=core.applyOperation(s,{type:'SET_PRESENCE',character_id:'crew.core.dubi',state:'WITH_EXPLORER'});
-assert.equal(r.ok,true);s=r.state;
-assert.equal(s.crew_presence[0].state,'WITH_EXPLORER');
-assert.equal(s.relationships.length,0);
+r=core.applyEvent(s,{
+  event_id:'W3',
+  type:'SPECIAL_EVENT_STARTED',
+  character_id:'crew.core.nova',
+  location_ref:'special-zone',
+  occurred_at:'2026-09-26T00:02:00.000Z'
+});
+assert.equal(r.ok,true); s=r.world;
+assert.equal(s.crew['crew.core.nova'].state,'SPECIAL_EVENT');
 
-r=core.applyOperation(s,{type:'RECORD_MEANINGFUL_EPISODE',character_id:'crew.core.dubi',memory_ref:'memory:explicit',source_event_id:'E1'});
-assert.equal(r.ok,true);
-assert.equal(r.state.relationships[0].meaningful_episode_count,1);
+r=core.applyEvent(s,{
+  event_id:'W4',
+  type:'RETURN_REUNION_RECORDED',
+  character_id:'crew.core.nova',
+  occurred_at:'2026-09-26T00:03:00.000Z'
+});
+assert.equal(r.ok,true); s=r.world;
+assert.equal(s.events.length,4);
+assert.equal(s.absence_penalty,false);
+assert.equal(s.full_daily_simulation,false);
 
-const src=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','ready-world-state-v01.js'),'utf8');
-assert(src.includes("detail.payload?.meaningful_episode===true"));
-assert(src.includes("detail.payload?.memory_ref"));
-assert(!src.includes("source_event_type==='TASK_COMPLETED'&&"),'task completion alone must not create affinity');
+const duplicate=core.applyEvent(s,{
+  event_id:'W4',
+  type:'RETURN_REUNION_RECORDED',
+  character_id:'crew.core.nova'
+});
+assert.equal(duplicate.ok,true);
+assert.equal(duplicate.reason,'IDEMPOTENT_ALREADY_APPLIED');
+assert.equal(duplicate.world.revision,s.revision);
+
+const synthetic=World.canonicalFromSynthetic({member_id:'C1'});
+assert.equal(synthetic.ok,false);
+assert.equal(synthetic.reason,'SYNTHETIC_WORLD_STATE_NOT_CANONICAL');
+
 console.log('READY_FAMILY_WORLD_STATE_CONTRACT_PASS');
