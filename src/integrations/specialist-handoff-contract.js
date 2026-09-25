@@ -24,7 +24,8 @@
       confidence:Number.isFinite(task.confidence)?Math.max(0,Math.min(1,task.confidence)):null,
       unresolved_flags:list(task.unresolved_flags,12),
       provenance:{
-        engine:'READY_LEARNING_ENGINE',
+        engine:'TAKY_LEARNING_ENGINE_CORE',
+        adapter:'READY_SPECIALIST_HANDOFF',
         version:VERSION,
         confirmation_state:'ROUTED'
       }
@@ -62,6 +63,7 @@
     ,40)||null;
     return {
       event_id:clean(raw.event_id,160)||null,
+      observed_at:clean(raw.occurred_at||raw.at||payload.observed_at||payload.at,80)||null,
       type,
       from_app:app,
       session_id:clean(raw.session_id||taskContext.session_id,160)||null,
