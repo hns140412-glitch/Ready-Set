@@ -481,6 +481,7 @@
           preferred_days:Array.isArray(input.preferred_days)?[...input.preferred_days]:[],
           execution_plan:input.execution_plan&&typeof input.execution_plan==='object'?JSON.parse(JSON.stringify(input.execution_plan)):null,
           execution_app:cleanText(input.execution_app)||'ready-set',
+          specialist_material_binding:input.specialist_material_binding&&typeof input.specialist_material_binding==='object'?JSON.parse(JSON.stringify(input.specialist_material_binding)):null,
           source:requestedSource,
           source_actor:cleanText(input.source_actor)||null,
           provenance:input.provenance||null,
@@ -520,7 +521,8 @@
         parent_help_dependency:x.parent_help_dependency||null,
         preferred_days:Array.isArray(x.preferred_days)?[...x.preferred_days]:[],
         execution_plan:x.execution_plan||null,
-        execution_app:x.execution_app||'ready-set'
+        execution_app:x.execution_app||'ready-set',
+        specialist_material_binding:x.specialist_material_binding?JSON.parse(JSON.stringify(x.specialist_material_binding)):null
       }));
     }
     function linkOrCreateTodayItems(values=[],options={}){
@@ -696,6 +698,14 @@
           const preferredDays=preferredDaysForUnit(unit,fact);
           const preferredDates=preferredDays.length?dates.filter(d=>preferredDays.includes(new Date(d+'T12:00:00').getDay())):[];
           const executionPlan=executionPlanForUnit(unit);
+          const specialistMaterialBinding=Object.values(domain.specialistBindings||{}).find(row=>
+            row?.confirmation_state==='HUMAN_CONFIRMED'&&
+            row?.assignment_id===assignmentId&&
+            row?.specialist_app===executionPlan.primary_app&&
+            cleanText(row?.source_range)===cleanText(unit.source_range)&&
+            cleanText(row?.workbook_ref_id)===cleanText(fact.workbook_ref_id)&&
+            cleanText(row?.concept_skill_target).toUpperCase()===cleanText(unit.concept_skill_target).toUpperCase()
+          )||null;
           const operatingRuleByDate=Object.fromEntries(dates.map(d=>[d,operatingRuleForUnit(unit,d,scheduleByDate)]));
           const date=[...(preferredDates.length?preferredDates:dates)].sort((a,b)=>{
             const ar=!!operatingRuleByDate[a],br=!!operatingRuleByDate[b];
@@ -763,6 +773,7 @@
             recurring_occurrence:preferredDays.length>0,
             execution_plan:executionPlan,
             execution_app:executionPlan.primary_app,
+            specialist_material_binding:specialistMaterialBinding?JSON.parse(JSON.stringify(specialistMaterialBinding)):null,
             confidence:Number.isFinite(unit.confidence)?unit.confidence:null,
             unresolved_flags:Array.isArray(unit.unresolved_flags)?[...unit.unresolved_flags]:[],
             cognitive_load_profile:unit.cognitive_load_profile,
@@ -825,6 +836,7 @@
             recurring_occurrence:p.recurring_occurrence===true,
             execution_plan:p.execution_plan||null,
             execution_app:p.execution_app||'ready-set',
+            specialist_material_binding:p.specialist_material_binding?JSON.parse(JSON.stringify(p.specialist_material_binding)):null,
             operating_rule:p.operating_rule||null,
             preferred_daypart:p.preferred_daypart||null,
             operating_rule_evidence:p.operating_rule_evidence||null,
@@ -879,6 +891,7 @@
           recovery_need:source.recovery_need||null,
           review_policy:source.review_policy||null,
           review_lexical_ids:Array.isArray(source.review_lexical_ids)?[...source.review_lexical_ids]:[],
+          specialist_material_binding:source.specialist_material_binding?JSON.parse(JSON.stringify(source.specialist_material_binding)):null,
           parent_help_dependency:source.parent_help_dependency||null,
           operating_rule:source.operating_rule||null,
           preferred_daypart:source.preferred_daypart||null,
