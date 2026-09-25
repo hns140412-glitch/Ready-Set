@@ -236,7 +236,7 @@
       await put('outbox',working);
 
       try{
-        const result=await adapter.send(working);
+        const result=await adapter.send(publicScopedRow(working));
         if(result?.conflict){
           working={...working,status:'PENDING',domain_conflict:'OPEN',updated_at:now()};
           await put('outbox',working);
