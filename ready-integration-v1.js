@@ -270,10 +270,39 @@
     };
   }
 
+  function applyLearningEngineDecision(decision={},input={}){
+    const adapter=window.ReadyLearningEngineAdapterV2;
+    if(!adapter?.translate)return {ok:false,reason:'LEARNING_ENGINE_ADAPTER_V2_MISSING'};
+    const translated=adapter.translate(decision,{
+      assignment_id:input.assignment_id,
+      analysis_id:input.analysis_id,
+      learning_decision_ref:input.learning_decision_ref,
+      scheduling_constraints:input.scheduling_constraints||null
+    });
+    if(!translated.ok)return translated;
+    if(translated.execution_status==='HOLD'){
+      return {
+        ok:true,
+        authority:'READY_EXECUTION_ADAPTER_ONLY',
+        execution_status:'HOLD',
+        translated,
+        planner_called:false
+      };
+    }
+    return {
+      ok:true,
+      authority:'READY_EXECUTION_ADAPTER_ONLY',
+      execution_status:'READY_FOR_PLANNER_ALLOCATION',
+      translated,
+      planner_called:false,
+      note:'Adapter V2 preserves Core intent. Planner allocation remains a separate Ready/Planner operation.'
+    };
+  }
+
   function processConfirmed(input={}){
     const state=window.ReadyAssignments?.load?.();if(!state)return [];
     return Object.values(state.assignmentFacts).filter(f=>f.confirmation_state==='FACT_CONFIRMED').map(f=>processAssignment(f.assignment_id,input));
   }
-  window.ReadyIntegrationV1={version:VERSION,processAssignment,processConfirmed,reviewEscalatedCarryOver,reviewLearningEvidence,specialistEvidenceSignal,learnerAdaptiveProfile};
+  window.ReadyIntegrationV1={version:VERSION,legacy_learning_logic:'LEGACY_COMPATIBILITY',processAssignment,processConfirmed,reviewEscalatedCarryOver,reviewLearningEvidence,specialistEvidenceSignal,learnerAdaptiveProfile,applyLearningEngineDecision};
   document.documentElement.dataset.readyIntegration=VERSION;
 })();
