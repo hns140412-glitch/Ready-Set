@@ -100,6 +100,11 @@
   <section class="view cream plannerAdminView" id="plannerAdminView" data-view="planner-admin">
     <header class="safe pageHeader"><button data-nav="planner" aria-label="뒤로">←</button><div><span class="kicker">PARENT / ADMIN</span><h1>탐험 일정 관리</h1></div><span></span></header>
     <main class="safe scroll plannerAdminMain">
+      <section class="glassCard adminCard" id="plannerChildContext" hidden>
+        <div class="adminSectionHead"><div><small>LEARNER CONTEXT</small><h2>현재 학습자</h2></div><span>Family</span></div>
+        <label class="inputBlock">아이 선택<select id="plannerChildSelect"></select></label>
+        <p class="muted">선택한 아이의 일정·숙제·학습 결과만 편집합니다.</p>
+      </section>
       <section class="glassCard adminCard">
         <div class="adminSectionHead"><div><small>FIXED SCHEDULE</small><h2>고정 일정</h2></div><button class="miniAction" id="scheduleClearBtn">새 일정</button></div>
         <input id="scheduleId" type="hidden">
@@ -245,6 +250,11 @@
 </div>
 <div id="authLoggedInControls" hidden>
   <button class="btn outline compactBtn" id="authLogoutBtn">로그아웃</button>
+  <div id="familyMemberSection" hidden>
+    <p class="muted">보호자는 가족에 연결된 아이 중 현재 관리할 학습자를 선택할 수 있습니다.</p>
+    <label class="inputBlock">현재 학습자<select id="familyActiveChildSelect"></select></label>
+    <div id="familyMemberList" class="adminList"></div>
+  </div>
   <div id="familyLinkChildSection" hidden>
     <p class="muted">보호자 계정은 이미 가입된 CHILD 계정을 같은 가족으로 연결할 수 있습니다.</p>
     <label class="inputBlock">CHILD 이메일<input id="familyChildEmailInput" type="email" autocomplete="email" placeholder="child@example.com"></label>
