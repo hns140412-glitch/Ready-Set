@@ -270,7 +270,11 @@
       : null;
     const memoryPriority=Number(specialist?.max_memory_review_priority);
     const memoryStrength=Number(specialist?.min_memory_strength);
-    const memoryConcern=(Number.isFinite(memoryPriority)&&memoryPriority>=70)||(Number.isFinite(memoryStrength)&&memoryStrength<60);
+    const adaptiveProfile=signal.learner_adaptive_profile?.authority==='LEARNER_ADAPTIVE_PROFILE_ADVISORY_ONLY'
+      ? signal.learner_adaptive_profile
+      : null;
+    const personalDecline=adaptiveProfile?.trend==='DECLINING'&&Number(adaptiveProfile?.memory_sample_count)>=3;
+    const memoryConcern=(Number.isFinite(memoryPriority)&&memoryPriority>=70)||(Number.isFinite(memoryStrength)&&memoryStrength<60)||personalDecline;
     const productionObserved=Number(specialist?.child_authored_production_count||0)>0;
     return {
       authority:'ADAPTIVE_REVIEW_ONLY',
@@ -281,7 +285,7 @@
       production_evidence_observed:productionObserved,
       recovery_floor:(depth>=4||repeatedFriction>=3||memoryConcern)?'HIGH':repeatedFriction>=2?'MEDIUM':null,
       parent_help_floor:helpBlocked?'HIGH':repeatedFriction>=3?'MEDIUM':null,
-      evidence:{repeated_friction_count:repeatedFriction,carry_over_depth:depth,states:[...states],specialist_evidence:specialist?clone(specialist):null},
+      evidence:{repeated_friction_count:repeatedFriction,carry_over_depth:depth,states:[...states],specialist_evidence:specialist?clone(specialist):null,learner_adaptive_profile:adaptiveProfile?clone(adaptiveProfile):null},
       cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','DEADLINE','ASSIGNMENT_FACT']
     };
   }
