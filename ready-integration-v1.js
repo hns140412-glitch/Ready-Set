@@ -11,7 +11,8 @@
         assignment_id:assignmentId,
         analysis_id:input.analysis_id||null,
         learning_decision_ref:input.learning_decision_ref||null,
-        scheduling_constraints:input.scheduling_constraints||null
+        scheduling_constraints:input.scheduling_constraints||null,
+        force_core_reanalysis:true
       });
       if(!translated.ok)return translated;
       if(translated.execution_status==='HOLD'){
@@ -29,6 +30,7 @@
         learning_decision_ref:input.learning_decision_ref||null,
         scope:translated.scope,
         execution_hints:translated.execution_hints||[],
+        adaptive_plan:translated.adaptive_plan?JSON.parse(JSON.stringify(translated.adaptive_plan)):null,
         specialist_routing_intent:translated.specialist_routing_intent||null,
         cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','DUE_AT','DEADLINE','ASSIGNMENT_FACT','LEARNER_MODEL']
       };
@@ -53,7 +55,18 @@
         };
       }
     }
-    if(fact.analysis_state!=='INTERPRETED'){
+    if(input.force_core_reanalysis===true&&learningDecisionProjection?.adaptive_plan){
+      const learnerContext=input.learner_context||window.ReadySetLearnerContext?.current?.()||null;
+      window.ReadyLearningMasterV01.interpretConfirmed(assignmentId,{
+        actor:'LEARNING_ENGINE_CORE_ADAPTIVE_PLAN',
+        force_review:true,
+        review_reason:'CORE_ADAPTIVE_PLAN',
+        core_adaptive_plan:learningDecisionProjection.adaptive_plan,
+        learner_context:learnerContext
+      });
+      state=window.ReadyAssignments.load();
+      fact=state.assignmentFacts[assignmentId];
+    }else if(fact.analysis_state!=='INTERPRETED'){
       const subject=fact.book_subject||fact.subject||null;
       const profile=window.ReadyLearningMasterV01.PROFILE?.[subject]||null;
       const learningSignal=window.ReadySetPlanner.crossRevisionLearningSignal?.({
@@ -251,7 +264,8 @@
         start_date:input.start_date,
         candidate_dates:input.candidate_dates,
         candidate_windows_by_date:input.candidate_windows_by_date,
-        scheduling_constraints:input.scheduling_constraints||null
+        scheduling_constraints:input.scheduling_constraints||null,
+        force_core_reanalysis:true
       });
       return {
         ...processed,
