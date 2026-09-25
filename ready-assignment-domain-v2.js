@@ -44,8 +44,9 @@
     };
   }
   function createDomain(storage){
-    function load(){try{return normalize(JSON.parse(storage.getItem(STORAGE_KEY)||'null'))}catch{return blank()}}
-    function save(s){const n=normalize(s),payload=JSON.stringify(n);storage.setItem(STORAGE_KEY,payload);globalThis.ReadySetLocalFirst?.capture?.('assignments',payload).catch?.(()=>{});return n}
+    const storageKey=()=>globalThis.ReadySetLocalFirst?.storageKey?.('assignments')||STORAGE_KEY;
+    function load(){try{return normalize(JSON.parse(storage.getItem(storageKey())||'null'))}catch{return blank()}}
+    function save(s){const n=normalize(s),payload=JSON.stringify(n);storage.setItem(storageKey(),payload);globalThis.ReadySetLocalFirst?.capture?.('assignments',payload).catch?.(()=>{});return n}
     function mutate(fn){const s=load(),out=fn(s);save(s);return out}
 
     function upsertWorkbookRef(input={}){
