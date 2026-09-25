@@ -20,8 +20,9 @@
       const beforeSelected=(state.selectedTodoIds||[]).length;
       state.selectedTodoIds=(state.selectedTodoIds||[]).filter(id=>openToday.has(id));
 
+      const hadActiveSession=!!state.activeSession?.id;
       let resumed=false;
-      if(state.activeSession?.id){
+      if(hadActiveSession){
         let status=planner()?.sessionRuntimeStatus?.(state.activeSession.id)||null;
         const sessionIds=new Set((state.activeSession.plannerLinks||[]).map(item=>item.todo_id).filter(Boolean));
         let inProgress=(status?.in_progress||[]).filter(item=>sessionIds.has(item.todo_id));
@@ -52,7 +53,8 @@
         }
       }
 
-      const changed=beforeSelected!==state.selectedTodoIds.length||!state.activeSession||resumed;
+      const activeSessionCleared=hadActiveSession&&!state.activeSession;
+      const changed=beforeSelected!==state.selectedTodoIds.length||activeSessionCleared||resumed;
       if(changed)save();
       return {resumed,changed};
     }
