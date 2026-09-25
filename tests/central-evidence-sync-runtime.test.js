@@ -48,7 +48,7 @@ function fakeOutbox(){
   assert.equal(partialResult.results[0].state,'ACKNOWLEDGED');
   assert.equal(partialResult.results[1].state,'RETAINED_PENDING');
   assert.equal(partialResult.pending_count,1);
-  assert.equal(partialResult.invariant,'NO_PACKET_REMOVED_WITHOUT_REAL_EVIDENCE_RECEIPT_ACK');
+  assert.equal(partialResult.invariant,'NO_PACKET_REMOVED_WITHOUT_IMMUTABLE_CENTRAL_INGEST_ACK');
 
   const success=fakeOutbox();
   const successResult=await Sync.drain({
@@ -58,6 +58,19 @@ function fakeOutbox(){
   assert.equal(successResult.ok,true);
   assert.equal(successResult.pending_count,0);
   assert.equal(successResult.results.every(x=>x.state==='ACKNOWLEDGED'),true);
+
+  const observation=fakeOutbox();
+  const observationResult=await Sync.drain({
+    outbox:observation,
+    transport:{ingest:async()=>({
+      ok:true,
+      acknowledgement_kind:'OBSERVATION_INGEST_RECEIPT',
+      receipt_id:'observation:abc'
+    })}
+  });
+  assert.equal(observationResult.ok,true);
+  assert.equal(observationResult.pending_count,0);
+  assert.equal(observationResult.results[0].acknowledgement_kind,'OBSERVATION_INGEST_RECEIPT');
 
   console.log('READY_CENTRAL_EVIDENCE_SYNC_PASS');
 })().catch(err=>{console.error(err);process.exit(1)});
