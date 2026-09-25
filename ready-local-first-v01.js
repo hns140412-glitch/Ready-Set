@@ -9,9 +9,18 @@
   const SCOPE_KEYS={planner:'readyset_planner_v1',app_state:'readyset_state',assignments:'readyset_assignments_v2'};
   const StorageScope=globalThis.TakyStorageScope;
   if(!StorageScope?.snapshotScope || !StorageScope?.storageKey) throw new Error('READY_STORAGE_SCOPE_UNAVAILABLE');
-  function familySession(){return globalThis.ReadyFamilySession?.current?.()||{authenticated:false,family_id:null,member_id:null}}
-  function scopedScope(logicalScope,session=familySession()){return StorageScope.snapshotScope(logicalScope,session)}
-  function scopedStorageKey(logicalScope,session=familySession()){
+  function familySession(){return globalThis.ReadyFamilySession?.current?.()||{authenticated:false,family_id:null,member_id:null,role:'CHILD'}}
+  function scopeSession(logicalScope){
+    const actor=familySession();
+    if(!actor.authenticated)return actor;
+    if(['planner','assignments'].includes(logicalScope)&&actor.role==='PARENT'){
+      const child=globalThis.ReadyFamilyRegistry?.activeChild?.();
+      if(child?.member_id)return {...actor,member_id:child.member_id};
+    }
+    return actor;
+  }
+  function scopedScope(logicalScope,session=scopeSession(logicalScope)){return StorageScope.snapshotScope(logicalScope,session)}
+  function scopedStorageKey(logicalScope,session=scopeSession(logicalScope)){
     const legacy=SCOPE_KEYS[logicalScope];
     if(!legacy) return null;
     return StorageScope.storageKey(logicalScope,legacy,session);
@@ -58,7 +67,7 @@
     return new Promise((resolve,reject)=>{tx.oncomplete=()=>resolve(row);tx.onerror=()=>reject(tx.error)});
   }
 
-  function toStoredQueue(shared,{scope,logical_scope=null,scope_identity=null,digest,payload,envelope,domain_conflict=null}={}){
+  function toStoredQueue(shared,{scope,logical_scope=null,scope_identity=null,actor_member_id=null,digest,payload,envelope,domain_conflict=null}={}){
     return {
       id:shared.event_id,
       event_id:shared.event_id,
@@ -77,6 +86,7 @@
       scope:scope??null,
       logical_scope:logical_scope??null,
       scope_identity:scope_identity??null,
+      actor_member_id:actor_member_id??null,
       digest:digest??null,
       payload:payload??null,
       envelope:envelope??null,
@@ -108,6 +118,7 @@
       scope:row.scope,
       logical_scope:row.logical_scope||null,
       scope_identity:row.scope_identity||null,
+      actor_member_id:row.actor_member_id||null,
       digest:row.digest,
       payload:row.payload,
       envelope:row.envelope||null,
@@ -127,8 +138,10 @@
   async function capture(scope,payload,options={}){
     const logical_scope=String(scope||'').trim();
     if(!SCOPE_KEYS[logical_scope]) throw new Error('UNKNOWN_READY_SCOPE');
-    const session_at_capture=familySession();
+    const actor_session=familySession();
+    const session_at_capture=scopeSession(logical_scope);
     const scope_identity=scopeIdentity(session_at_capture);
+    const actor_member_id=actor_session.member_id||null;
     const scope_key=scopedScope(logical_scope,session_at_capture);
     const db=await openDb();
     const text=typeof payload==='string'?payload:JSON.stringify(payload);
@@ -138,45 +151,45 @@
       source:'ready-set',
       event_type:'READY_SCOPE_SNAPSHOT_CAPTURED',
       occurred_at:updated_at,
-      payload:{scope:scope_key,logical_scope,scope_identity,digest,payload:text}
+      payload:{scope:scope_key,logical_scope,scope_identity,actor_member_id,digest,payload:text}
     });
     const shared=LocalQueue.create({
       event_id:envelope.event_id,
       idempotency_key:envelope.idempotency_key,
       created_at:updated_at,
       max_attempts:5,
-      metadata:{source:'ready-set',scope:scope_key,logical_scope}
+      metadata:{source:'ready-set',scope:scope_key,logical_scope,actor_member_id}
     });
 
     const tx=db.transaction(['snapshots','outbox'],'readwrite');
-    tx.objectStore('snapshots').put({scope:scope_key,logical_scope,scope_identity,payload:text,digest,updated_at});
+    tx.objectStore('snapshots').put({scope:scope_key,logical_scope,scope_identity,actor_member_id,payload:text,digest,updated_at});
     if(options.enqueue!==false){
-      tx.objectStore('outbox').put(toStoredQueue(shared,{scope:scope_key,logical_scope,scope_identity,digest,payload:text,envelope}));
+      tx.objectStore('outbox').put(toStoredQueue(shared,{scope:scope_key,logical_scope,scope_identity,actor_member_id,digest,payload:text,envelope}));
     }
     return new Promise((resolve,reject)=>{
-      tx.oncomplete=()=>resolve({scope:scope_key,logical_scope,scope_identity,digest,event_id:envelope.event_id});
+      tx.oncomplete=()=>resolve({scope:scope_key,logical_scope,scope_identity,actor_member_id,digest,event_id:envelope.event_id});
       tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
     });
   }
 
   async function recoverMissingScopes(){
-    const session_at_recovery=familySession();
-    const currentIdentity=scopeIdentity(session_at_recovery);
     const rows=await all('snapshots');
     let recovered=0,ignored_other_members=0;
     for(const row of rows){
       const logical=logicalScopeOf(row);
       if(!logical) continue;
-      const expected=scopedScope(logical,session_at_recovery);
+      const recovery_session=scopeSession(logical);
+      const currentIdentity=scopeIdentity(recovery_session);
+      const expected=scopedScope(logical,recovery_session);
       const legacyAnonymous=currentIdentity.mode==='ANONYMOUS_LOCAL'&&row.scope===logical;
       if(row.scope!==expected&&!legacyAnonymous){ignored_other_members++;continue;}
-      const key=scopedStorageKey(logical,session_at_recovery);
+      const key=scopedStorageKey(logical,recovery_session);
       if(key&&localStorage.getItem(key)==null&&row.payload!=null){
         localStorage.setItem(key,row.payload);
         recovered++;
       }
     }
-    return {ok:true,recovered,ignored_other_members,scope_identity:currentIdentity,reload_required:recovered>0};
+    return {ok:true,recovered,ignored_other_members,reload_required:recovered>0};
   }
 
   async function resolveConflict(conflictId,resolution){
@@ -246,6 +259,7 @@
             scope:working.scope,
             logical_scope:working.logical_scope||null,
             scope_identity:working.scope_identity||null,
+            actor_member_id:working.actor_member_id||null,
             local_payload:working.payload,
             remote_payload:result.remote_payload??null,
             status:'OPEN',
@@ -291,6 +305,7 @@
     storageKey:scopedStorageKey,
     snapshotScope:scopedScope,
     scopeIdentity,
+    scopeSession,
     recoverMissingScopes,
     resolveConflict,
     outbox:()=>all('outbox').then(rows=>rows.map(publicScopedRow)),
