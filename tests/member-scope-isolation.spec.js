@@ -222,3 +222,42 @@ test('active member gates local-first recovery, flush and conflict handling', as
   expect(result.bVisible.every(scope=>scope.startsWith('member:CHILD_B:'))).toBe(true);
   expect(result.crossResolve).toEqual({ok:false,reason:'MEMBER_SCOPE_FORBIDDEN'});
 });
+
+
+test('idle recovery does not overwrite scoped app state while switching member context', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', {waitUntil:'load'});
+  const result=await page.evaluate(()=>{
+    const originalFamily=window.ReadyFamilySession;
+    const makeSession=id=>({
+      current:()=>({authenticated:true,family_id:'FAMILY_TEST',member_id:id,role:'CHILD'}),
+      requireRole:()=>({ok:true})
+    });
+    const setMember=id=>{ window.ReadyFamilySession=makeSession(id); };
+
+    const persistence=window.ReadyRebuildAppPersistence.create({
+      initial:{schemaVersion:5,profile:{name:'',birthdate:'',photo:'',style:'editorial',shareAvatar:false},guide:{}},
+      storageKey:()=>window.ReadyMemberScope.storageKey('readyset_state'),
+      storage:localStorage,
+      localFirst:null
+    });
+    const recovery=window.ReadyRebuildSessionRecoveryController.create({
+      getState:()=>({schemaVersion:5,profile:{name:'',birthdate:'',photo:'',style:'editorial',shareAvatar:false},selectedTodoIds:[],activeSession:null}),
+      save:()=>persistence.save({schemaVersion:5,profile:{name:'',birthdate:'',photo:'',style:'editorial',shareAvatar:false},guide:{}}),
+      planner:()=>window.ReadySetPlanner,
+      plannerQuery:{snapshot:()=>({dated_todos:[]})},
+      localDateKey:()=>new Date().toLocaleDateString('sv-SE')
+    });
+
+    setMember('CHILD_A');
+    persistence.save({schemaVersion:5,profile:{name:'A',birthdate:'2015-01-01',photo:'',style:'editorial',shareAvatar:false},guide:{}});
+    const before=persistence.load().profile.name;
+    const rec=recovery.reconcile();
+    const after=persistence.load().profile.name;
+    window.ReadyFamilySession=originalFamily;
+    return {before,after,changed:rec.changed};
+  });
+
+  expect(result.before).toBe('A');
+  expect(result.changed).toBe(false);
+  expect(result.after).toBe('A');
+});
