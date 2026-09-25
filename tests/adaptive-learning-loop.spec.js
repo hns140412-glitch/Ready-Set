@@ -88,7 +88,50 @@ test('repeated PARTIAL carry feeds specialist evidence back into Learning Master
     carry=p.carryOverCandidates().find(x=>x.source_todo_id===todo.todo_id);
     const escalation=p.replanCarryOver({carry_over_id:carry.carry_over_id,date:addDays(seeded.today,3),max_auto_depth:2});
 
-    const review=window.ReadyIntegrationV1.reviewEscalatedCarryOver(carry.carry_over_id,{start_date:addDays(seeded.today,3)});
+    const beforeDomain=window.ReadyAssignments.load();
+    const beforeFact=beforeDomain.assignmentFacts[seeded.assignment_id];
+    const beforeAnalysis=beforeDomain.analyses[beforeFact.current_analysis_id];
+    const beforeUnit=beforeDomain.learningUnits[beforeAnalysis.learning_unit_ids[0]];
+    const decision={
+      ok:true,
+      decision_contract:'TAKY_RUNTIME_DECISION_CONTRACT_V1',
+      authority:'LEARNING_DECISION_INTENT_ONLY',
+      scope:{
+        member_id:window.ReadyFamilySession?.current?.()?.member_id||'TEST_PARENT',
+        subject:beforeUnit.subject,
+        concept_skill_target:beforeUnit.concept_skill_target
+      },
+      blockers:[],
+      advisories:[],
+      pedagogical_actions:[
+        {intent:'TARGETED_RECOVERY_PRACTICE',priority:'HIGH',bases:['UNRESOLVED_RECOVERY'],targets:['math_memory_proxy']},
+        {intent:'RETRIEVAL_CHECKPOINT',priority:'HIGH',bases:['RETENTION_AT_RISK'],targets:['math_memory_proxy']}
+      ],
+      adaptive_plan:{
+        ok:true,
+        adaptive_plan_contract:'TAKY_ADAPTIVE_PLAN_INTENT_V1',
+        authority:'LEARNING_ADAPTIVE_PLAN_INTENT_ONLY',
+        unit_span_policy:'REDUCE',
+        add_checkpoint:true,
+        add_retrieval_checkpoint:true,
+        recovery_floor:'HIGH',
+        assistance_policy:'UNCHANGED',
+        target_learning_ids:['math_memory_proxy'],
+        rationale:[{intent:'TARGETED_RECOVERY_PRACTICE',priority:'HIGH',bases:['UNRESOLVED_RECOVERY']}],
+        cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','DUE_AT','DEADLINE','ASSIGNMENT_FACT']
+      },
+      execution_status:'PEDAGOGICAL_ACTION_AVAILABLE',
+      consumer_contract:{
+        ready:'MAY_TRANSLATE_INTENT_TO_EXECUTION_PLAN',
+        planner:'OWNS_DATED_ALLOCATION',
+        specialist:'OWNS_INTERACTION_EXECUTION_AND_EVIDENCE'
+      }
+    };
+    const review=window.ReadyIntegrationV1.reviewEscalatedCarryOver(carry.carry_over_id,{
+      start_date:addDays(seeded.today,3),
+      learning_decision:decision,
+      learning_decision_ref:'decision:adaptive-learning-loop'
+    });
     const domain=window.ReadyAssignments.load();
     const fact=domain.assignmentFacts[seeded.assignment_id];
     const analysis=domain.analyses[fact.current_analysis_id];
@@ -108,9 +151,11 @@ test('repeated PARTIAL carry feeds specialist evidence back into Learning Master
   expect(reviewed.escalation.reason).toBe('CARRY_OVER_ESCALATION_REQUIRED');
   expect(reviewed.escalation.escalation_level).toBe('PARENT_LEARNING_MASTER_REVIEW');
   expect(reviewed.review.ok).toBe(true);
+  expect(reviewed.review.legacy_learning_logic_used).toBe(false);
 
   expect(reviewed.fact.current_analysis_id).not.toBe(seeded.initial_analysis_id);
   expect(reviewed.fact.previous_analysis_ids).toContain(seeded.initial_analysis_id);
+  expect(reviewed.analysis.adaptive_review_policy.authority).toBe('CORE_ADAPTIVE_PLAN_APPLIED');
   expect(reviewed.analysis.adaptive_review_policy.reduce_unit_span).toBe(true);
   expect(reviewed.analysis.adaptive_review_policy.add_retrieval_checkpoint).toBe(true);
   expect(reviewed.analysis.adaptive_review_policy.recovery_floor).toBe('HIGH');
