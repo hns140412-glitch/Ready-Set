@@ -138,3 +138,27 @@ Remaining compatibility HOLD:
 - production/merge/Netlify remain HOLD.
 
 END
+
+## 10. Default fail-closed Core authority
+
+Current default:
+- reviewLearningEvidence requires learning_decision.
+- reviewEscalatedCarryOver requires learning_decision.
+- without a Core decision both APIs return LEARNING_DECISION_REQUIRED.
+- legacy learnerAdaptiveProfile / memoryConcern / direct ReadyLearningMaster review is reachable only with explicit allow_legacy_learning_logic=true.
+- no discovered adaptive/review regression caller uses the legacy fallback after migration.
+- Core-driven review is idempotent by learning_decision_ref.
+- repeated identical Core decision returns LEARNING_EVIDENCE_ALREADY_REVIEWED without regenerating analysis/TODOs.
+
+Migrated regressions:
+- core-adaptive-plan-integration.spec.js
+- adaptive-learning-loop.spec.js
+- recurring-adaptive-memory-loop.spec.js
+- learning-evidence-review-idempotency.spec.js
+
+Compatibility retention:
+- legacy code remains physically present for controlled fallback/recovery only.
+- physical presence does not confer Learning Engine authority.
+- remove only after final branch-wide runtime/replay closure and explicit cleanup decision.
+
+END
