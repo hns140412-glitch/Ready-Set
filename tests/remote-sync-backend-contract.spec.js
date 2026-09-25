@@ -90,6 +90,45 @@ test('remote sync core: conflicting payload returns explicit 409 inside one fami
   expect(conflict.body.remote_payload).toBe('{"version":"remote"}');
 });
 
+
+
+test('remote sync core: parent actor and learner member remain distinct', async ()=>{
+  const store=memoryStore();
+  const service=createSyncService(store,{
+    namespace:'family_a',
+    member_id:'child_a',
+    actor_member_id:'parent_a',
+    actor_role:'PARENT'
+  });
+  const result=await service.putEvent({
+    event_id:'evt_parent_child',
+    idempotency_key:'idem_parent_child',
+    scope:'planner',
+    logical_scope:'planner',
+    scope_identity:{family_id:'family_a',member_id:'child_a'},
+    actor_member_id:'parent_a',
+    digest:'digest-parent-child',
+    payload:'{"x":1}'
+  });
+  expect(result.status).toBe(200);
+  const record=JSON.parse([...store.snapshot().values()][0]);
+  expect(record.member_id).toBe('child_a');
+  expect(record.actor_member_id).toBe('parent_a');
+  expect(record.actor_role).toBe('PARENT');
+
+  const spoof=await service.putEvent({
+    event_id:'evt_actor_spoof',
+    idempotency_key:'idem_actor_spoof',
+    scope:'planner',
+    scope_identity:{family_id:'family_a',member_id:'child_a'},
+    actor_member_id:'other_parent',
+    digest:'digest-spoof',
+    payload:'{"x":2}'
+  });
+  expect(spoof.status).toBe(403);
+  expect(spoof.body.reason).toBe('ACTOR_SCOPE_MISMATCH');
+});
+
 test('Identity family mapping: Parent gets stable family namespace and Child requires membership', async ()=>{
   const parent=familyCore.familySessionFromIdentityUser({id:'parent_1',email:'p@example.test',roles:['PARENT'],appMetadata:{roles:['PARENT']}});
   expect(parent.ok).toBeTruthy();
