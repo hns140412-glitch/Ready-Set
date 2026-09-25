@@ -13,8 +13,8 @@ function store(){
 }
 async function readState(s,familyId,memberId){
   const raw=await s.get(worldCore.keyFor(familyId,memberId));
-  if(!raw)return World.blank(memberId);
-  try{return World.normalize(typeof raw==='string'?JSON.parse(raw):raw)}catch{return World.blank(memberId)}
+  if(!raw)return World.empty(memberId);
+  try{return World.normalize(typeof raw==='string'?JSON.parse(raw):raw)}catch{return World.empty(memberId)}
 }
 async function writeState(s,familyId,memberId,state){
   const normalized=World.normalize({...state,member_id:memberId});
@@ -47,9 +47,10 @@ export default async function handler(req){
     if(!allowed.ok)return Response.json({ok:false,reason:allowed.reason},{status:allowed.status||403});
     let body={}; try{body=await req.json()}catch{return Response.json({ok:false,reason:'INVALID_JSON'},{status:400})}
     const current=await readState(s,actor.session.family_id,targetId);
-    const applied=worldCore.applyOperation(current,body.operation||body);
+    const event=body.event||body.operation||body;
+    const applied=worldCore.applyEvent(current,event);
     if(!applied.ok)return Response.json({ok:false,reason:applied.reason},{status:400});
-    const state=await writeState(s,actor.session.family_id,targetId,applied.state);
+    const state=await writeState(s,actor.session.family_id,targetId,applied.world);
     return Response.json({ok:true,state,reason:applied.reason||'UPDATED'});
   }
 
