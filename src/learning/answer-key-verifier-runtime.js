@@ -1,4 +1,9 @@
-'use strict';
+(function(root,factory){
+  const api=factory();
+  if(typeof module!=='undefined'&&module.exports)module.exports=api;
+  if(root)root.ReadyAnswerKeyVerifier=api;
+})(typeof globalThis!=='undefined'?globalThis:this,function(){
+  'use strict';
 
 const clean=v=>String(v??'').trim();
 
@@ -29,4 +34,5 @@ function exactMatch({event_id,member_id,subject,concept_skill_target,response,an
   };
 }
 
-module.exports=Object.freeze({normalizeAnswer,exactMatch});
+  return Object.freeze({normalizeAnswer,exactMatch});
+});
