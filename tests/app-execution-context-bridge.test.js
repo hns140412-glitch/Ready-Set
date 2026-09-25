@@ -16,3 +16,6 @@ console.log('READY_APP_EXECUTION_CONTEXT_BRIDGE_PASS');
 assert(src.includes("ReadyFamilyRegistry?.activeChild?.()"));
 assert(src.includes('actor_member_id: family.member_id || null'));
 assert(src.includes('member_display_name'));
+
+assert(src.includes('TakyExplorationEvent'));
+assert(src.includes("taky-exploration-event"));
