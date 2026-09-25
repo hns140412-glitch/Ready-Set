@@ -122,11 +122,15 @@
     const anchor=Number.isFinite(asOf)?asOf:Date.now();
     const cutoff=anchor-1000*60*60*24*90;
     const seen=new Set();
+    const cleanKey=value=>String(value??'').trim();
+    const memberId=cleanKey(options.member_id||'');
+    const subject=cleanKey(options.subject||'').toLowerCase();
     const recent=(rows||[]).filter(row=>{
+      if(memberId&&cleanKey(row?.member_id||row?.learner_id||'')&&cleanKey(row?.member_id||row?.learner_id||'')!==memberId)return false;
+      if(subject&&cleanKey(row?.subject||row?.book_subject||'')&&cleanKey(row?.subject||row?.book_subject||'').toLowerCase()!==subject)return false;
       const stamp=Date.parse(row?.at||row?.created_at||row?.updated_at||'');
       return !Number.isFinite(stamp)||stamp>=cutoff;
     }).slice(-12);
-    const cleanKey=value=>String(value??'').trim();
     const evidence=recent.flatMap((row,rowIndex)=>(Array.isArray(row.learning_evidence)?row.learning_evidence:[]).map((e,eIndex)=>({e,row,rowIndex,eIndex})))
       .filter(({e,row,rowIndex,eIndex})=>{
         const key=cleanKey(e?.evidence_id||e?.event_id||e?.session_id||row?.session_id||row?.execution_observation_id||'')||
@@ -149,6 +153,8 @@
       observation_count:recent.length,
       unique_evidence_count:evidence.length,
       freshness_window_days:90,
+      member_scope:memberId||null,
+      subject_scope:subject||null,
       memory_sample_count:strengths.length,
       baseline_memory_strength:Number.isFinite(baseline)?Math.round(baseline*10)/10:null,
       latest_memory_strength:latest,
