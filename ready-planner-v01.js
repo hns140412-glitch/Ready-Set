@@ -1713,6 +1713,30 @@
       }));
     }
 
+    function applySpecialistMaterialBinding(input={}){
+      const binding=input&&typeof input==='object'?JSON.parse(JSON.stringify(input)):null;
+      if(!binding||binding.confirmation_state!=='HUMAN_CONFIRMED')return {ok:false,reason:'CONFIRMED_BINDING_REQUIRED'};
+      const assignmentId=cleanText(binding.assignment_id);
+      const specialistApp=cleanText(binding.specialist_app).toLowerCase();
+      const materialId=cleanText(binding.specialist_material_id);
+      if(!assignmentId||!specialistApp||!materialId)return {ok:false,reason:'SPECIALIST_BINDING_ID_REQUIRED'};
+      return mutate(s=>{
+        let updated=0;
+        for(const todo of s.dated_todos||[]){
+          if(todo.assignment_id!==assignmentId)continue;
+          if(cleanText(todo.execution_app).toLowerCase()!==specialistApp)continue;
+          if(cleanText(todo.source_range)!==cleanText(binding.source_range))continue;
+          if(cleanText(todo.workbook_ref_id)!==cleanText(binding.workbook_ref_id))continue;
+          if(cleanText(todo.concept_skill_target).toUpperCase()!==cleanText(binding.concept_skill_target).toUpperCase())continue;
+          if(['COMPLETED','SUPERSEDED'].includes(todo.state))continue;
+          todo.specialist_material_binding=JSON.parse(JSON.stringify(binding));
+          todo.updated_at=new Date().toISOString();
+          updated++;
+        }
+        return {ok:true,updated_todos:updated,binding_id:binding.binding_id||null};
+      });
+    }
+
     function validate(){
       const s=load(),issues=[];
       const todoIds=new Set();
@@ -1771,6 +1795,7 @@
       recentEstimateEvidence,
       crossRevisionLearningSignal,
       learningHistory,
+      applySpecialistMaterialBinding,
       proposeEstimateAdjustment,
       decideEstimateAdjustment,
       pendingEstimateAdjustments,
