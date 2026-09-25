@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - taky/ready-integration-v01
+      - taky/learning-consumer-adapter-2026-09-25
   pull_request:
     branches:
       - main
@@ -22,6 +23,8 @@ jobs:
         run: node .github/scripts/ready_planner_contract_test.js
       - name: Assignment and Learning Master contract
         run: node .github/scripts/ready_learning_master_contract_test.js
+      - name: Learning consumer adapter contract
+        run: node .github/scripts/ready_learning_consumer_adapter_test.js
 
   learning-master-contract:
     runs-on: ubuntu-latest
