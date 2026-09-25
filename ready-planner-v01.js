@@ -749,7 +749,7 @@
           proposals.push({
             decision:'PROPOSE',date,label:template.title,subject:unit.subject,assignment_id:assignmentId,analysis_id:analysis.analysis_id,
             fact_revision:Number(fact.fact_revision)||1,
-            learning_unit_id:unit.learning_unit_id,template_id:templateId,
+            learning_unit_id:unit.learning_unit_id,source_range:unit.source_range||null,workbook_ref_id:fact.workbook_ref_id||null,template_id:templateId,
             activity_types:unit.activity_types,
             activity_sequence:unit.activity_sequence||[],
             matched_domain:unit.analysis_provenance?.learning_reference?.matched_domain||null,
