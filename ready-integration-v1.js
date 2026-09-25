@@ -3,6 +3,36 @@
   const VERSION='2026.09.22-evidence-aware-review-v2';
   function processAssignment(assignmentId,input={}){
     if(!window.ReadyAssignments||!window.ReadyLearningMasterV01||!window.ReadySetPlanner)return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
+    let learningDecisionProjection=null;
+    if(input.learning_decision){
+      const adapter=window.ReadyLearningEngineAdapterV2;
+      if(!adapter?.translate)return {ok:false,reason:'LEARNING_ENGINE_ADAPTER_V2_MISSING'};
+      const translated=adapter.translate(input.learning_decision,{
+        assignment_id:assignmentId,
+        analysis_id:input.analysis_id||null,
+        learning_decision_ref:input.learning_decision_ref||null,
+        scheduling_constraints:input.scheduling_constraints||null
+      });
+      if(!translated.ok)return translated;
+      if(translated.execution_status==='HOLD'){
+        return {
+          ok:false,
+          reason:'LEARNING_DECISION_HOLD',
+          assignment_id:assignmentId,
+          authority:'READY_EXECUTION_ADAPTER_ONLY',
+          translated
+        };
+      }
+      learningDecisionProjection={
+        authority:'READY_EXECUTION_ADAPTER_ONLY',
+        source_decision_contract:translated.source_decision_contract||null,
+        learning_decision_ref:input.learning_decision_ref||null,
+        scope:translated.scope,
+        execution_hints:translated.execution_hints||[],
+        specialist_routing_intent:translated.specialist_routing_intent||null,
+        cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','DUE_AT','DEADLINE','ASSIGNMENT_FACT','LEARNER_MODEL']
+      };
+    }
     let state=window.ReadyAssignments.load(),fact=state.assignmentFacts[assignmentId];
     if(!fact)return {ok:false,reason:'ASSIGNMENT_FACT_NOT_FOUND'};
     if(fact.confirmation_state!=='FACT_CONFIRMED')return {ok:false,reason:'FACT_NOT_CONFIRMED'};
@@ -41,7 +71,14 @@
       });
       state=window.ReadyAssignments.load();fact=state.assignmentFacts[assignmentId];
     }
-    const allocation=window.ReadySetPlanner.allocateLearningUnits({assignment_id:assignmentId,domain_state:state,start_date:input.start_date,candidate_dates:input.candidate_dates,candidate_windows_by_date:input.candidate_windows_by_date});
+    const allocation=window.ReadySetPlanner.allocateLearningUnits({
+      assignment_id:assignmentId,
+      domain_state:state,
+      start_date:input.start_date,
+      candidate_dates:input.candidate_dates,
+      candidate_windows_by_date:input.candidate_windows_by_date,
+      learning_decision_projection:learningDecisionProjection
+    });
     if(!allocation.ok)return {...allocation,revision_impact:revisionImpact};
     const committed=window.ReadySetPlanner.commitLearningAllocation(allocation.allocation_run_id);
     if(committed.ok&&fact.planner_revision_pending){
@@ -50,7 +87,15 @@
         allocation_run_id:allocation.allocation_run_id
       });
     }
-    return {ok:committed.ok,assignment_id:assignmentId,analysis_id:fact.current_analysis_id,allocation_run_id:allocation.allocation_run_id,todos:committed.created||[],revision_impact:revisionImpact};
+    return {
+      ok:committed.ok,
+      assignment_id:assignmentId,
+      analysis_id:fact.current_analysis_id,
+      allocation_run_id:allocation.allocation_run_id,
+      todos:committed.created||[],
+      revision_impact:revisionImpact,
+      learning_decision_projection:learningDecisionProjection
+    };
   }
   function specialistEvidenceSignal(rows=[]){
     const evidence=(rows||[]).flatMap(x=>Array.isArray(x.learning_evidence)?x.learning_evidence:[]);
@@ -271,31 +316,16 @@
   }
 
   function applyLearningEngineDecision(decision={},input={}){
-    const adapter=window.ReadyLearningEngineAdapterV2;
-    if(!adapter?.translate)return {ok:false,reason:'LEARNING_ENGINE_ADAPTER_V2_MISSING'};
-    const translated=adapter.translate(decision,{
-      assignment_id:input.assignment_id,
-      analysis_id:input.analysis_id,
-      learning_decision_ref:input.learning_decision_ref,
-      scheduling_constraints:input.scheduling_constraints||null
+    const assignmentId=String(input.assignment_id||'').trim();
+    if(!assignmentId)return {ok:false,reason:'ASSIGNMENT_ID_REQUIRED'};
+    const processed=processAssignment(assignmentId,{
+      ...input,
+      learning_decision:decision
     });
-    if(!translated.ok)return translated;
-    if(translated.execution_status==='HOLD'){
-      return {
-        ok:true,
-        authority:'READY_EXECUTION_ADAPTER_ONLY',
-        execution_status:'HOLD',
-        translated,
-        planner_called:false
-      };
-    }
     return {
-      ok:true,
+      ...processed,
       authority:'READY_EXECUTION_ADAPTER_ONLY',
-      execution_status:'READY_FOR_PLANNER_ALLOCATION',
-      translated,
-      planner_called:false,
-      note:'Adapter V2 preserves Core intent. Planner allocation remains a separate Ready/Planner operation.'
+      planner_called:processed?.reason!=='LEARNING_DECISION_HOLD'&&processed?.reason!=='LEARNING_ENGINE_ADAPTER_V2_MISSING'
     };
   }
 
