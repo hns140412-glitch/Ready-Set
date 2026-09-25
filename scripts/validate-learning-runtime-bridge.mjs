@@ -8,7 +8,7 @@ const required=[
   'learning_engine_does_not_write_schedule:true',
   'preferred_date:null',
   'planner_date:null',
-  "data.type!=='TAKY_LEARNING_ACTION'"
+  "data.type==='TAKY_LEARNING_ACTION'"
 ];
 for(const token of required){if(!s.includes(token))throw new Error('MISSING:'+token);}
 if(!s.includes('accepted_for_planner:!!action.planner_allocation_allowed'))throw new Error('PLANNER_ACCEPTANCE_GATE_MISSING');
