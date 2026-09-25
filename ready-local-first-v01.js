@@ -10,13 +10,13 @@
   const StorageScope=globalThis.TakyStorageScope;
   if(!StorageScope?.snapshotScope || !StorageScope?.storageKey) throw new Error('READY_STORAGE_SCOPE_UNAVAILABLE');
   function familySession(){return globalThis.ReadyFamilySession?.current?.()||{authenticated:false,family_id:null,member_id:null}}
-  function scopedScope(logicalScope){return StorageScope.snapshotScope(logicalScope,familySession())}
-  function scopedStorageKey(logicalScope){
+  function scopedScope(logicalScope,session=familySession()){return StorageScope.snapshotScope(logicalScope,session)}
+  function scopedStorageKey(logicalScope,session=familySession()){
     const legacy=SCOPE_KEYS[logicalScope];
     if(!legacy) return null;
-    return StorageScope.storageKey(logicalScope,legacy,familySession());
+    return StorageScope.storageKey(logicalScope,legacy,session);
   }
-  function scopeIdentity(){return StorageScope.identity(familySession())}
+  function scopeIdentity(session=familySession()){return StorageScope.identity(session)}
   function logicalScopeOf(row={}){
     if(row.logical_scope&&SCOPE_KEYS[row.logical_scope])return row.logical_scope;
     if(SCOPE_KEYS[row.scope])return row.scope;
@@ -118,12 +118,13 @@
   async function capture(scope,payload,options={}){
     const logical_scope=String(scope||'').trim();
     if(!SCOPE_KEYS[logical_scope]) throw new Error('UNKNOWN_READY_SCOPE');
+    const session_at_capture=familySession();
+    const scope_identity=scopeIdentity(session_at_capture);
+    const scope_key=scopedScope(logical_scope,session_at_capture);
     const db=await openDb();
     const text=typeof payload==='string'?payload:JSON.stringify(payload);
     const digest=EventEnvelope.digest(text);
     const updated_at=now();
-    const scope_identity=scopeIdentity();
-    const scope_key=scopedScope(logical_scope);
     const envelope=EventEnvelope.create({
       source:'ready-set',
       event_type:'READY_SCOPE_SNAPSHOT_CAPTURED',
@@ -150,16 +151,17 @@
   }
 
   async function recoverMissingScopes(){
+    const session_at_recovery=familySession();
+    const currentIdentity=scopeIdentity(session_at_recovery);
     const rows=await all('snapshots');
-    const currentIdentity=scopeIdentity();
     let recovered=0,ignored_other_members=0;
     for(const row of rows){
       const logical=logicalScopeOf(row);
       if(!logical) continue;
-      const expected=scopedScope(logical);
+      const expected=scopedScope(logical,session_at_recovery);
       const legacyAnonymous=currentIdentity.mode==='ANONYMOUS_LOCAL'&&row.scope===logical;
       if(row.scope!==expected&&!legacyAnonymous){ignored_other_members++;continue;}
-      const key=scopedStorageKey(logical);
+      const key=scopedStorageKey(logical,session_at_recovery);
       if(key&&localStorage.getItem(key)==null&&row.payload!=null){
         localStorage.setItem(key,row.payload);
         recovered++;
