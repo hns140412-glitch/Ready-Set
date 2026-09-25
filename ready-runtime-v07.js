@@ -38,6 +38,12 @@
       payload
     };
     c.events = [...(c.events || []), event].slice(-200);
+    try{
+      const task=currentTask(c);
+      const identity=currentExecutionIdentity(task,c);
+      const exploration=globalThis.TakyExplorationEvent?.fromAppEvent?.({...event,...identity});
+      if(exploration)window.dispatchEvent(new CustomEvent('taky-exploration-event',{detail:exploration}));
+    }catch{}
     save();
     return event;
   }
