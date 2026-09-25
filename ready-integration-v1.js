@@ -107,15 +107,6 @@
     });
     const resolved=window.ReadySetPlanner.resolveCarryOver?.(carryOverId,{resolution:'CANCEL',actor:'PARENT_LEARNING_MASTER_REVIEW'});
     const processed=processAssignment(assignmentId,{start_date:input.start_date});
-    if(processed?.ok){
-      window.ReadyAssignments.markEvidenceReview?.(assignmentId,{
-        review_key:reviewKey,
-        analysis_id:reviewed?.analysis?.analysis_id||null,
-        evidence_count:evidenceKeys.length,
-        member_id:activeMember,
-        subject:factSubject
-      });
-    }
     return {
       ok:!!processed?.ok,
       assignment_id:assignmentId,
@@ -247,6 +238,15 @@
       candidate_windows_by_date:input.candidate_windows_by_date,
       learner_context:learnerContext
     });
+    if(processed?.ok){
+      window.ReadyAssignments.markEvidenceReview?.(assignmentId,{
+        review_key:reviewKey,
+        analysis_id:reviewed?.analysis?.analysis_id||null,
+        evidence_count:evidenceKeys.length,
+        member_id:activeMember,
+        subject:factSubject
+      });
+    }
     return {
       ok:!!processed?.ok,
       assignment_id:assignmentId,
