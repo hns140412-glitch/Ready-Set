@@ -54,7 +54,8 @@ test('consolidated recurring learning journey closes the full Ready -> Hide -> e
       initial_analysis_id:confirmed.current_analysis_id,
       today:dateKey(today),
       today_todo:todayTodo||null,
-      recurring_days:recurringDays
+      recurring_days:recurringDays,
+      candidate_dates:candidateDates
     };
   });
 
@@ -108,6 +109,60 @@ test('consolidated recurring learning journey closes the full Ready -> Hide -> e
   await expect(page.locator('#rev07ConfirmEnd')).toBeEnabled();
   await page.locator('#rev07ConfirmEnd').click();
   await expect(page.locator('#resultView')).toHaveClass(/active/);
+
+  const coreReview=await page.evaluate(seed=>{
+    const decision={
+      ok:true,
+      decision_contract:'TAKY_RUNTIME_DECISION_CONTRACT_V1',
+      authority:'LEARNING_DECISION_INTENT_ONLY',
+      scope:{
+        member_id:'TEST_PARENT',
+        subject:'영어',
+        concept_skill_target:'VOCABULARY'
+      },
+      blockers:[],
+      advisories:[],
+      pedagogical_actions:[
+        {intent:'TARGETED_RECOVERY_PRACTICE',priority:'HIGH',bases:['SPECIALIST_MEMORY_CONCERN']},
+        {intent:'RETRIEVAL_CHECKPOINT',priority:'HIGH',bases:['RETENTION_AT_RISK']}
+      ],
+      adaptive_plan:{
+        ok:true,
+        adaptive_plan_contract:'TAKY_ADAPTIVE_PLAN_INTENT_V1',
+        authority:'LEARNING_ADAPTIVE_PLAN_INTENT_ONLY',
+        scope:{
+          member_id:'TEST_PARENT',
+          subject:'영어',
+          concept_skill_target:'VOCABULARY'
+        },
+        unit_span_policy:'UNCHANGED',
+        add_checkpoint:true,
+        add_retrieval_checkpoint:true,
+        recovery_floor:'HIGH',
+        assistance_policy:'UNCHANGED',
+        target_learning_ids:[],
+        rationale:[
+          {intent:'TARGETED_RECOVERY_PRACTICE',priority:'HIGH',bases:['SPECIALIST_MEMORY_CONCERN']}
+        ],
+        can_influence:['LEARNING_UNIT_SPAN_POLICY','ACTIVITY_SEQUENCE','RECOVERY_INTENSITY','CHECKPOINT_SELECTION'],
+        cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','DUE_AT','DEADLINE','ASSIGNMENT_FACT','SUBJECT_SOURCE_FACT']
+      },
+      execution_status:'PEDAGOGICAL_ACTION_AVAILABLE',
+      consumer_contract:{
+        ready:'MAY_TRANSLATE_INTENT_TO_EXECUTION_PLAN',
+        planner:'OWNS_DATED_ALLOCATION',
+        specialist:'OWNS_INTERACTION_EXECUTION_AND_EVIDENCE'
+      }
+    };
+    return window.ReadyIntegrationV1.reviewLearningEvidence(seed.assignment_id,{
+      learning_decision:decision,
+      learning_decision_ref:'decision:consolidated-learning-journey',
+      candidate_dates:seed.candidate_dates,
+      start_date:seed.today
+    });
+  },seeded);
+  expect(coreReview.ok).toBe(true);
+  expect(coreReview.legacy_learning_logic_used).toBe(false);
 
   const finalState=await expect.poll(async()=>page.evaluate(({assignment_id,initial_analysis_id,today,recurring_days})=>{
     const domain=window.ReadyAssignments.load();
