@@ -50,7 +50,7 @@ test('Learning Engine interprets recurring English work and Planner materializes
   const vocabTodos=data.todos.filter(x=>x.concept_skill_target==='VOCABULARY');
   expect(vocabTodos.map(x=>x.date).sort()).toEqual(['2026-09-21','2026-09-23','2026-09-25']);
   expect(new Set(vocabTodos.map(x=>x.execution_app))).toEqual(new Set(['hide-seek']));
-  expect(vocabTodos.every(x=>x.execution_plan?.authority==='READY_LEARNING_ENGINE_ROUTING')).toBeTruthy();
+  expect(vocabTodos.every(x=>x.execution_plan?.authority==='READY_EXECUTION_ROUTING')).toBeTruthy();
   expect(vocabTodos.every(x=>x.source_range==='Unit 3')).toBeTruthy();
   expect(vocabTodos.every(x=>x.workbook_ref_id==='recurring_book')).toBeTruthy();
 
