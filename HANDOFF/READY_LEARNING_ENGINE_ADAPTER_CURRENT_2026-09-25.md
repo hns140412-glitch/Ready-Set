@@ -162,3 +162,33 @@ Compatibility retention:
 - remove only after final branch-wide runtime/replay closure and explicit cleanup decision.
 
 END
+
+## 11. Legacy learning logic extraction closure
+
+STATE: CLOSED / APPLIED
+
+Completed:
+- default adaptive review requires an independent Core Runtime Decision.
+- reviewLearningEvidence and reviewEscalatedCarryOver fail closed without learning_decision.
+- Core Adaptive Plan drives unit-span reduction, retrieval checkpoints, recovery intensity and target learning IDs.
+- Ready Adapter V2 translates only; it does not derive learner state.
+- Planner preserves Core decision/adaptive-plan provenance but owns all dated allocation.
+- legacy learnerAdaptiveProfile, memoryConcern and legacy adaptive review calculations were physically isolated into:
+  - src/learning/legacy-ready-learning-compat.js
+- ready-integration-v1.js and ready-learning-master-v01.js no longer contain the legacy threshold calculations.
+- explicit compatibility code is retained only for recovery/lineage and requires explicit allow_legacy_learning_logic=true.
+- compatibility presence != runtime authority.
+
+Validation:
+- legacy compatibility isolation unit gate: GREEN
+- Core adaptive plan integration: GREEN
+- migrated carry-over adaptive loop: GREEN
+- migrated recurring memory adaptive loop: GREEN
+- Core decision idempotency review: GREEN
+- full Ready Runtime E2E run 36134910799: SUCCESS
+
+Remaining:
+- estimator promotion is a TAKY Learning Engine Core concern, not a Ready concern.
+- production / merge / Netlify deployment remains HOLD until explicitly authorized.
+
+END
