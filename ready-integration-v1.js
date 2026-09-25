@@ -11,8 +11,7 @@
         assignment_id:assignmentId,
         analysis_id:input.analysis_id||null,
         learning_decision_ref:input.learning_decision_ref||null,
-        scheduling_constraints:input.scheduling_constraints||null,
-        force_core_reanalysis:true
+        scheduling_constraints:input.scheduling_constraints||null
       });
       if(!translated.ok)return translated;
       if(translated.execution_status==='HOLD'){
@@ -152,7 +151,8 @@
         assignment_id:assignmentId,
         learning_decision_ref:input.learning_decision_ref||null,
         start_date:input.start_date,
-        scheduling_constraints:input.scheduling_constraints||null
+        scheduling_constraints:input.scheduling_constraints||null,
+        force_core_reanalysis:true
       });
       if(processed?.ok){
         window.ReadySetPlanner.resolveCarryOver?.(carryOverId,{resolution:'CANCEL',actor:'CORE_DECISION_ADAPTER_REVIEW'});
