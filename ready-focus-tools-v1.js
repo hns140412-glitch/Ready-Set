@@ -101,10 +101,11 @@
   }
   async function saveRecording(){
     if(!currentAudio){toast('먼저 녹음을 완료해 주세요.');return}
+    const ownsWait=window.ReadyBaseRuntimeV1?.setInterruption?.('SYSTEM_WAIT',true,'RECORDING_SAVE');
     try{
       const type=currentAudio.type||'audio/webm',ext=/audio\/(mp4|m4a)/.test(type)?'m4a':'webm',name=`ready-set-recording-${new Date().toISOString().replace(/[:.]/g,'-')}.${ext}`;
       await storeAudio(currentAudio,name,type);markRecordingCompleted();toast('녹음 저장 완료');resetRecordingUI();window.ReadyBaseRuntimeV1?.nav?.('focus');setTimeout(ensure,0)
-    }catch{toast('녹음을 저장하지 못했습니다. 다시 시도해 주세요.')}
+    }catch{toast('녹음을 저장하지 못했습니다. 다시 시도해 주세요.')}finally{if(ownsWait)window.ReadyBaseRuntimeV1?.setInterruption?.('SYSTEM_WAIT',false)}
   }
 
   function bindRecordingRoundTrip(){

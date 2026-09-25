@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8"><title>Ready continuity local fixture</title>
+<h1>Continuity at 390px</h1><p>Dedicated localhost fixture origin only. Synthetic session; no specialist navigation.</p>
+<button id="run">Seed fixture and check reload recovery</button><pre id="result">Not run</pre>
+<iframe id="app" title="Ready mobile preview" style="width:390px;height:844px"></iframe>
+<script>
+run.onclick=async()=>{
+ if(location.hostname!=='127.0.0.1'||location.port!=='8097')throw Error('Use isolated fixture origin 127.0.0.1:8097');
+ const session={id:'continuity-browser-fixture',startAt:Date.now()-65000,targetMs:300000,pausedAt:null,pausedMs:0,tasks:['English fixture'],selected:[],taskLabel:'English fixture'};
+ localStorage.setItem('readyset_state',JSON.stringify({activeSession:session,records:[],tasks:session.tasks,selected:[]}));
+ const load=()=>new Promise(resolve=>{app.onload=()=>setTimeout(resolve,1500);app.src='/index.html?continuity_fixture=1&reload='+Date.now()});
+ try{
+  await load();let w=app.contentWindow,r=w.ReadyBaseRuntimeV1,c=w.ReadySetRev07.contract();
+  const ids=JSON.stringify([c.session_id,c.goal_id,c.active_task_id,c.active_lap_id]);
+  if(!w.document.querySelector('#focusView.active'))throw Error('Focus not restored at boot');
+  if(r.times().focus<65000)throw Error('Wall time lost');
+  r.setInterruption('PAUSE',true);const paused=r.times().focus;await load();w=app.contentWindow;r=w.ReadyBaseRuntimeV1;c=w.ReadySetRev07.contract();
+  if(JSON.stringify([c.session_id,c.goal_id,c.active_task_id,c.active_lap_id])!==ids)throw Error('Identity changed');
+  if(r.times().focus!==paused)throw Error('Explicit pause lost');
+  r.setInterruption('PAUSE',false);w.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));
+  result.textContent='PASS: real browser boot/reload, same session/task/lap, timestamp elapsed, explicit pause restore, synthetic pageshow, 390px Focus. DEVICE_UNVERIFIED: genuine BFCache, iOS suspension, lock and specialist apps.';
+ }catch(error){result.textContent='FAIL: '+error.message}
+};
+</script>

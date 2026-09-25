@@ -13,6 +13,7 @@
     const task=(day.tasks||[]).find(t=>String(t.id)===String(id));
     if(!task)return false;
     const core=read(CORE_KEY,{});
+    if(core.activeSession){window.ReadyBaseRuntimeV1?.recover?.(true);return false}
     if(selected){
       day.tasks=(day.tasks||[]).map(t=>({...t,selected:String(t.id)===String(id)}));
       core.g13PlannerTask={id:task.id,date:today(),status:task.status||'PLANNED',confirmationState:task.confirmationState||task.allocationState||null};

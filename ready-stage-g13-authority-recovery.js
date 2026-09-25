@@ -16,6 +16,7 @@
   function syncCoreMission(t){
     if(!t)return false;
     const s=readCore();
+    if(s.activeSession)return false;
     const label=[taskLabel(t),taskDetail(t)].filter(Boolean).join(' · ');
     s.selected=[];
     s.tasks=[label];
@@ -28,7 +29,7 @@
     const id=sessionStorage.getItem(PENDING_KEY);if(!id)return false;
     sessionStorage.removeItem(PENDING_KEY);
     const t=plannerTask(id);if(!t)return false;
-    syncCoreMission(t);
+    if(!syncCoreMission(t))return false;
     const mission=document.getElementById('missionView');
     if(mission){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v===mission));window.scrollTo(0,0);}
     return true;
