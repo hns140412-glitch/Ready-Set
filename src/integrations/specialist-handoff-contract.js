@@ -14,6 +14,8 @@
       learning_unit_id:clean(task.learning_unit_id,120)||null,
       analysis_id:clean(task.analysis_id,120)||null,
       assignment_id:clean(task.assignment_id,120)||null,
+      source_range:clean(task.source_range,160)||null,
+      workbook_ref_id:clean(task.workbook_ref_id,120)||null,
       subject:clean(task.subject,80)||null,
       concept_skill_target:clean(task.concept_skill_target,180)||null,
       activity_types:list(task.activity_types,12),

@@ -90,6 +90,8 @@
         assignment_id:link.assignment_id||null,
         analysis_id:link.analysis_id||null,
         learning_unit_id:link.learning_unit_id||null,
+        source_range:link.source_range||null,
+        workbook_ref_id:link.workbook_ref_id||null,
         template_id:link.template_id||null,
         allocation_run_id:link.allocation_run_id||null,
         subject:link.subject||null,

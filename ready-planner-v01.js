@@ -504,6 +504,7 @@
         confidence:Number.isFinite(x.confidence)?x.confidence:null,
         unresolved_flags:Array.isArray(x.unresolved_flags)?[...x.unresolved_flags]:[],
         assignment_id:x.assignment_id,analysis_id:x.analysis_id,learning_unit_id:x.learning_unit_id,
+        source_range:x.source_range||null,workbook_ref_id:x.workbook_ref_id||null,
         template_id:x.template_id,allocation_run_id:x.allocation_run_id,
         activity_types:Array.isArray(x.activity_types)?x.activity_types:[],
         activity_sequence:Array.isArray(x.activity_sequence)?x.activity_sequence:[],
@@ -804,7 +805,7 @@
           if(!todo){todo={
             todo_id:makeId('todo'),date:p.date,label:p.label,subject:p.subject||null,assignment_id:p.assignment_id,analysis_id:p.analysis_id,
             fact_revision:Number(p.fact_revision)||Number(run.fact_revision)||1,
-            learning_unit_id:p.learning_unit_id,template_id:p.template_id,allocation_run_id:runId,
+            learning_unit_id:p.learning_unit_id,source_range:p.source_range||null,workbook_ref_id:p.workbook_ref_id||null,template_id:p.template_id,allocation_run_id:runId,
             activity_types:p.activity_types,activity_sequence:p.activity_sequence||[],
             matched_domain:p.matched_domain||null,method_variant:p.method_variant||null,
             concept_skill_target:p.concept_skill_target||null,
