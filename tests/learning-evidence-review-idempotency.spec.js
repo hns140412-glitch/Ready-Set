@@ -1,15 +1,13 @@
 const {test,expect}=require('@playwright/test');
 
 test('same terminal learning evidence is reviewed once only',async({page})=>{
-  await page.addInitScript(()=>{window.__READY_AUTH_BOOTSTRAP__={authenticated:true,family_id:'TEST_FAMILY',member_id:'TEST_CHILD',role:'CHILD',session_id:'TEST_SESSION',expires_at:'2099-01-01T00:00:00.000Z',source:'TEST_ONLY'};});
+  await page.addInitScript(()=>{window.__READY_AUTH_BOOTSTRAP__={authenticated:true,family_id:'TEST_FAMILY',member_id:'TEST_PARENT',role:'PARENT',session_id:'TEST_SESSION',expires_at:'2099-01-01T00:00:00.000Z',source:'TEST_ONLY'};});
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
   const r=await page.evaluate(()=>{
     const ref=window.ReadyAssignments.upsertWorkbookRef({workbook_ref_id:'idem_book',name:'Idem Vocabulary',subject:'영어'});
-    const fact=window.ReadyAssignments.upsertEnglishAssignment({actor:'CHILD',assignment_id:'idem_assignment',workbook_ref_id:ref.workbook_ref_id,source_date:'2026-09-21',source_range:'p.1',recurring_days:[1,3,5],components:{vocabulary:'Unit 1'},next_academy:'2026-09-28'});
-    window.ReadyAssignments.reviewChildFact?.(fact.assignment_id,{actor:'PARENT',decision:'CONFIRM'});
+    const fact=window.ReadyAssignments.upsertEnglishAssignment({actor:'PARENT',assignment_id:'idem_assignment',workbook_ref_id:ref.workbook_ref_id,source_date:'2026-09-21',source_range:'p.1',recurring_days:[1,3,5],components:{vocabulary:'Unit 1'},next_academy:'2026-09-28'});
+    window.ReadyAssignments.confirmFact(fact.assignment_id,{actor:'PARENT'});
     let state=window.ReadyAssignments.load();
-    const confirmed=state.assignmentFacts[fact.assignment_id];
-    if(confirmed.confirmation_state!=='FACT_CONFIRMED') window.ReadyAssignments.confirmFact(fact.assignment_id,{actor:'PARENT'});
     const first=window.ReadyIntegrationV1.processAssignment(fact.assignment_id,{candidate_dates:['2026-09-21','2026-09-23','2026-09-25']});
     const todo=first.todos.find(x=>x.concept_skill_target==='VOCABULARY')||first.todos[0];
     const p=window.ReadySetPlanner;
