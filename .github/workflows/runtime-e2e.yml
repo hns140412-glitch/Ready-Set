@@ -40,6 +40,14 @@ jobs:
         run: node tests/central-evidence-outbox.test.js
       - name: Validate fail-safe central evidence sync
         run: node tests/central-evidence-sync-runtime.test.js
+      - name: Validate learning evidence HTTP transport
+        run: node tests/central-evidence-http-transport.test.js
+      - name: Validate learning evidence family resolver
+        run: node tests/learning-evidence-family-resolver.test.js
+      - name: Validate learning evidence transport provenance
+        run: node tests/learning-evidence-transport-provenance.test.js
+      - name: Validate learning evidence endpoint contract
+        run: node tests/learning-evidence-endpoint-contract.test.js
       - name: Validate legacy Ready learning compatibility isolation
         run: node tests/legacy-ready-learning-compat.test.js
       - name: Validate Google Account FamilyMembership contract
