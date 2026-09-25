@@ -104,6 +104,8 @@
         divisible_boundary:link.divisible_boundary||null,
         confidence:Number.isFinite(link.confidence)?link.confidence:null,
         unresolved_flags:Array.isArray(link.unresolved_flags)?[...link.unresolved_flags]:[],
+        review_lexical_ids:Array.isArray(link.review_lexical_ids)?[...link.review_lexical_ids]:[],
+        scheduled_date:link.date||null,
         execution_app:link.execution_app||link.execution_plan?.primary_app||'ready-set',
         execution_plan:link.execution_plan||null,
         route_plan:routeTask(link),
@@ -290,6 +292,17 @@
     if(targetDescriptor?.target_kind)url.searchParams.set('target_kind',targetDescriptor.target_kind);
     if(window.ReadySpecialistHandoffContract?.encodeLearningContext){
       url.searchParams.set('learning_context',window.ReadySpecialistHandoffContract.encodeLearningContext(task));
+    }
+    if(app==='hide-seek'&&Array.isArray(task.review_lexical_ids)&&task.review_lexical_ids.length){
+      url.searchParams.set('review_directive',JSON.stringify({
+        authority:'EXPLICIT_READY_PLANNER_REVIEW_DIRECTIVE',
+        reviewPolicyOwner:'READY_LEARNING_ENGINE',
+        scheduleOwner:'READY_SET_PLANNER',
+        lexicalIds:[...new Set(task.review_lexical_ids.map(x=>String(x||'').trim()).filter(Boolean))].slice(0,24),
+        directiveId:task.analysis_id||task.learning_unit_id||task.task_id,
+        taskId:task.task_id,
+        scheduledDate:task.scheduled_date||null
+      }));
     }
     return {ok:true,app,url:url.href,task_id:task.task_id,lap_id:lap.lap_id};
   }
