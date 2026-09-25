@@ -118,9 +118,20 @@
   }
 
   function learnerAdaptiveProfile(rows=[]){
-    const recent=(rows||[]).slice(-12);
-    const evidence=recent.flatMap(x=>Array.isArray(x.learning_evidence)?x.learning_evidence:[]);
-    const memory=evidence.filter(x=>x?.evidence_type==='MEMORY_RETRIEVAL_EVIDENCE');
+    const cutoff=Date.now()-1000*60*60*24*90;
+    const seen=new Set();
+    const recent=(rows||[]).filter(row=>{
+      const stamp=Date.parse(row?.at||row?.created_at||row?.updated_at||'');
+      return !Number.isFinite(stamp)||stamp>=cutoff;
+    }).slice(-12);
+    const evidence=recent.flatMap((row,rowIndex)=>(Array.isArray(row.learning_evidence)?row.learning_evidence:[]).map((e,eIndex)=>({e,row,rowIndex,eIndex})))
+      .filter(({e,row,rowIndex,eIndex})=>{
+        const key=clean(e?.evidence_id||e?.event_id||e?.session_id||row?.session_id||row?.execution_observation_id||'')||
+          JSON.stringify([row?.at||row?.created_at||rowIndex,e?.evidence_type,e?.memory?.average_strength,eIndex]);
+        if(seen.has(key))return false;
+        seen.add(key); return true;
+      });
+    const memory=evidence.map(x=>x.e).filter(x=>x?.evidence_type==='MEMORY_RETRIEVAL_EVIDENCE');
     const strengths=memory.map(x=>Number(x?.memory?.average_strength)).filter(Number.isFinite);
     const priorities=memory.flatMap(x=>Array.isArray(x?.memory?.review_advisories)?x.memory.review_advisories:[])
       .map(x=>Number(x?.nextReviewPriority??x?.priority)).filter(Number.isFinite);
@@ -133,6 +144,8 @@
     return {
       authority:'LEARNER_ADAPTIVE_PROFILE_ADVISORY_ONLY',
       observation_count:recent.length,
+      unique_evidence_count:evidence.length,
+      freshness_window_days:90,
       memory_sample_count:strengths.length,
       baseline_memory_strength:Number.isFinite(baseline)?Math.round(baseline*10)/10:null,
       latest_memory_strength:latest,
