@@ -1,7 +1,8 @@
-# READY LEARNING ENGINE CURRENT — 2026-09-25
+# READY LEARNING ENGINE CURRENT — 2026-09-25 (SUPERSEDED AS ENGINE AUTHORITY)
 
-STATE: CLOSED_CURRENT
+STATE: SUPERSEDED_AS_ENGINE_AUTHORITY
 SCOPE: Ready & Set Learning Engine vertical contract
+CORRECTION: Ready & Set is not the Learning Engine. This file is retained as implementation lineage only. Current Ready boundary authority is HANDOFF/READY_LEARNING_ENGINE_ADAPTER_CURRENT_2026-09-25.md; Core authority is TAKY OS/LEARNING_ENGINE_CORE.md.
 AUTHORITY: latest validated implementation on branch `taky/ready-character-intro-integration-2026-09-24`
 PRINCIPLE: DEEP MEMORY — LIGHT EXECUTION
 USER != DEBUGGER
