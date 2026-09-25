@@ -56,7 +56,7 @@ Do not duplicate these algorithms into a second engine. Move/refactor only after
 
 ## 6. Current adapter evidence improvements
 
-Ready evidence ontology V02 preserves:
+Ready evidence ontology V03 preserves:
 - member_id when available
 - concept_skill_target
 - instrument_version
@@ -89,8 +89,16 @@ Implemented:
 - ready-integration-v1.js exposes applyLearningEngineDecision().
 - existing embedded adaptive logic is explicitly marked LEGACY_COMPATIBILITY.
 
+Core-decision migration now active:
+- processAssignment accepts independent Core Runtime Decision Contract via Adapter V2.
+- reviewLearningEvidence bypasses learnerAdaptiveProfile / memoryConcern when a Core decision is supplied.
+- reviewEscalatedCarryOver bypasses direct ReadyLearningMaster reinterpretation when a Core decision is supplied.
+- Planner preserves Core execution hints as metadata only; dated allocation authority remains Planner.
+- Ready execution routing authority is READY_EXECUTION_ROUTING, not READY_LEARNING_ENGINE_ROUTING.
+
 Remaining HOLD:
-- migrate learnerAdaptiveProfile / memoryConcern / direct ReadyLearningMaster reinterpretation out of Ready once the Core-decision-to-Planner path is fully regression-green.
-- do not delete the legacy path before compatibility/replay closure.
+- legacy learnerAdaptiveProfile / memoryConcern / direct ReadyLearningMaster reinterpretation remains only for calls that do not yet supply a Core decision.
+- remove that compatibility path only after all callers are migrated and replay/runtime regression stays green.
+- do not deploy/merge until migration gate is explicitly opened.
 
 END
