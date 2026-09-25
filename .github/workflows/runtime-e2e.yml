@@ -34,6 +34,8 @@ jobs:
         run: node tests/character-intro-integration-contract.test.js
       - name: Validate Ready answer-key verification producer
         run: node tests/answer-key-verifier.test.js
+      - name: Validate independent Learning Engine adapter v2
+        run: node tests/learning-engine-adapter-v2.test.js
       - name: Validate Google Account FamilyMembership contract
         run: node tests/google-family-membership-contract.test.js
       - name: Validate Google OAuth browser integration
