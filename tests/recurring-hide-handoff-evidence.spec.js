@@ -164,6 +164,16 @@ test('recurring vocabulary TODO launches Hide with Learning Engine context and r
     attempt_count:2,
     response_latency_ms:900
   });
+
+  const outbox=await page.evaluate(()=>window.ReadyCentralEvidenceOutbox?.pending?.()||[]);
+  expect(outbox.length).toBeGreaterThan(0);
+  const packet=outbox.find(x=>x.packet_id==='hide-seek:hide_return_recurring_1');
+  expect(packet).toBeTruthy();
+  expect(packet.transport_state).toBe('PENDING_CENTRAL_INGEST');
+  expect(packet.source_app).toBe('hide-seek');
+  expect(packet.context.subject).toBe('영어');
+  expect(packet.context.concept_skill_target).toBe('VOCABULARY');
+  expect(packet.evidence.evidence_type).toBe('MEMORY_RETRIEVAL_EVIDENCE');
 });
 
 
