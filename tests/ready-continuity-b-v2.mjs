@@ -5,12 +5,12 @@ import assert from 'node:assert/strict';
 let now=1800000000000;
 class Clock extends Date { constructor(...args){super(...(args.length?args:[now]))} static now(){return now} }
 const store=new Map();
-function boot(){
+function boot(search=""){
  const listeners={},elements=new Map(),ticks=new Map();let serial=0;
  const on=(name,fn)=>(listeners[name]??=[]).push(fn);
  const element=id=>{if(!elements.has(id))elements.set(id,{dataset:{},classList:{toggle(){},contains(){return false}},addEventListener:on,before(){},appendChild(){},textContent:'',hidden:false});return elements.get(id)};
  const document={readyState:'loading',visibilityState:'visible',documentElement:{dataset:{}},head:{appendChild(){}},body:{appendChild(){}},addEventListener:on,querySelector:s=>s.includes('.controlPanel')?null:element(s),querySelectorAll:()=>[],getElementById:element,createElement:()=>element(`el${++serial}`)};
- const c={console,structuredClone,URL,URLSearchParams,Date:Clock,Math,JSON,Event:class{constructor(type){this.type=type}},document,localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,String(v))},sessionStorage:{getItem:()=>null,removeItem(){}},location:{origin:'https://ready.test',pathname:'/',href:'https://ready.test/',search:'',hash:'',assign(url){c.assigned=url},reload(){throw Error('active session reloaded')}},history:{replaceState(){}},addEventListener:on,dispatchEvent(){},scrollTo(){},setTimeout:()=>1,clearTimeout(){},setInterval:fn=>{ticks.set(++serial,fn);return serial},clearInterval:id=>ticks.delete(id)};
+ const c={console,structuredClone,URL,URLSearchParams,Date:Clock,Math,JSON,Event:class{constructor(type){this.type=type}},document,localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,String(v))},sessionStorage:{getItem:()=>null,removeItem(){}},location:{origin:'https://ready.test',pathname:'/',href:'https://ready.test/',search,hash:'',assign(url){c.assigned=url},reload(){throw Error('active session reloaded')}},history:{replaceState(_state,_title,url){c.cleanedUrl=url}},addEventListener:on,dispatchEvent(){},scrollTo(){},setTimeout:()=>1,clearTimeout(){},setInterval:fn=>{ticks.set(++serial,fn);return serial},clearInterval:id=>ticks.delete(id)};
  c.window=c;c.globalThis=c;vm.createContext(c);
  for(const file of ['ready-base-runtime-v1.js','ready-runtime-v07.js'])vm.runInContext(fs.readFileSync(file,'utf8'),c);
  const fire=(name,event={persisted:true})=>{for(const fn of [...(listeners[name]||[])])fn(event)};
@@ -46,6 +46,30 @@ for(let i=0;i<3;i++)h.fire('pageshow');assert.equal(h.ticks.size,1);assert.equal
 const contract=h.c.ReadySetRev07.contract(),message={origin:new URL(h.c.ReadySetRev07.routing().hide_url).origin,data:{type:'TAKY_LEARNING_EVENT',event:{type:'TASK_PARTIAL',app:'hide-seek',session_id:contract.session_id,goal_id:contract.goal_id,task_id:contract.active_task_id,lap_id:contract.active_lap_id,event_id:'return-once'}}};
 h.fire('message',message);const afterReturn=h.c.state.activeSession.rev07.events.length;
 h.fire('message',message);assert.equal(h.c.state.activeSession.rev07.events.length,afterReturn);assert.equal(ids(),identity);
+// Malformed, stale and wrong-origin returns cannot mutate the local owner.
+const validEvent=message.data.event;
+for(const change of [{session_id:'stale'}, {goal_id:'stale'}, {lap_id:'stale'}, {task_id:'missing'}, {app:'unknown'}]){
+ const before=JSON.stringify(h.c.state.activeSession);
+ h.fire('message',{...message,data:{type:'TAKY_LEARNING_EVENT',event:{...validEvent,...change,event_id:'invalid',type:'TASK_COMPLETED'}}});
+ assert.equal(JSON.stringify(h.c.state.activeSession),before);
+}
+const beforeSpoof=JSON.stringify(h.c.state.activeSession);
+h.fire('message',{...message,data:{type:'TAKY_LEARNING_EVENT',event:{...validEvent,app:'snap-pop',type:'TASK_COMPLETED'}}});
+assert.equal(JSON.stringify(h.c.state.activeSession),beforeSpoof);
+// A return without a result restores the same lap and consumes its query.
+for(const app of ['hide-seek','snap-pop']){
+ h.c.state.activeSession.return_target='https://untrusted.invalid/';
+ h.c.ReadySetRev07.launchSpecialist(app);
+ const outbound=new URL(h.c.assigned);
+ assert.equal(new URL(outbound.searchParams.get('return_target')).origin,'https://ready.test');
+ const query=new URLSearchParams({session_id:contract.session_id,goal_id:contract.goal_id,task_id:contract.active_task_id,lap_id:contract.active_lap_id,from_app:app});
+ now+=7000;h=boot('?'+query);R=h.c.ReadyBaseRuntimeV1;
+ assert.equal(ids(),identity);assert.equal(h.c.cleanedUrl,'/');
+ assert.equal(h.c.state.activeSession.rev07.active_app,'ready-set');
+}
+const local=JSON.stringify(h.c.state.activeSession);
+h=boot('?session_id=stale&goal_id=stale&task_id=stale&lap_id=stale&task_state=COMPLETED&from_app=hide-seek');R=h.c.ReadyBaseRuntimeV1;
+assert.equal(JSON.stringify(h.c.state.activeSession),local);
 const s=h.c.state.activeSession,oldLap=s.rev07.active_lap_id;s.rev07.tasks.push({task_id:'second',label:'Math',state:'PENDING',laps:[]});h.c.ReadySetRev07.switchTask('second');
 assert.notEqual(s.rev07.active_lap_id,oldLap);assert.equal(s.rev07.tasks[0].laps[0].end_reason,'TASK_CHANGE');assert.equal(s.rev07.tasks.flatMap(t=>t.laps).filter(l=>!l.ended_at).length,1);
 const count=s.rev07.events.length;h.c.ReadySetRev07.switchTask('second');assert.equal(s.rev07.events.length,count);
@@ -67,3 +91,12 @@ R.setInterruption('SYSTEM_WAIT',true,'RECORDING_SAVE');now+=3000;h=boot();R=h.c.
 assert.equal(h.c.state.activeSession.systemWaitState,null);assert.equal(h.c.state.activeSession.recordingSaveRecovery,'INTERRUPTED_UNVERIFIED');
 const recoveredFocus=R.times().focus;now+=1000;assert.equal(R.times().focus,recoveredFocus+1000,'interrupted save cannot leave Focus frozen');
 console.log('PASS continuity-b-v2: background, pause/issue/system-wait, recording, Hide/Snap transport+return, task lap, offline/reconnect, BFCache event, safe restore, duplicate guards, Planner protection, legacy migration. DEVICE_UNVERIFIED: actual Safari/iOS lifecycle and external specialist consumption.');
+
+// Execute service-worker install: an update must remain waiting for active clients.
+const workerListeners={};let installed;
+vm.runInNewContext(fs.readFileSync('sw.js','utf8'),{
+ self:{addEventListener:(name,fn)=>workerListeners[name]=fn,skipWaiting(){throw Error('forced update activation')}},
+ caches:{open:async()=>({addAll:async()=>{}})}
+});
+workerListeners.install({waitUntil:p=>installed=p});await installed;
+console.log('PASS continuity return validation and safe service-worker update');
