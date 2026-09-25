@@ -8,6 +8,8 @@ function createSyncService(store,options={}){
   }
   const namespace=clean(options.namespace);
   const memberId=clean(options.member_id);
+  const actorMemberId=clean(options.actor_member_id);
+  const actorRole=clean(options.actor_role).toUpperCase();
   if(!namespace) throw new Error('namespace required');
 
   async function health(){
@@ -47,6 +49,9 @@ function createSyncService(store,options={}){
     if(memberId&&clean(clientScopeIdentity.member_id)&&clean(clientScopeIdentity.member_id)!==memberId){
       return {status:403,body:{ok:false,reason:'MEMBER_SCOPE_MISMATCH'}};
     }
+    if(actorMemberId&&clean(input.actor_member_id)&&clean(input.actor_member_id)!==actorMemberId){
+      return {status:403,body:{ok:false,reason:'ACTOR_SCOPE_MISMATCH'}};
+    }
 
     const record={
       event_id:eventId,
@@ -55,6 +60,8 @@ function createSyncService(store,options={}){
       logical_scope:clean(input.logical_scope||input.scope)||'unknown',
       scope_key:clean(input.scope_key)||null,
       scope_identity:{family_id:namespace,member_id:memberId||null},
+      actor_member_id:actorMemberId||null,
+      actor_role:actorRole||null,
       digest,
       payload:input.payload ?? null,
       created_at:input.created_at || null,
@@ -63,6 +70,8 @@ function createSyncService(store,options={}){
       remote_version:1,
       family_namespace:namespace,
       member_id:memberId||null,
+      actor_member_id:actorMemberId||null,
+      actor_role:actorRole||null,
       accepted_at:new Date().toISOString()
     };
     await store.set(key,JSON.stringify(record));
