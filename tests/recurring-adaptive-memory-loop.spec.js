@@ -93,6 +93,8 @@ test('weak Hide memory evidence automatically adapts future recurring vocabulary
   expect(adapted.fact.current_analysis_id).not.toBe(seeded.initial_analysis_id);
   expect(adapted.analysis.adaptive_review_policy.add_retrieval_checkpoint).toBe(true);
   expect(adapted.analysis.adaptive_review_policy.recovery_floor).toBe('HIGH');
+  expect(adapted.analysis.adaptive_review_policy.target_lexical_ids).toEqual(['word_1']);
+  expect(adapted.vocab.review_lexical_ids).toEqual(['word_1']);
   expect(adapted.vocab.preferred_days).toEqual([1,3,5]);
   expect(adapted.vocab.activity_sequence).toContain('RETRIEVAL_CHECKPOINT');
   expect(adapted.vocab.activity_load.recovery_need).toBe('HIGH');
@@ -100,6 +102,7 @@ test('weak Hide memory evidence automatically adapts future recurring vocabulary
   const futureDates=adapted.todos.map(x=>x.date).sort();
   expect(futureDates).toEqual(['2026-09-23','2026-09-25']);
   expect(adapted.todos.every(x=>[1,3,5].includes(new Date(x.date+'T12:00:00').getDay()))).toBe(true);
+  expect(adapted.todos.every(x=>Array.isArray(x.review_lexical_ids)&&x.review_lexical_ids.includes('word_1'))).toBe(true);
   expect(adapted.review.specialist_evidence.max_memory_review_priority).toBe(91);
   expect(adapted.review.specialist_evidence.min_memory_strength).toBe(42);
   expect(adapted.review.processed.ok).toBe(true);
