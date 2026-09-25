@@ -102,3 +102,39 @@ Remaining HOLD:
 - do not deploy/merge until migration gate is explicitly opened.
 
 END
+
+## 9. Core Adaptive Plan Intent
+
+Central authority:
+- TAKY/LEARNING/pedagogy/adaptive-plan-contract.js
+- TAKY/LEARNING/runtime/decision-contract.js
+
+The Core decision now carries:
+- unit_span_policy
+- add_checkpoint
+- add_retrieval_checkpoint
+- recovery_floor
+- assistance_policy
+- target_learning_ids
+- rationale/provenance
+
+Ready behavior:
+- ReadyLearningEngineAdapterV2 validates and preserves the Core adaptive plan.
+- ready-learning-master-v01.js applies the plan to subject-specific unit generation.
+- ReadyLearningMaster no longer needs to infer memory concern when a Core decision is supplied.
+- Ready subject interpretation may translate REDUCE into the subject profile's concrete max-span, but may not invent a new learner-state reason.
+- Planner preserves the adaptive plan as provenance only and does not use it as date authority.
+- reviewLearningEvidence and reviewEscalatedCarryOver invalidate stale Planner outputs before Core-driven reanalysis.
+
+Runtime migration:
+- core-adaptive-plan-integration.spec.js validates Core plan -> Ready reanalysis -> Planner TODO.
+- adaptive-learning-loop.spec.js migrated to Core decision path.
+- recurring-adaptive-memory-loop.spec.js migrated to Core decision path.
+- legacy learnerAdaptiveProfile / memoryConcern remains compatibility-only for callers that do not yet provide a Core decision.
+
+Remaining compatibility HOLD:
+- identify/migrate any residual branch callers that invoke learning evidence review without Core decision.
+- keep legacy fallback until final runtime/replay closure proves no required behavior depends on it.
+- production/merge/Netlify remain HOLD.
+
+END
