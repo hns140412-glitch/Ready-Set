@@ -1,0 +1,12 @@
+{
+  "version": "2026-09-25.1",
+  "capability_id": "CAP-LEARNING-EVIDENCE-TRANSPORT-001",
+  "canonical_source": {
+    "repository": "hns140412-glitch/TAKY",
+    "path": "LEARNING/transport/server-transport-kernel.js",
+    "commit": "d6a4f1d0bf97304d2ce06ace232c8c73cd5e408e",
+    "blob_sha": "400ef26529762242a1a2ba5c7e82a2c31d8227b7"
+  },
+  "consumer_path": "vendor/taky/learning-evidence-transport-kernel.js",
+  "policy": "Consumer copy must stay byte-equivalent to the recorded TAKY canonical blob. Ready owns HTTP endpoint, FamilyMembership auth and Netlify storage binding only; Learning Engine semantics remain TAKY-owned."
+}
