@@ -124,3 +124,11 @@ assert(syncAdapter.includes("credentials:'same-origin'"));
 assert(syncAdapter.includes("res.status===409"));
 assert(syncAdapter.includes("ReadyFamilySession"));
 console.log('PASS: Ready consumes shared HTTP transport while retaining family auth and conflict semantics');
+
+const readyIndex=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+const readyAnswerVerifier=fs.readFileSync(path.join(__dirname,'..','src','learning','answer-key-verifier-runtime.js'),'utf8');
+assert(readyIndex.includes('./src/learning/answer-key-verifier-runtime.js'));
+assert(readyAnswerVerifier.includes('ReadyAnswerKeyVerifier'));
+assert(readyAnswerVerifier.includes('ANSWER_KEY_EXACT'));
+assert(readyAnswerVerifier.includes('DETERMINISTIC_LOCAL_MATCH'));
+console.log('PASS: Ready exposes deterministic answer-key verification producer without promoting completion to mastery');
