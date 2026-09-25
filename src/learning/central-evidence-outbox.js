@@ -46,6 +46,7 @@
       verification_input:input.verification_input?JSON.parse(JSON.stringify(input.verification_input)):null,
       transport_state:'PENDING_CENTRAL_INGEST',
       acknowledged_receipt_id:null,
+      acknowledgement_kind:null,
       acknowledged_at:null
     };
     rows.push(packet);
@@ -61,11 +62,18 @@
   function acknowledge(packet_id,receipt_id,at=null,storage=globalThis.localStorage){
     const id=clean(packet_id),receipt=clean(receipt_id);
     if(!id||!receipt)return {ok:false,reason:'ACK_METADATA_REQUIRED'};
+    const acknowledgementKind=receipt.startsWith('real-evidence:')
+      ?'REAL_EVIDENCE_RECEIPT'
+      :receipt.startsWith('observation:')
+        ?'OBSERVATION_INGEST_RECEIPT'
+        :null;
+    if(!acknowledgementKind)return {ok:false,reason:'ACK_RECEIPT_KIND_INVALID'};
     const rows=load(storage);
     const row=rows.find(x=>x.packet_id===id);
     if(!row)return {ok:false,reason:'PACKET_NOT_FOUND'};
     row.transport_state='ACKNOWLEDGED';
     row.acknowledged_receipt_id=receipt;
+    row.acknowledgement_kind=acknowledgementKind;
     row.acknowledged_at=clean(at)||new Date().toISOString();
     save(rows,storage);
     return {ok:true,packet:row};
@@ -88,6 +96,7 @@
       ids.add(row.packet_id);
       if(!['PENDING_CENTRAL_INGEST','ACKNOWLEDGED'].includes(row.transport_state))issues.push('TRANSPORT_STATE_INVALID');
       if(row.transport_state==='ACKNOWLEDGED'&&!clean(row.acknowledged_receipt_id))issues.push('ACK_RECEIPT_REQUIRED');
+      if(row.transport_state==='ACKNOWLEDGED'&&!['REAL_EVIDENCE_RECEIPT','OBSERVATION_INGEST_RECEIPT'].includes(row.acknowledgement_kind))issues.push('ACK_KIND_INVALID');
     }
     return {ok:issues.length===0,issues};
   }
