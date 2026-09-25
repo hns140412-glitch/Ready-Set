@@ -163,6 +163,14 @@
         legacy_learning_logic_used:false
       };
     }
+    if(input.allow_legacy_learning_logic!==true){
+      return {
+        ok:false,
+        reason:'LEARNING_DECISION_REQUIRED',
+        legacy_learning_logic_used:false,
+        compatibility_path_available:true
+      };
+    }
     const carry=window.ReadySetPlanner.carryOverCandidates?.().find(x=>x.carry_over_id===carryOverId);
     if(!carry)return {ok:false,reason:'CARRY_OVER_NOT_FOUND'};
     if(carry.escalation_level!=='PARENT_LEARNING_MASTER_REVIEW')return {ok:false,reason:'ESCALATION_REVIEW_NOT_REQUIRED'};
@@ -313,6 +321,15 @@
         review_key:coreReviewKey,
         invalidation:invalidated,
         legacy_learning_logic_used:false
+      };
+    }
+    if(input.allow_legacy_learning_logic!==true){
+      return {
+        ok:false,
+        reason:'LEARNING_DECISION_REQUIRED',
+        assignment_id:assignmentId,
+        legacy_learning_logic_used:false,
+        compatibility_path_available:true
       };
     }
     const state=window.ReadyAssignments.load();
