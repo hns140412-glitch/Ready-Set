@@ -7,6 +7,21 @@
 
   const DB_NAME='readyset_local_v1', DB_VERSION=1;
   const SCOPE_KEYS={planner:'readyset_planner_v1',app_state:'readyset_state',assignments:'readyset_assignments_v2'};
+  const StorageScope=globalThis.TakyStorageScope;
+  if(!StorageScope?.snapshotScope || !StorageScope?.storageKey) throw new Error('READY_STORAGE_SCOPE_UNAVAILABLE');
+  function familySession(){return globalThis.ReadyFamilySession?.current?.()||{authenticated:false,family_id:null,member_id:null}}
+  function scopedScope(logicalScope){return StorageScope.snapshotScope(logicalScope,familySession())}
+  function scopedStorageKey(logicalScope){
+    const legacy=SCOPE_KEYS[logicalScope];
+    if(!legacy) return null;
+    return StorageScope.storageKey(logicalScope,legacy,familySession());
+  }
+  function scopeIdentity(){return StorageScope.identity(familySession())}
+  function logicalScopeOf(row={}){
+    if(row.logical_scope&&SCOPE_KEYS[row.logical_scope])return row.logical_scope;
+    if(SCOPE_KEYS[row.scope])return row.scope;
+    return null;
+  }
   const SHARED_STATES=new Set(['PENDING','IN_FLIGHT','RETRY','ACKED','DEAD_LETTER','SUPERSEDED']);
   let dbPromise=null;
   const now=()=>new Date().toISOString();
@@ -43,7 +58,7 @@
     return new Promise((resolve,reject)=>{tx.oncomplete=()=>resolve(row);tx.onerror=()=>reject(tx.error)});
   }
 
-  function toStoredQueue(shared,{scope,digest,payload,envelope,domain_conflict=null}={}){
+  function toStoredQueue(shared,{scope,logical_scope=null,scope_identity=null,digest,payload,envelope,domain_conflict=null}={}){
     return {
       id:shared.event_id,
       event_id:shared.event_id,
@@ -60,6 +75,8 @@
       updated_at:shared.updated_at,
       acked_at:shared.acked_at||null,
       scope:scope??null,
+      logical_scope:logical_scope??null,
+      scope_identity:scope_identity??null,
       digest:digest??null,
       payload:payload??null,
       envelope:envelope??null,
@@ -89,6 +106,8 @@
   function domainFields(row){
     return {
       scope:row.scope,
+      logical_scope:row.logical_scope||null,
+      scope_identity:row.scope_identity||null,
       digest:row.digest,
       payload:row.payload,
       envelope:row.envelope||null,
@@ -97,47 +116,56 @@
   }
 
   async function capture(scope,payload,options={}){
+    const logical_scope=String(scope||'').trim();
+    if(!SCOPE_KEYS[logical_scope]) throw new Error('UNKNOWN_READY_SCOPE');
     const db=await openDb();
     const text=typeof payload==='string'?payload:JSON.stringify(payload);
     const digest=EventEnvelope.digest(text);
     const updated_at=now();
+    const scope_identity=scopeIdentity();
+    const scope_key=scopedScope(logical_scope);
     const envelope=EventEnvelope.create({
       source:'ready-set',
       event_type:'READY_SCOPE_SNAPSHOT_CAPTURED',
       occurred_at:updated_at,
-      payload:{scope,digest,payload:text}
+      payload:{scope:scope_key,logical_scope,scope_identity,digest,payload:text}
     });
     const shared=LocalQueue.create({
       event_id:envelope.event_id,
       idempotency_key:envelope.idempotency_key,
       created_at:updated_at,
       max_attempts:5,
-      metadata:{source:'ready-set'}
+      metadata:{source:'ready-set',scope:scope_key,logical_scope}
     });
 
     const tx=db.transaction(['snapshots','outbox'],'readwrite');
-    tx.objectStore('snapshots').put({scope,payload:text,digest,updated_at});
+    tx.objectStore('snapshots').put({scope:scope_key,logical_scope,scope_identity,payload:text,digest,updated_at});
     if(options.enqueue!==false){
-      tx.objectStore('outbox').put(toStoredQueue(shared,{scope,digest,payload:text,envelope}));
+      tx.objectStore('outbox').put(toStoredQueue(shared,{scope:scope_key,logical_scope,scope_identity,digest,payload:text,envelope}));
     }
     return new Promise((resolve,reject)=>{
-      tx.oncomplete=()=>resolve({scope,digest,event_id:envelope.event_id});
+      tx.oncomplete=()=>resolve({scope:scope_key,logical_scope,scope_identity,digest,event_id:envelope.event_id});
       tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
     });
   }
 
   async function recoverMissingScopes(){
     const rows=await all('snapshots');
-    let recovered=0;
+    const currentIdentity=scopeIdentity();
+    let recovered=0,ignored_other_members=0;
     for(const row of rows){
-      const key=SCOPE_KEYS[row.scope];
-      if(!key) continue;
-      if(localStorage.getItem(key)==null && row.payload!=null){
+      const logical=logicalScopeOf(row);
+      if(!logical) continue;
+      const expected=scopedScope(logical);
+      const legacyAnonymous=currentIdentity.mode==='ANONYMOUS_LOCAL'&&row.scope===logical;
+      if(row.scope!==expected&&!legacyAnonymous){ignored_other_members++;continue;}
+      const key=scopedStorageKey(logical);
+      if(key&&localStorage.getItem(key)==null&&row.payload!=null){
         localStorage.setItem(key,row.payload);
         recovered++;
       }
     }
-    return {ok:true,recovered,reload_required:recovered>0};
+    return {ok:true,recovered,ignored_other_members,scope_identity:currentIdentity,reload_required:recovered>0};
   }
 
   async function resolveConflict(conflictId,resolution){
@@ -155,12 +183,13 @@
       });
       await put('outbox',toStoredQueue(base,{...domainFields(outbox),domain_conflict:null}));
     } else if(resolution==='ACCEPT_REMOTE'){
-      const key=SCOPE_KEYS[conflict.scope];
+      const logical=conflict.logical_scope||logicalScopeOf(conflict);
+      const key=logical?scopedStorageKey(logical):null;
       const remote=typeof conflict.remote_payload==='string'
         ? conflict.remote_payload
         : JSON.stringify(conflict.remote_payload??null);
       if(key) localStorage.setItem(key,remote);
-      await capture(conflict.scope,remote,{enqueue:false});
+      if(logical) await capture(logical,remote,{enqueue:false});
       const superseded=LocalQueue.markSuperseded(fromStoredQueue(outbox),now());
       if(!superseded.ok) return {ok:false,reason:superseded.reason};
       await put('outbox',toStoredQueue(superseded.row,{...domainFields(outbox),domain_conflict:null}));
@@ -204,6 +233,8 @@
             id:'conflict_'+working.id,
             outbox_id:working.id,
             scope:working.scope,
+            logical_scope:working.logical_scope||null,
+            scope_identity:working.scope_identity||null,
             local_payload:working.payload,
             remote_payload:result.remote_payload??null,
             status:'OPEN',
@@ -246,6 +277,9 @@
     mode:'INDEXEDDB_RECOVERY_WITH_SHARED_EVENT_QUEUE',
     capabilities:Object.freeze(['CAP-EVENT-ENVELOPE-001','CAP-LOCAL-QUEUE-001']),
     capture:(scope,payload)=>capture(scope,payload),
+    storageKey:scopedStorageKey,
+    snapshotScope:scopedScope,
+    scopeIdentity,
     recoverMissingScopes,
     resolveConflict,
     outbox:()=>all('outbox'),
