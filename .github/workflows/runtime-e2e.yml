@@ -7,6 +7,7 @@ on:
       - taky/runtime-e2e-0131929
       - taky/ready-integration-v01
       - taky/unit-mapping-table-full-v02
+      - taky/app-execution-context-bridge-2026-09-25
   pull_request:
     branches:
       - main
@@ -22,6 +23,8 @@ jobs:
           node-version: '20'
       - name: Validate shared runtime contract
         run: node tests/shared-runtime-contract.test.js
+      - name: Validate app execution context bridge
+        run: node tests/app-execution-context-bridge.test.js
       - name: Install Playwright
         run: |
           npm install --no-save @playwright/test@1.55.0
