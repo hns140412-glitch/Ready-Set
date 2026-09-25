@@ -11,7 +11,53 @@ test('recurring vocabulary TODO launches Hide with Learning Engine context and r
 
   const todoId=await page.evaluate(()=>{
     const today=new Date().toLocaleDateString('sv-SE');
+    const tomorrow=new Date(Date.now()+86400000).toLocaleDateString('sv-SE');
+    const ref=window.ReadyAssignments.upsertWorkbookRef({
+      workbook_ref_id:'hide_book',name:'Hide Binding Book',subject:'영어',provenance:{kind:'TEST'}
+    });
+    const fact=window.ReadyAssignments.upsertEnglishAssignment({
+      actor:'PARENT',assignment_id:'a_hide',workbook_ref_id:ref.workbook_ref_id,
+      source_date:today,source_range:'p.10~12',components:{vocabulary:'Unit 3'},
+      next_academy:new Date(Date.now()+7*86400000).toLocaleDateString('sv-SE'),provenance:{kind:'TEST'}
+    });
+    window.ReadyAssignments.confirmFact(fact.assignment_id,{actor:'PARENT'});
+    const common={
+      label:'영어 · Unit 3',
+      subject:'영어',
+      assignment_id:'a_hide',
+      analysis_id:'an_hide',
+      learning_unit_id:'u_hide',
+      source_range:'Unit 3',
+      workbook_ref_id:'hide_book',
+      source:'PLANNER_V2_ALLOCATION',
+      state:'PLANNED',
+      activity_types:['MEMORY','RECALL'],
+      activity_sequence:['ENCODE','RECALL','CHECK'],
+      concept_skill_target:'VOCABULARY',
+      review_lexical_ids:['word_1'],
+      execution_plan:{
+        authority:'READY_LEARNING_ENGINE_ROUTING',
+        mode:'HIDE_SPECIALIST',
+        primary_app:'hide-seek',
+        allowed_specialists:['hide-seek'],
+        handoff_queue:['hide-seek']
+      },
+      execution_app:'hide-seek'
+    };
     const todo=window.ReadySetPlanner.upsertDatedTodo({
+      ...common,
+      todo_id:'hide_route_todo',
+      date:today
+    });
+    window.ReadySetPlanner.upsertDatedTodo({
+      ...common,
+      todo_id:'hide_route_future',
+      date:tomorrow
+    });
+    return todo.todo_id;
+  });
+
+
       todo_id:'hide_route_todo',
       date:today,
       label:'영어 · Unit 3',
@@ -47,6 +93,7 @@ test('recurring vocabulary TODO launches Hide with Learning Engine context and r
   expect(prepared.url).toContain('learning_context=');
   expect(prepared.url).toContain('route_authority=READY_LEARNING_ENGINE_ROUTING');
   const preparedUrl=new URL(prepared.url);
+  expect(preparedUrl.searchParams.get('material_binding')).toBeNull();
   const directive=JSON.parse(preparedUrl.searchParams.get('review_directive'));
   expect(directive.authority).toBe('EXPLICIT_READY_PLANNER_REVIEW_DIRECTIVE');
   expect(directive.reviewPolicyOwner).toBe('READY_LEARNING_ENGINE');
@@ -74,6 +121,20 @@ test('recurring vocabulary TODO launches Hide with Learning Engine context and r
           responseLatencyMs:900,
           taskState:'COMPLETED',
           taskContext:{session_id:c.session_id,task_id:t.task_id,lap_id:c.active_lap_id},
+          materialBinding:{
+            contract_version:'READY_SPECIALIST_MATERIAL_BINDING_V1',
+            assignment_id:'a_hide',
+            analysis_id:'an_hide',
+            learning_unit_id:'u_hide',
+            source_range:'Unit 3',
+            workbook_ref_id:'hide_book',
+            concept_skill_target:'VOCABULARY',
+            specialist_app:'hide-seek',
+            specialist_material_id:'hide_mission_unit3',
+            specialist_material_kind:'HIDE_MISSION',
+            confirmation_state:'HUMAN_CONFIRMED',
+            confirmation_source:'HIDE_USER_ACTION'
+          },
           memorySummary:{
             averageMemoryStrength:61,
             prioritySemantics:'ADVISORY_SIGNAL_NOT_DATE',
@@ -87,6 +148,19 @@ test('recurring vocabulary TODO launches Hide with Learning Engine context and r
   });
 
   await page.waitForFunction(()=>window.ReadySetRev07.contract().tasks[0].state==='COMPLETED');
+  await expect.poll(async()=>page.evaluate(()=>{
+    const binding=window.ReadyAssignments.specialistBinding({
+      assignment_id:'a_hide',specialist_app:'hide-seek',source_range:'Unit 3',
+      workbook_ref_id:'hide_book',concept_skill_target:'VOCABULARY'
+    });
+    const future=window.ReadySetPlanner.snapshot().dated_todos.find(x=>x.todo_id==='hide_route_future');
+    const task=window.ReadySetRev07.contract().tasks[0];
+    return {
+      stored:binding?.specialist_material_id||null,
+      future:future?.specialist_material_binding?.specialist_material_id||null,
+      task:task?.specialist_material_binding?.specialist_material_id||null
+    };
+  })).toEqual({stored:'hide_mission_unit3',future:'hide_mission_unit3',task:'hide_mission_unit3'});
   await page.locator('#completeBtn').click();
   await expect(page.locator('#readyRev07Wrap')).toBeVisible();
   await expect(page.locator('#rev07ConfirmEnd')).toBeEnabled();
@@ -116,4 +190,51 @@ test('recurring vocabulary TODO launches Hide with Learning Engine context and r
     attempt_count:2,
     response_latency_ms:900
   });
+});
+
+
+test('confirmed specialist material binding is reused on the next Hide launch',async({page})=>{
+  await page.addInitScript(()=>{
+    window.__READY_AUTH_BOOTSTRAP__={
+      authenticated:true,family_id:'TEST_FAMILY',member_id:'TEST_PARENT',role:'PARENT',
+      session_id:'TEST_SESSION_2',expires_at:'2099-01-01T00:00:00.000Z',source:'TEST_ONLY'
+    };
+  });
+  await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
+  const todoId=await page.evaluate(()=>{
+    const today=new Date().toLocaleDateString('sv-SE');
+    const binding={
+      binding_id:'binding_hide_unit3',
+      contract_version:'READY_SPECIALIST_MATERIAL_BINDING_V1',
+      assignment_id:'a_reuse',
+      analysis_id:'an_reuse',
+      learning_unit_id:'u_reuse',
+      source_range:'Unit 3',
+      workbook_ref_id:'book_reuse',
+      concept_skill_target:'VOCABULARY',
+      specialist_app:'hide-seek',
+      specialist_material_id:'hide_mission_unit3',
+      specialist_material_kind:'HIDE_MISSION',
+      confirmation_state:'HUMAN_CONFIRMED',
+      confirmed_by:'PARENT',
+      confirmation_source:'TEST'
+    };
+    const todo=window.ReadySetPlanner.upsertDatedTodo({
+      todo_id:'hide_reuse_todo',date:today,label:'영어 · Unit 3',subject:'영어',
+      assignment_id:'a_reuse',analysis_id:'an_reuse',learning_unit_id:'u_reuse',
+      source_range:'Unit 3',workbook_ref_id:'book_reuse',source:'PLANNER_V2_ALLOCATION',state:'PLANNED',
+      activity_types:['MEMORY'],activity_sequence:['RECALL'],concept_skill_target:'VOCABULARY',
+      execution_plan:{authority:'READY_LEARNING_ENGINE_ROUTING',mode:'HIDE_SPECIALIST',primary_app:'hide-seek',allowed_specialists:['hide-seek'],handoff_queue:['hide-seek']},
+      execution_app:'hide-seek',specialist_material_binding:binding
+    });
+    return todo.todo_id;
+  });
+  await page.locator('#homeView [data-nav="mission"]').first().click();
+  await page.locator('#plannerTodayList [data-todo-id="'+todoId+'"]').click();
+  await page.locator('#startBtn').click();
+  const prepared=await page.evaluate(()=>window.ReadySetRev07.prepareSpecialistLaunch('hide-seek'));
+  expect(prepared.ok).toBe(true);
+  const binding=JSON.parse(new URL(prepared.url).searchParams.get('material_binding'));
+  expect(binding.confirmation_state).toBe('HUMAN_CONFIRMED');
+  expect(binding.specialist_material_id).toBe('hide_mission_unit3');
 });
