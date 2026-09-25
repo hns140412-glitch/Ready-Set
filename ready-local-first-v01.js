@@ -6,14 +6,14 @@
   if(!EventEnvelope?.create || !LocalQueue?.create) throw new Error('READY_SHARED_EVENT_QUEUE_UNAVAILABLE');
 
   const DB_NAME='readyset_local_v1', DB_VERSION=1;
-  const SCOPE_KEYS={planner:'readyset_planner_v1',app_state:'readyset_state',assignments:'readyset_assignments_v2'};
+  const SCOPE_KEYS={planner:'readyset_planner_v1',app_state:'readyset_state',assignments:'readyset_assignments_v2',world_state:'taky_world_state_v1'};
   const StorageScope=globalThis.TakyStorageScope;
   if(!StorageScope?.snapshotScope || !StorageScope?.storageKey) throw new Error('READY_STORAGE_SCOPE_UNAVAILABLE');
   function familySession(){return globalThis.ReadyFamilySession?.current?.()||{authenticated:false,family_id:null,member_id:null,role:'CHILD'}}
   function scopeSession(logicalScope){
     const actor=familySession();
     if(!actor.authenticated)return actor;
-    if(['planner','assignments'].includes(logicalScope)&&actor.role==='PARENT'){
+    if(['planner','assignments','world_state'].includes(logicalScope)&&actor.role==='PARENT'){
       const child=globalThis.ReadyFamilyRegistry?.activeChild?.();
       if(child?.member_id)return {...actor,member_id:child.member_id};
     }
