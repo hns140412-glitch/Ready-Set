@@ -302,7 +302,7 @@
     if(app==='hide-seek'&&Array.isArray(task.review_lexical_ids)&&task.review_lexical_ids.length){
       url.searchParams.set('review_directive',JSON.stringify({
         authority:'EXPLICIT_READY_PLANNER_REVIEW_DIRECTIVE',
-        reviewPolicyOwner:'READY_LEARNING_ENGINE',
+        reviewPolicyOwner:'TAKY_LEARNING_ENGINE_CORE',
         scheduleOwner:'READY_SET_PLANNER',
         lexicalIds:[...new Set(task.review_lexical_ids.map(x=>String(x||'').trim()).filter(Boolean))].slice(0,24),
         directiveId:task.analysis_id||task.learning_unit_id||task.task_id,
