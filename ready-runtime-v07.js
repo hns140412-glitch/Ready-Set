@@ -6,7 +6,7 @@
   const SNAP_URL = 'https://cheerful-pothos-d1c3ee.netlify.app';
   const VALID_TASK_STATES = new Set(['PENDING','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
   const TRUSTED_APP_ORIGINS = new Set([new URL(HIDE_URL).origin, new URL(SNAP_URL).origin]);
-  const EXECUTION_CONTEXT_KEYS = ['family_id','member_id','actor_member_id','profile_id','assignment_id','analysis_id','learning_unit_id','todo_id','session_id','task_id','lap_id'];
+  const EXECUTION_CONTEXT_KEYS = ['family_id','member_id','actor_member_id','profile_id','companion_id','companion_name','assignment_id','analysis_id','learning_unit_id','todo_id','session_id','task_id','lap_id'];
 
   const id = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
   const iso = ms => new Date(ms ?? Date.now()).toISOString();
@@ -219,11 +219,14 @@
     const family = window.ReadyFamilySession?.current?.() || {};
     const activeChild = family.role === 'PARENT' ? window.ReadyFamilyRegistry?.activeChild?.() : null;
     const learnerMemberId = family.role === 'PARENT' ? (activeChild?.member_id || null) : (family.member_id || null);
+    const companion=window.ReadyCrewRegistry?.primary?.()||null;
     return {
       family_id: family.family_id || null,
       member_id: learnerMemberId,
       actor_member_id: family.member_id || null,
       profile_id: state.profile?.id || state.profile?.profile_id || null,
+      companion_id: companion?.character_id||null,
+      companion_name: companion?.display_name||companion?.canonical_name||null,
       assignment_id: task?.assignment_id || null,
       analysis_id: task?.analysis_id || null,
       learning_unit_id: task?.learning_unit_id || null,
