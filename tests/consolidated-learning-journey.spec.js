@@ -61,7 +61,7 @@ test('consolidated recurring learning journey closes the full Ready -> Hide -> e
   expect(seeded.processed.ok).toBe(true);
   expect(seeded.today_todo).toBeTruthy();
   expect(seeded.today_todo.execution_app).toBe('hide-seek');
-  expect(seeded.today_todo.execution_plan?.authority).toBe('READY_LEARNING_ENGINE_ROUTING');
+  expect(seeded.today_todo.execution_plan?.authority).toBe('READY_EXECUTION_ROUTING');
 
   await page.locator('#homeView [data-nav="mission"]').first().click();
   const row=page.locator('#plannerTodayList [data-todo-id="'+seeded.today_todo.todo_id+'"]');
@@ -72,7 +72,7 @@ test('consolidated recurring learning journey closes the full Ready -> Hide -> e
 
   const prepared=await page.evaluate(()=>window.ReadySetRev07.prepareSpecialistLaunch('hide-seek'));
   expect(prepared.ok).toBe(true);
-  expect(prepared.url).toContain('route_authority=READY_LEARNING_ENGINE_ROUTING');
+  expect(prepared.url).toContain('route_authority=READY_EXECUTION_ROUTING');
 
   await page.evaluate(()=>{
     const c=window.ReadySetRev07.contract();
