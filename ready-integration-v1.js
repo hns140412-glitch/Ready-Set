@@ -91,10 +91,59 @@
     };
   }
 
+  function normalizeLearningAction(message={}){
+    const runtime=message.runtime||message.learning_result||{};
+    const decision=runtime.decision||message.decision||{};
+    const policy=runtime.evidence_policy||message.evidence_policy||{};
+    const trace=runtime.trace||message.trace||{};
+    const action=runtime.next_learning_action||message.next_learning_action||message.action||{};
+
+    if(message.ok===false||runtime.ok===false)return {ok:false,reason:'LEARNING_RUNTIME_NOT_OK'};
+    if(policy&&Array.isArray(policy.denied)&&policy.denied.length)return {ok:false,reason:'LEARNING_EVIDENCE_POLICY_DENIED',denied:policy.denied};
+    if(decision.execution_status==='HOLD_FOR_MORE_RELIABLE_INTERPRETATION'){
+      return {ok:false,reason:'LEARNING_DECISION_HOLD',decision};
+    }
+
+    return {
+      ok:true,
+      schema:'TAKY_READY_LEARNING_ACTION_V2',
+      accepted_for_planner:!!action.planner_allocation_allowed,
+      child_id:message.child_id||message.learner_id||runtime.scope?.member_id||null,
+      skill_id:action.skill_id||message.skill_id||runtime.scope?.concept_skill_target||null,
+      action:action.action||null,
+      intensity:action.intensity||null,
+      estimated_units:Number(action.estimated_units||1),
+      source_refs:Array.isArray(trace.source_refs)?[...trace.source_refs]:[],
+      evidence_policy_ids:Array.isArray(trace.evidence_policy_ids)?[...trace.evidence_policy_ids]:[],
+      preferred_date:null,
+      planner_date:null,
+      guards:{
+        ready_planner_owns_date:true,
+        learning_action_is_candidate:true,
+        learning_engine_does_not_write_schedule:true,
+        source_refs_are_context_only:true
+      }
+    };
+  }
+
+  function consumeLearningAction(message={}){
+    const request=normalizeLearningAction(message);
+    if(!request.ok)return request;
+    try{window.dispatchEvent(new CustomEvent('taky-ready-learning-action',{detail:request}));}catch{}
+    return request;
+  }
+
   function processConfirmed(input={}){
     const state=window.ReadyAssignments?.load?.();if(!state)return [];
     return Object.values(state.assignmentFacts).filter(f=>f.confirmation_state==='FACT_CONFIRMED').map(f=>processAssignment(f.assignment_id,input));
   }
-  window.ReadyIntegrationV1={version:VERSION,processAssignment,processConfirmed,reviewEscalatedCarryOver};
+
+  window.addEventListener('message',event=>{
+    const data=event?.data;
+    if(!data||data.type!=='TAKY_LEARNING_ACTION')return;
+    consumeLearningAction(data.learning_result||data.payload||{});
+  });
+
+  window.ReadyIntegrationV1={version:VERSION,processAssignment,processConfirmed,reviewEscalatedCarryOver,normalizeLearningAction,consumeLearningAction};
   document.documentElement.dataset.readyIntegration=VERSION;
 })();
