@@ -15,11 +15,48 @@ test('same terminal learning evidence is reviewed once only',async({page})=>{
     const terminalOne=p.recordSessionOutcome({todo_id:todo.todo_id,ready_state:'COMPLETED',actual_ms:600000,session_id:'idem_session',task_id:'idem_task',learning_evidence:[{event_id:'idem_evidence_1',evidence_type:'MEMORY_RETRIEVAL_EVIDENCE',memory:{average_strength:42,review_advisories:[{nextReviewPriority:91}]}}],completed_specialists:['hide-seek'],at:'2026-09-21T07:10:00.000Z'});
     const terminalTwo=p.recordSessionOutcome({todo_id:todo.todo_id,ready_state:'COMPLETED',actual_ms:600000,session_id:'idem_session',task_id:'idem_task',learning_evidence:[{event_id:'idem_evidence_1',evidence_type:'MEMORY_RETRIEVAL_EVIDENCE',memory:{average_strength:42,review_advisories:[{nextReviewPriority:91}]}}],completed_specialists:['hide-seek'],at:'2026-09-21T07:10:00.000Z'});
     const observationCountBeforeReview=p.learningHistory(fact.assignment_id,{current_revision:1}).length;
-    const one=window.ReadyIntegrationV1.reviewLearningEvidence(fact.assignment_id,{start_date:'2026-09-22',as_of:'2026-09-25T12:00:00.000Z'});
+    state=window.ReadyAssignments.load();
+    const liveFact=state.assignmentFacts[fact.assignment_id];
+    const liveAnalysis=state.analyses[liveFact.current_analysis_id];
+    const vocabUnit=liveAnalysis.learning_unit_ids.map(id=>state.learningUnits[id]).find(x=>x.concept_skill_target==='VOCABULARY')||
+      state.learningUnits[liveAnalysis.learning_unit_ids[0]];
+    const decision={
+      ok:true,
+      decision_contract:'TAKY_RUNTIME_DECISION_CONTRACT_V1',
+      authority:'LEARNING_DECISION_INTENT_ONLY',
+      scope:{member_id:'TEST_PARENT',subject:vocabUnit.subject,concept_skill_target:vocabUnit.concept_skill_target},
+      blockers:[],
+      advisories:[],
+      pedagogical_actions:[
+        {intent:'TARGETED_RECOVERY_PRACTICE',priority:'HIGH',bases:['UNRESOLVED_RECOVERY'],targets:['idem_evidence_1']},
+        {intent:'RETRIEVAL_CHECKPOINT',priority:'HIGH',bases:['RETENTION_AT_RISK'],targets:['idem_evidence_1']}
+      ],
+      adaptive_plan:{
+        ok:true,
+        adaptive_plan_contract:'TAKY_ADAPTIVE_PLAN_INTENT_V1',
+        authority:'LEARNING_ADAPTIVE_PLAN_INTENT_ONLY',
+        unit_span_policy:'REDUCE',
+        add_checkpoint:true,
+        add_retrieval_checkpoint:true,
+        recovery_floor:'HIGH',
+        assistance_policy:'UNCHANGED',
+        target_learning_ids:['idem_evidence_1'],
+        rationale:[{intent:'TARGETED_RECOVERY_PRACTICE',priority:'HIGH',bases:['UNRESOLVED_RECOVERY']}],
+        cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','DUE_AT','DEADLINE','ASSIGNMENT_FACT']
+      },
+      execution_status:'PEDAGOGICAL_ACTION_AVAILABLE',
+      consumer_contract:{ready:'MAY_TRANSLATE_INTENT_TO_EXECUTION_PLAN',planner:'OWNS_DATED_ALLOCATION',specialist:'OWNS_INTERACTION_EXECUTION_AND_EVIDENCE'}
+    };
+    const reviewInput={
+      start_date:'2026-09-22',
+      learning_decision:decision,
+      learning_decision_ref:'decision:idem-001'
+    };
+    const one=window.ReadyIntegrationV1.reviewLearningEvidence(fact.assignment_id,reviewInput);
     state=window.ReadyAssignments.load();
     const analysisAfterOne=state.assignmentFacts[fact.assignment_id].current_analysis_id;
     const todoCountAfterOne=p.snapshot().dated_todos.filter(x=>x.assignment_id===fact.assignment_id&&x.state!=='SUPERSEDED').length;
-    const two=window.ReadyIntegrationV1.reviewLearningEvidence(fact.assignment_id,{start_date:'2026-09-22',as_of:'2026-09-25T12:00:00.000Z'});
+    const two=window.ReadyIntegrationV1.reviewLearningEvidence(fact.assignment_id,reviewInput);
     state=window.ReadyAssignments.load();
     return {terminalOne,terminalTwo,observationCountBeforeReview,one,two,analysisAfterOne,analysisAfterTwo:state.assignmentFacts[fact.assignment_id].current_analysis_id,todoCountAfterOne,todoCountAfterTwo:p.snapshot().dated_todos.filter(x=>x.assignment_id===fact.assignment_id&&x.state!=='SUPERSEDED').length,receipt:state.assignmentFacts[fact.assignment_id].learning_evidence_review};
   });
@@ -32,5 +69,7 @@ test('same terminal learning evidence is reviewed once only',async({page})=>{
   expect(r.two.reason).toBe('LEARNING_EVIDENCE_ALREADY_REVIEWED');
   expect(r.analysisAfterTwo).toBe(r.analysisAfterOne);
   expect(r.todoCountAfterTwo).toBe(r.todoCountAfterOne);
-  expect(r.receipt.evidence_count).toBeGreaterThan(0);
+  expect(r.one.legacy_learning_logic_used).toBe(false);
+  expect(r.receipt.review_key).toBe('CORE_DECISION:decision:idem-001');
+  expect(r.receipt.evidence_count).toBe(0);
 });
