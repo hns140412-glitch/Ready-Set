@@ -257,10 +257,11 @@
   }
 
   function adaptiveReviewPolicy(analysis,profile){
-    const signal=analysis?.escalation_review_signal;
-    if(!signal||signal.authority!=='ESCALATION_ADVISORY_ONLY')return null;
+    const signal=analysis?.evidence_review_signal||analysis?.escalation_review_signal;
+    if(!signal||!['ESCALATION_ADVISORY_ONLY','LEARNING_EVIDENCE_ADVISORY_ONLY'].includes(signal.authority))return null;
     const states=(signal.states||[]).map(clean).filter(Boolean);
     const repeatedFriction=states.filter(x=>['PARTIAL','DEFERRED','BLOCKED','WAITING_FOR_PARENT'].includes(x)).length;
+    const directEvidenceReview=signal.authority==='LEARNING_EVIDENCE_ADVISORY_ONLY';
     const helpBlocked=states.some(x=>['BLOCKED','WAITING_FOR_PARENT'].includes(x));
     const depth=Math.max(0,Number(signal.carry_over_depth)||0);
     const baseSpan=Number(profile?.split_policy?.max_span)||null;
@@ -273,7 +274,7 @@
     const productionObserved=Number(specialist?.child_authored_production_count||0)>0;
     return {
       authority:'ADAPTIVE_REVIEW_ONLY',
-      reduce_unit_span:!!(baseSpan&&repeatedFriction>=2&&depth>=3),
+      reduce_unit_span:!!(baseSpan&&((repeatedFriction>=2&&depth>=3)||(directEvidenceReview&&memoryConcern))),
       max_span:baseSpan?Math.max(1,Math.ceil(baseSpan/2)):null,
       add_checkpoint:repeatedFriction>=2||memoryConcern,
       add_retrieval_checkpoint:memoryConcern,
@@ -484,6 +485,7 @@
       provenance:{kind:'LEARNING_MASTER',actor:input.actor||'SYSTEM',source_fact_updated_at:fact.updated_at||null,fact_revision:Number(fact.fact_revision)||1,previous_analysis_ids:[...(fact.previous_analysis_ids||[])]},
       cross_revision_learning_signal:input.learning_signal?clone(input.learning_signal):null,
       escalation_review_signal:input.escalation_review_signal?clone(input.escalation_review_signal):null,
+      evidence_review_signal:input.evidence_review_signal?clone(input.evidence_review_signal):null,
       review_reason:clean(input.review_reason)||null,
       learner_context:input.learner_context?clone(input.learner_context):null,
       confidence:clean(fact.teacher_instruction)?0.78:0.62,
