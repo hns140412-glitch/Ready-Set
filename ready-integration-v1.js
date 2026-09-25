@@ -56,9 +56,18 @@
     const evidence=(rows||[]).flatMap(x=>Array.isArray(x.learning_evidence)?x.learning_evidence:[]);
     const memory=evidence.filter(x=>x?.evidence_type==='MEMORY_RETRIEVAL_EVIDENCE');
     const production=evidence.filter(x=>x?.evidence_type==='LEARNER_PRODUCTION_EVIDENCE');
-    const priorities=memory.flatMap(x=>Array.isArray(x?.memory?.review_advisories)?x.memory.review_advisories:[])
-      .map(x=>Number(x?.nextReviewPriority??x?.priority))
-      .filter(Number.isFinite);
+    const advisoryMap=new Map();
+    for(const row of memory.flatMap(x=>Array.isArray(x?.memory?.review_advisories)?x.memory.review_advisories:[])){
+      const lexicalId=String(row?.lexicalId||row?.lexical_id||'').trim();
+      const priority=Number(row?.nextReviewPriority??row?.priority);
+      if(!lexicalId)continue;
+      const existing=advisoryMap.get(lexicalId);
+      if(!existing||(!Number.isFinite(existing.nextReviewPriority)&&Number.isFinite(priority))||(Number.isFinite(priority)&&priority>existing.nextReviewPriority)){
+        advisoryMap.set(lexicalId,{lexicalId,nextReviewPriority:Number.isFinite(priority)?priority:null});
+      }
+    }
+    const reviewAdvisories=[...advisoryMap.values()].sort((a,b)=>(Number(b.nextReviewPriority)||0)-(Number(a.nextReviewPriority)||0)).slice(0,24);
+    const priorities=reviewAdvisories.map(x=>Number(x.nextReviewPriority)).filter(Number.isFinite);
     const weakStrength=memory.map(x=>Number(x?.memory?.average_strength)).filter(Number.isFinite);
     const childAuthored=production.filter(x=>x?.production?.child_authored===true).length;
     return {
@@ -66,6 +75,7 @@
       memory_evidence_count:memory.length,
       production_evidence_count:production.length,
       max_memory_review_priority:priorities.length?Math.max(...priorities):null,
+      review_advisories:reviewAdvisories,
       min_memory_strength:weakStrength.length?Math.min(...weakStrength):null,
       child_authored_production_count:childAuthored,
       can_influence:['RECOVERY_INTENSITY','CHECKPOINT_SELECTION','UNIT_SPAN'],
