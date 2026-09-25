@@ -1522,8 +1522,50 @@ $('#saveProfileBtn').onclick=async()=>{
 
 
 
+function renderFamilyMemberControls(){
+  const session=familySession();
+  const familySection=$('#familyMemberSection');
+  const plannerContext=$('#plannerChildContext');
+  const familySelect=$('#familyActiveChildSelect');
+  const plannerSelect=$('#plannerChildSelect');
+  const list=$('#familyMemberList');
+  const isParent=session.authenticated&&session.role==='PARENT';
+  const children=window.ReadyFamilyRegistry?.children?.()||[];
+  const active=window.ReadyFamilyRegistry?.activeChild?.()||null;
+
+  if(familySection)familySection.hidden=!isParent;
+  if(plannerContext)plannerContext.hidden=!isParent;
+  const fill=select=>{
+    if(!select)return;
+    select.innerHTML='';
+    for(const child of children){
+      const option=document.createElement('option');
+      option.value=child.member_id;
+      option.textContent=child.profile?.display_name||child.member_id;
+      option.selected=child.member_id===active?.member_id;
+      select.appendChild(option);
+    }
+    select.disabled=!children.length;
+  };
+  fill(familySelect);fill(plannerSelect);
+  if(list){
+    list.innerHTML=children.map(child=>`<div class="adminListItem"><b>${escapeHtml(child.profile?.display_name||child.member_id)}</b><small>${escapeHtml(child.member_id)}</small></div>`).join('');
+  }
+}
+function selectFamilyChild(memberId){
+  const result=window.ReadyFamilyRegistry?.selectActiveChild?.(memberId);
+  if(!result?.ok)return;
+  renderFamilyMemberControls();
+  renderHome();
+  renderMission();
+  renderPlanner();
+  renderPlannerAdmin();
+  updateAvatar();
+}
+
 function renderAuthStatus(){
   const session=familySession();
+  renderFamilyMemberControls();
   const badge=$('#authStateBadge'),text=$('#authStatusText');
   const loginControls=$('#authLoginControls'),loggedInControls=$('#authLoggedInControls'),link=$('#familyLinkChildSection');
   if(badge)badge.textContent=session.authenticated?(session.role==='PARENT'?'보호자':'학생'):'로컬 모드';
@@ -1536,7 +1578,11 @@ function renderAuthStatus(){
   if(loggedInControls)loggedInControls.hidden=!session.authenticated;
   if(link)link.hidden=!(session.authenticated&&session.role==='PARENT');
 }
+$('#familyActiveChildSelect')?.addEventListener('change',e=>selectFamilyChild(e.target.value));
+$('#plannerChildSelect')?.addEventListener('change',e=>selectFamilyChild(e.target.value));
+
 window.addEventListener('readyset-family-registry',()=>{
+  renderFamilyMemberControls();
   const projection=window.ReadyFamilyRegistry?.minimalProjection?.()||{};
   if(projection.display_name && state.profile.name!==projection.display_name){
     state.profile.name=projection.display_name;
