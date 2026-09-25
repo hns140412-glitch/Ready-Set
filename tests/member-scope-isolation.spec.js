@@ -1,6 +1,18 @@
 const { test, expect } = require('@playwright/test');
 
 test('member scope isolates planner, assignments, app state and local-first snapshots', async ({ page }) => {
+  await page.addInitScript(()=>{
+    window.__READY_AUTH_BOOTSTRAP__={
+      authenticated:true,
+      account_id:'TEST_INITIAL_ACCOUNT',
+      family_id:'FAMILY_TEST',
+      member_id:'TEST_INITIAL_MEMBER',
+      role:'CHILD',
+      session_id:'TEST_INITIAL_SESSION',
+      expires_at:'2099-01-01T00:00:00.000Z',
+      source:'TEST_ONLY'
+    };
+  });
   await page.goto('http://127.0.0.1:4173/', {waitUntil:'load'});
 
   const result=await page.evaluate(async()=>{
@@ -128,6 +140,18 @@ test('member scope isolates planner, assignments, app state and local-first snap
 
 
 test('active member gates local-first recovery, flush and conflict handling', async ({ page }) => {
+  await page.addInitScript(()=>{
+    window.__READY_AUTH_BOOTSTRAP__={
+      authenticated:true,
+      account_id:'TEST_INITIAL_ACCOUNT',
+      family_id:'FAMILY_TEST',
+      member_id:'TEST_INITIAL_MEMBER',
+      role:'CHILD',
+      session_id:'TEST_INITIAL_SESSION',
+      expires_at:'2099-01-01T00:00:00.000Z',
+      source:'TEST_ONLY'
+    };
+  });
   await page.goto('http://127.0.0.1:4173/', {waitUntil:'load'});
 
   const result=await page.evaluate(async()=>{
