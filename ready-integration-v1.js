@@ -117,8 +117,10 @@
     };
   }
 
-  function learnerAdaptiveProfile(rows=[]){
-    const cutoff=Date.now()-1000*60*60*24*90;
+  function learnerAdaptiveProfile(rows=[],options={}){
+    const asOf=Date.parse(options.as_of||'');
+    const anchor=Number.isFinite(asOf)?asOf:Date.now();
+    const cutoff=anchor-1000*60*60*24*90;
     const seen=new Set();
     const recent=(rows||[]).filter(row=>{
       const stamp=Date.parse(row?.at||row?.created_at||row?.updated_at||'');
