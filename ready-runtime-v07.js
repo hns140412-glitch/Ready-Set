@@ -6,7 +6,7 @@
   const SNAP_URL = 'https://cheerful-pothos-d1c3ee.netlify.app';
   const VALID_TASK_STATES = new Set(['PENDING','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
   const TRUSTED_APP_ORIGINS = new Set([new URL(HIDE_URL).origin, new URL(SNAP_URL).origin]);
-  const EXECUTION_CONTEXT_KEYS = ['family_id','member_id','profile_id','assignment_id','analysis_id','learning_unit_id','todo_id','session_id','task_id','lap_id'];
+  const EXECUTION_CONTEXT_KEYS = ['family_id','member_id','actor_member_id','profile_id','assignment_id','analysis_id','learning_unit_id','todo_id','session_id','task_id','lap_id'];
 
   const id = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
   const iso = ms => new Date(ms ?? Date.now()).toISOString();
@@ -211,9 +211,12 @@
 
   function currentExecutionIdentity(task, contract) {
     const family = window.ReadyFamilySession?.current?.() || {};
+    const activeChild = family.role === 'PARENT' ? window.ReadyFamilyRegistry?.activeChild?.() : null;
+    const learnerMemberId = family.role === 'PARENT' ? (activeChild?.member_id || null) : (family.member_id || null);
     return {
       family_id: family.family_id || null,
-      member_id: family.member_id || null,
+      member_id: learnerMemberId,
+      actor_member_id: family.member_id || null,
       profile_id: state.profile?.id || state.profile?.profile_id || null,
       assignment_id: task?.assignment_id || null,
       analysis_id: task?.analysis_id || null,
@@ -239,9 +242,13 @@
     const url = new URL(appUrl(app));
     const executionContext = currentExecutionIdentity(task, c);
     executionContext.lap_id = lap.lap_id;
+    if (!executionContext.member_id) return;
+    const memberProfile = window.ReadyFamilyRegistry?.minimalProjection?.(executionContext.member_id) || {};
     for (const [key, value] of Object.entries(executionContext)) {
       if (value) url.searchParams.set(key, value);
     }
+    if (memberProfile.display_name) url.searchParams.set('member_display_name', memberProfile.display_name);
+    if (memberProfile.avatar_ref) url.searchParams.set('member_avatar_ref', memberProfile.avatar_ref);
     url.searchParams.set('goal_id', c.goal_id);
     url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
     url.searchParams.set('snap_target', SNAP_URL);
@@ -267,7 +274,7 @@
     const task = c.tasks.find(t => t.task_id === task_id);
     if (!task) return false;
     const expected = currentExecutionIdentity(task, c);
-    const incoming = {family_id,member_id,profile_id,assignment_id,analysis_id,learning_unit_id,todo_id};
+    const incoming = {family_id,member_id,actor_member_id,profile_id,assignment_id,analysis_id,learning_unit_id,todo_id};
     for (const [key,value] of Object.entries(incoming)) {
       if (value && expected[key] && value !== expected[key]) return false;
     }
@@ -290,6 +297,7 @@
     const args = {
       family_id: p.get('family_id'),
       member_id: p.get('member_id'),
+      actor_member_id: p.get('actor_member_id'),
       profile_id: p.get('profile_id'),
       assignment_id: p.get('assignment_id'),
       analysis_id: p.get('analysis_id'),
@@ -319,6 +327,7 @@
     applyInboundResult({
       family_id: e.family_id,
       member_id: e.member_id || e.child_id,
+      actor_member_id: e.actor_member_id,
       profile_id: e.profile_id,
       assignment_id: e.assignment_id,
       analysis_id: e.analysis_id,
