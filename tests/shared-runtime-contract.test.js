@@ -142,3 +142,10 @@ assert(readyAdapterSource.includes('OWNS_DATED_ALLOCATION'));
 assert(readyIntegrationSource.includes("legacy_learning_logic:'LEGACY_COMPATIBILITY'"));
 assert(readyIntegrationSource.includes('applyLearningEngineDecision'));
 console.log('PASS: Ready consumes independent Learning Engine decisions through adapter v2 and retains legacy logic only as compatibility path');
+
+const readyIntegrationSourceV2=fs.readFileSync(path.join(__dirname,'..','ready-integration-v1.js'),'utf8');
+assert(readyIntegrationSourceV2.includes('if(input.learning_decision)'));
+assert(readyIntegrationSourceV2.includes('legacy_learning_logic_used:false'));
+assert(readyIntegrationSourceV2.includes('CORE_DECISION_ADAPTER_REVIEW'));
+assert(readyIntegrationSourceV2.includes("legacy_learning_logic:'LEGACY_COMPATIBILITY'"));
+console.log('PASS: Core decision path bypasses Ready-local adaptive judgment while legacy path remains explicit compatibility only');
