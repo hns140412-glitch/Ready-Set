@@ -109,35 +109,24 @@
       learning_decision_projection:learningDecisionProjection
     };
   }
+  function legacyCompat(){
+    return window.ReadyLegacyLearningCompat||null;
+  }
+
   function specialistEvidenceSignal(rows=[]){
-    const evidence=(rows||[]).flatMap(x=>Array.isArray(x.learning_evidence)?x.learning_evidence:[]);
-    const memory=evidence.filter(x=>x?.evidence_type==='MEMORY_RETRIEVAL_EVIDENCE');
-    const production=evidence.filter(x=>x?.evidence_type==='LEARNER_PRODUCTION_EVIDENCE');
-    const advisoryMap=new Map();
-    for(const row of memory.flatMap(x=>Array.isArray(x?.memory?.review_advisories)?x.memory.review_advisories:[])){
-      const lexicalId=String(row?.lexicalId||row?.lexical_id||'').trim();
-      const priority=Number(row?.nextReviewPriority??row?.priority);
-      if(!lexicalId)continue;
-      const existing=advisoryMap.get(lexicalId);
-      if(!existing||(!Number.isFinite(existing.nextReviewPriority)&&Number.isFinite(priority))||(Number.isFinite(priority)&&priority>existing.nextReviewPriority)){
-        advisoryMap.set(lexicalId,{lexicalId,nextReviewPriority:Number.isFinite(priority)?priority:null});
-      }
-    }
-    const reviewAdvisories=[...advisoryMap.values()].sort((a,b)=>(Number(b.nextReviewPriority)||0)-(Number(a.nextReviewPriority)||0)).slice(0,24);
-    const priorities=reviewAdvisories.map(x=>Number(x.nextReviewPriority)).filter(Number.isFinite);
-    const weakStrength=memory.map(x=>Number(x?.memory?.average_strength)).filter(Number.isFinite);
-    const childAuthored=production.filter(x=>x?.production?.child_authored===true).length;
-    return {
-      authority:'READY_EVIDENCE_INTERPRETATION_ONLY',
-      memory_evidence_count:memory.length,
-      production_evidence_count:production.length,
-      max_memory_review_priority:priorities.length?Math.max(...priorities):null,
-      review_advisories:reviewAdvisories,
-      min_memory_strength:weakStrength.length?Math.min(...weakStrength):null,
-      child_authored_production_count:childAuthored,
-      can_influence:['RECOVERY_INTENSITY','CHECKPOINT_SELECTION','UNIT_SPAN'],
-      cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','ASSIGNMENT_FACT','SOURCE_RANGE','DEADLINE','FACT_CONFIRMATION']
-    };
+    const compat=legacyCompat();
+    return compat?.specialistEvidenceSignal
+      ? compat.specialistEvidenceSignal(rows)
+      : {
+          authority:'READY_LEGACY_COMPAT_UNAVAILABLE',
+          memory_evidence_count:0,
+          production_evidence_count:0,
+          max_memory_review_priority:null,
+          review_advisories:[],
+          min_memory_strength:null,
+          child_authored_production_count:0,
+          runtime_default_authority:false
+        };
   }
 
   function reviewEscalatedCarryOver(carryOverId,input={}){
@@ -214,53 +203,17 @@
   }
 
   function learnerAdaptiveProfile(rows=[],options={}){
-    const asOf=Date.parse(options.as_of||'');
-    const anchor=Number.isFinite(asOf)?asOf:Date.now();
-    const cutoff=anchor-1000*60*60*24*90;
-    const seen=new Set();
-    const cleanKey=value=>String(value??'').trim();
-    const memberId=cleanKey(options.member_id||'');
-    const subject=cleanKey(options.subject||'').toLowerCase();
-    const recent=(rows||[]).filter(row=>{
-      if(memberId&&cleanKey(row?.member_id||row?.learner_id||'')&&cleanKey(row?.member_id||row?.learner_id||'')!==memberId)return false;
-      if(subject&&cleanKey(row?.subject||row?.book_subject||'')&&cleanKey(row?.subject||row?.book_subject||'').toLowerCase()!==subject)return false;
-      const stamp=Date.parse(row?.at||row?.created_at||row?.updated_at||'');
-      return !Number.isFinite(stamp)||stamp>=cutoff;
-    }).slice(-12);
-    const evidence=recent.flatMap((row,rowIndex)=>(Array.isArray(row.learning_evidence)?row.learning_evidence:[]).map((e,eIndex)=>({e,row,rowIndex,eIndex})))
-      .filter(({e,row,rowIndex,eIndex})=>{
-        const key=cleanKey(e?.evidence_id||e?.event_id||e?.session_id||row?.session_id||row?.execution_observation_id||'')||
-          JSON.stringify([row?.at||row?.created_at||rowIndex,e?.evidence_type,e?.memory?.average_strength,eIndex]);
-        if(seen.has(key))return false;
-        seen.add(key); return true;
-      });
-    const memory=evidence.map(x=>x.e).filter(x=>x?.evidence_type==='MEMORY_RETRIEVAL_EVIDENCE');
-    const strengths=memory.map(x=>Number(x?.memory?.average_strength)).filter(Number.isFinite);
-    const priorities=memory.flatMap(x=>Array.isArray(x?.memory?.review_advisories)?x.memory.review_advisories:[])
-      .map(x=>Number(x?.nextReviewPriority??x?.priority)).filter(Number.isFinite);
-    const frictionStates=recent.map(x=>x.ready_state||x.state).filter(x=>['PARTIAL','DEFERRED','BLOCKED','WAITING_FOR_PARENT'].includes(x));
-    const enough=strengths.length>=3;
-    const baseline=enough?strengths.slice(0,-1).reduce((a,b)=>a+b,0)/Math.max(1,strengths.length-1):null;
-    const latest=strengths.length?strengths[strengths.length-1]:null;
-    const delta=Number.isFinite(baseline)&&Number.isFinite(latest)?latest-baseline:null;
-    const trend=!Number.isFinite(delta)?'INSUFFICIENT_EVIDENCE':delta<=-10?'DECLINING':delta>=10?'IMPROVING':'STABLE';
-    return {
-      authority:'LEARNER_ADAPTIVE_PROFILE_ADVISORY_ONLY',
-      observation_count:recent.length,
-      unique_evidence_count:evidence.length,
-      freshness_window_days:90,
-      member_scope:memberId||null,
-      subject_scope:subject||null,
-      memory_sample_count:strengths.length,
-      baseline_memory_strength:Number.isFinite(baseline)?Math.round(baseline*10)/10:null,
-      latest_memory_strength:latest,
-      memory_delta:Number.isFinite(delta)?Math.round(delta*10)/10:null,
-      trend,
-      friction_count:frictionStates.length,
-      max_memory_review_priority:priorities.length?Math.max(...priorities):null,
-      can_influence:['RECOVERY_INTENSITY','CHECKPOINT_SELECTION','UNIT_SPAN','ACTIVITY_SEQUENCE'],
-      cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','ASSIGNMENT_FACT','SOURCE_RANGE','DEADLINE','FACT_CONFIRMATION']
-    };
+    const compat=legacyCompat();
+    return compat?.learnerAdaptiveProfile
+      ? compat.learnerAdaptiveProfile(rows,options)
+      : {
+          authority:'READY_LEGACY_COMPAT_UNAVAILABLE',
+          observation_count:0,
+          unique_evidence_count:0,
+          memory_sample_count:0,
+          trend:'INSUFFICIENT_EVIDENCE',
+          runtime_default_authority:false
+        };
   }
 
   function reviewLearningEvidence(assignmentId,input={}){
@@ -338,9 +291,19 @@
     if(fact.confirmation_state!=='FACT_CONFIRMED')return {ok:false,reason:'FACT_NOT_CONFIRMED'};
     const history=window.ReadySetPlanner.learningHistory?.(assignmentId,{current_revision:Number(fact.fact_revision)||1})||[];
     const recent=history.slice(-12);
-    const specialist=specialistEvidenceSignal(recent);
     const activeMember=window.ReadyFamilySession?.current?.()?.member_id||input.member_id||null;
     const factSubject=fact.book_subject||fact.subject||null;
+    const compatAssessment=legacyCompat()?.assessMemoryConcern?.(recent,{
+      as_of:input.as_of,
+      member_id:activeMember,
+      subject:factSubject
+    })||null;
+    const specialist=compatAssessment?.specialist_evidence||specialistEvidenceSignal(recent);
+    const adaptiveProfile=compatAssessment?.learner_adaptive_profile||learnerAdaptiveProfile(recent,{
+      as_of:input.as_of,
+      member_id:activeMember,
+      subject:factSubject
+    });
     const evidenceKeys=[...new Set(recent.flatMap((row,rowIndex)=>(Array.isArray(row.learning_evidence)?row.learning_evidence:[]).map((e,eIndex)=>
       String(e?.evidence_id||e?.event_id||e?.session_id||row?.session_id||row?.execution_observation_id||[row?.at||row?.created_at||rowIndex,e?.evidence_type,e?.memory?.average_strength,eIndex].join(':')).trim()
     )).filter(Boolean))].sort();
@@ -354,15 +317,7 @@
     if(fact.learning_evidence_review?.review_key===reviewKey){
       return {ok:false,reason:'LEARNING_EVIDENCE_ALREADY_REVIEWED',review_key:reviewKey};
     }
-    const adaptiveProfile=learnerAdaptiveProfile(recent,{
-      as_of:input.as_of,
-      member_id:activeMember,
-      subject:factSubject
-    });
-    const priority=Number(specialist.max_memory_review_priority);
-    const strength=Number(specialist.min_memory_strength);
-    const personalDecline=adaptiveProfile.trend==='DECLINING';
-    const memoryConcern=(Number.isFinite(priority)&&priority>=70)||(Number.isFinite(strength)&&strength<60)||personalDecline;
+    const memoryConcern=compatAssessment?.memory_concern===true;
     if(!memoryConcern)return {ok:false,reason:'EVIDENCE_REVIEW_NOT_REQUIRED',specialist_evidence:specialist};
 
     const invalidated=window.ReadySetPlanner.invalidateAssignmentOutputs?.(assignmentId,{
