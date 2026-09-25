@@ -176,7 +176,13 @@
     const history=window.ReadySetPlanner.learningHistory?.(assignmentId,{current_revision:Number(fact.fact_revision)||1})||[];
     const recent=history.slice(-12);
     const specialist=specialistEvidenceSignal(recent);
-    const adaptiveProfile=learnerAdaptiveProfile(recent);
+    const activeMember=window.ReadyFamilySession?.current?.()?.member_id||input.member_id||null;
+    const factSubject=fact.book_subject||fact.subject||null;
+    const adaptiveProfile=learnerAdaptiveProfile(recent,{
+      as_of:input.as_of,
+      member_id:activeMember,
+      subject:factSubject
+    });
     const priority=Number(specialist.max_memory_review_priority);
     const strength=Number(specialist.min_memory_strength);
     const personalDecline=adaptiveProfile.trend==='DECLINING';
