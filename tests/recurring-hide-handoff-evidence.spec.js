@@ -57,32 +57,6 @@ test('recurring vocabulary TODO launches Hide with Learning Engine context and r
     return todo.todo_id;
   });
 
-
-      todo_id:'hide_route_todo',
-      date:today,
-      label:'영어 · Unit 3',
-      subject:'영어',
-      assignment_id:'a_hide',
-      analysis_id:'an_hide',
-      learning_unit_id:'u_hide',
-      source:'PLANNER_V2_ALLOCATION',
-      state:'PLANNED',
-      activity_types:['MEMORY','RECALL'],
-      activity_sequence:['ENCODE','RECALL','CHECK'],
-      concept_skill_target:'VOCABULARY',
-      review_lexical_ids:['word_1'],
-      execution_plan:{
-        authority:'READY_LEARNING_ENGINE_ROUTING',
-        mode:'HIDE_SPECIALIST',
-        primary_app:'hide-seek',
-        allowed_specialists:['hide-seek'],
-        handoff_queue:['hide-seek']
-      },
-      execution_app:'hide-seek'
-    });
-    return todo.todo_id;
-  });
-
   await page.locator('#homeView [data-nav="mission"]').first().click();
   await page.locator('#plannerTodayList [data-todo-id="'+todoId+'"]').click();
   await page.locator('#startBtn').click();
