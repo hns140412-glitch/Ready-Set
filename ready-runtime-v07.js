@@ -105,6 +105,7 @@
         confidence:Number.isFinite(link.confidence)?link.confidence:null,
         unresolved_flags:Array.isArray(link.unresolved_flags)?[...link.unresolved_flags]:[],
         review_lexical_ids:Array.isArray(link.review_lexical_ids)?[...link.review_lexical_ids]:[],
+        specialist_material_binding:link.specialist_material_binding?structuredClone(link.specialist_material_binding):null,
         scheduled_date:link.date||null,
         execution_app:link.execution_app||link.execution_plan?.primary_app||'ready-set',
         execution_plan:link.execution_plan||null,
@@ -293,6 +294,9 @@
     if(window.ReadySpecialistHandoffContract?.encodeLearningContext){
       url.searchParams.set('learning_context',window.ReadySpecialistHandoffContract.encodeLearningContext(task));
     }
+    if(task.specialist_material_binding?.confirmation_state==='HUMAN_CONFIRMED'){
+      url.searchParams.set('material_binding',JSON.stringify(task.specialist_material_binding));
+    }
     if(app==='hide-seek'&&Array.isArray(task.review_lexical_ids)&&task.review_lexical_ids.length){
       url.searchParams.set('review_directive',JSON.stringify({
         authority:'EXPLICIT_READY_PLANNER_REVIEW_DIRECTIVE',
@@ -312,6 +316,47 @@
     if(!prepared?.ok)return false;
     location.assign(prepared.url);
     return true;
+  }
+
+  function acceptMaterialBinding(task,sourceApp,payload,eventId=null){
+    const raw=payload?.materialBinding;
+    if(!raw||typeof raw!=='object'||Array.isArray(raw))return null;
+    if(raw.contract_version!=='READY_SPECIALIST_MATERIAL_BINDING_V1')return null;
+    if(raw.confirmation_state!=='HUMAN_CONFIRMED')return null;
+    if(String(raw.specialist_app||'').trim()!==sourceApp)return null;
+    if(!String(raw.specialist_material_id||'').trim())return null;
+    const same=(a,b)=>String(a||'').trim()===String(b||'').trim();
+    if(!same(raw.assignment_id,task.assignment_id))return null;
+    if(raw.analysis_id&&!same(raw.analysis_id,task.analysis_id))return null;
+    if(raw.learning_unit_id&&!same(raw.learning_unit_id,task.learning_unit_id))return null;
+    if(!same(raw.source_range,task.source_range))return null;
+    if(!same(raw.workbook_ref_id,task.workbook_ref_id))return null;
+    if(!same(raw.concept_skill_target,task.concept_skill_target))return null;
+    const actor=String(window.ReadyFamilySession?.current?.()?.role||'').toUpperCase();
+    if(!['PARENT','CHILD'].includes(actor))return null;
+    try{
+      const binding=window.ReadyAssignments?.confirmSpecialistBinding?.({
+        actor,
+        assignment_id:task.assignment_id,
+        analysis_id:task.analysis_id,
+        learning_unit_id:task.learning_unit_id,
+        source_range:task.source_range,
+        workbook_ref_id:task.workbook_ref_id,
+        concept_skill_target:task.concept_skill_target,
+        specialist_app:sourceApp,
+        specialist_material_id:raw.specialist_material_id,
+        specialist_material_kind:raw.specialist_material_kind||null,
+        confirmation_source:raw.confirmation_source||'SPECIALIST_USER_ACTION',
+        source_event_id:eventId||raw.source_event_id||null
+      })||null;
+      if(binding){
+        task.specialist_material_binding=structuredClone(binding);
+        window.ReadySetPlanner?.applySpecialistMaterialBinding?.(binding);
+      }
+      return binding;
+    }catch{
+      return null;
+    }
   }
 
   function normalizeInboundState(raw) {
@@ -339,6 +384,7 @@
     }
 
     const normalized = normalizeInboundState(task_state);
+    const acceptedBinding=acceptMaterialBinding(task,sourceApp,payload,event_id||null);
     const evidence=window.ReadyEvidenceOntology?.specialistEvidence?.({
       task,from_app:sourceApp,task_state:normalized||task_state||null,payload,event_id:event_id||null
     })||null;
@@ -361,7 +407,7 @@
       if(normalized==='BLOCKED')endActiveLap('SPECIALIST_RESULT','BLOCKED');
     }
     if (event_id) c.applied_event_ids = [...(c.applied_event_ids || []), event_id].slice(-200);
-    emit('APP_RETURN', { from: sourceApp || from_app || 'specialist', task_state: normalized || task_state || null, specialist_payload:payload||null, evidence_record:evidence||null });
+    emit('APP_RETURN', { from: sourceApp || from_app || 'specialist', task_state: normalized || task_state || null, specialist_payload:payload||null, evidence_record:evidence||null, material_binding:acceptedBinding||null });
     save();
     renderContractUI();
     return true;
