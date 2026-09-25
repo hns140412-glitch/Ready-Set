@@ -132,3 +132,13 @@ assert(readyAnswerVerifier.includes('ReadyAnswerKeyVerifier'));
 assert(readyAnswerVerifier.includes('ANSWER_KEY_EXACT'));
 assert(readyAnswerVerifier.includes('DETERMINISTIC_LOCAL_MATCH'));
 console.log('PASS: Ready exposes deterministic answer-key verification producer without promoting completion to mastery');
+
+const readyAdapterSource=fs.readFileSync(path.join(__dirname,'..','src','learning','learning-engine-adapter-v2.js'),'utf8');
+const readyIntegrationSource=fs.readFileSync(path.join(__dirname,'..','ready-integration-v1.js'),'utf8');
+assert(readyIndex.includes('./src/learning/learning-engine-adapter-v2.js'));
+assert(readyAdapterSource.includes('READY_EXECUTION_ADAPTER_ONLY'));
+assert(readyAdapterSource.includes('LEARNING_DECISION_INTENT_ONLY'));
+assert(readyAdapterSource.includes('OWNS_DATED_ALLOCATION'));
+assert(readyIntegrationSource.includes("legacy_learning_logic:'LEGACY_COMPATIBILITY'"));
+assert(readyIntegrationSource.includes('applyLearningEngineDecision'));
+console.log('PASS: Ready consumes independent Learning Engine decisions through adapter v2 and retains legacy logic only as compatibility path');
