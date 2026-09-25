@@ -34,6 +34,8 @@ jobs:
         run: node tests/family-member-registry.test.js
       - name: Validate shared family crew
         run: node tests/family-crew-contract.test.js
+      - name: Validate badge source evidence boundary
+        run: node tests/badge-source-evidence-boundary.test.js
       - name: Validate shared family world state
         run: node tests/family-world-state-contract.test.js
       - name: Install Playwright
