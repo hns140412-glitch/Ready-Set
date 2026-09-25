@@ -60,6 +60,11 @@ test('recurring vocabulary TODO launches Hide with Learning Engine context and r
         lap_id:c.active_lap_id,
         payload:{
           sourceApp:'hide-seek',
+          instrumentVersion:'hide-contract-v1',
+          interactionMode:'RECALL',
+          assisted:false,
+          attemptCount:2,
+          responseLatencyMs:900,
           taskState:'COMPLETED',
           taskContext:{session_id:c.session_id,task_id:t.task_id,lap_id:c.active_lap_id},
           memorySummary:{
@@ -83,12 +88,25 @@ test('recurring vocabulary TODO launches Hide with Learning Engine context and r
   await expect.poll(async()=>page.evaluate(()=>{
     const s=window.ReadySetPlanner.snapshot();
     const o=s.execution_observations.find(x=>x.todo_id==='hide_route_todo');
+    const ev=o?.learning_evidence?.[0]||null;
     return o?{
       evidence:o.learning_evidence?.map(x=>x.evidence_type)||[],
-      specialists:o.completed_specialists||[]
+      specialists:o.completed_specialists||[],
+      concept_skill_target:ev?.concept_skill_target||null,
+      instrument_version:ev?.instrument_version||null,
+      interaction_mode:ev?.interaction_mode||null,
+      assistance:ev?.assistance||null,
+      attempt_count:ev?.attempt_count??null,
+      response_latency_ms:ev?.response_latency_ms??null
     }:null;
   })).toEqual({
     evidence:['MEMORY_RETRIEVAL_EVIDENCE'],
-    specialists:['hide-seek']
+    specialists:['hide-seek'],
+    concept_skill_target:'VOCABULARY',
+    instrument_version:'hide-contract-v1',
+    interaction_mode:'RECALL',
+    assistance:'UNASSISTED',
+    attempt_count:2,
+    response_latency_ms:900
   });
 });
