@@ -261,6 +261,19 @@
       const state=window.ReadyAssignments.load();
       const fact=state.assignmentFacts?.[assignmentId];
       if(!fact)return {ok:false,reason:'ASSIGNMENT_FACT_NOT_FOUND'};
+      const coreReviewKey='CORE_DECISION:'+String(input.learning_decision_ref||JSON.stringify({
+        decision_contract:input.learning_decision?.decision_contract||null,
+        scope:input.learning_decision?.scope||null,
+        adaptive_plan:input.learning_decision?.adaptive_plan||null
+      }));
+      if(fact.learning_evidence_review?.review_key===coreReviewKey){
+        return {
+          ok:false,
+          reason:'LEARNING_EVIDENCE_ALREADY_REVIEWED',
+          review_key:coreReviewKey,
+          legacy_learning_logic_used:false
+        };
+      }
       const invalidated=window.ReadySetPlanner.invalidateAssignmentOutputs?.(assignmentId,{
         reason:'LEARNING_ENGINE_CORE_DECISION_REVIEW',
         fact_revision:Number(fact.fact_revision)||1
@@ -284,9 +297,20 @@
         scheduling_constraints:input.scheduling_constraints||null,
         force_core_reanalysis:true
       });
+      if(processed?.ok){
+        window.ReadyAssignments.markEvidenceReview?.(assignmentId,{
+          review_key:coreReviewKey,
+          analysis_id:processed.analysis_id||null,
+          evidence_count:0,
+          member_id:input.learning_decision?.scope?.member_id||null,
+          subject:input.learning_decision?.scope?.subject||null,
+          source:'LEARNING_ENGINE_CORE_DECISION'
+        });
+      }
       return {
         ...processed,
         assignment_id:assignmentId,
+        review_key:coreReviewKey,
         invalidation:invalidated,
         legacy_learning_logic_used:false
       };
