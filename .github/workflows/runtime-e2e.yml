@@ -38,6 +38,8 @@ jobs:
         run: node tests/learning-engine-adapter-v2.test.js
       - name: Validate durable central evidence outbox
         run: node tests/central-evidence-outbox.test.js
+      - name: Validate fail-safe central evidence sync
+        run: node tests/central-evidence-sync-runtime.test.js
       - name: Validate legacy Ready learning compatibility isolation
         run: node tests/legacy-ready-learning-compat.test.js
       - name: Validate Google Account FamilyMembership contract
