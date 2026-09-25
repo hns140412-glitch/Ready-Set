@@ -106,5 +106,54 @@
     };
   }
 
-  return Object.freeze({VERSION,specialistEvidenceSignal,learnerAdaptiveProfile,assessMemoryConcern});
+
+  function adaptiveReviewPolicy(analysis={},profile={}){
+    const signal=analysis?.evidence_review_signal||analysis?.escalation_review_signal;
+    if(!signal||!['ESCALATION_ADVISORY_ONLY','LEARNING_EVIDENCE_ADVISORY_ONLY'].includes(signal.authority))return null;
+    const states=(signal.states||[]).map(clean).filter(Boolean);
+    const repeatedFriction=states.filter(x=>['PARTIAL','DEFERRED','BLOCKED','WAITING_FOR_PARENT'].includes(x)).length;
+    const directEvidenceReview=signal.authority==='LEARNING_EVIDENCE_ADVISORY_ONLY';
+    const helpBlocked=states.some(x=>['BLOCKED','WAITING_FOR_PARENT'].includes(x));
+    const depth=Math.max(0,Number(signal.carry_over_depth)||0);
+    const baseSpan=Number(profile?.split_policy?.max_span)||null;
+
+    const specialist=signal.specialist_evidence?.authority==='READY_LEGACY_COMPAT_EVIDENCE_INTERPRETATION_ONLY'
+      ? signal.specialist_evidence
+      : null;
+    const memoryPriority=Number(specialist?.max_memory_review_priority);
+    const memoryStrength=Number(specialist?.min_memory_strength);
+    const adaptiveProfile=signal.learner_adaptive_profile?.authority==='READY_LEGACY_COMPAT_ADAPTIVE_PROFILE_ONLY'
+      ? signal.learner_adaptive_profile
+      : null;
+    const personalDecline=adaptiveProfile?.trend==='DECLINING'&&Number(adaptiveProfile?.memory_sample_count)>=3;
+    const memoryConcern=(Number.isFinite(memoryPriority)&&memoryPriority>=70)||(Number.isFinite(memoryStrength)&&memoryStrength<60)||personalDecline;
+    const productionObserved=Number(specialist?.child_authored_production_count||0)>0;
+    const targetLexicalIds=memoryConcern
+      ? [...new Set((Array.isArray(specialist?.review_advisories)?specialist.review_advisories:[])
+          .map(x=>clean(x?.lexicalId||x?.lexical_id)).filter(Boolean))].slice(0,24)
+      : [];
+
+    return {
+      authority:'READY_LEGACY_COMPAT_ADAPTIVE_REVIEW_ONLY',
+      reduce_unit_span:!!(baseSpan&&((repeatedFriction>=2&&depth>=3)||(directEvidenceReview&&memoryConcern))),
+      max_span:baseSpan?Math.max(1,Math.ceil(baseSpan/2)):null,
+      add_checkpoint:repeatedFriction>=2||memoryConcern,
+      add_retrieval_checkpoint:memoryConcern,
+      production_evidence_observed:productionObserved,
+      target_lexical_ids:targetLexicalIds,
+      recovery_floor:(depth>=4||repeatedFriction>=3||memoryConcern)?'HIGH':repeatedFriction>=2?'MEDIUM':null,
+      parent_help_floor:helpBlocked?'HIGH':repeatedFriction>=3?'MEDIUM':null,
+      evidence:{
+        repeated_friction_count:repeatedFriction,
+        carry_over_depth:depth,
+        states:[...states],
+        specialist_evidence:specialist?JSON.parse(JSON.stringify(specialist)):null,
+        learner_adaptive_profile:adaptiveProfile?JSON.parse(JSON.stringify(adaptiveProfile)):null
+      },
+      runtime_default_authority:false,
+      cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','DEADLINE','ASSIGNMENT_FACT','LEARNER_MODEL_AUTHORITY']
+    };
+  }
+
+  return Object.freeze({VERSION,specialistEvidenceSignal,learnerAdaptiveProfile,assessMemoryConcern,adaptiveReviewPolicy});
 });
