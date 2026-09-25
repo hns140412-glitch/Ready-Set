@@ -1,0 +1,72 @@
+name: Ready Hosted Cross-App Roundtrip
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_receipt_json:
+        description: Exact-source deployment receipt JSON for Hide/Snap
+        required: true
+        type: string
+      hide_v2_url:
+        description: Verified hosted Hide V2 URL
+        required: true
+        type: string
+      snap_v2_url:
+        description: Verified hosted Snap V2 URL
+        required: true
+        type: string
+
+jobs:
+  hosted-roundtrip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Materialize deployment receipt
+        env:
+          RECEIPT_JSON: ${{ inputs.deployment_receipt_json }}
+        run: |
+          printf '%s' "$RECEIPT_JSON" > /tmp/specialist-deployment-receipt.json
+
+      - name: Validate exact-source deployment receipt
+        run: node .github/scripts/validate-specialist-deployment-receipt.mjs /tmp/specialist-deployment-receipt.json
+
+      - name: Verify hosted URLs match validated receipt
+        env:
+          HIDE_URL: ${{ inputs.hide_v2_url }}
+          SNAP_URL: ${{ inputs.snap_v2_url }}
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('/tmp/specialist-deployment-receipt.json','utf8'));
+          const clean=v=>new URL(String(v)).href.replace(/\/$/,'');
+          if(clean(process.env.HIDE_URL)!==clean(r.hideSeekV2.deployed_url)) throw new Error('HIDE_URL_RECEIPT_MISMATCH');
+          if(clean(process.env.SNAP_URL)!==clean(r.snapPopV2.deployed_url)) throw new Error('SNAP_URL_RECEIPT_MISMATCH');
+          console.log('READY_HOSTED_URL_RECEIPT_MATCH_PASS');
+          NODE
+
+      - name: Install project dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build browser Identity runtime
+        run: npm run build:auth
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save @playwright/test@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Start exact-head Ready
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/readyset-http.log 2>&1 &
+          echo $! > /tmp/readyset-http.pid
+
+      - name: Run live hosted Hide/Snap roundtrip
+        env:
+          READY_HIDE_V2_URL: ${{ inputs.hide_v2_url }}
+          READY_SNAP_V2_URL: ${{ inputs.snap_v2_url }}
+        run: npx playwright test tests/live-hosted-cross-app-roundtrip.spec.js --reporter=line
