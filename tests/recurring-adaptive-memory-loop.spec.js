@@ -72,8 +72,50 @@ test('weak Hide memory evidence automatically adapts future recurring vocabulary
       at:'2026-09-21T07:12:00.000Z'
     });
 
+    const beforeDomain=window.ReadyAssignments.load();
+    const beforeFact=beforeDomain.assignmentFacts[seeded.assignment_id];
+    const beforeAnalysis=beforeDomain.analyses[beforeFact.current_analysis_id];
+    const beforeUnits=beforeAnalysis.learning_unit_ids.map(id=>beforeDomain.learningUnits[id]);
+    const vocabBefore=beforeUnits.find(x=>x.concept_skill_target==='VOCABULARY');
+    const decision={
+      ok:true,
+      decision_contract:'TAKY_RUNTIME_DECISION_CONTRACT_V1',
+      authority:'LEARNING_DECISION_INTENT_ONLY',
+      scope:{
+        member_id:window.ReadyFamilySession?.current?.()?.member_id||'TEST_PARENT',
+        subject:vocabBefore.subject,
+        concept_skill_target:'VOCABULARY'
+      },
+      blockers:[],
+      advisories:[],
+      pedagogical_actions:[
+        {intent:'TARGETED_RECOVERY_PRACTICE',priority:'HIGH',bases:['UNRESOLVED_RECOVERY'],targets:['word_1']},
+        {intent:'RETRIEVAL_CHECKPOINT',priority:'HIGH',bases:['RETENTION_AT_RISK'],targets:['word_1']}
+      ],
+      adaptive_plan:{
+        ok:true,
+        adaptive_plan_contract:'TAKY_ADAPTIVE_PLAN_INTENT_V1',
+        authority:'LEARNING_ADAPTIVE_PLAN_INTENT_ONLY',
+        unit_span_policy:'REDUCE',
+        add_checkpoint:true,
+        add_retrieval_checkpoint:true,
+        recovery_floor:'HIGH',
+        assistance_policy:'UNCHANGED',
+        target_learning_ids:['word_1'],
+        rationale:[{intent:'TARGETED_RECOVERY_PRACTICE',priority:'HIGH',bases:['UNRESOLVED_RECOVERY']}],
+        cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','DUE_AT','DEADLINE','ASSIGNMENT_FACT']
+      },
+      execution_status:'PEDAGOGICAL_ACTION_AVAILABLE',
+      consumer_contract:{
+        ready:'MAY_TRANSLATE_INTENT_TO_EXECUTION_PLAN',
+        planner:'OWNS_DATED_ALLOCATION',
+        specialist:'OWNS_INTERACTION_EXECUTION_AND_EVIDENCE'
+      }
+    };
     const review=window.ReadyIntegrationV1.reviewLearningEvidence(seeded.assignment_id,{
-      start_date:'2026-09-22'
+      start_date:'2026-09-22',
+      learning_decision:decision,
+      learning_decision_ref:'decision:recurring-memory-loop'
     });
     const domain=window.ReadyAssignments.load();
     const fact=domain.assignmentFacts[seeded.assignment_id];
@@ -90,7 +132,9 @@ test('weak Hide memory evidence automatically adapts future recurring vocabulary
   },seeded);
 
   expect(adapted.review.ok).toBe(true);
+  expect(adapted.review.legacy_learning_logic_used).toBe(false);
   expect(adapted.fact.current_analysis_id).not.toBe(seeded.initial_analysis_id);
+  expect(adapted.analysis.adaptive_review_policy.authority).toBe('CORE_ADAPTIVE_PLAN_APPLIED');
   expect(adapted.analysis.adaptive_review_policy.add_retrieval_checkpoint).toBe(true);
   expect(adapted.analysis.adaptive_review_policy.recovery_floor).toBe('HIGH');
   expect(adapted.analysis.adaptive_review_policy.target_lexical_ids).toEqual(['word_1']);
@@ -103,9 +147,8 @@ test('weak Hide memory evidence automatically adapts future recurring vocabulary
   expect(futureDates).toEqual(['2026-09-23','2026-09-25']);
   expect(adapted.todos.every(x=>[1,3,5].includes(new Date(x.date+'T12:00:00').getDay()))).toBe(true);
   expect(adapted.todos.every(x=>Array.isArray(x.review_lexical_ids)&&x.review_lexical_ids.includes('word_1'))).toBe(true);
-  expect(adapted.review.specialist_evidence.max_memory_review_priority).toBe(91);
-  expect(adapted.review.specialist_evidence.min_memory_strength).toBe(42);
-  expect(adapted.review.processed.ok).toBe(true);
-  expect(adapted.review.scheduling_constraints.recurring_days).toEqual([1,3,5]);
-  expect(adapted.review.adaptive_review_policy.cannot_influence).toContain('SCHEDULE_DATE');
+  expect(adapted.review.ok).toBe(true);
+  expect(adapted.analysis.core_adaptive_plan.authority).toBe('LEARNING_ADAPTIVE_PLAN_INTENT_ONLY');
+  expect(adapted.analysis.adaptive_review_policy.target_lexical_ids).toEqual(['word_1']);
+  expect(adapted.todos.every(x=>x.learning_decision_projection?.adaptive_plan?.authority==='LEARNING_ADAPTIVE_PLAN_INTENT_ONLY')).toBe(true);
 });
