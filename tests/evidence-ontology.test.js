@@ -1,6 +1,7 @@
 'use strict';
 
 const assert=require('node:assert/strict');
+globalThis.ReadyAnswerKeyVerifier=require('../src/learning/answer-key-verifier-runtime.js');
 const Evidence=require('../src/learning/evidence-ontology-runtime.js');
 
 const baseTask={
@@ -42,7 +43,25 @@ assert.equal(hide.attempt_count,2);
 assert.equal(hide.response_latency_ms,1800);
 assert.equal(hide.memory.average_strength,62);
 assert.equal(hide.memory.schedule_owner,'READY_SET_PLANNER');
+assert.equal(hide.interpretation_owner,'TAKY_LEARNING_ENGINE_CORE');
+assert.equal(hide.memory.review_policy_owner,'TAKY_LEARNING_ENGINE_CORE');
+assert.equal(hide.memory.reported_review_policy_owner,'READY_LEARNING_ENGINE');
 assert.ok(hide.cannot_claim.includes('CONCEPT_MASTERY'));
+
+const readyStructured=Evidence.structuredPracticeEvidence({
+  task:{...baseTask,member_id:'A',learning_target_id:'word:essential'},
+  event_id:'e-ready',
+  response:'Essential',
+  answer_key:'essential',
+  answer_key_ref:'assignment:a1:item:essential'
+});
+assert.equal(readyStructured.ok,true);
+assert.equal(readyStructured.evidence.evidence_type,'STRUCTURED_PRACTICE_EVIDENCE');
+assert.equal(readyStructured.evidence.learning_target_id,'word:essential');
+assert.equal(readyStructured.evidence.verification_candidate.verifier_type,'ANSWER_KEY_EXACT');
+assert.equal(readyStructured.evidence.verification_candidate.outcome,1);
+assert.equal(readyStructured.evidence.interpretation_owner,'TAKY_LEARNING_ENGINE_CORE');
+assert.ok(readyStructured.evidence.cannot_claim.includes('GLOBAL_MASTERY'));
 
 const snap=Evidence.specialistEvidence({
   task:baseTask,
