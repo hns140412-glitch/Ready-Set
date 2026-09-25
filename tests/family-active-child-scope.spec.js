@@ -32,7 +32,10 @@ test('Parent active child selection scopes Planner by learner while preserving a
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
   await expect.poll(()=>page.evaluate(()=>window.ReadyFamilyRegistry?.children?.().length||0)).toBe(2);
 
-  await page.evaluate(()=>window.ReadyFamilyRegistry.selectActiveChild('CHILD_A'));
+  await page.locator('[data-nav="planner"]').first().click();
+  await page.locator('[data-nav="planner-admin"]').first().click();
+  await expect(page.locator('#plannerChildContext')).toBeVisible();
+  await page.locator('#plannerChildSelect').selectOption('CHILD_A');
   await page.evaluate(()=>window.ReadySetPlanner.upsertScheduleCommitment({title:'A piano',source:'TEST'}));
   await expect.poll(()=>page.evaluate(async()=>{
     const rows=await window.ReadySetLocalFirst.snapshots();
@@ -40,12 +43,12 @@ test('Parent active child selection scopes Planner by learner while preserving a
   })).toBeTruthy();
   expect(await page.evaluate(()=>window.ReadySetPlanner.snapshot().schedule_commitments.map(x=>x.title))).toEqual(['A piano']);
 
-  await page.evaluate(()=>window.ReadyFamilyRegistry.selectActiveChild('CHILD_B'));
+  await page.locator('#plannerChildSelect').selectOption('CHILD_B');
   expect(await page.evaluate(()=>window.ReadySetPlanner.snapshot().schedule_commitments.length)).toBe(0);
   await page.evaluate(()=>window.ReadySetPlanner.upsertScheduleCommitment({title:'B science',source:'TEST'}));
   expect(await page.evaluate(()=>window.ReadySetPlanner.snapshot().schedule_commitments.map(x=>x.title))).toEqual(['B science']);
 
-  await page.evaluate(()=>window.ReadyFamilyRegistry.selectActiveChild('CHILD_A'));
+  await page.locator('#plannerChildSelect').selectOption('CHILD_A');
   expect(await page.evaluate(()=>window.ReadySetPlanner.snapshot().schedule_commitments.map(x=>x.title))).toEqual(['A piano']);
 
   const scopes=await page.evaluate(async()=>({
