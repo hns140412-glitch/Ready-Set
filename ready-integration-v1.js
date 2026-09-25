@@ -117,10 +117,71 @@
     };
   }
 
+  function reviewLearningEvidence(assignmentId,input={}){
+    if(!window.ReadyAssignments||!window.ReadyLearningMasterV01||!window.ReadySetPlanner)return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
+    const state=window.ReadyAssignments.load();
+    const fact=state.assignmentFacts?.[assignmentId];
+    if(!fact)return {ok:false,reason:'ASSIGNMENT_FACT_NOT_FOUND'};
+    if(fact.confirmation_state!=='FACT_CONFIRMED')return {ok:false,reason:'FACT_NOT_CONFIRMED'};
+    const history=window.ReadySetPlanner.learningHistory?.(assignmentId,{current_revision:Number(fact.fact_revision)||1})||[];
+    const recent=history.slice(-12);
+    const specialist=specialistEvidenceSignal(recent);
+    const priority=Number(specialist.max_memory_review_priority);
+    const strength=Number(specialist.min_memory_strength);
+    const memoryConcern=(Number.isFinite(priority)&&priority>=70)||(Number.isFinite(strength)&&strength<60);
+    if(!memoryConcern)return {ok:false,reason:'EVIDENCE_REVIEW_NOT_REQUIRED',specialist_evidence:specialist};
+
+    const invalidated=window.ReadySetPlanner.invalidateAssignmentOutputs?.(assignmentId,{
+      reason:'LEARNING_EVIDENCE_REVIEW',
+      fact_revision:Number(fact.fact_revision)||1
+    })||null;
+    if(invalidated?.in_progress_count>0){
+      return {ok:false,reason:'LEARNING_EVIDENCE_REVIEW_IN_PROGRESS_HOLD',specialist_evidence:specialist,invalidation:invalidated};
+    }
+
+    const evidenceSignal={
+      authority:'LEARNING_EVIDENCE_ADVISORY_ONLY',
+      review_reason:'SPECIALIST_MEMORY_CONCERN',
+      observation_count:recent.length,
+      states:recent.map(x=>x.ready_state||x.state).filter(Boolean),
+      actual_minutes:recent.map(x=>x.actual_minutes).filter(Number.isFinite),
+      specialist_evidence:specialist,
+      scheduling_constraints:{
+        recurring_days:Array.isArray(fact.recurring_days)?[...fact.recurring_days]:[],
+        weekday_prints:fact.weekday_prints?JSON.parse(JSON.stringify(fact.weekday_prints)):{}
+      },
+      cannot_influence:['ASSIGNMENT_FACT','SOURCE_RANGE','DEADLINE','FACT_CONFIRMATION','SCHEDULE_DATE','PLANNER_DATE']
+    };
+    const learnerContext=input.learner_context||window.ReadySetLearnerContext?.current?.()||null;
+    const reviewed=window.ReadyLearningMasterV01.interpretConfirmed(assignmentId,{
+      actor:'LEARNING_MASTER_EVIDENCE_REVIEW',
+      force_review:true,
+      review_reason:'SPECIALIST_MEMORY_CONCERN',
+      evidence_review_signal:evidenceSignal,
+      learner_context:learnerContext
+    });
+    const processed=processAssignment(assignmentId,{
+      start_date:input.start_date,
+      candidate_dates:input.candidate_dates,
+      candidate_windows_by_date:input.candidate_windows_by_date,
+      learner_context:learnerContext
+    });
+    return {
+      ok:!!processed?.ok,
+      assignment_id:assignmentId,
+      review_analysis_id:reviewed?.analysis?.analysis_id||null,
+      adaptive_review_policy:reviewed?.analysis?.adaptive_review_policy||null,
+      specialist_evidence:specialist,
+      scheduling_constraints:evidenceSignal.scheduling_constraints,
+      processed,
+      invalidation:invalidated
+    };
+  }
+
   function processConfirmed(input={}){
     const state=window.ReadyAssignments?.load?.();if(!state)return [];
     return Object.values(state.assignmentFacts).filter(f=>f.confirmation_state==='FACT_CONFIRMED').map(f=>processAssignment(f.assignment_id,input));
   }
-  window.ReadyIntegrationV1={version:VERSION,processAssignment,processConfirmed,reviewEscalatedCarryOver};
+  window.ReadyIntegrationV1={version:VERSION,processAssignment,processConfirmed,reviewEscalatedCarryOver,reviewLearningEvidence,specialistEvidenceSignal};
   document.documentElement.dataset.readyIntegration=VERSION;
 })();
