@@ -70,9 +70,46 @@ test('recurring vocabulary TODO launches Hide with Learning Engine context and r
   expect(preparedUrl.searchParams.get('material_binding')).toBeNull();
   const directive=JSON.parse(preparedUrl.searchParams.get('review_directive'));
   expect(directive.authority).toBe('EXPLICIT_READY_PLANNER_REVIEW_DIRECTIVE');
-  expect(directive.reviewPolicyOwner).toBe('READY_LEARNING_ENGINE');
+  expect(directive.reviewPolicyOwner).toBe('TAKY_LEARNING_ENGINE_CORE');
   expect(directive.scheduleOwner).toBe('READY_SET_PLANNER');
   expect(directive.lexicalIds).toEqual(['word_1']);
+
+  await page.evaluate(()=>{
+    const c=window.ReadySetRev07.contract();
+    const t=c.tasks[0];
+    window.dispatchEvent(new MessageEvent('message',{
+      origin:'https://dainty-froyo-a6e427.netlify.app',
+      data:{type:'TAKY_LEARNING_EVENT',event:{
+        event_id:'hide_retrieval_verified_1',
+        source:'hide-seek',
+        event_type:'RETRIEVAL_ATTEMPT_RESULT',
+        occurred_at:'2026-09-21T07:08:00.000Z',
+        session_id:c.session_id,
+        task_id:t.task_id,
+        lap_id:c.active_lap_id,
+        payload:{
+          member_id:'TEST_PARENT',
+          subject:'영어',
+          concept_skill_target:'VOCABULARY',
+          word_id:'word_1',
+          instrumentVersion:'HIDE_CODE_RED_V1',
+          interactionMode:'CORE',
+          assisted:false,
+          attemptCount:1,
+          responseLatencyMs:800,
+          verification_candidate:{
+            verifier_type:'RETRIEVAL_EXACT_MATCH',
+            verifier_version:'HIDE_CODE_RED_V1',
+            target_semantics:'UNASSISTED_EXACT_RETRIEVAL',
+            outcome:1,
+            reference_id:'hide-word:test:word_1:spelling',
+            basis:'DETERMINISTIC_LOCAL_MATCH',
+            result_type:'CORRECT'
+          }
+        }
+      }}
+    }));
+  });
 
   await page.evaluate(()=>{
     const c=window.ReadySetRev07.contract();
@@ -167,6 +204,13 @@ test('recurring vocabulary TODO launches Hide with Learning Engine context and r
 
   const outbox=await page.evaluate(()=>window.ReadyCentralEvidenceOutbox?.pending?.()||[]);
   expect(outbox.length).toBeGreaterThan(0);
+  const verifiedPacket=outbox.find(x=>x.packet_id==='hide-seek:hide_retrieval_verified_1');
+  expect(verifiedPacket).toBeTruthy();
+  expect(verifiedPacket.event.payload.verification_candidate.outcome).toBe(1);
+  expect(verifiedPacket.event.payload.verification_candidate.basis).toBe('DETERMINISTIC_LOCAL_MATCH');
+  expect(verifiedPacket.context.family_id).toBe('TEST_FAMILY');
+  expect(verifiedPacket.context.member_id).toBe('TEST_PARENT');
+
   const packet=outbox.find(x=>x.packet_id==='hide-seek:hide_return_recurring_1');
   expect(packet).toBeTruthy();
   expect(packet.transport_state).toBe('PENDING_CENTRAL_INGEST');
