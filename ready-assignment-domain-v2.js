@@ -224,6 +224,25 @@
       });
     }
 
+    function markEvidenceReview(assignmentId,input={}){
+      const reviewKey=clean(input.review_key);
+      if(!reviewKey)throw new Error('review key required');
+      return mutate(s=>{
+        const f=s.assignmentFacts[assignmentId];if(!f)throw new Error('fact not found');
+        f.learning_evidence_review={
+          review_key:reviewKey,
+          fact_revision:Number(f.fact_revision)||1,
+          analysis_id:clean(input.analysis_id)||f.current_analysis_id||null,
+          evidence_count:Number.isFinite(input.evidence_count)?Math.max(0,Math.floor(input.evidence_count)):null,
+          member_id:clean(input.member_id)||null,
+          subject:clean(input.subject)||null,
+          reviewed_at:now()
+        };
+        f.updated_at=now();
+        return clone(f.learning_evidence_review);
+      });
+    }
+
     function project(role='CHILD'){
       const s=load(),parent=String(role).toUpperCase()==='PARENT';
       const visibleArtifacts=Object.fromEntries(Object.entries(s.artifacts).filter(([,a])=>parent||a.visibility!=='PARENT_ONLY'));
@@ -238,7 +257,7 @@
       });
       return {role:parent?'PARENT':'CHILD',facts,packages:Object.values(s.assignmentPackages).map(clone),workbookRefs:Object.values(s.workbookRefs).map(clone),artifacts:Object.values(visibleArtifacts).map(clone)};
     }
-    return {version:VERSION,load,save,upsertWorkbookRef,upsertTalentPackage,upsertEnglishAssignment,addEventFact,pendingChildFacts,reviewChildFact,confirmFact,markRevisionPropagationComplete,project};
+    return {version:VERSION,load,save,upsertWorkbookRef,upsertTalentPackage,upsertEnglishAssignment,addEventFact,pendingChildFacts,reviewChildFact,confirmFact,markRevisionPropagationComplete,markEvidenceReview,project};
   }
   return {version:VERSION,STORAGE_KEY,TALENT_BOOKS,createDomain,normalize};
 });
