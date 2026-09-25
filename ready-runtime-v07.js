@@ -6,6 +6,7 @@
   const SNAP_URL = 'https://cheerful-pothos-d1c3ee.netlify.app';
   const VALID_TASK_STATES = new Set(['PENDING','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
   const TRUSTED_APP_ORIGINS = new Set([new URL(HIDE_URL).origin, new URL(SNAP_URL).origin]);
+  const EXECUTION_CONTEXT_KEYS = ['family_id','member_id','profile_id','assignment_id','analysis_id','learning_unit_id','todo_id','session_id','task_id','lap_id'];
 
   const id = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
   const iso = ms => new Date(ms ?? Date.now()).toISOString();
@@ -208,6 +209,22 @@
     return app === 'hide-seek' ? HIDE_URL : app === 'snap-pop' ? SNAP_URL : location.href;
   }
 
+  function currentExecutionIdentity(task, contract) {
+    const family = window.ReadyFamilySession?.current?.() || {};
+    return {
+      family_id: family.family_id || null,
+      member_id: family.member_id || null,
+      profile_id: state.profile?.id || state.profile?.profile_id || null,
+      assignment_id: task?.assignment_id || null,
+      analysis_id: task?.analysis_id || null,
+      learning_unit_id: task?.learning_unit_id || null,
+      todo_id: task?.planner_todo_id || null,
+      session_id: contract?.session_id || null,
+      task_id: task?.task_id || null,
+      lap_id: contract?.active_lap_id || null
+    };
+  }
+
   function launchSpecialist(app) {
     const session = state.activeSession;
     const c = ensureContract(session);
@@ -220,10 +237,12 @@
     save();
 
     const url = new URL(appUrl(app));
-    url.searchParams.set('session_id', c.session_id);
+    const executionContext = currentExecutionIdentity(task, c);
+    executionContext.lap_id = lap.lap_id;
+    for (const [key, value] of Object.entries(executionContext)) {
+      if (value) url.searchParams.set(key, value);
+    }
     url.searchParams.set('goal_id', c.goal_id);
-    url.searchParams.set('task_id', task.task_id);
-    url.searchParams.set('lap_id', lap.lap_id);
     url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
     url.searchParams.set('snap_target', SNAP_URL);
     url.searchParams.set('from_app', 'ready-set');
@@ -237,12 +256,21 @@
     return null;
   }
 
-  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null }) {
+  function applyInboundResult({
+    family_id = null, member_id = null, profile_id = null,
+    assignment_id = null, analysis_id = null, learning_unit_id = null, todo_id = null,
+    session_id, task_id, lap_id, task_state, from_app, event_id = null
+  }) {
     const c = ensureContract();
     if (!c || !session_id || session_id !== c.session_id) return false;
     if (event_id && c.applied_event_ids?.includes(event_id)) return false;
     const task = c.tasks.find(t => t.task_id === task_id);
     if (!task) return false;
+    const expected = currentExecutionIdentity(task, c);
+    const incoming = {family_id,member_id,profile_id,assignment_id,analysis_id,learning_unit_id,todo_id};
+    for (const [key,value] of Object.entries(incoming)) {
+      if (value && expected[key] && value !== expected[key]) return false;
+    }
 
     const normalized = normalizeInboundState(task_state);
     c.active_app = 'ready-set';
@@ -260,6 +288,13 @@
   function consumeReturnQuery() {
     const p = new URLSearchParams(location.search);
     const args = {
+      family_id: p.get('family_id'),
+      member_id: p.get('member_id'),
+      profile_id: p.get('profile_id'),
+      assignment_id: p.get('assignment_id'),
+      analysis_id: p.get('analysis_id'),
+      learning_unit_id: p.get('learning_unit_id'),
+      todo_id: p.get('todo_id'),
       session_id: p.get('session_id'),
       task_id: p.get('task_id'),
       lap_id: p.get('lap_id'),
@@ -267,7 +302,7 @@
       from_app: p.get('from_app')
     };
     if (!args.session_id || !args.task_id || !applyInboundResult(args)) return;
-    ['session_id','goal_id','task_id','lap_id','task_state','from_app'].forEach(k => p.delete(k));
+    [...EXECUTION_CONTEXT_KEYS,'goal_id','task_state','from_app'].forEach(k => p.delete(k));
     const clean = `${location.pathname}${p.toString() ? `?${p}` : ''}${location.hash}`;
     history.replaceState(null, '', clean);
   }
@@ -282,6 +317,13 @@
       : e.type === 'TASK_PARTIAL' ? 'PARTIAL'
       : null;
     applyInboundResult({
+      family_id: e.family_id,
+      member_id: e.member_id || e.child_id,
+      profile_id: e.profile_id,
+      assignment_id: e.assignment_id,
+      analysis_id: e.analysis_id,
+      learning_unit_id: e.learning_unit_id,
+      todo_id: e.todo_id,
       session_id: e.session_id,
       task_id: e.task_id,
       lap_id: e.lap_id,
