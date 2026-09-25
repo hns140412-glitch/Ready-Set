@@ -117,6 +117,34 @@
     };
   }
 
+  function learnerAdaptiveProfile(rows=[]){
+    const recent=(rows||[]).slice(-12);
+    const evidence=recent.flatMap(x=>Array.isArray(x.learning_evidence)?x.learning_evidence:[]);
+    const memory=evidence.filter(x=>x?.evidence_type==='MEMORY_RETRIEVAL_EVIDENCE');
+    const strengths=memory.map(x=>Number(x?.memory?.average_strength)).filter(Number.isFinite);
+    const priorities=memory.flatMap(x=>Array.isArray(x?.memory?.review_advisories)?x.memory.review_advisories:[])
+      .map(x=>Number(x?.nextReviewPriority??x?.priority)).filter(Number.isFinite);
+    const frictionStates=recent.map(x=>x.ready_state||x.state).filter(x=>['PARTIAL','DEFERRED','BLOCKED','WAITING_FOR_PARENT'].includes(x));
+    const enough=strengths.length>=3;
+    const baseline=enough?strengths.slice(0,-1).reduce((a,b)=>a+b,0)/Math.max(1,strengths.length-1):null;
+    const latest=strengths.length?strengths[strengths.length-1]:null;
+    const delta=Number.isFinite(baseline)&&Number.isFinite(latest)?latest-baseline:null;
+    const trend=!Number.isFinite(delta)?'INSUFFICIENT_EVIDENCE':delta<=-10?'DECLINING':delta>=10?'IMPROVING':'STABLE';
+    return {
+      authority:'LEARNER_ADAPTIVE_PROFILE_ADVISORY_ONLY',
+      observation_count:recent.length,
+      memory_sample_count:strengths.length,
+      baseline_memory_strength:Number.isFinite(baseline)?Math.round(baseline*10)/10:null,
+      latest_memory_strength:latest,
+      memory_delta:Number.isFinite(delta)?Math.round(delta*10)/10:null,
+      trend,
+      friction_count:frictionStates.length,
+      max_memory_review_priority:priorities.length?Math.max(...priorities):null,
+      can_influence:['RECOVERY_INTENSITY','CHECKPOINT_SELECTION','UNIT_SPAN','ACTIVITY_SEQUENCE'],
+      cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','ASSIGNMENT_FACT','SOURCE_RANGE','DEADLINE','FACT_CONFIRMATION']
+    };
+  }
+
   function reviewLearningEvidence(assignmentId,input={}){
     if(!window.ReadyAssignments||!window.ReadyLearningMasterV01||!window.ReadySetPlanner)return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
     const state=window.ReadyAssignments.load();
@@ -126,9 +154,11 @@
     const history=window.ReadySetPlanner.learningHistory?.(assignmentId,{current_revision:Number(fact.fact_revision)||1})||[];
     const recent=history.slice(-12);
     const specialist=specialistEvidenceSignal(recent);
+    const adaptiveProfile=learnerAdaptiveProfile(recent);
     const priority=Number(specialist.max_memory_review_priority);
     const strength=Number(specialist.min_memory_strength);
-    const memoryConcern=(Number.isFinite(priority)&&priority>=70)||(Number.isFinite(strength)&&strength<60);
+    const personalDecline=adaptiveProfile.trend==='DECLINING';
+    const memoryConcern=(Number.isFinite(priority)&&priority>=70)||(Number.isFinite(strength)&&strength<60)||personalDecline;
     if(!memoryConcern)return {ok:false,reason:'EVIDENCE_REVIEW_NOT_REQUIRED',specialist_evidence:specialist};
 
     const invalidated=window.ReadySetPlanner.invalidateAssignmentOutputs?.(assignmentId,{
@@ -146,6 +176,7 @@
       states:recent.map(x=>x.ready_state||x.state).filter(Boolean),
       actual_minutes:recent.map(x=>x.actual_minutes).filter(Number.isFinite),
       specialist_evidence:specialist,
+      learner_adaptive_profile:adaptiveProfile,
       scheduling_constraints:{
         recurring_days:Array.isArray(fact.recurring_days)?[...fact.recurring_days]:[],
         weekday_prints:fact.weekday_prints?JSON.parse(JSON.stringify(fact.weekday_prints)):{}
@@ -172,6 +203,7 @@
       review_analysis_id:reviewed?.analysis?.analysis_id||null,
       adaptive_review_policy:reviewed?.analysis?.adaptive_review_policy||null,
       specialist_evidence:specialist,
+      learner_adaptive_profile:adaptiveProfile,
       scheduling_constraints:evidenceSignal.scheduling_constraints,
       processed,
       invalidation:invalidated
@@ -182,6 +214,6 @@
     const state=window.ReadyAssignments?.load?.();if(!state)return [];
     return Object.values(state.assignmentFacts).filter(f=>f.confirmation_state==='FACT_CONFIRMED').map(f=>processAssignment(f.assignment_id,input));
   }
-  window.ReadyIntegrationV1={version:VERSION,processAssignment,processConfirmed,reviewEscalatedCarryOver,reviewLearningEvidence,specialistEvidenceSignal};
+  window.ReadyIntegrationV1={version:VERSION,processAssignment,processConfirmed,reviewEscalatedCarryOver,reviewLearningEvidence,specialistEvidenceSignal,learnerAdaptiveProfile};
   document.documentElement.dataset.readyIntegration=VERSION;
 })();
