@@ -47,6 +47,40 @@ test('remote sync core: same idempotency key is isolated across families', async
   expect(store.snapshot().size).toBe(2);
 });
 
+
+
+test('remote sync core: authenticated member scope is server-bound and spoofing is rejected', async ()=>{
+  const store=memoryStore();
+  const service=createSyncService(store,{namespace:'family_a',member_id:'child_a'});
+  const ok=await service.putEvent({
+    event_id:'evt_member_a',
+    idempotency_key:'idem_member_a',
+    scope:'planner',
+    logical_scope:'planner',
+    scope_key:'family/family_a/member/child_a/scope/planner',
+    scope_identity:{family_id:'family_a',member_id:'child_a'},
+    digest:'digest-member-a',
+    payload:'{"x":1}'
+  });
+  expect(ok.status).toBe(200);
+  const record=JSON.parse([...store.snapshot().values()][0]);
+  expect(record.family_namespace).toBe('family_a');
+  expect(record.member_id).toBe('child_a');
+  expect(record.scope_identity).toEqual({family_id:'family_a',member_id:'child_a'});
+  expect(record.logical_scope).toBe('planner');
+
+  const spoof=await service.putEvent({
+    event_id:'evt_spoof',
+    idempotency_key:'idem_spoof',
+    scope:'planner',
+    scope_identity:{family_id:'family_a',member_id:'child_b'},
+    digest:'digest-spoof',
+    payload:'{"x":2}'
+  });
+  expect(spoof.status).toBe(403);
+  expect(spoof.body.reason).toBe('MEMBER_SCOPE_MISMATCH');
+});
+
 test('remote sync core: conflicting payload returns explicit 409 inside one family', async ()=>{
   const service=createSyncService(memoryStore(),{namespace:'family_a'});
   await service.putEvent({event_id:'evt_2',idempotency_key:'idem_2',scope:'assignments',digest:'digest-a',payload:'{"version":"remote"}'});
