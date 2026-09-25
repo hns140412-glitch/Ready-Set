@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='READY_EVIDENCE_ONTOLOGY_V02';
+  const VERSION='READY_EVIDENCE_ONTOLOGY_V03';
   const clean=(v,max=160)=>String(v??'').trim().slice(0,max);
 
   function specialistEvidence({task={},from_app=null,task_state=null,payload=null,event_id=null,at=null}={}){
@@ -24,6 +24,7 @@
       member_id:clean(task.member_id||payload?.member_id||activeMember)||null,
       subject:clean(task.subject,80)||null,
       concept_skill_target:clean(task.concept_skill_target,120)||null,
+      learning_target_id:clean(task.learning_target_id||task.item_id||payload?.learning_target_id||payload?.item_id||payload?.word_id,160)||null,
       domain:clean(task.matched_domain,80)||null,
       task_state:clean(task_state,40)||null,
       source_app:clean(from_app,40)||null,
@@ -34,7 +35,7 @@
       attempt_count:Number.isFinite(payload?.attemptCount)?Math.max(0,Math.floor(payload.attemptCount)):null,
       response_latency_ms:Number.isFinite(payload?.responseLatencyMs)?Math.max(0,payload.responseLatencyMs):null,
       authority:'READY_EVIDENCE_RECORD',
-      interpretation_owner:'READY_LEARNING_ENGINE'
+      interpretation_owner:'TAKY_LEARNING_ENGINE_CORE'
     };
 
     if(from_app==='hide-seek'){
@@ -47,7 +48,7 @@
           average_strength:Number.isFinite(memory?.averageMemoryStrength)?memory.averageMemoryStrength:null,
           review_advisories:Array.isArray(memory?.reviewAdvisories)?memory.reviewAdvisories.slice(0,24):[],
           next_review_semantics:memory?.prioritySemantics||'ADVISORY_SIGNAL_NOT_DATE',
-          review_policy_owner:memory?.reviewPolicyOwner||'READY_LEARNING_ENGINE',
+          review_policy_owner:memory?.reviewPolicyOwner||'TAKY_LEARNING_ENGINE_CORE',
           schedule_owner:memory?.scheduleOwner||'READY_SET_PLANNER'
         },
         cannot_claim:['CONCEPT_MASTERY','FINAL_SUBJECT_MASTERY','SCHEDULE_DATE']
@@ -77,6 +78,60 @@
     });
   }
 
+  function structuredPracticeEvidence({
+    task={},
+    response=null,
+    answer_key=null,
+    answer_key_ref=null,
+    event_id=null,
+    at=null,
+    instrument_version='READY_ANSWER_KEY_V1',
+    interaction_mode='STRUCTURED_PRACTICE'
+  }={}){
+    const verifier=globalThis.ReadyAnswerKeyVerifier;
+    if(!verifier?.exactMatch)return {ok:false,reason:'READY_ANSWER_KEY_VERIFIER_UNAVAILABLE'};
+    const observedAt=at||new Date().toISOString();
+    const activeMember=globalThis.ReadyFamilySession?.current?.()?.member_id||null;
+    const memberId=clean(task.member_id||activeMember);
+    const subject=clean(task.subject,80);
+    const target=clean(task.concept_skill_target,120);
+    const match=verifier.exactMatch({
+      event_id,
+      member_id:memberId,
+      subject,
+      concept_skill_target:target,
+      response,
+      answer_key,
+      answer_key_ref,
+      verifier_version:instrument_version
+    });
+    if(!match.ok)return match;
+    return {
+      ok:true,
+      evidence:Object.freeze({
+        evidence_contract:VERSION,
+        event_id:clean(event_id)||null,
+        at:observedAt,
+        observed_at:observedAt,
+        learning_unit_id:clean(task.learning_unit_id)||null,
+        assignment_id:clean(task.assignment_id)||null,
+        analysis_id:clean(task.analysis_id)||null,
+        member_id:memberId||null,
+        subject:subject||null,
+        concept_skill_target:target||null,
+        learning_target_id:clean(task.learning_target_id||task.item_id,160)||null,
+        evidence_type:'STRUCTURED_PRACTICE_EVIDENCE',
+        source_app:'ready-set',
+        instrument_version,
+        interaction_mode,
+        verification_candidate:match.verification_candidate,
+        authority:'READY_EVIDENCE_RECORD',
+        interpretation_owner:'TAKY_LEARNING_ENGINE_CORE',
+        cannot_claim:['GLOBAL_MASTERY','SCHEDULE_DATE','TEACHER_JUDGMENT']
+      })
+    };
+  }
+
   function append(rows=[],evidence){
     const list=Array.isArray(rows)?rows:[];
     if(!evidence)return list.slice(-120);
@@ -84,5 +139,5 @@
     return [...list,evidence].slice(-120);
   }
 
-  return Object.freeze({version:VERSION,specialistEvidence,append});
+  return Object.freeze({version:VERSION,specialistEvidence,structuredPracticeEvidence,append});
 });
