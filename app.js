@@ -1495,10 +1495,29 @@ $('#galleryInput').onchange=e=>photoLoad(e.target.files[0]);
 $$('[data-style]').forEach(b=>b.onclick=()=>{
   state.profile.style=b.dataset.style;save();renderProfile();
 });
-$('#saveProfileBtn').onclick=()=>{
+$('#saveProfileBtn').onclick=async()=>{
   state.profile.name=$('#profileName').value.trim();
   state.profile.shareAvatar=$('#shareAvatarOptIn').checked;
-  save();toast('프로필을 저장했어요.');renderHome();
+  save();
+  const session=familySession();
+  if(session.authenticated){
+    const target=session.role==='PARENT'
+      ? window.ReadyFamilyRegistry?.activeChild?.()?.member_id
+      : session.member_id;
+    if(target){
+      const shared=await window.ReadyFamilyRegistry?.updateProfile?.({
+        member_id:target,
+        display_name:state.profile.name
+      });
+      if(shared && shared.ok===false){
+        toast('기기 프로필은 저장했지만 가족 프로필 동기화는 확인이 필요해요.');
+        renderHome();
+        return;
+      }
+    }
+  }
+  toast('프로필을 저장했어요.');
+  renderHome();
 };
 
 
@@ -1517,6 +1536,18 @@ function renderAuthStatus(){
   if(loggedInControls)loggedInControls.hidden=!session.authenticated;
   if(link)link.hidden=!(session.authenticated&&session.role==='PARENT');
 }
+window.addEventListener('readyset-family-registry',()=>{
+  const projection=window.ReadyFamilyRegistry?.minimalProjection?.()||{};
+  if(projection.display_name && state.profile.name!==projection.display_name){
+    state.profile.name=projection.display_name;
+    save();
+    renderHome();
+    renderMission();
+    renderProfile();
+    updateAvatar();
+  }
+});
+
 window.addEventListener('readyset-family-session',()=>{
   state=load();
   renderAuthStatus();
