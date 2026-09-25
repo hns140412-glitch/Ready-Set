@@ -7,6 +7,7 @@ function createSyncService(store,options={}){
     throw new Error('store with get/set required');
   }
   const namespace=clean(options.namespace);
+  const memberId=clean(options.member_id);
   if(!namespace) throw new Error('namespace required');
 
   async function health(){
@@ -39,10 +40,21 @@ function createSyncService(store,options={}){
       };
     }
 
+    const clientScopeIdentity=input.scope_identity&&typeof input.scope_identity==='object'?input.scope_identity:{};
+    if(clean(clientScopeIdentity.family_id)&&clean(clientScopeIdentity.family_id)!==namespace){
+      return {status:403,body:{ok:false,reason:'FAMILY_SCOPE_MISMATCH'}};
+    }
+    if(memberId&&clean(clientScopeIdentity.member_id)&&clean(clientScopeIdentity.member_id)!==memberId){
+      return {status:403,body:{ok:false,reason:'MEMBER_SCOPE_MISMATCH'}};
+    }
+
     const record={
       event_id:eventId,
       idempotency_key:idempotencyKey,
       scope:clean(input.scope)||'unknown',
+      logical_scope:clean(input.logical_scope||input.scope)||'unknown',
+      scope_key:clean(input.scope_key)||null,
+      scope_identity:{family_id:namespace,member_id:memberId||null},
       digest,
       payload:input.payload ?? null,
       created_at:input.created_at || null,
@@ -50,6 +62,7 @@ function createSyncService(store,options={}){
       client:input.client || null,
       remote_version:1,
       family_namespace:namespace,
+      member_id:memberId||null,
       accepted_at:new Date().toISOString()
     };
     await store.set(key,JSON.stringify(record));
