@@ -42,10 +42,12 @@ current={authenticated:true,family_id:'FAMILY_1',member_id:'CHILD_A'};
 assert.equal(Object.values(domain.load().workbookRefs)[0].name,'A workbook','CHILD_A assignment state must survive member switch');
 
 const localFirst=fs.readFileSync(require('node:path').join(__dirname,'..','ready-local-first-v01.js'),'utf8');
-const freezeAt=localFirst.indexOf('const session_at_capture=familySession()');
-const awaitAt=localFirst.indexOf('const db=await openDb()',freezeAt);
-assert(freezeAt>=0&&awaitAt>freezeAt,'capture scope must be frozen before first await');
+const actorFreezeAt=localFirst.indexOf('const actor_session=familySession()');
+const learnerFreezeAt=localFirst.indexOf('const session_at_capture=scopeSession(logical_scope)',actorFreezeAt);
+const awaitAt=localFirst.indexOf('const db=await openDb()',learnerFreezeAt);
+assert(actorFreezeAt>=0&&learnerFreezeAt>actorFreezeAt&&awaitAt>learnerFreezeAt,'actor and learner scope must be frozen before first await');
 assert(localFirst.includes('const scope_key=scopedScope(logical_scope,session_at_capture)'));
+assert(localFirst.includes('const actor_member_id=actor_session.member_id||null'));
 assert(localFirst.includes("ignored_other_members++"));
 assert(localFirst.includes("scope_identity"));
 
