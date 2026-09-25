@@ -77,3 +77,20 @@ These fields are evidence provenance, not mastery claims.
 5. do not deploy/merge until migration gate is explicitly opened.
 
 END
+
+## 8. Adapter V2 runtime migration
+
+Implemented:
+- src/learning/learning-engine-adapter-v2.js
+- Ready consumes TAKY Runtime Decision Contract only when authority = LEARNING_DECISION_INTENT_ONLY.
+- Ready translates pedagogical actions into execution hints.
+- Planner remains owner of all dated allocation.
+- Ready adapter cannot influence learner model, assignment facts, deadline or calendar dates.
+- ready-integration-v1.js exposes applyLearningEngineDecision().
+- existing embedded adaptive logic is explicitly marked LEGACY_COMPATIBILITY.
+
+Remaining HOLD:
+- migrate learnerAdaptiveProfile / memoryConcern / direct ReadyLearningMaster reinterpretation out of Ready once the Core-decision-to-Planner path is fully regression-green.
+- do not delete the legacy path before compatibility/replay closure.
+
+END
