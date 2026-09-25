@@ -37,7 +37,9 @@ test('member scope isolates planner, assignments, app state and local-first snap
     };
     window.ReadyAssignments.save(aAssignments);
     persistence.save({schemaVersion:5,profile:{name:'A',birthdate:'2015-01-01',photo:'',style:'editorial',shareAvatar:false},guide:{}});
+    const debugAAfterSave=localStorage.getItem(window.ReadyMemberScope.storageKey('readyset_state'));
     await window.ReadySetLocalFirst.capture('planner',JSON.stringify({member:'A'}));
+    const debugAAfterCapture=localStorage.getItem(window.ReadyMemberScope.storageKey('readyset_state'));
 
     const aKeys={
       planner:window.ReadyMemberScope.storageKey('readyset_planner_v1'),
@@ -47,6 +49,7 @@ test('member scope isolates planner, assignments, app state and local-first snap
     };
 
     setMember('CHILD_B');
+    const debugAAtBSwitch=localStorage.getItem('readyset_state::member::CHILD_A');
     const bBefore={
       planner:window.ReadySetPlanner.snapshot(),
       assignments:window.ReadyAssignments.load(),
@@ -71,6 +74,7 @@ test('member scope isolates planner, assignments, app state and local-first snap
     window.ReadyAssignments.save(bAssignments);
     persistence.save({schemaVersion:5,profile:{name:'B',birthdate:'2020-01-01',photo:'',style:'editorial',shareAvatar:false},guide:{}});
     await window.ReadySetLocalFirst.capture('planner',JSON.stringify({member:'B'}));
+    const debugAAfterBWork=localStorage.getItem('readyset_state::member::CHILD_A');
 
     const bKeys={
       planner:window.ReadyMemberScope.storageKey('readyset_planner_v1'),
@@ -90,8 +94,13 @@ test('member scope isolates planner, assignments, app state and local-first snap
     setMember('CHILD_B');
     const bSnapshots=await window.ReadySetLocalFirst.snapshots();
     window.ReadyFamilySession=originalFamily;
-    return {aKeys,bKeys,bBefore,aAfter,aSnapshotScopes:aSnapshots.map(x=>x.scope),bSnapshotScopes:bSnapshots.map(x=>x.scope)};
+    return {aKeys,bKeys,bBefore,aAfter,aSnapshotScopes:aSnapshots.map(x=>x.scope),bSnapshotScopes:bSnapshots.map(x=>x.scope),debugAAfterSave,debugAAfterCapture,debugAAtBSwitch,debugAAfterBWork};
   });
+
+  expect(JSON.parse(result.debugAAfterSave||'null')?.profile?.name,'A after save').toBe('A');
+  expect(JSON.parse(result.debugAAfterCapture||'null')?.profile?.name,'A after capture').toBe('A');
+  expect(JSON.parse(result.debugAAtBSwitch||'null')?.profile?.name,'A at B switch').toBe('A');
+  expect(JSON.parse(result.debugAAfterBWork||'null')?.profile?.name,'A after B work').toBe('A');
 
   expect(result.aKeys.planner).toContain('CHILD_A');
   expect(result.bKeys.planner).toContain('CHILD_B');
