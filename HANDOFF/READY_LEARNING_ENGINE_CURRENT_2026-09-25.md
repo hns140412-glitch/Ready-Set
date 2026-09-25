@@ -1,6 +1,6 @@
 # READY LEARNING ENGINE CURRENT — 2026-09-25
 
-STATE: CURRENT
+STATE: CLOSED_CURRENT
 SCOPE: Ready & Set Learning Engine vertical contract
 AUTHORITY: latest validated implementation on branch `taky/ready-character-intro-integration-2026-09-24`
 PRINCIPLE: DEEP MEMORY — LIGHT EXECUTION
@@ -196,11 +196,14 @@ Implementation commits:
 - `c27736d375282caa39ea91ffc3ea1e75d1889ba0` review idempotency
 - `883ed955aab5a0e23adab85f9c0c62ca0afa8f38` isolated regression fixture
 
-Verification status at document creation:
+Verification status:
 - member/subject isolation: GREEN
 - personal baseline policy: GREEN
 - consolidated learning journey: GREEN
-- evidence-review idempotency exact-head CI: IN_PROGRESS
+- terminal + evidence-review idempotency exact-head: GREEN
+- validated functional HEAD: `695ac2140f38d14902c6e06278aeda6fd1902aa8`
+- Runtime E2E: `36090675519`
+- Runtime flow / package / artifact steps: SUCCESS
 
 ## 6. CLOSED / DO NOT REOPEN WITHOUT REGRESSION
 
@@ -214,10 +217,9 @@ Verification status at document creation:
 
 ## 7. REMAINING OPEN
 
-1. exact-head GREEN for evidence-review idempotency
-2. confirm terminal finalization cannot re-trigger the same review receipt
-3. update this CURRENT from PENDING to CLOSED_CURRENT after verification
-4. deployment / merge remain HOLD until deployment gate
+1. deployment / merge remain HOLD until deployment gate
+2. future Learning Engine changes must preserve this CURRENT contract
+3. production-device / live specialist-provider verification remains a release concern, not a Learning Engine logic OPEN
 
 ## 8. ANTI-FRAGMENTATION RULE
 
