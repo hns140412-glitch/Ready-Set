@@ -258,6 +258,23 @@
   function reviewLearningEvidence(assignmentId,input={}){
     if(!window.ReadyAssignments||!window.ReadyLearningMasterV01||!window.ReadySetPlanner)return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
     if(input.learning_decision){
+      const state=window.ReadyAssignments.load();
+      const fact=state.assignmentFacts?.[assignmentId];
+      if(!fact)return {ok:false,reason:'ASSIGNMENT_FACT_NOT_FOUND'};
+      const invalidated=window.ReadySetPlanner.invalidateAssignmentOutputs?.(assignmentId,{
+        reason:'LEARNING_ENGINE_CORE_DECISION_REVIEW',
+        fact_revision:Number(fact.fact_revision)||1
+      })||null;
+      if(invalidated?.in_progress_count>0){
+        return {
+          ok:false,
+          reason:'LEARNING_DECISION_REVIEW_IN_PROGRESS_HOLD',
+          assignment_id:assignmentId,
+          authority:'READY_EXECUTION_ADAPTER_ONLY',
+          invalidation:invalidated,
+          legacy_learning_logic_used:false
+        };
+      }
       const processed=applyLearningEngineDecision(input.learning_decision,{
         assignment_id:assignmentId,
         learning_decision_ref:input.learning_decision_ref||null,
@@ -270,6 +287,7 @@
       return {
         ...processed,
         assignment_id:assignmentId,
+        invalidation:invalidated,
         legacy_learning_logic_used:false
       };
     }
