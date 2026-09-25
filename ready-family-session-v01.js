@@ -1,49 +1,16 @@
 (() => {
   'use strict';
 
-  const VERSION='0.2.0';
-  const ROLES=new Set(['CHILD','PARENT']);
+  const VERSION='0.3.0';
+  const FamilyContext=globalThis.TakyFamilyContext;
+  if(!FamilyContext?.normalize || !FamilyContext?.requireRole) throw new Error('READY_FAMILY_CONTEXT_UNAVAILABLE');
   let sessionRevision=0;
-  let session={
-    state:'ANONYMOUS_LOCAL',
-    authenticated:false,
-    family_id:null,
-    member_id:null,
-    role:'CHILD',
-    session_id:null,
-    issued_at:null,
-    expires_at:null,
-    source:'LOCAL_DEFAULT'
-  };
+  let session=FamilyContext.anonymousLocal({source:'LOCAL_DEFAULT'});
 
   function clone(v){return JSON.parse(JSON.stringify(v));}
-  function nowMs(){return Date.now();}
-  function isExpired(s){
-    if(!s.expires_at)return false;
-    const t=Date.parse(s.expires_at);
-    return Number.isFinite(t)&&t<=nowMs();
-  }
   function normalize(input={}){
-    const role=String(input.role||'').trim().toUpperCase();
-    const authenticated=input.authenticated===true;
-    const familyId=String(input.family_id||'').trim()||null;
-    const memberId=String(input.member_id||'').trim()||null;
-    const sessionId=String(input.session_id||'').trim()||null;
-    const validRole=ROLES.has(role)?role:null;
-    const candidate={
-      state:authenticated?'AUTHENTICATED':'ANONYMOUS_LOCAL',
-      authenticated,
-      family_id:familyId,
-      member_id:memberId,
-      role:validRole||'CHILD',
-      session_id:sessionId,
-      issued_at:input.issued_at||null,
-      expires_at:input.expires_at||null,
-      source:String(input.source||'AUTH_BOOTSTRAP')
-    };
-    if(authenticated&&(!familyId||!memberId||!sessionId||!validRole)) return null;
-    if(isExpired(candidate)) return null;
-    return candidate;
+    const checked=FamilyContext.validate(input);
+    return checked.ok?checked.context:null;
   }
 
   function applyBootstrap(input={}){
@@ -107,10 +74,7 @@
   }
 
   function clear(){
-    session={
-      state:'ANONYMOUS_LOCAL',authenticated:false,family_id:null,member_id:null,role:'CHILD',
-      session_id:null,issued_at:null,expires_at:null,source:'LOCAL_DEFAULT'
-    };
+    session=FamilyContext.anonymousLocal({source:'LOCAL_DEFAULT'});
     sessionRevision+=1;
     window.dispatchEvent(new CustomEvent('readyset-family-session',{detail:publicSession()}));
     return publicSession();
@@ -122,14 +86,11 @@
   }
   function current(){return publicSession();}
   function role(){return current().role;}
-  function isParent(){const s=current();return s.authenticated===true&&s.role==='PARENT';}
-  function isChild(){const s=current();return s.role==='CHILD';}
+  function isParent(){return FamilyContext.requireRole(current(),'PARENT').ok===true;}
+  function isChild(){return FamilyContext.requireRole(current(),'CHILD').ok===true;}
   function requireRole(required){
-    const want=String(required||'').toUpperCase();
-    const s=current();
-    if(want==='CHILD' && s.role==='CHILD') return {ok:true,session:s};
-    if(want==='PARENT' && isParent()) return {ok:true,session:s};
-    return {ok:false,reason:want==='PARENT'?'PARENT_AUTH_REQUIRED':'ROLE_NOT_ALLOWED',session:s};
+    const result=FamilyContext.requireRole(current(),required);
+    return {ok:result.ok,reason:result.reason,session:current()};
   }
   const bootstrap=globalThis.__READY_AUTH_BOOTSTRAP__;
   const bootstrapAllowed=typeof location!=='undefined'&&['127.0.0.1','localhost'].includes(location.hostname);
