@@ -24,6 +24,7 @@ test('recurring vocabulary TODO launches Hide with Learning Engine context and r
       activity_types:['MEMORY','RECALL'],
       activity_sequence:['ENCODE','RECALL','CHECK'],
       concept_skill_target:'VOCABULARY',
+      review_lexical_ids:['word_1'],
       execution_plan:{
         authority:'READY_LEARNING_ENGINE_ROUTING',
         mode:'HIDE_SPECIALIST',
@@ -45,6 +46,12 @@ test('recurring vocabulary TODO launches Hide with Learning Engine context and r
   expect(prepared.ok).toBe(true);
   expect(prepared.url).toContain('learning_context=');
   expect(prepared.url).toContain('route_authority=READY_LEARNING_ENGINE_ROUTING');
+  const preparedUrl=new URL(prepared.url);
+  const directive=JSON.parse(preparedUrl.searchParams.get('review_directive'));
+  expect(directive.authority).toBe('EXPLICIT_READY_PLANNER_REVIEW_DIRECTIVE');
+  expect(directive.reviewPolicyOwner).toBe('READY_LEARNING_ENGINE');
+  expect(directive.scheduleOwner).toBe('READY_SET_PLANNER');
+  expect(directive.lexicalIds).toEqual(['word_1']);
 
   await page.evaluate(()=>{
     const c=window.ReadySetRev07.contract();
