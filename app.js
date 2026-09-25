@@ -100,6 +100,7 @@ const appPersistence=rebuildPersistence.create({
   safePoint:appState=>!appState?.activeSession
 });
 let state=appPersistence.load();
+let stateStorageKey=appPersistence.currentKey();
 const learnerContextRuntime=rebuildLearnerContext.create({
   getBirthdate:()=>state.profile?.birthdate||'',
   dateKey:()=>new Date().toLocaleDateString('sv-SE')
@@ -116,8 +117,21 @@ function readyPwaSafePoint(){
 }
 globalThis.ReadySetPwaSafePoint=readyPwaSafePoint;
 function save(){
+  const currentKey=appPersistence.currentKey();
+  if(currentKey!==stateStorageKey){
+    return {
+      ok:false,
+      reason:'STALE_MEMBER_STATE_WRITE_BLOCKED',
+      loaded_key:stateStorageKey,
+      current_key:currentKey
+    };
+  }
   return appPersistence.save(state);
 }
+window.addEventListener('readyset-family-session',()=>{
+  state=appPersistence.load();
+  stateStorageKey=appPersistence.currentKey();
+});
 function toast(msg){
   const t=$('#toast'); if(!t)return;
   t.textContent=msg;t.hidden=false;
