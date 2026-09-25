@@ -10,6 +10,11 @@
   const id = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
   const iso = ms => new Date(ms ?? Date.now()).toISOString();
   const uniq = arr => [...new Set(arr.filter(Boolean))];
+  const nextLocalDateKey = () => {
+    const d=new Date();
+    d.setDate(d.getDate()+1);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  };
 
   function taskLabels(session) {
     return uniq([...(session?.selected || []), ...(session?.tasks || [])]);
@@ -537,10 +542,27 @@
         plannerOutcome
       });
     }
+    const evidenceAssignments=[...new Set(c.tasks
+      .filter(t=>t.assignment_id&&Array.isArray(t.learning_evidence)&&t.learning_evidence.length)
+      .map(t=>t.assignment_id))];
+    const adaptiveReviews=[];
+    for(const assignmentId of evidenceAssignments){
+      const review=window.ReadyIntegrationV1?.reviewLearningEvidence?.(assignmentId,{start_date:nextLocalDateKey()})||null;
+      adaptiveReviews.push({assignment_id:assignmentId,review});
+    }
+
     c.session_state = 'ENDED';
     c.ended_at = iso();
     c.active_app = 'ready-set';
-    emit('SESSION_ENDED', { task_states: c.tasks.map(t => ({ task_id:t.task_id, state:t.state })) });
+    emit('SESSION_ENDED', {
+      task_states: c.tasks.map(t => ({ task_id:t.task_id, state:t.state })),
+      adaptive_reviews:adaptiveReviews.map(x=>({
+        assignment_id:x.assignment_id,
+        ok:!!x.review?.ok,
+        reason:x.review?.reason||null,
+        review_analysis_id:x.review?.review_analysis_id||null
+      }))
+    });
     save();
     document.getElementById('readyRev07Wrap').hidden = true;
     if (typeof completeSessionFromTaskOutcomes === 'function') {
