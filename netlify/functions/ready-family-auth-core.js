@@ -1,5 +1,7 @@
 'use strict';
 
+const FamilyContext=require('../../vendor/taky/family-context.js');
+
 function clean(v){return String(v??'').trim();}
 function upper(v){return clean(v).toUpperCase();}
 function normalizedRoles(user={}){
@@ -27,15 +29,20 @@ function familySessionFromIdentityUser(user={}){
   if(!id)return {ok:false,status:401,reason:'IDENTITY_USER_REQUIRED'};
   if(!role)return {ok:false,status:403,reason:'IDENTITY_ROLE_INVALID'};
   if(!familyId)return {ok:false,status:403,reason:'FAMILY_MEMBERSHIP_REQUIRED'};
+  const checked=FamilyContext.validate({
+    authenticated:true,
+    family_id:familyId,
+    member_id:id,
+    role,
+    session_id:'netlify_identity_'+id,
+    auth_provider:'NETLIFY_IDENTITY',
+    source:'NETLIFY_IDENTITY'
+  });
+  if(!checked.ok)return {ok:false,status:403,reason:checked.issues[0]||'FAMILY_CONTEXT_INVALID'};
   return {
     ok:true,
     session:{
-      authenticated:true,
-      family_id:familyId,
-      member_id:id,
-      role,
-      session_id:'netlify_identity_'+id,
-      source:'NETLIFY_IDENTITY',
+      ...checked.context,
       email:clean(user.email)||null,
       name:clean(user.name)||clean(user.userMetadata?.full_name)||null
     }
