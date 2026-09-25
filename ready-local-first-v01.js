@@ -115,6 +115,15 @@
     };
   }
 
+  function publicScopedRow(row){
+    if(!row)return row;
+    return {
+      ...row,
+      scope_key:row.scope||null,
+      scope:row.logical_scope||row.scope||null
+    };
+  }
+
   async function capture(scope,payload,options={}){
     const logical_scope=String(scope||'').trim();
     if(!SCOPE_KEYS[logical_scope]) throw new Error('UNKNOWN_READY_SCOPE');
@@ -284,9 +293,9 @@
     scopeIdentity,
     recoverMissingScopes,
     resolveConflict,
-    outbox:()=>all('outbox'),
-    conflicts:()=>all('conflicts'),
-    snapshots:()=>all('snapshots'),
+    outbox:()=>all('outbox').then(rows=>rows.map(publicScopedRow)),
+    conflicts:()=>all('conflicts').then(rows=>rows.map(publicScopedRow)),
+    snapshots:()=>all('snapshots').then(rows=>rows.map(publicScopedRow)),
     flush
   });
 
