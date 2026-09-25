@@ -36,7 +36,7 @@ test('recurring vocabulary TODO launches Hide with Learning Engine context and r
       concept_skill_target:'VOCABULARY',
       review_lexical_ids:['word_1'],
       execution_plan:{
-        authority:'READY_LEARNING_ENGINE_ROUTING',
+        authority:'READY_EXECUTION_ROUTING',
         mode:'HIDE_SPECIALIST',
         primary_app:'hide-seek',
         allowed_specialists:['hide-seek'],
@@ -65,7 +65,7 @@ test('recurring vocabulary TODO launches Hide with Learning Engine context and r
   const prepared=await page.evaluate(()=>window.ReadySetRev07.prepareSpecialistLaunch('hide-seek'));
   expect(prepared.ok).toBe(true);
   expect(prepared.url).toContain('learning_context=');
-  expect(prepared.url).toContain('route_authority=READY_LEARNING_ENGINE_ROUTING');
+  expect(prepared.url).toContain('route_authority=READY_EXECUTION_ROUTING');
   const preparedUrl=new URL(prepared.url);
   expect(preparedUrl.searchParams.get('material_binding')).toBeNull();
   const directive=JSON.parse(preparedUrl.searchParams.get('review_directive'));
@@ -198,7 +198,7 @@ test('confirmed specialist material binding is reused on the next Hide launch',a
       assignment_id:'a_reuse',analysis_id:'an_reuse',learning_unit_id:'u_reuse',
       source_range:'Unit 3',workbook_ref_id:'book_reuse',source:'PLANNER_V2_ALLOCATION',state:'PLANNED',
       activity_types:['MEMORY'],activity_sequence:['RECALL'],concept_skill_target:'VOCABULARY',
-      execution_plan:{authority:'READY_LEARNING_ENGINE_ROUTING',mode:'HIDE_SPECIALIST',primary_app:'hide-seek',allowed_specialists:['hide-seek'],handoff_queue:['hide-seek']},
+      execution_plan:{authority:'READY_EXECUTION_ROUTING',mode:'HIDE_SPECIALIST',primary_app:'hide-seek',allowed_specialists:['hide-seek'],handoff_queue:['hide-seek']},
       execution_app:'hide-seek',specialist_material_binding:binding
     });
     return todo.todo_id;
