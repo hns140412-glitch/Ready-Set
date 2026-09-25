@@ -75,7 +75,7 @@
 
     return Object.freeze({
       router_version:VERSION,
-      authority:'READY_LEARNING_ENGINE_ROUTING',
+      authority:'READY_EXECUTION_ROUTING',
       subject:subject||null,
       domain:domain||null,
       mode,
