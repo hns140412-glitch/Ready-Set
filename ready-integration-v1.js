@@ -130,6 +130,26 @@
 
   function reviewEscalatedCarryOver(carryOverId,input={}){
     if(!window.ReadyAssignments||!window.ReadyLearningMasterV01||!window.ReadySetPlanner)return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
+    if(input.learning_decision){
+      const carry=window.ReadySetPlanner.carryOverCandidates?.().find(x=>x.carry_over_id===carryOverId);
+      if(!carry)return {ok:false,reason:'CARRY_OVER_NOT_FOUND'};
+      if(carry.escalation_level!=='PARENT_LEARNING_MASTER_REVIEW')return {ok:false,reason:'ESCALATION_REVIEW_NOT_REQUIRED'};
+      const assignmentId=carry.assignment_id;
+      const processed=applyLearningEngineDecision(input.learning_decision,{
+        assignment_id:assignmentId,
+        learning_decision_ref:input.learning_decision_ref||null,
+        start_date:input.start_date,
+        scheduling_constraints:input.scheduling_constraints||null
+      });
+      if(processed?.ok){
+        window.ReadySetPlanner.resolveCarryOver?.(carryOverId,{resolution:'CANCEL',actor:'CORE_DECISION_ADAPTER_REVIEW'});
+      }
+      return {
+        ...processed,
+        carry_over_id:carryOverId,
+        legacy_learning_logic_used:false
+      };
+    }
     const carry=window.ReadySetPlanner.carryOverCandidates?.().find(x=>x.carry_over_id===carryOverId);
     if(!carry)return {ok:false,reason:'CARRY_OVER_NOT_FOUND'};
     if(carry.escalation_level!=='PARENT_LEARNING_MASTER_REVIEW')return {ok:false,reason:'ESCALATION_REVIEW_NOT_REQUIRED'};
@@ -224,6 +244,21 @@
 
   function reviewLearningEvidence(assignmentId,input={}){
     if(!window.ReadyAssignments||!window.ReadyLearningMasterV01||!window.ReadySetPlanner)return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
+    if(input.learning_decision){
+      const processed=applyLearningEngineDecision(input.learning_decision,{
+        assignment_id:assignmentId,
+        learning_decision_ref:input.learning_decision_ref||null,
+        start_date:input.start_date,
+        candidate_dates:input.candidate_dates,
+        candidate_windows_by_date:input.candidate_windows_by_date,
+        scheduling_constraints:input.scheduling_constraints||null
+      });
+      return {
+        ...processed,
+        assignment_id:assignmentId,
+        legacy_learning_logic_used:false
+      };
+    }
     const state=window.ReadyAssignments.load();
     const fact=state.assignmentFacts?.[assignmentId];
     if(!fact)return {ok:false,reason:'ASSIGNMENT_FACT_NOT_FOUND'};
@@ -305,6 +340,7 @@
     return {
       ok:!!processed?.ok,
       assignment_id:assignmentId,
+      legacy_learning_logic_used:true,
       review_analysis_id:reviewed?.analysis?.analysis_id||null,
       adaptive_review_policy:reviewed?.analysis?.adaptive_review_policy||null,
       specialist_evidence:specialist,
