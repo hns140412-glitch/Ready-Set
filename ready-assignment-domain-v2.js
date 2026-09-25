@@ -21,7 +21,7 @@
     const unit_name=clean(input.unit_name)||null;
     return {grade,semester,unit_name};
   }
-  const blank=()=>({schema_version:2,assignmentFacts:{},assignmentPackages:{},workbookRefs:{},artifacts:{},analyses:{},learningUnits:{}});
+  const blank=()=>({schema_version:2,assignmentFacts:{},assignmentPackages:{},workbookRefs:{},artifacts:{},analyses:{},learningUnits:{},specialistBindings:{}});
   function requireBrowserActor(actor){
     const normalized=clean(actor).toUpperCase();
     const family=globalThis.ReadyFamilySession;
@@ -40,7 +40,8 @@
       workbookRefs:x.workbookRefs&&typeof x.workbookRefs==='object'?x.workbookRefs:{},
       artifacts:x.artifacts&&typeof x.artifacts==='object'?x.artifacts:{},
       analyses:x.analyses&&typeof x.analyses==='object'?x.analyses:{},
-      learningUnits:x.learningUnits&&typeof x.learningUnits==='object'?x.learningUnits:{}
+      learningUnits:x.learningUnits&&typeof x.learningUnits==='object'?x.learningUnits:{},
+      specialistBindings:x.specialistBindings&&typeof x.specialistBindings==='object'?x.specialistBindings:{}
     };
   }
   function createDomain(storage){
@@ -243,6 +244,73 @@
       });
     }
 
+    function specialistBindingKey(input={}){
+      const assignmentId=clean(input.assignment_id);
+      const app=clean(input.specialist_app).toLowerCase();
+      const sourceRange=clean(input.source_range);
+      const workbookRefId=clean(input.workbook_ref_id);
+      const concept=clean(input.concept_skill_target).toUpperCase();
+      if(!assignmentId||!app)return null;
+      return [assignmentId,app,workbookRefId,sourceRange,concept].join('|');
+    }
+
+    function confirmSpecialistBinding(input={}){
+      const actor=clean(input.actor).toUpperCase();
+      if(!['PARENT','CHILD'].includes(actor))throw new Error('HUMAN_CONFIRMATION_REQUIRED');
+      const actorGuard=requireBrowserActor(actor);if(!actorGuard.ok)throw new Error(actorGuard.reason);
+      const specialistApp=clean(input.specialist_app).toLowerCase();
+      if(!['hide-seek','snap-pop'].includes(specialistApp))throw new Error('SPECIALIST_APP_INVALID');
+      const assignmentId=clean(input.assignment_id);
+      const materialId=clean(input.specialist_material_id);
+      if(!assignmentId||!materialId)throw new Error('SPECIALIST_BINDING_ID_REQUIRED');
+      return mutate(s=>{
+        const fact=s.assignmentFacts[assignmentId];if(!fact)throw new Error('fact not found');
+        const learningUnitId=clean(input.learning_unit_id);
+        const unit=learningUnitId?s.learningUnits[learningUnitId]||null:null;
+        if(unit&&unit.assignment_id!==assignmentId)throw new Error('SPECIALIST_BINDING_ASSIGNMENT_MISMATCH');
+        const sourceRange=clean(input.source_range)||clean(unit?.source_range)||null;
+        const workbookRefId=clean(input.workbook_ref_id)||clean(fact.workbook_ref_id)||null;
+        const conceptSkillTarget=clean(input.concept_skill_target)||clean(unit?.concept_skill_target)||null;
+        const key=specialistBindingKey({
+          assignment_id:assignmentId,
+          specialist_app:specialistApp,
+          source_range:sourceRange,
+          workbook_ref_id:workbookRefId,
+          concept_skill_target:conceptSkillTarget
+        });
+        if(!key)throw new Error('SPECIALIST_BINDING_KEY_INVALID');
+        const row={
+          binding_id:s.specialistBindings[key]?.binding_id||id('specialist_binding'),
+          binding_key:key,
+          contract_version:'READY_SPECIALIST_MATERIAL_BINDING_V1',
+          assignment_id:assignmentId,
+          analysis_id:clean(input.analysis_id)||clean(unit?.analysis_id)||null,
+          learning_unit_id:learningUnitId||clean(unit?.learning_unit_id)||null,
+          source_range:sourceRange,
+          workbook_ref_id:workbookRefId,
+          concept_skill_target:conceptSkillTarget,
+          specialist_app:specialistApp,
+          specialist_material_id:materialId,
+          specialist_material_kind:clean(input.specialist_material_kind)||null,
+          confirmation_state:'HUMAN_CONFIRMED',
+          confirmed_by:actor,
+          confirmation_source:clean(input.confirmation_source)||'SPECIALIST_USER_ACTION',
+          source_event_id:clean(input.source_event_id)||null,
+          confirmed_at:now(),
+          updated_at:now()
+        };
+        s.specialistBindings[key]=row;
+        return clone(row);
+      });
+    }
+
+    function specialistBinding(input={}){
+      const key=specialistBindingKey(input);
+      if(!key)return null;
+      const row=load().specialistBindings[key]||null;
+      return row?.confirmation_state==='HUMAN_CONFIRMED'?clone(row):null;
+    }
+
     function project(role='CHILD'){
       const s=load(),parent=String(role).toUpperCase()==='PARENT';
       const visibleArtifacts=Object.fromEntries(Object.entries(s.artifacts).filter(([,a])=>parent||a.visibility!=='PARENT_ONLY'));
@@ -255,9 +323,9 @@
         if(!parent)delete row.answer_reference_ids;
         return row;
       });
-      return {role:parent?'PARENT':'CHILD',facts,packages:Object.values(s.assignmentPackages).map(clone),workbookRefs:Object.values(s.workbookRefs).map(clone),artifacts:Object.values(visibleArtifacts).map(clone)};
+      return {role:parent?'PARENT':'CHILD',facts,packages:Object.values(s.assignmentPackages).map(clone),workbookRefs:Object.values(s.workbookRefs).map(clone),artifacts:Object.values(visibleArtifacts).map(clone),specialistBindings:Object.values(s.specialistBindings||{}).filter(x=>x.confirmation_state==='HUMAN_CONFIRMED').map(clone)};
     }
-    return {version:VERSION,load,save,upsertWorkbookRef,upsertTalentPackage,upsertEnglishAssignment,addEventFact,pendingChildFacts,reviewChildFact,confirmFact,markRevisionPropagationComplete,markEvidenceReview,project};
+    return {version:VERSION,load,save,upsertWorkbookRef,upsertTalentPackage,upsertEnglishAssignment,addEventFact,pendingChildFacts,reviewChildFact,confirmFact,markRevisionPropagationComplete,markEvidenceReview,confirmSpecialistBinding,specialistBinding,project};
   }
   return {version:VERSION,STORAGE_KEY,TALENT_BOOKS,createDomain,normalize};
 });
