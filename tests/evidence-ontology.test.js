@@ -8,7 +8,8 @@ const baseTask={
   assignment_id:'a1',
   analysis_id:'an1',
   subject:'영어',
-  matched_domain:'이해'
+  matched_domain:'이해',
+  concept_skill_target:'VOCABULARY'
 };
 
 const hide=Evidence.specialistEvidence({
@@ -17,6 +18,11 @@ const hide=Evidence.specialistEvidence({
   task_state:'PARTIAL',
   event_id:'e-hide',
   payload:{
+    instrumentVersion:'hide-v2',
+    interactionMode:'RECALL',
+    assisted:false,
+    attemptCount:2,
+    responseLatencyMs:1800,
     memorySummary:{
       authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
       averageMemoryStrength:62,
@@ -28,6 +34,12 @@ const hide=Evidence.specialistEvidence({
   }
 });
 assert.equal(hide.evidence_type,'MEMORY_RETRIEVAL_EVIDENCE');
+assert.equal(hide.concept_skill_target,'VOCABULARY');
+assert.equal(hide.instrument_version,'hide-v2');
+assert.equal(hide.interaction_mode,'RECALL');
+assert.equal(hide.assistance,'UNASSISTED');
+assert.equal(hide.attempt_count,2);
+assert.equal(hide.response_latency_ms,1800);
 assert.equal(hide.memory.average_strength,62);
 assert.equal(hide.memory.schedule_owner,'READY_SET_PLANNER');
 assert.ok(hide.cannot_claim.includes('CONCEPT_MASTERY'));
