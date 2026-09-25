@@ -4,7 +4,7 @@
   const World=globalThis.TakyWorldState;
   if(!World?.normalize)throw new Error('READY_WORLD_STATE_CONTRACT_UNAVAILABLE');
 
-  let state=World.blank(null);
+  let state=World.empty(null);
   let loading=null;
 
   function family(){return globalThis.ReadyFamilySession?.current?.()||{authenticated:false,role:'CHILD',member_id:null}}
@@ -23,7 +23,7 @@
 
   async function hydrate(){
     const id=targetMemberId();
-    if(!id){state=World.blank(null);publish();return {ok:true,state:current(),reason:'NO_AUTHENTICATED_LEARNER'}}
+    if(!id){state=World.empty(null);publish();return {ok:true,state:current(),reason:'NO_AUTHENTICATED_LEARNER'}}
     if(loading)return loading;
     loading=(async()=>{
       try{
