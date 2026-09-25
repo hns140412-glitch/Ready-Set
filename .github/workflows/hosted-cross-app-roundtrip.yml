@@ -3,6 +3,10 @@ name: Ready Hosted Cross-App Roundtrip
 on:
   workflow_dispatch:
     inputs:
+      deployment_gate:
+        description: Type DEPLOYMENT_GATE_OPEN to authorize hosted verification after external deploy
+        required: true
+        type: string
       deployment_receipt_json:
         description: Exact-source deployment receipt JSON for Hide/Snap
         required: true
@@ -21,6 +25,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      - name: Enforce explicit deployment gate
+        env:
+          DEPLOYMENT_GATE: ${{ inputs.deployment_gate }}
+        run: |
+          test "$DEPLOYMENT_GATE" = "DEPLOYMENT_GATE_OPEN" || { echo 'DEPLOYMENT_HOLD_ACTIVE'; exit 1; }
+          echo 'DEPLOYMENT_GATE_EXPLICITLY_OPEN'
+
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
