@@ -89,6 +89,7 @@
         label:link.label,
         state: 'PENDING',
         planner_todo_id: link.todo_id,
+        member_id:link.member_id||link.target_member_id||window.ReadyFamilySession?.current?.()?.member_id||null,
         assignment_id:link.assignment_id||null,
         analysis_id:link.analysis_id||null,
         learning_unit_id:link.learning_unit_id||null,
@@ -289,6 +290,9 @@
     const snapTarget=specialistTargets.resolve('snap-pop')?.url||null;
     if(snapTarget)url.searchParams.set('snap_target',snapTarget);
     url.searchParams.set('from_app', 'ready-set');
+    if(task.member_id)url.searchParams.set('child_id',task.member_id);
+    if(task.subject)url.searchParams.set('subject',task.subject);
+    if(task.concept_skill_target)url.searchParams.set('concept_skill_target',task.concept_skill_target);
     url.searchParams.set('handoff_scope', app==='hide-seek'?'MEMORY_RETRIEVAL':'LEARNER_PRODUCTION');
     url.searchParams.set('route_authority',plan?.authority||'READY_EXECUTION_ROUTING');
     const targetDescriptor=specialistTargets.resolve(app);
@@ -396,7 +400,8 @@
     const centralOutbox=window.ReadyCentralEvidenceOutbox;
     if(centralOutbox?.enqueue&&event_id){
       const activeFamilySession=window.ReadyFamilySession?.current?.()||null;
-      const activeMember=activeFamilySession?.member_id||evidence?.member_id||null;
+      const learnerMember=evidence?.member_id||task.member_id||payload?.member_id||payload?.child_id||activeFamilySession?.member_id||null;
+      const actorMember=activeFamilySession?.member_id||null;
       centralOutbox.enqueue({
         source_app:sourceApp,
         created_at:observed_at||evidence?.observed_at||iso(),
@@ -411,7 +416,8 @@
         evidence:evidence||null,
         context:{
           family_id:activeFamilySession?.family_id||null,
-          member_id:activeMember,
+          member_id:learnerMember,
+          actor_member_id:actorMember,
           subject:task.subject||evidence?.subject||null,
           concept_skill_target:task.concept_skill_target||evidence?.concept_skill_target||null,
           learning_target_id:evidence?.learning_target_id||payload?.learning_target_id||payload?.word_id||null,
