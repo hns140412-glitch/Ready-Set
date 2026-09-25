@@ -48,7 +48,8 @@
           average_strength:Number.isFinite(memory?.averageMemoryStrength)?memory.averageMemoryStrength:null,
           review_advisories:Array.isArray(memory?.reviewAdvisories)?memory.reviewAdvisories.slice(0,24):[],
           next_review_semantics:memory?.prioritySemantics||'ADVISORY_SIGNAL_NOT_DATE',
-          review_policy_owner:memory?.reviewPolicyOwner||'TAKY_LEARNING_ENGINE_CORE',
+          review_policy_owner:'TAKY_LEARNING_ENGINE_CORE',
+          reported_review_policy_owner:clean(memory?.reviewPolicyOwner,80)||null,
           schedule_owner:memory?.scheduleOwner||'READY_SET_PLANNER'
         },
         cannot_claim:['CONCEPT_MASTERY','FINAL_SUBJECT_MASTERY','SCHEDULE_DATE']
