@@ -12,7 +12,7 @@ assert.equal(core.canRead(parent,'C1',members).ok,true);
 assert.equal(core.canWrite(child,'C1').ok,true);
 assert.equal(core.canWrite(parent,'C1').ok,false);
 
-let s=World.blank('C1');
+let s=World.empty('C1');
 let r=core.applyOperation(s,{type:'SET_PRIMARY_COMPANION',character_id:'crew.core.dubi'});
 assert.equal(r.ok,true);s=r.state;
 assert.equal(s.primary_companion_id,'crew.core.dubi');
