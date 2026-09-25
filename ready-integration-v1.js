@@ -126,9 +126,10 @@
       const stamp=Date.parse(row?.at||row?.created_at||row?.updated_at||'');
       return !Number.isFinite(stamp)||stamp>=cutoff;
     }).slice(-12);
+    const cleanKey=value=>String(value??'').trim();
     const evidence=recent.flatMap((row,rowIndex)=>(Array.isArray(row.learning_evidence)?row.learning_evidence:[]).map((e,eIndex)=>({e,row,rowIndex,eIndex})))
       .filter(({e,row,rowIndex,eIndex})=>{
-        const key=clean(e?.evidence_id||e?.event_id||e?.session_id||row?.session_id||row?.execution_observation_id||'')||
+        const key=cleanKey(e?.evidence_id||e?.event_id||e?.session_id||row?.session_id||row?.execution_observation_id||'')||
           JSON.stringify([row?.at||row?.created_at||rowIndex,e?.evidence_type,e?.memory?.average_strength,eIndex]);
         if(seen.has(key))return false;
         seen.add(key); return true;
