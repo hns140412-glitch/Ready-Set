@@ -7,6 +7,18 @@ const decision={
   decision_contract:'TAKY_RUNTIME_DECISION_CONTRACT_V1',
   authority:'LEARNING_DECISION_INTENT_ONLY',
   scope:{member_id:'A',subject:'영어',concept_skill_target:'vocabulary'},
+  adaptive_plan:{
+    ok:true,
+    adaptive_plan_contract:'TAKY_ADAPTIVE_PLAN_INTENT_V1',
+    authority:'LEARNING_ADAPTIVE_PLAN_INTENT_ONLY',
+    unit_span_policy:'REDUCE',
+    add_checkpoint:true,
+    add_retrieval_checkpoint:true,
+    recovery_floor:'HIGH',
+    assistance_policy:'UNCHANGED',
+    target_learning_ids:['word:a'],
+    cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','DUE_AT','DEADLINE','ASSIGNMENT_FACT']
+  },
   blockers:[],
   pedagogical_actions:[
     {intent:'TARGETED_RECOVERY_PRACTICE',priority:'HIGH',basis:['UNRESOLVED_RECOVERY'],targets:['word:a']},
@@ -31,6 +43,9 @@ assert.equal(out.authority,'READY_EXECUTION_ADAPTER_ONLY');
 assert.equal(out.execution_status,'READY_FOR_PLANNER_ALLOCATION');
 assert.equal(out.execution_hints.length,2);
 assert.equal(out.specialist_routing_intent,'MEMORY_SPECIALIST_PREFERRED');
+assert.equal(out.adaptive_plan.authority,'LEARNING_ADAPTIVE_PLAN_INTENT_ONLY');
+assert.equal(out.adaptive_plan.unit_span_policy,'REDUCE');
+assert.deepEqual(out.adaptive_plan.target_learning_ids,['word:a']);
 assert.equal(out.planner_request.planner_owns_dates,true);
 assert.equal(out.planner_request.scheduling_constraints.recurring_days[0],'MON');
 assert.equal(A.selfValidate(out).ok,true);
