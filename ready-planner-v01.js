@@ -700,6 +700,7 @@
             source_decision_contract:learningDecisionProjection.source_decision_contract||null,
             learning_decision_ref:learningDecisionProjection.learning_decision_ref||null,
             execution_hints:Array.isArray(learningDecisionProjection.execution_hints)?JSON.parse(JSON.stringify(learningDecisionProjection.execution_hints)):[],
+            adaptive_plan:learningDecisionProjection.adaptive_plan?JSON.parse(JSON.stringify(learningDecisionProjection.adaptive_plan)):null,
             specialist_routing_intent:learningDecisionProjection.specialist_routing_intent||null,
             cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','DUE_AT','DEADLINE','ASSIGNMENT_FACT','LEARNER_MODEL']
           }:null;
