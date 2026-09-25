@@ -69,3 +69,60 @@ test('English academy day prioritizes vocabulary as morning review without inven
   expect(out.todo.operating_rule_evidence.commitment_id).toBe('english_academy_rule');
   expect(out.todo.time).toBeUndefined();
 });
+
+
+test('Planner preserves Core execution hints without giving Ready date or learner-model authority',async({page})=>{
+  await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
+  const out=await page.evaluate(()=>{
+    const p=window.ReadySetPlanner;
+    const domain={
+      assignmentFacts:{
+        core_a1:{
+          assignment_id:'core_a1',confirmation_state:'FACT_CONFIRMED',deadline_state:'VERIFIED',
+          deadline_boundary:'2026-10-03',analysis_state:'INTERPRETED',current_analysis_id:'core_an1',
+          fact_revision:1,assignment_cycle:'ACADEMY'
+        }
+      },
+      analyses:{core_an1:{analysis_id:'core_an1',learning_unit_ids:['core_u1']}},
+      learningUnits:{
+        core_u1:{
+          learning_unit_id:'core_u1',analysis_id:'core_an1',assignment_id:'core_a1',
+          subject:'영어',source_range:'단어',concept_skill_target:'VOCABULARY',
+          activity_types:['MEMORY'],activity_sequence:['RECALL'],
+          cognitive_load_profile:['RETRIEVAL_LOAD'],
+          activity_load:{score:3,difficulty:2,recovery_need:'LOW'},
+          state:'INTERPRETED'
+        }
+      }
+    };
+    const projection={
+      authority:'READY_EXECUTION_ADAPTER_ONLY',
+      source_decision_contract:'TAKY_RUNTIME_DECISION_CONTRACT_V1',
+      learning_decision_ref:'decision:test-1',
+      scope:{member_id:'A',subject:'영어',concept_skill_target:'vocabulary'},
+      execution_hints:[
+        {intent:'TARGETED_RECOVERY_PRACTICE',priority:'HIGH',recovery_hint:'TARGETED'}
+      ],
+      specialist_routing_intent:'MEMORY_SPECIALIST_PREFERRED',
+      cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','DUE_AT','DEADLINE','ASSIGNMENT_FACT','LEARNER_MODEL']
+    };
+    const allocation=p.allocateLearningUnits({
+      assignment_id:'core_a1',
+      domain_state:domain,
+      candidate_dates:['2026-10-01','2026-10-02'],
+      learning_decision_projection:projection
+    });
+    const committed=p.commitLearningAllocation(allocation.allocation_run_id);
+    const todo=p.snapshot().dated_todos.find(x=>x.assignment_id==='core_a1');
+    return {allocation,committed,todo};
+  });
+  expect(out.allocation.ok).toBeTruthy();
+  expect(out.committed.ok).toBeTruthy();
+  expect(out.todo.learning_decision_projection.authority).toBe('READY_EXECUTION_ADAPTER_ONLY');
+  expect(out.todo.learning_decision_projection.learning_decision_ref).toBe('decision:test-1');
+  expect(out.todo.learning_decision_projection.execution_hints[0].intent).toBe('TARGETED_RECOVERY_PRACTICE');
+  expect(out.todo.learning_decision_projection.specialist_routing_intent).toBe('MEMORY_SPECIALIST_PREFERRED');
+  expect(out.todo.learning_decision_projection.schedule_date).toBeUndefined();
+  expect(out.todo.learning_decision_projection.planner_date).toBeUndefined();
+  expect(out.todo.execution_plan.authority).toBe('READY_EXECUTION_ROUTING');
+});
