@@ -6,9 +6,9 @@ test('learner adaptive profile distinguishes personal decline from stable baseli
   const result=await page.evaluate(()=>{
     const ev=(n,id)=>({evidence_id:id,evidence_type:'MEMORY_RETRIEVAL_EVIDENCE',memory:{average_strength:n,review_advisories:[]}});
     const rows=a=>a.map((n,i)=>({ready_state:'COMPLETED',learning_evidence:[ev(n,'ev_'+i)],at:'2026-09-'+String(20+i).padStart(2,'0')+'T07:00:00.000Z'}));
-    const declining=window.ReadyIntegrationV1.learnerAdaptiveProfile(rows([82,80,65]));
-    const stable=window.ReadyIntegrationV1.learnerAdaptiveProfile(rows([65,64,65]));
-    const insufficient=window.ReadyIntegrationV1.learnerAdaptiveProfile(rows([40,55]));
+    const declining=window.ReadyIntegrationV1.learnerAdaptiveProfile(rows([82,80,65]),{as_of:'2026-09-25T12:00:00.000Z'});
+    const stable=window.ReadyIntegrationV1.learnerAdaptiveProfile(rows([65,64,65]),{as_of:'2026-09-25T12:00:00.000Z'});
+    const insufficient=window.ReadyIntegrationV1.learnerAdaptiveProfile(rows([40,55]),{as_of:'2026-09-25T12:00:00.000Z'});
     const duplicate=window.ReadyIntegrationV1.learnerAdaptiveProfile([
       {at:new Date().toISOString(),learning_evidence:[ev(82,'same'),ev(82,'same')]},
       {at:new Date().toISOString(),learning_evidence:[ev(65,'next')]}
