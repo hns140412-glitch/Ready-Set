@@ -368,7 +368,7 @@
     return null;
   }
 
-  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null, payload = null }) {
+  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null, observed_at = null, payload = null }) {
     const c = ensureContract();
     if (!c || !session_id || session_id !== c.session_id) return false;
     if (event_id && c.applied_event_ids?.includes(event_id)) return false;
@@ -388,9 +388,35 @@
     const normalized = normalizeInboundState(task_state);
     const acceptedBinding=acceptMaterialBinding(task,sourceApp,payload,event_id||null);
     const evidence=window.ReadyEvidenceOntology?.specialistEvidence?.({
-      task,from_app:sourceApp,task_state:normalized||task_state||null,payload,event_id:event_id||null
+      task,from_app:sourceApp,task_state:normalized||task_state||null,payload,event_id:event_id||null,
+      at:observed_at||null
     })||null;
     if(evidence)task.learning_evidence=window.ReadyEvidenceOntology?.append?.(task.learning_evidence||[],evidence)||[...(task.learning_evidence||[]),evidence].slice(-120);
+
+    const centralOutbox=window.ReadyCentralEvidenceOutbox;
+    if(centralOutbox?.enqueue&&event_id){
+      const activeMember=window.ReadyFamilySession?.current?.()?.member_id||evidence?.member_id||null;
+      centralOutbox.enqueue({
+        source_app:sourceApp,
+        created_at:observed_at||evidence?.observed_at||iso(),
+        event:{
+          source:sourceApp,
+          app:sourceApp,
+          event_id:event_id,
+          occurred_at:observed_at||evidence?.observed_at||iso(),
+          event_type:'SPECIALIST_RESULT',
+          payload:payload||{}
+        },
+        evidence:evidence||null,
+        context:{
+          member_id:activeMember,
+          subject:task.subject||evidence?.subject||null,
+          concept_skill_target:task.concept_skill_target||evidence?.concept_skill_target||null,
+          learning_target_id:evidence?.learning_target_id||payload?.learning_target_id||payload?.word_id||null,
+          source_contract_version:'READY_REV07_SPECIALIST_RETURN'
+        }
+      });
+    }
     c.active_app = 'ready-set';
     c.active_task_id = task.task_id;
     if (lap_id) c.active_lap_id = lap_id;
