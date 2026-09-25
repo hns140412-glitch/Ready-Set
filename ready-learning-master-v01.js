@@ -257,6 +257,28 @@
   }
 
   function adaptiveReviewPolicy(analysis,profile){
+    const corePlan=analysis?.core_adaptive_plan;
+    if(corePlan?.authority==='LEARNING_ADAPTIVE_PLAN_INTENT_ONLY'){
+      const baseSpan=Number(profile?.split_policy?.max_span)||null;
+      const reduce=corePlan.unit_span_policy==='REDUCE';
+      return {
+        authority:'CORE_ADAPTIVE_PLAN_APPLIED',
+        reduce_unit_span:reduce&&!!baseSpan,
+        max_span:reduce&&baseSpan?Math.max(1,Math.ceil(baseSpan/2)):baseSpan,
+        add_checkpoint:corePlan.add_checkpoint===true,
+        add_retrieval_checkpoint:corePlan.add_retrieval_checkpoint===true,
+        production_evidence_observed:false,
+        target_lexical_ids:Array.isArray(corePlan.target_learning_ids)?[...new Set(corePlan.target_learning_ids.map(clean).filter(Boolean))].slice(0,24):[],
+        recovery_floor:['LOW','MEDIUM','HIGH'].includes(clean(corePlan.recovery_floor))?clean(corePlan.recovery_floor):null,
+        parent_help_floor:null,
+        evidence:{
+          source:'LEARNING_ENGINE_CORE',
+          adaptive_plan_contract:corePlan.adaptive_plan_contract||null,
+          rationale:Array.isArray(corePlan.rationale)?clone(corePlan.rationale):[]
+        },
+        cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','DEADLINE','ASSIGNMENT_FACT']
+      };
+    }
     const signal=analysis?.evidence_review_signal||analysis?.escalation_review_signal;
     if(!signal||!['ESCALATION_ADVISORY_ONLY','LEARNING_EVIDENCE_ADVISORY_ONLY'].includes(signal.authority))return null;
     const states=(signal.states||[]).map(clean).filter(Boolean);
@@ -410,6 +432,7 @@
         cross_revision_learning_signal:analysis.cross_revision_learning_signal?clone(analysis.cross_revision_learning_signal):null,
         escalation_review_signal:analysis.escalation_review_signal?clone(analysis.escalation_review_signal):null,
         adaptive_review_policy:reviewPolicy?clone(reviewPolicy):null,
+        core_adaptive_plan:analysis.core_adaptive_plan?clone(analysis.core_adaptive_plan):null,
         learner_age_policy:agePolicy?clone(agePolicy):null,
         learner_context:analysis.learner_context?clone(analysis.learner_context):null,
         learning_reference:learningRef?{
@@ -496,6 +519,7 @@
       cross_revision_learning_signal:input.learning_signal?clone(input.learning_signal):null,
       escalation_review_signal:input.escalation_review_signal?clone(input.escalation_review_signal):null,
       evidence_review_signal:input.evidence_review_signal?clone(input.evidence_review_signal):null,
+      core_adaptive_plan:input.core_adaptive_plan?clone(input.core_adaptive_plan):null,
       review_reason:clean(input.review_reason)||null,
       learner_context:input.learner_context?clone(input.learner_context):null,
       confidence:clean(fact.teacher_instruction)?0.78:0.62,
