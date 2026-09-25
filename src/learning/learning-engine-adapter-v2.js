@@ -24,6 +24,7 @@
     if(clean(decision.authority)!=='LEARNING_DECISION_INTENT_ONLY')issues.push('DECISION_AUTHORITY_INVALID');
     if(clean(decision?.consumer_contract?.planner)!=='OWNS_DATED_ALLOCATION')issues.push('PLANNER_BOUNDARY_INVALID');
     if(!decision.scope?.member_id||!decision.scope?.subject||!decision.scope?.concept_skill_target)issues.push('DECISION_SCOPE_REQUIRED');
+    if(decision.adaptive_plan?.authority!=='LEARNING_ADAPTIVE_PLAN_INTENT_ONLY')issues.push('ADAPTIVE_PLAN_AUTHORITY_INVALID');
 
     const forbidden=['schedule_date','planner_date','due_at','due_date','deadline'];
     const walk=v=>{
@@ -51,6 +52,7 @@
         hold_reason:(decision.blockers||[]).map(x=>x.code).filter(Boolean),
         source_decision_contract:decision.decision_contract||null,
         scope:decision.scope,
+        adaptive_plan:decision.adaptive_plan||null,
         execution_hints:[],
         planner_request:null,
         cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','DUE_AT','DEADLINE','ASSIGNMENT_FACT','LEARNER_MODEL']
@@ -77,6 +79,7 @@
       execution_status:'READY_FOR_PLANNER_ALLOCATION',
       source_decision_contract:decision.decision_contract||null,
       scope:decision.scope,
+      adaptive_plan:decision.adaptive_plan?JSON.parse(JSON.stringify(decision.adaptive_plan)):null,
       assignment_id:clean(context.assignment_id)||null,
       analysis_id:clean(context.analysis_id)||null,
       execution_hints:hints,
@@ -88,6 +91,7 @@
         assignment_id:clean(context.assignment_id)||null,
         learning_decision_ref:clean(context.learning_decision_ref)||null,
         execution_hints:hints,
+        adaptive_plan:decision.adaptive_plan?JSON.parse(JSON.stringify(decision.adaptive_plan)):null,
         scheduling_constraints:context.scheduling_constraints||null,
         planner_owns_dates:true
       },
