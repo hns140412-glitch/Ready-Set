@@ -34,6 +34,8 @@ jobs:
         run: node tests/family-member-registry.test.js
       - name: Validate shared family crew
         run: node tests/family-crew-contract.test.js
+      - name: Validate shared family world state
+        run: node tests/family-world-state-contract.test.js
       - name: Install Playwright
         run: |
           npm install --no-save @playwright/test@1.55.0
