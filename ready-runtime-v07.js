@@ -395,7 +395,8 @@
 
     const centralOutbox=window.ReadyCentralEvidenceOutbox;
     if(centralOutbox?.enqueue&&event_id){
-      const activeMember=window.ReadyFamilySession?.current?.()?.member_id||evidence?.member_id||null;
+      const activeFamilySession=window.ReadyFamilySession?.current?.()||null;
+      const activeMember=activeFamilySession?.member_id||evidence?.member_id||null;
       centralOutbox.enqueue({
         source_app:sourceApp,
         created_at:observed_at||evidence?.observed_at||iso(),
@@ -409,6 +410,7 @@
         },
         evidence:evidence||null,
         context:{
+          family_id:activeFamilySession?.family_id||null,
           member_id:activeMember,
           subject:task.subject||evidence?.subject||null,
           concept_skill_target:task.concept_skill_target||evidence?.concept_skill_target||null,
