@@ -716,6 +716,7 @@
 
   function boot() {
     document.documentElement.dataset.readyRuntime = RUNTIME_VERSION;
+    window.ReadyCentralEvidenceSync?.autoBoot?.();
     injectStyles();
     patchHandlers();
     ensureWrapUp();
