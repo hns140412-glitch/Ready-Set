@@ -630,12 +630,13 @@
         activity_types:unit.activity_types||[]
       })||null;
       return plan?{
-        authority:plan.authority||'READY_LEARNING_ENGINE_ROUTING',
+        authority:'READY_EXECUTION_ROUTING',
+        reported_authority:plan.authority||null,
         mode:plan.mode||'READY_ORCHESTRATED',
         primary_app:plan.primary_app||'ready-set',
         allowed_specialists:Array.isArray(plan.allowed_specialists)?[...plan.allowed_specialists]:[],
         handoff_queue:Array.isArray(plan.handoff_queue)?[...plan.handoff_queue]:[]
-      }:{authority:'READY_LEARNING_ENGINE_ROUTING',mode:'READY_ORCHESTRATED',primary_app:'ready-set',allowed_specialists:[],handoff_queue:[]};
+      }:{authority:'READY_EXECUTION_ROUTING',reported_authority:null,mode:'READY_ORCHESTRATED',primary_app:'ready-set',allowed_specialists:[],handoff_queue:[]};
     }
 
     function operatingRuleForUnit(unit={},date,scheduleByDate={}){
@@ -687,7 +688,21 @@
           }))]));
         const scheduleByDate=Object.fromEntries(dates.map(d=>[d,scheduleCommitmentsForDate(d,s)]));
         const proposals=[];
+        const learningDecisionProjection=(input.learning_decision_projection&&typeof input.learning_decision_projection==='object')
+          ?JSON.parse(JSON.stringify(input.learning_decision_projection)):null;
         for(const unit of units){
+          const decisionScope=learningDecisionProjection?.scope||{};
+          const unitDecisionMatches=!!learningDecisionProjection &&
+            (!cleanText(decisionScope.subject)||cleanText(decisionScope.subject).toLowerCase()===cleanText(unit.subject).toLowerCase()) &&
+            (!cleanText(decisionScope.concept_skill_target)||cleanText(decisionScope.concept_skill_target).toLowerCase()===cleanText(unit.concept_skill_target).toLowerCase());
+          const unitDecisionProjection=unitDecisionMatches?{
+            authority:'READY_EXECUTION_ADAPTER_ONLY',
+            source_decision_contract:learningDecisionProjection.source_decision_contract||null,
+            learning_decision_ref:learningDecisionProjection.learning_decision_ref||null,
+            execution_hints:Array.isArray(learningDecisionProjection.execution_hints)?JSON.parse(JSON.stringify(learningDecisionProjection.execution_hints)):[],
+            specialist_routing_intent:learningDecisionProjection.specialist_routing_intent||null,
+            cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','DUE_AT','DEADLINE','ASSIGNMENT_FACT','LEARNER_MODEL']
+          }:null;
           const existing=s.dated_todos.find(t=>t.learning_unit_id===unit.learning_unit_id&&isOpenTodo(t));
           if(existing){proposals.push({decision:'REUSE',date:existing.date,todo_id:existing.todo_id,learning_unit_id:unit.learning_unit_id});continue}
           const tags=unit.cognitive_load_profile||[];
@@ -757,7 +772,7 @@
           const operatingRule=operatingRuleByDate[date]||null;
           const templateId=`template_${unit.learning_unit_id}`;
           const factRevision=Number(fact.fact_revision)||1;
-          const template={template_id:templateId,title:`${unit.subject} · ${unit.source_range||unit.concept_skill_target}`,subject:unit.subject,assignment_cycle:fact.assignment_cycle,learning_units:[unit.learning_unit_id],provenance:{kind:'LEARNING_MASTER_OUTPUT',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:factRevision},confirmation_state:'CONFIRMED',deadline_date:fact.deadline_boundary||null,estimated_minutes:null,planner_estimated_minutes:null,allocation_priority:operatingRule?20:100,required_today:!!operatingRule,preferred_days:preferredDays,recurring_preference:preferredDays.length>0,execution_plan:executionPlan,execution_app:executionPlan.primary_app,operating_rule:operatingRule?.rule_id||null,preferred_daypart:operatingRule?.preferred_daypart||null,operating_rule_evidence:operatingRule?.evidence||null,updated_at:new Date().toISOString()};
+          const template={template_id:templateId,title:`${unit.subject} · ${unit.source_range||unit.concept_skill_target}`,subject:unit.subject,assignment_cycle:fact.assignment_cycle,learning_units:[unit.learning_unit_id],provenance:{kind:'LEARNING_MASTER_OUTPUT',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:factRevision},confirmation_state:'CONFIRMED',deadline_date:fact.deadline_boundary||null,estimated_minutes:null,planner_estimated_minutes:null,allocation_priority:operatingRule?20:100,required_today:!!operatingRule,preferred_days:preferredDays,recurring_preference:preferredDays.length>0,execution_plan:executionPlan,execution_app:executionPlan.primary_app,learning_decision_projection:unitDecisionProjection,operating_rule:operatingRule?.rule_id||null,preferred_daypart:operatingRule?.preferred_daypart||null,operating_rule_evidence:operatingRule?.evidence||null,updated_at:new Date().toISOString()};
           const ti=s.homework_templates.findIndex(x=>x.template_id===templateId);if(ti>=0)s.homework_templates[ti]=template;else s.homework_templates.push(template);
           proposals.push({
             decision:'PROPOSE',date,label:template.title,subject:unit.subject,assignment_id:assignmentId,analysis_id:analysis.analysis_id,
@@ -773,6 +788,7 @@
             recurring_occurrence:preferredDays.length>0,
             execution_plan:executionPlan,
             execution_app:executionPlan.primary_app,
+            learning_decision_projection:unitDecisionProjection,
             specialist_material_binding:specialistMaterialBinding?JSON.parse(JSON.stringify(specialistMaterialBinding)):null,
             confidence:Number.isFinite(unit.confidence)?unit.confidence:null,
             unresolved_flags:Array.isArray(unit.unresolved_flags)?[...unit.unresolved_flags]:[],
@@ -836,6 +852,7 @@
             recurring_occurrence:p.recurring_occurrence===true,
             execution_plan:p.execution_plan||null,
             execution_app:p.execution_app||'ready-set',
+            learning_decision_projection:p.learning_decision_projection?JSON.parse(JSON.stringify(p.learning_decision_projection)):null,
             specialist_material_binding:p.specialist_material_binding?JSON.parse(JSON.stringify(p.specialist_material_binding)):null,
             operating_rule:p.operating_rule||null,
             preferred_daypart:p.preferred_daypart||null,
