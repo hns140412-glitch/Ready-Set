@@ -42,14 +42,20 @@ jobs:
           GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
-          gh issue list --state open --limit 100 --json number,title,comments > /tmp/taky-open.json
+          gh issue list --state open --limit 100 --json number,title,comments,author,authorAssociation > /tmp/taky-open.json
           python - <<'PY' > /tmp/missing-credential-issues.txt
-          import json
+          import json, os
           from pathlib import Path
           data=json.loads(Path('/tmp/taky-open.json').read_text())
           marker='<!-- TAKY_CODEX_CREDENTIAL_BLOCKED -->'
+          repo_owner=os.environ.get('GITHUB_REPOSITORY','').split('/',1)[0].lower()
+          trusted={repo_owner,'github-actions[bot]'}
           for issue in data:
               if not str(issue.get('title','')).startswith('[TAKY EXECUTOR QUEUE]'):
+                  continue
+              author=issue.get('author') or {}
+              actor=str(author.get('login') if isinstance(author,dict) else author or '').strip().lower()
+              if actor not in trusted:
                   continue
               if any(marker in str((c or {}).get('body') or '') for c in issue.get('comments') or []):
                   continue
@@ -86,7 +92,7 @@ jobs:
       - name: Read open local TAKY queue
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh issue list --state open --limit 100 --json number,title,body,comments > /tmp/taky-issues.json
+        run: gh issue list --state open --limit 100 --json number,title,body,comments,author,authorAssociation > /tmp/taky-issues.json
       - name: Resolve prior executor run liveness
         env:
           GH_TOKEN: ${{ github.token }}
@@ -95,6 +101,7 @@ jobs:
           set -euo pipefail
           python .github/scripts/taky_codex_queue.py run-ids \
             --issues /tmp/taky-issues.json \
+            --repo "$GITHUB_REPOSITORY" \
             --output /tmp/taky-run-ids.json
           printf '{}\n' > /tmp/taky-run-states.json
           jq -r '.[]' /tmp/taky-run-ids.json | while IFS= read -r RUN_ID; do

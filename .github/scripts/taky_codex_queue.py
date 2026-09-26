@@ -34,6 +34,31 @@ def extract(text, begin, end):
     try: return json.loads(m.group(1))
     except json.JSONDecodeError: return None
 
+def issue_author_login(issue):
+    author=(issue or {}).get("author")
+    if isinstance(author,dict):
+        login=author.get("login")
+        if isinstance(login,str) and login.strip():
+            return login.strip()
+    if isinstance(author,str) and author.strip():
+        return author.strip()
+    user=(issue or {}).get("user")
+    if isinstance(user,dict):
+        login=user.get("login")
+        if isinstance(login,str) and login.strip():
+            return login.strip()
+    return ""
+
+def validate_issue_source(issue, repo):
+    actor=issue_author_login(issue)
+    repo_owner=str(repo or "").split("/",1)[0].strip()
+    trusted={x.lower() for x in (repo_owner,"github-actions[bot]") if x}
+    if not actor:
+        return ["QUEUE_ISSUE_AUTHOR_MISSING"]
+    if actor.lower() not in trusted:
+        return [f"QUEUE_ISSUE_AUTHOR_UNTRUSTED:{actor}"]
+    return []
+
 def marker_present(comments, marker):
     return any(marker in str((c or {}).get("body") or "") for c in comments or [])
 
@@ -49,11 +74,13 @@ def latest_receipt(comments):
     values=machine_blocks(comments,BEGIN_RECEIPT,END_RECEIPT)
     return values[-1] if values else None
 
-def collect_executor_run_ids(issues):
+def collect_executor_run_ids(issues, repo=None):
     ids=[]
     seen=set()
     for issue in issues or []:
         if not str((issue or {}).get("title","")).startswith(QUEUE_PREFIX):
+            continue
+        if repo and validate_issue_source(issue,repo):
             continue
         comments=(issue or {}).get("comments") or []
         if marker_present(comments,BEGIN_RESULT):
@@ -182,6 +209,15 @@ def prepare(issues, repo, base_head, run_id, run_states=None):
     run_states=run_states or {}
     for issue in sorted(issues, key=lambda x:int(x.get("number",0))):
         if not str(issue.get("title","")).startswith(QUEUE_PREFIX): continue
+        source_failures=validate_issue_source(issue,repo)
+        if source_failures:
+            blocked.append({
+                "issue_number":issue.get("number"),
+                "task_id":None,
+                "detected":source_failures,
+                "issue_author":issue_author_login(issue) or None,
+            })
+            continue
         comments=issue.get("comments") or []
         if marker_present(comments, BEGIN_RESULT): continue
 
@@ -274,7 +310,7 @@ def build_result(task, contract_hash, codex_output, validation, commit_ref, pr_u
 def main():
     ap=argparse.ArgumentParser(); sub=ap.add_subparsers(dest="cmd",required=True)
     p=sub.add_parser("prepare"); p.add_argument("--issues",type=Path,required=True); p.add_argument("--repo",required=True); p.add_argument("--base-head",required=True); p.add_argument("--run-id",required=True); p.add_argument("--out-dir",type=Path,required=True); p.add_argument("--run-states",type=Path)
-    r=sub.add_parser("run-ids"); r.add_argument("--issues",type=Path,required=True); r.add_argument("--output",type=Path)
+    r=sub.add_parser("run-ids"); r.add_argument("--issues",type=Path,required=True); r.add_argument("--repo"); r.add_argument("--output",type=Path)
     q=sub.add_parser("result"); q.add_argument("--task",type=Path,required=True); q.add_argument("--contract-hash",required=True); q.add_argument("--codex-output",type=Path,required=True); q.add_argument("--validation",type=Path,required=True); q.add_argument("--commit-ref",required=True); q.add_argument("--pr-url",default=""); q.add_argument("--materialization-risk",default=""); q.add_argument("--output",type=Path,required=True)
     args=ap.parse_args()
     if args.cmd=="prepare":
@@ -288,7 +324,7 @@ def main():
             (args.out_dir/"receipt.md").write_text(out["receipt_body"],encoding="utf-8")
     elif args.cmd=="run-ids":
         issues=json.loads(args.issues.read_text(encoding="utf-8"))
-        out=collect_executor_run_ids(issues)
+        out=collect_executor_run_ids(issues,args.repo)
         payload=json.dumps(out,ensure_ascii=False,indent=2)+"\n"
         if args.output: args.output.write_text(payload,encoding="utf-8")
         else: print(payload,end="")
