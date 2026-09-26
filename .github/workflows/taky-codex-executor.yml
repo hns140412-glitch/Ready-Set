@@ -67,6 +67,7 @@ jobs:
     permissions:
       contents: read
       issues: write
+      actions: read
     outputs:
       has_task: ${{ steps.meta.outputs.has_task }}
       issue_number: ${{ steps.meta.outputs.issue_number }}
@@ -86,6 +87,42 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh issue list --state open --limit 100 --json number,title,body,comments > /tmp/taky-issues.json
+      - name: Resolve prior executor run liveness
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python .github/scripts/taky_codex_queue.py run-ids \
+            --issues /tmp/taky-issues.json \
+            --output /tmp/taky-run-ids.json
+          printf '{}\n' > /tmp/taky-run-states.json
+          jq -r '.[]' /tmp/taky-run-ids.json | while IFS= read -r RUN_ID; do
+            [ -z "$RUN_ID" ] && continue
+            if ! gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" > "/tmp/taky-run-${RUN_ID}.json" 2>/dev/null; then
+              continue
+            fi
+            if ! gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/jobs?per_page=100" > "/tmp/taky-run-${RUN_ID}-jobs.json" 2>/dev/null; then
+              printf '{"jobs":[]}\n' > "/tmp/taky-run-${RUN_ID}-jobs.json"
+            fi
+            python - "$RUN_ID" "/tmp/taky-run-${RUN_ID}.json" "/tmp/taky-run-${RUN_ID}-jobs.json" /tmp/taky-run-states.json <<'PY'
+          import json, pathlib, sys
+          run_id, meta_path, jobs_path, state_path = sys.argv[1:]
+          meta=json.loads(pathlib.Path(meta_path).read_text())
+          jobs=json.loads(pathlib.Path(jobs_path).read_text()).get('jobs',[])
+          states=json.loads(pathlib.Path(state_path).read_text())
+          states[str(run_id)]={
+              'status':meta.get('status'),
+              'conclusion':meta.get('conclusion'),
+              'jobs':[{
+                  'name':j.get('name'),
+                  'status':j.get('status'),
+                  'conclusion':j.get('conclusion')
+              } for j in jobs],
+          }
+          pathlib.Path(state_path).write_text(json.dumps(states,indent=2)+'\n')
+          PY
+          done
       - name: Prepare one verified task
         run: |
           mkdir -p /tmp/taky-context
@@ -94,6 +131,7 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --base-head "$(git rev-parse HEAD)" \
             --run-id "$GITHUB_RUN_ID" \
+            --run-states /tmp/taky-run-states.json \
             --out-dir /tmp/taky-context
       - id: meta
         name: Export task metadata
