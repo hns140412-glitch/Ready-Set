@@ -89,6 +89,15 @@ jobs:
           assert unknown['has_task'] is False
           assert 'EXECUTOR_LIVENESS_UNKNOWN' in unknown['blocked'][0]['detected'], unknown
 
+          cancelled=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'new-run',{
+            'old-run':{
+              'status':'completed','conclusion':'cancelled',
+              'jobs':[{'name':'materialize','status':'completed','conclusion':'skipped'}]
+            }
+          })
+          assert cancelled['has_task'] is False
+          assert 'EXECUTOR_CANCELLED_REQUIRES_HUMAN_DECISION' in cancelled['blocked'][0]['detected'], cancelled
+
           recover=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'new-run',{
             'old-run':{
               'status':'completed','conclusion':'failure',

@@ -20,7 +20,7 @@ SUPPORTED_EXECUTOR_PROFILE="READY_SET_CODEX_V1"
 SUPPORTED_VALIDATION_PROFILE="READY_SET_STATIC_V1"
 
 ACTIVE_RUN_STATUSES={"queued","in_progress","waiting","pending","requested"}
-SAFE_RECLAIM_CONCLUSIONS={"failure","cancelled","timed_out","startup_failure"}
+SAFE_RECLAIM_CONCLUSIONS={"failure","timed_out","startup_failure"}
 
 def canonical_bytes(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",",":")).encode("utf-8")
@@ -92,6 +92,14 @@ def classify_receipt_liveness(receipt, run_states):
     mat_status=str(mat.get("status","")).strip().lower()
     mat_conclusion=str(mat.get("conclusion","")).strip().lower()
     materialize_never_started=(mat_status=="completed" and mat_conclusion=="skipped")
+
+    if conclusion=="cancelled":
+        return {
+            "state":"CANCELLED_REQUIRES_HUMAN_DECISION",
+            "reclaim":False,
+            "detected":["EXECUTOR_CANCELLED_REQUIRES_HUMAN_DECISION"],
+            "run_id":run_id,
+        }
 
     if conclusion in SAFE_RECLAIM_CONCLUSIONS and materialize_never_started:
         return {
