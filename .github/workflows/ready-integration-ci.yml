@@ -22,6 +22,14 @@ jobs:
         run: node .github/scripts/ready_planner_contract_test.js
       - name: Assignment and Learning Master contract
         run: node .github/scripts/ready_learning_master_contract_test.js
+      - name: Family relation and explicit gift permission regression
+        run: node tests/family-relations-gift-permission.test.js
+      - name: Family gift access function syntax
+        run: node --check netlify/functions/family-gift-permission.mjs
+      - name: Family auth and sync endpoint syntax
+        run: |
+          node --check netlify/functions/ready-family-auth-core.js
+          node --check netlify/functions/ready-sync.mjs
 
   learning-master-contract:
     runs-on: ubuntu-latest
