@@ -34,6 +34,8 @@ export default async function handler(req){
     if(!user) return Response.json({ok:false,reason:'UNAUTHENTICATED'},{status:401});
     const mapped=familySessionFromIdentityUser(user);
     if(!mapped.ok) return Response.json({ok:false,reason:mapped.reason},{status:mapped.status});
+    if(mapped.session.role==='FAMILY_ADULT')
+      return Response.json({ok:false,reason:'FAMILY_ADULT_READY_SYNC_NOT_AUTHORIZED'},{status:403});
 
     let body={};
     try{ body=await req.json(); }
