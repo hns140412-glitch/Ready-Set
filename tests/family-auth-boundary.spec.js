@@ -199,7 +199,8 @@ test('server-provisioned adult family relation stays outside Parent planner and 
   expect(forbiddenSync.reason).toMatch(/SYNC_NOT_CONFIGURED|FAMILY_ADULT_READY_SYNC_NOT_AUTHORIZED/);
   await page.locator('[data-nav="planner"]').first().click();
   await expect(page.locator('[data-nav="planner-admin"]').first()).toBeHidden();
-  await page.locator('[data-nav="settings"]').first().click();
+  await page.locator('#plannerView [data-nav="home"]').click();
+  await page.locator('#homeView [data-nav="settings"]').first().click();
   await expect(page.locator('#authStateBadge')).toHaveText('가족 구성원');
   await expect(page.locator('#familyLinkChildSection')).toBeHidden();
 });
