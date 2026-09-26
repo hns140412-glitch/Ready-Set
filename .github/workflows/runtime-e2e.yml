@@ -22,6 +22,8 @@ jobs:
           node-version: '20'
       - name: Validate shared runtime contract
         run: node tests/shared-runtime-contract.test.js
+      - name: Learning App Family return-state regression
+        run: node .github/scripts/learning_app_family_return_state_test.js
       - name: Install Playwright
         run: |
           npm install --no-save @playwright/test@1.55.0
