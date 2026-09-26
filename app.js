@@ -785,6 +785,10 @@ function renderPlanner(){
   $('#plannerDayTitle').textContent=`${dd.getMonth()+1}월 ${dd.getDate()}일 탐험`;
   $('#plannerDayCount').textContent=`${selectedItems.length}개`;
   $('#plannerHeroTitle').textContent=plannerTab==='week'?'이번 주 탐험 지도':'오늘의 탐험 루트';
+  // Presentation only; the badge reader cannot mutate Planner or award a badge.
+  if(window.ReadyBadgePlannerHighlights?.render)
+    void window.ReadyBadgePlannerHighlights.render({selectedDate:plannerSelectedDate,
+      weekDates:weekDates.map(d=>localDateKey(d))});
 }
 
 
@@ -1506,10 +1510,10 @@ function renderAuthStatus(){
   const session=familySession();
   const badge=$('#authStateBadge'),text=$('#authStatusText');
   const loginControls=$('#authLoginControls'),loggedInControls=$('#authLoggedInControls'),link=$('#familyLinkChildSection');
-  if(badge)badge.textContent=session.authenticated?(session.role==='PARENT'?'보호자':'학생'):'로컬 모드';
+  if(badge)badge.textContent=session.authenticated?(session.role==='PARENT'?'보호자':session.role==='CHILD'?'학생':'가족 구성원'):'로컬 모드';
   if(text){
     text.textContent=session.authenticated
-      ? `${session.role==='PARENT'?'PARENT':'CHILD'} 계정으로 로그인됨 · 가족 ${session.family_id||'-'}`
+      ? `${session.role==='PARENT'?'PARENT':session.role==='CHILD'?'CHILD':'FAMILY_ADULT'} 계정으로 로그인됨 · 가족 ${session.family_id||'-'}`
       : '로그인하지 않아도 이 기기에서 CHILD 로컬 모드로 사용할 수 있습니다.';
   }
   if(loginControls)loginControls.hidden=!!session.authenticated;

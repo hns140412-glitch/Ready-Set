@@ -74,6 +74,7 @@
     };
     const family=window.ReadyFamilySession?.current?.();
     if(!family?.authenticated) return {ok:false,reason:'AUTH_SESSION_REQUIRED'};
+    if(family.role==='FAMILY_ADULT')return {ok:false,reason:'FAMILY_ADULT_READY_SYNC_NOT_AUTHORIZED'};
     if(!HttpJson?.request) return {ok:false,reason:'SHARED_HTTP_TRANSPORT_UNAVAILABLE'};
     const res=await HttpJson.request(config.endpoint+'/events',{
       method:'POST',
@@ -106,7 +107,7 @@
 
   function bindFamilySession(){
     const family=window.ReadyFamilySession?.current?.();
-    if(family?.authenticated){
+    if(family?.authenticated&&family.role!=='FAMILY_ADULT'){
       const cfg=readConfig();
       if(!cfg.endpoint||cfg.endpoint==='/api/ready-sync')writeConfig({endpoint:'/api/ready-sync',enabled:true});
     }else{

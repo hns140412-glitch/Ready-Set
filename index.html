@@ -87,10 +87,12 @@
       <section id="plannerWeekPanel" class="plannerPanel" role="tabpanel">
         <div id="plannerWeekStrip" class="plannerWeekStrip"></div>
         <div id="plannerWeekDetail" class="plannerWeekDetail"></div>
+        <section id="plannerWeekBadgeRail" class="plannerBadgeRail" aria-label="이번 주 획득 배지" aria-live="polite"><p class="plannerBadgeNote">인증된 획득 기록 연결 전이에요.</p></section>
       </section>
       <section id="plannerDayPanel" class="plannerPanel" role="tabpanel" hidden>
         <div class="plannerDayHead"><div><small>TODAY ROUTE</small><h2 id="plannerDayTitle">오늘의 탐험</h2></div><span id="plannerDayCount">0개</span></div>
         <div id="plannerDayTimeline" class="plannerDayTimeline"></div>
+        <section id="plannerDayBadgeRail" class="plannerBadgeRail" aria-label="이날 획득 배지" aria-live="polite"><p class="plannerBadgeNote">인증된 획득 기록 연결 전이에요.</p></section>
         <button class="btn dark" data-nav="mission">오늘 작전 고르기</button>
       </section>
     </main>
@@ -302,6 +304,7 @@
 <script src="./ready-learning-master-v01.js"></script>
 <script src="./ready-planner-v01.js"></script>
 <script src="./ready-integration-v1.js"></script>
+<script src="./ready-badge-planner-v01.js"></script>
 <script src="./app.js"></script>
 <script src="./ready-pwa-update-v01.js"></script>
 <script src="./ready-runtime-v07.js"></script>
