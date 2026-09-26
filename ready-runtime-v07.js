@@ -2,10 +2,23 @@
   'use strict';
 
   const RUNTIME_VERSION = '2026.09.07-rev07-b';
-  const HIDE_URL = 'https://dainty-froyo-a6e427.netlify.app';
+  const LEGACY_HIDE_URL = 'https://dainty-froyo-a6e427.netlify.app';
   const SNAP_URL = 'https://cheerful-pothos-d1c3ee.netlify.app';
   const VALID_TASK_STATES = new Set(['PENDING','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
-  const TRUSTED_APP_ORIGINS = new Set([new URL(HIDE_URL).origin, new URL(SNAP_URL).origin]);
+
+  function configuredHideV2Url(){
+    const raw=String(globalThis.ReadySetSpecialistTargets?.hideSeekV2||'').trim();
+    if(!raw)return null;
+    try{
+      const url=new URL(raw,location.href);
+      if(url.protocol!=='https:'&&url.hostname!=='127.0.0.1'&&url.hostname!=='localhost')return null;
+      return url.href;
+    }catch{return null}
+  }
+  function trustedAppOrigins(){
+    const urls=[LEGACY_HIDE_URL,SNAP_URL,configuredHideV2Url()].filter(Boolean);
+    return new Set(urls.map(x=>new URL(x,location.href).origin));
+  }
 
   const id = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
   const iso = ms => new Date(ms ?? Date.now()).toISOString();
@@ -45,19 +58,27 @@
     if (!session) return null;
     if (!session.rev07) {
       const linked=(session.plannerLinks||[]);
-      const tasks = linked.map((link, index) => ({
-        task_id: `task_${session.id || Date.now()}_${index + 1}`,
-        label:link.label,
-        state: 'PENDING',
-        planner_todo_id: link.todo_id,
-        assignment_id:link.assignment_id||null,
-        analysis_id:link.analysis_id||null,
-        learning_unit_id:link.learning_unit_id||null,
-        template_id:link.template_id||null,
-        allocation_run_id:link.allocation_run_id||null,
-        suggested_app: suggestedApp(link.label),
-        laps: []
-      }));
+      const plannerTodos = window.ReadySetPlanner?.snapshot?.()?.dated_todos || [];
+      const tasks = linked.map((link, index) => {
+        const taskId=`task_${session.id || Date.now()}_${index + 1}`;
+        const todo=plannerTodos.find(x=>x.todo_id===link.todo_id)||null;
+        const reviewDirective=window.ReadyHideMemoryReviewV01?.directiveForPlannerTodo?.(todo,taskId)||null;
+        return {
+          task_id: taskId,
+          label:link.label,
+          state: 'PENDING',
+          planner_todo_id: link.todo_id,
+          assignment_id:link.assignment_id||null,
+          analysis_id:link.analysis_id||null,
+          learning_unit_id:link.learning_unit_id||null,
+          template_id:link.template_id||null,
+          allocation_run_id:link.allocation_run_id||null,
+          suggested_app: reviewDirective?'hide-seek':suggestedApp(link.label),
+          review_directive:reviewDirective,
+          specialist_result:null,
+          laps: []
+        };
+      });
       session.rev07 = {
         contract_version: 'REV_07',
         session_id: session.id || id('session'),
@@ -71,8 +92,6 @@
         created_at: iso(session.startAt || Date.now())
       };
       if (window.ReadySetPlanner) {
-        const plannerState = window.ReadySetPlanner.snapshot?.();
-        const plannerTodos = plannerState?.dated_todos || [];
         tasks.forEach((task, index) => {
           if (!task.planner_todo_id) return;
           const todo = plannerTodos.find(x => x.todo_id === task.planner_todo_id);
@@ -204,8 +223,12 @@
     renderContractUI();
   }
 
-  function appUrl(app) {
-    return app === 'hide-seek' ? HIDE_URL : app === 'snap-pop' ? SNAP_URL : location.href;
+  function appUrl(app,task=null) {
+    if(app==='hide-seek'){
+      if(task?.review_directive)return configuredHideV2Url();
+      return LEGACY_HIDE_URL;
+    }
+    return app === 'snap-pop' ? SNAP_URL : location.href;
   }
 
   function launchSpecialist(app) {
@@ -219,7 +242,15 @@
     emit('APP_SWITCH', { from: 'ready-set', to: app, lap_ended: false });
     save();
 
-    const url = new URL(appUrl(app));
+    const target=appUrl(app,task);
+    if(!target){
+      emit('APP_ROUTE_BLOCKED',{to:app,reason:'HIDE_V2_TARGET_REQUIRED',task_id:task.task_id});
+      c.active_app='ready-set';
+      save();
+      renderContractUI();
+      return false;
+    }
+    const url = new URL(target);
     url.searchParams.set('session_id', c.session_id);
     url.searchParams.set('goal_id', c.goal_id);
     url.searchParams.set('task_id', task.task_id);
@@ -227,7 +258,11 @@
     url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
     url.searchParams.set('snap_target', SNAP_URL);
     url.searchParams.set('from_app', 'ready-set');
+    if(app==='hide-seek'&&task.review_directive){
+      url.searchParams.set('review_directive',JSON.stringify(task.review_directive));
+    }
     location.assign(url.href);
+    return true;
   }
 
   function normalizeInboundState(raw) {
@@ -237,7 +272,7 @@
     return null;
   }
 
-  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null }) {
+  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null, result_payload = null }) {
     const c = ensureContract();
     if (!c || !session_id || session_id !== c.session_id) return false;
     if (event_id && c.applied_event_ids?.includes(event_id)) return false;
@@ -245,6 +280,10 @@
     if (!task) return false;
 
     const normalized = normalizeInboundState(task_state);
+    if(from_app==='hide-seek'&&result_payload){
+      const specialistResult=window.ReadyHideMemoryReviewV01?.normalizeHideSpecialistResult?.(result_payload)||null;
+      if(specialistResult)task.specialist_result=specialistResult;
+    }
     c.active_app = 'ready-set';
     c.active_task_id = task.task_id;
     if (lap_id) c.active_lap_id = lap_id;
@@ -259,6 +298,22 @@
 
   function consumeReturnQuery() {
     const p = new URLSearchParams(location.search);
+    const rawEvent=p.get('learning_event');
+    if(rawEvent){
+      let e=null;
+      try{e=JSON.parse(rawEvent)}catch{}
+      const normalizedEvent=window.ReadyHideMemoryReviewV01?.normalizeHideV2ReturnEvent?.(e)||null;
+      if(normalizedEvent){
+        const applied=applyInboundResult(normalizedEvent);
+        if(applied){
+          p.delete('learning_event');
+          const clean=`${location.pathname}${p.toString()?`?${p}`:''}${location.hash}`;
+          history.replaceState(null,'',clean);
+          return;
+        }
+      }
+    }
+
     const args = {
       session_id: p.get('session_id'),
       task_id: p.get('task_id'),
@@ -273,7 +328,7 @@
   }
 
   function handleLearningEvent(messageEvent) {
-    if (!TRUSTED_APP_ORIGINS.has(messageEvent.origin)) return;
+    if (!trustedAppOrigins().has(messageEvent.origin)) return;
     const e = messageEvent.data?.type === 'TAKY_LEARNING_EVENT' ? messageEvent.data.event : null;
     if (!e) return;
     const taskState = e.type === 'TASK_COMPLETED' ? 'COMPLETED'
@@ -287,7 +342,8 @@
       lap_id: e.lap_id,
       task_state: taskState,
       from_app: e.app,
-      event_id: e.event_id
+      event_id: e.event_id,
+      result_payload: e.payload||null
     });
   }
 
@@ -447,6 +503,7 @@
         label: task.label,
         state: task.state,
         actual_ms: actualMs,
+        specialistResult:task.specialist_result||null,
         plannerOutcome
       });
     }
