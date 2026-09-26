@@ -42,7 +42,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
-          gh issue list --state open --limit 100 --json number,title,comments,author,authorAssociation > /tmp/taky-open.json
+          gh issue list --state open --limit 100 --json number,title,comments,author > /tmp/taky-open.json
           python - <<'PY' > /tmp/missing-credential-issues.txt
           import json, os
           from pathlib import Path
@@ -92,7 +92,7 @@ jobs:
       - name: Read open local TAKY queue
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh issue list --state open --limit 100 --json number,title,body,comments,author,authorAssociation > /tmp/taky-issues.json
+        run: gh issue list --state open --limit 100 --json number,title,body,comments,author > /tmp/taky-issues.json
       - name: Resolve prior executor run liveness
         env:
           GH_TOKEN: ${{ github.token }}
