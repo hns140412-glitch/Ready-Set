@@ -194,6 +194,9 @@ test('server-provisioned adult family relation stays outside Parent planner and 
     relation:window.ReadyFamilySession.current().family_relation
   }));
   expect(state).toEqual({parent:false,child:false,admin:false,relation:'GRANDPARENT'});
+  await expect.poll(()=>page.evaluate(()=>window.ReadySetSyncAdapter.status().enabled)).toBeFalsy();
+  const forbiddenSync=await page.evaluate(()=>window.ReadySetSyncAdapter.send({id:'forbidden-adult-event',scope:'planner',digest:'x',payload:'{}'}));
+  expect(forbiddenSync.reason).toMatch(/SYNC_NOT_CONFIGURED|FAMILY_ADULT_READY_SYNC_NOT_AUTHORIZED/);
   await page.locator('[data-nav="planner"]').first().click();
   await expect(page.locator('[data-nav="planner-admin"]').first()).toBeHidden();
   await page.locator('[data-nav="settings"]').first().click();
