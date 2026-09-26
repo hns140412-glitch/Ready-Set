@@ -174,3 +174,29 @@ test('Parent can request linking an existing Child account through server family
   await linkRequest;
   await expect.poll(()=>linkedEmail).toBe('child@example.test');
 });
+
+
+test('server-provisioned adult family relation stays outside Parent planner and Child role',async({page})=>{
+  await page.route('**/api/auth/session',async route=>{
+    await route.fulfill({status:200,contentType:'application/json',
+      body:JSON.stringify({ok:true,session:{
+        authenticated:true,family_id:'FAMILY_X',member_id:'GRANDMA_X',
+        role:'FAMILY_ADULT',family_relation:'GRANDPARENT',
+        session_id:'netlify_identity_grandma_x',source:'NETLIFY_IDENTITY'
+      }})});
+  });
+  await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
+  await expect.poll(()=>page.evaluate(()=>window.ReadyFamilySession.current().role)).toBe('FAMILY_ADULT');
+  const state=await page.evaluate(()=>({
+    parent:window.ReadyFamilySession.isParent(),
+    child:window.ReadyFamilySession.isChild(),
+    admin:window.ReadyFamilySession.requireRole('PARENT').ok,
+    relation:window.ReadyFamilySession.current().family_relation
+  }));
+  expect(state).toEqual({parent:false,child:false,admin:false,relation:'GRANDPARENT'});
+  await page.locator('[data-nav="planner"]').first().click();
+  await expect(page.locator('[data-nav="planner-admin"]').first()).toBeHidden();
+  await page.locator('[data-nav="settings"]').first().click();
+  await expect(page.locator('#authStateBadge')).toHaveText('가족 구성원');
+  await expect(page.locator('#familyLinkChildSection')).toBeHidden();
+});
