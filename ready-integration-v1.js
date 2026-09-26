@@ -133,6 +133,56 @@
     return request;
   }
 
+  function normalizeWorldState(message={}){
+    const payload=message.world_state_payload||message.payload||message;
+    const binding=payload.visual_binding||payload.binding||{};
+    const world_state=payload.world_state||binding.world_state||null;
+    const theme_expression=payload.theme_expression||binding.theme_expression||null;
+    const crew_visual=payload.crew_visual||binding.crew_visual||null;
+    const world_review_status=payload.world_review_status||binding.review_status||binding.world_review_status||null;
+    const crew_review_status=payload.crew_review_status||binding.crew_review_status||null;
+
+    if(message.ok===false||payload.ok===false)return {ok:false,reason:'WORLD_STATE_NOT_OK'};
+    if(!world_state||!theme_expression)return {ok:false,reason:'WORLD_STATE_REQUIRED'};
+    if(world_review_status!=='REVIEWED_RUNTIME_CANDIDATE'&&world_review_status!=='APPROVED_RUNTIME_ASSET'){
+      return {ok:false,reason:'WORLD_VISUAL_NOT_REVIEWED',world_review_status};
+    }
+    if(crew_visual&&crew_visual!=='STATIC_REFERENCE_LINEAGE_ONLY'&&crew_review_status!=='APPROVED_RUNTIME_ASSET'){
+      return {ok:false,reason:'CREW_VISUAL_NOT_REVIEWED',crew_visual,crew_review_status};
+    }
+
+    return {
+      ok:true,
+      schema:'TAKY_READY_WORLD_STATE_CONSUMER_V1',
+      source_app:payload.source_app||message.source_app||'snap-pop',
+      child_id:payload.child_id||payload.member_id||message.child_id||null,
+      world_state,
+      theme_expression,
+      crew_visual:crew_visual||'STATIC_REFERENCE_LINEAGE_ONLY',
+      world_review_status,
+      crew_review_status:crew_review_status||'HOLD_NO_APPROVED_INDIVIDUAL_ASSET',
+      release_pass:payload.release_pass===true,
+      visual_binding_version:payload.visual_binding_version||binding.version||null,
+      runtime_asset:payload.runtime_asset||binding.runtime_asset||null,
+      guards:{
+        consumer_only:true,
+        ready_does_not_own_world_state:true,
+        ready_does_not_mutate_crew_identity:true,
+        reference_board_direct_binding:false,
+        auto_asset_promotion:false,
+        auto_badge_activation:false,
+        auto_award:false
+      }
+    };
+  }
+
+  function consumeWorldState(message={}){
+    const request=normalizeWorldState(message);
+    if(!request.ok)return request;
+    try{window.dispatchEvent(new CustomEvent('taky-ready-world-state',{detail:request}));}catch{}
+    return request;
+  }
+
   function processConfirmed(input={}){
     const state=window.ReadyAssignments?.load?.();if(!state)return [];
     return Object.values(state.assignmentFacts).filter(f=>f.confirmation_state==='FACT_CONFIRMED').map(f=>processAssignment(f.assignment_id,input));
@@ -140,10 +190,16 @@
 
   window.addEventListener('message',event=>{
     const data=event?.data;
-    if(!data||data.type!=='TAKY_LEARNING_ACTION')return;
-    consumeLearningAction(data.learning_result||data.payload||{});
+    if(!data)return;
+    if(data.type==='TAKY_LEARNING_ACTION'){
+      consumeLearningAction(data.learning_result||data.payload||{});
+      return;
+    }
+    if(data.type==='TAKY_WORLD_STATE'){
+      consumeWorldState(data.world_state_payload||data.payload||{});
+    }
   });
 
-  window.ReadyIntegrationV1={version:VERSION,processAssignment,processConfirmed,reviewEscalatedCarryOver,normalizeLearningAction,consumeLearningAction};
+  window.ReadyIntegrationV1={version:VERSION,processAssignment,processConfirmed,reviewEscalatedCarryOver,normalizeLearningAction,consumeLearningAction,normalizeWorldState,consumeWorldState};
   document.documentElement.dataset.readyIntegration=VERSION;
 })();
