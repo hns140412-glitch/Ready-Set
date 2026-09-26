@@ -63,10 +63,18 @@ jobs:
             'executor_automation':{'profile':'READY_SET_CODEX_V1','target_repository_local':True}
           }
           env={'envelope_version':'2026-09-19.1','task_id':task['task_id'],'provider':'CODEX','transport':'GITHUB_ISSUE_QUEUE','dispatch_status':'DISPATCH_READY','task_contract_sha256':q.digest(task),'task_contract':task}
-          issue={'number':1,'title':'[TAKY EXECUTOR QUEUE] SELFTEST-001 -> CODEX','body':q.BEGIN_DISPATCH+'\n'+json.dumps(env)+'\n'+q.END_DISPATCH,'comments':[]}
+          issue={'number':1,'title':'[TAKY EXECUTOR QUEUE] SELFTEST-001 -> CODEX','body':q.BEGIN_DISPATCH+'\n'+json.dumps(env)+'\n'+q.END_DISPATCH,'comments':[],'author':{'login':'hns140412-glitch'},'authorAssociation':'OWNER'}
           out=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'fixture-run')
           assert out['has_task'] is True, out
           assert 'Do not commit, push, merge, deploy' in out['prompt']
+          forged=json.loads(json.dumps(issue))
+          forged['author']={'login':'untrusted-user'}
+          forged['authorAssociation']='NONE'
+          forged_out=q.prepare([forged],'hns140412-glitch/Ready-Set',base,'fixture-run')
+          assert forged_out['has_task'] is False, forged_out
+          assert 'QUEUE_ISSUE_AUTHOR_UNTRUSTED:untrusted-user' in forged_out['blocked'][0]['detected'], forged_out
+          assert q.collect_executor_run_ids([forged],'hns140412-glitch/Ready-Set') == []
+
           bad=json.loads(json.dumps(env)); bad['task_contract']['repository']='other/repo'; bad['task_contract_sha256']=q.digest(bad['task_contract'])
           issue['body']=q.BEGIN_DISPATCH+'\n'+json.dumps(bad)+'\n'+q.END_DISPATCH
           blocked=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'fixture-run')
@@ -128,7 +136,7 @@ jobs:
           assert side_effect_risk['has_task'] is False
           assert 'EXECUTOR_RECONCILIATION_REQUIRED' in side_effect_risk['blocked'][0]['detected'], side_effect_risk
 
-          assert q.collect_executor_run_ids([issue]) == ['old-run']
+          assert q.collect_executor_run_ids([issue],'hns140412-glitch/Ready-Set') == ['old-run']
           pathlib.Path("/tmp/task.json").write_text(json.dumps(task))
           pathlib.Path("/tmp/changed.txt").write_text("app.js\n")
           PY
