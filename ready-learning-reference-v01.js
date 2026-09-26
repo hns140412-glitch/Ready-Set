@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.3.0';
+  const VERSION='0.4.0';
   const AUTHORITY={
     ASSIGNMENT_FACT:{rank:100,role:'EXECUTION_TRUTH',can_override_assignment:false},
     TEACHER_INSTRUCTION:{rank:95,role:'LOCAL_INSTRUCTION',can_override_assignment:false},
@@ -100,10 +100,20 @@
         unresolved:['SUBJECT_REFERENCE_PROFILE_MISSING']
       };
     }
-    const subjectMaster=subjectMasterApi()?.resolve?.(key,context)||null;
     const standardMatch=standardMatcherApi()?.match?.(key,context)||null;
+    const subjectMaster=subjectMasterApi()?.resolve?.(key,{
+      ...context,
+      matched_domain:standardMatch?.selected?.domain||null,
+      standard_domain:standardMatch?.selected?.domain||null
+    })||null;
+    const verifiedStandard=standardMatch?.status==='MATCHED_VERIFIED_STANDARD'&&!!standardMatch?.official_standard_code;
+    const rowUnresolved=(row.unresolved||[]).filter(flag=>{
+      if(verifiedStandard&&flag==='GRADE_STANDARD_MAPPING_NOT_YET_BOUND')return false;
+      if(verifiedStandard&&flag==='OFFICIAL_CURRICULUM_SOURCE_POINTER_NOT_YET_BOUND')return false;
+      return true;
+    });
     const unresolved=[
-      ...row.unresolved,
+      ...rowUnresolved,
       ...(subjectMaster?.unresolved||[]),
       ...(standardMatch?.unresolved||[])
     ];

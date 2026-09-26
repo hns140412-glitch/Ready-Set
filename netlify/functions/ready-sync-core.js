@@ -2,11 +2,20 @@
 
 function clean(value){ return String(value ?? '').trim(); }
 
+function parseMemberScope(scope){
+  const match=/^member:([^:]+):(.+)$/.exec(clean(scope));
+  if(!match)return null;
+  let memberId=match[1];
+  try{memberId=decodeURIComponent(memberId);}catch{}
+  return {member_id:clean(memberId),scope:clean(match[2])};
+}
+
 function createSyncService(store,options={}){
   if(!store || typeof store.get !== 'function' || typeof store.set !== 'function'){
     throw new Error('store with get/set required');
   }
   const namespace=clean(options.namespace);
+  const authenticatedMemberId=clean(options.member_id);
   if(!namespace) throw new Error('namespace required');
 
   async function health(){
@@ -21,7 +30,21 @@ function createSyncService(store,options={}){
       return {status:400,body:{ok:false,reason:'INVALID_EVENT'}};
     }
 
-    const key='families/'+encodeURIComponent(namespace)+'/events/'+encodeURIComponent(idempotencyKey);
+    const scope=clean(input.scope)||'unknown';
+    const parsedMemberScope=parseMemberScope(scope);
+    if(authenticatedMemberId){
+      if(!parsedMemberScope){
+        return {status:400,body:{ok:false,reason:'MEMBER_SCOPE_REQUIRED'}};
+      }
+      if(parsedMemberScope.member_id!==authenticatedMemberId){
+        return {status:403,body:{ok:false,reason:'MEMBER_SCOPE_FORBIDDEN'}};
+      }
+    }
+
+    const memberScoped=!!parsedMemberScope;
+    const key=memberScoped
+      ? 'families/'+encodeURIComponent(namespace)+'/scopes/'+encodeURIComponent(scope)+'/events/'+encodeURIComponent(idempotencyKey)
+      : 'families/'+encodeURIComponent(namespace)+'/events/'+encodeURIComponent(idempotencyKey);
     const existing=await store.get(key);
     if(existing){
       const current=typeof existing==='string' ? JSON.parse(existing) : existing;
@@ -42,7 +65,7 @@ function createSyncService(store,options={}){
     const record={
       event_id:eventId,
       idempotency_key:idempotencyKey,
-      scope:clean(input.scope)||'unknown',
+      scope,
       digest,
       payload:input.payload ?? null,
       created_at:input.created_at || null,
@@ -50,6 +73,7 @@ function createSyncService(store,options={}){
       client:input.client || null,
       remote_version:1,
       family_namespace:namespace,
+      member_id:parsedMemberScope?.member_id||null,
       accepted_at:new Date().toISOString()
     };
     await store.set(key,JSON.stringify(record));
@@ -59,4 +83,4 @@ function createSyncService(store,options={}){
   return {health,putEvent};
 }
 
-module.exports={createSyncService};
+module.exports={createSyncService,parseMemberScope};

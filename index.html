@@ -18,7 +18,7 @@
   <section class="view active peach" id="homeView" data-view="home">
     <div class="safe topbar"><div><div class="brand">Ready & Set</div><div class="tagline">준비는 가볍게. 시작은 자신 있게.</div></div><button class="avatarButton" data-nav="profile" aria-label="프로필"><span id="homeAvatar">RS</span></button></div>
     <main class="safe homeMain">
-      <section class="heroBlock"><div class="heroCopy"><span class="kicker">FOCUS CHALLENGE</span><h1>타임어택<br>이벤트</h1><p>오늘 할 일을 정하고, 한 번에 시작해요.</p></div><div class="stopwatchArt" aria-hidden="true"><div class="watchCrown"></div><div class="watchFace"><span id="heroTime">25:00</span></div></div>
+      <section class="heroBlock baseCampHero"><div class="heroCopy"><span class="kicker">BASE CAMP · TODAY</span><div class="homeHeroStatus"><span>오늘의 탐험</span><b id="homeTodayCount">비어 있음</b></div><h1 id="homePrimaryTitle">오늘의 탐험을 준비해요</h1><p id="homePrimaryMeta">Planner에 오늘 할 일이 생기면 여기 가장 먼저 보여요.</p><button class="homePrimaryAction" data-nav="mission">오늘 탐험 시작</button></div><div class="stopwatchArt homeTimerTool" aria-hidden="true"><div class="watchCrown"></div><div class="watchFace"><span id="heroTime">25:00</span></div><small>집중 도구</small></div>
         <section class="homeGuideCard" id="homeGuideCard">
           <div class="guidePortrait" id="homeGuidePortrait" aria-hidden="true"></div>
           <div class="homeGuideCopy"><small>MY GUIDE · <span id="homeGuideName">루미</span></small><b id="homeGuideLine">오늘 작전, 내가 옆에서 같이 봐줄게.</b></div>
@@ -26,7 +26,7 @@
         </section>
       </section>
       <section class="commandCard">
-        <button data-nav="mission"><span><b>오늘 목표 정하기</b><small>과제와 목표 시간을 정해요</small></span><strong>→</strong></button>
+        <button data-nav="mission"><span><b>오늘의 탐험 이어가기</b><small>Planner가 준비한 오늘 할 일을 확인해요</small></span><strong>→</strong></button>
         <button data-nav="planner"><span><b>탐험 일정 보기</b><small>이번 주와 오늘 계획을 한눈에</small></span><strong>→</strong></button>
         <button id="preShareBtn"><span><b>작전 개시 전, 응원 요청!</b><small>가족에게 오늘의 목표 공유</small></span><strong>↗</strong></button>
         <button data-nav="history"><span><b>작전 기록실</b><small>완료한 작전과 기록 보기</small></span><strong>→</strong></button>
@@ -68,16 +68,17 @@
     </main>
   </section>
 
-  <section class="view peach" id="resultView" data-view="result"><header class="safe pageHeader"><span></span><div><span class="kicker">MISSION RESULT</span><h1>오늘의 작전 보고서</h1></div><span></span></header><main class="safe resultMain"><section class="resultCard"><span class="resultBadge">READY & SET</span><h2 id="resultHeadline">무사 귀환!</h2><div class="resultScene"><div class="resultAvatar" id="resultAvatar">RS</div><div class="guidePortrait small" id="resultGuidePortrait"></div><div class="guidePortrait small guest resultGuest" id="resultGuestPortrait" hidden></div><div class="sceneLine" id="resultLine">오늘도 작전 완료!</div></div><div id="resultTasks" class="resultTasks"></div><div class="resultNumbers"><div><small>목표</small><b id="resultTarget">25:00</b></div><div><small>집중</small><b id="resultFocus">00:00</b></div><div><small id="deltaLabel">차이</small><b id="resultDelta">00:00</b></div></div><button class="btn dark" id="shareResultBtn">공유 카드 만들기</button><button class="btn outline" data-nav="home">홈으로 돌아가기</button></section></main></section>
+  <section class="view peach" id="resultView" data-view="result"><header class="safe pageHeader"><span></span><div><span class="kicker">MISSION RESULT</span><h1>오늘의 작전 보고서</h1></div><span></span></header><main class="safe resultMain"><section class="resultCard"><span class="resultBadge">READY & SET</span><h2 id="resultHeadline">무사 귀환!</h2><div class="resultScene"><div class="resultAvatar" id="resultAvatar">RS</div><div class="guidePortrait small" id="resultGuidePortrait"></div><div class="guidePortrait small guest resultGuest" id="resultGuestPortrait" hidden></div><div class="sceneLine" id="resultLine">오늘도 작전 완료!</div></div><div id="resultTasks" class="resultTasks"></div><div class="resultNumbers"><div><small>목표</small><b id="resultTarget">25:00</b></div><div><small>집중</small><b id="resultFocus">00:00</b></div><div><small id="deltaLabel">차이</small><b id="resultDelta">00:00</b></div></div><div id="resultRecordingCard" class="historyItem" hidden><small>VOICE RECORDING</small><b id="resultRecordingName">저장된 녹음</b><audio id="resultRecordingAudio" controls></audio></div><button class="btn dark" id="shareResultBtn">공유 카드 만들기</button><button class="btn outline" data-nav="home">홈으로 돌아가기</button></section></main></section>
 
   <section class="view cream" id="historyView" data-view="history"><header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MISSION LOG</span><h1>작전 기록실</h1></div><span></span></header><main class="safe scroll"><div id="historyList" class="historyList"></div></main></section>
   <section class="view cream" id="calendarView" data-view="calendar"><header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MISSION JOURNAL</span><h1>작전 일지</h1></div><span></span></header><main class="safe scroll"><section class="glassCard"><h2>이번 달 기록</h2><div id="calendarList" class="historyList"></div></section><p class="muted">Google Calendar 연동은 외부 OAuth 구성이 필요한 Online Enhancement입니다. 로컬 기록은 오프라인에서도 유지됩니다.</p></main></section>
 
   <section class="view cream plannerView" id="plannerView" data-view="planner">
+    <div class="plannerWorldLayer" aria-hidden="true"><span class="plannerWorldHorizon"></span><span class="plannerWorldLand plannerWorldLandA"></span><span class="plannerWorldLand plannerWorldLandB"></span><span class="plannerWorldCamp"></span></div>
     <header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">EXPLORATION PLANNER</span><h1>탐험 일정</h1></div><span></span></header>
     <main class="safe scroll plannerMain">
       <section class="plannerHero">
-        <div><small>READY & SET · PLANNER</small><h2 id="plannerHeroTitle">이번 주 탐험 지도</h2><p id="plannerHeroCopy">해야 할 일과 고정 일정을 가볍게 확인해요.</p></div>
+        <div><small>READY & SET · PLANNER</small><h2 id="plannerHeroTitle">이번 주 여정</h2><p id="plannerHeroCopy">해야 할 일과 고정 일정을 가볍게 확인해요.</p></div>
         <div class="plannerHeroActions"><button class="plannerTodayJump" id="plannerTodayJump">오늘</button><button class="plannerAdminJump" data-nav="planner-admin">관리</button></div>
       </section>
       <div class="plannerTabs" role="tablist" aria-label="플래너 보기">
@@ -89,7 +90,7 @@
         <div id="plannerWeekDetail" class="plannerWeekDetail"></div>
       </section>
       <section id="plannerDayPanel" class="plannerPanel" role="tabpanel" hidden>
-        <div class="plannerDayHead"><div><small>TODAY ROUTE</small><h2 id="plannerDayTitle">오늘의 탐험</h2></div><span id="plannerDayCount">0개</span></div>
+        <div class="plannerDayHead"><div><small>TODAY ROUTE</small><h2 id="plannerDayTitle">오늘의 탐험길</h2></div><span id="plannerDayCount">0개</span></div>
         <div id="plannerDayTimeline" class="plannerDayTimeline"></div>
         <button class="btn dark" data-nav="mission">오늘 작전 고르기</button>
       </section>
@@ -104,17 +105,40 @@
         <div class="adminSectionHead"><div><small>FIXED SCHEDULE</small><h2>고정 일정</h2></div><button class="miniAction" id="scheduleClearBtn">새 일정</button></div>
         <input id="scheduleId" type="hidden">
         <label class="inputBlock">일정명<input id="scheduleTitle" placeholder="예) 영어학원"></label>
+        <label class="adminToggle"><input id="scheduleWeekly" type="checkbox"><span><b>매주 반복</b><small>학원·피아노·태권도처럼 매주 같은 요일의 고정 일정</small></span></label>
         <div class="adminGrid two">
           <label class="inputBlock">분류<input id="scheduleCategory" placeholder="예) 영어"></label>
           <label class="inputBlock">날짜<input id="scheduleDate" type="date"></label>
         </div>
+        <label class="inputBlock">요일<select id="scheduleWeekday"><option value="1">월</option><option value="2">화</option><option value="3">수</option><option value="4">목</option><option value="5">금</option><option value="6">토</option><option value="0">일</option></select></label>
         <div class="adminGrid two">
           <label class="inputBlock">시작<input id="scheduleStart" type="time"></label>
           <label class="inputBlock">종료<input id="scheduleEnd" type="time"></label>
         </div>
+        <div class="adminGrid two">
+          <label class="inputBlock">반복 시작일<input id="scheduleValidFrom" type="date"></label>
+          <label class="inputBlock">반복 종료일<input id="scheduleValidUntil" type="date"></label>
+        </div>
         <label class="adminToggle"><input id="scheduleMovable" type="checkbox"><span><b>플래너가 이동 가능</b><small>기본은 고정 일정으로 유지합니다.</small></span></label>
         <button class="btn dark" id="saveScheduleBtn">고정 일정 저장</button>
         <div id="scheduleAdminList" class="adminList"></div>
+      </section>
+
+      <section class="glassCard adminCard" id="scheduleExceptionCard">
+        <div class="adminSectionHead"><div><small>SCHEDULE EXCEPTION</small><h2>휴강 · 보강 · 이번 주만 변경</h2></div><button class="miniAction" id="scheduleExceptionClearBtn">새 예외</button></div>
+        <p class="muted">기본 반복 일정은 그대로 두고 특정 날짜만 건너뛰거나 시간을 바꿉니다.</p>
+        <label class="inputBlock">반복 일정<select id="scheduleExceptionCommitment"><option value="">반복 일정 선택</option></select></label>
+        <div class="adminGrid two">
+          <label class="inputBlock">날짜<input id="scheduleExceptionDate" type="date"></label>
+          <label class="inputBlock">처리<select id="scheduleExceptionType"><option value="SKIP">휴강 / 없음</option><option value="REPLACE">보강 / 시간 변경</option></select></label>
+        </div>
+        <div class="adminGrid two">
+          <label class="inputBlock">변경 시작<input id="scheduleExceptionStart" type="time"></label>
+          <label class="inputBlock">변경 종료<input id="scheduleExceptionEnd" type="time"></label>
+        </div>
+        <label class="inputBlock">메모<input id="scheduleExceptionNote" placeholder="예) 추석 휴강 / 보강"></label>
+        <button class="btn dark" id="saveScheduleExceptionBtn">이번 날짜만 반영</button>
+        <div id="scheduleExceptionList" class="adminList"></div>
       </section>
 
       <section class="glassCard">
@@ -130,8 +154,35 @@
           <label class="inputBlock">시작<input id="availabilityStart" type="time"></label>
           <label class="inputBlock">종료<input id="availabilityEnd" type="time"></label>
         </div>
+        <div class="adminGrid two">
+          <label class="inputBlock">반복 시작일<input id="availabilityValidFrom" type="date"></label>
+          <label class="inputBlock">반복 종료일<input id="availabilityValidUntil" type="date"></label>
+        </div>
         <button class="btn dark" id="saveAvailabilityBtn">가능 시간 저장</button>
         <div id="availabilityAdminList" class="adminList"></div>
+      </section>
+
+      <section class="glassCard adminCard" id="availabilityExceptionCard">
+        <div class="adminSectionHead"><div><small>AVAILABILITY EXCEPTION</small><h2>이번 날만 가능시간 변경</h2></div><button class="miniAction" id="availabilityExceptionClearBtn">새 예외</button></div>
+        <p class="muted">매주 반복 가능시간은 유지하고 특정 날짜만 불가 또는 다른 시간으로 바꿉니다.</p>
+        <label class="inputBlock">반복 가능시간<select id="availabilityExceptionAvailability"><option value="">반복 가능시간 선택</option></select></label>
+        <div class="adminGrid two"><label class="inputBlock">날짜<input id="availabilityExceptionDate" type="date"></label><label class="inputBlock">처리<select id="availabilityExceptionType"><option value="SKIP">이번 날 불가</option><option value="REPLACE">가능시간 변경</option></select></label></div>
+        <div class="adminGrid two"><label class="inputBlock">변경 시작<input id="availabilityExceptionStart" type="time"></label><label class="inputBlock">변경 종료<input id="availabilityExceptionEnd" type="time"></label></div>
+        <label class="inputBlock">메모<input id="availabilityExceptionNote" placeholder="예) 가족 일정 / 외출"></label>
+        <button class="btn dark" id="saveAvailabilityExceptionBtn">이번 날짜만 반영</button>
+        <div id="availabilityExceptionList" class="adminList"></div>
+      </section>
+
+      <section class="glassCard adminCard" id="weeklyReflowAdminCard">
+        <div class="adminSectionHead"><div><small>WEEKLY REFLOW</small><h2>이번 주 다시 맞추기</h2></div><button class="miniAction" id="weeklyReflowPlanBtn">재배치안 만들기</button></div>
+        <p class="muted">고정 일정·가용시간·마감·학습 부하를 다시 읽고, 시작하지 않은 Planner 탐험만 이번 주 안에서 재배치합니다. 적용 전 Parent 확인이 필요합니다.</p>
+        <div id="weeklyReflowAdminList" class="adminList"></div>
+      </section>
+
+      <section class="glassCard adminCard" id="adaptiveEstimateAdminCard">
+        <div class="adminSectionHead"><div><small>ADAPTIVE PLANNER</small><h2>실제 수행시간 반영</h2></div><button class="miniAction" id="adaptiveEstimateRefreshBtn">최근 수행시간 분석</button></div>
+        <p class="muted">Planner는 실제 수행시간을 근거로 다음 배정 시간을 제안합니다. 자동으로 바꾸지 않고 Parent 확인 후에만 반영합니다.</p>
+        <div id="adaptiveEstimateAdminList" class="adminList"></div>
       </section>
 
       <section class="glassCard adminCard" id="carryOverAdminCard">
@@ -209,6 +260,8 @@
         <div class="adminGrid two">
           <label class="inputBlock">요일별 프린트<input id="englishPrints" placeholder="예) MON:1장, WED:2장"></label>
           <label class="inputBlock">단어<input id="englishVocabulary" placeholder="예) Unit 3"></label>
+          <label class="inputBlock">문법 확인<input id="englishGrammar" placeholder="예) Grammar Check 3"></label>
+          <label class="inputBlock">읽기·이해<input id="englishReading" placeholder="예) Story 3 / Comprehension"></label>
           <label class="inputBlock">듣기<input id="englishListening" placeholder="예) Track 4"></label>
           <label class="inputBlock">녹음<input id="englishRecording" placeholder="예) Sentence 2"></label>
           <label class="inputBlock">쓰기<input id="englishWriting" placeholder="예) Paragraph 1"></label>
@@ -223,8 +276,9 @@
     </main>
   </section>
 
-  <section class="view peach" id="profileView" data-view="profile"><header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MY READY PROFILE</span><h1>내 캐릭터</h1></div><span></span></header><main class="safe scroll"><section class="profileCard"><div class="avatarPreviewWrap"><img id="profileImage" alt="프로필 미리보기" hidden><div id="profilePlaceholder" class="profilePlaceholder">RS</div></div><label class="inputBlock">이름<input id="profileName" placeholder="이름 또는 별명"></label><div class="photoActions"><label class="btn outline">사진 찍기<input id="cameraInput" type="file" accept="image/*" capture="user" hidden></label><label class="btn outline">사진 선택<input id="galleryInput" type="file" accept="image/*" hidden></label></div><h2>일러스트 스타일 선택</h2><div class="styleGrid" id="styleGrid"><button data-style="editorial" class="on"><span class="styleSample editorial"></span><b>Signature 2.5D</b><small>기본 추천</small></button><button data-style="storybook"><span class="styleSample storybook"></span><b>Soft Storybook</b><small>따뜻한 페인팅</small></button><button data-style="graphic"><span class="styleSample graphic"></span><b>Clean Graphic</b><small>선명한 캐릭터</small></button><button data-style="natural"><span class="styleSample natural"></span><b>Natural Soft</b><small>원본에 가깝게</small></button></div><p class="muted">현재 정적 PWA에서는 로컬 미리보기 스타일만 제공합니다. 생성형 2.5D 재렌더링은 API 키를 브라우저에 노출하지 않도록 서버 연동 계층으로 분리해야 합니다.</p><label class="shareAvatarToggle"><input type="checkbox" id="shareAvatarOptIn"><span><b>공유 카드에 내 캐릭터 포함</b><small>기본은 OFF · 켜면 선택한 프로필 이미지를 공유 카드에 사용합니다.</small></span></label>
+  <section class="view peach" id="profileView" data-view="profile"><header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MY READY PROFILE</span><h1>내 프로필</h1></div><span></span></header><main class="safe scroll"><section class="profileCard"><div class="avatarPreviewWrap"><img id="profileImage" alt="프로필 미리보기" hidden><div id="profilePlaceholder" class="profilePlaceholder">RS</div></div><label class="inputBlock">이름<input id="profileName" placeholder="이름 또는 별명"></label><label class="inputBlock">생년월일<input id="profileBirthdate" type="date"></label><p class="muted">생년월일만 사용해 현재 만 나이와 학습 단위 크기를 조정합니다. 학년·지역·교육과정은 자동 추정하지 않습니다.</p><div class="photoActions"><label class="btn outline">사진 찍기<input id="cameraInput" type="file" accept="image/*" capture="user" hidden></label><label class="btn outline">사진 선택<input id="galleryInput" type="file" accept="image/*" hidden></label></div><label class="shareAvatarToggle"><input type="checkbox" id="shareAvatarOptIn"><span><b>공유 카드에 프로필 이미지 포함</b><small>기본은 OFF · 켜면 프로필 이미지를 공유 카드에 사용합니다.</small></span></label>
 <button class="btn dark" id="saveProfileBtn">프로필 저장</button></section></main></section>
+
 
   <section class="view cream" id="settingsView" data-view="settings"><header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">SETTINGS</span><h1>설정</h1></div><span></span></header><main class="safe scroll"><section class="glassCard"><h2>내 길잡이</h2><div class="guideSetting"><div class="guidePortrait" id="settingsGuidePortrait"></div><div><b id="guideNameLabel">루미</b><small id="guidePersonalityLabel">포근하고 위트 있는 길잡이</small></div></div>
 <div class="guideChoiceGrid">
@@ -251,7 +305,7 @@
     <button class="btn outline compactBtn" id="familyLinkChildBtn">CHILD 연결</button>
   </div>
 </div>
-</section><section class="glassCard syncStatusCard"><div class="syncStatusHead"><div><small>CLOUD SYNC</small><h2>동기화 상태</h2></div><span id="syncStateBadge">로컬 저장</span></div><p id="syncStatusText" class="muted">현재 이 기기에 안전하게 저장 중이에요. 클라우드 동기화는 아직 연결되지 않았습니다.</p><div class="syncMeta"><span>대기 중 <b id="syncPendingCount">0</b></span><span>충돌 <b id="syncConflictCount">0</b></span></div><button class="btn outline compactBtn" id="checkSyncBtn">연결 상태 확인</button></section><section class="glassCard"><h2>데이터</h2><button class="btn outline" id="exportDataBtn">기록 JSON 내보내기</button><button class="dangerText" id="resetDataBtn">모든 로컬 데이터 초기화</button></section><p class="muted" id="readyVersionInfo">Release information loading…</p></main></section>
+</section><section class="glassCard syncStatusCard"><div class="syncStatusHead"><div><small>CLOUD SYNC</small><h2>동기화 상태</h2></div><span id="syncStateBadge">로컬 저장</span></div><p id="syncStatusText" class="muted">현재 이 기기에 안전하게 저장 중이에요. 클라우드 동기화는 아직 연결되지 않았습니다.</p><div class="syncMeta"><span>대기 중 <b id="syncPendingCount">0</b></span><span>충돌 <b id="syncConflictCount">0</b></span></div><div id="syncConflictList" class="adminList" hidden></div><button class="btn outline compactBtn" id="checkSyncBtn">연결 상태 확인</button></section><section class="glassCard"><h2>데이터</h2><button class="btn outline" id="exportDataBtn">기록 JSON 내보내기</button><button class="dangerText" id="resetDataBtn">모든 로컬 데이터 초기화</button></section><p class="muted" id="readyVersionInfo">Release information loading…</p></main></section>
 
   <div class="sheet" id="soundSheet" role="dialog" aria-modal="true" aria-label="집중 사운드 선택" hidden><div class="sheetBackdrop" data-close-sound></div><div class="sheetCard safe"><div class="sheetHandle"></div><div class="sheetHeader"><h2>집중 사운드</h2><button data-close-sound aria-label="닫기">×</button></div><div class="soundSheetOptions">
   <button data-sheet-sound="집중 피아노"><span>PIANO</span><b>집중 피아노</b><small>따뜻하고 일정한 기본 BGM</small><i>▶</i></button>
@@ -289,6 +343,7 @@
 <script src="./vendor/taky/http-json.js"></script>
 <script src="./ready-release-v01.js"></script>
 <script src="./ready-family-session-v01.js"></script>
+<script src="./src/persistence/member-scope-runtime.js"></script>
 <script src="./ready-sync-adapter-v01.js"></script>
 <script src="./ready-local-first-v01.js"></script>
 <script src="./ready-capture-v01.js"></script>
@@ -299,9 +354,55 @@
 <script src="./ready-official-unit-map-v01.js"></script>
 <script src="./ready-learning-standard-matcher-v01.js"></script>
 <script src="./ready-learning-reference-v01.js"></script>
+<script src="./src/learning/learner-context-runtime.js"></script>
 <script src="./ready-learning-master-v01.js"></script>
+<script src="./src/planner/planner-policy-runtime.js"></script>
+<script src="./src/planner/planner-projection-runtime.js"></script>
+<script src="./src/planner/planner-view-runtime.js"></script>
+<script src="./src/planner/planner-query-controller-runtime.js"></script>
 <script src="./ready-planner-v01.js"></script>
 <script src="./ready-integration-v1.js"></script>
+<script src="./src/integrations/specialist-router-runtime.js"></script>
+<script src="./src/integrations/specialist-handoff-contract.js"></script>
+<script src="./src/learning/evidence-ontology-runtime.js"></script>
+<script src="./src/session/session-domain-runtime.js"></script>
+<script src="./src/session/session-service-runtime.js"></script>
+<script src="./src/session/session-recovery-controller-runtime.js"></script>
+<script src="./src/session/session-completion-controller-runtime.js"></script>
+<script src="./src/session/mission-focus-controller-runtime.js"></script>
+<script src="./src/shell/navigation-runtime.js"></script>
+<script src="./src/persistence/app-state-runtime.js"></script>
+<script src="./src/views/mission-view-runtime.js"></script>
+<script src="./src/views/mission-controller-runtime.js"></script>
+<script src="./src/views/focus-view-runtime.js"></script>
+<script src="./src/views/planner-admin-view-runtime.js"></script>
+<script src="./src/views/planner-admin-controller-runtime.js"></script>
+<script src="./src/views/parent-intake-view-runtime.js"></script>
+<script src="./src/assignment/capture-service-runtime.js"></script>
+<script src="./src/assignment/capture-orchestrator-runtime.js"></script>
+<script src="./src/assignment/capture-intake-controller-runtime.js"></script>
+<script src="./src/assignment/capture-draft-runtime.js"></script>
+<script src="./src/assignment/assignment-service-runtime.js"></script>
+<script src="./src/assignment/assignment-intake-controller-runtime.js"></script>
+<script src="./src/views/capture-view-runtime.js"></script>
+<script src="./src/recording/recording-service-runtime.js"></script>
+<script src="./src/recording/recording-orchestrator-runtime.js"></script>
+<script src="./src/recording/recording-controller-runtime.js"></script>
+<script src="./src/views/recording-view-runtime.js"></script>
+<script src="./src/views/result-history-view-runtime.js"></script>
+<script src="./src/views/result-history-controller-runtime.js"></script>
+<script src="./src/views/profile-settings-view-runtime.js"></script>
+<script src="./src/views/profile-controller-runtime.js"></script>
+<script src="./src/views/settings-controller-runtime.js"></script>
+<script src="./src/views/auth-sync-view-runtime.js"></script>
+<script src="./src/views/auth-sync-controller-runtime.js"></script>
+<script src="./src/views/home-view-runtime.js"></script>
+<script src="./src/views/planner-screen-view-runtime.js"></script>
+<script src="./src/views/planner-screen-controller-runtime.js"></script>
+<script src="./src/views/share-card-runtime.js"></script>
+<script src="./src/audio/audio-service-runtime.js"></script>
+<script src="./src/shell/accessibility-runtime.js"></script>
+<script src="./src/shell/app-bootstrap-controller-runtime.js"></script>
 <script src="./app.js"></script>
 <script src="./ready-pwa-update-v01.js"></script>
 <script src="./ready-runtime-v07.js"></script>

@@ -85,6 +85,7 @@ test('Netlify Identity server functions use modern Identity verification pattern
   const session=fs.readFileSync('netlify/functions/auth-session.mjs','utf8');
   expect(sync).toContain("getUser");
   expect(sync).toContain("namespace:mapped.session.family_id");
+  expect(sync).toContain("member_id:mapped.session.member_id");
   expect(login).toContain("verifyRequestOrigin");
   expect(logout).toContain("verifyRequestOrigin");
   expect(session).toContain("getUser");
@@ -103,4 +104,79 @@ test('Identity signup event assigns CHILD by default and never self-elects PAREN
     user:{id:'parent_user',email:'parent@example.test',appMetadata:{roles:['PARENT']}}
   });
   expect(existingParent.user.appMetadata.roles).toEqual(['PARENT']);
+});
+
+
+test('member-scoped remote sync keys isolate members inside one family', async ()=>{
+  const store=memoryStore();
+  const service=createSyncService(store,{namespace:'family_shared'});
+  const a=await service.putEvent({
+    event_id:'evt_member_a',
+    idempotency_key:'same-idem',
+    scope:'member:CHILD_A:planner',
+    digest:'digest-a',
+    payload:'{"member":"A"}'
+  });
+  const b=await service.putEvent({
+    event_id:'evt_member_b',
+    idempotency_key:'same-idem',
+    scope:'member:CHILD_B:planner',
+    digest:'digest-b',
+    payload:'{"member":"B"}'
+  });
+  expect(a.status).toBe(200);
+  expect(b.status).toBe(200);
+  const keys=[...store.snapshot().keys()];
+  expect(keys).toHaveLength(2);
+  expect(keys.some(x=>x.includes(encodeURIComponent('member:CHILD_A:planner')))).toBe(true);
+  expect(keys.some(x=>x.includes(encodeURIComponent('member:CHILD_B:planner')))).toBe(true);
+});
+
+test('legacy unscoped remote sync path remains backward compatible', async ()=>{
+  const store=memoryStore();
+  const service=createSyncService(store,{namespace:'family_legacy'});
+  const result=await service.putEvent({
+    event_id:'evt_legacy',
+    idempotency_key:'legacy-idem',
+    scope:'planner',
+    digest:'legacy-digest',
+    payload:'{"legacy":true}'
+  });
+  expect(result.status).toBe(200);
+  const key=[...store.snapshot().keys()][0];
+  expect(key).toContain('families/family_legacy/events/');
+  expect(key).not.toContain('/scopes/');
+});
+
+
+test('authenticated member scope rejects cross-member and unscoped writes', async ()=>{
+  const store=memoryStore();
+  const service=createSyncService(store,{namespace:'family_shared',member_id:'CHILD_A'});
+  const own=await service.putEvent({
+    event_id:'evt_own',
+    idempotency_key:'idem_own',
+    scope:'member:CHILD_A:planner',
+    digest:'digest-own',
+    payload:'{"member":"A"}'
+  });
+  const cross=await service.putEvent({
+    event_id:'evt_cross',
+    idempotency_key:'idem_cross',
+    scope:'member:CHILD_B:planner',
+    digest:'digest-cross',
+    payload:'{"member":"B"}'
+  });
+  const unscoped=await service.putEvent({
+    event_id:'evt_unscoped',
+    idempotency_key:'idem_unscoped',
+    scope:'planner',
+    digest:'digest-unscoped',
+    payload:'{}'
+  });
+  expect(own.status).toBe(200);
+  expect(cross.status).toBe(403);
+  expect(cross.body.reason).toBe('MEMBER_SCOPE_FORBIDDEN');
+  expect(unscoped.status).toBe(400);
+  expect(unscoped.body.reason).toBe('MEMBER_SCOPE_REQUIRED');
+  expect(store.snapshot().size).toBe(1);
 });

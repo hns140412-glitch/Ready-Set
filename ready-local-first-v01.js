@@ -7,6 +7,20 @@
 
   const DB_NAME='readyset_local_v1', DB_VERSION=1;
   const SCOPE_KEYS={planner:'readyset_planner_v1',app_state:'readyset_state',assignments:'readyset_assignments_v2'};
+  const memberScope=()=>globalThis.ReadyMemberScope||null;
+  function scopedScope(scope){return memberScope()?.syncScope?.(scope)||scope}
+  function parsedScope(scope){return memberScope()?.parseSyncScope?.(scope)||{member_id:null,scope};}
+  function activeMemberId(){return memberScope()?.memberId?.()||null;}
+  function belongsToActiveMember(scope){
+    const parsed=parsedScope(scope);
+    const active=activeMemberId();
+    return active?parsed.member_id===active:parsed.member_id==null;
+  }
+  function localStorageKeyForScope(scope){
+    const parsed=parsedScope(scope);
+    const base=SCOPE_KEYS[parsed.scope];if(!base)return null;
+    return parsed.member_id?`${base}::member::${encodeURIComponent(parsed.member_id)}`:base;
+  }
   const SHARED_STATES=new Set(['PENDING','IN_FLIGHT','RETRY','ACKED','DEAD_LETTER','SUPERSEDED']);
   let dbPromise=null;
   const now=()=>new Date().toISOString();
@@ -36,6 +50,10 @@
   async function get(store,id){
     const db=await openDb(); const tx=db.transaction(store,'readonly');
     return request(tx.objectStore(store).get(id));
+  }
+
+  async function scopedRows(store){
+    return (await all(store)).filter(row=>belongsToActiveMember(row.scope));
   }
 
   async function put(store,row){
@@ -98,6 +116,7 @@
 
   async function capture(scope,payload,options={}){
     const db=await openDb();
+    const effectiveScope=scopedScope(scope);
     const text=typeof payload==='string'?payload:JSON.stringify(payload);
     const digest=EventEnvelope.digest(text);
     const updated_at=now();
@@ -105,7 +124,7 @@
       source:'ready-set',
       event_type:'READY_SCOPE_SNAPSHOT_CAPTURED',
       occurred_at:updated_at,
-      payload:{scope,digest,payload:text}
+      payload:{scope:effectiveScope,digest,payload:text}
     });
     const shared=LocalQueue.create({
       event_id:envelope.event_id,
@@ -116,21 +135,21 @@
     });
 
     const tx=db.transaction(['snapshots','outbox'],'readwrite');
-    tx.objectStore('snapshots').put({scope,payload:text,digest,updated_at});
+    tx.objectStore('snapshots').put({scope:effectiveScope,payload:text,digest,updated_at});
     if(options.enqueue!==false){
-      tx.objectStore('outbox').put(toStoredQueue(shared,{scope,digest,payload:text,envelope}));
+      tx.objectStore('outbox').put(toStoredQueue(shared,{scope:effectiveScope,digest,payload:text,envelope}));
     }
     return new Promise((resolve,reject)=>{
-      tx.oncomplete=()=>resolve({scope,digest,event_id:envelope.event_id});
+      tx.oncomplete=()=>resolve({scope:effectiveScope,digest,event_id:envelope.event_id});
       tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
     });
   }
 
   async function recoverMissingScopes(){
-    const rows=await all('snapshots');
+    const rows=(await all('snapshots')).filter(row=>belongsToActiveMember(row.scope));
     let recovered=0;
     for(const row of rows){
-      const key=SCOPE_KEYS[row.scope];
+      const key=localStorageKeyForScope(row.scope);
       if(!key) continue;
       if(localStorage.getItem(key)==null && row.payload!=null){
         localStorage.setItem(key,row.payload);
@@ -143,6 +162,7 @@
   async function resolveConflict(conflictId,resolution){
     const conflict=await get('conflicts',conflictId);
     if(!conflict || conflict.status!=='OPEN') return {ok:false,reason:'CONFLICT_NOT_FOUND'};
+    if(!belongsToActiveMember(conflict.scope)) return {ok:false,reason:'MEMBER_SCOPE_FORBIDDEN'};
     const outbox=await get('outbox',conflict.outbox_id);
     if(!outbox) return {ok:false,reason:'OUTBOX_NOT_FOUND'};
 
@@ -155,7 +175,7 @@
       });
       await put('outbox',toStoredQueue(base,{...domainFields(outbox),domain_conflict:null}));
     } else if(resolution==='ACCEPT_REMOTE'){
-      const key=SCOPE_KEYS[conflict.scope];
+      const key=localStorageKeyForScope(conflict.scope);
       const remote=typeof conflict.remote_payload==='string'
         ? conflict.remote_payload
         : JSON.stringify(conflict.remote_payload??null);
@@ -178,6 +198,7 @@
   async function flush(){
     const adapter=window.ReadySetSyncAdapter;
     const rows=(await all('outbox')).filter(row=>{
+      if(!belongsToActiveMember(row.scope)) return false;
       if(row.domain_conflict==='OPEN') return false;
       const q=fromStoredQueue(row);
       return LocalQueue.canAttempt(q,Date.now());
@@ -230,7 +251,7 @@
       }
     }
 
-    const remaining=await all('outbox');
+    const remaining=(await all('outbox')).filter(row=>belongsToActiveMember(row.scope));
     return {
       ok:true,
       sent,
@@ -248,9 +269,9 @@
     capture:(scope,payload)=>capture(scope,payload),
     recoverMissingScopes,
     resolveConflict,
-    outbox:()=>all('outbox'),
-    conflicts:()=>all('conflicts'),
-    snapshots:()=>all('snapshots'),
+    outbox:()=>scopedRows('outbox'),
+    conflicts:()=>scopedRows('conflicts'),
+    snapshots:()=>scopedRows('snapshots'),
     flush
   });
 

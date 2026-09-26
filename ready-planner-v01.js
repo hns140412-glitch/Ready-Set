@@ -18,19 +18,25 @@
     WAITING_FOR_PARENT:'WAITING_FOR_PARENT',
     BLOCKED:'BLOCKED'
   };
+  const rebuildPolicy=globalThis.ReadyRebuildPlannerPolicy||null;
+  const rebuildProjection=globalThis.ReadyRebuildPlannerProjection||null;
 
   const blank=()=>({
     schema_version:SCHEMA_VERSION,
     storage_backend:'LOCALSTORAGE_COMPATIBILITY_SCAFFOLD',
     schedule_commitments:[],
+    schedule_exceptions:[],
     daily_availability_windows:[],
+    availability_exceptions:[],
     homework_templates:[],
     dated_todos:[],
     progress_events:[],
     allocation_runs:[],
     execution_observations:[],
     carry_over_queue:[],
-    adaptive_estimate_proposals:[]
+    adaptive_estimate_proposals:[],
+    weekly_reflow_runs:[],
+    reflow_review:{needed:false,reasons:[],updated_at:null}
   });
 
   const cleanText=x=>String(x??'').trim();
@@ -49,24 +55,67 @@
       ...x,
       schema_version:SCHEMA_VERSION,
       schedule_commitments:Array.isArray(x.schedule_commitments)?x.schedule_commitments:[],
+      schedule_exceptions:Array.isArray(x.schedule_exceptions)?x.schedule_exceptions:[],
       daily_availability_windows:Array.isArray(x.daily_availability_windows)?x.daily_availability_windows:[],
+      availability_exceptions:Array.isArray(x.availability_exceptions)?x.availability_exceptions:[],
       homework_templates:Array.isArray(x.homework_templates)?x.homework_templates:[],
       dated_todos:Array.isArray(x.dated_todos)?x.dated_todos:[],
       progress_events:Array.isArray(x.progress_events)?x.progress_events:[],
       allocation_runs:Array.isArray(x.allocation_runs)?x.allocation_runs:[],
       execution_observations:Array.isArray(x.execution_observations)?x.execution_observations:[],
       carry_over_queue:Array.isArray(x.carry_over_queue)?x.carry_over_queue:[],
-      adaptive_estimate_proposals:Array.isArray(x.adaptive_estimate_proposals)?x.adaptive_estimate_proposals:[]
+      adaptive_estimate_proposals:Array.isArray(x.adaptive_estimate_proposals)?x.adaptive_estimate_proposals:[],
+      weekly_reflow_runs:Array.isArray(x.weekly_reflow_runs)?x.weekly_reflow_runs:[],
+      reflow_review:(x.reflow_review&&typeof x.reflow_review==='object')?x.reflow_review:{needed:false,reasons:[],updated_at:null}
     };
   }
 
   function createPlanner(storage){
     const isOpenTodo=t=>t&&t.state!=='COMPLETED'&&t.state!=='SUPERSEDED';
+    function storageKey(){return globalThis.ReadyMemberScope?.storageKey?.(STORAGE_KEY)||STORAGE_KEY}
     function load(){
-      try{return normalize(JSON.parse(storage.getItem(STORAGE_KEY)||'null'))}catch{return blank()}
+      try{return normalize(JSON.parse(storage.getItem(storageKey())||'null'))}catch{return blank()}
     }
-    function save(s){const payload=JSON.stringify(normalize(s));storage.setItem(STORAGE_KEY,payload);globalThis.ReadySetLocalFirst?.capture?.('planner',payload).catch?.(()=>{})}
+    function save(s){const payload=JSON.stringify(normalize(s));storage.setItem(storageKey(),payload);globalThis.ReadySetLocalFirst?.capture?.('planner',payload).catch?.(()=>{})}
     function mutate(fn){const s=load();const out=fn(s);save(s);return out}
+
+    function markReflowReview(state,reason){
+      const reasons=new Set(Array.isArray(state.reflow_review?.reasons)?state.reflow_review.reasons:[]);
+      if(reason)reasons.add(reason);
+      state.reflow_review={needed:true,reasons:[...reasons],updated_at:new Date().toISOString()};
+    }
+
+    function clearReflowReview(state){
+      state.reflow_review={needed:false,reasons:[],updated_at:new Date().toISOString()};
+    }
+
+    function scheduleCommitmentsForDate(date,state=load()){
+      const dow=parseLocal(date,'12:00').getDay();
+      const exceptionByCommitment=new Map((state.schedule_exceptions||[])
+        .filter(x=>x.date===date)
+        .map(x=>[x.commitment_id,x]));
+      return (state.schedule_commitments||[])
+        .filter(x=>x.confirmed!==false)
+        .filter(x=>{
+          if(x.recurrence==='WEEKLY'){
+            if(Number(x.weekday)!==dow)return false;
+            if(x.valid_from&&date<x.valid_from)return false;
+            if(x.valid_until&&date>x.valid_until)return false;
+            return /^\d{2}:\d{2}$/.test(String(x.start||''))&&/^\d{2}:\d{2}$/.test(String(x.end||''));
+          }
+          return x.start_at&&x.end_at&&String(x.start_at).slice(0,10)===date&&String(x.end_at).slice(0,10)===date;
+        })
+        .flatMap(x=>{
+          const exception=exceptionByCommitment.get(x.commitment_id)||null;
+          if(exception?.type==='SKIP')return [];
+          if(x.recurrence==='WEEKLY'){
+            const start=exception?.type==='REPLACE'?(exception.start||x.start):x.start;
+            const end=exception?.type==='REPLACE'?(exception.end||x.end):x.end;
+            return [{...x,start_at:date+'T'+start+':00',end_at:date+'T'+end+':00',occurrence_date:date,schedule_exception:exception}];
+          }
+          return [{...x,occurrence_date:date,schedule_exception:exception}];
+        });
+    }
 
     function upsertScheduleCommitment(input={}){
       if(globalThis.ReadyFamilySession && cleanText(input.source)==='PARENT_ADMIN_UI'){
@@ -76,13 +125,26 @@
       const title=cleanText(input.title); if(!title) throw new Error('title required');
       return mutate(s=>{
         const id=cleanText(input.commitment_id)||makeId('commitment');
-        const item={
+        const recurrence=cleanText(input.recurrence)||null;
+        const weekday=Number.isInteger(input.weekday)?input.weekday:null;
+        const start=cleanText(input.start)||null;
+        const end=cleanText(input.end)||null;
+        if(recurrence==='WEEKLY'){
+          if(!(weekday>=0&&weekday<=6))throw new Error('weekday required');
+          if(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start)throw new Error('valid start/end required');
+        }
+        const item=rebuildProjection?.scheduleCommitment?.(input,{id,now:new Date().toISOString()})||{
           commitment_id:id,
           title,
           category:cleanText(input.category)||'OTHER',
-          start_at:input.start_at||null,
-          end_at:input.end_at||null,
-          recurrence:input.recurrence||null,
+          start_at:recurrence==='WEEKLY'?null:(input.start_at||null),
+          end_at:recurrence==='WEEKLY'?null:(input.end_at||null),
+          recurrence:recurrence==='WEEKLY'?'WEEKLY':null,
+          weekday:recurrence==='WEEKLY'?weekday:null,
+          start:recurrence==='WEEKLY'?start:null,
+          end:recurrence==='WEEKLY'?end:null,
+          valid_from:cleanText(input.valid_from)||null,
+          valid_until:cleanText(input.valid_until)||null,
           confirmed:input.confirmed!==false,
           planner_movable:!!input.planner_movable,
           parent_editable:input.parent_editable!==false,
@@ -91,7 +153,59 @@
         };
         const i=s.schedule_commitments.findIndex(x=>x.commitment_id===id);
         if(i>=0)s.schedule_commitments[i]=item;else s.schedule_commitments.push(item);
+        markReflowReview(s,'SCHEDULE_CHANGED');
         return item;
+      });
+    }
+
+    function upsertScheduleException(input={}){
+      if(globalThis.ReadyFamilySession){
+        const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
+        if(!gate?.ok)throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
+      }
+      const commitmentId=cleanText(input.commitment_id);
+      const date=cleanText(input.date);
+      const type=cleanText(input.type).toUpperCase();
+      if(!commitmentId||!/^\d{4}-\d{2}-\d{2}$/.test(date))return {ok:false,reason:'COMMITMENT_AND_DATE_REQUIRED'};
+      if(!['SKIP','REPLACE'].includes(type))return {ok:false,reason:'INVALID_EXCEPTION_TYPE'};
+      const start=cleanText(input.start)||null,end=cleanText(input.end)||null;
+      if(type==='REPLACE'&&(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start))return {ok:false,reason:'VALID_REPLACEMENT_TIME_REQUIRED'};
+      return mutate(s=>{
+        const commitment=s.schedule_commitments.find(x=>x.commitment_id===commitmentId&&x.recurrence==='WEEKLY');
+        if(!commitment)return {ok:false,reason:'WEEKLY_COMMITMENT_NOT_FOUND'};
+        const key=commitmentId+'@'+date;
+        const item={
+          exception_id:cleanText(input.exception_id)||key,
+          commitment_id:commitmentId,
+          date,
+          type,
+          start:type==='REPLACE'?start:null,
+          end:type==='REPLACE'?end:null,
+          note:cleanText(input.note)||null,
+          source:cleanText(input.source)||'PARENT_ADMIN_UI',
+          updated_at:new Date().toISOString()
+        };
+        const i=s.schedule_exceptions.findIndex(x=>x.commitment_id===commitmentId&&x.date===date);
+        if(i>=0)s.schedule_exceptions[i]=item;else s.schedule_exceptions.push(item);
+        markReflowReview(s,'SCHEDULE_EXCEPTION_CHANGED');
+        return {ok:true,item:{...item}};
+      });
+    }
+
+    function removeScheduleException(input={}){
+      if(globalThis.ReadyFamilySession){
+        const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
+        if(!gate?.ok)throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
+      }
+      const id=cleanText(input.exception_id);
+      const commitmentId=cleanText(input.commitment_id);
+      const date=cleanText(input.date);
+      return mutate(s=>{
+        const before=s.schedule_exceptions.length;
+        s.schedule_exceptions=s.schedule_exceptions.filter(x=>id?x.exception_id!==id:!(x.commitment_id===commitmentId&&x.date===date));
+        if(before===s.schedule_exceptions.length)return {ok:false,reason:'SCHEDULE_EXCEPTION_NOT_FOUND'};
+        markReflowReview(s,'SCHEDULE_EXCEPTION_REMOVED');
+        return {ok:true};
       });
     }
 
@@ -108,7 +222,7 @@
       if(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start) throw new Error('valid start/end required');
       return mutate(s=>{
         const id=cleanText(input.availability_id)||makeId('availability');
-        const item={
+        const item=rebuildProjection?.availabilityWindow?.(input,{id,now:new Date().toISOString()})||{
           availability_id:id,date:recurrence==='WEEKLY'?null:date,start,end,
           recurrence:recurrence==='WEEKLY'?'WEEKLY':null,
           weekday:recurrence==='WEEKLY'?weekday:null,
@@ -121,7 +235,46 @@
         };
         const i=s.daily_availability_windows.findIndex(x=>x.availability_id===id);
         if(i>=0)s.daily_availability_windows[i]=item;else s.daily_availability_windows.push(item);
+        markReflowReview(s,'AVAILABILITY_CHANGED');
         return item;
+      });
+    }
+
+    function upsertAvailabilityException(input={}){
+      if(globalThis.ReadyFamilySession){
+        const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
+        if(!gate?.ok)throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
+      }
+      const availabilityId=cleanText(input.availability_id);
+      const date=cleanText(input.date);
+      const type=cleanText(input.type).toUpperCase();
+      if(!availabilityId||!/^\d{4}-\d{2}-\d{2}$/.test(date))return {ok:false,reason:'AVAILABILITY_AND_DATE_REQUIRED'};
+      if(!['SKIP','REPLACE'].includes(type))return {ok:false,reason:'INVALID_EXCEPTION_TYPE'};
+      const start=cleanText(input.start)||null,end=cleanText(input.end)||null;
+      if(type==='REPLACE'&&(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start))return {ok:false,reason:'VALID_REPLACEMENT_TIME_REQUIRED'};
+      return mutate(s=>{
+        const source=s.daily_availability_windows.find(x=>x.availability_id===availabilityId&&x.recurrence==='WEEKLY');
+        if(!source)return {ok:false,reason:'WEEKLY_AVAILABILITY_NOT_FOUND'};
+        const item={exception_id:cleanText(input.exception_id)||(availabilityId+'@'+date),availability_id:availabilityId,date,type,start:type==='REPLACE'?start:null,end:type==='REPLACE'?end:null,note:cleanText(input.note)||null,source:cleanText(input.source)||'PARENT_ADMIN_UI',updated_at:new Date().toISOString()};
+        const i=s.availability_exceptions.findIndex(x=>x.availability_id===availabilityId&&x.date===date);
+        if(i>=0)s.availability_exceptions[i]=item;else s.availability_exceptions.push(item);
+        markReflowReview(s,'AVAILABILITY_EXCEPTION_CHANGED');
+        return {ok:true,item:{...item}};
+      });
+    }
+
+    function removeAvailabilityException(input={}){
+      if(globalThis.ReadyFamilySession){
+        const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
+        if(!gate?.ok)throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
+      }
+      const id=cleanText(input.exception_id),availabilityId=cleanText(input.availability_id),date=cleanText(input.date);
+      return mutate(s=>{
+        const before=s.availability_exceptions.length;
+        s.availability_exceptions=s.availability_exceptions.filter(x=>id?x.exception_id!==id:!(x.availability_id===availabilityId&&x.date===date));
+        if(before===s.availability_exceptions.length)return {ok:false,reason:'AVAILABILITY_EXCEPTION_NOT_FOUND'};
+        markReflowReview(s,'AVAILABILITY_EXCEPTION_REMOVED');
+        return {ok:true};
       });
     }
 
@@ -134,7 +287,9 @@
       return mutate(s=>{
         const before=s.daily_availability_windows.length;
         s.daily_availability_windows=s.daily_availability_windows.filter(x=>x.availability_id!==target);
-        return before===s.daily_availability_windows.length?{ok:false,reason:'AVAILABILITY_NOT_FOUND'}:{ok:true,availability_id:target};
+        if(before===s.daily_availability_windows.length)return {ok:false,reason:'AVAILABILITY_NOT_FOUND'};
+        markReflowReview(s,'AVAILABILITY_REMOVED');
+        return {ok:true,availability_id:target};
       });
     }
 
@@ -142,6 +297,7 @@
       const s=load(),out={};
       for(const date of dates||[]){
         const dow=parseLocal(date,'12:00').getDay();
+        const exceptionByAvailability=new Map((s.availability_exceptions||[]).filter(x=>x.date===date).map(x=>[x.availability_id,x]));
         out[date]=(s.daily_availability_windows||[])
           .filter(x=>x.confirmed!==false)
           .filter(x=>{
@@ -149,14 +305,17 @@
               if(Number(x.weekday)!==dow)return false;
               if(x.valid_from&&date<x.valid_from)return false;
               if(x.valid_until&&date>x.valid_until)return false;
+              if(exceptionByAvailability.get(x.availability_id)?.type==='SKIP')return false;
               return true;
             }
             return x.date===date;
           })
           .sort((a,b)=>String(a.start).localeCompare(String(b.start)))
-          .map(x=>x.recurrence==='WEEKLY'
-            ? {start:x.start,end:x.end,availability_id:x.availability_id,source:x.source,recurrence:'WEEKLY',weekday:Number(x.weekday)}
-            : {start:x.start,end:x.end,availability_id:x.availability_id,source:x.source});
+          .map(x=>{
+            const exception=exceptionByAvailability.get(x.availability_id)||null;
+            if(x.recurrence==='WEEKLY')return {start:exception?.type==='REPLACE'?(exception.start||x.start):x.start,end:exception?.type==='REPLACE'?(exception.end||x.end):x.end,availability_id:x.availability_id,source:x.source,recurrence:'WEEKLY',weekday:Number(x.weekday),availability_exception:exception};
+            return {start:x.start,end:x.end,availability_id:x.availability_id,source:x.source};
+          });
       }
       return out;
     }
@@ -222,7 +381,12 @@
       const ids=new Set((todoIds||[]).map(cleanText).filter(Boolean));
       const allowedStates=new Set(Array.isArray(options.allowed_states)&&options.allowed_states.length?options.allowed_states:['PLANNED']);
       return load().dated_todos.filter(x=>ids.has(x.todo_id)&&x.date===date&&allowedStates.has(x.state)).map(x=>({
-        todo_id:x.todo_id,label:x.label,date:x.date,source:x.source,
+        todo_id:x.todo_id,label:x.label,date:x.date,source:x.source,subject:x.subject||null,
+        matched_domain:x.matched_domain||null,method_variant:x.method_variant||null,
+        concept_skill_target:x.concept_skill_target||null,
+        divisible_boundary:x.divisible_boundary||null,
+        confidence:Number.isFinite(x.confidence)?x.confidence:null,
+        unresolved_flags:Array.isArray(x.unresolved_flags)?[...x.unresolved_flags]:[],
         assignment_id:x.assignment_id,analysis_id:x.analysis_id,learning_unit_id:x.learning_unit_id,
         template_id:x.template_id,allocation_run_id:x.allocation_run_id,
         activity_types:Array.isArray(x.activity_types)?x.activity_types:[],
@@ -314,6 +478,33 @@
       });
     }
 
+    function isEnglishAcademyCommitment(item={}){
+      const text=(cleanText(item.title)+' '+cleanText(item.category)).toUpperCase();
+      const hasEnglish=/영어|ENGLISH/.test(text);
+      const hasAcademy=/학원|ACADEMY/.test(text);
+      return hasEnglish&&hasAcademy;
+    }
+
+    function operatingRuleForUnit(unit={},date,scheduleByDate={}){
+      const target=cleanText(unit.concept_skill_target).toUpperCase();
+      const isVocabulary=target==='VOCABULARY';
+      if(!isVocabulary)return null;
+      const academy=(scheduleByDate[date]||[]).find(isEnglishAcademyCommitment);
+      if(!academy)return null;
+      return {
+        rule_id:'ENGLISH_ACADEMY_MORNING_VOCAB_REVIEW',
+        preferred_daypart:'MORNING',
+        evidence:{
+          commitment_id:academy.commitment_id||null,
+          commitment_title:academy.title||null,
+          commitment_category:academy.category||null,
+          academy_date:date,
+          learning_unit_id:unit.learning_unit_id||null,
+          concept_skill_target:unit.concept_skill_target||null
+        }
+      };
+    }
+
     function allocateLearningUnits(input={}){
       const assignmentId=cleanText(input.assignment_id);if(!assignmentId)return {ok:false,reason:'ASSIGNMENT_ID_REQUIRED'};
       const domain=input.domain_state||globalThis.ReadyAssignments?.load?.();
@@ -341,7 +532,7 @@
             difficulty:Number.isFinite(t.difficulty)?t.difficulty:3,
             recovery_need:t.recovery_need||'MEDIUM'
           }))]));
-        const scheduleByDate=Object.fromEntries(dates.map(d=>[d,(s.schedule_commitments||[]).filter(x=>x.confirmed!==false&&x.start_at&&x.end_at&&String(x.start_at).slice(0,10)===d&&String(x.end_at).slice(0,10)===d)]));
+        const scheduleByDate=Object.fromEntries(dates.map(d=>[d,scheduleCommitmentsForDate(d,s)]));
         const proposals=[];
         for(const unit of units){
           const existing=s.dated_todos.find(t=>t.learning_unit_id===unit.learning_unit_id&&isOpenTodo(t));
@@ -351,7 +542,10 @@
           const unitScore=Number.isFinite(unitLoad.score)?unitLoad.score:3;
           const unitDifficulty=Number.isFinite(unitLoad.difficulty)?unitLoad.difficulty:3;
           const unitRecovery=unitLoad.recovery_need||'MEDIUM';
+          const operatingRuleByDate=Object.fromEntries(dates.map(d=>[d,operatingRuleForUnit(unit,d,scheduleByDate)]));
           const date=[...dates].sort((a,b)=>{
+            const ar=!!operatingRuleByDate[a],br=!!operatingRuleByDate[b];
+            if(ar!==br)return ar?-1:1;
             const wa=freeWindowByDate[a],wb=freeWindowByDate[b];
             if(wa.known||wb.known){
               if(wa.known!==wb.known)return wa.known?-1:1;
@@ -396,9 +590,10 @@
             return score(a)-score(b)||a.localeCompare(b);
           })[0];
           loadByDate[date].push({tags,score:unitScore,difficulty:unitDifficulty,recovery_need:unitRecovery});
+          const operatingRule=operatingRuleByDate[date]||null;
           const templateId=`template_${unit.learning_unit_id}`;
           const factRevision=Number(fact.fact_revision)||1;
-          const template={template_id:templateId,title:`${unit.subject} · ${unit.source_range||unit.concept_skill_target}`,subject:unit.subject,assignment_cycle:fact.assignment_cycle,learning_units:[unit.learning_unit_id],provenance:{kind:'LEARNING_MASTER_OUTPUT',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:factRevision},confirmation_state:'CONFIRMED',deadline_date:fact.deadline_boundary||null,estimated_minutes:null,planner_estimated_minutes:null,allocation_priority:100,required_today:false,preferred_days:[],updated_at:new Date().toISOString()};
+          const template={template_id:templateId,title:`${unit.subject} · ${unit.source_range||unit.concept_skill_target}`,subject:unit.subject,assignment_cycle:fact.assignment_cycle,learning_units:[unit.learning_unit_id],provenance:{kind:'LEARNING_MASTER_OUTPUT',assignment_id:assignmentId,analysis_id:analysis.analysis_id,fact_revision:factRevision},confirmation_state:'CONFIRMED',deadline_date:fact.deadline_boundary||null,estimated_minutes:null,planner_estimated_minutes:null,allocation_priority:operatingRule?20:100,required_today:!!operatingRule,preferred_days:[],operating_rule:operatingRule?.rule_id||null,preferred_daypart:operatingRule?.preferred_daypart||null,operating_rule_evidence:operatingRule?.evidence||null,updated_at:new Date().toISOString()};
           const ti=s.homework_templates.findIndex(x=>x.template_id===templateId);if(ti>=0)s.homework_templates[ti]=template;else s.homework_templates.push(template);
           proposals.push({
             decision:'PROPOSE',date,label:template.title,subject:unit.subject,assignment_id:assignmentId,analysis_id:analysis.analysis_id,
@@ -406,6 +601,12 @@
             learning_unit_id:unit.learning_unit_id,template_id:templateId,
             activity_types:unit.activity_types,
             activity_sequence:unit.activity_sequence||[],
+            matched_domain:unit.analysis_provenance?.learning_reference?.matched_domain||null,
+            method_variant:unit.analysis_provenance?.learning_reference?.method_variant||null,
+            concept_skill_target:unit.concept_skill_target||null,
+            divisible_boundary:unit.divisible_boundary||null,
+            confidence:Number.isFinite(unit.confidence)?unit.confidence:null,
+            unresolved_flags:Array.isArray(unit.unresolved_flags)?[...unit.unresolved_flags]:[],
             cognitive_load_profile:unit.cognitive_load_profile,
             activity_load_score:unitScore,
             difficulty:unitDifficulty,
@@ -413,6 +614,9 @@
             review_policy:unit.review_policy||'RESULT_DEPENDENT',
             parent_help_dependency:unit.parent_help_dependency||'UNRESOLVED',
             prerequisite:unit.prerequisite,
+            operating_rule:operatingRule?.rule_id||null,
+            preferred_daypart:operatingRule?.preferred_daypart||null,
+            operating_rule_evidence:operatingRule?.evidence||null,
             cross_revision_learning_signal:crossRevisionLearningSignal({
               assignment_id:assignmentId,
               subject:unit.subject,
@@ -437,10 +641,18 @@
             fact_revision:Number(p.fact_revision)||Number(run.fact_revision)||1,
             learning_unit_id:p.learning_unit_id,template_id:p.template_id,allocation_run_id:runId,
             activity_types:p.activity_types,activity_sequence:p.activity_sequence||[],
+            matched_domain:p.matched_domain||null,method_variant:p.method_variant||null,
+            concept_skill_target:p.concept_skill_target||null,
+            divisible_boundary:p.divisible_boundary||null,
+            confidence:Number.isFinite(p.confidence)?p.confidence:null,
+            unresolved_flags:Array.isArray(p.unresolved_flags)?[...p.unresolved_flags]:[],
             cognitive_load_profile:p.cognitive_load_profile,
             activity_load_score:p.activity_load_score,difficulty:p.difficulty,recovery_need:p.recovery_need,
             free_window_evidence:p.free_window_evidence||null,
             review_policy:p.review_policy,parent_help_dependency:p.parent_help_dependency,
+            operating_rule:p.operating_rule||null,
+            preferred_daypart:p.preferred_daypart||null,
+            operating_rule_evidence:p.operating_rule_evidence||null,
             source:'PLANNER_V2_ALLOCATION',source_actor:'PLANNER_MAIN',
             provenance:{assignment_id:p.assignment_id,analysis_id:p.analysis_id,learning_unit_id:p.learning_unit_id,allocation_run_id:runId,fact_revision:Number(p.fact_revision)||Number(run.fact_revision)||1},
             order:created.length,state:'PLANNED',estimated_minutes:null,created_at:new Date().toISOString(),updated_at:new Date().toISOString()
@@ -458,13 +670,12 @@
         const nextDepth=Math.max(0,Number(source.provenance?.carry_over_depth)||0)+1;
         const template=s.homework_templates.find(x=>x.template_id===source.template_id)||null;
         const deadline=cleanText(template?.deadline_date)||null;
-        const deadlineExceeded=deadline&&date>deadline;
-        const nearDeadline=deadline&&date>=addDays(deadline,-1);
         const maxAutoDepth=Math.max(1,Number(input.max_auto_depth)||3);
-        if(deadlineExceeded||nextDepth>maxAutoDepth||(nearDeadline&&nextDepth>=maxAutoDepth)){
+        const escalation=rebuildPolicy?.carryEscalation?.({nextDepth,deadline,targetDate:date,maxAutoDepth})||(()=>{const deadlineExceeded=deadline&&date>deadline;const nearDeadline=deadline&&date>=addDays(deadline,-1);return {required:!!(deadlineExceeded||nextDepth>maxAutoDepth||(nearDeadline&&nextDepth>=maxAutoDepth)),reason:deadlineExceeded?'DEADLINE_EXCEEDED':nearDeadline?'REPEATED_CARRY_NEAR_DEADLINE':nextDepth>maxAutoDepth?'REPEATED_CARRY_LIMIT':null}})();
+        if(escalation.required){
           carry.resolution_required=true;
           carry.allocation_ready=false;
-          carry.escalation_reason=deadlineExceeded?'DEADLINE_EXCEEDED':nearDeadline?'REPEATED_CARRY_NEAR_DEADLINE':'REPEATED_CARRY_LIMIT';
+          carry.escalation_reason=escalation.reason;
           carry.escalation_level='PARENT_LEARNING_MASTER_REVIEW';
           carry.escalated_at=new Date().toISOString();
           carry.next_carry_over_depth=nextDepth;
@@ -493,6 +704,9 @@
           recovery_need:source.recovery_need||null,
           review_policy:source.review_policy||null,
           parent_help_dependency:source.parent_help_dependency||null,
+          operating_rule:source.operating_rule||null,
+          preferred_daypart:source.preferred_daypart||null,
+          operating_rule_evidence:source.operating_rule_evidence||null,
           estimated_minutes:Number.isFinite(source.estimated_minutes)?source.estimated_minutes:null,
           source:'PLANNER_V2_CARRY_OVER',
           source_actor:'PLANNER_MAIN',
@@ -542,14 +756,14 @@
     }
 
     function commitmentIntervals(state,date){
-      return state.schedule_commitments
+      return scheduleCommitmentsForDate(date,state)
         .filter(x=>x.confirmed!==false && x.start_at && x.end_at)
-        .filter(x=>String(x.start_at).slice(0,10)===date && String(x.end_at).slice(0,10)===date)
         .map(x=>({
           start:parseLocal(date,String(x.start_at).slice(11,16)),
           end:parseLocal(date,String(x.end_at).slice(11,16)),
           commitment_id:x.commitment_id,
-          title:x.title
+          title:x.title,
+          schedule_exception:x.schedule_exception||null
         }))
         .filter(x=>x.end>x.start);
     }
@@ -733,18 +947,20 @@
     function recordSessionOutcome(input={}){
       const todoId=cleanText(input.todo_id); if(!todoId) return {ok:false,reason:'TODO_ID_REQUIRED'};
       const readyState=cleanText(input.ready_state);
-      const mapped=READY_TO_TODO[readyState]||readyState;
-      if(!TODO_STATES.has(mapped)) return {ok:false,reason:'INVALID_READY_STATE'};
+      const mapped=rebuildPolicy?.mapReadyState?.(readyState)??(READY_TO_TODO[readyState]||readyState);
+      if(!mapped||!TODO_STATES.has(mapped)) return {ok:false,reason:'INVALID_READY_STATE'};
       const actualMs=Number.isFinite(input.actual_ms)?Math.max(0,input.actual_ms):0;
       const actualMinutes=Math.round(actualMs/60000);
       return mutate(s=>{
         const todo=s.dated_todos.find(x=>x.todo_id===todoId);
         if(!todo)return {ok:false,reason:'TODO_NOT_FOUND'};
         const sessionId=cleanText(input.session_id)||null;
-        if(todo.active_session_id&&sessionId&&todo.active_session_id!==sessionId){
-          return {ok:false,reason:'SESSION_OWNERSHIP_CONFLICT',todo_id:todoId,active_session_id:todo.active_session_id};
+        const ownership=rebuildPolicy?.validateSessionOwnership?.(todo,sessionId)||{ok:!(todo.active_session_id&&sessionId&&todo.active_session_id!==sessionId),reason:'SESSION_OWNERSHIP_CONFLICT',active_session_id:todo.active_session_id};
+        if(!ownership.ok){
+          return {ok:false,reason:ownership.reason||'SESSION_OWNERSHIP_CONFLICT',todo_id:todoId,active_session_id:ownership.active_session_id||todo.active_session_id};
         }
-        if(todo.state!=='IN_PROGRESS'&&!['PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].includes(todo.state)){
+        const finishable=rebuildPolicy?.canFinishTodo?.(todo)??(todo.state==='IN_PROGRESS'||['PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].includes(todo.state));
+        if(!finishable){
           return {ok:false,reason:'TODO_NOT_FINISHABLE',todo_id:todoId,state:todo.state};
         }
         todo.state=mapped;
@@ -780,6 +996,8 @@
             time_attribution:cleanText(input.time_attribution)||'DIRECT_TASK_OBSERVATION',
             session_total_actual_ms:Number.isFinite(input.session_total_actual_ms)?Math.max(0,input.session_total_actual_ms):null,
             session_task_count:Number.isFinite(input.session_task_count)?Math.max(1,Math.floor(input.session_task_count)):null,
+            learning_evidence:Array.isArray(input.learning_evidence)?input.learning_evidence.slice(-120):[],
+            completed_specialists:Array.isArray(input.completed_specialists)?[...new Set(input.completed_specialists.map(cleanText).filter(Boolean))]:[],
             at:eventAt
           };
           s.execution_observations.push(obs);
@@ -801,14 +1019,17 @@
             session_id:cleanText(input.session_id)||null,
             task_id:cleanText(input.task_id)||null,
             state:mapped,
+            evidence_types:[...new Set((Array.isArray(input.learning_evidence)?input.learning_evidence:[]).map(x=>cleanText(x?.evidence_type)).filter(Boolean))],
+            completed_specialists:Array.isArray(input.completed_specialists)?[...new Set(input.completed_specialists.map(cleanText).filter(Boolean))]:[],
             source:'READY_SESSION_OUTCOME',
             at:eventAt
           });
           s.progress_events=s.progress_events.slice(-500);
         }
 
-        const carryEligible=['PARTIAL','DEFERRED'].includes(mapped);
-        const carryNeedsResolution=['BLOCKED','WAITING_FOR_PARENT'].includes(mapped);
+        const carryPolicy=rebuildPolicy?.carryPolicyForState?.(mapped)||{carryEligible:['PARTIAL','DEFERRED'].includes(mapped),resolutionRequired:['BLOCKED','WAITING_FOR_PARENT'].includes(mapped),resolvesOpenCarry:mapped==='COMPLETED'};
+        const carryEligible=carryPolicy.carryEligible;
+        const carryNeedsResolution=carryPolicy.resolutionRequired;
         const existing=s.carry_over_queue.find(x=>x.source_todo_id===todoId&&x.status==='OPEN');
         if((carryEligible||carryNeedsResolution)&&!existing){
           s.carry_over_queue.push({
@@ -828,10 +1049,12 @@
             resolution_required:carryNeedsResolution,
             planned_minutes:Number.isFinite(todo.estimated_minutes)?todo.estimated_minutes:null,
             actual_minutes:actualMinutes,
+            evidence_types:[...new Set((Array.isArray(input.learning_evidence)?input.learning_evidence:[]).map(x=>cleanText(x?.evidence_type)).filter(Boolean))],
+            completed_specialists:Array.isArray(input.completed_specialists)?[...new Set(input.completed_specialists.map(cleanText).filter(Boolean))]:[],
             created_at:new Date().toISOString()
           });
         }
-        if(mapped==='COMPLETED'){
+        if(carryPolicy.resolvesOpenCarry){
           s.carry_over_queue.forEach(x=>{
             if(x.source_todo_id===todoId&&x.status==='OPEN'){
               x.status='RESOLVED';
@@ -1069,6 +1292,137 @@
       return load().adaptive_estimate_proposals.filter(x=>x.status==='PENDING').map(x=>({...x}));
     }
 
+    function planWeeklyReflow(input={}){
+      const start=cleanText(input.start_date)||dateKey();
+      const days=Number.isFinite(input.days)?Math.max(1,Math.min(14,Math.floor(input.days))):7;
+      const dates=Array.from({length:days},(_,i)=>addDays(start,i));
+      const windowsByDate=candidateWindowsByDate(dates);
+      return mutate(s=>{
+        const existingPending=s.weekly_reflow_runs.find(x=>x.status==='PENDING'&&x.start_date===start&&x.days===days);
+        if(existingPending){clearReflowReview(s);return {ok:true,reused:true,run:{...existingPending}};}
+
+        const templateById=new Map((s.homework_templates||[]).map(x=>[x.template_id,x]));
+        const evidenceByDate=Object.fromEntries(dates.map(d=>[d,freeWindowEvidence(s,d,windowsByDate[d]||[])]));
+        const protectedTodos=(s.dated_todos||[]).filter(t=>dates.includes(t.date)&&(
+          t.state!=='PLANNED'||!/^PLANNER/.test(t.source||'')||!!t.active_session_id
+        ));
+        const movable=(s.dated_todos||[]).filter(t=>dates.includes(t.date)&&t.state==='PLANNED'&&/^PLANNER/.test(t.source||'')&&!t.active_session_id);
+
+        const load=Object.fromEntries(dates.map(d=>[d,{minutes:0,semantic:0,count:0}]));
+        for(const t of protectedTodos){
+          const template=templateById.get(t.template_id);
+          const est=Number.isFinite(t.estimated_minutes)?t.estimated_minutes:(Number.isFinite(template?.planner_estimated_minutes)?template.planner_estimated_minutes:null);
+          if(est!==null)load[t.date].minutes+=est;
+          load[t.date].semantic+=Number.isFinite(t.activity_load_score)?t.activity_load_score:(Number.isFinite(t.difficulty)?t.difficulty:3);
+          load[t.date].count++;
+        }
+
+        const ordered=[...movable].sort((a,b)=>{
+          const ta=templateById.get(a.template_id),tb=templateById.get(b.template_id);
+          const ad=ta?.deadline_date||'9999-12-31',bd=tb?.deadline_date||'9999-12-31';
+          if(ad!==bd)return ad.localeCompare(bd);
+          const ac=Number(a.provenance?.carry_over_depth)||0,bc=Number(b.provenance?.carry_over_depth)||0;
+          if(ac!==bc)return bc-ac;
+          return (a.order??999)-(b.order??999)||String(a.label||'').localeCompare(String(b.label||''),'ko');
+        });
+
+        const moves=[];
+        for(const todo of ordered){
+          const template=templateById.get(todo.template_id);
+          const deadline=cleanText(template?.deadline_date)||null;
+          const est=Number.isFinite(todo.estimated_minutes)?todo.estimated_minutes:(Number.isFinite(template?.planner_estimated_minutes)?template.planner_estimated_minutes:null);
+          const semantic=Number.isFinite(todo.activity_load_score)?todo.activity_load_score:(Number.isFinite(todo.difficulty)?todo.difficulty:3);
+          let eligible=dates.filter(d=>!deadline||d<=deadline);
+          if(todo.operating_rule==='ENGLISH_ACADEMY_MORNING_VOCAB_REVIEW'){
+            const academyDates=eligible.filter(d=>scheduleCommitmentsForDate(d,s).some(isEnglishAcademyCommitment));
+            if(academyDates.length)eligible=academyDates;
+          }
+          if(!eligible.length)continue;
+          const anyKnown=eligible.some(d=>evidenceByDate[d]?.known);
+          const ranked=eligible.map(d=>{
+            const ev=evidenceByDate[d];
+            const capacityPenalty=(anyKnown&&!ev.known)?100000:0;
+            const overflow=(ev?.known&&est!==null)?Math.max(0,(load[d].minutes+est)-(ev.total_free_minutes||0)):0;
+            const overflowPenalty=overflow*1000;
+            const semanticPenalty=load[d].semantic*100;
+            const countPenalty=load[d].count*10;
+            const churnPenalty=d===todo.date?0:1;
+            return {date:d,score:capacityPenalty+overflowPenalty+semanticPenalty+countPenalty+churnPenalty,ev};
+          }).sort((a,b)=>a.score-b.score||a.date.localeCompare(b.date));
+          const chosen=ranked[0]?.date||todo.date;
+          if(est!==null)load[chosen].minutes+=est;
+          load[chosen].semantic+=semantic;
+          load[chosen].count++;
+          if(chosen!==todo.date){
+            moves.push({
+              todo_id:todo.todo_id,
+              label:todo.label,
+              from_date:todo.date,
+              to_date:chosen,
+              template_id:todo.template_id||null,
+              deadline_date:deadline,
+              estimated_minutes:est,
+              semantic_load:semantic,
+              reason:evidenceByDate[chosen]?.known?'FREE_WINDOW_AND_LOAD_BALANCE':'SEMANTIC_LOAD_BALANCE'
+            });
+          }
+        }
+
+        const run={
+          reflow_run_id:makeId('reflow'),
+          start_date:start,
+          days,
+          status:'PENDING',
+          authority:'PLANNER_PROPOSAL_HUMAN_APPROVAL_REQUIRED',
+          movable_count:movable.length,
+          protected_count:protectedTodos.length,
+          moves,
+          evidence_by_date:evidenceByDate,
+          created_at:new Date().toISOString()
+        };
+        s.weekly_reflow_runs.push(run);
+        s.weekly_reflow_runs=s.weekly_reflow_runs.slice(-50);
+        clearReflowReview(s);
+        return {ok:true,reused:false,run:{...run}};
+      });
+    }
+
+    function decideWeeklyReflow(runId,input={}){
+      const id=cleanText(runId);if(!id)return {ok:false,reason:'REFLOW_RUN_ID_REQUIRED'};
+      const decision=cleanText(input.decision).toUpperCase();
+      if(!['CONFIRM','REJECT'].includes(decision))return {ok:false,reason:'INVALID_DECISION'};
+      return mutate(s=>{
+        const run=s.weekly_reflow_runs.find(x=>x.reflow_run_id===id);
+        if(!run)return {ok:false,reason:'REFLOW_RUN_NOT_FOUND'};
+        if(run.status!=='PENDING')return {ok:false,reason:'REFLOW_ALREADY_DECIDED',status:run.status};
+        run.status=decision==='CONFIRM'?'CONFIRMED':'REJECTED';
+        run.decision_actor=cleanText(input.actor)||'PARENT';
+        run.decided_at=new Date().toISOString();
+        const applied=[],skipped=[];
+        if(decision==='CONFIRM'){
+          for(const move of run.moves||[]){
+            const todo=s.dated_todos.find(x=>x.todo_id===move.todo_id);
+            if(!todo||todo.state!=='PLANNED'||todo.active_session_id||todo.date!==move.from_date){
+              skipped.push({todo_id:move.todo_id,reason:'TODO_CHANGED_SINCE_PROPOSAL'});
+              continue;
+            }
+            todo.date=move.to_date;
+            todo.reflow_run_id=run.reflow_run_id;
+            todo.reflow_reason=move.reason;
+            todo.updated_at=new Date().toISOString();
+            applied.push({todo_id:todo.todo_id,from_date:move.from_date,to_date:move.to_date});
+          }
+        }
+        run.applied=applied;
+        run.skipped=skipped;
+        return {ok:true,decision,status:run.status,applied,skipped,run:{...run}};
+      });
+    }
+
+    function pendingWeeklyReflows(){
+      return load().weekly_reflow_runs.filter(x=>x.status==='PENDING').map(x=>({...x}));
+    }
+
     function recordTaskState(input={}){
       const todoId=cleanText(input.todo_id); if(!todoId) return null;
       const requested=cleanText(input.ready_state);
@@ -1088,8 +1442,9 @@
           todo.active_task_id=cleanText(input.task_id)||null;
           todo.started_at=todo.started_at||input.at||new Date().toISOString();
         }else{
-          if(todo.active_session_id&&sessionId&&todo.active_session_id!==sessionId){
-            return {ok:false,reason:'SESSION_OWNERSHIP_CONFLICT',todo_id:todoId,active_session_id:todo.active_session_id};
+          const ownership=rebuildPolicy?.validateSessionOwnership?.(todo,sessionId)||{ok:!(todo.active_session_id&&sessionId&&todo.active_session_id!==sessionId),reason:'SESSION_OWNERSHIP_CONFLICT',active_session_id:todo.active_session_id};
+          if(!ownership.ok){
+            return {ok:false,reason:ownership.reason||'SESSION_OWNERSHIP_CONFLICT',todo_id:todoId,active_session_id:ownership.active_session_id||todo.active_session_id};
           }
           todo.state=mapped;
           todo.active_session_id=null;
@@ -1139,7 +1494,7 @@
     }
 
     function todayProjection(date=dateKey()){
-      return today(date).map(x=>({
+      return today(date).map(x=>rebuildProjection?.todayItem?.(x)||({
         todo_id:x.todo_id,
         assignment_id:x.assignment_id||null,
         analysis_id:x.analysis_id||null,
@@ -1147,6 +1502,13 @@
         template_id:x.template_id||null,
         allocation_run_id:x.allocation_run_id||null,
         label:x.label,
+        subject:x.subject||null,
+        matched_domain:x.matched_domain||null,
+        method_variant:x.method_variant||null,
+        concept_skill_target:x.concept_skill_target||null,
+        divisible_boundary:x.divisible_boundary||null,
+        confidence:Number.isFinite(x.confidence)?x.confidence:null,
+        unresolved_flags:Array.isArray(x.unresolved_flags)?[...x.unresolved_flags]:[],
         state:x.state,
         source:x.source,
         estimated_minutes:Number.isFinite(x.estimated_minutes)?x.estimated_minutes:null,
@@ -1173,6 +1535,13 @@
       for(const e of s.progress_events){
         if(e.todo_id&&!todoIds.has(e.todo_id))issues.push('ORPHAN_PROGRESS_EVENT');
       }
+      for(const ae of s.availability_exceptions){if(!['SKIP','REPLACE'].includes(ae.type))issues.push('AVAILABILITY_EXCEPTION_TYPE_INVALID');}
+      for(const e of s.schedule_exceptions){
+        if(!['SKIP','REPLACE'].includes(e.type))issues.push('SCHEDULE_EXCEPTION_TYPE_INVALID');
+      }
+      for(const r of s.weekly_reflow_runs){
+        if(!['PENDING','CONFIRMED','REJECTED'].includes(r.status))issues.push('WEEKLY_REFLOW_STATUS_INVALID');
+      }
       for(const p of s.adaptive_estimate_proposals){
         if(!['PENDING','CONFIRMED','REJECTED'].includes(p.status))issues.push('ADAPTIVE_ESTIMATE_STATUS_INVALID');
         if(!s.homework_templates.some(x=>x.template_id===p.template_id))issues.push('ORPHAN_ADAPTIVE_ESTIMATE_PROPOSAL');
@@ -1186,7 +1555,12 @@
       today,
       todayProjection,
       upsertScheduleCommitment,
+      scheduleCommitmentsForDate,
+      upsertScheduleException,
+      removeScheduleException,
       upsertDailyAvailabilityWindow,
+      upsertAvailabilityException,
+      removeAvailabilityException,
       removeDailyAvailabilityWindow,
       candidateWindowsByDate,
       upsertHomeworkTemplate,
@@ -1210,7 +1584,10 @@
       learningHistory,
       proposeEstimateAdjustment,
       decideEstimateAdjustment,
-      pendingEstimateAdjustments
+      pendingEstimateAdjustments,
+      planWeeklyReflow,
+      decideWeeklyReflow,
+      pendingWeeklyReflows
     };
   }
 

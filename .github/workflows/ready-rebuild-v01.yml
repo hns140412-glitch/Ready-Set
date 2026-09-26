@@ -1,0 +1,50 @@
+name: ready-set Rebuild V01 Foundation
+
+on:
+  push:
+    branches:
+      - taky/ready-rebuild-v01-2026-09-21
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rebuild-foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validate rebuild foundation
+        run: node REBUILD/validate-rebuild-v01.mjs
+      - name: Validate subject method routing
+        run: node tests/subject-method-routing.test.js
+      - name: Validate specialist routing
+        run: node tests/specialist-router.test.js
+      - name: Validate specialist handoff contract
+        run: node tests/specialist-handoff-contract.test.js
+      - name: Validate evidence ontology
+        run: node tests/evidence-ontology.test.js
+      - name: Validate learning routing roundtrip
+        run: node tests/learning-routing-roundtrip.test.js
+      - name: Validate evidence-aware review policy
+        run: node tests/evidence-aware-review-policy.test.js
+      - name: Guard JavaScript parseability
+        run: |
+          node --check app.js
+          node --check ready-planner-v01.js
+          node --check ready-runtime-v07.js
+          node --check ready-integration-v1.js
+          node --check src/integrations/specialist-router-runtime.js
+          node --check src/integrations/specialist-handoff-contract.js
+          node --check src/learning/evidence-ontology-runtime.js
+          node --check src/planner/planner-policy-runtime.js
+          node --check src/planner/planner-projection-runtime.js
+          node --check src/session/session-domain-runtime.js
+      - name: Guard legacy entrypoints remain available during migration
+        run: |
+          test -f app.js
+          test -f index.html

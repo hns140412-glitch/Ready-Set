@@ -386,9 +386,9 @@ assert.strictEqual(partialContextInterpreted.learning_units[0].analysis_provenan
 assert.strictEqual(standardMatcher.version,'0.4.1');
 assert.strictEqual(standardMatcher.OFFICIAL_STANDARD_DATASET.standard_codes_bound,true);
 assert.strictEqual(standardMatcher.OFFICIAL_STANDARD_DATASET.standard_code_binding,'CONDITIONAL_VERIFIED_RECORD_ONLY');
-assert.strictEqual(learning.version,'0.5.1');
+assert.strictEqual(learning.version,'0.6.0');
 
-assert.strictEqual(subjectMaster.version,'0.2.1');
+assert.strictEqual(subjectMaster.version,'0.3.0');
 const scienceSubjectGap=subjectMaster.resolve('과학',{teacher_instruction:'지층의 특징을 설명'});
 assert(scienceSubjectGap.unresolved.includes('TEXTBOOK_UNIT_TO_STANDARD_BINDING_REQUIRES_ACTUAL_BOOK_CONTEXT'));
 const scienceSubjectResolved=subjectMaster.resolve('과학',{grade:5,semester:1,unit_name:'1. 지층과 화석',teacher_instruction:'지층의 특징을 설명'});

@@ -102,3 +102,94 @@
 .captureReviewDraft small{margin-top:4px;color:var(--muted);line-height:1.45}
 .captureReviewDraft .captureWarnings{color:#8b5a2b}
 
+
+/* Ready Weekly final-composition delta: planner-first markers, no new IA. */
+.plannerDayChip{position:relative}
+.plannerDayChip.today:not(.on){box-shadow:inset 0 0 0 2px rgba(42,35,31,.22)}
+.plannerDayChip i{position:absolute;top:-7px;left:50%;transform:translateX(-50%);font-style:normal;font-size:7px;font-weight:950;letter-spacing:.04em;background:#fff7d6;color:#5c4a22;border:1px solid rgba(92,74,34,.14);border-radius:999px;padding:2px 5px;white-space:nowrap}
+.plannerDayChip.on i{background:#ffe572;color:#2a231f}
+.plannerWeekItem.beforeSchool{border-color:rgba(79,112,143,.18);background:rgba(237,246,252,.9)}
+.plannerWeekItem.beforeSchool .plannerDot{background:#6487a7}
+.plannerFreeWindows{margin-top:4px;padding:13px 14px;border-radius:18px;background:rgba(255,255,255,.52);border:1px dashed rgba(42,35,31,.14)}
+.plannerFreeHead{display:flex;align-items:end;justify-content:space-between;gap:10px}
+.plannerFreeHead b{font-size:12px}.plannerFreeHead small{font-size:9px;color:#81756d;text-align:right}
+.plannerFreeList{display:flex;gap:6px;overflow-x:auto;padding-top:9px;scrollbar-width:none}.plannerFreeList::-webkit-scrollbar{display:none}
+.plannerFreeList>span{flex:0 0 auto;min-width:108px;padding:9px 10px;border-radius:14px;background:rgba(255,248,231,.92);border:1px solid rgba(195,156,65,.16)}
+.plannerFreeList b,.plannerFreeList small{display:block}.plannerFreeList b{font-size:11px}.plannerFreeList small{margin-top:3px;font-size:8px;color:#8b765c}
+
+/* Daily Planner semantic completion — use existing truthful Planner windows. */
+.plannerRouteItem.fixed{border:1px solid rgba(180,137,37,.18);background:rgba(255,245,213,.88)}
+.plannerRouteItem.mission{border:1px solid rgba(42,35,31,.06)}
+.plannerDayFree{margin:4px 0 14px;padding:13px 14px;border:1px solid rgba(42,35,31,.08);border-radius:18px;background:rgba(255,255,255,.54)}
+.plannerFreeHead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.plannerFreeHead b{font-size:12px}.plannerFreeHead small{font-size:9px;color:#7a6f67}.plannerFreeList{display:flex;gap:7px;overflow-x:auto;padding-top:9px}.plannerFreeList>span{flex:0 0 auto;min-width:92px;padding:9px 10px;border-radius:13px;background:rgba(255,255,255,.9);border:1px solid rgba(42,35,31,.06)}.plannerFreeList b,.plannerFreeList small{display:block}.plannerFreeList b{font-size:11px}.plannerFreeList small{margin-top:2px;font-size:9px;color:#7a6f67}
+
+
+/* READY Planner visual hierarchy: world behind, Planner above.
+   This is an atmospheric slot only; it does not define canonical island topology. */
+.plannerView{
+  isolation:isolate;
+  background:
+    linear-gradient(180deg,rgba(243,231,211,.18) 0%,rgba(225,240,231,.18) 46%,rgba(218,235,237,.26) 100%),
+    #edf1e8;
+}
+.plannerView>.pageHeader,.plannerView>.plannerMain{position:relative;z-index:2}
+.plannerWorldLayer{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:
+  radial-gradient(70% 34% at 78% 17%,rgba(255,249,225,.92) 0%,rgba(255,249,225,0) 72%),
+  linear-gradient(180deg,#dce9df 0%,#e6efe6 33%,#bdd7d1 56%,#9fc6c4 100%)}
+.plannerWorldHorizon{position:absolute;left:-12%;right:-12%;top:34%;height:33%;background:
+  radial-gradient(60% 130% at 22% 100%,rgba(93,137,102,.78) 0 44%,transparent 45%),
+  radial-gradient(72% 145% at 72% 100%,rgba(75,126,91,.72) 0 42%,transparent 43%),
+  linear-gradient(180deg,transparent 0 48%,rgba(106,151,126,.35) 49% 100%);
+  filter:saturate(.82)}
+.plannerWorldLand{position:absolute;border-radius:50%;background:linear-gradient(180deg,rgba(117,160,105,.86),rgba(72,116,83,.9));box-shadow:0 18px 40px rgba(39,79,66,.18)}
+.plannerWorldLandA{width:310px;height:142px;right:-72px;top:43%;transform:rotate(-8deg)}
+.plannerWorldLandB{width:240px;height:106px;left:-92px;top:50%;transform:rotate(9deg);opacity:.78}
+.plannerWorldCamp{position:absolute;right:32px;top:41%;width:64px;height:42px;border-radius:10px 10px 16px 16px;background:rgba(74,73,54,.48);box-shadow:0 13px 0 -4px rgba(246,229,179,.42);transform:rotate(-2deg)}
+.plannerView .pageHeader{background:linear-gradient(180deg,rgba(247,246,238,.76),rgba(247,246,238,.18));backdrop-filter:blur(8px)}
+.plannerView .plannerHero{margin-top:4px;padding:16px 14px 14px;border:1px solid rgba(255,255,255,.44);border-radius:24px;background:linear-gradient(145deg,rgba(255,255,255,.70),rgba(250,247,238,.52));box-shadow:0 18px 42px rgba(56,77,67,.13);backdrop-filter:blur(16px) saturate(1.08)}
+.plannerView .plannerTabs{background:rgba(247,246,238,.44);border:1px solid rgba(255,255,255,.42);backdrop-filter:blur(15px)}
+.plannerView .plannerTabs button.on{background:rgba(255,255,255,.76);box-shadow:0 8px 20px rgba(42,61,54,.10)}
+.plannerView .plannerDayChip{background:rgba(255,255,255,.60);border:1px solid rgba(255,255,255,.34);backdrop-filter:blur(10px)}
+.plannerView .plannerDayChip.on{background:rgba(38,39,34,.92);border-color:rgba(255,255,255,.10)}
+.plannerView .plannerWeekItem,.plannerView .plannerRouteItem{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.50);box-shadow:0 10px 24px rgba(53,74,65,.08);backdrop-filter:blur(13px)}
+.plannerView .plannerWeekItem.fixed,.plannerView .plannerRouteItem.fixed{background:rgba(255,242,198,.76);border-color:rgba(255,239,185,.72)}
+.plannerView .plannerFreeWindows,.plannerView .plannerDayFree{background:rgba(246,251,247,.58);border-color:rgba(255,255,255,.44);backdrop-filter:blur(13px)}
+.plannerView .plannerFreeList>span{background:rgba(255,255,255,.68)}
+.plannerView .plannerAdminJump{background:rgba(255,255,255,.68);backdrop-filter:blur(10px)}
+.plannerView .plannerTodayJump{box-shadow:0 10px 20px rgba(30,38,34,.14)}
+@media (prefers-reduced-motion:no-preference){
+  .plannerWorldHorizon{animation:plannerWorldDrift 14s ease-in-out infinite alternate}
+  .plannerView .plannerPanel{animation:plannerPanelIn .28s ease both}
+}
+@keyframes plannerWorldDrift{from{transform:translate3d(-5px,0,0)}to{transform:translate3d(5px,-2px,0)}}
+@keyframes plannerPanelIn{from{opacity:.72;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.plannerWorldHorizon,.plannerView .plannerPanel{animation:none!important}}
+@media (min-width:700px){
+  .plannerView{background:#dfe9e2}
+  .plannerWorldLayer{inset:0 -28vw}
+}
+
+
+/* Ready Base Camp TODAY: Planner projection first, timer secondary. */
+#homeView{background:
+  radial-gradient(90% 42% at 72% 17%,rgba(255,246,218,.82) 0%,rgba(255,246,218,0) 72%),
+  linear-gradient(180deg,#dce9df 0%,#e7efe6 34%,#c4dcd4 62%,#aed0cd 100%)}
+#homeView .topbar{position:relative;z-index:3}
+#homeView:before{content:"";position:absolute;left:0;right:0;top:31%;height:42%;pointer-events:none;background:
+  radial-gradient(62% 112% at 20% 100%,rgba(86,136,96,.70) 0 45%,transparent 46%),
+  radial-gradient(70% 125% at 76% 100%,rgba(66,119,82,.67) 0 43%,transparent 44%);
+  opacity:.72}
+#homeView .homeMain{position:relative;z-index:2}
+.baseCampHero{min-height:352px;align-items:flex-start;padding-top:30px}
+.baseCampHero .heroCopy{width:100%;max-width:100%;padding:20px 18px 118px;border:1px solid rgba(255,255,255,.50);border-radius:28px;background:linear-gradient(145deg,rgba(255,255,255,.72),rgba(248,249,239,.50));box-shadow:0 20px 44px rgba(54,78,67,.14);backdrop-filter:blur(16px) saturate(1.06)}
+.baseCampHero .heroCopy h1{max-width:86%;font-size:38px;line-height:1.02;margin:10px 0 10px;letter-spacing:-.055em}
+.baseCampHero .heroCopy p{max-width:86%;font-size:12px;line-height:1.5;color:#5f6e64}
+.homeHeroStatus{display:flex;justify-content:space-between;align-items:center;margin-top:8px}.homeHeroStatus span{font-size:10px;font-weight:900;color:#68786d}.homeHeroStatus b{padding:6px 9px;border-radius:999px;background:rgba(38,48,42,.90);color:#fff;font-size:10px}
+.homePrimaryAction{min-height:46px;margin-top:16px;border:0;border-radius:15px;padding:0 16px;background:#252d28;color:#fff;font-size:12px;font-weight:900;box-shadow:0 10px 20px rgba(38,48,42,.14)}
+.homeTimerTool{top:auto;right:18px;bottom:14px;width:104px;height:94px;filter:none;opacity:.94}
+.homeTimerTool .watchCrown{display:none}.homeTimerTool .watchFace{left:0;top:0;width:88px;height:88px;border-width:6px;box-shadow:0 8px 18px rgba(45,60,52,.12);background:linear-gradient(145deg,#d9b989,#a9875e)}
+.homeTimerTool .watchFace:before{inset:18px;border-width:3px}.homeTimerTool .watchFace span{font-size:16px}.homeTimerTool>small{position:absolute;right:0;bottom:4px;padding:5px 7px;border-radius:999px;background:rgba(255,255,255,.82);font-size:8px;font-weight:900;color:#59675e}
+#homeView .homeGuideCard{background:rgba(255,255,255,.74);border-color:rgba(255,255,255,.54);backdrop-filter:blur(14px)}
+#homeView .commandCard{background:rgba(255,255,255,.68);border-color:rgba(255,255,255,.52);backdrop-filter:blur(14px)}
+#homeView .categoryGrid button{background:rgba(255,255,255,.66);border-color:rgba(255,255,255,.48);backdrop-filter:blur(12px)}
+#homeView .bottomNav{background:rgba(246,248,241,.88);border-top-color:rgba(67,91,77,.10)}

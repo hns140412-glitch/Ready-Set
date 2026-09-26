@@ -31,7 +31,7 @@ test('TODAY -> Mission -> Focus -> Wrap-up -> Result -> carry-over -> replan', a
   await expect(todayItem).toBeVisible();
   await todayItem.click();
 
-  await page.locator('[data-minutes="10"]').click();
+  await page.locator('#missionView [data-minutes="10"]').first().click();
   await page.locator('#startBtn').click();
   await expect(page.locator('#focusView')).toHaveClass(/active/);
   await expect(page.locator('#focusMission')).toContainText('E2E 사회 정리');

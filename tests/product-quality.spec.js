@@ -109,8 +109,10 @@ test('mobile product quality gate: planner/admin data survives reload and remain
 test('product integrity gate: navigation targets exist and unique action buttons are wired in app runtime', async ({page})=>{
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
   const audit=await page.evaluate(async()=>{
-    const [appSource,runtimeSource]=await Promise.all([fetch('./app.js').then(r=>r.text()),fetch('./ready-runtime-v07.js').then(r=>r.text())]);
-    const wiringSource=appSource+'\n'+runtimeSource;
+    const localScripts=[...document.scripts]
+      .map(script=>script.getAttribute('src'))
+      .filter(src=>src&&src.endsWith('.js')&&!src.startsWith('http'));
+    const wiringSource=(await Promise.all(localScripts.map(src=>fetch(src).then(r=>r.text())))).join('\n');
     const navButtons=[...document.querySelectorAll('[data-nav]')];
     const missingNav=navButtons
       .map(b=>b.dataset.nav)

@@ -1,0 +1,85 @@
+(function(root){
+  'use strict';
+
+  const CANDIDATES=Object.freeze([
+    'audio/mp4;codecs=mp4a.40.2',
+    'audio/mp4',
+    'audio/webm;codecs=opus',
+    'audio/webm'
+  ]);
+
+  function chooseMime(MediaRecorderCtor=root.MediaRecorder){
+    if(!MediaRecorderCtor)return '';
+    return CANDIDATES.find(m=>MediaRecorderCtor.isTypeSupported?.(m))||'';
+  }
+
+  function extensionFor(type=''){
+    return /audio\/(mp4|m4a)/.test(type)?'m4a':'webm';
+  }
+
+  function safeBaseName(name='Judy'){
+    return String(name||'Judy').replace(/[\\/:*?"<>|]/g,'_');
+  }
+
+  function filenameFor({profileName='Judy',date=new Date(),type='audio/webm'}={}){
+    const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,'0'),d=String(date.getDate()).padStart(2,'0');
+    return `${safeBaseName(profileName)}'s grammar recording ${y} ${m} ${d}.${extensionFor(type)}`;
+  }
+
+  function formatNote(type=''){
+    return /audio\/(mp4|m4a)/.test(type)
+      ?'실제 MP4/M4A 계열 오디오로 저장할 수 있는 브라우저입니다.'
+      :'이 브라우저의 원본 녹음 포맷은 WebM입니다. .m4a로 이름만 바꾸지 않으며, M4A 제출이 필요하면 별도 변환 계층이 필요합니다.';
+  }
+
+  function storeAudio(blob,name,type,{indexedDBImpl=root.indexedDB,now=Date.now}={}){
+    return new Promise((resolve,reject)=>{
+      const req=indexedDBImpl.open('readyset_audio',1);
+      req.onupgradeneeded=()=>{
+        if(!req.result.objectStoreNames.contains('audio'))req.result.createObjectStore('audio',{keyPath:'id'});
+      };
+      req.onerror=()=>reject(req.error);
+      req.onsuccess=()=>{
+        const db=req.result;
+        const createdAt=now();
+        const row={id:`a_${createdAt}_${Math.random().toString(36).slice(2,8)}`,name,type,blob,createdAt};
+        const tx=db.transaction('audio','readwrite');
+        tx.objectStore('audio').put(row);
+        tx.oncomplete=()=>{db.close();resolve({id:row.id,name:row.name,type:row.type,createdAt:row.createdAt,size:Number(blob?.size)||0});};
+        tx.onerror=()=>{db.close();reject(tx.error)};
+      };
+    });
+  }
+
+  function loadAudio(id,{indexedDBImpl=root.indexedDB}={}){
+    const key=String(id||'').trim();
+    if(!key)return Promise.resolve(null);
+    return new Promise((resolve,reject)=>{
+      const req=indexedDBImpl.open('readyset_audio',1);
+      req.onupgradeneeded=()=>{
+        if(!req.result.objectStoreNames.contains('audio'))req.result.createObjectStore('audio',{keyPath:'id'});
+      };
+      req.onerror=()=>reject(req.error);
+      req.onsuccess=()=>{
+        const db=req.result;
+        const tx=db.transaction('audio','readonly');
+        const get=tx.objectStore('audio').get(key);
+        get.onsuccess=()=>resolve(get.result||null);
+        get.onerror=()=>reject(get.error);
+        tx.oncomplete=()=>db.close();
+      };
+    });
+  }
+
+  root.ReadyRebuildRecordingService=Object.freeze({
+    version:'READY_REBUILD_RECORDING_SERVICE_V01',
+    CANDIDATES,
+    chooseMime,
+    extensionFor,
+    safeBaseName,
+    filenameFor,
+    formatNote,
+    storeAudio,
+    loadAudio
+  });
+})(typeof globalThis!=='undefined'?globalThis:this);

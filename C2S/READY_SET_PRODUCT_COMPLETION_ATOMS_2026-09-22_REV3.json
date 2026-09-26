@@ -1,0 +1,100 @@
+{
+  "schema": "TKY-C2S-001",
+  "date": "2026-09-22",
+  "repo": "hns140412-glitch/Ready-Set",
+  "branch": "taky/ready-rebuild-v01-2026-09-21",
+  "captured_head": "f2d3d9a5ae27185ae49cfb3db3a5db92bfdc07f2",
+  "atoms": [
+    {
+      "id": "RS-REV3-001",
+      "type": "DECISION",
+      "domain": "PLANNER",
+      "text": "Recurring schedules remain canonical; date-specific changes use SKIP/REPLACE overlays.",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "RS-REV3-002",
+      "type": "CORRECTION",
+      "domain": "PLANNER",
+      "text": "Planner UI must render exception-expanded schedules, not raw recurrence rows.",
+      "disposition": "IMPLEMENTED_AND_RUNTIME_VALIDATED"
+    },
+    {
+      "id": "RS-REV3-003",
+      "type": "REQUIREMENT",
+      "domain": "LEARNING",
+      "text": "Specialist evidence may influence recovery/checkpoints/unit span but never schedule date.",
+      "disposition": "LOCKED"
+    },
+    {
+      "id": "RS-REV3-004",
+      "type": "EVIDENCE",
+      "domain": "LEARNING",
+      "text": "Repeated PARTIAL -> carry escalation -> specialist evidence -> reinterpretation -> finer units -> replanning passes browser runtime.",
+      "disposition": "VALIDATED"
+    },
+    {
+      "id": "RS-REV3-005",
+      "type": "DECISION",
+      "domain": "LEARNER_CONTEXT",
+      "text": "Birthdate is the only required learner-age input; do not infer grade/region/curriculum.",
+      "disposition": "IMPLEMENTED_AND_VALIDATED"
+    },
+    {
+      "id": "RS-REV3-006",
+      "type": "EVIDENCE",
+      "domain": "CAPTURE",
+      "text": "Capture review/reanalysis and English capture-to-FACT-to-Planner paths pass browser runtime.",
+      "disposition": "VALIDATED"
+    },
+    {
+      "id": "RS-REV3-007",
+      "type": "CONFLICT",
+      "domain": "IDENTITY",
+      "text": "Family session had member_id while data scopes were historically shared.",
+      "disposition": "PARTIALLY_RESOLVED"
+    },
+    {
+      "id": "RS-REV3-008",
+      "type": "DECISION",
+      "domain": "IDENTITY",
+      "text": "Use central ReadyMemberScope for storage and sync scope.",
+      "disposition": "IMPLEMENTED"
+    },
+    {
+      "id": "RS-REV3-009",
+      "type": "CORRECTION",
+      "domain": "SYNC",
+      "text": "Conflict list/count must filter active member and parse member-scoped labels.",
+      "disposition": "IMPLEMENTED_PENDING_EXACT_HEAD_RUNTIME"
+    },
+    {
+      "id": "RS-REV3-010",
+      "type": "STRATEGY",
+      "domain": "GITHUB",
+      "text": "Concurrent same-branch updates require live refresh and sequential file-SHA updates; never force push.",
+      "disposition": "LOCKED"
+    },
+    {
+      "id": "RS-REV3-011",
+      "type": "OPEN",
+      "domain": "VALIDATION",
+      "text": "Exact captured-head Runtime E2E and some CI gates were still running.",
+      "disposition": "RESUME_FIRST"
+    },
+    {
+      "id": "RS-REV3-012",
+      "type": "OPEN",
+      "domain": "EXTERNAL",
+      "text": "Real OCR provider, production sync, device validation and deploy remain external-resource-gated.",
+      "disposition": "HOLD"
+    }
+  ],
+  "closure": {
+    "unmapped_material": 0,
+    "silent_loss": 0,
+    "false_convergence": false,
+    "reflection_complete": true,
+    "downstream_execution_complete": false
+  }
+}

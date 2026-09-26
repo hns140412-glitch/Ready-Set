@@ -1,0 +1,52 @@
+'use strict';
+
+const assert=require('node:assert/strict');
+const Evidence=require('../src/learning/evidence-ontology-runtime.js');
+
+const baseTask={
+  learning_unit_id:'u1',
+  assignment_id:'a1',
+  analysis_id:'an1',
+  subject:'영어',
+  matched_domain:'이해'
+};
+
+const hide=Evidence.specialistEvidence({
+  task:baseTask,
+  from_app:'hide-seek',
+  task_state:'PARTIAL',
+  event_id:'e-hide',
+  payload:{
+    memorySummary:{
+      authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
+      averageMemoryStrength:62,
+      prioritySemantics:'ADVISORY_SIGNAL_NOT_DATE',
+      reviewPolicyOwner:'READY_LEARNING_ENGINE',
+      scheduleOwner:'READY_SET_PLANNER',
+      reviewAdvisories:[{lexicalId:'word_1',nextReviewPriority:88}]
+    }
+  }
+});
+assert.equal(hide.evidence_type,'MEMORY_RETRIEVAL_EVIDENCE');
+assert.equal(hide.memory.average_strength,62);
+assert.equal(hide.memory.schedule_owner,'READY_SET_PLANNER');
+assert.ok(hide.cannot_claim.includes('CONCEPT_MASTERY'));
+
+const snap=Evidence.specialistEvidence({
+  task:baseTask,
+  from_app:'snap-pop',
+  task_state:'COMPLETED',
+  event_id:'e-snap',
+  payload:{child_authored:true,landmark:'forest',step:3}
+});
+assert.equal(snap.evidence_type,'LEARNER_PRODUCTION_EVIDENCE');
+assert.equal(snap.production.child_authored,true);
+assert.ok(snap.cannot_claim.includes('OBJECTIVE_RECALL_MASTERY'));
+
+let rows=[];
+rows=Evidence.append(rows,hide);
+rows=Evidence.append(rows,hide);
+rows=Evidence.append(rows,snap);
+assert.equal(rows.length,2,'event_id dedupe must hold');
+
+console.log('EVIDENCE_ONTOLOGY_PASS');

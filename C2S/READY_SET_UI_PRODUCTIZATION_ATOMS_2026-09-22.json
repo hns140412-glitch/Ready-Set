@@ -1,0 +1,81 @@
+{
+  "schema": "TKY-C2S-001",
+  "date": "2026-09-22",
+  "repo": "hns140412-glitch/Ready-Set",
+  "branch": "taky/ready-rebuild-v01-2026-09-21",
+  "atoms": [
+    {
+      "id": "RS-UI-001",
+      "type": "CORRECTION",
+      "text": "74–76% browser/runtime maturity must not be treated as final product completion.",
+      "disposition": "LOCKED"
+    },
+    {
+      "id": "RS-UI-002",
+      "type": "DECISION",
+      "text": "Completion reporting uses four axes: function implementation, UI structure definition, UI-function integration, user-facing product maturity.",
+      "disposition": "LOCKED"
+    },
+    {
+      "id": "RS-UI-003",
+      "type": "STRATEGY",
+      "text": "UI work follows product purpose → IA → screen contract → component contract → owner/state/event mapping → visual system → implementation → E2E.",
+      "disposition": "LOCKED"
+    },
+    {
+      "id": "RS-UI-004",
+      "type": "PROHIBITION",
+      "text": "Do not jump from mockup directly to CSS without contract mapping.",
+      "disposition": "LOCKED"
+    },
+    {
+      "id": "RS-UI-005",
+      "type": "REQUIREMENT",
+      "text": "Every visible control maps to owner, source of truth, state, event, transition, validation and failure state.",
+      "disposition": "OPEN_EXECUTION"
+    },
+    {
+      "id": "RS-UI-006",
+      "type": "REQUIREMENT",
+      "text": "Every critical existing capability must have a UI destination or explicit intentional-hidden disposition.",
+      "disposition": "OPEN_EXECUTION"
+    },
+    {
+      "id": "RS-UI-007",
+      "type": "DECISION",
+      "text": "390x844 is primary mobile design reference for browser UI work.",
+      "disposition": "LOCKED"
+    },
+    {
+      "id": "RS-UI-008",
+      "type": "DECISION",
+      "text": "Character visuals use runtime slots/hooks and are not hard-coded into core layout.",
+      "disposition": "LOCKED"
+    },
+    {
+      "id": "RS-UI-009",
+      "type": "BOUNDARY",
+      "text": "Ready owns planning/execution/scheduling/confirmation/results; Snap & Pop and Hide & Seek domain logic remains outside Ready.",
+      "disposition": "LOCKED"
+    },
+    {
+      "id": "RS-UI-010",
+      "type": "CORRECTION",
+      "text": "Provisional user-facing maturity before final UI integration should be treated conservatively around 45–55%.",
+      "disposition": "PROVISIONAL"
+    },
+    {
+      "id": "RS-UI-011",
+      "type": "VALIDATION",
+      "text": "Static screenshots alone cannot establish UI completion; runtime integration and regression evidence are required.",
+      "disposition": "LOCKED"
+    }
+  ],
+  "closure": {
+    "unmapped_material": 0,
+    "silent_loss": 0,
+    "false_convergence": false,
+    "reflection_complete": true,
+    "downstream_execution_complete": false
+  }
+}

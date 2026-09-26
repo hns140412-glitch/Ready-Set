@@ -8,11 +8,12 @@
   "contractVersion": 1,
   "releaseId": "ready-set-1.0.0-alpha.1-r1",
   "masterRevision": "C2S_REWRITE_01",
-  "releaseStatus": "IMPLEMENTATION_BRANCH__RUNTIME_VALIDATION_PENDING",
+  "releaseStatus": "PREDEPLOY_FROZEN_CANDIDATE__EXTERNAL_DEVICE_PENDING",
   "notes": [
     "This file is a compatibility mirror, not an independent version authority.",
     "Service-worker cache identity is derived from release_id.",
     "Service-worker activation waits for an explicit APPLY_UPDATE message from the Ready safe-point adapter.",
-    "Real-device update/restore behavior remains separately unverified."
+    "Browser/runtime and release-archive gates are verified for the predeploy candidate.",
+    "Real-device update/restore, production Identity/sync and external provider behavior remain separately unverified."
   ]
 }

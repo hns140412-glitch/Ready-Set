@@ -1,0 +1,119 @@
+{
+  "schema": "TKY-C2S-001",
+  "project": "Ready & Set",
+  "date": "2026-09-21",
+  "authority_branch": "taky/ready-rebuild-v01-2026-09-21",
+  "observed_head": "59a0619a4e0369fbc935a1fc7de05cb65a73fd9c",
+  "atoms": [
+    {
+      "id": "RRS-001",
+      "type": "REQUIREMENT",
+      "text": "Ready & Set only in this conversation; do not modify Snap & Pop or Hide & Seek rebuild work.",
+      "disposition": "LOCKED",
+      "destination": "REBUILD_SCOPE"
+    },
+    {
+      "id": "RRS-002",
+      "type": "DECISION",
+      "text": "Use dedicated Ready rebuild branch; preserve active product branch as evidence/fallback.",
+      "disposition": "LOCKED",
+      "destination": "BRANCH_POLICY"
+    },
+    {
+      "id": "RRS-003",
+      "type": "DECISION",
+      "text": "Rebuild composition/ownership boundaries while preserving verified domain assets.",
+      "disposition": "LOCKED",
+      "destination": "ARCHITECTURE"
+    },
+    {
+      "id": "RRS-004",
+      "type": "CORRECTION",
+      "text": "CODED/static validation must not be treated as usable product completion; CI/RUNTIME/DEVICE remain separate.",
+      "disposition": "LOCKED",
+      "destination": "REPORTING"
+    },
+    {
+      "id": "RRS-005",
+      "type": "EVIDENCE",
+      "text": "Live rebuild app.js reduced from approximately 105 KB to approximately 64.8 KB by observed head.",
+      "disposition": "ACCEPTED",
+      "destination": "STRUCTURE_EVIDENCE"
+    },
+    {
+      "id": "RRS-006",
+      "type": "CORRECTION",
+      "text": "Planner projection self-recursion introduced by mechanical replacement caused Runtime E2E failure; fixed and guarded.",
+      "disposition": "PROPAGATED",
+      "destination": "REGRESSION_RULE"
+    },
+    {
+      "id": "RRS-007",
+      "type": "CORRECTION",
+      "text": "Planner Admin broad block replacement removed ~19.8 KB of event/capture wiring; restored from prior PASS commit and retained view delegation.",
+      "disposition": "PROPAGATED",
+      "destination": "REGRESSION_RULE"
+    },
+    {
+      "id": "RRS-008",
+      "type": "STRATEGY",
+      "text": "Use exact function-body boundaries / brace scanning for extraction rather than broad neighboring anchors.",
+      "disposition": "LOCKED",
+      "destination": "REBUILD_METHOD"
+    },
+    {
+      "id": "RRS-009",
+      "type": "EVIDENCE",
+      "text": "Capture helper ownership commit ce65dc0645036242858c2b51e0ac3b9e9a048bac passed Runtime E2E.",
+      "disposition": "ACCEPTED",
+      "destination": "VALIDATION"
+    },
+    {
+      "id": "RRS-010",
+      "type": "EVIDENCE",
+      "text": "Latest observed head 59a0619... Foundation run 35599385239 succeeded.",
+      "disposition": "ACCEPTED",
+      "destination": "VALIDATION"
+    },
+    {
+      "id": "RRS-011",
+      "type": "EVIDENCE",
+      "text": "Latest exact-head Runtime E2E run 35599385063 failed. Primary error: ReferenceError: Cannot access 'homeView' before initialization, with cascading navigation/UI failures.",
+      "disposition": "FAIL",
+      "destination": "NEXT_CHAT_FIRST_FIX"
+    },
+    {
+      "id": "RRS-012",
+      "type": "CONFLICT",
+      "text": "Same Ready rebuild branch advanced concurrently outside this conversation; next work must live-refresh before edits and avoid redoing migrated modules.",
+      "disposition": "ACTIVE_GUARD",
+      "destination": "CONCURRENCY"
+    },
+    {
+      "id": "RRS-013",
+      "type": "STRATEGY",
+      "text": "Remaining monolith slices should be migrated one bounded responsibility at a time with runtime regression before old-path removal.",
+      "disposition": "LOCKED",
+      "destination": "NEXT_WORK"
+    },
+    {
+      "id": "RRS-014",
+      "type": "REQUIREMENT",
+      "text": "No Netlify, production deploy, main merge or user-as-tester during rebuild.",
+      "disposition": "LOCKED",
+      "destination": "EXTERNAL_RESOURCE_GATE"
+    },
+    {
+      "id": "RRS-015",
+      "type": "CORRECTION",
+      "text": "Do not continue new extraction from head 59a0619... until bootstrap/homeView initialization order is repaired and exact-head Runtime E2E passes.",
+      "disposition": "LOCKED",
+      "destination": "NEXT_WORK_GATE"
+    }
+  ],
+  "closure": {
+    "unmapped_material": 0,
+    "silent_loss": 0,
+    "false_convergence": false
+  }
+}

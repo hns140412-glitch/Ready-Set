@@ -314,10 +314,35 @@
     const result=await adapter.analyze({session:next,manifest,getBlob:async itemId=>(await getItem(itemId))?.blob||null});
     const priorHistory=Array.isArray(session.analysis_history)?session.analysis_history:[];
     const previous=session.analysis_result?.ok?{
+      kind:'SUCCESSFUL_ANALYSIS_ARCHIVE',
       analysis_run_no:session.analysis_result.analysis_run_no||session.analysis_run_no||1,
       archived_at:now(),
       result:clone(session.analysis_result)
     }:null;
+
+    if(!result?.ok&&session.analysis_result?.ok){
+      const attemptedRunNo=Number(session.analysis_run_no||0)+1;
+      const failedAt=now();
+      const failureRecord={
+        kind:'FAILED_REANALYSIS_ATTEMPT',
+        attempted_run_no:attemptedRunNo,
+        archived_at:failedAt,
+        failure:clone(result||{ok:false,reason:'UNKNOWN_ANALYSIS_FAILURE'})
+      };
+      const preserved={
+        ...next,
+        analysis_run_no:Number(session.analysis_run_no||0),
+        analysis_history:[...priorHistory,failureRecord],
+        analysis_state:'ANALYSIS_COMPLETE',
+        analysis_result:clone(session.analysis_result),
+        last_analysis_failure:{attempted_run_no:attemptedRunNo,at:failedAt,result:clone(failureRecord.failure)},
+        updated_at:now()
+      };
+      await put(SESSION_STORE,preserved);
+      localStorage.removeItem(ACTIVE_SESSION_KEY);
+      return {ok:false,capture_session_id:preserved.capture_session_id,analysis_state:preserved.analysis_state,prior_analysis_preserved:true,result};
+    }
+
     const decorated=decorateAnalysisResult(session,result,manifest);
     const done={
       ...next,
@@ -325,6 +350,7 @@
       analysis_history:previous?[...priorHistory,previous]:priorHistory,
       analysis_state:result?.ok?'ANALYSIS_COMPLETE':'ANALYSIS_FAILED',
       analysis_result:decorated||result||null,
+      last_analysis_failure:null,
       updated_at:now()
     };
     await put(SESSION_STORE,done);

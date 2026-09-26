@@ -15,11 +15,28 @@
     return uniq([...(session?.selected || []), ...(session?.tasks || [])]);
   }
 
-  function suggestedApp(label = '') {
-    const x = String(label).toLowerCase();
-    if (/단어|vocab|word|철자|뜻/.test(x)) return 'hide-seek';
-    if (/라이팅|글쓰기|문장|말하기|녹음|표현|writing|speaking|sentence/.test(x)) return 'snap-pop';
-    return 'ready-set';
+  function routeTask(link = {}) {
+    const router=window.ReadySpecialistRouter;
+    if(router?.classify){
+      return router.classify({
+        subject:link.subject||null,
+        matched_domain:link.matched_domain||link.domain||null,
+        activity_types:Array.isArray(link.activity_types)?link.activity_types:[],
+        activity_sequence:Array.isArray(link.activity_sequence)?link.activity_sequence:[],
+        method_sequence:Array.isArray(link.method_sequence)?link.method_sequence:[]
+      });
+    }
+    return Object.freeze({
+      router_version:'LEGACY_FAIL_CLOSED',
+      authority:'READY_LEARNING_ENGINE_ROUTING',
+      mode:'READY_ORCHESTRATED',
+      primary_app:'ready-set',
+      ready_owned:true,
+      handoffs:[],
+      allowed_specialists:[],
+      denied_by_default:true,
+      reason:{fallback:'ROUTER_UNAVAILABLE_NO_LABEL_GUESS'}
+    });
   }
 
   function emit(type, payload = {}) {
@@ -55,7 +72,20 @@
         learning_unit_id:link.learning_unit_id||null,
         template_id:link.template_id||null,
         allocation_run_id:link.allocation_run_id||null,
-        suggested_app: suggestedApp(link.label),
+        subject:link.subject||null,
+        matched_domain:link.matched_domain||link.domain||null,
+        activity_types:Array.isArray(link.activity_types)?[...link.activity_types]:[],
+        activity_sequence:Array.isArray(link.activity_sequence)?[...link.activity_sequence]:[],
+        method_sequence:Array.isArray(link.method_sequence)?[...link.method_sequence]:[],
+        concept_skill_target:link.concept_skill_target||null,
+        cognitive_load_profile:Array.isArray(link.cognitive_load_profile)?[...link.cognitive_load_profile]:[],
+        divisible_boundary:link.divisible_boundary||null,
+        confidence:Number.isFinite(link.confidence)?link.confidence:null,
+        unresolved_flags:Array.isArray(link.unresolved_flags)?[...link.unresolved_flags]:[],
+        route_plan:routeTask(link),
+        completed_specialists:[],
+        active_specialist:null,
+        learning_evidence:[],
         laps: []
       }));
       session.rev07 = {
@@ -208,15 +238,23 @@
     return app === 'hide-seek' ? HIDE_URL : app === 'snap-pop' ? SNAP_URL : location.href;
   }
 
-  function launchSpecialist(app) {
+  function prepareSpecialistLaunch(app) {
     const session = state.activeSession;
     const c = ensureContract(session);
     const task = currentTask(c);
     const lap = currentLap(c) || (task ? startLap(task, 'SPECIALIST_ROUTE', session) : null);
-    if (!session || !c || !task || !lap || !['hide-seek','snap-pop'].includes(app)) return;
+    if (!session || !c || !task || !lap || !['hide-seek','snap-pop'].includes(app)) {
+      return {ok:false,reason:'SPECIALIST_LAUNCH_CONTEXT_INVALID'};
+    }
+    const plan=task.route_plan||routeTask(task);
+    if(!window.ReadySpecialistRouter?.canLaunch?.(plan,app,task.completed_specialists||[])){
+      emit('SPECIALIST_ROUTE_DENIED',{requested_app:app,route_plan:plan});
+      return {ok:false,reason:'SPECIALIST_ROUTE_DENIED',requested_app:app};
+    }
 
     c.active_app = app;
-    emit('APP_SWITCH', { from: 'ready-set', to: app, lap_ended: false });
+    task.active_specialist=app;
+    emit('APP_SWITCH', { from: 'ready-set', to: app, lap_ended: false, route_plan:plan });
     save();
 
     const url = new URL(appUrl(app));
@@ -227,7 +265,19 @@
     url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
     url.searchParams.set('snap_target', SNAP_URL);
     url.searchParams.set('from_app', 'ready-set');
-    location.assign(url.href);
+    url.searchParams.set('handoff_scope', app==='hide-seek'?'MEMORY_RETRIEVAL':'LEARNER_PRODUCTION');
+    url.searchParams.set('route_authority','READY_LEARNING_ENGINE_ROUTING');
+    if(app==='snap-pop'&&window.ReadySpecialistHandoffContract?.encodeLearningContext){
+      url.searchParams.set('learning_context',window.ReadySpecialistHandoffContract.encodeLearningContext(task));
+    }
+    return {ok:true,app,url:url.href,task_id:task.task_id,lap_id:lap.lap_id};
+  }
+
+  function launchSpecialist(app) {
+    const prepared=prepareSpecialistLaunch(app);
+    if(!prepared?.ok)return false;
+    location.assign(prepared.url);
+    return true;
   }
 
   function normalizeInboundState(raw) {
@@ -237,21 +287,47 @@
     return null;
   }
 
-  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null }) {
+  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null, payload = null }) {
     const c = ensureContract();
     if (!c || !session_id || session_id !== c.session_id) return false;
     if (event_id && c.applied_event_ids?.includes(event_id)) return false;
     const task = c.tasks.find(t => t.task_id === task_id);
     if (!task) return false;
+    const sourceApp=window.ReadySpecialistHandoffContract?.sourceApp?.(from_app)||null;
+    if(!sourceApp){
+      emit('SPECIALIST_RETURN_DENIED',{from_app:null,event_id:event_id||null,reason:'SOURCE_APP_REQUIRED',route_plan:task.route_plan||null});
+      return false;
+    }
+    if(!window.ReadySpecialistHandoffContract?.authorized?.(task,sourceApp)||
+       task.active_specialist!==sourceApp){
+      emit('SPECIALIST_RETURN_DENIED',{from_app:sourceApp,event_id:event_id||null,reason:'ROUTE_OR_SEQUENCE_MISMATCH',route_plan:task.route_plan||null,active_specialist:task.active_specialist||null});
+      return false;
+    }
 
     const normalized = normalizeInboundState(task_state);
+    const evidence=window.ReadyEvidenceOntology?.specialistEvidence?.({
+      task,from_app:sourceApp,task_state:normalized||task_state||null,payload,event_id:event_id||null
+    })||null;
+    if(evidence)task.learning_evidence=window.ReadyEvidenceOntology?.append?.(task.learning_evidence||[],evidence)||[...(task.learning_evidence||[]),evidence].slice(-120);
     c.active_app = 'ready-set';
     c.active_task_id = task.task_id;
     if (lap_id) c.active_lap_id = lap_id;
-    if (normalized) setTaskState(task.task_id, normalized, from_app || 'SPECIALIST');
-    if (['COMPLETED','BLOCKED'].includes(normalized)) endActiveLap('SPECIALIST_RESULT', normalized);
+    if(normalized==='COMPLETED'){
+      task.completed_specialists=[...new Set([...(task.completed_specialists||[]),sourceApp])];
+      task.active_specialist=null;
+      const next=window.ReadySpecialistRouter?.nextSpecialist?.(task.route_plan,task.completed_specialists||[])||null;
+      if(next){
+        setTaskState(task.task_id,'PARTIAL',sourceApp);
+      }else{
+        setTaskState(task.task_id,'COMPLETED',sourceApp);
+        endActiveLap('SPECIALIST_RESULT','COMPLETED');
+      }
+    }else if(normalized){
+      setTaskState(task.task_id,normalized,sourceApp);
+      if(normalized==='BLOCKED')endActiveLap('SPECIALIST_RESULT','BLOCKED');
+    }
     if (event_id) c.applied_event_ids = [...(c.applied_event_ids || []), event_id].slice(-200);
-    emit('APP_RETURN', { from: from_app || 'specialist', task_state: normalized || task_state || null });
+    emit('APP_RETURN', { from: sourceApp || from_app || 'specialist', task_state: normalized || task_state || null, specialist_payload:payload||null, evidence_record:evidence||null });
     save();
     renderContractUI();
     return true;
@@ -259,15 +335,24 @@
 
   function consumeReturnQuery() {
     const p = new URLSearchParams(location.search);
-    const args = {
+    let eventArgs=null;
+    const rawEvent=p.get('learning_event');
+    if(rawEvent&&window.ReadySpecialistHandoffContract?.normalizeReturnEvent){
+      try{
+        eventArgs=window.ReadySpecialistHandoffContract.normalizeReturnEvent(JSON.parse(rawEvent));
+      }catch{}
+    }
+    const args = eventArgs || {
       session_id: p.get('session_id'),
       task_id: p.get('task_id'),
       lap_id: p.get('lap_id'),
       task_state: p.get('task_state'),
-      from_app: p.get('from_app')
+      from_app: p.get('from_app'),
+      event_id: p.get('event_id'),
+      payload:null
     };
-    if (!args.session_id || !args.task_id || !applyInboundResult(args)) return;
-    ['session_id','goal_id','task_id','lap_id','task_state','from_app'].forEach(k => p.delete(k));
+    if (!args?.session_id || !args?.task_id || !applyInboundResult(args)) return;
+    ['session_id','goal_id','task_id','lap_id','task_state','from_app','event_id','learning_event','memory_summary','specialist_report'].forEach(k => p.delete(k));
     const clean = `${location.pathname}${p.toString() ? `?${p}` : ''}${location.hash}`;
     history.replaceState(null, '', clean);
   }
@@ -276,19 +361,9 @@
     if (!TRUSTED_APP_ORIGINS.has(messageEvent.origin)) return;
     const e = messageEvent.data?.type === 'TAKY_LEARNING_EVENT' ? messageEvent.data.event : null;
     if (!e) return;
-    const taskState = e.type === 'TASK_COMPLETED' ? 'COMPLETED'
-      : e.type === 'TASK_BLOCKED' ? 'BLOCKED'
-      : e.type === 'HELP_NEEDED' ? 'BLOCKED'
-      : e.type === 'TASK_PARTIAL' ? 'PARTIAL'
-      : null;
-    applyInboundResult({
-      session_id: e.session_id,
-      task_id: e.task_id,
-      lap_id: e.lap_id,
-      task_state: taskState,
-      from_app: e.app,
-      event_id: e.event_id
-    });
+    const normalized=window.ReadySpecialistHandoffContract?.normalizeReturnEvent?.(e);
+    if(!normalized)return;
+    applyInboundResult(normalized);
   }
 
   function labelState(value) {
@@ -337,8 +412,7 @@
       <small>ONE SESSION · CONTINUOUS TIMER</small>
       <h3>${task ? escapeHtml(task.label) : '현재 과제 없음'} · ${task ? labelState(task.state) : ''}</h3>
       <div class="rev07-row">
-        <button class="primary" data-rev07-app="hide-seek">Hide & Seek</button>
-        <button class="primary" data-rev07-app="snap-pop">Snap & Pop</button>
+        ${(()=>{const app=task?window.ReadySpecialistRouter?.nextSpecialist?.(task.route_plan,task.completed_specialists||[]):null;return app?`<button class="primary" data-rev07-app="${app}">${app==='hide-seek'?'Hide & Seek':'Snap & Pop'}</button>`:''})()}
       </div>
       <div class="rev07-tasks">${c.tasks.map(t => `<button class="rev07-task ${t.task_id===c.active_task_id?'active':''}" data-rev07-task="${t.task_id}"><span>${escapeHtml(t.label)}</span><strong>${labelState(t.state)}</strong></button>`).join('')}</div>`;
     const mission = document.getElementById('focusMission');
@@ -438,6 +512,8 @@
             actual_ms: actualMs,
             session_id: c.session_id,
             task_id: task.task_id,
+            learning_evidence:Array.isArray(task.learning_evidence)?[...task.learning_evidence]:[],
+            completed_specialists:Array.isArray(task.completed_specialists)?[...task.completed_specialists]:[],
             at: iso()
           })
         : null;
@@ -485,25 +561,15 @@
     return { ok:Object.values(checks).every(Boolean), checks };
   }
 
-  const originalStart = document.getElementById('startBtn')?.onclick;
   const originalNav = nav;
 
   function patchHandlers() {
-    const start = document.getElementById('startBtn');
-    if (start && originalStart) {
-      start.onclick = async function patchedStart(event) {
-        const pending = originalStart.call(this, event);
-        if (state.activeSession) {
-          ensureContract();
-          renderContractUI();
-        }
-        await pending;
-        if (state.activeSession && !state.activeSession.rev07) {
-          ensureContract();
-          renderContractUI();
-        }
-      };
-    }
+    window.addEventListener('readyset-session-started',()=>{
+      if (state.activeSession) {
+        ensureContract();
+        renderContractUI();
+      }
+    });
     const end = document.getElementById('completeBtn');
     if (end) {
       end.textContent = '세션 종료';
@@ -540,6 +606,7 @@
       contract: () => state.activeSession?.rev07 ? structuredClone(state.activeSession.rev07) : null,
       validate: validateContract,
       launchSpecialist,
+      prepareSpecialistLaunch,
       setTaskState,
       switchTask,
       openWrapUp

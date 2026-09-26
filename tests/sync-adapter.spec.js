@@ -87,3 +87,33 @@ test('local-first outbox flush uses configured sync adapter only in authenticate
   expect(result.sent).toBeGreaterThan(0);
   expect(count).toBeGreaterThan(0);
 });
+
+test('Settings exposes explicit KEEP_LOCAL conflict resolution', async ({page})=>{
+  await page.addInitScript(()=>{
+    window.__READY_AUTH_BOOTSTRAP__={
+      authenticated:true,family_id:'TEST_FAMILY',member_id:'TEST_PARENT',role:'PARENT',
+      session_id:'TEST_SESSION',expires_at:'2099-01-01T00:00:00.000Z',source:'TEST_ONLY'
+    };
+  });
+  await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
+  await page.evaluate(async()=>{
+    await window.ReadySetLocalFirst.capture('planner',{probe:'ui-conflict'});
+    window.ReadySetSyncAdapter={
+      status:()=>({configured:true,enabled:true,state:'CONNECTED'}),
+      send:async row=>window.ReadyMemberScope.parseSyncScope(row.scope).scope==='planner'
+        ?{conflict:true,remote_payload:{schema_version:1,dated_todos:[]}}
+        :{ok:true}
+    };
+    await window.ReadySetLocalFirst.flush();
+  });
+  await page.locator('[data-nav="settings"]:visible').first().click();
+  await expect(page.locator('#syncConflictCount')).toHaveText('1');
+  await expect(page.locator('#syncConflictList')).toBeVisible();
+  await expect(page.locator('#syncConflictList')).toContainText('Planner 충돌');
+  await page.locator('[data-sync-conflict-resolution="KEEP_LOCAL"]').click();
+  await expect(page.locator('#syncConflictCount')).toHaveText('0');
+  await expect(page.locator('#syncConflictList')).toBeHidden();
+  const rows=await page.evaluate(()=>window.ReadySetLocalFirst.conflicts());
+  expect(rows.filter(x=>x.status==='OPEN')).toHaveLength(0);
+  expect(rows.some(x=>x.resolution==='KEEP_LOCAL')).toBeTruthy();
+});

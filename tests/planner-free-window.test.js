@@ -93,3 +93,56 @@ assert.deepEqual(fallback.free_window_coverage,{known_dates:0,total_dates:2});
 assert.equal(fallback.free_window_by_date['2026-09-22'].known,false);
 
 console.log('PASS: Planner V2 uses actual free-window evidence as secondary capacity safety without making minutes primary learning semantics');
+
+
+const recurringPlanner=createPlanner(memoryStorage());
+recurringPlanner.upsertScheduleCommitment({
+  commitment_id:'weekly-english',
+  title:'영어학원',
+  category:'영어',
+  recurrence:'WEEKLY',
+  weekday:1,
+  start:'17:00',
+  end:'19:00',
+  confirmed:true,
+  source:'TEST_FIXTURE'
+});
+recurringPlanner.upsertDailyAvailabilityWindow({
+  availability_id:'weekly-mon',
+  recurrence:'WEEKLY',
+  weekday:1,
+  start:'15:30',
+  end:'20:30',
+  confirmed:true,
+  source:'TEST_FIXTURE'
+});
+const recurringDomain=JSON.parse(JSON.stringify(domain));
+const recurringAllocation=recurringPlanner.allocateLearningUnits({
+  assignment_id:'a1',
+  domain_state:recurringDomain,
+  candidate_dates:['2026-09-21']
+});
+assert.equal(recurringAllocation.ok,true);
+assert.equal(recurringAllocation.free_window_by_date['2026-09-21'].total_free_minutes,180);
+assert.equal(recurringAllocation.free_window_by_date['2026-09-21'].largest_contiguous_minutes,90);
+
+recurringPlanner.upsertScheduleException({
+  commitment_id:'weekly-english',
+  date:'2026-09-28',
+  type:'REPLACE',
+  start:'18:30',
+  end:'20:00',
+  source:'TEST_FIXTURE'
+});
+const exceptionDomain=JSON.parse(JSON.stringify(domain));
+exceptionDomain.assignmentFacts.a1.deadline_boundary='2026-09-29';
+const exceptionAllocation=recurringPlanner.allocateLearningUnits({
+  assignment_id:'a1',
+  domain_state:exceptionDomain,
+  candidate_dates:['2026-09-28']
+});
+assert.equal(exceptionAllocation.ok,true);
+assert.equal(exceptionAllocation.free_window_by_date['2026-09-28'].total_free_minutes,210);
+assert.equal(exceptionAllocation.free_window_by_date['2026-09-28'].largest_contiguous_minutes,180);
+
+console.log('PASS: recurring schedule and date exceptions are subtracted from Planner free-window capacity');

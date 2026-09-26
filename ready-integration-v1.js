@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const VERSION='2026.09.20-cross-revision-signal-v1';
+  const VERSION='2026.09.22-evidence-aware-review-v2';
   function processAssignment(assignmentId,input={}){
     if(!window.ReadyAssignments||!window.ReadyLearningMasterV01||!window.ReadySetPlanner)return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
     let state=window.ReadyAssignments.load(),fact=state.assignmentFacts[assignmentId];
@@ -33,9 +33,11 @@
         activity_types:profile?.activity_types||[],
         allow_subject_generalization:true
       })||null;
+      const learnerContext=input.learner_context||window.ReadySetLearnerContext?.current?.()||null;
       window.ReadyLearningMasterV01.interpretConfirmed(assignmentId,{
         actor:'LEARNING_MASTER_RUNTIME',
-        learning_signal:learningSignal
+        learning_signal:learningSignal,
+        learner_context:learnerContext
       });
       state=window.ReadyAssignments.load();fact=state.assignmentFacts[assignmentId];
     }
@@ -50,6 +52,27 @@
     }
     return {ok:committed.ok,assignment_id:assignmentId,analysis_id:fact.current_analysis_id,allocation_run_id:allocation.allocation_run_id,todos:committed.created||[],revision_impact:revisionImpact};
   }
+  function specialistEvidenceSignal(rows=[]){
+    const evidence=(rows||[]).flatMap(x=>Array.isArray(x.learning_evidence)?x.learning_evidence:[]);
+    const memory=evidence.filter(x=>x?.evidence_type==='MEMORY_RETRIEVAL_EVIDENCE');
+    const production=evidence.filter(x=>x?.evidence_type==='LEARNER_PRODUCTION_EVIDENCE');
+    const priorities=memory.flatMap(x=>Array.isArray(x?.memory?.review_advisories)?x.memory.review_advisories:[])
+      .map(x=>Number(x?.nextReviewPriority??x?.priority))
+      .filter(Number.isFinite);
+    const weakStrength=memory.map(x=>Number(x?.memory?.average_strength)).filter(Number.isFinite);
+    const childAuthored=production.filter(x=>x?.production?.child_authored===true).length;
+    return {
+      authority:'READY_EVIDENCE_INTERPRETATION_ONLY',
+      memory_evidence_count:memory.length,
+      production_evidence_count:production.length,
+      max_memory_review_priority:priorities.length?Math.max(...priorities):null,
+      min_memory_strength:weakStrength.length?Math.min(...weakStrength):null,
+      child_authored_production_count:childAuthored,
+      can_influence:['RECOVERY_INTENSITY','CHECKPOINT_SELECTION','UNIT_SPAN'],
+      cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','ASSIGNMENT_FACT','SOURCE_RANGE','DEADLINE','FACT_CONFIRMATION']
+    };
+  }
+
   function reviewEscalatedCarryOver(carryOverId,input={}){
     if(!window.ReadyAssignments||!window.ReadyLearningMasterV01||!window.ReadySetPlanner)return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
     const carry=window.ReadySetPlanner.carryOverCandidates?.().find(x=>x.carry_over_id===carryOverId);
@@ -71,13 +94,16 @@
       observation_count:recent.length,
       states:recent.map(x=>x.ready_state||x.state).filter(Boolean),
       actual_minutes:recent.map(x=>x.actual_minutes).filter(Number.isFinite),
-      cannot_influence:['ASSIGNMENT_FACT','SOURCE_RANGE','DEADLINE','FACT_CONFIRMATION']
+      specialist_evidence:specialistEvidenceSignal(recent),
+      cannot_influence:['ASSIGNMENT_FACT','SOURCE_RANGE','DEADLINE','FACT_CONFIRMATION','SCHEDULE_DATE','PLANNER_DATE']
     };
+    const learnerContext=input.learner_context||window.ReadySetLearnerContext?.current?.()||null;
     const reviewed=window.ReadyLearningMasterV01.interpretConfirmed(assignmentId,{
       actor:'LEARNING_MASTER_ESCALATION_REVIEW',
       force_review:true,
       review_reason:carry.escalation_reason||'CARRY_OVER_ESCALATION',
-      escalation_review_signal:escalationSignal
+      escalation_review_signal:escalationSignal,
+      learner_context:learnerContext
     });
     const resolved=window.ReadySetPlanner.resolveCarryOver?.(carryOverId,{resolution:'CANCEL',actor:'PARENT_LEARNING_MASTER_REVIEW'});
     const processed=processAssignment(assignmentId,{start_date:input.start_date});

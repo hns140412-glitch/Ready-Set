@@ -32,6 +32,7 @@ test('service worker uses controlled APPLY_UPDATE instead of install-time skipWa
   expect(text).toContain("event.data?.type==='APPLY_UPDATE'");
   expect(text).toContain('self.skipWaiting()');
   expect(text).not.toContain(".then(()=>self.skipWaiting())");
+  expect(text).not.toContain('.md');
 
   const installStart = text.indexOf("self.addEventListener('install'");
   const messageStart = text.indexOf("self.addEventListener('message'");

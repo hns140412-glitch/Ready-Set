@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.5.1';
+  const VERSION='0.6.0';
   const referenceApi=()=>{
     if(typeof globalThis!=='undefined'&&globalThis.ReadyLearningReferenceV01)return globalThis.ReadyLearningReferenceV01;
     if(typeof require==='function'){try{return require('./ready-learning-reference-v01.js')}catch{}}
@@ -132,6 +132,30 @@
       split_policy:{kind:'NONE',max_span:null},
       default_goal:'프린트 과제 완수'
     },
+    'grammar':{
+      activity_types:['GRAMMAR_CHECK','QUIZ','SELF_CHECK'],
+      activity_sequence:['GRAMMAR_CHECK','QUIZ','REVIEW'],
+      cognitive_load:['RULE_RETRIEVAL','FORM_MEANING_INTEGRATION'],
+      default_boundary:'GRAMMAR_UNIT',
+      base_difficulty:3,
+      activity_load_score:3,
+      recovery_need:'LOW',
+      parent_help_dependency:'LOW',
+      split_policy:{kind:'NONE',max_span:null},
+      default_goal:'문법 규칙을 확인하고 짧은 퀴즈로 점검'
+    },
+    'reading':{
+      activity_types:['READING','COMPREHENSION','SENTENCE_BUILDING','SELF_CHECK'],
+      activity_sequence:['READ_STORY','COMPREHENSION_CHECK','SENTENCE_BUILDING','REVIEW'],
+      cognitive_load:['READING_COMPREHENSION','LANGUAGE_PRODUCTION'],
+      default_boundary:'READING_UNIT',
+      base_difficulty:3,
+      activity_load_score:4,
+      recovery_need:'MEDIUM',
+      parent_help_dependency:'LOW',
+      split_policy:{kind:'NONE',max_span:null},
+      default_goal:'읽고 이해한 뒤 문장으로 표현하고 확인'
+    },
     'vocabulary':{
       activity_types:['MEMORY','RECALL','SELF_CHECK'],
       activity_sequence:['ENCODE','RECALL','CHECK'],
@@ -240,23 +264,58 @@
     const helpBlocked=states.some(x=>['BLOCKED','WAITING_FOR_PARENT'].includes(x));
     const depth=Math.max(0,Number(signal.carry_over_depth)||0);
     const baseSpan=Number(profile?.split_policy?.max_span)||null;
+    const specialist=signal.specialist_evidence?.authority==='READY_EVIDENCE_INTERPRETATION_ONLY'
+      ? signal.specialist_evidence
+      : null;
+    const memoryPriority=Number(specialist?.max_memory_review_priority);
+    const memoryStrength=Number(specialist?.min_memory_strength);
+    const memoryConcern=(Number.isFinite(memoryPriority)&&memoryPriority>=70)||(Number.isFinite(memoryStrength)&&memoryStrength<60);
+    const productionObserved=Number(specialist?.child_authored_production_count||0)>0;
     return {
       authority:'ADAPTIVE_REVIEW_ONLY',
       reduce_unit_span:!!(baseSpan&&repeatedFriction>=2&&depth>=3),
       max_span:baseSpan?Math.max(1,Math.ceil(baseSpan/2)):null,
-      add_checkpoint:repeatedFriction>=2,
-      recovery_floor:(depth>=4||repeatedFriction>=3)?'HIGH':repeatedFriction>=2?'MEDIUM':null,
+      add_checkpoint:repeatedFriction>=2||memoryConcern,
+      add_retrieval_checkpoint:memoryConcern,
+      production_evidence_observed:productionObserved,
+      recovery_floor:(depth>=4||repeatedFriction>=3||memoryConcern)?'HIGH':repeatedFriction>=2?'MEDIUM':null,
       parent_help_floor:helpBlocked?'HIGH':repeatedFriction>=3?'MEDIUM':null,
-      evidence:{repeated_friction_count:repeatedFriction,carry_over_depth:depth,states:[...states]}
+      evidence:{repeated_friction_count:repeatedFriction,carry_over_depth:depth,states:[...states],specialist_evidence:specialist?clone(specialist):null},
+      cannot_influence:['SCHEDULE_DATE','PLANNER_DATE','DEADLINE','ASSIGNMENT_FACT']
+    };
+  }
+
+  function learnerAgePolicy(analysis,profile){
+    const ctx=analysis?.learner_context;
+    const age=Number(ctx?.chronological_age_years);
+    const baseSpan=Number(profile?.split_policy?.max_span)||null;
+    if(!Number.isFinite(age)||!ctx||ctx.authority!=='BIRTHDATE_ONLY')return null;
+    let multiplier=1,addCheckpoint=false;
+    if(age<=7){multiplier=0.5;addCheckpoint=true;}
+    else if(age<=10){multiplier=0.75;addCheckpoint=true;}
+    const maxSpan=baseSpan?Math.max(1,Math.floor(baseSpan*multiplier)):null;
+    return {
+      authority:'BIRTHDATE_DEVELOPMENTAL_ADAPTATION_ONLY',
+      chronological_age_years:age,
+      age_band:ctx.age_band||null,
+      max_span:maxSpan,
+      add_checkpoint:addCheckpoint,
+      cannot_influence:['GRADE','CURRICULUM','EDUCATION_POLICY','SCHEDULE_DATE','PLANNER_DATE','DEADLINE','ASSIGNMENT_FACT']
     };
   }
 
   function reviewAdjustedSequence(sequence=[],policy){
     const out=[...(sequence||[])];
-    if(!policy?.add_checkpoint||!out.length)return out;
-    if(out.includes('SHORT_CHECKPOINT'))return out;
-    const at=Math.max(1,out.length-1);
-    out.splice(at,0,'SHORT_CHECKPOINT');
+    if(!out.length)return out;
+    if(policy?.add_retrieval_checkpoint&&!out.includes('RETRIEVAL_CHECKPOINT')){
+      const beforeProduction=out.findIndex(x=>['PRODUCE','RESPOND_OR_EXPRESS','EXPLAIN'].includes(x));
+      const at=beforeProduction>0?beforeProduction:Math.max(1,out.length-1);
+      out.splice(at,0,'RETRIEVAL_CHECKPOINT');
+    }
+    if(policy?.add_checkpoint&&!out.includes('SHORT_CHECKPOINT')){
+      const at=Math.max(1,out.length-1);
+      out.splice(at,0,'SHORT_CHECKPOINT');
+    }
     return out;
   }
 
@@ -286,6 +345,22 @@
     const profile=(kind==='WORKBOOK_RANGE'&&PROFILE[subjectKey])?PROFILE[subjectKey]:(PROFILE[kind]||PROFILE[subjectKey]||PROFILE.WORKBOOK_RANGE);
     const desc=extra.range_descriptor||rangeDescriptor(extra.source_range??fact.source_range);
     const reviewPolicy=adaptiveReviewPolicy(analysis,profile);
+    const agePolicy=learnerAgePolicy(analysis,profile);
+    const learningRef=referenceApi()?.resolve?.(subjectKey,{
+      workbook_name:fact.workbook_name||fact.workbook_ref_id||null,
+      source_range:extra.source_range??fact.source_range??null,
+      teacher_instruction:fact.teacher_instruction||null,
+      grade:fact.grade||null,
+      semester:fact.semester||null,
+      unit_name:fact.unit_name||null
+    });
+    const subjectMethodSequence=Array.isArray(learningRef?.subject_master?.learning_loop)
+      ? learningRef.subject_master.learning_loop
+      : null;
+    const componentSpecificProfile=Object.prototype.hasOwnProperty.call(PROFILE,kind)&&kind!=='WORKBOOK_RANGE'&&kind!==subjectKey;
+    const preferredActivitySequence=componentSpecificProfile
+      ? profile.activity_sequence
+      : (subjectMethodSequence||profile.activity_sequence||[]);
     const unresolved=[...(extra.unresolved_flags||[])];
     if(!clean(fact.teacher_instruction)&&!extra.concept_skill_target)unresolved.push('CONCEPT_TARGET_INFERRED_FROM_SUBJECT_PROFILE');
     if(desc.kind==='AMBIGUOUS_NUMERIC_RANGE')unresolved.push('RANGE_SEMANTICS_AMBIGUOUS_NOT_SPLIT');
@@ -301,7 +376,7 @@
       source_range:extra.source_range??fact.source_range??null,
       range_descriptor:clone(desc),
       activity_types:clone(extra.activity_types||profile.activity_types),
-      activity_sequence:clone(reviewAdjustedSequence(extra.activity_sequence||profile.activity_sequence||[],reviewPolicy)),
+      activity_sequence:clone(reviewAdjustedSequence(reviewAdjustedSequence(extra.activity_sequence||preferredActivitySequence,reviewPolicy),agePolicy)),
       cognitive_load_profile:clone(extra.cognitive_load_profile||profile.cognitive_load),
       activity_load:{
         score:extra.activity_load_score??profile.activity_load_score??3,
@@ -323,23 +398,18 @@
         cross_revision_learning_signal:analysis.cross_revision_learning_signal?clone(analysis.cross_revision_learning_signal):null,
         escalation_review_signal:analysis.escalation_review_signal?clone(analysis.escalation_review_signal):null,
         adaptive_review_policy:reviewPolicy?clone(reviewPolicy):null,
-        learning_reference:(()=>{
-          const ref=referenceApi()?.resolve?.(subjectKey,{
-            workbook_name:fact.workbook_name||fact.workbook_ref_id||null,
-            source_range:extra.source_range??fact.source_range??null,
-            teacher_instruction:fact.teacher_instruction||null,
-            grade:fact.grade||null,
-            semester:fact.semester||null,
-            unit_name:fact.unit_name||null
-          });
-          return ref?{
-            status:ref.status,
-            reference_classes:ref.reference_classes,
-            method:ref.method,
-            evidence_refs:ref.evidence_refs,
-            standard_match:ref.standard_match||null
-          }:null;
-        })()
+        learner_age_policy:agePolicy?clone(agePolicy):null,
+        learner_context:analysis.learner_context?clone(analysis.learner_context):null,
+        learning_reference:learningRef?{
+          status:learningRef.status,
+          reference_classes:learningRef.reference_classes,
+          method:learningRef.method,
+          method_variant:learningRef.subject_master?.method_variant||null,
+          matched_domain:learningRef.subject_master?.matched_domain||learningRef.standard_match?.selected?.domain||null,
+          method_sequence:subjectMethodSequence?[...subjectMethodSequence]:null,
+          evidence_refs:learningRef.evidence_refs,
+          standard_match:learningRef.standard_match||null
+        }:null
       },
       confidence:extra.confidence??(clean(fact.teacher_instruction)?0.78:0.62),
       unresolved_flags:[...new Set(unresolved)],
@@ -351,7 +421,9 @@
   function talentUnits(fact,analysis){
     const profile=PROFILE[fact.book_subject]||PROFILE.WORKBOOK_RANGE;
     const reviewPolicy=adaptiveReviewPolicy(analysis,profile);
-    const chunks=splitRange(fact.source_range,profile,{max_span:reviewPolicy?.reduce_unit_span?reviewPolicy.max_span:null});
+    const agePolicy=learnerAgePolicy(analysis,profile);
+    const spans=[reviewPolicy?.reduce_unit_span?reviewPolicy.max_span:null,agePolicy?.max_span].filter(Number.isFinite);
+    const chunks=splitRange(fact.source_range,profile,{max_span:spans.length?Math.min(...spans):null});
     return chunks.map((chunk,index)=>unitBase(fact,analysis,fact.book_subject,index,{
       source_range:chunk.source_range,
       range_descriptor:chunk.range_descriptor,
@@ -365,7 +437,9 @@
     if(clean(fact.source_range)){
       const profile=PROFILE.WORKBOOK_RANGE;
       const reviewPolicy=adaptiveReviewPolicy(analysis,profile);
-      for(const chunk of splitRange(fact.source_range,profile,{max_span:reviewPolicy?.reduce_unit_span?reviewPolicy.max_span:null})){
+      const agePolicy=learnerAgePolicy(analysis,profile);
+      const spans=[reviewPolicy?.reduce_unit_span?reviewPolicy.max_span:null,agePolicy?.max_span].filter(Number.isFinite);
+      for(const chunk of splitRange(fact.source_range,profile,{max_span:spans.length?Math.min(...spans):null})){
         out.push(unitBase(fact,analysis,'WORKBOOK_RANGE',n++,{
           source_range:chunk.source_range,
           range_descriptor:chunk.range_descriptor,
@@ -402,6 +476,7 @@
       cross_revision_learning_signal:input.learning_signal?clone(input.learning_signal):null,
       escalation_review_signal:input.escalation_review_signal?clone(input.escalation_review_signal):null,
       review_reason:clean(input.review_reason)||null,
+      learner_context:input.learner_context?clone(input.learner_context):null,
       confidence:clean(fact.teacher_instruction)?0.78:0.62,
       unresolved_flags:[]
     };
@@ -419,6 +494,7 @@
     analysis.load_model='SUBJECT_ACTIVITY_DIFFICULTY_RECOVERY';
     analysis.subject_profile=fact.book_subject||fact.subject||null;
     analysis.adaptive_review_policy=adaptiveReviewPolicy(analysis,PROFILE[analysis.subject_profile]||PROFILE.WORKBOOK_RANGE);
+    analysis.learner_age_policy=learnerAgePolicy(analysis,PROFILE[analysis.subject_profile]||PROFILE.WORKBOOK_RANGE);
     const ref=referenceApi()?.resolve?.(analysis.subject_profile,{
       workbook_name:fact.workbook_name||fact.workbook_ref_id||null,
       title:fact.title||null,
