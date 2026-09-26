@@ -46,6 +46,10 @@ jobs:
           node --check ready-runtime-v07.js
       - name: Verify Planner entity/runtime contract
         run: node .github/scripts/ready_planner_contract_test.js
+      - name: Verify GitHub CLI queue author field compatibility
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue list --state open --limit 5 --json number,title,comments,author > /tmp/taky-cli-author-fields.json
       - name: Verify queue integrity and profile binding
         run: |
           python - <<'PY'
