@@ -3,7 +3,7 @@
 function clean(v){return String(v??'').trim();}
 function upper(v){return clean(v).toUpperCase();}
 function normalizedRoles(user={}){
-  const src=Array.isArray(user.roles)?user.roles:
+  const src=Array.isArray(user.roles)&&user.roles.length?user.roles:
     Array.isArray(user.appMetadata?.roles)?user.appMetadata.roles:
     Array.isArray(user.app_metadata?.roles)?user.app_metadata.roles:[];
   return [...new Set(src.map(upper).filter(Boolean))];
