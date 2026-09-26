@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const VERSION='0.2.0';
-  const ROLES=new Set(['CHILD','PARENT']);
+  const VERSION='0.2.1';
+  const ROLES=new Set(['CHILD','PARENT','FAMILY_ADULT']);
   let sessionRevision=0;
   let session={
     state:'ANONYMOUS_LOCAL',
@@ -10,6 +10,7 @@
     family_id:null,
     member_id:null,
     role:'CHILD',
+    family_relation:null,
     session_id:null,
     issued_at:null,
     expires_at:null,
@@ -36,6 +37,7 @@
       family_id:familyId,
       member_id:memberId,
       role:validRole||'CHILD',
+      family_relation:String(input.family_relation||'').trim().toUpperCase()||null,
       session_id:sessionId,
       issued_at:input.issued_at||null,
       expires_at:input.expires_at||null,
@@ -108,7 +110,7 @@
 
   function clear(){
     session={
-      state:'ANONYMOUS_LOCAL',authenticated:false,family_id:null,member_id:null,role:'CHILD',
+      state:'ANONYMOUS_LOCAL',authenticated:false,family_id:null,member_id:null,role:'CHILD',family_relation:null,
       session_id:null,issued_at:null,expires_at:null,source:'LOCAL_DEFAULT'
     };
     sessionRevision+=1;
