@@ -71,6 +71,55 @@ jobs:
           issue['body']=q.BEGIN_DISPATCH+'\n'+json.dumps(bad)+'\n'+q.END_DISPATCH
           blocked=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'fixture-run')
           assert blocked['has_task'] is False and 'TARGET_REPOSITORY_MISMATCH' in blocked['blocked'][0]['detected'], blocked
+
+          issue['body']=q.BEGIN_DISPATCH+'\n'+json.dumps(env)+'\n'+q.END_DISPATCH
+          prior={
+            'task_id':env['task_id'],'provider':'CODEX','task_contract_sha256':env['task_contract_sha256'],
+            'executor_run_id':'old-run','status':'ACCEPTED','attempt':1
+          }
+          issue['comments']=[{'body':q.BEGIN_RECEIPT+'\n'+json.dumps(prior)+'\n'+q.END_RECEIPT}]
+
+          active=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'new-run',{
+            'old-run':{'status':'in_progress','conclusion':None,'jobs':[]}
+          })
+          assert active['has_task'] is False
+          assert 'EXECUTOR_RUN_ACTIVE' in active['blocked'][0]['detected'], active
+
+          unknown=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'new-run',{})
+          assert unknown['has_task'] is False
+          assert 'EXECUTOR_LIVENESS_UNKNOWN' in unknown['blocked'][0]['detected'], unknown
+
+          recover=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'new-run',{
+            'old-run':{
+              'status':'completed','conclusion':'failure',
+              'jobs':[{'name':'materialize','status':'completed','conclusion':'skipped'}]
+            }
+          })
+          assert recover['has_task'] is True, recover
+          assert recover['attempt']==2 and recover['recovery_of_run_id']=='old-run', recover
+          recovered_receipt=q.extract(recover['receipt_body'],q.BEGIN_RECEIPT,q.END_RECEIPT)
+          assert recovered_receipt['attempt']==2
+          assert recovered_receipt['recovery_of_run_id']=='old-run'
+
+          success_missing=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'new-run',{
+            'old-run':{
+              'status':'completed','conclusion':'success',
+              'jobs':[{'name':'materialize','status':'completed','conclusion':'success'}]
+            }
+          })
+          assert success_missing['has_task'] is False
+          assert 'EXECUTOR_RESULT_MISSING_AFTER_SUCCESS' in success_missing['blocked'][0]['detected'], success_missing
+
+          side_effect_risk=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'new-run',{
+            'old-run':{
+              'status':'completed','conclusion':'failure',
+              'jobs':[{'name':'materialize','status':'completed','conclusion':'failure'}]
+            }
+          })
+          assert side_effect_risk['has_task'] is False
+          assert 'EXECUTOR_RECONCILIATION_REQUIRED' in side_effect_risk['blocked'][0]['detected'], side_effect_risk
+
+          assert q.collect_executor_run_ids([issue]) == ['old-run']
           pathlib.Path("/tmp/task.json").write_text(json.dumps(task))
           pathlib.Path("/tmp/changed.txt").write_text("app.js\n")
           PY
