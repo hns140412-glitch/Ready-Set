@@ -28,6 +28,7 @@ const scope=(giver,action='VIEW_GIFT_OPTIONS',target_child_id=null)=>({
 assert.equal(core.roleFor(parent),'PARENT');
 assert.equal(core.roleFor(child),'CHILD');
 assert.equal(core.roleFor(grandparent),'FAMILY_ADULT');
+assert.equal(core.roleFor({...grandparent,roles:[]}), 'FAMILY_ADULT');
 assert.equal(core.roleFor(user('BAD',['PARENT','FAMILY_ADULT'])),null);
 assert.equal(core.familySessionFromIdentityUser(parent).session.family_id,'family_PARENT_A');
 assert.equal(core.familySessionFromIdentityUser(parent).session.family_relation,'PARENT');
