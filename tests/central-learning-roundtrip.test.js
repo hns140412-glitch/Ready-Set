@@ -223,6 +223,9 @@ const context=row=>({event_id:'evt:'+row.task_id,
  assert.equal(persistedCheckpoint.options.outcomes.length,1);
  assert.equal(persistedCheckpoint.options.outcomes[0].centralFeedbackKind,
   'CENTRAL_CHECKPOINT_PROGRESS');
+ const storedRecord={session_id:'session-A',completed_at:'2026-09-27T01:00:00Z',
+  central_learning_scope:{family_id:'F1',member_id:'CHILD_A'},
+  task_outcomes:[{...row,family_id:'F1',member_id:'CHILD_A'}]};
  const dualStored={...storedRecord,session_id:'session-dual',
   task_outcomes:[{...storedRecord.task_outcomes[0],
    planner_todo_id:'central-todo-1',centralCheckpoint:checkpointRow.centralCheckpoint}]};
@@ -236,9 +239,6 @@ const context=row=>({event_id:'evt:'+row.task_id,
   dualOptions.options.observationContextForRow(x).event_id),[
    'ready:session-dual:task-1','ready:session-dual:task-1:checkpoint'
   ]);
- const storedRecord={session_id:'session-A',completed_at:'2026-09-27T01:00:00Z',
-  central_learning_scope:{family_id:'F1',member_id:'CHILD_A'},
-  task_outcomes:[{...row,family_id:'F1',member_id:'CHILD_A'}]};
  const persisted=Orchestrator.optionsFromPersistedRecord(storedRecord,{
   subject:'english',concept_skill_target:'vocabulary',planner,
   candidate_dates:['2026-09-30']});
