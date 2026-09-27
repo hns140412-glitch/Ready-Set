@@ -33,6 +33,8 @@
     // The central pipeline owns authenticated scope re-check, durable queue
     // and transport ACK. Enqueue success is not central storage confirmation.
     const queued=await pipeline.enqueueReadyObservation(mapped.observation);
+    if(!queued||queued.queued!==true&&queued.duplicate!==true)
+      return {ok:false,reason:'CENTRAL_OUTBOX_ENQUEUE_NOT_CONFIRMED',queued:queued||null};
     return {ok:true,queued,authority:'LOCAL_OUTBOX_ONLY_NOT_CENTRAL_ACK'};
   }
   const api=Object.freeze({VERSION,fromOutcome,enqueueOutcome});
