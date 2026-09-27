@@ -37,6 +37,31 @@ assert.equal(planner.resolveCarryOver(carry.carry_over_id,{
 assert.equal(planner.resolveCarryOver(carry.carry_over_id,{
  resolution:'CANCEL',central_scope:a}).ok,true);
 assert.equal(planner.carryOverCandidates({central_scope:a}).length,0);
+// Simulate an older stored carry-over before central_scope metadata existed.
+const previous=planner.upsertDatedTodo({todo_id:'central-legacy-a',
+ date:'2026-09-27',label:'이전 중앙 점검',
+ source:'PLANNER_CENTRAL_LEARNING_CHECKPOINT',state:'PLANNED',
+ review_policy:{authority:'TAKY_LEARNING_ENGINE_CORE'},
+ provenance:{family_id:'F1',member_id:'CHILD_A',
+  schedule_authority:'READY_SET_PLANNER'}});
+planner.recordTaskState({todo_id:previous.todo_id,ready_state:'IN_PROGRESS',
+ session_id:'sLegacy',task_id:'tLegacy'});
+planner.recordSessionOutcome({todo_id:previous.todo_id,ready_state:'PARTIAL',
+ actual_ms:10000,session_id:'sLegacy',task_id:'tLegacy'});
+const raw=JSON.parse(values.get('readyset_planner_v1'));
+const old=raw.carry_over_queue.find(x=>x.source_todo_id===previous.todo_id);
+delete old.source_todo_source;delete old.central_scope;
+values.set('readyset_planner_v1',JSON.stringify(raw));
+assert.equal(planner.carryOverCandidates().length,0);
+assert.equal(planner.carryOverCandidates({central_scope:b}).length,0);
+assert.equal(planner.carryOverCandidates({central_scope:a}).length,1);
+assert.equal(planner.replanReadyCarryOvers({date:'2026-09-28'}).attempted,0);
+assert.equal(planner.replanCarryOver({carry_over_id:old.carry_over_id,
+ date:'2026-09-28'}).reason,'CENTRAL_CHECKPOINT_REQUIRES_FRESH_LEARNING_DECISION');
+assert.equal(planner.resolveCarryOver(old.carry_over_id,{
+ resolution:'CANCEL',central_scope:b}).reason,'CENTRAL_CARRY_OVER_MEMBER_SCOPE_REQUIRED');
+assert.equal(planner.resolveCarryOver(old.carry_over_id,{
+ resolution:'CANCEL',central_scope:a}).ok,true);
 // Ordinary local carry-over retains its established behavior.
 const local=planner.upsertDatedTodo({todo_id:'regular',
  date:'2026-09-27',label:'일반 과제',source:'PLANNER_ALLOCATION',state:'PLANNED'});
