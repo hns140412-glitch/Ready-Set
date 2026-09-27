@@ -15,6 +15,9 @@ assert.equal(good.ok,true);
 assert.equal(good.observation.payload.member_id,'child-A');
 assert.equal(good.observation.payload.observation_only,true);
 assert.equal(good.observation.payload.global_mastery_claim,false);
+assert.equal(good.observation.payload.evidence_type,'MEMORY_RETRIEVAL_EVIDENCE');
+assert.equal(good.observation.payload.forwarded_source_app,'hide-seek');
+assert.equal(good.observation.payload.instrument_version,'HIDE_SPECIALIST_RESULT_V1');
 assert.equal(good.authority,'OBSERVATION_ONLY_NOT_CENTRAL_DECISION');
 assert.equal('planner_date' in good.observation.payload,false);
 assert.equal('memoryReviewFeedback' in good.observation.payload,false);
@@ -33,7 +36,7 @@ assert.equal(H.fromOutcome({...row,member_id:'child-B'},context).reason,'OUTCOME
 assert.equal(H.fromOutcome({...row,specialistResult:{...row.specialistResult,child_id:'child-B'}},context).reason,'OUTCOME_MEMBER_SCOPE_MISMATCH');
 assert.equal(H.fromOutcome({...row,family_id:'other-family'},context).reason,'OUTCOME_FAMILY_SCOPE_MISMATCH');
 assert.equal(H.fromOutcome({...row,specialistResult:{...row.specialistResult,family_id:'other-family'}},context).reason,'OUTCOME_FAMILY_SCOPE_MISMATCH');
-const copy=H.fromOutcome(row,context);copy.observation.payload.memory_summary.reviewAdvisories[0].lexicalId='mutated';
+const copy=H.fromOutcome(row,context);copy.observation.payload.memorySummary.reviewAdvisories[0].lexicalId='mutated';
 assert.equal(row.specialistResult.memorySummary.reviewAdvisories[0].lexicalId,'word-a');
 (async()=>{
  let called=0;
