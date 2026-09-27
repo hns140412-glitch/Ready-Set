@@ -15,12 +15,13 @@ const result={ok:true,authority:'TAKY_LEARNING_ENGINE_CORE',
  adaptive_plan:{ok:true,authority:'LEARNING_ADAPTIVE_PLAN_INTENT_ONLY',
    adaptive_plan_contract:'TAKY_ADAPTIVE_PLAN_INTENT_V1',
    scope:{member_id:'A',subject:'english',concept_skill_target:'vocabulary'}}},
- trace:{evidence_ids:['server-e1'],verified_receipt_id:'server:r1'}};
+ trace:{evidence_ids:['server-e1'],verified_receipt_id:'server:r1',
+  verified_evidence_count:1,basis_kind:'VERIFIED_ONLY'}};
 const body={ok:true,authenticated_server_response:true,
  decision_response_version:'TAKY_CENTRAL_LEARNING_DECISION_HTTP_V1',
  receipt_scope:{family_id:'F',member_id:'A'},
  source:'SERVER_DURABLE_VERIFIED_EVIDENCE_ONLY',
- observation_only_excluded:true,runtime_result:result};
+ observation_only_excluded:true,observation_proof_promotion:false,runtime_result:result};
 const url='https://central.example.test/api/learning/decision';
 (async()=>{
  let seen=null;
@@ -54,6 +55,20 @@ const url='https://central.example.test/api/learning/decision';
  assert.equal((await stub({...body,source:'UNTRUSTED_BROWSER'}).request(scope))
   .reason,'CENTRAL_DECISION_RESPONSE_CONTRACT_INVALID');
  assert.equal((await stub({...body,observation_only_excluded:false}).request(scope))
+  .reason,'CENTRAL_DECISION_RESPONSE_CONTRACT_INVALID');
+ const advisory={...body,
+  source:'SERVER_DURABLE_AUTHENTICATED_ADVISORY_AND_VERIFIED_EVIDENCE',
+  observation_only_excluded:false,
+  runtime_result:{...result,
+   trace:{verified_receipt_id:null,verified_evidence_count:0,
+    basis_kind:'OBSERVATION_ADVISORY_ONLY',
+    observation_review_evidence_count:1,
+    observation_review_digest_sha256:'a'.repeat(64)}}};
+ assert.equal((await stub(advisory).request(scope)).ok,true);
+ assert.equal((await stub({...advisory,observation_proof_promotion:true}).request(scope))
+  .reason,'CENTRAL_DECISION_RESPONSE_CONTRACT_INVALID');
+ assert.equal((await stub({...advisory,runtime_result:{...advisory.runtime_result,
+  trace:{...advisory.runtime_result.trace,observation_review_digest_sha256:null}}}).request(scope))
   .reason,'CENTRAL_DECISION_RESPONSE_CONTRACT_INVALID');
  const unauthorized=Client.create({endpointUrl:url,tokenProvider:async()=> 'opaque-token-001',
   fetchImpl:async()=>({status:403,json:async()=>({ok:false})})});
