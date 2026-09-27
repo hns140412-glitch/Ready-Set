@@ -129,6 +129,14 @@ function nav(name){
   if(name==='settings')renderSettings();
   if(name==='result')renderResult();
 }
+window.addEventListener('readyset-central-roundtrip-result',event=>{
+  const result=event.detail?.result;
+  if(result?.ok!==true||result.scheduled!==true)return;
+  renderHome();
+  if(document.querySelector('.view.active[data-view="mission"]'))renderMission();
+  if(document.querySelector('.view.active[data-view="planner"]'))renderPlanner();
+  toast('중앙 학습 결과를 반영해 Planner에 다음 학습을 배치했어요.');
+});
 document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.nav)));
 document.addEventListener('click',e=>{const tab=e.target.closest('[data-planner-tab]');if(tab){plannerTab=tab.dataset.plannerTab;renderPlanner();return}const day=e.target.closest('[data-planner-date]');if(day){plannerSelectedDate=day.dataset.plannerDate;renderPlanner();}});
 document.getElementById('plannerTodayJump')?.addEventListener('click',()=>{plannerSelectedDate=localDateKey();plannerTab='day';renderPlanner();});
