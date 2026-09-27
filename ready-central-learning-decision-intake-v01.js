@@ -34,7 +34,8 @@
   return {ok:true,authority:'CENTRAL_PEDAGOGICAL_INTENT_ONLY',
    actions:structuredClone(result.decision.pedagogical_actions),
    adaptive_plan:structuredClone(result.decision.adaptive_plan),
-   scope:structuredClone(scope),trace:structuredClone(result.trace||{})};
+   scope:structuredClone(scope),receipt_scope:{family_id,member_id},
+   trace:structuredClone(result.trace||{})};
  }
  // A host-supplied authenticated decision provider must bind its envelope to
  // the selected member both before and after the asynchronous request.
