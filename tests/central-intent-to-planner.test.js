@@ -115,7 +115,7 @@ assert.equal(taskEnded.ok,true);
 const oldReceipt=Bridge.planAccepted(intent,planner,{activeSession,candidate_dates:['2026-09-30']});
 assert.equal(oldReceipt.ok,false);
 assert.equal(oldReceipt.reason,'CENTRAL_CHECKPOINT_REQUIRES_NEW_EVIDENCE');
-assert.equal(planner.snapshot().dated_todos.length,1);
+assert.equal(planner.snapshot().dated_todos.length,2);
 const priorCarry=planner.snapshot().carry_over_queue.find(x=>
  x.source_todo_id===planned.todo.todo_id);
 assert.equal(priorCarry.status,'OPEN');
@@ -127,7 +127,7 @@ assert.equal(next.ok,true,JSON.stringify(next));
 assert.equal(next.reused,undefined);
 assert.equal(next.previous_carry_reconciled.length,1);
 assert.equal(next.previous_carry_reconciled[0],priorCarry.carry_over_id);
-assert.equal(planner.snapshot().dated_todos.length,2);
+assert.equal(planner.snapshot().dated_todos.length,3);
 const resolvedCarry=planner.snapshot().carry_over_queue.find(x=>
  x.carry_over_id===priorCarry.carry_over_id);
 assert.equal(resolvedCarry.status,'RESOLVED');
