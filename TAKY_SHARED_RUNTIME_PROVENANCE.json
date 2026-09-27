@@ -32,7 +32,7 @@
     {
       "consumer_path": "vendor/taky/vision-ingest.js",
       "source_path": "SHARED/runtime/vision-ingest.js",
-      "source_blob_sha": "49391dde656f2142a2cd1769126822794b7399e7",
+      "source_blob_sha": "d64bf7f239036ec54b5e942a0c480d40f74331f1",
       "capability_id": "CAP-OCR-INGEST-001"
     },
     {
@@ -42,5 +42,18 @@
       "capability_id": "CAP-HTTP-ADAPTER-001"
     }
   ],
-  "policy": "Vendored copies must stay byte-equivalent to the recorded canonical source. Ready owns endpoint configuration, family authentication, 409 conflict meaning, retry scheduling and response semantics; shared primitives own only semantic-light release/PWA/event/queue/vision/HTTP mechanics."
+  "policy": "Vendored copies must stay byte-equivalent to the recorded canonical source. Ready owns endpoint configuration, family authentication, 409 conflict meaning, retry scheduling and response semantics; shared primitives own only semantic-light release/PWA/event/queue/vision/HTTP mechanics. Draft-only staged_candidate_overrides are explicit per-file exceptions to the earlier canonical source commit; promotion requires reconciliation against a later verified TAKY canonical source.",
+  "staged_candidate_overrides": [
+    {
+      "capability_id": "CAP-OCR-INGEST-001",
+      "consumer_path": "vendor/taky/vision-ingest.js",
+      "source_repository": "hns140412-glitch/TAKY",
+      "source_pull_request": 165,
+      "source_commit": "bc8830e9f94208135e0f21cdad138450dd965749",
+      "source_blob_sha": "d64bf7f239036ec54b5e942a0c480d40f74331f1",
+      "consumer_blob_sha": "d64bf7f239036ec54b5e942a0c480d40f74331f1",
+      "state": "DRAFT_ONLY_NOT_MERGED_TO_TAKY_MAIN",
+      "reason": "Exact request/source binding candidate. All other vendored capabilities remain at prior canonical provenance; no provider-live or release claim."
+    }
+  ]
 }
