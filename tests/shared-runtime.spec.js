@@ -97,9 +97,10 @@ test('Ready loads shared vision ingest and rejects unknown OCR evidence ids', as
 
   const result=await page.evaluate(async()=>{
     const originalFetch=window.fetch;
-    window.fetch=async()=>({
+    window.fetch=async(_url,options)=>({
       ok:true,
       json:async()=>({
+        vision_ingest_request_id:options.body.get('vision_ingest_request_id'),
         provider:'TEST',
         model:'fixture',
         result:{
@@ -129,6 +130,57 @@ test('Ready loads shared vision ingest and rejects unknown OCR evidence ids', as
   expect(result.unknown_evidence[0].source_id).toBe('unknown-source');
 });
 
+
+test('Ready capture requires server OCR request correlation and rejects excluded or unlinked evidence',async({page})=>{
+  await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+  const result=await page.evaluate(async()=>{
+    const originalFetch=window.fetch;
+    const run=async(kind)=>{
+      const uploaded=[];
+      window.fetch=async(_url,options)=>{
+        const id=options.body.get('vision_ingest_request_id');
+        for(const [key] of options.body.entries())if(key.startsWith('image__'))uploaded.push(key);
+        const drafts=kind==='excluded'
+          ?[{review_draft_id:'draft-1',evidence_item_ids:['answer-1']}]
+          :kind==='unlinked'
+          ?[{review_draft_id:'draft-1',evidence_item_ids:[]}]
+          :[{review_draft_id:'draft-1',evidence_item_ids:['source-1']}];
+        return {ok:true,json:async()=>({
+          ...(kind==='missing-echo'?{}:{
+            vision_ingest_request_id:kind==='stale-echo'?'stale-request':id
+          }),
+          provider:'FIXTURE',result:{analysis_version:'TEST_V1',drafts}
+        })};
+      };
+      try{
+        const result=await globalThis.ReadyCaptureAnalysisAdapter.analyze({
+          session:{capture_session_id:'capture-test'},
+          manifest:[
+            {capture_item_id:'source-1',kind:'RANGE',group_key:'TALENT:연산',mime_type:'image/jpeg',size:4},
+            {capture_item_id:'answer-1',kind:'ANSWER_REFERENCE',group_key:'TALENT:연산',mime_type:'image/jpeg',size:4}
+          ],
+          getBlob:async()=>new Blob(['test'],{type:'image/jpeg'})
+        });
+        return {ok:result.ok,reason:result.reason||null,uploaded,unknown:result.unknown_evidence?.[0]?.source_id||null,missing:result.missing_evidence?.[0]?.reason||null};
+      }finally{window.fetch=originalFetch}
+    };
+    return {
+      valid:await run('valid'),
+      missing:await run('missing-echo'),
+      stale:await run('stale-echo'),
+      excluded:await run('excluded'),
+      unlinked:await run('unlinked')
+    };
+  });
+  expect(result.valid.ok).toBe(true);
+  expect(result.valid.uploaded).toEqual(['image__source-1']);
+  expect(result.missing.reason).toBe('ANALYSIS_REQUEST_BINDING_MISSING');
+  expect(result.stale.reason).toBe('ANALYSIS_REQUEST_BINDING_MISMATCH');
+  expect(result.excluded.reason).toBe('ANALYSIS_EVIDENCE_INVALID');
+  expect(result.excluded.unknown).toBe('answer-1');
+  expect(result.unlinked.reason).toBe('ANALYSIS_EVIDENCE_INVALID');
+  expect(result.unlinked.missing).toBe('EVIDENCE_SOURCE_REQUIRED');
+});
 
 test('Ready loads shared HTTP transport without moving auth authority',async({page})=>{
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
