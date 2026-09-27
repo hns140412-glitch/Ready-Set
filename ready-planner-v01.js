@@ -224,6 +224,16 @@
     // The existing Planner compatibility store is shared. A new central
     // child-scoped checkpoint must be invisible and unroutable unless the
     // independently authenticated central host supplies the active scope.
+    // Legacy carry-over rows predate explicit central_scope metadata. Resolve
+    // their ownership against the original Planner TODO rather than exposing
+    // a formerly child-scoped item when a stored projection is upgraded.
+    function centralCarryScope(carry,s){
+      const source=s.dated_todos.find(t=>t.todo_id===carry?.source_todo_id);
+      if(carry?.source_todo_source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT'&&
+         source?.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT')return null;
+      return {family_id:carry?.central_scope?.family_id||source?.provenance?.family_id||null,
+        member_id:carry?.central_scope?.member_id||source?.provenance?.member_id||null};
+    }
     function visibleToCentralScope(todo,scope){
       if(todo?.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT')return true;
       return scope?.authenticated===true&&
@@ -868,7 +878,7 @@
       const date=cleanText(input.date)||dateKey();
       const s=load();
       const ids=s.carry_over_queue
-        .filter(x=>x.source_todo_source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT')
+        .filter(x=>!centralCarryScope(x,s))
         .filter(x=>x.status==='OPEN'&&x.allocation_ready===true&&x.resolution_required!==true)
         .filter(x=>cleanText(x.from_date)<date)
         .map(x=>x.carry_over_id);
@@ -878,9 +888,11 @@
     }
 
     function carryOverCandidates(options={}){
-      return load().carry_over_queue.filter(x=>x.status==='OPEN')
-        .filter(x=>x.source_todo_source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT'||
-          visibleToCentralScope({source:x.source_todo_source,provenance:x.central_scope},options.central_scope))
+      const s=load();
+      return s.carry_over_queue.filter(x=>x.status==='OPEN')
+        .filter(x=>{const bound=centralCarryScope(x,s);return !bound||
+          visibleToCentralScope({source:'PLANNER_CENTRAL_LEARNING_CHECKPOINT',
+            provenance:bound},options.central_scope)})
         .map(x=>({...x}));
     }
 
@@ -890,9 +902,10 @@
         const carry=s.carry_over_queue.find(x=>x.carry_over_id===id&&x.status==='OPEN');
         if(!carry)return {ok:false,reason:'CARRY_OVER_NOT_FOUND'};
         const resolution=cleanText(input.resolution)||'READY_FOR_REPLAN';
-        if(carry.source_todo_source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'){
-          if(!visibleToCentralScope({source:carry.source_todo_source,
-            provenance:carry.central_scope},input.central_scope))
+        const centralBound=centralCarryScope(carry,s);
+        if(centralBound){
+          if(!visibleToCentralScope({source:'PLANNER_CENTRAL_LEARNING_CHECKPOINT',
+            provenance:centralBound},input.central_scope))
             return {ok:false,reason:'CENTRAL_CARRY_OVER_MEMBER_SCOPE_REQUIRED'};
           if(resolution==='READY_FOR_REPLAN')
             return {ok:false,reason:'CENTRAL_CHECKPOINT_REQUIRES_FRESH_LEARNING_DECISION'};
