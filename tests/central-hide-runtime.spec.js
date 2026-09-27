@@ -88,6 +88,11 @@ test('missing central Hide route or lexical directive does not start any Planner
   const missingRoute={active:state.activeSession,
    states:p.snapshot().dated_todos.filter(x=>['preflight-ordinary','preflight-central']
     .includes(x.todo_id)).map(x=>x.state)};
+  window.ReadySetSpecialistTargets={hideSeekV2:'https://hide.example.test/'};
+  document.getElementById('startBtn').click();
+  const invalidPage={active:state.activeSession,
+   states:p.snapshot().dated_todos.filter(x=>['preflight-ordinary','preflight-central']
+    .includes(x.todo_id)).map(x=>x.state)};
   window.ReadySetSpecialistTargets={hideSeekV2:'https://hide.example.test/v2.html'};
   p.upsertDatedTodo({...central,provenance:{...central.provenance,target_learning_ids:[]}});
   document.getElementById('startBtn').click();
@@ -95,10 +100,12 @@ test('missing central Hide route or lexical directive does not start any Planner
    states:p.snapshot().dated_todos.filter(x=>['preflight-ordinary','preflight-central']
     .includes(x.todo_id)).map(x=>x.state)};
   host.detach();
-  return {missingRoute,missingIds};
+  return {missingRoute,invalidPage,missingIds};
  });
  expect(result.missingRoute.active).toBeNull();
  expect(result.missingRoute.states).toEqual(['PLANNED','PLANNED']);
+ expect(result.invalidPage.active).toBeNull();
+ expect(result.invalidPage.states).toEqual(['PLANNED','PLANNED']);
  expect(result.missingIds.active).toBeNull();
  expect(result.missingIds.states).toEqual(['PLANNED','PLANNED']);
 });
