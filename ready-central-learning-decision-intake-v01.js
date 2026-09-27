@@ -19,7 +19,8 @@
   if(!clean(family_id)||!clean(member_id)||!clean(subject)||!clean(concept_skill_target)||
      receipt_scope?.family_id!==family_id||receipt_scope?.member_id!==member_id||
      scope.member_id!==member_id||
-     scope.subject!==subject||scope.concept_skill_target!==concept_skill_target||
+     scope.subject!==clean(subject).toLowerCase()||
+     scope.concept_skill_target!==clean(concept_skill_target).toLowerCase()||
      JSON.stringify(ds)!==JSON.stringify(scope))
    return {ok:false,reason:'CENTRAL_DECISION_SCOPE_MISMATCH'};
   const plan=result.decision.adaptive_plan||{};
