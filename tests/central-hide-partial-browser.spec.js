@@ -86,6 +86,13 @@ test('Hide V2 partial return retains exact central task and does not certify com
  expect(rejectedLap.task.state).toBe('PENDING');
  expect(rejectedLap.task.specialist_result).toBeNull();
  expect(rejectedLap.fragmentPending).toBe(true);
+ const lapDiagnostic=await page.evaluate(()=>{
+  const c=window.ReadySetRev07.contract(),t=c?.tasks?.[0];
+  return {active_task_id:c?.active_task_id,active_lap_id:c?.active_lap_id,
+   session_id:c?.session_id,task_id:t?.task_id,laps:t?.laps,
+   validation:window.ReadySetRev07.validate()};
+ });
+ console.log('CENTRAL_HIDE_LAP_DIAGNOSTIC',JSON.stringify({bound,lapDiagnostic}));
  await navigate(buildEvent('partial-correct-2',['b::뜻','a::뜻']),{fragment:true});
  const valid=await page.evaluate(()=>{
   const c=window.ReadySetRev07.contract(),t=c.tasks[0];
