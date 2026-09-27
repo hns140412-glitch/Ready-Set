@@ -4,7 +4,7 @@
  const clean=x=>typeof x==='string'?x.trim():'';
  // A transport ingest ACK is never a pedagogical decision. The central
  // runtime decision is intent-only and cannot allocate Planner dates.
- function accept(result,{family_id,member_id,subject,concept_skill_target}={}){
+ function accept(result,{family_id,member_id,subject,concept_skill_target,receipt_scope}={}){
   if(result?.ok!==true||result.authority!=='TAKY_LEARNING_ENGINE_CORE'||
      result.engine_runtime!=='TAKY_LEARNING_ENGINE_RUNTIME_V1'||
      result.decision?.ok!==true||
@@ -13,8 +13,12 @@
      result.decision.consumer_contract?.planner!=='OWNS_DATED_ALLOCATION')
    return {ok:false,reason:'CENTRAL_RUNTIME_DECISION_REQUIRED'};
   const scope=result.scope||{},ds=result.decision.scope||{};
+  // The central learner-state core scopes member/subject/skill, not family.
+  // Family binding must therefore come from a separately trusted server
+  // response envelope, never from an invented result.scope.family_id.
   if(!clean(family_id)||!clean(member_id)||!clean(subject)||!clean(concept_skill_target)||
-     scope.family_id!==family_id||scope.member_id!==member_id||
+     receipt_scope?.family_id!==family_id||receipt_scope?.member_id!==member_id||
+     scope.member_id!==member_id||
      scope.subject!==subject||scope.concept_skill_target!==concept_skill_target||
      JSON.stringify(ds)!==JSON.stringify(scope))
    return {ok:false,reason:'CENTRAL_DECISION_SCOPE_MISMATCH'};
