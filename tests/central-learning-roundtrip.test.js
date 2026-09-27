@@ -78,16 +78,22 @@ const context=row=>({event_id:'evt:'+row.task_id,
  occurred_at:'2026-09-27T01:00:00.000Z',subject:'english',
  concept_skill_target:'vocabulary'});
 (async()=>{
+ const persistedStore=store();
  const runtimeHost=Orchestrator.create({
   sessionProvider,tokenProvider:async()=> 'verified-test-token-0001',fetchImpl,
   evidenceEndpointUrl:'https://central.example.test/api/learning/evidence',
   decisionEndpointUrl:'https://central.example.test/api/learning/decision',
-  storageAdapter:store(),cryptoProvider:webcrypto,
+  storageAdapter:persistedStore,cryptoProvider:webcrypto,
   centralPipelineFactory:browser.TakyCentralEvidence.pipeline.create
  });
  const args={outcomes:[row],observationContextForRow:context,
   subject:'english',concept_skill_target:'vocabulary',planner,
   candidate_dates:['2026-09-30']};
+ const noOp=await runtimeHost.run({...args,outcomes:[{...row,state:'PARTIAL'}]});
+ assert.equal(noOp.ok,true);
+ assert.equal(noOp.reason,'NO_COMPLETED_HIDE_OBSERVATIONS');
+ assert.equal(evidenceResponses,0);
+ assert.equal(planner.snapshot().dated_todos.length,0);
  const result=await runtimeHost.run(args);
  assert.equal(result.ok,true,JSON.stringify(result));
  assert.equal(result.scheduled,true);
@@ -123,6 +129,22 @@ const context=row=>({event_id:'evt:'+row.task_id,
  assert.equal(pending.reason,'CENTRAL_EVIDENCE_ACK_PENDING');
  assert.equal(planner.snapshot().dated_todos.length,1);
  await runtimeHost.close();
+ // No hidden background execution: a trusted host can explicitly replay the
+ // persisted completed session after a transient outage/reopen.
+ evidenceDown=false;
+ const resumed=Orchestrator.create({
+  sessionProvider,tokenProvider:async()=> 'verified-test-token-0001',fetchImpl,
+  evidenceEndpointUrl:'https://central.example.test/api/learning/evidence',
+  decisionEndpointUrl:'https://central.example.test/api/learning/decision',
+  storageAdapter:persistedStore,cryptoProvider:webcrypto,
+  centralPipelineFactory:browser.TakyCentralEvidence.pipeline.create
+ });
+ const retried=await resumed.run({...args,outcomes:[{...row,task_id:'task-2'}]});
+ assert.equal(retried.ok,true,JSON.stringify(retried));
+ assert.equal(retried.reused,true);
+ assert.equal(evidenceResponses,3,'one initial receipt, one failed attempt, one explicit replay');
+ assert.equal(planner.snapshot().dated_todos.length,1);
+ await resumed.close();
  const appSource=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
  assert(appSource.includes("new CustomEvent('readyset-learning-outcomes-ready'"));
  const listeners=new Map();
