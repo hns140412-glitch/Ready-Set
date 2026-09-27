@@ -21,4 +21,19 @@ assert.equal(H.fromOutcome(row,{...context,concept_skill_target:''}).ok,false);
 assert.equal(H.fromOutcome(row,{...context,event_id:''}).ok,false);
 const copy=H.fromOutcome(row,context);copy.observation.payload.memory_summary.reviewAdvisories[0].lexicalId='mutated';
 assert.equal(row.specialistResult.memorySummary.reviewAdvisories[0].lexicalId,'word-a');
-console.log('READY_CENTRAL_OBSERVATION_HANDOFF_PASS');
+(async()=>{
+ let called=0;
+ const pipeline={enqueueReadyObservation:async observation=>{
+   called++;assert.equal(observation.payload.member_id,'child-A');
+   assert.equal(observation.type,undefined);return {queued:true,duplicate:false};
+ }};
+ const enqueued=await H.enqueueOutcome(row,context,{pipeline});
+ assert.equal(enqueued.ok,true);
+ assert.equal(enqueued.queued.queued,true);
+ assert.equal(enqueued.authority,'LOCAL_OUTBOX_ONLY_NOT_CENTRAL_ACK');
+ assert.equal(called,1);
+ assert.equal((await H.enqueueOutcome({...row,state:'PARTIAL'},context,{pipeline})).ok,false);
+ assert.equal(called,1);
+ assert.equal((await H.enqueueOutcome(row,context)).reason,'CENTRAL_PIPELINE_REQUIRED');
+ console.log('READY_CENTRAL_OBSERVATION_HANDOFF_PASS');
+})().catch(e=>{console.error(e);process.exitCode=1});
