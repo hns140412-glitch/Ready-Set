@@ -75,6 +75,6 @@ assert.equal(automatic.attempted,1);
 assert.equal(automatic.results[0].ok,true,JSON.stringify(automatic));
 assert.equal(automatic.results[0].todo.source,'PLANNER_V2_CARRY_OVER');
 const app=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','app.js'),'utf8');
-assert(app.includes("x.source_todo_source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT'"));
+assert(app.includes("const central=x.source_todo_source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'||"));
 assert(app.includes('central_scope:centralPlannerScope()'));
 console.log('READY_CENTRAL_CARRY_SCOPE_PASS: scoped partial feedback; central auto replan denied; sibling/anonymous concealment; local carry-over intact');
