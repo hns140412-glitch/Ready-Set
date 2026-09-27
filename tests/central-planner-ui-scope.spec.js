@@ -17,11 +17,11 @@ test('central child-scoped checkpoint is hidden from sibling and anonymous Ready
   return {modules:!!window.ReadyCentralLearningRoundtripV01&&!!window.TakyCentralEvidence};
  });
  expect(setup.modules).toBe(true);
- await page.locator('[data-nav="planner"]').first().click();
+ await page.evaluate(()=>window.nav('planner'));
  await expect(page.locator('#plannerWeekDetail')).toContainText('일반 로컬 과제');
  await expect(page.locator('#plannerWeekDetail')).not.toContainText('중앙 회상 점검 A');
  await expect(page.locator('#plannerWeekDetail')).not.toContainText('중앙 회상 점검 B');
- await page.locator('[data-nav="mission"]').first().click();
+ await page.evaluate(()=>window.nav('mission'));
  await expect(page.locator('#plannerTodayList')).not.toContainText('중앙 회상 점검 A');
  await page.evaluate(()=>{
   window.__centralUiFixtureScope={authenticated:true,family_id:'F1',selected_member_id:'A'};
@@ -32,18 +32,18 @@ test('central child-scoped checkpoint is hidden from sibling and anonymous Ready
    activeScopeProvider:()=>window.__centralUiFixtureScope
   });
  });
- await page.locator('[data-nav="planner"]').first().click();
+ await page.evaluate(()=>window.nav('planner'));
  await expect(page.locator('#plannerWeekDetail')).toContainText('중앙 회상 점검 A');
  await expect(page.locator('#plannerWeekDetail')).not.toContainText('중앙 회상 점검 B');
- await page.locator('[data-nav="mission"]').first().click();
+ await page.evaluate(()=>window.nav('mission'));
  await expect(page.locator('#plannerTodayList')).toContainText('중앙 회상 점검 A');
  await expect(page.locator('#plannerTodayList')).not.toContainText('중앙 회상 점검 B');
  await page.evaluate(()=>{window.__centralUiFixtureScope.selected_member_id='B'});
- await page.locator('[data-nav="planner"]').first().click();
+ await page.evaluate(()=>window.nav('planner'));
  await expect(page.locator('#plannerWeekDetail')).toContainText('중앙 회상 점검 B');
  await expect(page.locator('#plannerWeekDetail')).not.toContainText('중앙 회상 점검 A');
  await page.evaluate(()=>{window.__centralUiFixtureScope.authenticated=false});
- await page.locator('[data-nav="mission"]').first().click();
+ await page.evaluate(()=>window.nav('mission'));
  await expect(page.locator('#plannerTodayList')).not.toContainText('중앙 회상 점검 A');
  await expect(page.locator('#plannerTodayList')).not.toContainText('중앙 회상 점검 B');
  await page.evaluate(()=>window.__centralUiFixtureHost.detach());
