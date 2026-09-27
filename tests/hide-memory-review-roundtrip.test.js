@@ -38,6 +38,18 @@ assert.deepEqual(planned.directive.lexicalIds,['word-a','word-b']);
 assert.equal(planned.directive.taskId,planned.todo.todo_id);
 assert.equal(planned.directive.scheduledDate,'2026-09-22');
 
+assert.equal(review.directiveForPlannerTodo({...planned.todo,date:null},'task-review-1'),null);
+assert.equal(review.directiveForPlannerTodo({...planned.todo,todo_id:null},'task-review-1'),null);
+const badPlanner={
+  candidateWindowsByDate:()=>({'2026-09-22':[{start:'16:00',end:'17:00'}]}),
+  upsertDatedTodo:()=>({todo_id:'todo-wrong-date',date:'2026-09-23'})
+};
+assert.deepEqual(review.planReview(interpreted.decision,badPlanner,{candidate_dates:['2026-09-22']}),
+  {ok:false,reason:'PLANNER_DATED_TODO_NOT_CONFIRMED'});
+const noTodoPlanner={...badPlanner,upsertDatedTodo:()=>null};
+assert.deepEqual(review.planReview(interpreted.decision,noTodoPlanner,{candidate_dates:['2026-09-22']}),
+  {ok:false,reason:'PLANNER_DATED_TODO_NOT_CONFIRMED'});
+
 const noWindow=review.planReview(interpreted.decision,createPlanner(memoryStorage()),{candidate_dates:['2026-09-22']});
 assert.equal(noWindow.ok,false);
 assert.equal(noWindow.reason,'NO_CONFIRMED_REVIEW_WINDOW');
