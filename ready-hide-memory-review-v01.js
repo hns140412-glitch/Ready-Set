@@ -116,6 +116,16 @@
     const windows=planner.candidateWindowsByDate(dates)||{};
     const date=dates.find(d=>Array.isArray(windows[d])&&windows[d].length>0);
     if(!date)return {ok:false,reason:'NO_CONFIRMED_REVIEW_WINDOW'};
+    const sourceTaskId=clean(options.source_task_id);
+    const existing=sourceTaskId&&typeof planner.snapshot==='function'
+      ? (planner.snapshot()?.dated_todos||[]).find(x=>
+          x?.source==='PLANNER_SPECIALIST_MEMORY_REVIEW' &&
+          x?.provenance?.source_task_id===sourceTaskId) : null;
+    if(existing){
+      const directive=directiveForPlannerTodo(existing,existing.todo_id);
+      return directive?{ok:true,todo:existing,directive,reused:true}
+        :{ok:false,reason:'EXISTING_REVIEW_TODO_INVALID'};
+    }
     const todo=planner.upsertDatedTodo({
       date,
       label:clean(options.label)||'Language Memory 복습',
@@ -124,6 +134,7 @@
       learning_unit_id:clean(options.learning_unit_id)||null,
       provenance:{
         kind:'HIDE_MEMORY_REVIEW',
+        source_task_id:sourceTaskId||null,
         review_policy_authority:'READY_LEARNING_ENGINE',
         schedule_authority:'READY_SET_PLANNER',
         lexical_ids:[...decision.lexicalIds],
@@ -170,7 +181,7 @@
     if(!eligible.length)return {ok:true,scheduled:[],reason:'NO_ACTIONABLE_REVIEW_FEEDBACK'};
     const scheduled=[];
     for(const row of eligible){
-      const result=planReview(row.memoryReviewFeedback.decision,planner,options);
+      const result=planReview(row.memoryReviewFeedback.decision,planner,{...options,source_task_id:row.task_id});
       if(!result.ok)return {ok:false,reason:result.reason,scheduled};
       scheduled.push({source_task_id:clean(row.task_id),...result});
     }
