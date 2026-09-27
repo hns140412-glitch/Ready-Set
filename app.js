@@ -1899,13 +1899,15 @@ function reconcileReadyRuntimeState(){
       const completeMatch=contract?.session_state==='ACTIVE'&&
         contract.session_id===state.activeSession.id&&
         Array.isArray(contract.tasks)&&contract.tasks.length>0&&
+        contract.tasks.some(task=>resumeStates.has(task.state))&&
         contract.tasks.every(task=>{
           const todo=rawTodos.find(t=>t.todo_id===task.planner_todo_id);
           if(!todo||!sessionIds.has(todo.todo_id))return false;
           if(todo.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'&&
             (!bound||todo.provenance?.family_id!==bound.family_id||
              todo.provenance?.member_id!==bound.member_id))return false;
-          return resumeStates.has(task.state)&&todo.state===task.state;
+          return resumeStates.has(task.state)?todo.state===task.state
+            :task.state==='PENDING'&&todo.state==='PLANNED';
         });
       if(completeMatch){
         resumed=true;
