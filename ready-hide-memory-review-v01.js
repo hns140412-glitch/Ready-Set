@@ -183,15 +183,27 @@
       row?.memoryReviewFeedback?.ok===true &&
       row?.memoryReviewFeedback?.decision?.authority==='READY_LEARNING_ENGINE_REVIEW_POLICY');
     if(!eligible.length)return {ok:true,scheduled:[],reason:'NO_ACTIONABLE_REVIEW_FEEDBACK'};
-    const scheduled=[];
+    // Validate the entire batch before the first Planner mutation. A later
+    // corrupted projection must not leave earlier rows partially scheduled.
+    const validated=[];
+    const seen=new Map();
     for(const row of eligible){
-      // Persisted projections are not independent evidence. Recompute from the
-      // actual specialist summary before using any proposed lexical selection.
       const derived=interpretHideMemorySummary(row.specialistResult.memorySummary);
       if(!derived.ok||!derived.decision||
         JSON.stringify(derived.decision)!==JSON.stringify(row.memoryReviewFeedback.decision))
-        return {ok:false,reason:'PERSISTED_REVIEW_FEEDBACK_MISMATCH',scheduled};
-      const result=planReview(derived.decision,planner,{...options,source_task_id:row.task_id});
+        return {ok:false,reason:'PERSISTED_REVIEW_FEEDBACK_MISMATCH',scheduled:[]};
+      const key=clean(row.task_id),fingerprint=JSON.stringify(derived.decision);
+      if(seen.has(key)){
+        if(seen.get(key)!==fingerprint)
+          return {ok:false,reason:'BATCH_SOURCE_TASK_CONFLICT',scheduled:[]};
+        continue;
+      }
+      seen.set(key,fingerprint);
+      validated.push({row,decision:derived.decision});
+    }
+    const scheduled=[];
+    for(const {row,decision} of validated){
+      const result=planReview(decision,planner,{...options,source_task_id:row.task_id});
       if(!result.ok)return {ok:false,reason:result.reason,scheduled};
       scheduled.push({source_task_id:clean(row.task_id),...result});
     }
