@@ -76,5 +76,31 @@ assert.equal(row.specialistResult.memorySummary.reviewAdvisories[0].lexicalId,'w
  assert.equal(partial.ok,false);
  assert.equal(partial.results.length,1);
  assert.equal(partial.failed_event_id,'event:second');
+ const checkpoint={state:'PARTIAL',task_id:'checkpoint-task-1',
+  planner_todo_id:'central-todo-1',family_id:session.family_id,
+  member_id:session.selected_member_id,actual_ms:120000,
+  centralCheckpoint:{todo_id:'central-todo-1',
+   source:'PLANNER_CENTRAL_LEARNING_CHECKPOINT',
+   review_policy:{authority:'TAKY_LEARNING_ENGINE_CORE'},
+   provenance:{family_id:session.family_id,member_id:session.selected_member_id,
+    subject:'english',concept_skill_target:'vocabulary',
+    schedule_authority:'READY_SET_PLANNER'}}};
+ const mappedCheckpoint=H.fromCheckpointOutcome(checkpoint,{
+  ...context,event_id:'checkpoint-result-1'});
+ assert.equal(mappedCheckpoint.ok,true,JSON.stringify(mappedCheckpoint));
+ assert.equal(mappedCheckpoint.observation.payload.evidence_type,'CHILD_SELF_REPORT');
+ assert.equal(mappedCheckpoint.observation.payload.ready_state,'PARTIAL');
+ assert.equal(mappedCheckpoint.observation.payload.actual_minutes,2);
+ assert.equal(mappedCheckpoint.observation.payload.checkpoint_completion_is_verified_recall,false);
+ assert.equal('verified_outcome' in mappedCheckpoint.observation.payload,false);
+ const checkpointBatch=await H.enqueueBatch([checkpoint],
+  r=>({...context,event_id:'checkpoint:'+r.task_id}),{pipeline:batchPipeline});
+ assert.equal(checkpointBatch.ok,true);
+ assert.equal(checkpointBatch.results.length,1);
+ assert.equal(H.fromCheckpointOutcome({...checkpoint,member_id:'child-B'},context).reason,
+  'CENTRAL_CHECKPOINT_MEMBER_SCOPE_MISMATCH');
+ assert.equal(H.fromCheckpointOutcome({...checkpoint,centralCheckpoint:{
+  ...checkpoint.centralCheckpoint,provenance:{...checkpoint.centralCheckpoint.provenance,
+   subject:'math'}}},context).reason,'CENTRAL_CHECKPOINT_LEARNING_CONTEXT_REQUIRED');
  console.log('READY_CENTRAL_OBSERVATION_HANDOFF_PASS');
 })().catch(e=>{console.error(e);process.exitCode=1});
