@@ -15,10 +15,23 @@
      scope.member_id!==receipt.member_id||!clean(scope.subject)||
      !clean(scope.concept_skill_target))
    return {ok:false,reason:'ACTIVE_CENTRAL_PLANNER_SCOPE_REQUIRED'};
-  const evidenceReceipt=clean(intent.trace?.verified_receipt_id);
-  if(!evidenceReceipt||!(Number.isInteger(intent.trace?.verified_evidence_count)&&
-    intent.trace.verified_evidence_count>0))
-   return {ok:false,reason:'SERVER_VERIFIED_DECISION_BASIS_REQUIRED'};
+  const trace=intent.trace||{};
+  const evidenceReceipt=clean(trace.verified_receipt_id);
+  const verified=!!evidenceReceipt&&Number.isInteger(trace.verified_evidence_count)&&
+    trace.verified_evidence_count>0;
+  const observationDigest=clean(trace.observation_review_digest_sha256);
+  const observation=Number.isInteger(trace.observation_review_evidence_count)&&
+    trace.observation_review_evidence_count>0&&
+    Array.isArray(trace.observation_review_evidence_ids)&&
+    trace.observation_review_evidence_ids.length===trace.observation_review_evidence_count&&
+    /^[a-f0-9]{64}$/.test(observationDigest)&&
+    (intent.actions||[]).some(x=>x.intent==='RETRIEVAL_CHECKPOINT'&&
+      (Array.isArray(x.basis)?x.basis:[x.basis]).includes('HIDE_MEMORY_ADVISORY_ONLY'));
+  const basisKind=verified
+    ?(observation?'VERIFIED_WITH_OBSERVATION_ADVISORY':'VERIFIED_ONLY')
+    :(observation?'OBSERVATION_ADVISORY_ONLY':null);
+  if(!basisKind||trace.basis_kind!==basisKind)
+   return {ok:false,reason:'SERVER_SCOPED_DECISION_BASIS_REQUIRED'};
   if(intent.adaptive_plan.add_checkpoint!==true)
    return {ok:true,scheduled:false,reason:'NO_CENTRAL_CHECKPOINT_INTENT'};
   if(!planner||typeof planner.candidateWindowsByDate!=='function'||
@@ -27,7 +40,8 @@
    return {ok:false,reason:'PLANNER_RUNTIME_REQUIRED'};
   const provenanceBase={family_id:receipt.family_id,member_id:receipt.member_id,
    subject:scope.subject,concept_skill_target:scope.concept_skill_target,
-   verified_receipt_id:evidenceReceipt};
+   basis_kind:basisKind,verified_receipt_id:evidenceReceipt||null,
+   observation_basis_digest_sha256:observation?observationDigest:null};
   const matches=t=>t?.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'&&
    Object.entries(provenanceBase).every(([k,v])=>t.provenance?.[k]===v);
   const existing=(planner.snapshot()?.dated_todos||[]).find(matches);
@@ -54,7 +68,8 @@
    source_actor:'READY_SET_PLANNER',state:'PLANNED',
    activity_types:types,activity_sequence:sequence,
    review_policy:{authority:'TAKY_LEARNING_ENGINE_CORE',
-    decision_contract:'TAKY_RUNTIME_DECISION_CONTRACT_V1',intent_only:true},
+    decision_contract:'TAKY_RUNTIME_DECISION_CONTRACT_V1',intent_only:true,
+    evidence_basis_kind:basisKind,observation_is_verified_proof:false},
    provenance:{kind:'CENTRAL_PEDAGOGICAL_CHECKPOINT',...provenanceBase,
     central_intents:(intent.actions||[]).map(x=>clean(x.intent)).filter(Boolean),
     target_learning_ids:Array.isArray(intent.adaptive_plan.target_learning_ids)
