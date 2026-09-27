@@ -318,6 +318,13 @@
     }
     // A review task cannot be completed by bare return URL parameters.
     // This remains local result integrity, not a central authenticated receipt.
+    if(task.review_directive&&from_app==='hide-seek'&&
+       result_payload?.resultContract==='HIDE_SPECIALIST_RESULT_V2'){
+      const echoed=result_payload.reviewDirective||{};
+      if(echoed.authority!==task.review_directive.authority||
+         echoed.directiveId!==task.review_directive.directiveId||
+         echoed.taskId!==task.task_id)return false;
+    }
     if(task.review_directive && from_app==='hide-seek' &&
        (!event_id || !result_payload ||
         !window.ReadyHideMemoryReviewV01?.normalizeHideSpecialistResult?.(result_payload))) return false;
