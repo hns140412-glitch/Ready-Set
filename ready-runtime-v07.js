@@ -329,7 +329,10 @@
 
   function consumeReturnQuery() {
     const p = new URLSearchParams(location.search);
-    const rawEvent=p.get('learning_event');
+    const hashParams=new URLSearchParams(location.hash.replace(/^#/,''));
+    const hashReturn=hashParams.has('learning_event');
+    const rawEvent=hashReturn
+      ?hashParams.get('learning_event'):p.get('learning_event');
     if(rawEvent){
       let e=null;
       try{e=JSON.parse(rawEvent)}catch{}
@@ -338,7 +341,9 @@
         const applied=applyInboundResult(normalizedEvent);
         if(applied){
           p.delete('learning_event');
-          const clean=`${location.pathname}${p.toString()?`?${p}`:''}${location.hash}`;
+          hashParams.delete('learning_event');
+          const remainingHash=hashParams.toString();
+          const clean=`${location.pathname}${p.toString()?`?${p}`:''}${remainingHash?`#${remainingHash}`:''}`;
           history.replaceState(null,'',clean);
           return;
         }
