@@ -41,6 +41,24 @@ assert.equal(Directive.forPlannerTodo({...scheduled.todo,
 assert.equal(Directive.forPlannerTodo({...scheduled.todo,provenance:{
  ...scheduled.todo.provenance,target_learning_ids:[]}},'task-1',
  {boundScope:{family_id:'F1',member_id:'CHILD_A'}}),null);
+const result={
+ resultContract:'HIDE_SPECIALIST_RESULT_V2',runtime:'V2',taskState:'COMPLETED',
+ learningPhase:'COMPLETE',taskContext:{task_id:'task-1'},
+ reviewDirective:directive,reviewedLexicalIds:['word-b','word-a'],
+ memorySummary:{authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
+  prioritySemantics:'ADVISORY_SIGNAL_NOT_DATE',scopedItemIds:['w-b','w-a']},
+ trailSummary:{scopeItemIds:['w-a','w-b'],totalWordCount:2}
+};
+assert.equal(Directive.validateResult(directive,result),true);
+assert.equal(Directive.validateResult(directive,{...result,reviewedLexicalIds:['word-b']}),false);
+assert.equal(Directive.validateResult(directive,{...result,taskState:'PARTIAL'}),false);
+assert.equal(Directive.validateResult(directive,{...result,taskContext:{task_id:'other-task'}}),false);
+assert.equal(Directive.validateResult(directive,{...result,reviewDirective:{
+ ...directive,directiveId:'old-different-task'}}),false);
+assert.equal(Directive.validateResult(directive,{...result,memorySummary:{
+ ...result.memorySummary,scopedItemIds:['w-a','w-c']}}),false);
+assert.equal(Directive.validateResult(directive,{...result,trailSummary:{
+ ...result.trailSummary,totalWordCount:3}}),false);
 const runtime=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','ready-runtime-v07.js'),'utf8');
 assert(runtime.includes('window.ReadyCentralHideDirectiveV01?.forPlannerTodo?.('));
 assert(runtime.includes("if(task?.central_checkpoint&&"));
