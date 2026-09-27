@@ -220,6 +220,23 @@ assert.equal(review.planFromReadyOutcomes([{state:'COMPLETED',task_id:'forged',
  specialistResult:{...normalizedResult,taskState:'PARTIAL'},memoryReviewFeedback:interpreted}],
  outcomePlanner,{candidate_dates:['2026-09-25']}).scheduled.length,0);
 
+const batchPlanner=createPlanner(memoryStorage());
+batchPlanner.upsertDailyAvailabilityWindow({date:'2026-09-26',start:'16:00',end:'17:00',confirmed:true,source:'PARENT_CONFIRMED'});
+const goodRow={state:'COMPLETED',task_id:'batch-good',specialistResult:normalizedResult,memoryReviewFeedback:interpreted};
+const badRow={...goodRow,task_id:'batch-bad',
+ memoryReviewFeedback:{ok:true,decision:{...interpreted.decision,lexicalIds:['injected']}}};
+assert.equal(review.planFromReadyOutcomes([goodRow,badRow],batchPlanner,
+ {candidate_dates:['2026-09-26']}).reason,'PERSISTED_REVIEW_FEEDBACK_MISMATCH');
+assert.equal(batchPlanner.snapshot().dated_todos.length,0);
+const duplicateBatch=review.planFromReadyOutcomes([goodRow,goodRow],batchPlanner,
+ {candidate_dates:['2026-09-26']});
+assert.equal(duplicateBatch.ok,true);
+assert.equal(duplicateBatch.scheduled.length,1);
+assert.equal(batchPlanner.snapshot().dated_todos.length,1);
+assert.equal(review.planFromReadyOutcomes([goodRow,{...goodRow,
+ memoryReviewFeedback:{ok:true,decision:{...interpreted.decision,lexicalIds:['injected']}}}],
+ batchPlanner,{candidate_dates:['2026-09-26']}).reason,'PERSISTED_REVIEW_FEEDBACK_MISMATCH');
+
 const fs=require('fs');
 const runtime=fs.readFileSync(require('path').join(__dirname,'..','ready-runtime-v07.js'),'utf8');
 assert(runtime.includes("url.searchParams.set('review_directive',JSON.stringify(task.review_directive))"));
