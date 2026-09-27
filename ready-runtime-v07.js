@@ -280,6 +280,12 @@
     if (!task) return false;
 
     const normalized = normalizeInboundState(task_state);
+    // A review task cannot be completed by bare return URL parameters.
+    // This remains local result integrity, not a central authenticated receipt.
+    if(task.review_directive && from_app==='hide-seek' &&
+       (!event_id || !result_payload ||
+        !window.ReadyHideMemoryReviewV01?.normalizeHideSpecialistResult?.(result_payload))) return false;
+    if(task.review_directive && normalized==='COMPLETED' && from_app!=='hide-seek') return false;
     if(from_app==='hide-seek'&&result_payload){
       const specialistResult=window.ReadyHideMemoryReviewV01?.normalizeHideSpecialistResult?.(result_payload)||null;
       if(specialistResult)task.specialist_result=specialistResult;
