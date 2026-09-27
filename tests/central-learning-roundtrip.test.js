@@ -152,7 +152,8 @@ const context=row=>({event_id:'evt:'+row.task_id,
  // the observation is not a verified receipt and must match the current task.
  decisionRuntime={...runtime,decision:{...runtime.decision,
   pedagogical_actions:[{intent:'RETRIEVAL_CHECKPOINT',priority:'HIGH',
-   basis:['HIDE_MEMORY_ADVISORY_ONLY']}]},
+   basis:['HIDE_MEMORY_ADVISORY_ONLY'],targets:['word-a']}],
+  adaptive_plan:{...runtime.decision.adaptive_plan,target_learning_ids:['word-a']}},
   trace:{verified_receipt_id:null,verified_evidence_count:0,
    basis_kind:'OBSERVATION_ADVISORY_ONLY',
    observation_review_evidence_count:1,
@@ -170,6 +171,7 @@ const context=row=>({event_id:'evt:'+row.task_id,
  assert.equal(advisory.ok,true,JSON.stringify(advisory));
  assert.equal(advisory.todo.provenance.verified_receipt_id,null);
  assert.equal(advisory.todo.provenance.basis_kind,'OBSERVATION_ADVISORY_ONLY');
+ assert.deepEqual(advisory.todo.provenance.target_learning_ids,['word-a']);
  assert.equal(advisory.todo.review_policy.observation_is_verified_proof,false);
  assert.equal(planner.snapshot().dated_todos.length,2);
  const unrelated=await observational.run({...args,
