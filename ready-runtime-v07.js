@@ -405,13 +405,19 @@
     const panel = ensurePanel();
     if (!c || !panel) return;
     const task = currentTask(c);
+    const central=task?.central_checkpoint===true;
+    const canHide=!central||!!(task?.review_directive&&configuredHideV2Url());
+    const actions=central
+      ?(task?.review_directive
+        ?`<button class="primary" data-rev07-app="hide-seek" ${canHide?'':'disabled'}>Hide & Seek</button>
+           ${canHide?'':'<small>복습 화면을 준비 중이에요.</small>'}`
+        :'<small>오늘 학습 확인은 Ready에서 이어가요.</small>')
+      :`<button class="primary" data-rev07-app="hide-seek">Hide & Seek</button>
+         <button class="primary" data-rev07-app="snap-pop">Snap & Pop</button>`;
     panel.innerHTML = `
       <small>ONE SESSION · CONTINUOUS TIMER</small>
       <h3>${task ? escapeHtml(task.label) : '현재 과제 없음'} · ${task ? labelState(task.state) : ''}</h3>
-      <div class="rev07-row">
-        <button class="primary" data-rev07-app="hide-seek">Hide & Seek</button>
-        <button class="primary" data-rev07-app="snap-pop">Snap & Pop</button>
-      </div>
+      <div class="rev07-row">${actions}</div>
       <div class="rev07-tasks">${c.tasks.map(t => `<button class="rev07-task ${t.task_id===c.active_task_id?'active':''}" data-rev07-task="${t.task_id}"><span>${escapeHtml(t.label)}</span><strong>${labelState(t.state)}</strong></button>`).join('')}</div>`;
     const mission = document.getElementById('focusMission');
     if (mission && task) mission.textContent = task.label;
