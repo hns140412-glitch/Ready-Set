@@ -123,5 +123,28 @@ const context=row=>({event_id:'evt:'+row.task_id,
  assert.equal(pending.reason,'CENTRAL_EVIDENCE_ACK_PENDING');
  assert.equal(planner.snapshot().dated_todos.length,1);
  await runtimeHost.close();
+ const appSource=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
+ assert(appSource.includes("new CustomEvent('readyset-learning-outcomes-ready'"));
+ const listeners=new Map();
+ const eventTarget={addEventListener:(key,fn)=>listeners.set(key,fn),
+  removeEventListener:(key,fn)=>{if(listeners.get(key)===fn)listeners.delete(key)}};
+ const delivered=new Promise(resolve=>{
+  const attached=Orchestrator.attachReadySession({eventTarget,
+   roundtrip:{run:async args=>{
+    assert.equal(args.outcomes[0].task_id,'task-1');
+    return {ok:true,stage:'READY_EXECUTION_READY'};
+   }},
+   resolveRecordOptions:record=>{
+    assert.equal(record.session_id,'session-real-1');
+    return {subject:'english',concept_skill_target:'vocabulary'};
+   },
+   onResult:result=>{attached.detach();resolve(result);}
+  });
+  listeners.get('readyset-learning-outcomes-ready')({detail:{
+   session_id:'session-real-1',task_outcomes:[row]}});
+ });
+ const deliveredResult=await delivered;
+ assert.equal(deliveredResult.result.ok,true);
+ assert.equal(listeners.size,0);
  console.log('READY_CENTRAL_VERTICAL_SLICE_PASS: real vendored outbox enqueue/ACK, HTTPS LE decision intake, Planner confirmed TODO and Ready activity, replay/HOLD/member switch/HTTP retry');
 })().catch(e=>{console.error(e);process.exitCode=1});
