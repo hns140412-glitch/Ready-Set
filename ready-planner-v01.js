@@ -471,6 +471,8 @@
       return mutate(s=>{const carry=s.carry_over_queue.find(x=>x.carry_over_id===carryId&&x.status==='OPEN');if(!carry)return {ok:false,reason:'CARRY_OVER_NOT_FOUND'};
         if(carry.resolution_required)return {ok:false,reason:'CARRY_OVER_REQUIRES_RESOLUTION'};
         const source=s.dated_todos.find(x=>x.todo_id===carry.source_todo_id);if(!source)return {ok:false,reason:'SOURCE_TODO_NOT_FOUND'};
+        if(source.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT')
+          return {ok:false,reason:'CENTRAL_CHECKPOINT_REQUIRES_FRESH_LEARNING_DECISION'};
         const nextDepth=Math.max(0,Number(source.provenance?.carry_over_depth)||0)+1;
         const template=s.homework_templates.find(x=>x.template_id===source.template_id)||null;
         const deadline=cleanText(template?.deadline_date)||null;
@@ -830,6 +832,9 @@
           s.carry_over_queue.push({
             carry_over_id:makeId('carry'),
             source_todo_id:todoId,
+            source_todo_source:todo.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'?todo.source:null,
+            central_scope:todo.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'
+              ?{family_id:todo.provenance?.family_id||null,member_id:todo.provenance?.member_id||null}:null,
             template_id:todo.template_id||null,
             assignment_id:todo.assignment_id||null,
             analysis_id:todo.analysis_id||null,
@@ -863,6 +868,7 @@
       const date=cleanText(input.date)||dateKey();
       const s=load();
       const ids=s.carry_over_queue
+        .filter(x=>x.source_todo_source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT')
         .filter(x=>x.status==='OPEN'&&x.allocation_ready===true&&x.resolution_required!==true)
         .filter(x=>cleanText(x.from_date)<date)
         .map(x=>x.carry_over_id);
@@ -871,8 +877,11 @@
       return {ok:true,date,attempted:ids.length,results};
     }
 
-    function carryOverCandidates(){
-      return load().carry_over_queue.filter(x=>x.status==='OPEN').map(x=>({...x}));
+    function carryOverCandidates(options={}){
+      return load().carry_over_queue.filter(x=>x.status==='OPEN')
+        .filter(x=>x.source_todo_source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT'||
+          visibleToCentralScope({source:x.source_todo_source,provenance:x.central_scope},options.central_scope))
+        .map(x=>({...x}));
     }
 
     function resolveCarryOver(carryOverId,input={}){
@@ -881,6 +890,13 @@
         const carry=s.carry_over_queue.find(x=>x.carry_over_id===id&&x.status==='OPEN');
         if(!carry)return {ok:false,reason:'CARRY_OVER_NOT_FOUND'};
         const resolution=cleanText(input.resolution)||'READY_FOR_REPLAN';
+        if(carry.source_todo_source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'){
+          if(!visibleToCentralScope({source:carry.source_todo_source,
+            provenance:carry.central_scope},input.central_scope))
+            return {ok:false,reason:'CENTRAL_CARRY_OVER_MEMBER_SCOPE_REQUIRED'};
+          if(resolution==='READY_FOR_REPLAN')
+            return {ok:false,reason:'CENTRAL_CHECKPOINT_REQUIRES_FRESH_LEARNING_DECISION'};
+        }
         if(resolution==='READY_FOR_REPLAN'){
           carry.resolution_required=false;
           carry.allocation_ready=true;
