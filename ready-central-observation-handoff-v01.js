@@ -16,6 +16,17 @@
        !clean(subject)||!clean(concept_skill_target))
       return {ok:false,reason:'EXPLICIT_OBSERVATION_CONTEXT_REQUIRED'};
     const member_id=session.selected_member_id;
+    // Do not let an explicitly scoped persisted outcome be rebound to a
+    // different active child or family after an asynchronous account switch.
+    for(const member of [row.member_id,row.selected_member_id,
+      row.specialistResult.member_id,row.specialistResult.child_id]){
+      if(member!=null&&member!==member_id)
+        return {ok:false,reason:'OUTCOME_MEMBER_SCOPE_MISMATCH'};
+    }
+    for(const family of [row.family_id,row.specialistResult.family_id]){
+      if(family!=null&&family!==session.family_id)
+        return {ok:false,reason:'OUTCOME_FAMILY_SCOPE_MISMATCH'};
+    }
     const payload={
       member_id,family_id:session.family_id,subject,concept_skill_target,
       source_task_id:row.task_id,observation_only:true,global_mastery_claim:false,
