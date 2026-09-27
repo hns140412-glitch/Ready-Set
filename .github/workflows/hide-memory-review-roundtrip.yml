@@ -10,6 +10,7 @@ on:
       - 'tests/central-learning-decision-http.test.js'
       - 'ready-central-intent-to-planner-v01.js'
       - 'tests/central-intent-to-planner.test.js'
+      - 'tests/central-carry-scope.test.js'
       - 'ready-central-learning-roundtrip-v01.js'
       - 'tests/central-learning-roundtrip.test.js'
       - 'tests/central-learning-browser-host.test.js'
@@ -38,5 +39,6 @@ jobs:
           node tests/central-learning-decision-intake.test.js
           node tests/central-learning-decision-http.test.js
           node tests/central-intent-to-planner.test.js
+          node tests/central-carry-scope.test.js
           node tests/central-learning-roundtrip.test.js
           node tests/central-learning-browser-host.test.js
