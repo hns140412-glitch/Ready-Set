@@ -887,6 +887,49 @@
       return {ok:true,date,attempted:ids.length,results};
     }
 
+    // A newly allocated, independently based central decision closes older
+    // terminal checkpoint carry-over for that child/skill. It never redates
+    // the previous task, creates a task or treats a self-report as proof.
+    function reconcileCentralCheckpointCarries(input={}){
+      const id=cleanText(input.new_todo_id);
+      if(!id)return {ok:false,reason:'NEW_CENTRAL_TODO_REQUIRED'};
+      return mutate(s=>{
+        const next=s.dated_todos.find(x=>x.todo_id===id);
+        if(next?.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT'||
+          !['PLANNED','IN_PROGRESS'].includes(next.state)||
+          !cleanText(next.provenance?.family_id)||
+          !cleanText(next.provenance?.member_id)||
+          !cleanText(next.provenance?.subject)||
+          !cleanText(next.provenance?.concept_skill_target))
+          return {ok:false,reason:'VALID_NEW_CENTRAL_CHECKPOINT_REQUIRED'};
+        const p=next.provenance;
+        if(input.family_id!==p.family_id||input.member_id!==p.member_id||
+          input.subject!==p.subject||input.concept_skill_target!==p.concept_skill_target)
+          return {ok:false,reason:'CENTRAL_RECONCILIATION_SCOPE_MISMATCH'};
+        const resolved=[];
+        for(const carry of s.carry_over_queue){
+          if(carry.status!=='OPEN'||carry.source_todo_id===id)continue;
+          const scope=centralCarryScope(carry,s);
+          if(!scope||scope.family_id!==p.family_id||scope.member_id!==p.member_id)continue;
+          const previous=s.dated_todos.find(x=>x.todo_id===carry.source_todo_id);
+          if(!previous||previous.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT'||
+            previous.provenance?.subject!==p.subject||
+            previous.provenance?.concept_skill_target!==p.concept_skill_target||
+            !['PARTIAL','DEFERRED','BLOCKED','WAITING_FOR_PARENT'].includes(previous.state)||
+            previous.provenance?.verified_receipt_id===p.verified_receipt_id&&
+            previous.provenance?.observation_basis_digest_sha256===
+              p.observation_basis_digest_sha256)
+            continue;
+          carry.status='RESOLVED';
+          carry.resolution='SUPERSEDED_BY_FRESH_CENTRAL_DECISION';
+          carry.rescheduled_todo_id=id;
+          carry.resolved_at=new Date().toISOString();
+          resolved.push(carry.carry_over_id);
+        }
+        return {ok:true,resolved};
+      });
+    }
+
     function carryOverCandidates(options={}){
       const s=load();
       return s.carry_over_queue.filter(x=>x.status==='OPEN')
@@ -1250,6 +1293,7 @@
       commitAllocation,
       recordSessionOutcome,
       carryOverCandidates,
+      reconcileCentralCheckpointCarries,
       resolveCarryOver,
       recentEstimateEvidence,
       crossRevisionLearningSignal,
