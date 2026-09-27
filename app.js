@@ -797,7 +797,11 @@ function plannerSnapshot(){
   return {...raw,dated_todos:(raw.dated_todos||[]).filter(x=>
     x.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT'||
     (scope?.authenticated===true&&scope.family_id===x.provenance?.family_id&&
-     scope.selected_member_id===x.provenance?.member_id))};
+     scope.selected_member_id===x.provenance?.member_id)),
+    carry_over_queue:(raw.carry_over_queue||[]).filter(x=>
+      x.source_todo_source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT'||
+      (scope?.authenticated===true&&scope.family_id===x.central_scope?.family_id&&
+       scope.selected_member_id===x.central_scope?.member_id))};
 }
 plannerSelectedDate=plannerSelectedDate||localDateKey();
 function plannerItemsForDate(date,snap=plannerSnapshot()){
@@ -902,8 +906,11 @@ function renderPlannerAdmin(){
     carryRoot.innerHTML=carry.length?carry.map(x=>{
       const needs=x.resolution_required===true;
       const escalated=x.escalation_level==='PARENT_LEARNING_MASTER_REVIEW';
-      const status=escalated?'반복 검토 필요':needs?'확인 필요':'다음 일정 대기';
-      const actions=escalated
+      const centralCarry=x.source_todo_source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT';
+      const status=centralCarry?'중앙 학습 판단 필요':escalated?'반복 검토 필요':needs?'확인 필요':'다음 일정 대기';
+      const actions=centralCarry
+        ? `<div class="adminInlineActions"><button class="miniAction" data-carry-cancel="${x.carry_over_id}">종료</button></div>`
+        : escalated
         ? `<div class="adminInlineActions"><button class="miniAction" data-carry-review="${x.carry_over_id}">학습 재검토</button><button class="miniAction" data-carry-cancel="${x.carry_over_id}">종료</button></div>`
         : needs
           ? `<div class="adminInlineActions"><button class="miniAction" data-carry-ready="${x.carry_over_id}">다시 계획</button><button class="miniAction" data-carry-cancel="${x.carry_over_id}">종료</button></div>`
@@ -988,7 +995,7 @@ document.addEventListener('click',e=>{
   const cancel=e.target.closest('[data-carry-cancel]');
   if(cancel){
     if(!requireParentUi())return;
-    const resolved=window.ReadySetPlanner?.resolveCarryOver?.(cancel.dataset.carryCancel,{resolution:'CANCEL',actor:'PARENT'});
+    const resolved=window.ReadySetPlanner?.resolveCarryOver?.(cancel.dataset.carryCancel,{resolution:'CANCEL',actor:'PARENT',central_scope:centralPlannerScope()});
     toast(resolved?.ok?'이 남은 탐험은 종료했어요.':'종료 처리하지 못했어요.');
     renderPlannerAdmin();renderPlanner();return;
   }
