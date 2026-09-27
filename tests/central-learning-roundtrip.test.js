@@ -147,6 +147,31 @@ const context=row=>({event_id:'evt:'+row.task_id,
  await resumed.close();
  const appSource=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
  assert(appSource.includes("new CustomEvent('readyset-learning-outcomes-ready'"));
+ assert(appSource.includes('central_learning_scope:structuredClone(boundCentral)'));
+ assert(appSource.includes('if(boundCentral&&hideOutcomes.length)'));
+ const legacy=Orchestrator.optionsFromPersistedRecord({
+  session_id:'s1',completed_at:'2026-09-27T01:00:00Z',
+  task_outcomes:[row]
+ },{subject:'english',concept_skill_target:'vocabulary'});
+ assert.equal(legacy.reason,'PERSISTED_CENTRAL_RECORD_SCOPE_REQUIRED');
+ const storedRecord={session_id:'session-A',completed_at:'2026-09-27T01:00:00Z',
+  central_learning_scope:{family_id:'F1',member_id:'CHILD_A'},
+  task_outcomes:[{...row,family_id:'F1',member_id:'CHILD_A'}]};
+ const persisted=Orchestrator.optionsFromPersistedRecord(storedRecord,{
+  subject:'english',concept_skill_target:'vocabulary',planner,
+  candidate_dates:['2026-09-30']});
+ assert.equal(persisted.ok,true);
+ const previous=persisted.options.observationContextForRow(storedRecord.task_outcomes[0]);
+ const again=Orchestrator.optionsFromPersistedRecord(storedRecord,{
+  subject:'english',concept_skill_target:'vocabulary',planner,
+  candidate_dates:['2026-09-30']});
+ assert.deepEqual(previous,again.options.observationContextForRow(storedRecord.task_outcomes[0]));
+ assert.equal(previous.event_id,'ready:session-A:task-1');
+ assert.equal(previous.occurred_at,'2026-09-27T01:00:00Z');
+ assert.equal(Orchestrator.optionsFromPersistedRecord({...storedRecord,
+  task_outcomes:[{...storedRecord.task_outcomes[0],member_id:'CHILD_B'}]},{
+   subject:'english',concept_skill_target:'vocabulary'}).reason,
+   'PERSISTED_CENTRAL_OUTCOME_SCOPE_MISMATCH');
  const listeners=new Map();
  const eventTarget={addEventListener:(key,fn)=>listeners.set(key,fn),
   removeEventListener:(key,fn)=>{if(listeners.get(key)===fn)listeners.delete(key)}};
