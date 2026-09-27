@@ -102,6 +102,24 @@
       return {ok:false,reason:'CENTRAL_OUTBOX_ENQUEUE_NOT_CONFIRMED',queued:queued||null};
     return {ok:true,queued,authority:'LOCAL_OUTBOX_ONLY_NOT_CENTRAL_ACK'};
   }
+  // One completed task may both return Hide memory and close a centrally
+  // allocated checkpoint. Preserve both distinct observations on replay.
+  function expandOutcomes(outcomes=[]){
+    const expanded=[];
+    for(const row of(Array.isArray(outcomes)?outcomes:[])){
+      if(row?.centralFeedbackKind==='HIDE_MEMORY'||
+         row?.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'){
+        expanded.push(row);continue;
+      }
+      if(row?.state==='COMPLETED'&&
+         row?.specialistResult?.sourceApp==='hide-seek')
+        expanded.push({...row,centralFeedbackKind:'HIDE_MEMORY'});
+      if(['COMPLETED','PARTIAL','BLOCKED'].includes(row?.state)&&
+         row?.centralCheckpoint?.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT')
+        expanded.push({...row,centralFeedbackKind:'CENTRAL_CHECKPOINT_PROGRESS'});
+    }
+    return expanded;
+  }
   // Prevalidate all eligible completed Hide outcomes before enqueueing any.
   // The outbox may still fail mid-batch; report exact partial state for retry.
   async function enqueueBatch(outcomes,contextForRow,{pipeline}={}){
@@ -110,10 +128,11 @@
     if(!pipeline||typeof pipeline.enqueueReadyObservation!=='function')
       return {ok:false,reason:'CENTRAL_PIPELINE_REQUIRED',results:[]};
     const prepared=[],seen=new Map();
-    for(const row of outcomes){
-      const isHide=row?.state==='COMPLETED'&&
-        row?.specialistResult?.sourceApp==='hide-seek';
-      const isCheckpoint=['COMPLETED','PARTIAL','BLOCKED'].includes(row?.state)&&
+    for(const row of expandOutcomes(outcomes)){
+      const isHide=row?.centralFeedbackKind==='HIDE_MEMORY'&&
+        row?.state==='COMPLETED'&&row?.specialistResult?.sourceApp==='hide-seek';
+      const isCheckpoint=row?.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'&&
+        ['COMPLETED','PARTIAL','BLOCKED'].includes(row?.state)&&
         row?.centralCheckpoint?.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT';
       if(!isHide&&!isCheckpoint)continue;
       const context=contextForRow(row);
@@ -142,7 +161,7 @@
     }
     return {ok:true,results,authority:'LOCAL_OUTBOX_ONLY_NOT_CENTRAL_ACK'};
   }
-  const api=Object.freeze({VERSION,fromOutcome,fromCheckpointOutcome,enqueueOutcome,enqueueBatch});
+  const api=Object.freeze({VERSION,fromOutcome,fromCheckpointOutcome,expandOutcomes,enqueueOutcome,enqueueBatch});
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   if(typeof window!=='undefined')window.ReadyCentralObservationHandoffV01=api;
 })();
