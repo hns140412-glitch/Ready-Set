@@ -99,3 +99,50 @@ test('completed central Planner checkpoint is persisted and dispatched as unveri
  expect(actual.eventRow.specialistResult).toBeUndefined();
  expect(actual.eventRow.memoryReviewFeedback).toBeUndefined();
 });
+
+test('one real Ready task returning Hide also preserves separate central checkpoint feedback',async({page})=>{
+ await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
+ const result=await page.evaluate(()=>{
+  const scope={authenticated:true,family_id:'F1',selected_member_id:'A'};
+  let detail=null;
+  window.addEventListener('readyset-learning-outcomes-ready',e=>detail=e.detail);
+  const host=window.ReadyCentralLearningRoundtripV01.installBrowserHost({
+   eventTarget:window,activeScopeProvider:()=>scope,
+   roundtrip:{run:async()=>({ok:false,reason:'TEST_ONLY_NO_LIVE_CENTRAL_ACCOUNT'})},
+   resolveRecordOptions:()=>({})
+  });
+  const p=window.ReadySetPlanner;
+  const todo=p.upsertDatedTodo({todo_id:'central-dual-fixture',date:'2026-09-27',
+   label:'영어 복습 점검',source:'PLANNER_CENTRAL_LEARNING_CHECKPOINT',
+   review_policy:{authority:'TAKY_LEARNING_ENGINE_CORE',intent_only:true},
+   provenance:{family_id:'F1',member_id:'A',subject:'english',
+    concept_skill_target:'vocabulary',schedule_authority:'READY_SET_PLANNER'},
+   state:'PLANNED'});
+  p.recordTaskState({todo_id:todo.todo_id,ready_state:'IN_PROGRESS',
+   session_id:'dual-session',task_id:'dual-task'});
+  const plannerOutcome=p.recordSessionOutcome({todo_id:todo.todo_id,
+   ready_state:'COMPLETED',actual_ms:90000,session_id:'dual-session',
+   task_id:'dual-task'});
+  state.activeSession={id:'dual-session',startAt:Date.now()-3000,
+   targetMs:3000,pausedAt:null,issueMs:0,completed:false,selected:[],tasks:[],
+   plannerLinks:[],sound:'OFF',recordingDone:false,
+   centralLearningScope:{family_id:'F1',member_id:'A'}};
+  const record=window.completeSessionFromTaskOutcomes([{
+   task_id:'dual-task',planner_todo_id:todo.todo_id,state:'COMPLETED',
+   actual_ms:90000,plannerOutcome,specialistResult:{
+    sourceApp:'hide-seek',taskState:'COMPLETED',
+    memorySummary:{authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
+     prioritySemantics:'ADVISORY_SIGNAL_NOT_DATE',
+     reviewAdvisories:[{lexicalId:'word-a',advisoryOnly:true,
+      evidenceBasis:'HIDE_MEMORY_EVIDENCE',nextReviewPriority:80}]}
+   }
+  }]);
+  host.detach();
+  return {persistedCount:record.taskOutcomes.length,
+   kinds:detail?.task_outcomes?.map(x=>x.centralFeedbackKind),
+   ids:detail?.task_outcomes?.map(x=>x.task_id)};
+ });
+ expect(result.persistedCount).toBe(1);
+ expect(result.kinds).toEqual(['HIDE_MEMORY','CENTRAL_CHECKPOINT_PROGRESS']);
+ expect(result.ids).toEqual(['dual-task','dual-task']);
+});
