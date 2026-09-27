@@ -178,7 +178,7 @@ assert.equal(review.nextReviewFromSpecialistResult({memorySummary:{authority:'FO
 const outcomePlanner=createPlanner(memoryStorage());
 outcomePlanner.upsertDailyAvailabilityWindow({date:'2026-09-25',start:'16:00',end:'17:00',confirmed:true,source:'PARENT_CONFIRMED'});
 const outcomeFeedback=review.planFromReadyOutcomes([{
- task_id:'completed-hide-task',
+ state:'COMPLETED',task_id:'completed-hide-task',
  specialistResult:normalizedResult,
  memoryReviewFeedback:interpreted
 }],outcomePlanner,{candidate_dates:['2026-09-25']});
@@ -187,19 +187,19 @@ assert.equal(outcomeFeedback.scheduled.length,1);
 assert.equal(outcomeFeedback.scheduled[0].todo.date,'2026-09-25');
 assert.equal(outcomeFeedback.scheduled[0].source_task_id,'completed-hide-task');
 const repeatFeedback=review.planFromReadyOutcomes([{
- task_id:'completed-hide-task',specialistResult:normalizedResult,memoryReviewFeedback:interpreted
+ state:'COMPLETED',task_id:'completed-hide-task',specialistResult:normalizedResult,memoryReviewFeedback:interpreted
 }],outcomePlanner,{candidate_dates:['2026-09-25']});
 assert.equal(repeatFeedback.ok,true);
 assert.equal(repeatFeedback.scheduled[0].reused,true);
 assert.equal(repeatFeedback.scheduled[0].todo.todo_id,outcomeFeedback.scheduled[0].todo.todo_id);
 assert.equal(outcomePlanner.snapshot().dated_todos.length,1);
 const replayWithoutAvailability=review.planFromReadyOutcomes([{
- task_id:'completed-hide-task',specialistResult:normalizedResult,memoryReviewFeedback:interpreted
+ state:'COMPLETED',task_id:'completed-hide-task',specialistResult:normalizedResult,memoryReviewFeedback:interpreted
 }],outcomePlanner,{candidate_dates:[]});
 assert.equal(replayWithoutAvailability.ok,true);
 assert.equal(replayWithoutAvailability.scheduled[0].reused,true);
 const conflictingFeedback=review.planFromReadyOutcomes([{
- task_id:'completed-hide-task',specialistResult:normalizedResult,
+ state:'COMPLETED',task_id:'completed-hide-task',specialistResult:normalizedResult,
  memoryReviewFeedback:{ok:true,decision:{...interpreted.decision,lexicalIds:['different-lexical-id']}}
 }],outcomePlanner,{candidate_dates:[]});
 assert.equal(conflictingFeedback.ok,false);
@@ -208,9 +208,16 @@ assert.equal(conflictingFeedback.reason,'REPLAY_REVIEW_DECISION_CONFLICT');
 
 assert.equal(review.planFromReadyOutcomes([{task_id:'ordinary',memoryReviewFeedback:interpreted}],
  outcomePlanner,{candidate_dates:['2026-09-25']}).scheduled.length,0);
-assert.equal(review.planFromReadyOutcomes([{task_id:'hide',specialistResult:normalizedResult,
+assert.equal(review.planFromReadyOutcomes([{state:'COMPLETED',task_id:'hide',specialistResult:normalizedResult,
  memoryReviewFeedback:interpreted}],createPlanner(memoryStorage()),{candidate_dates:['2026-09-25']}).reason,
  'NO_CONFIRMED_REVIEW_WINDOW');
+
+assert.equal(review.planFromReadyOutcomes([{state:'PARTIAL',task_id:'incomplete',
+ specialistResult:normalizedResult,memoryReviewFeedback:interpreted}],outcomePlanner,
+ {candidate_dates:['2026-09-25']}).scheduled.length,0);
+assert.equal(review.planFromReadyOutcomes([{state:'COMPLETED',task_id:'forged',
+ specialistResult:{...normalizedResult,taskState:'PARTIAL'},memoryReviewFeedback:interpreted}],
+ outcomePlanner,{candidate_dates:['2026-09-25']}).scheduled.length,0);
 
 const fs=require('fs');
 const runtime=fs.readFileSync(require('path').join(__dirname,'..','ready-runtime-v07.js'),'utf8');
