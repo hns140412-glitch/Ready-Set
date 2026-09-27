@@ -639,6 +639,7 @@
       contract: () => state.activeSession?.rev07 ? structuredClone(state.activeSession.rev07) : null,
       validate: validateContract,
       launchSpecialist,
+      hideV2TargetUrl:configuredHideV2Url,
       setTaskState,
       switchTask,
       openWrapUp
