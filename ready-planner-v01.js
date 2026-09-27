@@ -772,7 +772,16 @@
         if(todo.active_session_id&&sessionId&&todo.active_session_id!==sessionId){
           return {ok:false,reason:'SESSION_OWNERSHIP_CONFLICT',todo_id:todoId,active_session_id:todo.active_session_id};
         }
-        if(todo.state!=='IN_PROGRESS'&&!['PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].includes(todo.state)){
+        // Ready's task-state event can already mark this exact task COMPLETED
+        // before the final session-outcome recorder attaches elapsed time.
+        // Allow that one same-session completion, not an unrelated replay.
+        const sameCompletedEvent=todo.state==='COMPLETED'&&mapped==='COMPLETED'&&
+          !!sessionId&&!!cleanText(input.task_id)&&s.progress_events.some(e=>
+            e.todo_id===todoId&&e.session_id===sessionId&&
+            e.task_id===cleanText(input.task_id)&&e.state==='COMPLETED'&&
+            e.source==='READY_SESSION');
+        if(todo.state!=='IN_PROGRESS'&&!sameCompletedEvent&&
+          !['PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].includes(todo.state)){
           return {ok:false,reason:'TODO_NOT_FINISHABLE',todo_id:todoId,state:todo.state};
         }
         todo.state=mapped;
