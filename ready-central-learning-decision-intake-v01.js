@@ -36,7 +36,27 @@
    adaptive_plan:structuredClone(result.decision.adaptive_plan),
    scope:structuredClone(scope),trace:structuredClone(result.trace||{})};
  }
- const api=Object.freeze({VERSION,accept});
+ // A host-supplied authenticated decision provider must bind its envelope to
+ // the selected member both before and after the asynchronous request.
+ async function receive({sessionProvider,decisionProvider,subject,concept_skill_target}={}){
+  if(typeof sessionProvider!=='function'||typeof decisionProvider!=='function')
+   return {ok:false,reason:'TRUSTED_CENTRAL_DECISION_PROVIDER_REQUIRED'};
+  const before=await sessionProvider();
+  if(before?.authenticated!==true||!clean(before.family_id)||!clean(before.selected_member_id))
+   return {ok:false,reason:'ACTIVE_CENTRAL_SESSION_REQUIRED'};
+  const response=await decisionProvider({family_id:before.family_id,
+   member_id:before.selected_member_id,subject,concept_skill_target});
+  const after=await sessionProvider();
+  if(after?.authenticated!==true||after.family_id!==before.family_id||
+     after.selected_member_id!==before.selected_member_id)
+   return {ok:false,reason:'CENTRAL_DECISION_SESSION_CHANGED'};
+  if(response?.authenticated_server_response!==true)
+   return {ok:false,reason:'AUTHENTICATED_CENTRAL_RESPONSE_REQUIRED'};
+  return accept(response.runtime_result,{family_id:before.family_id,
+   member_id:before.selected_member_id,subject,concept_skill_target,
+   receipt_scope:response.receipt_scope});
+ }
+ const api=Object.freeze({VERSION,accept,receive});
  if(typeof module!=='undefined'&&module.exports)module.exports=api;
  if(typeof window!=='undefined')window.ReadyCentralLearningDecisionIntakeV01=api;
 })();
