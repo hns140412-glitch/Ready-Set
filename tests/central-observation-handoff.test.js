@@ -23,6 +23,12 @@ assert.equal(H.fromOutcome({...row,specialistResult:{...row.specialistResult,tas
 assert.equal(H.fromOutcome(row,{...context,session:{...session,authenticated:false}}).ok,false);
 assert.equal(H.fromOutcome(row,{...context,concept_skill_target:''}).ok,false);
 assert.equal(H.fromOutcome(row,{...context,event_id:''}).ok,false);
+assert.equal(H.fromOutcome({...row,specialistResult:{...row.specialistResult,
+ memorySummary:{...row.specialistResult.memorySummary,nested:{verification_receipt:{ok:true}}}}},context).reason,
+ 'SPECIALIST_SUMMARY_AUTHORITY_LEAK');
+assert.equal(H.fromOutcome({...row,specialistResult:{...row.specialistResult,
+ memorySummary:{...row.specialistResult.memorySummary,nested:{planner_date:'2026-09-27'}}}},context).reason,
+ 'SPECIALIST_SUMMARY_AUTHORITY_LEAK');
 assert.equal(H.fromOutcome({...row,member_id:'child-B'},context).reason,'OUTCOME_MEMBER_SCOPE_MISMATCH');
 assert.equal(H.fromOutcome({...row,specialistResult:{...row.specialistResult,child_id:'child-B'}},context).reason,'OUTCOME_MEMBER_SCOPE_MISMATCH');
 assert.equal(H.fromOutcome({...row,family_id:'other-family'},context).reason,'OUTCOME_FAMILY_SCOPE_MISMATCH');
