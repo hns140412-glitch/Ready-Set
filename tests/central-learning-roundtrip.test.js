@@ -38,7 +38,7 @@ const runtime={ok:true,authority:'TAKY_LEARNING_ENGINE_CORE',
  pedagogical_actions:[{intent:'RETRIEVAL_CHECKPOINT',priority:'HIGH'}],
  adaptive_plan:adaptive},
  trace:{verified_receipt_id:'real-evidence:server-r1',verified_evidence_count:1,
- evidence_ids:['prior-server-verified-e1']}};
+ basis_kind:'VERIFIED_ONLY',evidence_ids:['prior-server-verified-e1']}};
 let decisionRuntime=runtime,member='CHILD_A',evidenceResponses=0,seenObservation=null;
 let evidenceDown=false,changeMemberOnDecision=false;
 const fetchImpl=async(url,opts)=>{
@@ -59,7 +59,8 @@ const fetchImpl=async(url,opts)=>{
    decision_response_version:'TAKY_CENTRAL_LEARNING_DECISION_HTTP_V1',
    receipt_scope:{family_id:'F1',member_id:'CHILD_A'},
    source:'SERVER_DURABLE_VERIFIED_EVIDENCE_ONLY',
-   observation_only_excluded:true,runtime_result:decisionRuntime})};
+   observation_only_excluded:true,observation_proof_promotion:false,
+   runtime_result:decisionRuntime})};
  }
  throw Error('UNEXPECTED_HTTP_URL:'+url);
 };
