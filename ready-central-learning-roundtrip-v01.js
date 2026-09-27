@@ -85,5 +85,30 @@
   }
   return Object.freeze({VERSION,run,close:()=>pipeline.close?.()});
  }
- return Object.freeze({VERSION,create});
+ // Explicit attachment: the page emits this only after persisting a
+ // completed session. No listener is installed without a trusted host.
+ function attachReadySession({eventTarget,roundtrip,resolveRecordOptions,onResult}={}){
+  if(typeof eventTarget?.addEventListener!=='function'||
+     typeof eventTarget?.removeEventListener!=='function'||
+     typeof roundtrip?.run!=='function'||
+     typeof resolveRecordOptions!=='function'||
+     typeof onResult!=='function')
+   throw Error('EXPLICIT_READY_CENTRAL_EVENT_HOST_REQUIRED');
+  let attached=true;
+  const handler=event=>{
+   const record=event?.detail;
+   if(!attached||!clean(record?.session_id)||!Array.isArray(record?.task_outcomes))
+    return;
+   Promise.resolve().then(()=>resolveRecordOptions(record))
+    .then(options=>roundtrip.run({...options,outcomes:record.task_outcomes}))
+    .then(result=>{if(attached)onResult({session_id:record.session_id,result})})
+    .catch(()=>{if(attached)onResult({session_id:record.session_id,
+      result:{ok:false,reason:'CENTRAL_ROUNDTRIP_HOST_UNAVAILABLE'}})});
+  };
+  eventTarget.addEventListener('readyset-learning-outcomes-ready',handler);
+  return Object.freeze({detach(){
+   attached=false;eventTarget.removeEventListener('readyset-learning-outcomes-ready',handler);
+  }});
+ }
+ return Object.freeze({VERSION,create,attachReadySession});
 });
