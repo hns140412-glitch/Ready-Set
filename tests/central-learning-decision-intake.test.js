@@ -14,6 +14,7 @@ const result={ok:true,authority:'TAKY_LEARNING_ENGINE_CORE',
    scope:{member_id:'A',subject:'english',concept_skill_target:'vocabulary'}}},
  trace:{evidence_ids:['e1']}};
 assert.equal(Intake.accept(result,context).ok,true);
+assert.equal(Intake.accept(result,{...context,subject:'English',concept_skill_target:'Vocabulary'}).ok,true);
 assert.equal(Intake.accept({...result,decision:{...result.decision,adaptive_plan:{...result.decision.adaptive_plan,scope:{...result.scope,member_id:'B'}}}},context).reason,'CENTRAL_ADAPTIVE_PLAN_SCOPE_INVALID');
 assert.equal(Intake.accept(result,scope).reason,'CENTRAL_DECISION_SCOPE_MISMATCH');
 assert.equal(Intake.accept(result,{...context,receipt_scope:{...receipt_scope,family_id:'other'}}).reason,'CENTRAL_DECISION_SCOPE_MISMATCH');
