@@ -529,7 +529,7 @@
         // Preserve actionable review intent in the normal session outcome path.
         // This is a local advisory projection, NOT a central verified receipt,
         // and it never allocates a date without the Planner.
-        memoryReviewFeedback:task.state==='COMPLETED' &&
+        memoryReviewFeedback:task.state==='COMPLETED' && !task.central_checkpoint &&
           task.specialist_result?.sourceApp==='hide-seek'
           ? (window.ReadyHideMemoryReviewV01?.interpretHideMemorySummary?.(
               task.specialist_result.memorySummary)||null)
