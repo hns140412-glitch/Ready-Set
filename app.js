@@ -164,8 +164,15 @@ function applyGuide(el,type=state.guide.type){
 }
 function guideData(type=state.guide.type){return GUIDE_TYPES[type]||GUIDE_TYPES.lumi}
 
+function centralPlannerScope(){
+  // Supplied only by an explicitly installed trusted central host. Ready's
+  // local family session is not an independent Google/central grant.
+  const scope=window.ReadyCentralLearningHost?.activeScope?.()||null;
+  return scope?.authenticated===true?scope:null;
+}
 function currentPlannerMissionItems(){
-  const today=window.ReadySetPlanner?.todayProjection?.()||[];
+  const today=window.ReadySetPlanner?.todayProjection?.(undefined,{
+    central_scope:centralPlannerScope()})||[];
   const selected=today.filter(x=>x.state==='PLANNED'&&state.selectedTodoIds.includes(x.todo_id));
   return selected.length?selected:today.filter(x=>x.state==='PLANNED');
 }
@@ -234,7 +241,7 @@ function renderPlannerToday(){
   const root=$('#plannerTodayList');
   const section=$('#plannerTodaySection');
   if(!root||!section)return;
-  const items=window.ReadySetPlanner?.todayProjection?.()||[];
+  const items=window.ReadySetPlanner?.todayProjection?.(undefined,{central_scope:centralPlannerScope()})||[];
   section.hidden=!items.length;
   root.innerHTML='';
   for(const item of items){
@@ -263,7 +270,7 @@ function renderMission(){
   renderChips($('#missionChips'));
   renderPlannerToday();
   const tl=$('#taskList');tl.innerHTML='';
-  const chosen=(window.ReadySetPlanner?.todayProjection?.()||[]).filter(x=>x.state==='PLANNED'&&state.selectedTodoIds.includes(x.todo_id));
+  const chosen=(window.ReadySetPlanner?.todayProjection?.(undefined,{central_scope:centralPlannerScope()})||[]).filter(x=>x.state==='PLANNED'&&state.selectedTodoIds.includes(x.todo_id));
   chosen.forEach((t)=>{
     const row=document.createElement('div');
     row.className='taskRow';
@@ -396,7 +403,7 @@ $('#startBtn').onclick=async()=>{
   if(state.activeSession){toast('이미 진행 중인 작전이 있어요. 먼저 진행 중인 작전으로 돌아가 주세요.');nav('focus');return}
   if(!state.selectedTodoIds.length){toast('먼저 Planner가 준비한 오늘의 탐험을 선택해 주세요.');return}
   const now=Date.now();
-  const plannerLinks=window.ReadySetPlanner?.linkTodayItems(state.selectedTodoIds,{allowed_states:['PLANNED']})||[];
+  const plannerLinks=window.ReadySetPlanner?.linkTodayItems(state.selectedTodoIds,{allowed_states:['PLANNED'],central_scope:centralPlannerScope()})||[];
   if(!plannerLinks.length){toast('지금 시작할 수 있는 Planner TODO가 없어요. TODAY를 다시 확인해 주세요.');return}
   const labels=plannerLinks.map(x=>x.label);
   const sessionId=`s_${now}`;
@@ -743,7 +750,15 @@ function addDays(base,n){const d=new Date(base);d.setDate(d.getDate()+n);return 
 function weekStart(base=new Date()){
   const d=new Date(base); const dow=d.getDay(); const delta=dow===0?-6:1-dow; d.setDate(d.getDate()+delta); d.setHours(12,0,0,0); return d;
 }
-function plannerSnapshot(){return window.ReadySetPlanner?.snapshot?.()||{dated_todos:[],schedule_commitments:[],daily_availability_windows:[],carry_over_queue:[]}}
+function plannerSnapshot(){
+  const raw=window.ReadySetPlanner?.snapshot?.()||{
+    dated_todos:[],schedule_commitments:[],daily_availability_windows:[],carry_over_queue:[]};
+  const scope=centralPlannerScope();
+  return {...raw,dated_todos:(raw.dated_todos||[]).filter(x=>
+    x.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT'||
+    (scope?.authenticated===true&&scope.family_id===x.provenance?.family_id&&
+     scope.selected_member_id===x.provenance?.member_id))};
+}
 plannerSelectedDate=plannerSelectedDate||localDateKey();
 function plannerItemsForDate(date,snap=plannerSnapshot()){
   const todos=(snap.dated_todos||[]).filter(x=>x.date===date).map(x=>({
