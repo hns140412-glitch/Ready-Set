@@ -89,13 +89,15 @@
 
   function normalizeHideV2ReturnEvent(event={}){
     const eventType=clean(event.event_type||event.type);
-    if(event?.source!=='hide-seek'||eventType!=='TASK_COMPLETED')return null;
+    if(event?.source!=='hide-seek'||!['TASK_COMPLETED','TASK_PARTIAL'].includes(eventType))return null;
     const payload=event?.payload;
     if(!payload||payload.resultContract!=='HIDE_SPECIALIST_RESULT_V2'||clean(payload.runtime)!=='V2')return null;
     if(!normalizeHideSpecialistResult(payload))return null;
     const ctx=payload.taskContext||{};
     const sessionId=clean(ctx.session_id),taskId=clean(ctx.task_id);
-    if(!sessionId||!taskId||!clean(ctx.lap_id)||!clean(event.event_id)||clean(payload.taskState)!=='COMPLETED')return null;
+    const expected=eventType==='TASK_COMPLETED'?'COMPLETED':'PARTIAL';
+    if(!sessionId||!taskId||!clean(ctx.lap_id)||!clean(event.event_id)||
+       clean(payload.taskState)!==expected)return null;
     return Object.freeze({
       session_id:sessionId,
       task_id:taskId,
