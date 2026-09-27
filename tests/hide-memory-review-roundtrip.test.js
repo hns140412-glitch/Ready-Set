@@ -141,6 +141,10 @@ assert(runtime.includes("HIDE_V2_TARGET_REQUIRED"));
 assert(runtime.includes("configuredHideV2Url"));
 assert(runtime.includes("p.get('learning_event')"));
 assert(runtime.includes("normalizeHideV2ReturnEvent"));
+assert(runtime.includes('A review task cannot be completed by bare return URL parameters.'));
+assert(runtime.includes('if(task.review_directive && normalized===\'COMPLETED\' && from_app!==\'hide-seek\') return false;'));
+assert(runtime.includes('!event_id || !result_payload ||'));
+
 assert(runtime.includes("result_payload: e.payload||null"));
 assert(runtime.includes("task.specialist_result=specialistResult"));
 assert(runtime.includes("specialistResult:task.specialist_result||null"));
