@@ -172,6 +172,7 @@ const context=row=>({event_id:'evt:'+row.task_id,
  assert.equal(advisory.todo.provenance.verified_receipt_id,null);
  assert.equal(advisory.todo.provenance.basis_kind,'OBSERVATION_ADVISORY_ONLY');
  assert.deepEqual(advisory.todo.provenance.target_learning_ids,['word-a']);
+ assert.equal(advisory.todo.label,'영어 다시 떠올리기 · 1개');
  assert.equal(advisory.todo.review_policy.observation_is_verified_proof,false);
  assert.equal(planner.snapshot().dated_todos.length,2);
  const unrelated=await observational.run({...args,
