@@ -44,7 +44,11 @@
    observation_basis_digest_sha256:observation?observationDigest:null};
   const matches=t=>t?.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'&&
    Object.entries(provenanceBase).every(([k,v])=>t.provenance?.[k]===v);
-  const existing=(planner.snapshot()?.dated_todos||[]).find(matches);
+  const prior=(planner.snapshot()?.dated_todos||[]).filter(matches);
+  const existing=prior.find(x=>['PLANNED','IN_PROGRESS'].includes(x.state));
+  if(!existing&&prior.length)
+   return {ok:false,reason:'CENTRAL_CHECKPOINT_REQUIRES_NEW_EVIDENCE',
+     previous_todo_id:prior.at(-1).todo_id};
   const sequence=[
    ...(intent.adaptive_plan.unit_span_policy==='REDUCE'?['SHORT_LEARNING_UNIT']:[]),
    ...(intent.adaptive_plan.add_retrieval_checkpoint===true?['RETRIEVAL_CHECKPOINT']:['CONCEPT_CHECKPOINT']),
