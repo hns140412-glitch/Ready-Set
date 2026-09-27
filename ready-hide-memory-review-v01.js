@@ -178,6 +178,7 @@
   function planFromReadyOutcomes(outcomes,planner,options={}){
     if(!Array.isArray(outcomes))return {ok:false,reason:'READY_OUTCOMES_REQUIRED'};
     const eligible=outcomes.filter(row=>row?.state==='COMPLETED' &&
+      row?.centralCheckpoint?.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT' &&
       clean(row?.task_id) && row?.specialistResult?.sourceApp==='hide-seek' &&
       row?.specialistResult?.taskState==='COMPLETED' &&
       row?.memoryReviewFeedback?.ok===true &&
