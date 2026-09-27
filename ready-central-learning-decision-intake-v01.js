@@ -22,6 +22,12 @@
      scope.subject!==subject||scope.concept_skill_target!==concept_skill_target||
      JSON.stringify(ds)!==JSON.stringify(scope))
    return {ok:false,reason:'CENTRAL_DECISION_SCOPE_MISMATCH'};
+  const plan=result.decision.adaptive_plan||{};
+  if(plan.ok!==true||
+     plan.authority!=='LEARNING_ADAPTIVE_PLAN_INTENT_ONLY'||
+     plan.adaptive_plan_contract!=='TAKY_ADAPTIVE_PLAN_INTENT_V1'||
+     JSON.stringify(plan.scope)!==JSON.stringify(scope))
+   return {ok:false,reason:'CENTRAL_ADAPTIVE_PLAN_SCOPE_INVALID'};
   if(result.decision.execution_status!=='PEDAGOGICAL_ACTION_AVAILABLE')
    return {ok:false,reason:'CENTRAL_DECISION_HOLD'};
   const forbidden=new Set(['schedule_date','planner_date','due_at','due_date','deadline']);
