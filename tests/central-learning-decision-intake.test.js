@@ -20,4 +20,20 @@ assert.equal(Intake.accept(result,{...context,member_id:'B'}).reason,'CENTRAL_DE
 assert.equal(Intake.accept({...result,decision:{...result.decision,execution_status:'HOLD_FOR_MORE_RELIABLE_INTERPRETATION'}},context).reason,'CENTRAL_DECISION_HOLD');
 assert.equal(Intake.accept({...result,decision:{...result.decision,planner_date:'2026-09-27'}},context).reason,'CENTRAL_DECISION_AUTHORITY_LEAK');
 assert.equal(Intake.accept({...result,decision:{...result.decision,authority:'READY_LEARNING_ENGINE_REVIEW_POLICY'}},context).reason,'CENTRAL_RUNTIME_DECISION_REQUIRED');
-console.log('READY_CENTRAL_LEARNING_DECISION_INTAKE_PASS');
+(async()=>{
+ let member='A';
+ const sessionProvider=async()=>({authenticated:true,family_id:'F',selected_member_id:member});
+ const decisionProvider=async()=>({authenticated_server_response:true,receipt_scope,runtime_result:result});
+ const opts={sessionProvider,decisionProvider,subject:'english',concept_skill_target:'vocabulary'};
+ assert.equal((await Intake.receive(opts)).ok,true);
+ assert.equal((await Intake.receive({...opts,decisionProvider:async()=>({receipt_scope,runtime_result:result})})).reason,
+  'AUTHENTICATED_CENTRAL_RESPONSE_REQUIRED');
+ assert.equal((await Intake.receive({...opts,decisionProvider:async()=>{
+  member='B';return {authenticated_server_response:true,receipt_scope,runtime_result:result};
+ }})).reason,'CENTRAL_DECISION_SESSION_CHANGED');
+ member='A';
+ assert.equal((await Intake.receive({...opts,decisionProvider:async()=>({
+  authenticated_server_response:true,receipt_scope:{...receipt_scope,family_id:'other'},runtime_result:result
+ })})).reason,'CENTRAL_DECISION_SCOPE_MISMATCH');
+ console.log('READY_CENTRAL_LEARNING_DECISION_INTAKE_PASS');
+})().catch(e=>{console.error(e);process.exitCode=1});
