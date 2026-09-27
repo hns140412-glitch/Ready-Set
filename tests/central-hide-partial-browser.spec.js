@@ -113,6 +113,27 @@ test('Hide V2 partial return retains exact central task and does not certify com
  expect(refusedMember.task.state).toBe('PENDING');
  expect(refusedMember.task.specialist_result).toBeNull();
  expect(refusedMember.fragmentPending).toBe(true);
+ // A central-looking envelope must not be accepted by a local Ready policy
+ // task just because the generic V2 normalizer supports both contracts.
+ await page.evaluate(()=>{
+  const task=state.activeSession.rev07.tasks[0];
+  task.review_directive={...task.review_directive,
+   authority:'EXPLICIT_READY_PLANNER_REVIEW_DIRECTIVE',reviewPolicyOwner:'READY_LEARNING_ENGINE'};
+  task.central_checkpoint=false;save();
+ });
+ await navigate(buildEvent('cross-owner-to-local-3',['a::뜻','b::뜻']),{fragment:true});
+ await page.reload({waitUntil:'load'});
+ const refusedOwner=await page.evaluate(()=>({
+  task:window.ReadySetRev07.contract()?.tasks?.[0],
+  fragmentPending:location.hash.includes('learning_event')
+ }));
+ expect(refusedOwner.task.specialist_result).toBeNull();
+ expect(refusedOwner.task.state).toBe('PENDING');
+ expect(refusedOwner.fragmentPending).toBe(true);
+ await page.evaluate(expected=>{
+  const task=state.activeSession.rev07.tasks[0];
+  task.review_directive=expected;task.central_checkpoint=true;save();
+ },bound.directive);
  await navigate(buildEvent('partial-correct-2',['b::뜻','a::뜻']),{fragment:true});
  // The fixture serves Ready on one origin; hash-to-hash navigation does not
  // reload it. A real Hide-to-Ready cross-origin return loads Ready anew.
