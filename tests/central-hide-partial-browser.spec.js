@@ -1,14 +1,23 @@
 const {test,expect}=require('@playwright/test');
 
 test('Hide V2 partial return retains exact central task and does not certify completed recall',async({page})=>{
+ // A real navigation recreates the browser host. Model its explicitly
+ // configured authenticated session on every document rather than faking a
+ // token or assuming the previous page's JS objects survive reload.
+ await page.addInitScript(()=>{
+  document.addEventListener('DOMContentLoaded',()=>{
+   const scope={authenticated:true,family_id:'F1',selected_member_id:'CHILD_A'};
+   window.__testCentralScope=scope;
+   window.ReadyCentralLearningRoundtripV01.installBrowserHost({
+    eventTarget:window,activeScopeProvider:()=>scope,
+    roundtrip:{run:async()=>({ok:false,reason:'TEST_ONLY_NO_LIVE_CENTRAL_ACCOUNT'})},
+    resolveRecordOptions:()=>({})
+   });
+  },{once:true});
+ });
  await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
  const setup=await page.evaluate(async()=>{
-  const scope={authenticated:true,family_id:'F1',selected_member_id:'CHILD_A'};
-  const host=window.ReadyCentralLearningRoundtripV01.installBrowserHost({
-   eventTarget:window,activeScopeProvider:()=>scope,
-   roundtrip:{run:async()=>({ok:false,reason:'TEST_ONLY_NO_LIVE_CENTRAL_ACCOUNT'})},
-   resolveRecordOptions:()=>({})
-  });
+  const scope=window.__testCentralScope;
   const today=new Date(),date=today.getFullYear()+'-'+
    String(today.getMonth()+1).padStart(2,'0')+'-'+
    String(today.getDate()).padStart(2,'0');
@@ -30,7 +39,6 @@ test('Hide V2 partial return retains exact central task and does not certify com
   if(!planned.ok)return {ok:false,reason:planned.reason};
   state.selectedTodoIds=[planned.todo.todo_id];state.targetMin=1;save();
   document.getElementById('startBtn').click();
-  host.detach();
   return {ok:true};
  });
  expect(setup.ok).toBe(true);
