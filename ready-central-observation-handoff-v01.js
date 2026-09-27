@@ -48,7 +48,43 @@
       return {ok:false,reason:'CENTRAL_OUTBOX_ENQUEUE_NOT_CONFIRMED',queued:queued||null};
     return {ok:true,queued,authority:'LOCAL_OUTBOX_ONLY_NOT_CENTRAL_ACK'};
   }
-  const api=Object.freeze({VERSION,fromOutcome,enqueueOutcome});
+  // Prevalidate all eligible completed Hide outcomes before enqueueing any.
+  // The outbox may still fail mid-batch; report exact partial state for retry.
+  async function enqueueBatch(outcomes,contextForRow,{pipeline}={}){
+    if(!Array.isArray(outcomes)||typeof contextForRow!=='function')
+      return {ok:false,reason:'EXPLICIT_BATCH_CONTEXT_REQUIRED',results:[]};
+    if(!pipeline||typeof pipeline.enqueueReadyObservation!=='function')
+      return {ok:false,reason:'CENTRAL_PIPELINE_REQUIRED',results:[]};
+    const prepared=[],seen=new Map();
+    for(const row of outcomes){
+      if(row?.state!=='COMPLETED'||row?.specialistResult?.sourceApp!=='hide-seek')continue;
+      const context=contextForRow(row);
+      const mapped=fromOutcome(row,context);
+      if(!mapped.ok)return {ok:false,reason:mapped.reason,results:[]};
+      const key=mapped.observation.event_id;
+      const fingerprint=JSON.stringify(mapped.observation);
+      if(seen.has(key)){
+        if(seen.get(key)!==fingerprint)
+          return {ok:false,reason:'BATCH_OBSERVATION_ID_CONFLICT',results:[]};
+        continue;
+      }
+      seen.set(key,fingerprint);
+      prepared.push(mapped.observation);
+    }
+    const results=[];
+    for(const observation of prepared){
+      let queued;
+      try{queued=await pipeline.enqueueReadyObservation(observation)}
+      catch(error){return {ok:false,reason:'CENTRAL_OUTBOX_ENQUEUE_FAILED',
+        results,failed_event_id:observation.event_id};}
+      if(!queued||queued.queued!==true&&queued.duplicate!==true)
+        return {ok:false,reason:'CENTRAL_OUTBOX_ENQUEUE_NOT_CONFIRMED',
+          results,failed_event_id:observation.event_id};
+      results.push({event_id:observation.event_id,queued});
+    }
+    return {ok:true,results,authority:'LOCAL_OUTBOX_ONLY_NOT_CENTRAL_ACK'};
+  }
+  const api=Object.freeze({VERSION,fromOutcome,enqueueOutcome,enqueueBatch});
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   if(typeof window!=='undefined')window.ReadyCentralObservationHandoffV01=api;
 })();
