@@ -173,6 +173,12 @@
     const c = ensureContract();
     const task = c?.tasks?.find(t => t.task_id === taskId);
     if (!task || !VALID_TASK_STATES.has(nextState)) return false;
+    // Completing a targeted central specialist checkpoint requires its
+    // matching Hide V2 result, not just a wrap-up click or voice transcript.
+    if(nextState==='COMPLETED'&&task.central_checkpoint&&task.review_directive&&
+       (source!=='hide-seek'||!window.ReadyCentralHideDirectiveV01?.validateResult?.(
+         task.review_directive,task.specialist_result?.rawResult||null)))
+      return false;
     const previous = task.state;
     task.state = nextState;
     task.updated_at = iso();
@@ -300,7 +306,11 @@
            task.review_directive,result_payload))))return false;
     if(from_app==='hide-seek'&&result_payload){
       const specialistResult=window.ReadyHideMemoryReviewV01?.normalizeHideSpecialistResult?.(result_payload)||null;
-      if(specialistResult)task.specialist_result=specialistResult;
+      if(specialistResult){
+        task.specialist_result=task.central_checkpoint
+          ?{...specialistResult,rawResult:structuredClone(result_payload)}
+          :specialistResult;
+      }
     }
     c.active_app = 'ready-set';
     c.active_task_id = task.task_id;
@@ -456,7 +466,7 @@
       : `${state.guide?.name || '길잡이'}: 좋아. 빠진 상태 없이 정리됐어.`;
     document.getElementById('rev07WrapTasks').innerHTML = c.tasks.map(t => `
       <div class="rev07-wrap-task"><b>${escapeHtml(t.label)} · ${labelState(t.state)}</b><div class="rev07-state-grid">
-      ${['COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].map(s => `<button class="${t.state===s?'on':''}" data-wrap-state="${s}" data-task-id="${t.task_id}">${labelState(s)}</button>`).join('')}
+      ${['COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].map(s => `<button class="${t.state===s?'on':''}" data-wrap-state="${s}" data-task-id="${t.task_id}" ${s==='COMPLETED'&&t.central_checkpoint&&t.review_directive&&!window.ReadyCentralHideDirectiveV01?.validateResult?.(t.review_directive,t.specialist_result?.rawResult||null)?'disabled':''}>${labelState(s)}</button>`).join('')}
       </div></div>`).join('');
     document.getElementById('rev07ConfirmEnd').disabled = unresolved.length > 0;
     modal.hidden = false;
