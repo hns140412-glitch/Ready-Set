@@ -62,8 +62,16 @@
   const windows=planner.candidateWindowsByDate(dates)||{};
   const date=dates.find(d=>Array.isArray(windows[d])&&windows[d].length>0);
   if(!date)return {ok:false,reason:'NO_CONFIRMED_PLANNER_WINDOW'};
+  const reviewTargets=Array.isArray(intent.adaptive_plan.target_learning_ids)
+    ?[...new Set(intent.adaptive_plan.target_learning_ids.map(clean).filter(Boolean))].slice(0,24):[];
+  const subjectLabel=['english','영어'].includes(scope.subject)?'영어':
+    ['korean','국어'].includes(scope.subject)?'국어':
+    ['math','수학'].includes(scope.subject)?'수학':scope.subject;
+  const accessibleLabel=reviewTargets.length
+    ?subjectLabel+' 다시 떠올리기 · '+reviewTargets.length+'개'
+    :subjectLabel+' 학습 확인';
   const todo=planner.upsertDatedTodo({
-   date,label:clean(label)||'중앙 학습 점검',
+   date,label:clean(label)||accessibleLabel,
    source:'PLANNER_CENTRAL_LEARNING_CHECKPOINT',
    source_actor:'READY_SET_PLANNER',state:'PLANNED',
    activity_types:types,activity_sequence:sequence,
@@ -72,8 +80,7 @@
     evidence_basis_kind:basisKind,observation_is_verified_proof:false},
    provenance:{kind:'CENTRAL_PEDAGOGICAL_CHECKPOINT',...provenanceBase,
     central_intents:(intent.actions||[]).map(x=>clean(x.intent)).filter(Boolean),
-    target_learning_ids:Array.isArray(intent.adaptive_plan.target_learning_ids)
-     ?intent.adaptive_plan.target_learning_ids.filter(clean):[],
+    target_learning_ids:reviewTargets,
     schedule_authority:'READY_SET_PLANNER'}
   });
   if(!todo||!clean(todo.todo_id)||todo.date!==date)
