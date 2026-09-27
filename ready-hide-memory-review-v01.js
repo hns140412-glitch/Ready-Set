@@ -185,7 +185,13 @@
     if(!eligible.length)return {ok:true,scheduled:[],reason:'NO_ACTIONABLE_REVIEW_FEEDBACK'};
     const scheduled=[];
     for(const row of eligible){
-      const result=planReview(row.memoryReviewFeedback.decision,planner,{...options,source_task_id:row.task_id});
+      // Persisted projections are not independent evidence. Recompute from the
+      // actual specialist summary before using any proposed lexical selection.
+      const derived=interpretHideMemorySummary(row.specialistResult.memorySummary);
+      if(!derived.ok||!derived.decision||
+        JSON.stringify(derived.decision)!==JSON.stringify(row.memoryReviewFeedback.decision))
+        return {ok:false,reason:'PERSISTED_REVIEW_FEEDBACK_MISMATCH',scheduled};
+      const result=planReview(derived.decision,planner,{...options,source_task_id:row.task_id});
       if(!result.ok)return {ok:false,reason:result.reason,scheduled};
       scheduled.push({source_task_id:clean(row.task_id),...result});
     }
