@@ -9,6 +9,8 @@ on:
       - 'ready-central-learning-decision-http-v01.js'
       - 'tests/central-learning-decision-http.test.js'
       - 'ready-central-intent-to-planner-v01.js'
+      - 'ready-central-hide-directive-v01.js'
+      - 'tests/central-hide-directive.test.js'
       - 'tests/central-intent-to-planner.test.js'
       - 'tests/central-carry-scope.test.js'
       - 'ready-central-learning-roundtrip-v01.js'
