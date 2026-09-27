@@ -30,11 +30,13 @@
  }
  // A returned URL/event is local specialist continuity evidence, never a
  // server-authenticated learning receipt. Compare it to the actual task scope.
- function validateResult(expected,payload){
+ function validateBoundOutcome(expected,payload,{partial=false}={}){
   if(expected?.authority!=='EXPLICIT_CENTRAL_PLANNER_REVIEW_DIRECTIVE'||
      payload?.resultContract!=='HIDE_SPECIALIST_RESULT_V2'||
-     payload?.runtime!=='V2'||payload?.taskState!=='COMPLETED'||
-     payload?.learningPhase!=='COMPLETE'||
+     payload?.runtime!=='V2'||
+     payload?.taskState!==(partial?'PARTIAL':'COMPLETED')||
+     (!partial&&payload?.learningPhase!=='COMPLETE')||
+     (partial&&payload?.learningPhase==='COMPLETE')||
      payload?.taskContext?.task_id!==expected.taskId)return false;
   const echoed=payload.reviewDirective||{};
   if(echoed.authority!==expected.authority||
@@ -59,7 +61,13 @@
      payload.trailSummary.totalWordCount!==expected.lexicalIds.length)return false;
   return true;
  }
- const api=Object.freeze({VERSION,forPlannerTodo,validateResult});
+ function validateResult(expected,payload){
+  return validateBoundOutcome(expected,payload);
+ }
+ function validateProgress(expected,payload){
+  return validateBoundOutcome(expected,payload,{partial:true});
+ }
+ const api=Object.freeze({VERSION,forPlannerTodo,validateResult,validateProgress});
  if(typeof module!=='undefined'&&module.exports)module.exports=api;
  if(typeof window!=='undefined')window.ReadyCentralHideDirectiveV01=api;
 })();
