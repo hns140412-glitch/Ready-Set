@@ -53,4 +53,9 @@ test('a real Ready session binds central Planner lexical IDs into Hide V2 direct
   reviewPolicyOwner:'TAKY_LEARNING_ENGINE_CORE',scheduleOwner:'READY_SET_PLANNER',
   lexicalIds:['a::뜻','b::뜻'],observationIsVerifiedProof:false
  });
+ await page.locator('#completeBtn').click();
+ await expect(page.locator('#rev07WrapTasks [data-wrap-state="COMPLETED"]')).toBeDisabled();
+ await expect(page.locator('#rev07WrapTasks [data-wrap-state="PARTIAL"]')).toBeEnabled();
+ const before=await page.evaluate(()=>state.activeSession.rev07.tasks[0].state);
+ expect(before).toBe('PENDING');
 });
