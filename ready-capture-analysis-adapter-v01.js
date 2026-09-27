@@ -12,7 +12,7 @@
     if(!session.capture_session_id)return {ok:false,reason:'CAPTURE_SESSION_REQUIRED'};
     if(!manifest.length)return {ok:false,reason:'EMPTY_MANIFEST'};
     if(typeof getBlob!=='function')return {ok:false,reason:'BLOB_RESOLVER_REQUIRED'};
-    if(!VisionIngest?.buildRequest||!VisionIngest?.normalizeResult||!VisionIngest?.validateEvidence){
+    if(!VisionIngest?.buildRequest||!VisionIngest?.normalizeResult||!VisionIngest?.validateForRequest){
       return {ok:false,reason:'SHARED_VISION_INGEST_UNAVAILABLE'};
     }
 
@@ -76,13 +76,21 @@
       };
     }
 
+    // The response must independently echo the request identity. Reusing our
+    // outgoing request ID as the normalized response ID would not validate a roundtrip.
+    const echoedRequestId=typeof body?.vision_ingest_request_id==='string'
+      ?body.vision_ingest_request_id.trim():'';
+    if(!echoedRequestId)return {ok:false,reason:'ANALYSIS_REQUEST_BINDING_MISSING'};
+    if(echoedRequestId!==ingest.request.request_id){
+      return {ok:false,reason:'ANALYSIS_REQUEST_BINDING_MISMATCH'};
+    }
     const result=body?.result;
     if(!result||!Array.isArray(result.drafts)){
       return {ok:false,reason:'ANALYSIS_RESULT_INVALID'};
     }
 
     const normalized=VisionIngest.normalizeResult({
-      request_id:ingest.request.request_id,
+      request_id:echoedRequestId,
       provider:body.provider||'UNKNOWN',
       model:body.model||null,
       items:result.drafts.map((draft,index)=>({
@@ -92,12 +100,15 @@
       }))
     });
     if(!normalized.ok)return {ok:false,reason:normalized.reason||'VISION_INGEST_RESULT_INVALID'};
-    const evidence=VisionIngest.validateEvidence(
-      normalized.result,
-      ingest.request.manifest.map(x=>x.source_id)
-    );
+    const evidence=VisionIngest.validateForRequest(normalized.result,ingest.request);
     if(!evidence.ok){
-      return {ok:false,reason:'ANALYSIS_EVIDENCE_INVALID',unknown_evidence:evidence.unknown};
+      return {
+        ok:false,reason:'ANALYSIS_EVIDENCE_INVALID',
+        unknown_evidence:evidence.unknown||[],
+        missing_evidence:evidence.missing||[],
+        duplicate_result_ids:evidence.duplicate_result_ids||[],
+        invalid_confidence:evidence.invalid_confidence||[]
+      };
     }
 
     return {
@@ -106,7 +117,7 @@
       model:body.model||null,
       family_id:body.family_id||null,
       analysis_version:result.analysis_version||'CAPTURE_OCR_V1',
-      vision_ingest_request_id:ingest.request.request_id,
+      vision_ingest_request_id:echoedRequestId,
       vision_ingest_version:normalized.result.ingest_version,
       evidence_valid:true,
       drafts:result.drafts,
