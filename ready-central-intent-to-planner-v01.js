@@ -36,7 +36,8 @@
    return {ok:true,scheduled:false,reason:'NO_CENTRAL_CHECKPOINT_INTENT'};
   if(!planner||typeof planner.candidateWindowsByDate!=='function'||
      typeof planner.upsertDatedTodo!=='function'||
-     typeof planner.snapshot!=='function')
+     typeof planner.snapshot!=='function'||
+     typeof planner.reconcileCentralCheckpointCarries!=='function')
    return {ok:false,reason:'PLANNER_RUNTIME_REQUIRED'};
   const provenanceBase={family_id:receipt.family_id,member_id:receipt.member_id,
    subject:scope.subject,concept_skill_target:scope.concept_skill_target,
@@ -55,10 +56,17 @@
    ...(intent.adaptive_plan.assistance_policy==='FADE_GRADUALLY'?['ASSISTANCE_FADING']:[])
   ];
   const types=intent.adaptive_plan.add_retrieval_checkpoint===true?['RETRIEVAL']:['CHECKPOINT'];
+  const reconcile=todo=>planner.reconcileCentralCheckpointCarries({
+   new_todo_id:todo.todo_id,family_id:receipt.family_id,member_id:receipt.member_id,
+   subject:scope.subject,concept_skill_target:scope.concept_skill_target
+  });
   if(existing){
    if(JSON.stringify(existing.activity_sequence||[])!==JSON.stringify(sequence))
     return {ok:false,reason:'CENTRAL_CHECKPOINT_REPLAY_CONFLICT'};
-   return {ok:true,scheduled:true,reused:true,todo:existing};
+   const reconciled=reconcile(existing);
+   if(!reconciled?.ok)return {ok:false,reason:'CENTRAL_CARRY_RECONCILIATION_FAILED'};
+   return {ok:true,scheduled:true,reused:true,todo:existing,
+    previous_carry_reconciled:reconciled.resolved};
   }
   const dates=[...new Set((candidate_dates||[]).map(clean).filter(d=>
    /^\d{4}-\d{2}-\d{2}$/.test(d)))];
@@ -89,7 +97,11 @@
   });
   if(!todo||!clean(todo.todo_id)||todo.date!==date)
    return {ok:false,reason:'PLANNER_DATED_CHECKPOINT_NOT_CONFIRMED'};
-  return {ok:true,scheduled:true,todo};
+  const reconciled=reconcile(todo);
+  if(!reconciled?.ok)return {ok:false,reason:'CENTRAL_CARRY_RECONCILIATION_FAILED',
+    created_todo_id:todo.todo_id};
+  return {ok:true,scheduled:true,todo,
+   previous_carry_reconciled:reconciled.resolved};
  }
  const api=Object.freeze({VERSION,planAccepted});
  if(typeof module!=='undefined'&&module.exports)module.exports=api;
