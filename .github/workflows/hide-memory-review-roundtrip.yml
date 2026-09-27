@@ -5,6 +5,8 @@ on:
     paths:
       - 'ready-hide-memory-review-v01.js'
       - 'ready-central-observation-handoff-v01.js'
+      - 'ready-central-learning-decision-intake-v01.js'
+      - 'tests/central-learning-decision-intake.test.js'
       - 'tests/central-observation-handoff.test.js'
       - 'ready-planner-v01.js'
       - 'index.html'
@@ -23,3 +25,4 @@ jobs:
         run: |
           node tests/hide-memory-review-roundtrip.test.js
           node tests/central-observation-handoff.test.js
+          node tests/central-learning-decision-intake.test.js
