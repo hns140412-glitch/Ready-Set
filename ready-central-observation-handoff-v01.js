@@ -41,7 +41,10 @@
     const payload={
       member_id,family_id:session.family_id,subject,concept_skill_target,
       source_task_id:row.task_id,observation_only:true,global_mastery_claim:false,
-      memory_summary:structuredClone(row.specialistResult.memorySummary)
+      evidence_type:'MEMORY_RETRIEVAL_EVIDENCE',
+      instrument_version:clean(row.specialistResult.resultContract)||'HIDE_SPECIALIST_RESULT_V1',
+      forwarded_source_app:'hide-seek',ready_state:'COMPLETED',
+      memorySummary:structuredClone(row.specialistResult.memorySummary)
     };
     return {ok:true,observation:{event_id,occurred_at,member_id,payload},
       source_app:'ready-set',type:'READY_LEARNING_OBSERVATION',
