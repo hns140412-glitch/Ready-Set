@@ -50,6 +50,7 @@
   if(after?.authenticated!==true||after.family_id!==before.family_id||
      after.selected_member_id!==before.selected_member_id)
    return {ok:false,reason:'CENTRAL_DECISION_SESSION_CHANGED'};
+  if(response?.ok===false)return {ok:false,reason:response.reason||'CENTRAL_DECISION_UNAVAILABLE'};
   if(response?.authenticated_server_response!==true)
    return {ok:false,reason:'AUTHENTICATED_CENTRAL_RESPONSE_REQUIRED'};
   return accept(response.runtime_result,{family_id:before.family_id,
