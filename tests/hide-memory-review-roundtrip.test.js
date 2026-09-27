@@ -148,6 +148,33 @@ assert.equal(review.normalizeHideSpecialistResult({
   memorySummary:{authority:'FORGED',reviewPolicyOwner:'READY_LEARNING_ENGINE',scheduleOwner:'READY_SET_PLANNER'}
 }),null);
 
+// Execute the second half of the loop: specialist result -> fresh advisory
+// interpretation -> Planner-dated next task -> Ready directive.
+const followupPlanner=createPlanner(memoryStorage());
+followupPlanner.upsertDailyAvailabilityWindow({date:'2026-09-24',start:'16:00',end:'17:00',confirmed:true,source:'PARENT_CONFIRMED'});
+const followup=review.nextReviewFromSpecialistResult({
+ resultContract:'HIDE_SPECIALIST_RESULT_V2',runtime:'V2',taskState:'COMPLETED',
+ memorySummary:packet
+},followupPlanner,{candidate_dates:['2026-09-24'],learning_unit_id:'unit-language-memory'});
+assert.equal(followup.ok,true);
+assert.equal(followup.scheduled,true);
+assert.equal(followup.todo.date,'2026-09-24');
+assert.deepEqual(followup.directive.lexicalIds,['word-a','word-b']);
+assert.deepEqual(review.directiveForPlannerTodo(followup.todo,'next-ready-task').lexicalIds,['word-a','word-b']);
+const stableFollowup=review.nextReviewFromSpecialistResult({
+ resultContract:'HIDE_SPECIALIST_RESULT_V2',runtime:'V2',
+ memorySummary:{...packet,reviewAdvisories:[packet.reviewAdvisories[2]]}
+},followupPlanner,{candidate_dates:['2026-09-24']});
+assert.equal(stableFollowup.ok,true);
+assert.equal(stableFollowup.scheduled,false);
+assert.equal(stableFollowup.reason,'NO_REVIEW_NEEDED');
+assert.equal(review.nextReviewFromSpecialistResult({
+ resultContract:'HIDE_SPECIALIST_RESULT_V2',runtime:'V2',
+ memorySummary:packet
+},createPlanner(memoryStorage()),{candidate_dates:['2026-09-24']}).reason,'NO_CONFIRMED_REVIEW_WINDOW');
+assert.equal(review.nextReviewFromSpecialistResult({memorySummary:{authority:'FORGED'}},followupPlanner,
+ {candidate_dates:['2026-09-24']}).reason,'VALID_HIDE_SPECIALIST_RESULT_REQUIRED');
+
 const fs=require('fs');
 const runtime=fs.readFileSync(require('path').join(__dirname,'..','ready-runtime-v07.js'),'utf8');
 assert(runtime.includes("url.searchParams.set('review_directive',JSON.stringify(task.review_directive))"));
