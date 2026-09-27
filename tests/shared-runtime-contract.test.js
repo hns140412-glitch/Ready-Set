@@ -1,6 +1,7 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
+const { execFileSync }=require('child_process');
 const release=require('../vendor/taky/release-contract.js');
 const pwa=require('../vendor/taky/pwa-update-state.js');
 const eventEnvelope=require('../vendor/taky/event-envelope.js');
@@ -121,6 +122,15 @@ assert(captureAnalysis.includes('VisionIngest.validateForRequest'));
 assert(captureAnalysis.includes('ANALYSIS_REQUEST_BINDING_MISSING'));
 assert(captureAnalysis.includes('ANALYSIS_REQUEST_BINDING_MISMATCH'));
 assert(captureAnalysis.includes('ANALYSIS_EVIDENCE_INVALID'));
+const serverCapture=fs.readFileSync(path.join(__dirname,'..','netlify/functions/capture-analyze.mjs'),'utf8');
+assert(serverCapture.includes('validateCaptureEnvelope'));
+assert(serverCapture.includes('validateUploadedImageKeys'));
+assert(serverCapture.includes('validateReadyDrafts'));
+assert(serverCapture.includes('vision_ingest_request_id:envelope.request_id'));
+assert(serverCapture.includes('HIDE_VOCABULARY_UNSUPPORTED'));
+execFileSync(process.execPath,['tests/capture-ocr-contract.test.mjs'],{
+  cwd:path.join(__dirname,'..'),stdio:'inherit'
+});
 console.log('PASS: Ready consumes shared vision ingest mechanics while retaining Ready capture/FACT semantics');
 
 
