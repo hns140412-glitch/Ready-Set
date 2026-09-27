@@ -9,9 +9,12 @@ const result={ok:true,authority:'TAKY_LEARNING_ENGINE_CORE',
   decision_contract:'TAKY_RUNTIME_DECISION_CONTRACT_V1',scope:{member_id:'A',subject:'english',concept_skill_target:'vocabulary'},
   consumer_contract:{planner:'OWNS_DATED_ALLOCATION'},
   execution_status:'PEDAGOGICAL_ACTION_AVAILABLE',
-  pedagogical_actions:[{intent:'RECOVERY',priority:'HIGH'}],adaptive_plan:{ok:true}},
+  pedagogical_actions:[{intent:'RECOVERY',priority:'HIGH'}],adaptive_plan:{ok:true,authority:'LEARNING_ADAPTIVE_PLAN_INTENT_ONLY',
+   adaptive_plan_contract:'TAKY_ADAPTIVE_PLAN_INTENT_V1',
+   scope:{member_id:'A',subject:'english',concept_skill_target:'vocabulary'}}},
  trace:{evidence_ids:['e1']}};
 assert.equal(Intake.accept(result,context).ok,true);
+assert.equal(Intake.accept({...result,decision:{...result.decision,adaptive_plan:{...result.decision.adaptive_plan,scope:{...result.scope,member_id:'B'}}}},context).reason,'CENTRAL_ADAPTIVE_PLAN_SCOPE_INVALID');
 assert.equal(Intake.accept(result,scope).reason,'CENTRAL_DECISION_SCOPE_MISMATCH');
 assert.equal(Intake.accept(result,{...context,receipt_scope:{...receipt_scope,family_id:'other'}}).reason,'CENTRAL_DECISION_SCOPE_MISMATCH');
 assert.equal(Intake.accept({...result,authority:'OBSERVATION_INGEST_RECEIPT'},context).reason,
