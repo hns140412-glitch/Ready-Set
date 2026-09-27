@@ -18,8 +18,18 @@
       return url.href;
     }catch{return null}
   }
+  function configuredSnapUrl(){
+    const raw=String(globalThis.ReadySetSpecialistTargets?.snapPop??SNAP_URL).trim();
+    try{
+      const url=new URL(raw);
+      const local=['127.0.0.1','localhost','[::1]'].includes(url.hostname);
+      if((url.protocol!=='https:'&&!(url.protocol==='http:'&&local))||
+         url.username||url.password||url.search||url.hash)return null;
+      return url.href;
+    }catch{return null;}
+  }
   function trustedAppOrigins(){
-    const urls=[LEGACY_HIDE_URL,SNAP_URL,configuredHideV2Url()].filter(Boolean);
+    const urls=[LEGACY_HIDE_URL,configuredSnapUrl(),configuredHideV2Url()].filter(Boolean);
     return new Set(urls.map(x=>new URL(x,location.href).origin));
   }
 
@@ -244,7 +254,7 @@
       if(task?.review_directive)return configuredHideV2Url();
       return LEGACY_HIDE_URL;
     }
-    return app === 'snap-pop' ? SNAP_URL : location.href;
+    return app === 'snap-pop' ? configuredSnapUrl() : location.href;
   }
 
   function launchSpecialist(app) {
@@ -289,7 +299,7 @@
 
     const target=appUrl(app,task);
     if(!target){
-      emit('APP_ROUTE_BLOCKED',{to:app,reason:'HIDE_V2_TARGET_REQUIRED',task_id:task.task_id});
+      emit('APP_ROUTE_BLOCKED',{to:app,reason:app==='snap-pop'?'SNAP_TARGET_REQUIRED':'HIDE_V2_TARGET_REQUIRED',task_id:task.task_id});
       c.active_app='ready-set';
       save();
       renderContractUI();
@@ -301,7 +311,7 @@
     url.searchParams.set('task_id', task.task_id);
     url.searchParams.set('lap_id', lap.lap_id);
     url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
-    url.searchParams.set('snap_target', SNAP_URL);
+    if(configuredSnapUrl())url.searchParams.set('snap_target',configuredSnapUrl());
     url.searchParams.set('from_app', 'ready-set');
     if(app==='snap-pop'&&snapBinding?.ok){
       for(const [key,value] of Object.entries(snapBinding.fields))
@@ -702,6 +712,7 @@
       validate: validateContract,
       launchSpecialist,
       hideV2TargetUrl:configuredHideV2Url,
+      snapTargetUrl:configuredSnapUrl,
       setTaskState,
       switchTask,
       openWrapUp
