@@ -207,7 +207,7 @@ const context=row=>({event_id:'evt:'+row.task_id,
  const appSource=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
  assert(appSource.includes("new CustomEvent('readyset-learning-outcomes-ready'"));
  assert(appSource.includes('central_learning_scope:structuredClone(boundCentral)'));
- assert(appSource.includes('if(boundCentral&&(hideOutcomes.length||checkpointOutcomes.length))'));
+ assert(appSource.includes('if(boundCentral&&evidenceOutcomes.length)'));
  const legacy=Orchestrator.optionsFromPersistedRecord({
   session_id:'s1',completed_at:'2026-09-27T01:00:00Z',
   task_outcomes:[row]
@@ -221,6 +221,21 @@ const context=row=>({event_id:'evt:'+row.task_id,
   candidate_dates:['2026-09-30']});
  assert.equal(persistedCheckpoint.ok,true);
  assert.equal(persistedCheckpoint.options.outcomes.length,1);
+ assert.equal(persistedCheckpoint.options.outcomes[0].centralFeedbackKind,
+  'CENTRAL_CHECKPOINT_PROGRESS');
+ const dualStored={...storedRecord,session_id:'session-dual',
+  task_outcomes:[{...storedRecord.task_outcomes[0],
+   planner_todo_id:'central-todo-1',centralCheckpoint:checkpointRow.centralCheckpoint}]};
+ const dualOptions=Orchestrator.optionsFromPersistedRecord(dualStored,{
+  subject:'english',concept_skill_target:'vocabulary',planner,
+  candidate_dates:['2026-09-30']});
+ assert.equal(dualOptions.ok,true);
+ assert.deepEqual(dualOptions.options.outcomes.map(x=>x.centralFeedbackKind),
+  ['HIDE_MEMORY','CENTRAL_CHECKPOINT_PROGRESS']);
+ assert.deepEqual(dualOptions.options.outcomes.map(x=>
+  dualOptions.options.observationContextForRow(x).event_id),[
+   'ready:session-dual:task-1','ready:session-dual:task-1:checkpoint'
+  ]);
  const storedRecord={session_id:'session-A',completed_at:'2026-09-27T01:00:00Z',
   central_learning_scope:{family_id:'F1',member_id:'CHILD_A'},
   task_outcomes:[{...row,family_id:'F1',member_id:'CHILD_A'}]};
