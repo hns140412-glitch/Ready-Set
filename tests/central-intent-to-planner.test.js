@@ -116,4 +116,24 @@ const oldReceipt=Bridge.planAccepted(intent,planner,{activeSession,candidate_dat
 assert.equal(oldReceipt.ok,false);
 assert.equal(oldReceipt.reason,'CENTRAL_CHECKPOINT_REQUIRES_NEW_EVIDENCE');
 assert.equal(planner.snapshot().dated_todos.length,1);
+const priorCarry=planner.snapshot().carry_over_queue.find(x=>
+ x.source_todo_id===planned.todo.todo_id);
+assert.equal(priorCarry.status,'OPEN');
+const refreshed={...intent,trace:{...intent.trace,
+ verified_receipt_id:'real-evidence:server-r2',verified_evidence_count:2}};
+const next=Bridge.planAccepted(refreshed,planner,{
+ activeSession,candidate_dates:['2026-09-30']});
+assert.equal(next.ok,true,JSON.stringify(next));
+assert.equal(next.reused,undefined);
+assert.equal(next.previous_carry_reconciled.length,1);
+assert.equal(next.previous_carry_reconciled[0],priorCarry.carry_over_id);
+assert.equal(planner.snapshot().dated_todos.length,2);
+const resolvedCarry=planner.snapshot().carry_over_queue.find(x=>
+ x.carry_over_id===priorCarry.carry_over_id);
+assert.equal(resolvedCarry.status,'RESOLVED');
+assert.equal(resolvedCarry.resolution,'SUPERSEDED_BY_FRESH_CENTRAL_DECISION');
+assert.equal(resolvedCarry.rescheduled_todo_id,next.todo.todo_id);
+assert.equal(next.todo.date,'2026-09-30');
+assert.equal(Bridge.planAccepted(refreshed,planner,{activeSession,
+ candidate_dates:['2026-09-30']}).reused,true);
 console.log('READY_CENTRAL_INTENT_PLANNER_PASS: verified server intent -> Planner available date -> linked Ready activity, scope/isolation, replay and HOLD');
