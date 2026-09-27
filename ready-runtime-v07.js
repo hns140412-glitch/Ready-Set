@@ -11,7 +11,10 @@
     if(!raw)return null;
     try{
       const url=new URL(raw,location.href);
-      if(url.protocol!=='https:'&&url.hostname!=='127.0.0.1'&&url.hostname!=='localhost')return null;
+      const local=['127.0.0.1','localhost','[::1]'].includes(url.hostname);
+      if((url.protocol!=='https:'&&!(url.protocol==='http:'&&local))||
+         url.username||url.password||url.search||url.hash||
+         !url.pathname.endsWith('/v2.html'))return null;
       return url.href;
     }catch{return null}
   }
