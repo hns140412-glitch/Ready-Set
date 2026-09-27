@@ -91,6 +91,30 @@
   }
   return Object.freeze({VERSION,run,close:()=>pipeline.close?.()});
  }
+ // Rehydrate a previously persisted Ready record without fabricating a new
+ // event time or silently rebinding a legacy unscoped child outcome.
+ function optionsFromPersistedRecord(record,{subject,concept_skill_target,planner,
+  candidate_dates,maxFlushAttempts}={}){
+  const sessionId=clean(record?.session_id||record?.id);
+  const occurredAt=clean(record?.completed_at)||
+   (Number.isFinite(record?.endAt)?new Date(record.endAt).toISOString():'');
+  const bound=record?.central_learning_scope||record?.centralLearningScope;
+  const outcomes=record?.task_outcomes||record?.taskOutcomes;
+  if(!sessionId||!Number.isFinite(Date.parse(occurredAt))||
+     !clean(bound?.family_id)||!clean(bound?.member_id)||
+     !clean(subject)||!clean(concept_skill_target)||!Array.isArray(outcomes))
+   return {ok:false,reason:'PERSISTED_CENTRAL_RECORD_SCOPE_REQUIRED'};
+  const relevant=outcomes.filter(row=>row?.state==='COMPLETED'&&
+   row?.specialistResult?.sourceApp==='hide-seek');
+  if(relevant.some(row=>!clean(row.task_id)||row.family_id!==bound.family_id||
+     row.member_id!==bound.member_id))
+   return {ok:false,reason:'PERSISTED_CENTRAL_OUTCOME_SCOPE_MISMATCH'};
+  return {ok:true,options:{outcomes:relevant,subject,concept_skill_target,planner,
+   candidate_dates,maxFlushAttempts,observationContextForRow:row=>({
+    event_id:'ready:'+sessionId+':'+row.task_id,occurred_at:occurredAt,
+    subject,concept_skill_target
+   })}};
+ }
  // Explicit attachment: the page emits this only after persisting a
  // completed session. No listener is installed without a trusted host.
  function attachReadySession({eventTarget,roundtrip,resolveRecordOptions,onResult}={}){
@@ -150,5 +174,5 @@
   window.ReadyCentralLearningHost=host;
   return host;
  }
- return Object.freeze({VERSION,create,attachReadySession,installBrowserHost});
+ return Object.freeze({VERSION,create,optionsFromPersistedRecord,attachReadySession,installBrowserHost});
 });
