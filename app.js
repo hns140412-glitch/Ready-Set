@@ -522,10 +522,24 @@ function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOu
     liveCentral.family_id===s.centralLearningScope.family_id&&
     liveCentral.selected_member_id===s.centralLearningScope.member_id
       ?s.centralLearningScope:null;
-  const scopedOutcomes=(taskOutcomes||[]).map(row=>boundCentral?{
-    ...row,family_id:row.family_id??boundCentral.family_id,
-    member_id:row.member_id??boundCentral.member_id
-  }:row);
+  const plannerTodos=boundCentral
+    ?window.ReadySetPlanner?.snapshot?.()?.dated_todos||[]:[];
+  const scopedOutcomes=(taskOutcomes||[]).map(row=>{
+    if(!boundCentral)return row;
+    const linked=plannerTodos.find(todo=>todo.todo_id===row.planner_todo_id&&
+      todo.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'&&
+      todo.provenance?.family_id===boundCentral.family_id&&
+      todo.provenance?.member_id===boundCentral.member_id&&
+      todo.review_policy?.authority==='TAKY_LEARNING_ENGINE_CORE'&&
+      todo.provenance?.schedule_authority==='READY_SET_PLANNER');
+    const centralCheckpoint=linked&&row.plannerOutcome?.ok===true
+      ?{todo_id:linked.todo_id,source:linked.source,
+        provenance:structuredClone(linked.provenance),
+        review_policy:structuredClone(linked.review_policy)}:null;
+    return {...row,family_id:row.family_id??boundCentral.family_id,
+      member_id:row.member_id??boundCentral.member_id,
+      ...(centralCheckpoint?{centralCheckpoint}:{})};
+  });
   const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs,
     outcomeState,plannerOutcomes,taskOutcomes:scopedOutcomes};
   state.records.unshift(rec);state.records=state.records.slice(0,200);
@@ -536,11 +550,16 @@ function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOu
   const hideOutcomes=(rec.taskOutcomes||[]).filter(x=>x?.state==='COMPLETED'&&
     x?.specialistResult?.sourceApp==='hide-seek'&&
     x?.specialistResult?.taskState==='COMPLETED');
-  if(boundCentral&&hideOutcomes.length){
+  const checkpointOutcomes=(rec.taskOutcomes||[]).filter(x=>
+    ['COMPLETED','PARTIAL','BLOCKED'].includes(x?.state)&&
+    x?.centralCheckpoint?.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT');
+  if(boundCentral&&(hideOutcomes.length||checkpointOutcomes.length)){
+    const evidenceOutcomes=[...new Map([...hideOutcomes,...checkpointOutcomes]
+      .map(row=>[row.task_id,row])).values()];
     window.dispatchEvent(new CustomEvent('readyset-learning-outcomes-ready',{detail:{
       session_id:rec.id,completed_at:new Date(s.endAt).toISOString(),
       central_learning_scope:structuredClone(boundCentral),
-      task_outcomes:structuredClone(hideOutcomes)
+      task_outcomes:structuredClone(evidenceOutcomes)
     }}));
   }
   return rec;
