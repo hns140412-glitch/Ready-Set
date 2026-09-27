@@ -62,7 +62,9 @@
       const tasks = linked.map((link, index) => {
         const taskId=`task_${session.id || Date.now()}_${index + 1}`;
         const todo=plannerTodos.find(x=>x.todo_id===link.todo_id)||null;
-        const reviewDirective=window.ReadyHideMemoryReviewV01?.directiveForPlannerTodo?.(todo,taskId)||null;
+        const reviewDirective=window.ReadyCentralHideDirectiveV01?.forPlannerTodo?.(
+          todo,taskId,{boundScope:session.centralLearningScope})||
+          window.ReadyHideMemoryReviewV01?.directiveForPlannerTodo?.(todo,taskId)||null;
         return {
           task_id: taskId,
           label:link.label,
@@ -75,6 +77,7 @@
           allocation_run_id:link.allocation_run_id||null,
           suggested_app: reviewDirective?'hide-seek':suggestedApp(link.label),
           review_directive:reviewDirective,
+          central_checkpoint:todo?.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT',
           specialist_result:null,
           laps: []
         };
@@ -224,6 +227,10 @@
   }
 
   function appUrl(app,task=null) {
+    // A central checkpoint cannot silently fall back to unrelated legacy
+    // specialist practice when it has no explicitly scoped target IDs.
+    if(task?.central_checkpoint&&
+       (app!=='hide-seek'||!task.review_directive))return null;
     if(app==='hide-seek'){
       if(task?.review_directive)return configuredHideV2Url();
       return LEGACY_HIDE_URL;
