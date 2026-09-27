@@ -58,9 +58,11 @@ const fetchImpl=async(url,opts)=>{
   return {status:200,json:async()=>({ok:true,authenticated_server_response:true,
    decision_response_version:'TAKY_CENTRAL_LEARNING_DECISION_HTTP_V1',
    receipt_scope:{family_id:'F1',member_id:'CHILD_A'},
-   source:'SERVER_DURABLE_VERIFIED_EVIDENCE_ONLY',
-   observation_only_excluded:true,observation_proof_promotion:false,
-   runtime_result:decisionRuntime})};
+   source:decisionRuntime.trace.basis_kind==='OBSERVATION_ADVISORY_ONLY'
+    ?'SERVER_DURABLE_AUTHENTICATED_ADVISORY_AND_VERIFIED_EVIDENCE'
+    :'SERVER_DURABLE_VERIFIED_EVIDENCE_ONLY',
+   observation_only_excluded:decisionRuntime.trace.basis_kind!=='OBSERVATION_ADVISORY_ONLY',
+   observation_proof_promotion:false,runtime_result:decisionRuntime})};
  }
  throw Error('UNEXPECTED_HTTP_URL:'+url);
 };
@@ -146,6 +148,36 @@ const context=row=>({event_id:'evt:'+row.task_id,
  assert.equal(evidenceResponses,3,'one initial receipt, one failed attempt, one explicit replay');
  assert.equal(planner.snapshot().dated_todos.length,1);
  await resumed.close();
+ // Advisory-only observations can drive the central learning checkpoint;
+ // the observation is not a verified receipt and must match the current task.
+ decisionRuntime={...runtime,decision:{...runtime.decision,
+  pedagogical_actions:[{intent:'RETRIEVAL_CHECKPOINT',priority:'HIGH',
+   basis:['HIDE_MEMORY_ADVISORY_ONLY']}]},
+  trace:{verified_receipt_id:null,verified_evidence_count:0,
+   basis_kind:'OBSERVATION_ADVISORY_ONLY',
+   observation_review_evidence_count:1,
+   observation_review_evidence_ids:['evt:task-3'],
+   observation_review_digest_sha256:'a'.repeat(64)}};
+ const observational=Orchestrator.create({
+  sessionProvider,tokenProvider:async()=> 'verified-test-token-0001',fetchImpl,
+  evidenceEndpointUrl:'https://central.example.test/api/learning/evidence',
+  decisionEndpointUrl:'https://central.example.test/api/learning/decision',
+  storageAdapter:persistedStore,cryptoProvider:webcrypto,
+  centralPipelineFactory:browser.TakyCentralEvidence.pipeline.create
+ });
+ const advisory=await observational.run({...args,
+  outcomes:[{...row,task_id:'task-3'}]});
+ assert.equal(advisory.ok,true,JSON.stringify(advisory));
+ assert.equal(advisory.todo.provenance.verified_receipt_id,null);
+ assert.equal(advisory.todo.provenance.basis_kind,'OBSERVATION_ADVISORY_ONLY');
+ assert.equal(advisory.todo.review_policy.observation_is_verified_proof,false);
+ assert.equal(planner.snapshot().dated_todos.length,2);
+ const unrelated=await observational.run({...args,
+  outcomes:[{...row,task_id:'task-4'}]});
+ assert.equal(unrelated.ok,false);
+ assert.equal(unrelated.reason,'CENTRAL_ADVISORY_NOT_LINKED_TO_CURRENT_OBSERVATION');
+ assert.equal(planner.snapshot().dated_todos.length,2);
+ await observational.close();
  const appSource=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
  assert(appSource.includes("new CustomEvent('readyset-learning-outcomes-ready'"));
  assert(appSource.includes('central_learning_scope:structuredClone(boundCentral)'));
