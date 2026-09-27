@@ -253,6 +253,12 @@
     const task = currentTask(c);
     const lap = currentLap(c) || (task ? startLap(task, 'SPECIALIST_ROUTE', session) : null);
     if (!session || !c || !task || !lap || !['hide-seek','snap-pop'].includes(app)) return;
+    const centralMemberId=String(session.centralLearningScope?.member_id||'').trim();
+    if(app==='hide-seek'&&task.central_checkpoint&&task.review_directive&&
+       (!String(session.centralLearningScope?.family_id||'').trim()||!centralMemberId)){
+      emit('APP_ROUTE_BLOCKED',{to:app,reason:'CENTRAL_MEMBER_SCOPE_REQUIRED',task_id:task.task_id});
+      return false;
+    }
 
     c.active_app = app;
     emit('APP_SWITCH', { from: 'ready-set', to: app, lap_ended: false });
@@ -276,6 +282,7 @@
     url.searchParams.set('from_app', 'ready-set');
     if(app==='hide-seek'&&task.review_directive){
       url.searchParams.set('review_directive',JSON.stringify(task.review_directive));
+      if(task.central_checkpoint)url.searchParams.set('child_id',centralMemberId);
     }
     location.assign(url.href);
     return true;
@@ -302,7 +309,9 @@
     if(task.central_checkpoint&&from_app==='hide-seek'&&
        ['COMPLETED','PARTIAL'].includes(normalized)){
       const lap=currentLap(c),ctx=result_payload?.taskContext||{};
-      if(c.active_task_id!==task_id||!lap||lap.ended_at||
+      const memberId=String(state.activeSession?.centralLearningScope?.member_id||'').trim();
+      if(!memberId||ctx.child_id!==memberId||
+         c.active_task_id!==task_id||!lap||lap.ended_at||
          !lap_id||c.active_lap_id!==lap_id||lap.lap_id!==lap_id||
          lap.task_id!==task_id||ctx.session_id!==c.session_id||
          ctx.task_id!==task_id||ctx.lap_id!==lap_id)return false;
