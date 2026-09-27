@@ -193,6 +193,18 @@ assert.equal(repeatFeedback.ok,true);
 assert.equal(repeatFeedback.scheduled[0].reused,true);
 assert.equal(repeatFeedback.scheduled[0].todo.todo_id,outcomeFeedback.scheduled[0].todo.todo_id);
 assert.equal(outcomePlanner.snapshot().dated_todos.length,1);
+const replayWithoutAvailability=review.planFromReadyOutcomes([{
+ task_id:'completed-hide-task',specialistResult:normalizedResult,memoryReviewFeedback:interpreted
+}],outcomePlanner,{candidate_dates:[]});
+assert.equal(replayWithoutAvailability.ok,true);
+assert.equal(replayWithoutAvailability.scheduled[0].reused,true);
+const conflictingFeedback=review.planFromReadyOutcomes([{
+ task_id:'completed-hide-task',specialistResult:normalizedResult,
+ memoryReviewFeedback:{ok:true,decision:{...interpreted.decision,lexicalIds:['different-lexical-id']}}
+}],outcomePlanner,{candidate_dates:[]});
+assert.equal(conflictingFeedback.ok,false);
+assert.equal(conflictingFeedback.reason,'REPLAY_REVIEW_DECISION_CONFLICT');
+
 
 assert.equal(review.planFromReadyOutcomes([{task_id:'ordinary',memoryReviewFeedback:interpreted}],
  outcomePlanner,{candidate_dates:['2026-09-25']}).scheduled.length,0);
