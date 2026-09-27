@@ -145,5 +145,20 @@
     return {ok:true,todo,directive};
   }
 
-  return Object.freeze({version:VERSION,interpretHideMemorySummary,planReview,directiveForPlannerTodo,normalizeHideSpecialistResult,normalizeHideV2ReturnEvent});
+  // Complete a local advisory review cycle without claiming central verification.
+  // The next Planner allocation is driven only by the returned Hide memory
+  // summary, never by completion state or an invented mastery score.
+  function nextReviewFromSpecialistResult(result,planner,options={}){
+    const normalized=normalizeHideSpecialistResult(result);
+    if(!normalized)return {ok:false,reason:'VALID_HIDE_SPECIALIST_RESULT_REQUIRED'};
+    const interpreted=interpretHideMemorySummary(normalized.memorySummary);
+    if(!interpreted.ok)return interpreted;
+    if(!interpreted.decision)return {ok:true,scheduled:false,reason:'NO_REVIEW_NEEDED',decision:null};
+    const planned=planReview(interpreted.decision,planner,options);
+    if(!planned.ok)return {...planned,decision:interpreted.decision};
+    return {ok:true,scheduled:true,decision:interpreted.decision,
+      todo:planned.todo,directive:planned.directive};
+  }
+
+  return Object.freeze({version:VERSION,interpretHideMemorySummary,planReview,directiveForPlannerTodo,normalizeHideSpecialistResult,normalizeHideV2ReturnEvent,nextReviewFromSpecialistResult});
 });
