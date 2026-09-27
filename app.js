@@ -417,6 +417,23 @@ $('#startBtn').onclick=async()=>{
   if(!plannerLinks.length){toast('지금 시작할 수 있는 Planner TODO가 없어요. TODAY를 다시 확인해 주세요.');return}
   const labels=plannerLinks.map(x=>x.label);
   const sessionId=`s_${now}`;
+  const centralLinks=plannerLinks.filter(x=>x.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT');
+  if(centralLinks.length){
+    const scope=centralPlannerScope();
+    const original=window.ReadySetPlanner?.snapshot?.()?.dated_todos||[];
+    const bound={family_id:scope?.family_id,member_id:scope?.selected_member_id};
+    const allValid=plannerLinks.every((link,index)=>{
+      if(link.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT')return true;
+      const todo=original.find(x=>x.todo_id===link.todo_id);
+      return !!window.ReadyCentralHideDirectiveV01?.forPlannerTodo?.(
+        todo,`task_${sessionId}_${index+1}`,{boundScope:bound});
+    });
+    if(!allValid||!window.ReadySetRev07?.hideV2TargetUrl?.()){
+      toast('중앙 복습의 단어 대상 또는 Hide V2 연결을 확인할 수 없어요. 일정은 그대로 보존했어요.');
+      renderMission();
+      return;
+    }
+  }
   const started=[...plannerLinks];
   const firstLink=plannerLinks[0];
   const firstStarted=window.ReadySetPlanner?.recordTaskState?.({
