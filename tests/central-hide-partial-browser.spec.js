@@ -47,14 +47,17 @@ test('Hide V2 partial return retains exact central task and does not certify com
  const bound=await page.evaluate(()=>{
   const c=window.ReadySetRev07.contract(),t=c.tasks[0];
   return {session_id:c.session_id,task_id:t.task_id,lap_id:c.active_lap_id,
-   directive:t.review_directive,central:t.central_checkpoint};
+   directive:t.review_directive,central:t.central_checkpoint,
+   memberId:state.activeSession?.centralLearningScope?.member_id};
  });
  expect(bound.central).toBe(true);
+ expect(bound.memberId).toBe('CHILD_A');
  const buildEvent=(id,reviewed)=>({
   event_id:id,event_type:'TASK_PARTIAL',source:'hide-seek',
   payload:{resultContract:'HIDE_SPECIALIST_RESULT_V2',runtime:'V2',
    taskState:'PARTIAL',learningPhase:'FIRST_FIND',
-   taskContext:{session_id:bound.session_id,task_id:bound.task_id,lap_id:bound.lap_id},
+   taskContext:{session_id:bound.session_id,task_id:bound.task_id,
+    lap_id:bound.lap_id,child_id:bound.memberId},
    reviewDirective:bound.directive,reviewedLexicalIds:reviewed,
    memorySummary:{authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
     reviewPolicyOwner:'READY_LEARNING_ENGINE',scheduleOwner:'READY_SET_PLANNER',
@@ -86,6 +89,17 @@ test('Hide V2 partial return retains exact central task and does not certify com
  expect(rejectedLap.task.state).toBe('PENDING');
  expect(rejectedLap.task.specialist_result).toBeNull();
  expect(rejectedLap.fragmentPending).toBe(true);
+ const wrongMember=buildEvent('wrong-member-2',['a::뜻','b::뜻']);
+ wrongMember.payload.taskContext.child_id='CHILD_B';
+ await navigate(wrongMember,{fragment:true});
+ await page.reload({waitUntil:'load'});
+ const refusedMember=await page.evaluate(()=>({
+  task:window.ReadySetRev07.contract()?.tasks?.[0],
+  fragmentPending:location.hash.includes('learning_event')
+ }));
+ expect(refusedMember.task.state).toBe('PENDING');
+ expect(refusedMember.task.specialist_result).toBeNull();
+ expect(refusedMember.fragmentPending).toBe(true);
  await navigate(buildEvent('partial-correct-2',['b::뜻','a::뜻']),{fragment:true});
  // The fixture serves Ready on one origin; hash-to-hash navigation does not
  // reload it. A real Hide-to-Ready cross-origin return loads Ready anew.
