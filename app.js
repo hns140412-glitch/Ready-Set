@@ -237,7 +237,9 @@ function learningStepLabel(step){
     ENCODE:'익히기',RECALL:'떠올리기',READ:'읽기',UNDERSTAND:'이해하기',RESPOND:'답하기',
     CONNECT_CONCEPTS:'개념 연결',UNDERSTAND_CONCEPT:'개념 이해',APPLY:'적용',CHECK_ERROR:'오류 확인',
     EXPLORE:'탐색',REASON:'생각하기',EXPLAIN:'설명하기',PRACTICE:'연습',COMPLETE:'완료',
-    LISTEN:'듣기',PREPARE:'준비',SPEAK:'말하기',REVIEW:'돌아보기',PLAN:'계획',WRITE:'쓰기',REVISE:'고쳐쓰기'
+    LISTEN:'듣기',PREPARE:'준비',SPEAK:'말하기',REVIEW:'돌아보기',PLAN:'계획',WRITE:'쓰기',REVISE:'고쳐쓰기',
+    SHORT_LEARNING_UNIT:'짧게 나눠서',RETRIEVAL_CHECKPOINT:'떠올려 보기',
+    CONCEPT_CHECKPOINT:'개념 확인',ASSISTANCE_FADING:'도움 줄여보기'
   })[step]||String(step||'').replaceAll('_',' ');
 }
 function learningSequenceText(item){
