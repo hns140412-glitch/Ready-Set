@@ -291,7 +291,7 @@
   function normalizeInboundState(raw) {
     if (!raw) return null;
     if (VALID_TASK_STATES.has(raw)) return raw;
-    if (raw === 'HELP_NEEDED') return 'BLOCKED';
+    if (raw === 'HELP_NEEDED') return 'WAITING_FOR_PARENT';
     return null;
   }
 
@@ -396,7 +396,7 @@
     if (!e) return;
     const taskState = e.type === 'TASK_COMPLETED' ? 'COMPLETED'
       : e.type === 'TASK_BLOCKED' ? 'BLOCKED'
-      : e.type === 'HELP_NEEDED' ? 'BLOCKED'
+      : e.type === 'HELP_NEEDED' ? 'WAITING_FOR_PARENT'
       : e.type === 'TASK_PARTIAL' ? 'PARTIAL'
       : null;
     applyInboundResult({
