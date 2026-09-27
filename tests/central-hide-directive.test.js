@@ -52,6 +52,13 @@ const result={
 assert.equal(Directive.validateResult(directive,result),true);
 assert.equal(Directive.validateResult(directive,{...result,reviewedLexicalIds:['word-b']}),false);
 assert.equal(Directive.validateResult(directive,{...result,taskState:'PARTIAL'}),false);
+const partial={...result,taskState:'PARTIAL',learningPhase:'FIRST_FIND'};
+assert.equal(Directive.validateProgress(directive,partial),true);
+assert.equal(Directive.validateProgress(directive,{...partial,reviewedLexicalIds:['word-b']}),false);
+assert.equal(Directive.validateProgress(directive,{...partial,taskContext:{task_id:'wrong-task'}}),false);
+assert.equal(Directive.validateProgress(directive,{...partial,learningPhase:'COMPLETE'}),false);
+assert.equal(Directive.validateProgress(directive,result),false);
+
 assert.equal(Directive.validateResult(directive,{...result,taskContext:{task_id:'other-task'}}),false);
 assert.equal(Directive.validateResult(directive,{...result,reviewDirective:{
  ...directive,directiveId:'old-different-task'}}),false);
@@ -62,4 +69,5 @@ assert.equal(Directive.validateResult(directive,{...result,trailSummary:{
 const runtime=require('node:fs').readFileSync(require('node:path').join(__dirname,'..','ready-runtime-v07.js'),'utf8');
 assert(runtime.includes('window.ReadyCentralHideDirectiveV01?.forPlannerTodo?.('));
 assert(runtime.includes("if(task?.central_checkpoint&&"));
+assert(runtime.includes('validateProgress?.('));
 console.log('READY_CENTRAL_HIDE_DIRECTIVE_PASS: actual Planner lexical targets become child-scoped V2 directive, missing targets do not fall back');
