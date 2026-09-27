@@ -237,6 +237,13 @@ assert.equal(review.planFromReadyOutcomes([goodRow,{...goodRow,
  memoryReviewFeedback:{ok:true,decision:{...interpreted.decision,lexicalIds:['injected']}}}],
  batchPlanner,{candidate_dates:['2026-09-26']}).reason,'PERSISTED_REVIEW_FEEDBACK_MISMATCH');
 
+const centralExcluded=review.planFromReadyOutcomes([{
+ ...goodRow,task_id:'central-follow-up',
+ centralCheckpoint:{source:'PLANNER_CENTRAL_LEARNING_CHECKPOINT'}
+}],batchPlanner,{candidate_dates:['2026-09-26']});
+assert.equal(centralExcluded.ok,true);
+assert.equal(centralExcluded.scheduled.length,0);
+assert.equal(batchPlanner.snapshot().dated_todos.length,1);
 const fs=require('fs');
 const runtime=fs.readFileSync(require('path').join(__dirname,'..','ready-runtime-v07.js'),'utf8');
 assert(runtime.includes("url.searchParams.set('review_directive',JSON.stringify(task.review_directive))"));
@@ -251,7 +258,7 @@ assert(runtime.includes('!event_id || !result_payload ||'));
 assert(runtime.includes("result_payload: e.payload||null"));
 assert(runtime.includes("task.specialist_result=specialistResult"));
 assert(runtime.includes("specialistResult:task.specialist_result||null"));
-assert(runtime.includes("memoryReviewFeedback:task.state==='COMPLETED'"));
+assert(runtime.includes("memoryReviewFeedback:task.state==='COMPLETED' && !task.central_checkpoint"));
 assert(runtime.includes("task.specialist_result?.sourceApp==='hide-seek'"));
 assert(runtime.includes('task.specialist_result.memorySummary'));
 assert(runtime.includes('completeSessionFromTaskOutcomes(taskOutcomes)'));
