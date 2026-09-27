@@ -14,6 +14,7 @@ on:
       - 'tests/central-learning-roundtrip.test.js'
       - 'vendor/taky-central-evidence-v1.js'
       - 'sw.js'
+      - 'app.js'
       - 'tests/central-learning-decision-intake.test.js'
       - 'tests/central-observation-handoff.test.js'
       - 'ready-planner-v01.js'
