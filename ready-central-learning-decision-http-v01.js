@@ -33,10 +33,19 @@
    if(response.status!==200||body?.ok!==true)
     return {ok:false,reason:response.status===401||response.status===403
      ?'CENTRAL_DECISION_AUTHORIZATION_REQUIRED':'CENTRAL_DECISION_HTTP_'+response.status};
-   if(body.decision_response_version!==EXPECTED||
+   const trace=body?.runtime_result?.trace||{};
+   const verifiedOnly=body?.source==='SERVER_DURABLE_VERIFIED_EVIDENCE_ONLY'&&
+     body?.observation_only_excluded===true;
+   const observational=body?.source==='SERVER_DURABLE_AUTHENTICATED_ADVISORY_AND_VERIFIED_EVIDENCE'&&
+     body?.observation_only_excluded===false&&
+     Number.isInteger(trace.observation_review_evidence_count)&&
+     trace.observation_review_evidence_count>0&&
+     /^[a-f0-9]{64}$/.test(trace.observation_review_digest_sha256||'')&&
+     ['OBSERVATION_ADVISORY_ONLY','VERIFIED_WITH_OBSERVATION_ADVISORY'].includes(trace.basis_kind);
+   if(body?.decision_response_version!==EXPECTED||
       body.authenticated_server_response!==true||
-      body.source!=='SERVER_DURABLE_VERIFIED_EVIDENCE_ONLY'||
-      body.observation_only_excluded!==true||
+      body.observation_proof_promotion!==false||
+      !(verifiedOnly||observational)||
       body.receipt_scope?.family_id!==family_id||
       body.receipt_scope?.member_id!==member_id)
     return {ok:false,reason:'CENTRAL_DECISION_RESPONSE_CONTRACT_INVALID'};
