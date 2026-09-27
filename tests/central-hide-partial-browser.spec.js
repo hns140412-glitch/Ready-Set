@@ -73,7 +73,7 @@ test('Hide V2 partial return retains exact central task and does not certify com
     lap_id:bound.lap_id,child_id:bound.memberId},
    reviewDirective:bound.directive,reviewedLexicalIds:reviewed,
    memorySummary:{authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
-    reviewPolicyOwner:'READY_LEARNING_ENGINE',scheduleOwner:'READY_SET_PLANNER',
+    reviewPolicyOwner:'TAKY_LEARNING_ENGINE_CORE',scheduleOwner:'READY_SET_PLANNER',
     prioritySemantics:'ADVISORY_SIGNAL_NOT_DATE',scopedItemIds:['item-a','item-b'],
     reviewAdvisories:[]},
    trailSummary:{scopeItemIds:['item-a','item-b'],totalWordCount:2},
