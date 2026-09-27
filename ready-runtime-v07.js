@@ -340,6 +340,21 @@
     if (!task) return false;
 
     const normalized = normalizeInboundState(task_state);
+    if(from_app==='snap-pop'){
+      // A URL, message origin or saved child label is local continuity only,
+      // never a reason to rebind an active A run to newly selected child B.
+      const lap=currentLap(c);
+      const bound=state.activeSession?.centralLearningScope||null;
+      const live=window.ReadyCentralLearningHost?.activeScope?.()||null;
+      if(!normalized||c.active_app!=='snap-pop'||
+         c.active_task_id!==task_id||!lap||lap.ended_at||
+         !lap_id||c.active_lap_id!==lap_id||
+         lap.lap_id!==lap_id||lap.task_id!==task_id||
+         (bound&&(live?.authenticated!==true||
+            live.family_id!==bound.family_id||
+            live.selected_member_id!==bound.member_id)))
+        return false;
+    }
     // The specialist return belongs to the currently open Ready lap, not a
     // previously launched task or an unrelated post-reload/navigation attempt.
     // A URL fragment is continuity evidence, never an authenticated receipt.
