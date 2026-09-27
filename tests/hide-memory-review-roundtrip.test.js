@@ -114,6 +114,20 @@ const normalizedReturnEvent=review.normalizeHideV2ReturnEvent({
     }
   }
 });
+assert.equal(review.normalizeHideV2ReturnEvent({
+  source:'hide-seek',event_type:'TASK_COMPLETED',event_id:'event-conflict',
+  payload:{resultContract:'HIDE_SPECIALIST_RESULT_V2',runtime:'V2',
+    taskState:'PARTIAL',taskContext:{session_id:'s',task_id:'t',lap_id:'l'},
+    memorySummary:{authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
+      reviewPolicyOwner:'READY_LEARNING_ENGINE',scheduleOwner:'READY_SET_PLANNER'}}
+}),null);
+assert.equal(review.normalizeHideV2ReturnEvent({
+  source:'hide-seek',event_type:'TASK_COMPLETED',event_id:'event-no-lap',
+  payload:{resultContract:'HIDE_SPECIALIST_RESULT_V2',runtime:'V2',
+    taskState:'COMPLETED',taskContext:{session_id:'s',task_id:'t'},
+    memorySummary:{authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
+      reviewPolicyOwner:'READY_LEARNING_ENGINE',scheduleOwner:'READY_SET_PLANNER'}}
+}),null);
 assert.equal(normalizedReturnEvent.session_id,'ready-session-1');
 assert.equal(normalizedReturnEvent.task_id,'task-review-1');
 assert.equal(normalizedReturnEvent.lap_id,'lap-1');
