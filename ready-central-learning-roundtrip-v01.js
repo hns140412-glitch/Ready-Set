@@ -77,8 +77,9 @@
    const after=await sessionProvider();
    if(!same(before,after))
     return {ok:false,reason:'CENTRAL_ROUNDTRIP_SESSION_CHANGED',stage:'CENTRAL_ACK'};
-   const actionableHide=(Array.isArray(outcomes)?outcomes:[]).some(row=>
-     row?.state==='COMPLETED'&&row?.specialistResult?.sourceApp==='hide-seek');
+   const actionableHide=Handoff.expandOutcomes(outcomes).some(row=>
+     row?.centralFeedbackKind==='HIDE_MEMORY'&&row?.state==='COMPLETED'&&
+     row?.specialistResult?.sourceApp==='hide-seek');
    if(!actionableHide)
     return {ok:true,scheduled:false,
       reason:'CHECKPOINT_PROGRESS_RECORDED_RECALL_PROOF_PENDING',
@@ -120,16 +121,15 @@
      !clean(bound?.family_id)||!clean(bound?.member_id)||
      !clean(subject)||!clean(concept_skill_target)||!Array.isArray(outcomes))
    return {ok:false,reason:'PERSISTED_CENTRAL_RECORD_SCOPE_REQUIRED'};
-  const relevant=outcomes.filter(row=>
-    row?.state==='COMPLETED'&&row?.specialistResult?.sourceApp==='hide-seek'||
-    ['COMPLETED','PARTIAL','BLOCKED'].includes(row?.state)&&
-      row?.centralCheckpoint?.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT');
+  const relevant=Handoff.expandOutcomes(outcomes);
   if(relevant.some(row=>!clean(row.task_id)||row.family_id!==bound.family_id||
      row.member_id!==bound.member_id))
    return {ok:false,reason:'PERSISTED_CENTRAL_OUTCOME_SCOPE_MISMATCH'};
   return {ok:true,options:{outcomes:relevant,subject,concept_skill_target,planner,
    candidate_dates,maxFlushAttempts,observationContextForRow:row=>({
-    event_id:'ready:'+sessionId+':'+row.task_id,occurred_at:occurredAt,
+    event_id:'ready:'+sessionId+':'+row.task_id+
+      (row.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'?':checkpoint':''),
+    occurred_at:occurredAt,
     subject,concept_skill_target
    })}};
  }
