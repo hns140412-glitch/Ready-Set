@@ -175,6 +175,23 @@ assert.equal(review.nextReviewFromSpecialistResult({
 assert.equal(review.nextReviewFromSpecialistResult({memorySummary:{authority:'FORGED'}},followupPlanner,
  {candidate_dates:['2026-09-24']}).reason,'VALID_HIDE_SPECIALIST_RESULT_REQUIRED');
 
+const outcomePlanner=createPlanner(memoryStorage());
+outcomePlanner.upsertDailyAvailabilityWindow({date:'2026-09-25',start:'16:00',end:'17:00',confirmed:true,source:'PARENT_CONFIRMED'});
+const outcomeFeedback=review.planFromReadyOutcomes([{
+ task_id:'completed-hide-task',
+ specialistResult:normalizedResult,
+ memoryReviewFeedback:interpreted
+}],outcomePlanner,{candidate_dates:['2026-09-25']});
+assert.equal(outcomeFeedback.ok,true);
+assert.equal(outcomeFeedback.scheduled.length,1);
+assert.equal(outcomeFeedback.scheduled[0].todo.date,'2026-09-25');
+assert.equal(outcomeFeedback.scheduled[0].source_task_id,'completed-hide-task');
+assert.equal(review.planFromReadyOutcomes([{task_id:'ordinary',memoryReviewFeedback:interpreted}],
+ outcomePlanner,{candidate_dates:['2026-09-25']}).scheduled.length,0);
+assert.equal(review.planFromReadyOutcomes([{task_id:'hide',specialistResult:normalizedResult,
+ memoryReviewFeedback:interpreted}],createPlanner(memoryStorage()),{candidate_dates:['2026-09-25']}).reason,
+ 'NO_CONFIRMED_REVIEW_WINDOW');
+
 const fs=require('fs');
 const runtime=fs.readFileSync(require('path').join(__dirname,'..','ready-runtime-v07.js'),'utf8');
 assert(runtime.includes("url.searchParams.set('review_directive',JSON.stringify(task.review_directive))"));
