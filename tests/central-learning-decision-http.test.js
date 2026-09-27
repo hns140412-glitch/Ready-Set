@@ -36,6 +36,8 @@ const url='https://central.example.test/api/learning/decision';
  assert.equal(seen.opts.cache,'no-store');
  assert.equal(seen.opts.headers.Authorization,'Bearer opaque-test-token-0001');
  assert.deepEqual(JSON.parse(seen.opts.body),scope);
+ assert.equal((await client.request({...scope,subject:'English',concept_skill_target:'Vocabulary'})).ok,true);
+ assert.deepEqual(JSON.parse(seen.opts.body),scope);
  const accepted=await Intake.receive({sessionProvider:async()=>({
   authenticated:true,family_id:'F',selected_member_id:'A'}),
   decisionProvider:client.request,subject:'english',concept_skill_target:'vocabulary'});
