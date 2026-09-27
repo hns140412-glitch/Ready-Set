@@ -206,6 +206,10 @@
           source:requestedSource,
           source_actor:cleanText(input.source_actor)||null,
           provenance:input.provenance||null,
+          ...(Array.isArray(input.activity_types)?{activity_types:[...input.activity_types]}:{}),
+          ...(Array.isArray(input.activity_sequence)?{activity_sequence:[...input.activity_sequence]}:{}),
+          ...(input.review_policy&&typeof input.review_policy==='object'?
+            {review_policy:structuredClone(input.review_policy)}:{}),
           order:Number.isFinite(input.order)?input.order:999,
           state,
           created_at:input.created_at||new Date().toISOString(),
