@@ -74,6 +74,18 @@ test('Hide V2 partial return retains exact central task and does not certify com
  expect(invalid.task.state).toBe('PENDING');
  expect(invalid.task.specialist_result).toBeNull();
  expect(invalid.pending).toBe(true);
+ // Correct lexical IDs on a stale lap still cannot alter the current task,
+ // attach a memory result or consume the return fragment.
+ const staleLap=buildEvent('stale-lap-2',['a::뜻','b::뜻']);
+ staleLap.payload.taskContext.lap_id='previous-lap';
+ await navigate(staleLap,{fragment:true});
+ const rejectedLap=await page.evaluate(()=>({
+  task:window.ReadySetRev07.contract()?.tasks?.[0],
+  fragmentPending:location.hash.includes('learning_event')
+ }));
+ expect(rejectedLap.task.state).toBe('PENDING');
+ expect(rejectedLap.task.specialist_result).toBeNull();
+ expect(rejectedLap.fragmentPending).toBe(true);
  await navigate(buildEvent('partial-correct-2',['b::뜻','a::뜻']),{fragment:true});
  const valid=await page.evaluate(()=>{
   const c=window.ReadySetRev07.contract(),t=c.tasks[0];
