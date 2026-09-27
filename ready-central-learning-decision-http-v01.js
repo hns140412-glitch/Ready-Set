@@ -16,6 +16,9 @@
   async function request({family_id,member_id,subject,concept_skill_target}={}){
    if([family_id,member_id,subject,concept_skill_target].some(x=>!clean(x)))
     return {ok:false,reason:'EXPLICIT_DECISION_SCOPE_REQUIRED'};
+   const normalizedScope={family_id:clean(family_id),member_id:clean(member_id),
+    subject:clean(subject).toLowerCase(),
+    concept_skill_target:clean(concept_skill_target).toLowerCase()};
    let token;
    try{token=await tokenProvider()}catch{
     return {ok:false,reason:'CENTRAL_DECISION_TOKEN_UNAVAILABLE'};}
@@ -26,7 +29,7 @@
     response=await fetchImpl(endpoint.href,{
      method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json',
       Authorization:'Bearer '+token},credentials:'omit',redirect:'error',
-     cache:'no-store',body:JSON.stringify({family_id,member_id,subject,concept_skill_target})
+     cache:'no-store',body:JSON.stringify(normalizedScope)
     });
     body=await response.json();
    }catch{return {ok:false,reason:'CENTRAL_DECISION_HTTP_UNAVAILABLE'};}
