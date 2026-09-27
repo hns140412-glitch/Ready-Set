@@ -221,11 +221,23 @@
       });
     }
 
+    // The existing Planner compatibility store is shared. A new central
+    // child-scoped checkpoint must be invisible and unroutable unless the
+    // independently authenticated central host supplies the active scope.
+    function visibleToCentralScope(todo,scope){
+      if(todo?.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT')return true;
+      return scope?.authenticated===true&&
+        cleanText(scope.family_id)===cleanText(todo.provenance?.family_id)&&
+        cleanText(scope.selected_member_id)===cleanText(todo.provenance?.member_id)&&
+        !!cleanText(todo.provenance?.family_id)&&
+        !!cleanText(todo.provenance?.member_id);
+    }
     function linkTodayItems(todoIds=[],options={}){
       const date=cleanText(options.date)||dateKey();
       const ids=new Set((todoIds||[]).map(cleanText).filter(Boolean));
       const allowedStates=new Set(Array.isArray(options.allowed_states)&&options.allowed_states.length?options.allowed_states:['PLANNED']);
-      return load().dated_todos.filter(x=>ids.has(x.todo_id)&&x.date===date&&allowedStates.has(x.state)).map(x=>({
+      return load().dated_todos.filter(x=>ids.has(x.todo_id)&&x.date===date&&allowedStates.has(x.state)&&
+        visibleToCentralScope(x,options.central_scope)).map(x=>({
         todo_id:x.todo_id,label:x.label,date:x.date,source:x.source,
         assignment_id:x.assignment_id,analysis_id:x.analysis_id,learning_unit_id:x.learning_unit_id,
         template_id:x.template_id,allocation_run_id:x.allocation_run_id,
@@ -242,7 +254,7 @@
     function linkOrCreateTodayItems(values=[],options={}){
       const s=load(),date=cleanText(options.date)||dateKey();
       const ids=(values||[]).map(v=>typeof v==='object'?v.todo_id:v).filter(v=>s.dated_todos.some(x=>x.todo_id===v));
-      return linkTodayItems(ids,{date});
+      return linkTodayItems(ids,{...options,date});
     }
 
     function allocationDates(fact,input={}){
@@ -1135,15 +1147,16 @@
       };
     }
 
-    function today(date=dateKey()){
+    function today(date=dateKey(),options={}){
       const s=load();
       return s.dated_todos
-        .filter(x=>x.date===date&&isOpenTodo(x))
+        .filter(x=>x.date===date&&isOpenTodo(x)&&
+          visibleToCentralScope(x,options.central_scope))
         .sort((a,b)=>(a.order??999)-(b.order??999)||a.label.localeCompare(b.label,'ko'));
     }
 
-    function todayProjection(date=dateKey()){
-      return today(date).map(x=>({
+    function todayProjection(date=dateKey(),options={}){
+      return today(date,options).map(x=>({
         todo_id:x.todo_id,
         assignment_id:x.assignment_id||null,
         analysis_id:x.analysis_id||null,
