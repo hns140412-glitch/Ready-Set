@@ -12,6 +12,7 @@ on:
       - 'tests/central-intent-to-planner.test.js'
       - 'ready-central-learning-roundtrip-v01.js'
       - 'tests/central-learning-roundtrip.test.js'
+      - 'tests/central-learning-browser-host.test.js'
       - 'vendor/taky-central-evidence-v1.js'
       - 'sw.js'
       - 'app.js'
@@ -38,3 +39,4 @@ jobs:
           node tests/central-learning-decision-http.test.js
           node tests/central-intent-to-planner.test.js
           node tests/central-learning-roundtrip.test.js
+          node tests/central-learning-browser-host.test.js
