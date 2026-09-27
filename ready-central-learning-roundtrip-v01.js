@@ -110,5 +110,39 @@
    attached=false;eventTarget.removeEventListener('readyset-learning-outcomes-ready',handler);
   }});
  }
- return Object.freeze({VERSION,create,attachReadySession});
+ // Registration is opt-in. It only bridges a separately configured host's
+ // authenticated central session and credentials; Ready cannot mint these.
+ function installBrowserHost({eventTarget,roundtrip,resolveRecordOptions,
+  activeScopeProvider,onResult}={}){
+  if(typeof window==='undefined'||typeof activeScopeProvider!=='function')
+   throw Error('EXPLICIT_BROWSER_CENTRAL_SCOPE_HOST_REQUIRED');
+  if(window.ReadyCentralLearningHost)
+   throw Error('CENTRAL_BROWSER_HOST_ALREADY_INSTALLED');
+  const target=eventTarget||window;
+  const handler=payload=>{
+   if(typeof onResult==='function')onResult(payload);
+   target.dispatchEvent(new CustomEvent('readyset-central-roundtrip-result',{
+    detail:payload
+   }));
+  };
+  const attached=attachReadySession({eventTarget:target,roundtrip,
+   resolveRecordOptions,onResult:handler});
+  const host=Object.freeze({
+   activeScope(){
+    const scope=activeScopeProvider();
+    if(scope?.authenticated!==true||!clean(scope.family_id)||
+       !clean(scope.selected_member_id))return null;
+    return {authenticated:true,family_id:scope.family_id,
+     selected_member_id:scope.selected_member_id};
+   },
+   detach(){
+    attached.detach();
+    if(window.ReadyCentralLearningHost===host)
+     delete window.ReadyCentralLearningHost;
+   }
+  });
+  window.ReadyCentralLearningHost=host;
+  return host;
+ }
+ return Object.freeze({VERSION,create,attachReadySession,installBrowserHost});
 });
