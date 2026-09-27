@@ -111,11 +111,6 @@
     if(decision?.authority!=='READY_LEARNING_ENGINE_REVIEW_POLICY')return {ok:false,reason:'READY_REVIEW_DECISION_REQUIRED'};
     if(decision?.scheduleOwner!=='READY_SET_PLANNER')return {ok:false,reason:'PLANNER_SCHEDULE_OWNER_REQUIRED'};
     if(!planner?.candidateWindowsByDate||!planner?.upsertDatedTodo)return {ok:false,reason:'PLANNER_RUNTIME_REQUIRED'};
-    const dates=uniq(options.candidate_dates);
-    if(!dates.length)return {ok:false,reason:'CANDIDATE_DATES_REQUIRED'};
-    const windows=planner.candidateWindowsByDate(dates)||{};
-    const date=dates.find(d=>Array.isArray(windows[d])&&windows[d].length>0);
-    if(!date)return {ok:false,reason:'NO_CONFIRMED_REVIEW_WINDOW'};
     const sourceTaskId=clean(options.source_task_id);
     const existing=sourceTaskId&&typeof planner.snapshot==='function'
       ? (planner.snapshot()?.dated_todos||[]).find(x=>
@@ -123,9 +118,16 @@
           x?.provenance?.source_task_id===sourceTaskId) : null;
     if(existing){
       const directive=directiveForPlannerTodo(existing,existing.todo_id);
-      return directive?{ok:true,todo:existing,directive,reused:true}
-        :{ok:false,reason:'EXISTING_REVIEW_TODO_INVALID'};
+      if(!directive)return {ok:false,reason:'EXISTING_REVIEW_TODO_INVALID'};
+      if(uniq(directive.lexicalIds).join('|')!==uniq(decision.lexicalIds).join('|'))
+        return {ok:false,reason:'REPLAY_REVIEW_DECISION_CONFLICT'};
+      return {ok:true,todo:existing,directive,reused:true};
     }
+    const dates=uniq(options.candidate_dates);
+    if(!dates.length)return {ok:false,reason:'CANDIDATE_DATES_REQUIRED'};
+    const windows=planner.candidateWindowsByDate(dates)||{};
+    const date=dates.find(d=>Array.isArray(windows[d])&&windows[d].length>0);
+    if(!date)return {ok:false,reason:'NO_CONFIRMED_REVIEW_WINDOW'};
     const todo=planner.upsertDatedTodo({
       date,
       label:clean(options.label)||'Language Memory 복습',
