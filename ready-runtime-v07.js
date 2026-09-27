@@ -293,9 +293,11 @@
        (!event_id || !result_payload ||
         !window.ReadyHideMemoryReviewV01?.normalizeHideSpecialistResult?.(result_payload))) return false;
     if(task.review_directive && normalized==='COMPLETED' && from_app!=='hide-seek') return false;
-    if(task.central_checkpoint&&task.review_directive&&normalized==='COMPLETED'&&
-       !window.ReadyCentralHideDirectiveV01?.validateResult?.(
-         task.review_directive,result_payload))return false;
+    if(task.central_checkpoint&&task.review_directive&&from_app==='hide-seek'&&
+       ((normalized==='COMPLETED'&&!window.ReadyCentralHideDirectiveV01?.validateResult?.(
+           task.review_directive,result_payload))||
+        (normalized==='PARTIAL'&&!window.ReadyCentralHideDirectiveV01?.validateProgress?.(
+           task.review_directive,result_payload))))return false;
     if(from_app==='hide-seek'&&result_payload){
       const specialistResult=window.ReadyHideMemoryReviewV01?.normalizeHideSpecialistResult?.(result_payload)||null;
       if(specialistResult)task.specialist_result=specialistResult;
