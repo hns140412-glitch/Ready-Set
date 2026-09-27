@@ -53,6 +53,8 @@
   if(!sameIds(echoed.lexicalIds,expected.lexicalIds)||
      !sameIds(payload.reviewedLexicalIds,expected.lexicalIds)||
      payload.memorySummary?.authority!=='SPECIALIST_MEMORY_ADVISORY_ONLY'||
+     payload.memorySummary?.reviewPolicyOwner!=='TAKY_LEARNING_ENGINE_CORE'||
+     payload.memorySummary?.scheduleOwner!=='READY_SET_PLANNER'||
      payload.memorySummary?.prioritySemantics!=='ADVISORY_SIGNAL_NOT_DATE'||
      !Array.isArray(payload.memorySummary.scopedItemIds)||
      !Array.isArray(payload.trailSummary?.scopeItemIds)||
