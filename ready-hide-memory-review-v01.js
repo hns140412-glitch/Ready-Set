@@ -160,5 +160,22 @@
       todo:planned.todo,directive:planned.directive};
   }
 
-  return Object.freeze({version:VERSION,interpretHideMemorySummary,planReview,directiveForPlannerTodo,normalizeHideSpecialistResult,normalizeHideV2ReturnEvent,nextReviewFromSpecialistResult});
+  // A single explicit consumer for persisted Ready task outcomes. Do not
+  // silently date tasks: the caller supplies Planner candidate dates.
+  function planFromReadyOutcomes(outcomes,planner,options={}){
+    if(!Array.isArray(outcomes))return {ok:false,reason:'READY_OUTCOMES_REQUIRED'};
+    const eligible=outcomes.filter(row=>row?.specialistResult?.sourceApp==='hide-seek' &&
+      row?.memoryReviewFeedback?.ok===true &&
+      row?.memoryReviewFeedback?.decision?.authority==='READY_LEARNING_ENGINE_REVIEW_POLICY');
+    if(!eligible.length)return {ok:true,scheduled:[],reason:'NO_ACTIONABLE_REVIEW_FEEDBACK'};
+    const scheduled=[];
+    for(const row of eligible){
+      const result=planReview(row.memoryReviewFeedback.decision,planner,options);
+      if(!result.ok)return {ok:false,reason:result.reason,scheduled};
+      scheduled.push({source_task_id:clean(row.task_id),...result});
+    }
+    return {ok:true,scheduled};
+  }
+
+  return Object.freeze({version:VERSION,interpretHideMemorySummary,planReview,directiveForPlannerTodo,normalizeHideSpecialistResult,normalizeHideV2ReturnEvent,nextReviewFromSpecialistResult,planFromReadyOutcomes});
 });
