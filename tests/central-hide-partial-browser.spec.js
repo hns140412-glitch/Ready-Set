@@ -17,6 +17,7 @@ test('Hide V2 partial return retains exact central task and does not certify com
  });
  await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
  const setup=await page.evaluate(async()=>{
+  window.ReadySetSpecialistTargets={hideSeekV2:'https://hide.example.test/v2.html'};
   const scope=window.__testCentralScope;
   const today=new Date(),date=today.getFullYear()+'-'+
    String(today.getMonth()+1).padStart(2,'0')+'-'+
