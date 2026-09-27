@@ -1,5 +1,6 @@
 import { getUser } from '@netlify/identity';
 import familyCore from './ready-family-auth-core.js';
+import { validateCaptureEnvelope, validateUploadedImageKeys, validateReadyDrafts } from './capture-ocr-contract.mjs';
 
 const { familySessionFromIdentityUser } = familyCore;
 
@@ -88,11 +89,6 @@ export default async function handler(req){
     return Response.json({ok:false,reason:'PARENT_AUTH_REQUIRED'},{status:403});
   }
 
-  const apiKey=String(process.env.OPENAI_API_KEY||'').trim();
-  if(!apiKey){
-    return Response.json({ok:false,reason:'ANALYSIS_PROVIDER_NOT_CONFIGURED'},{status:503});
-  }
-
   let form;
   try{form=await req.formData()}
   catch{return Response.json({ok:false,reason:'INVALID_MULTIPART'},{status:400})}
@@ -104,9 +100,27 @@ export default async function handler(req){
     return Response.json({ok:false,reason:'EMPTY_MANIFEST'},{status:400});
   }
 
-  const analyzable=manifest.filter(x=>x&&x.kind!=='ANSWER_REFERENCE').slice(0,MAX_IMAGES);
-  if(!analyzable.length){
-    return Response.json({ok:false,reason:'NO_ANALYZABLE_IMAGES'},{status:400});
+  // Family OCR transport currently implements Ready assignment extraction only.
+  // Hide's HIDE_VOCABULARY schema must be implemented and verified separately.
+  const domain=String(form.get('analysis_domain')||'READY_ASSIGNMENT_FACT').trim();
+  if(domain!=='READY_ASSIGNMENT_FACT'){
+    return Response.json({ok:false,reason:domain==='HIDE_VOCABULARY'
+      ?'HIDE_VOCABULARY_UNSUPPORTED':'ANALYSIS_DOMAIN_UNSUPPORTED'},{status:422});
+  }
+  let visionManifest;
+  try{visionManifest=JSON.parse(String(form.get('vision_ingest_manifest')||'null'))}
+  catch{return Response.json({ok:false,reason:'INVALID_VISION_MANIFEST'},{status:400})}
+  const envelope=validateCaptureEnvelope({
+    request_id:form.get('vision_ingest_request_id'),manifest,
+    vision_manifest:visionManifest,max_images:MAX_IMAGES
+  });
+  if(!envelope.ok)return Response.json({ok:false,reason:envelope.reason},{status:400});
+  const uploaded=validateUploadedImageKeys([...form.keys()],envelope.analyzable_ids);
+  if(!uploaded.ok)return Response.json({ok:false,reason:uploaded.reason},{status:400});
+  const analyzable=envelope.analyzable;
+  const apiKey=String(process.env.OPENAI_API_KEY||'').trim();
+  if(!apiKey){
+    return Response.json({ok:false,reason:'ANALYSIS_PROVIDER_NOT_CONFIGURED'},{status:503});
   }
 
   let totalBytes=0;
@@ -127,7 +141,12 @@ export default async function handler(req){
 
   for(const item of analyzable){
     const file=form.get('image__'+item.capture_item_id);
-    if(!(file instanceof File))continue;
+    if(!(file instanceof File)){
+      return Response.json({ok:false,reason:'MISSING_CAPTURE_IMAGE',capture_item_id:item.capture_item_id},{status:400});
+    }
+    if(file.type!==item.mime_type){
+      return Response.json({ok:false,reason:'IMAGE_MIME_MISMATCH',capture_item_id:item.capture_item_id},{status:400});
+    }
     if(!ALLOWED_MIME.has(file.type)){
       return Response.json({ok:false,reason:'UNSUPPORTED_IMAGE_TYPE',capture_item_id:item.capture_item_id},{status:415});
     }
@@ -189,19 +208,16 @@ export default async function handler(req){
   try{parsed=JSON.parse(text)}
   catch{return Response.json({ok:false,reason:'ANALYSIS_OUTPUT_INVALID_JSON'},{status:502})}
 
-  const allowedGroups=new Set(manifest.map(x=>String(x.group_key||'')));
-  parsed.drafts=(Array.isArray(parsed.drafts)?parsed.drafts:[])
-    .filter(x=>allowedGroups.has(String(x.group_key||'')))
-    .map(x=>({
-      ...x,
-      confidence:Math.max(0,Math.min(1,Number(x.confidence)||0)),
-      evidence_item_ids:(Array.isArray(x.evidence_item_ids)?x.evidence_item_ids:[])
-        .filter(id=>manifest.some(m=>m.capture_item_id===id&&m.group_key===x.group_key)),
-      warnings:Array.isArray(x.warnings)?x.warnings.map(String):[]
-    }));
+  const checked=validateReadyDrafts(parsed?.drafts,analyzable);
+  if(!checked.ok){
+    return Response.json({ok:false,reason:checked.reason},{status:502,headers:{'Cache-Control':'no-store'}});
+  }
+  parsed.drafts=checked.drafts;
 
   return Response.json({
     ok:true,
+    analysis_domain:'READY_ASSIGNMENT_FACT',
+    vision_ingest_request_id:envelope.request_id,
     provider:'OPENAI_RESPONSES_VISION',
     model,
     family_id:mapped.session.family_id,
