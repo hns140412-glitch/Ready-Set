@@ -106,4 +106,14 @@ assert.equal(Bridge.planAccepted({...advisoryIntent,trace:{
  ...advisoryIntent.trace,observation_review_digest_sha256:'bad'}},planner,{
  activeSession,candidate_dates:['2026-09-30']}).reason,
  'SERVER_SCOPED_DECISION_BASIS_REQUIRED');
+const taskStarted=planner.recordTaskState({todo_id:planned.todo.todo_id,
+ ready_state:'IN_PROGRESS',session_id:'central-s1',task_id:'central-t1'});
+assert.equal(taskStarted.state,'IN_PROGRESS');
+const taskEnded=planner.recordSessionOutcome({todo_id:planned.todo.todo_id,
+ ready_state:'PARTIAL',session_id:'central-s1',task_id:'central-t1',actual_ms:50000});
+assert.equal(taskEnded.ok,true);
+const oldReceipt=Bridge.planAccepted(intent,planner,{activeSession,candidate_dates:['2026-09-30']});
+assert.equal(oldReceipt.ok,false);
+assert.equal(oldReceipt.reason,'CENTRAL_CHECKPOINT_REQUIRES_NEW_EVIDENCE');
+assert.equal(planner.snapshot().dated_todos.length,1);
 console.log('READY_CENTRAL_INTENT_PLANNER_PASS: verified server intent -> Planner available date -> linked Ready activity, scope/isolation, replay and HOLD');
