@@ -186,6 +186,14 @@ assert.equal(outcomeFeedback.ok,true);
 assert.equal(outcomeFeedback.scheduled.length,1);
 assert.equal(outcomeFeedback.scheduled[0].todo.date,'2026-09-25');
 assert.equal(outcomeFeedback.scheduled[0].source_task_id,'completed-hide-task');
+const repeatFeedback=review.planFromReadyOutcomes([{
+ task_id:'completed-hide-task',specialistResult:normalizedResult,memoryReviewFeedback:interpreted
+}],outcomePlanner,{candidate_dates:['2026-09-25']});
+assert.equal(repeatFeedback.ok,true);
+assert.equal(repeatFeedback.scheduled[0].reused,true);
+assert.equal(repeatFeedback.scheduled[0].todo.todo_id,outcomeFeedback.scheduled[0].todo.todo_id);
+assert.equal(outcomePlanner.snapshot().dated_todos.length,1);
+
 assert.equal(review.planFromReadyOutcomes([{task_id:'ordinary',memoryReviewFeedback:interpreted}],
  outcomePlanner,{candidate_dates:['2026-09-25']}).scheduled.length,0);
 assert.equal(review.planFromReadyOutcomes([{task_id:'hide',specialistResult:normalizedResult,
