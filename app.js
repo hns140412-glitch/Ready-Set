@@ -1887,7 +1887,33 @@ function reconcileReadyRuntimeState(){
         .filter(x=>liveById.has(x.todo_id))
         .map(x=>({...x,state:'IN_PROGRESS'}));
     }else{
-      state.activeSession=null;
+      // A specialist can return PARTIAL before the child closes the Ready
+      // session. Planner then has no IN_PROGRESS todo, but discarding the
+      // session here loses its wrapped task, evidence and continuous timer.
+      // Read the internal raw Planner for reconciliation, not the member-
+      // filtered display projection. Never rebind the original child scope.
+      const contract=state.activeSession.rev07;
+      const bound=state.activeSession.centralLearningScope||null;
+      const rawTodos=window.ReadySetPlanner?.snapshot?.()?.dated_todos||[];
+      const resumeStates=new Set(['COMPLETED','PARTIAL','DEFERRED','BLOCKED','WAITING_FOR_PARENT']);
+      const completeMatch=contract?.session_state==='ACTIVE'&&
+        contract.session_id===state.activeSession.id&&
+        Array.isArray(contract.tasks)&&contract.tasks.length>0&&
+        contract.tasks.every(task=>{
+          const todo=rawTodos.find(t=>t.todo_id===task.planner_todo_id);
+          if(!todo||!sessionIds.has(todo.todo_id))return false;
+          if(todo.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'&&
+            (!bound||todo.provenance?.family_id!==bound.family_id||
+             todo.provenance?.member_id!==bound.member_id))return false;
+          return resumeStates.has(task.state)&&todo.state===task.state;
+        });
+      if(completeMatch){
+        resumed=true;
+        state.activeSession.plannerLinks=(state.activeSession.plannerLinks||[])
+          .map(x=>({...x,state:rawTodos.find(t=>t.todo_id===x.todo_id)?.state||x.state}));
+      }else{
+        state.activeSession=null;
+      }
     }
   }
 
