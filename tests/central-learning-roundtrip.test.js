@@ -177,16 +177,48 @@ const context=row=>({event_id:'evt:'+row.task_id,
  assert.equal(unrelated.ok,false);
  assert.equal(unrelated.reason,'CENTRAL_ADVISORY_NOT_LINKED_TO_CURRENT_OBSERVATION');
  assert.equal(planner.snapshot().dated_todos.length,2);
+ const checkpointRow={state:'PARTIAL',task_id:'checkpoint-task-1',
+  planner_todo_id:'central-todo-1',family_id:'F1',member_id:'CHILD_A',
+  actual_ms:120000,centralCheckpoint:{todo_id:'central-todo-1',
+   source:'PLANNER_CENTRAL_LEARNING_CHECKPOINT',
+   review_policy:{authority:'TAKY_LEARNING_ENGINE_CORE'},
+   provenance:{family_id:'F1',member_id:'CHILD_A',subject:'english',
+    concept_skill_target:'vocabulary',schedule_authority:'READY_SET_PLANNER'}}};
+ const beforeCheckpoint=evidenceResponses;
+ const checkpointFeedback=await observational.run({...args,
+  outcomes:[checkpointRow]});
+ assert.equal(checkpointFeedback.ok,true,JSON.stringify(checkpointFeedback));
+ assert.equal(checkpointFeedback.scheduled,false);
+ assert.equal(checkpointFeedback.reason,'CHECKPOINT_PROGRESS_RECORDED_RECALL_PROOF_PENDING');
+ assert.equal(checkpointFeedback.observation_acknowledged,true);
+ assert.equal(evidenceResponses,beforeCheckpoint+1);
+ assert.equal(seenObservation.evidence_type,'CHILD_SELF_REPORT');
+ assert.equal(seenObservation.ready_state,'PARTIAL');
+ assert.equal(seenObservation.checkpoint_completion_is_verified_recall,false);
+ assert.equal(planner.snapshot().dated_todos.length,2);
+ const crossCheckpoint=await observational.run({...args,
+  outcomes:[{...checkpointRow,member_id:'CHILD_B'}]});
+ assert.equal(crossCheckpoint.ok,false);
+ assert.equal(crossCheckpoint.reason,'CENTRAL_CHECKPOINT_MEMBER_SCOPE_MISMATCH');
+ assert.equal(evidenceResponses,beforeCheckpoint+1);
  await observational.close();
  const appSource=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
  assert(appSource.includes("new CustomEvent('readyset-learning-outcomes-ready'"));
  assert(appSource.includes('central_learning_scope:structuredClone(boundCentral)'));
- assert(appSource.includes('if(boundCentral&&hideOutcomes.length)'));
+ assert(appSource.includes('if(boundCentral&&(hideOutcomes.length||checkpointOutcomes.length))'));
  const legacy=Orchestrator.optionsFromPersistedRecord({
   session_id:'s1',completed_at:'2026-09-27T01:00:00Z',
   task_outcomes:[row]
  },{subject:'english',concept_skill_target:'vocabulary'});
  assert.equal(legacy.reason,'PERSISTED_CENTRAL_RECORD_SCOPE_REQUIRED');
+ const persistedCheckpoint=Orchestrator.optionsFromPersistedRecord({
+  session_id:'session-checkpoint',completed_at:'2026-09-27T01:00:00Z',
+  central_learning_scope:{family_id:'F1',member_id:'CHILD_A'},
+  task_outcomes:[checkpointRow]
+ },{subject:'english',concept_skill_target:'vocabulary',planner,
+  candidate_dates:['2026-09-30']});
+ assert.equal(persistedCheckpoint.ok,true);
+ assert.equal(persistedCheckpoint.options.outcomes.length,1);
  const storedRecord={session_id:'session-A',completed_at:'2026-09-27T01:00:00Z',
   central_learning_scope:{family_id:'F1',member_id:'CHILD_A'},
   task_outcomes:[{...row,family_id:'F1',member_id:'CHILD_A'}]};
