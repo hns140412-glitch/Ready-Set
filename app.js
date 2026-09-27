@@ -434,6 +434,12 @@ $('#startBtn').onclick=async()=>{
     pausedAt:null,issueMs:0,completed:false,
     selected:[],tasks:labels,
     plannerLinks:started,
+    // Bind the central learner at task start; a later account/child switch
+    // cannot reattribute this completed interaction to the new learner.
+    centralLearningScope:(()=>{
+      const x=centralPlannerScope();
+      return x?{family_id:x.family_id,member_id:x.selected_member_id}:null;
+    })(),
     sound:state.sound,recordingDone:false
   };
   save();
@@ -511,7 +517,17 @@ function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOu
   const t=sessionTimes();
   const endedTodoIds=new Set((plannerOutcomes||[]).filter(x=>x?.ok).map(x=>x.todo_id));
   if(endedTodoIds.size)state.selectedTodoIds=state.selectedTodoIds.filter(id=>!endedTodoIds.has(id));
-  const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs,outcomeState,plannerOutcomes,taskOutcomes};
+  const liveCentral=centralPlannerScope();
+  const boundCentral=s.centralLearningScope&&liveCentral?.authenticated===true&&
+    liveCentral.family_id===s.centralLearningScope.family_id&&
+    liveCentral.selected_member_id===s.centralLearningScope.member_id
+      ?s.centralLearningScope:null;
+  const scopedOutcomes=(taskOutcomes||[]).map(row=>boundCentral?{
+    ...row,family_id:row.family_id??boundCentral.family_id,
+    member_id:row.member_id??boundCentral.member_id
+  }:row);
+  const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs,
+    outcomeState,plannerOutcomes,taskOutcomes:scopedOutcomes};
   state.records.unshift(rec);state.records=state.records.slice(0,200);
   state.activeSession=null;state.lastResult=rec;save();nav('result');
   // Durable local session completion is the producer boundary. A separately
@@ -520,7 +536,7 @@ function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOu
   const hideOutcomes=(rec.taskOutcomes||[]).filter(x=>x?.state==='COMPLETED'&&
     x?.specialistResult?.sourceApp==='hide-seek'&&
     x?.specialistResult?.taskState==='COMPLETED');
-  if(hideOutcomes.length){
+  if(boundCentral&&hideOutcomes.length){
     window.dispatchEvent(new CustomEvent('readyset-learning-outcomes-ready',{detail:{
       session_id:rec.id,completed_at:new Date(s.endAt).toISOString(),
       task_outcomes:structuredClone(hideOutcomes)
