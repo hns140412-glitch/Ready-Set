@@ -72,13 +72,7 @@ const normalizedResult=review.normalizeHideSpecialistResult({
   taskState:'COMPLETED',
   learningPhase:'COMPLETE',
   trailMastery:100,
-  memorySummary:{
-    authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
-    reviewPolicyOwner:'READY_LEARNING_ENGINE',
-    scheduleOwner:'READY_SET_PLANNER',
-    prioritySemantics:'ADVISORY_SIGNAL_NOT_DATE',
-    reviewAdvisories:[{lexicalId:'word-a',advisoryOnly:true,evidenceBasis:'HIDE_MEMORY_EVIDENCE'}]
-  }
+  memorySummary:packet
 });
 assert.equal(normalizedResult.sourceApp,'hide-seek');
 assert.equal(normalizedResult.resultContract,'HIDE_SPECIALIST_RESULT_V2');
