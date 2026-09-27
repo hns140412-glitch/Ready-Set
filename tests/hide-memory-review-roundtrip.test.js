@@ -203,7 +203,14 @@ const conflictingFeedback=review.planFromReadyOutcomes([{
  memoryReviewFeedback:{ok:true,decision:{...interpreted.decision,lexicalIds:['different-lexical-id']}}
 }],outcomePlanner,{candidate_dates:[]});
 assert.equal(conflictingFeedback.ok,false);
-assert.equal(conflictingFeedback.reason,'REPLAY_REVIEW_DECISION_CONFLICT');
+assert.equal(conflictingFeedback.reason,'PERSISTED_REVIEW_FEEDBACK_MISMATCH');
+const injectedFeedback=review.planFromReadyOutcomes([{
+ state:'COMPLETED',task_id:'injected',specialistResult:normalizedResult,
+ memoryReviewFeedback:{ok:true,decision:{...interpreted.decision,lexicalIds:['forged-word']}}
+}],outcomePlanner,{candidate_dates:['2026-09-25']});
+assert.equal(injectedFeedback.reason,'PERSISTED_REVIEW_FEEDBACK_MISMATCH');
+assert.equal(outcomePlanner.snapshot().dated_todos.length,1);
+
 
 
 assert.equal(review.planFromReadyOutcomes([{task_id:'ordinary',memoryReviewFeedback:interpreted}],
