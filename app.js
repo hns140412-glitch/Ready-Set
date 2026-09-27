@@ -798,10 +798,16 @@ function plannerSnapshot(){
     x.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT'||
     (scope?.authenticated===true&&scope.family_id===x.provenance?.family_id&&
      scope.selected_member_id===x.provenance?.member_id)),
-    carry_over_queue:(raw.carry_over_queue||[]).filter(x=>
-      x.source_todo_source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT'||
-      (scope?.authenticated===true&&scope.family_id===x.central_scope?.family_id&&
-       scope.selected_member_id===x.central_scope?.member_id))};
+    carry_over_queue:(raw.carry_over_queue||[]).filter(x=>{
+      const source=(raw.dated_todos||[]).find(t=>t.todo_id===x.source_todo_id);
+      const central=x.source_todo_source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'||
+        source?.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT';
+      if(!central)return true;
+      const family=x.central_scope?.family_id||source?.provenance?.family_id;
+      const member=x.central_scope?.member_id||source?.provenance?.member_id;
+      return scope?.authenticated===true&&scope.family_id===family&&
+        scope.selected_member_id===member&&!!family&&!!member;
+    })};
 }
 plannerSelectedDate=plannerSelectedDate||localDateKey();
 function plannerItemsForDate(date,snap=plannerSnapshot()){
