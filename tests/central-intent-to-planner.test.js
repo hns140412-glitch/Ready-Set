@@ -43,7 +43,15 @@ assert.deepEqual(planned.todo.activity_sequence,
  ['SHORT_LEARNING_UNIT','RETRIEVAL_CHECKPOINT','ASSISTANCE_FADING']);
 assert.equal(planned.todo.provenance.verified_receipt_id,'real-evidence:server-r1');
 assert.equal(planned.todo.provenance.schedule_authority,'READY_SET_PLANNER');
-const linked=planner.linkTodayItems([planned.todo.todo_id],{date:'2026-09-30'});
+assert.equal(planner.todayProjection('2026-09-30').length,0);
+assert.equal(planner.linkTodayItems([planned.todo.todo_id],{date:'2026-09-30'}).length,0);
+assert.equal(planner.todayProjection('2026-09-30',{central_scope:{
+ ...activeSession,selected_member_id:'CHILD_B'}}).length,0);
+assert.equal(planner.linkTodayItems([planned.todo.todo_id],{date:'2026-09-30',
+ central_scope:{...activeSession,selected_member_id:'CHILD_B'}}).length,0);
+assert.equal(planner.todayProjection('2026-09-30',{central_scope:activeSession}).length,1);
+const linked=planner.linkTodayItems([planned.todo.todo_id],{date:'2026-09-30',
+ central_scope:activeSession});
 assert.equal(linked.length,1);
 assert.deepEqual(linked[0].activity_sequence,planned.todo.activity_sequence);
 assert.equal(linked[0].review_policy.authority,'TAKY_LEARNING_ENGINE_CORE');
