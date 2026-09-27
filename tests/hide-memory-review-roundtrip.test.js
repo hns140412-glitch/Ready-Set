@@ -146,6 +146,17 @@ assert.equal(normalizedReturnEvent.from_app,'hide-seek');
 assert.equal(normalizedReturnEvent.event_id,'evt-hide-v2-1');
 assert.equal(normalizedReturnEvent.result_payload.resultContract,'HIDE_SPECIALIST_RESULT_V2');
 assert.equal(normalizedReturnEvent.result_payload.trailMastery,100);
+const centralPayload={...normalizedReturnEvent.result_payload,
+ reviewDirective:{authority:'EXPLICIT_CENTRAL_PLANNER_REVIEW_DIRECTIVE'},
+ memorySummary:{...normalizedReturnEvent.result_payload.memorySummary,
+  reviewPolicyOwner:'TAKY_LEARNING_ENGINE_CORE'}};
+assert.equal(review.normalizeHideV2ReturnEvent({event_id:'central-owner-pass',
+ source:'hide-seek',event_type:'TASK_COMPLETED',payload:centralPayload}).event_id,'central-owner-pass');
+assert.equal(review.normalizeHideSpecialistResult({...centralPayload,
+ memorySummary:{...centralPayload.memorySummary,reviewPolicyOwner:'READY_LEARNING_ENGINE'}}),null);
+assert.equal(review.normalizeHideSpecialistResult({...normalizedReturnEvent.result_payload,
+ memorySummary:{...normalizedReturnEvent.result_payload.memorySummary,
+  reviewPolicyOwner:'TAKY_LEARNING_ENGINE_CORE'}}),null);
 assert.equal(review.normalizeHideSpecialistResult({
   resultContract:'HIDE_SPECIALIST_RESULT_V2',
   runtime:'V2',
