@@ -272,7 +272,7 @@ assert(runtime.includes('if(task.review_directive && normalized===\'COMPLETED\' 
 assert(runtime.includes('!event_id || !result_payload ||'));
 
 assert(runtime.includes("result_payload: e.payload||null"));
-assert(runtime.includes("task.specialist_result=specialistResult"));
+assert(runtime.includes("task.specialist_result=task.central_checkpoint"));
 assert(runtime.includes("specialistResult:task.specialist_result||null"));
 assert(runtime.includes("memoryReviewFeedback:task.state==='COMPLETED' && !task.central_checkpoint"));
 assert(runtime.includes("task.specialist_result?.sourceApp==='hide-seek'"));
