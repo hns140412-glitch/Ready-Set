@@ -102,5 +102,22 @@ assert.equal(row.specialistResult.memorySummary.reviewAdvisories[0].lexicalId,'w
  assert.equal(H.fromCheckpointOutcome({...checkpoint,centralCheckpoint:{
   ...checkpoint.centralCheckpoint,provenance:{...checkpoint.centralCheckpoint.provenance,
    subject:'math'}}},context).reason,'CENTRAL_CHECKPOINT_LEARNING_CONTEXT_REQUIRED');
+ const dual={...checkpoint,state:'COMPLETED',specialistResult:row.specialistResult};
+ const split=H.expandOutcomes([dual]);
+ assert.deepEqual(split.map(x=>x.centralFeedbackKind),
+  ['HIDE_MEMORY','CENTRAL_CHECKPOINT_PROGRESS']);
+ let kinds=[];
+ const splitBatch=await H.enqueueBatch([dual],r=>({...context,
+  event_id:'dual:'+r.task_id+
+   (r.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'?':checkpoint':'')}),
+  {pipeline:{enqueueReadyObservation:async observation=>{
+   kinds.push({id:observation.event_id,type:observation.payload.evidence_type});
+   return {queued:true};
+  }}});
+ assert.equal(splitBatch.ok,true,JSON.stringify(splitBatch));
+ assert.deepEqual(kinds,[
+  {id:'dual:checkpoint-task-1',type:'MEMORY_RETRIEVAL_EVIDENCE'},
+  {id:'dual:checkpoint-task-1:checkpoint',type:'CHILD_SELF_REPORT'}]);
+ assert.equal(H.expandOutcomes(split).length,2);
  console.log('READY_CENTRAL_OBSERVATION_HANDOFF_PASS');
 })().catch(e=>{console.error(e);process.exitCode=1});
