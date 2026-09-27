@@ -65,7 +65,9 @@
   function normalizeHideSpecialistResult(payload={}){
     const memory=payload?.memorySummary;
     if(!memory||memory.authority!=='SPECIALIST_MEMORY_ADVISORY_ONLY')return null;
-    if(memory.reviewPolicyOwner!=='READY_LEARNING_ENGINE'||memory.scheduleOwner!=='READY_SET_PLANNER')return null;
+    const central=payload.reviewDirective?.authority==='EXPLICIT_CENTRAL_PLANNER_REVIEW_DIRECTIVE';
+    const expectedOwner=central?'TAKY_LEARNING_ENGINE_CORE':'READY_LEARNING_ENGINE';
+    if(memory.reviewPolicyOwner!==expectedOwner||memory.scheduleOwner!=='READY_SET_PLANNER')return null;
     const contract=clean(payload.resultContract)||'HIDE_SPECIALIST_RESULT_V1';
     if(!['HIDE_SPECIALIST_RESULT_V1','HIDE_SPECIALIST_RESULT_V2'].includes(contract))return null;
     const isV2=contract==='HIDE_SPECIALIST_RESULT_V2'||clean(payload.runtime)==='V2';
