@@ -52,6 +52,19 @@ test('Hide V2 partial return retains exact central task and does not certify com
  });
  expect(bound.central).toBe(true);
  expect(bound.memberId).toBe('CHILD_A');
+ // Inspect the actual Ready outbound navigation, without installing a Hide
+ // server or treating the URL parameter as authenticated authorization.
+ await page.route('https://hide.example.test/v2.html**',route=>route.abort());
+ const outboundRequest=page.waitForRequest(r=>r.url().startsWith('https://hide.example.test/v2.html?'));
+ await page.evaluate(()=>window.ReadySetRev07.launchSpecialist('hide-seek'));
+ const outbound=new URL((await outboundRequest).url());
+ expect(outbound.searchParams.get('child_id')).toBe('CHILD_A');
+ expect(outbound.searchParams.get('session_id')).toBe(bound.session_id);
+ expect(outbound.searchParams.get('task_id')).toBe(bound.task_id);
+ expect(outbound.searchParams.get('lap_id')).toBe(bound.lap_id);
+ const outgoingDirective=JSON.parse(outbound.searchParams.get('review_directive'));
+ expect(outgoingDirective.lexicalIds).toEqual(['a::뜻','b::뜻']);
+ expect(outgoingDirective.authority).toBe('EXPLICIT_CENTRAL_PLANNER_REVIEW_DIRECTIVE');
  const buildEvent=(id,reviewed)=>({
   event_id:id,event_type:'TASK_PARTIAL',source:'hide-seek',
   payload:{resultContract:'HIDE_SPECIALIST_RESULT_V2',runtime:'V2',
