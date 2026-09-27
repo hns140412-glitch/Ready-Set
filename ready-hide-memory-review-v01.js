@@ -95,7 +95,7 @@
     if(!normalizeHideSpecialistResult(payload))return null;
     const ctx=payload.taskContext||{};
     const sessionId=clean(ctx.session_id),taskId=clean(ctx.task_id);
-    if(!sessionId||!taskId)return null;
+    if(!sessionId||!taskId||!clean(ctx.lap_id)||!clean(event.event_id)||clean(payload.taskState)!=='COMPLETED')return null;
     return Object.freeze({
       session_id:sessionId,
       task_id:taskId,
