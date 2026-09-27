@@ -296,6 +296,17 @@
     if (!task) return false;
 
     const normalized = normalizeInboundState(task_state);
+    // The specialist return belongs to the currently open Ready lap, not a
+    // previously launched task or an unrelated post-reload/navigation attempt.
+    // A URL fragment is continuity evidence, never an authenticated receipt.
+    if(task.central_checkpoint&&from_app==='hide-seek'&&
+       ['COMPLETED','PARTIAL'].includes(normalized)){
+      const lap=currentLap(c),ctx=result_payload?.taskContext||{};
+      if(c.active_task_id!==task_id||!lap||lap.ended_at||
+         !lap_id||c.active_lap_id!==lap_id||lap.lap_id!==lap_id||
+         lap.task_id!==task_id||ctx.session_id!==c.session_id||
+         ctx.task_id!==task_id||ctx.lap_id!==lap_id)return false;
+    }
     // A review task cannot be completed by bare return URL parameters.
     // This remains local result integrity, not a central authenticated receipt.
     if(task.review_directive && from_app==='hide-seek' &&
