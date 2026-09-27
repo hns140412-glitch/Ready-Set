@@ -46,10 +46,13 @@ const result={
  learningPhase:'COMPLETE',taskContext:{task_id:'task-1'},
  reviewDirective:directive,reviewedLexicalIds:['word-b','word-a'],
  memorySummary:{authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
+  reviewPolicyOwner:'TAKY_LEARNING_ENGINE_CORE',scheduleOwner:'READY_SET_PLANNER',
   prioritySemantics:'ADVISORY_SIGNAL_NOT_DATE',scopedItemIds:['w-b','w-a']},
  trailSummary:{scopeItemIds:['w-a','w-b'],totalWordCount:2}
 };
 assert.equal(Directive.validateResult(directive,result),true);
+assert.equal(Directive.validateResult(directive,{...result,memorySummary:{
+ ...result.memorySummary,reviewPolicyOwner:'READY_LEARNING_ENGINE'}}),false);
 assert.equal(Directive.validateResult(directive,{...result,reviewedLexicalIds:['word-b']}),false);
 assert.equal(Directive.validateResult(directive,{...result,taskState:'PARTIAL'}),false);
 const partial={...result,taskState:'PARTIAL',learningPhase:'FIRST_FIND'};
