@@ -50,7 +50,7 @@
     if(p.kind!=='HIDE_MEMORY_REVIEW')return null;
     if(p.review_policy_authority!=='READY_LEARNING_ENGINE')return null;
     if(p.schedule_authority!=='READY_SET_PLANNER')return null;
-    if(!lexicalIds.length)return null;
+    if(!lexicalIds.length||!clean(todo.todo_id)||!/^\\d{4}-\\d{2}-\\d{2}$/.test(clean(todo.date)))return null;
     return Object.freeze({
       authority:'EXPLICIT_READY_PLANNER_REVIEW_DIRECTIVE',
       reviewPolicyOwner:'READY_LEARNING_ENGINE',
@@ -131,6 +131,8 @@
       },
       state:'PLANNED'
     });
+    if(!todo||!clean(todo.todo_id)||!dates.includes(clean(todo.date))||!/^\\d{4}-\\d{2}-\\d{2}$/.test(clean(todo.date)))
+      return {ok:false,reason:'PLANNER_DATED_TODO_NOT_CONFIRMED'};
     const directive={
       authority:'EXPLICIT_READY_PLANNER_REVIEW_DIRECTIVE',
       reviewPolicyOwner:'READY_LEARNING_ENGINE',
