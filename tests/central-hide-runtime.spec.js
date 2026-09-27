@@ -3,6 +3,7 @@ const {test,expect}=require('@playwright/test');
 test('a real Ready session binds central Planner lexical IDs into Hide V2 directive, not local review authority',async({page})=>{
  await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
  const setup=await page.evaluate(()=>{
+  window.ReadySetSpecialistTargets={hideSeekV2:'https://hide.example.test/v2.html'};
   window.__centralReviewFixture={authenticated:true,family_id:'F1',selected_member_id:'A'};
   window.__centralReviewHost=window.ReadyCentralLearningRoundtripV01.installBrowserHost({
    eventTarget:window,activeScopeProvider:()=>window.__centralReviewFixture,
