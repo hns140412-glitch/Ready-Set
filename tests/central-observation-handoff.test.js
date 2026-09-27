@@ -46,5 +46,25 @@ assert.equal(row.specialistResult.memorySummary.reviewAdvisories[0].lexicalId,'w
   'CENTRAL_OUTBOX_ENQUEUE_NOT_CONFIRMED');
  assert.equal((await H.enqueueOutcome(row,context,{pipeline:{enqueueReadyObservation:async()=>({duplicate:true})}})).ok,true);
  assert.equal((await H.enqueueOutcome(row,context)).reason,'CENTRAL_PIPELINE_REQUIRED');
+ const batchContext=r=>({...context,event_id:'event:'+r.task_id});
+ let batchCalls=0;
+ const batchPipeline={enqueueReadyObservation:async()=>{batchCalls++;return {queued:true}}};
+ const invalid={...row,task_id:'bad',member_id:'child-B'};
+ const rejected=await H.enqueueBatch([row,invalid],batchContext,{pipeline:batchPipeline});
+ assert.equal(rejected.reason,'OUTCOME_MEMBER_SCOPE_MISMATCH');
+ assert.equal(batchCalls,0);
+ const deduped=await H.enqueueBatch([row,row],batchContext,{pipeline:batchPipeline});
+ assert.equal(deduped.ok,true);
+ assert.equal(deduped.results.length,1);
+ assert.equal(batchCalls,1);
+ const conflict=await H.enqueueBatch([row,{...row,task_id:'other'}],
+  r=>({...context,event_id:'same-event'}),{pipeline:batchPipeline});
+ assert.equal(conflict.reason,'BATCH_OBSERVATION_ID_CONFLICT');
+ assert.equal(batchCalls,1);
+ const partial=await H.enqueueBatch([row,{...row,task_id:'second'}],batchContext,
+  {pipeline:{enqueueReadyObservation:async()=>++batchCalls===3?{queued:true}:{queued:false}}});
+ assert.equal(partial.ok,false);
+ assert.equal(partial.results.length,1);
+ assert.equal(partial.failed_event_id,'event:second');
  console.log('READY_CENTRAL_OBSERVATION_HANDOFF_PASS');
 })().catch(e=>{console.error(e);process.exitCode=1});
