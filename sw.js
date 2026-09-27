@@ -8,7 +8,7 @@ const CORE=[
 './ready-sync-adapter-v01.js','./ready-local-first-v01.js','./ready-assignment-domain-v2.js','./ready-subject-master-v01.js','./ready-official-standard-registry-v01.js','./ready-official-unit-map-v01.js','./ready-learning-standard-matcher-v01.js','./ready-learning-reference-v01.js','./ready-learning-master-v01.js','./ready-planner-v01.js',
 './ready-hide-memory-review-v01.js','./ready-central-evidence-session-v01.js',
 './ready-central-observation-handoff-v01.js','./ready-central-learning-decision-intake-v01.js',
-'./ready-central-learning-decision-http-v01.js','./ready-central-intent-to-planner-v01.js',
+'./ready-central-learning-decision-http-v01.js','./ready-central-intent-to-planner-v01.js','./ready-central-hide-directive-v01.js',
 './vendor/taky-central-evidence-v1.js','./ready-central-learning-roundtrip-v01.js',
 './ready-integration-v1.js','./app.js','./ready-runtime-v07.js','./manifest.webmanifest','./VERSION.json',
 './Ready_Set_Ui_Master_Logic_REV_06.md','./Ready_Set_Ui_Master_Logic_REV_07.md',
