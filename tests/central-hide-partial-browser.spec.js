@@ -63,7 +63,8 @@ test('Hide V2 partial return retains exact central task and does not certify com
    trailSummary:{scopeItemIds:['item-a','item-b'],totalWordCount:2},
    activeMissionId:'mission-scoped',missionStatus:'PARTIAL',trailMastery:0}
  });
- const navigate=event=>page.goto('http://127.0.0.1:4173/?learning_event='+
+ const navigate=(event,{fragment=false}={})=>page.goto(
+  'http://127.0.0.1:4173/'+(fragment?'#learning_event=':'?learning_event=')+
   encodeURIComponent(JSON.stringify(event)),{waitUntil:'load'});
  await navigate(buildEvent('partial-forged-1',['a::뜻','c::뜻']));
  let invalid=await page.evaluate(()=>({
@@ -73,7 +74,7 @@ test('Hide V2 partial return retains exact central task and does not certify com
  expect(invalid.task.state).toBe('PENDING');
  expect(invalid.task.specialist_result).toBeNull();
  expect(invalid.pending).toBe(true);
- await navigate(buildEvent('partial-correct-2',['b::뜻','a::뜻']));
+ await navigate(buildEvent('partial-correct-2',['b::뜻','a::뜻']),{fragment:true});
  const valid=await page.evaluate(()=>{
   const c=window.ReadySetRev07.contract(),t=c.tasks[0];
   const p=window.ReadySetPlanner.snapshot().dated_todos
@@ -81,6 +82,7 @@ test('Hide V2 partial return retains exact central task and does not certify com
   return {taskState:t.state,source:t.specialist_result?.sourceApp,
    returnRecorded:c.applied_event_ids?.includes('partial-correct-2'),
    plannerState:p?.state,queryConsumed:!location.search.includes('learning_event'),
+   fragmentConsumed:!location.hash.includes('learning_event'),
    centralCheckpoint:t.central_checkpoint}
  });
  expect(valid.taskState).toBe('PARTIAL');
@@ -88,5 +90,6 @@ test('Hide V2 partial return retains exact central task and does not certify com
  expect(valid.returnRecorded).toBe(true);
  expect(valid.plannerState).toBe('PARTIAL');
  expect(valid.queryConsumed).toBe(true);
+ expect(valid.fragmentConsumed).toBe(true);
  expect(valid.centralCheckpoint).toBe(true);
 });
