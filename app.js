@@ -549,15 +549,9 @@ function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOu
   // Durable local session completion is the producer boundary. A separately
   // configured central host may consume this event; no token, central ACK or
   // Planner allocation is invented here, and local completion never waits.
-  const hideOutcomes=(rec.taskOutcomes||[]).filter(x=>x?.state==='COMPLETED'&&
-    x?.specialistResult?.sourceApp==='hide-seek'&&
-    x?.specialistResult?.taskState==='COMPLETED');
-  const checkpointOutcomes=(rec.taskOutcomes||[]).filter(x=>
-    ['COMPLETED','PARTIAL','BLOCKED'].includes(x?.state)&&
-    x?.centralCheckpoint?.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT');
-  if(boundCentral&&(hideOutcomes.length||checkpointOutcomes.length)){
-    const evidenceOutcomes=[...new Map([...hideOutcomes,...checkpointOutcomes]
-      .map(row=>[row.task_id,row])).values()];
+  const evidenceOutcomes=window.ReadyCentralObservationHandoffV01
+    ?.expandOutcomes?.(rec.taskOutcomes)||[];
+  if(boundCentral&&evidenceOutcomes.length){
     window.dispatchEvent(new CustomEvent('readyset-learning-outcomes-ready',{detail:{
       session_id:rec.id,completed_at:new Date(s.endAt).toISOString(),
       central_learning_scope:structuredClone(boundCentral),
