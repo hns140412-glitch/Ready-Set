@@ -50,24 +50,30 @@
    };
    const batch=await Handoff.enqueueBatch(outcomes,contextForRow,{pipeline});
    if(!batch.ok)return {...batch,stage:'OBSERVATION_OUTBOX'};
+   if(!batch.results.length)
+    return {ok:true,scheduled:false,reason:'NO_COMPLETED_HIDE_OBSERVATIONS',
+     stage:'OBSERVATION_OUTBOX'};
    const expected=new Set(batch.results.map(x=>'ready-set:ready-set:'+x.event_id));
    let entries=[];
-   for(let attempt=0;attempt<maxFlushAttempts;attempt++){
+   try{
+    for(let attempt=0;attempt<maxFlushAttempts;attempt++){
+     entries=await pipeline.listActive('ready-set');
+     if([...expected].every(key=>entries.some(x=>x.key===key&&x.status==='ACKED'&&
+       ['OBSERVATION_INGEST_RECEIPT','REAL_EVIDENCE_RECEIPT'].includes(x.receipt?.kind))))
+       break;
+     if(entries.some(x=>expected.has(x.key)&&x.status==='BLOCKED'))
+      return {ok:false,reason:'CENTRAL_EVIDENCE_OUTBOX_BLOCKED',stage:'CENTRAL_ACK',batch};
+     const flush=await pipeline.flushOne('ready-set',owner);
+     if(!flush?.processed)break;
+    }
     entries=await pipeline.listActive('ready-set');
-    if([...expected].every(key=>entries.some(x=>x.key===key&&x.status==='ACKED'&&
-      ['OBSERVATION_INGEST_RECEIPT','REAL_EVIDENCE_RECEIPT'].includes(x.receipt?.kind))))
-      break;
-    if(entries.some(x=>expected.has(x.key)&&x.status==='BLOCKED'))
-     return {ok:false,reason:'CENTRAL_EVIDENCE_OUTBOX_BLOCKED',stage:'CENTRAL_ACK',batch};
-    const flush=await pipeline.flushOne('ready-set',owner);
-    if(!flush?.processed)break;
+   }catch{
+    return {ok:false,reason:'CENTRAL_EVIDENCE_OUTBOX_UNAVAILABLE',
+     stage:'CENTRAL_ACK',batch};
    }
-   if(expected.size){
-    entries=await pipeline.listActive('ready-set');
-    if(![...expected].every(key=>entries.some(x=>x.key===key&&x.status==='ACKED'&&
-      ['OBSERVATION_INGEST_RECEIPT','REAL_EVIDENCE_RECEIPT'].includes(x.receipt?.kind))))
-     return {ok:false,reason:'CENTRAL_EVIDENCE_ACK_PENDING',stage:'CENTRAL_ACK',batch};
-   }
+   if(![...expected].every(key=>entries.some(x=>x.key===key&&x.status==='ACKED'&&
+       ['OBSERVATION_INGEST_RECEIPT','REAL_EVIDENCE_RECEIPT'].includes(x.receipt?.kind))))
+    return {ok:false,reason:'CENTRAL_EVIDENCE_ACK_PENDING',stage:'CENTRAL_ACK',batch};
    const after=await sessionProvider();
    if(!same(before,after))
     return {ok:false,reason:'CENTRAL_ROUNDTRIP_SESSION_CHANGED',stage:'CENTRAL_ACK'};
