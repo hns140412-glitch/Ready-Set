@@ -26,7 +26,7 @@ const runtime={ok:true,authority:'TAKY_LEARNING_ENGINE_CORE',
   pedagogical_actions:[{intent:'TARGETED_RECOVERY_PRACTICE',priority:'HIGH'}],
   adaptive_plan},
  trace:{verified_receipt_id:'real-evidence:server-r1',verified_evidence_count:1,
-  evidence_ids:['server-e1']}};
+  basis_kind:'VERIFIED_ONLY',evidence_ids:['server-e1']}};
 const intent=Intake.accept(runtime,context);
 assert.equal(intent.ok,true);
 assert.equal(Bridge.planAccepted(intent,planner,{activeSession,candidate_dates:['2026-09-30']})
@@ -64,7 +64,7 @@ assert.equal(Bridge.planAccepted(intent,planner,{activeSession:{...activeSession
  'ACTIVE_CENTRAL_PLANNER_SCOPE_REQUIRED');
 assert.equal(Bridge.planAccepted({...intent,trace:{}},planner,{
  activeSession,candidate_dates:['2026-09-30']}).reason,
- 'SERVER_VERIFIED_DECISION_BASIS_REQUIRED');
+ 'SERVER_SCOPED_DECISION_BASIS_REQUIRED');
 assert.equal(Bridge.planAccepted({...intent,adaptive_plan:{...intent.adaptive_plan,
  unit_span_policy:'KEEP'}},planner,{activeSession,candidate_dates:['2026-09-30']})
  .reason,'CENTRAL_CHECKPOINT_REPLAY_CONFLICT');
@@ -78,4 +78,32 @@ const noCheckpoint={...intent,adaptive_plan:{...intent.adaptive_plan,
  add_checkpoint:false,add_retrieval_checkpoint:false}};
 assert.equal(Bridge.planAccepted(noCheckpoint,planner,{activeSession,
  candidate_dates:['2026-09-30']}).scheduled,false);
+const advisoryDigest='a'.repeat(64);
+const advisoryRuntime={...runtime,
+ decision:{...runtime.decision,pedagogical_actions:[{
+  intent:'RETRIEVAL_CHECKPOINT',priority:'HIGH',basis:['HIDE_MEMORY_ADVISORY_ONLY']}]},
+ trace:{verified_receipt_id:null,verified_evidence_count:0,
+  basis_kind:'OBSERVATION_ADVISORY_ONLY',
+  observation_review_evidence_count:1,
+  observation_review_evidence_ids:['ready-observation-2'],
+  observation_review_digest_sha256:advisoryDigest}};
+const advisoryIntent=Intake.accept(advisoryRuntime,context);
+assert.equal(advisoryIntent.ok,true);
+const advisoryTodo=Bridge.planAccepted(advisoryIntent,planner,{activeSession,
+ candidate_dates:['2026-09-30']});
+assert.equal(advisoryTodo.ok,true,JSON.stringify(advisoryTodo));
+assert.equal(advisoryTodo.todo.provenance.verified_receipt_id,null);
+assert.equal(advisoryTodo.todo.provenance.basis_kind,'OBSERVATION_ADVISORY_ONLY');
+assert.equal(advisoryTodo.todo.provenance.observation_basis_digest_sha256,advisoryDigest);
+assert.equal(advisoryTodo.todo.review_policy.observation_is_verified_proof,false);
+assert.equal(Bridge.planAccepted(advisoryIntent,planner,{activeSession,
+ candidate_dates:[]}).reused,true);
+assert.equal(planner.snapshot().dated_todos.length,2);
+assert.equal(Bridge.planAccepted({...advisoryIntent,actions:[]},planner,{
+ activeSession,candidate_dates:['2026-09-30']}).reason,
+ 'SERVER_SCOPED_DECISION_BASIS_REQUIRED');
+assert.equal(Bridge.planAccepted({...advisoryIntent,trace:{
+ ...advisoryIntent.trace,observation_review_digest_sha256:'bad'}},planner,{
+ activeSession,candidate_dates:['2026-09-30']}).reason,
+ 'SERVER_SCOPED_DECISION_BASIS_REQUIRED');
 console.log('READY_CENTRAL_INTENT_PLANNER_PASS: verified server intent -> Planner available date -> linked Ready activity, scope/isolation, replay and HOLD');
