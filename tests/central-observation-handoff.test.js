@@ -61,8 +61,9 @@ assert.equal(row.specialistResult.memorySummary.reviewAdvisories[0].lexicalId,'w
   r=>({...context,event_id:'same-event'}),{pipeline:batchPipeline});
  assert.equal(conflict.reason,'BATCH_OBSERVATION_ID_CONFLICT');
  assert.equal(batchCalls,1);
+ let partialCalls=0;
  const partial=await H.enqueueBatch([row,{...row,task_id:'second'}],batchContext,
-  {pipeline:{enqueueReadyObservation:async()=>++batchCalls===3?{queued:true}:{queued:false}}});
+  {pipeline:{enqueueReadyObservation:async()=>++partialCalls===1?{queued:true}:{queued:false}}});
  assert.equal(partial.ok,false);
  assert.equal(partial.results.length,1);
  assert.equal(partial.failed_event_id,'event:second');
