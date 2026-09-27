@@ -539,6 +539,7 @@ function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOu
   if(boundCentral&&hideOutcomes.length){
     window.dispatchEvent(new CustomEvent('readyset-learning-outcomes-ready',{detail:{
       session_id:rec.id,completed_at:new Date(s.endAt).toISOString(),
+      central_learning_scope:structuredClone(boundCentral),
       task_outcomes:structuredClone(hideOutcomes)
     }}));
   }
