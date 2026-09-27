@@ -81,6 +81,15 @@
     decisionProvider:client.request,subject,concept_skill_target});
    if(!intent.ok)return {ok:false,reason:intent.reason,stage:'CENTRAL_DECISION',
     observation_acknowledged:true};
+   // A durable low-confidence advisory cannot be replayed as the answer to an
+   // unrelated newly completed task. Verified historical state is separate.
+   if(['OBSERVATION_ADVISORY_ONLY','VERIFIED_WITH_OBSERVATION_ADVISORY']
+       .includes(intent.trace?.basis_kind)){
+    const observed=new Set(intent.trace?.observation_review_evidence_ids||[]);
+    if(!batch.results.some(x=>observed.has(x.event_id)))
+     return {ok:false,reason:'CENTRAL_ADVISORY_NOT_LINKED_TO_CURRENT_OBSERVATION',
+      stage:'CENTRAL_DECISION',observation_acknowledged:true};
+   }
    const active=await sessionProvider();
    if(!same(before,active))
     return {ok:false,reason:'CENTRAL_ROUNDTRIP_SESSION_CHANGED',stage:'PLANNER'};
