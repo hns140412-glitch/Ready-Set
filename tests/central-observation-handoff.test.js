@@ -34,6 +34,9 @@ assert.equal(row.specialistResult.memorySummary.reviewAdvisories[0].lexicalId,'w
  assert.equal(called,1);
  assert.equal((await H.enqueueOutcome({...row,state:'PARTIAL'},context,{pipeline})).ok,false);
  assert.equal(called,1);
+ assert.equal((await H.enqueueOutcome(row,context,{pipeline:{enqueueReadyObservation:async()=>({queued:false})}})).reason,
+  'CENTRAL_OUTBOX_ENQUEUE_NOT_CONFIRMED');
+ assert.equal((await H.enqueueOutcome(row,context,{pipeline:{enqueueReadyObservation:async()=>({duplicate:true})}})).ok,true);
  assert.equal((await H.enqueueOutcome(row,context)).reason,'CENTRAL_PIPELINE_REQUIRED');
  console.log('READY_CENTRAL_OBSERVATION_HANDOFF_PASS');
 })().catch(e=>{console.error(e);process.exitCode=1});
