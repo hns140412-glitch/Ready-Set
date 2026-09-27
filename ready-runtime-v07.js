@@ -259,6 +259,29 @@
       emit('APP_ROUTE_BLOCKED',{to:app,reason:'CENTRAL_MEMBER_SCOPE_REQUIRED',task_id:task.task_id});
       return false;
     }
+    // A saved child selection is never allowed to relabel a later child's
+    // linked expression. The trusted host, not a URL, selects the live child.
+    const currentCentral=window.ReadyCentralLearningHost?.activeScope?.()||null;
+    if(app==='snap-pop'&&session.centralLearningScope&&
+       (currentCentral?.authenticated!==true||
+        session.centralLearningScope.family_id!==currentCentral.family_id||
+        session.centralLearningScope.member_id!==currentCentral.selected_member_id)){
+      emit('APP_ROUTE_BLOCKED',{to:app,reason:'READY_SNAP_SELECTED_MEMBER_CHANGED',task_id:task.task_id});
+      return false;
+    }
+    let snapBinding=null;
+    if(app==='snap-pop'){
+      const original=(window.ReadySetPlanner?.snapshot?.()?.dated_todos||[])
+        .find(row=>row.todo_id===task.planner_todo_id)||null;
+      snapBinding=window.ReadySnapRunScopeV01?.fromSource?.({
+        activeScope:currentCentral,sessionScope:session.centralLearningScope,
+        session,contract:c,task,lap,todo:original,
+        domainState:window.ReadyAssignments?.load?.()
+      })||{ok:false,reason:'READY_SNAP_SCOPE_PRODUCER_MISSING'};
+      if(!snapBinding.ok)
+        emit('APP_ROUTE_CONTEXT_UNBOUND',{to:app,reason:snapBinding.reason,
+          task_id:task.task_id,contextual_learning_outcome_enabled:false});
+    }
 
     c.active_app = app;
     emit('APP_SWITCH', { from: 'ready-set', to: app, lap_ended: false });
@@ -280,6 +303,10 @@
     url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
     url.searchParams.set('snap_target', SNAP_URL);
     url.searchParams.set('from_app', 'ready-set');
+    if(app==='snap-pop'&&snapBinding?.ok){
+      for(const [key,value] of Object.entries(snapBinding.fields))
+        url.searchParams.set(key,value);
+    }
     if(app==='hide-seek'&&task.review_directive){
       url.searchParams.set('review_directive',JSON.stringify(task.review_directive));
       if(task.central_checkpoint)url.searchParams.set('child_id',centralMemberId);
