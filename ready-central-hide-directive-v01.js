@@ -28,7 +28,38 @@
    taskId:clean(taskId),scheduledDate:todo.date,basisKind:p.basis_kind,
    observationIsVerifiedProof:false});
  }
- const api=Object.freeze({VERSION,forPlannerTodo});
+ // A returned URL/event is local specialist continuity evidence, never a
+ // server-authenticated learning receipt. Compare it to the actual task scope.
+ function validateResult(expected,payload){
+  if(expected?.authority!=='EXPLICIT_CENTRAL_PLANNER_REVIEW_DIRECTIVE'||
+     payload?.resultContract!=='HIDE_SPECIALIST_RESULT_V2'||
+     payload?.runtime!=='V2'||payload?.taskState!=='COMPLETED'||
+     payload?.learningPhase!=='COMPLETE'||
+     payload?.taskContext?.task_id!==expected.taskId)return false;
+  const echoed=payload.reviewDirective||{};
+  if(echoed.authority!==expected.authority||
+     echoed.directiveId!==expected.directiveId||
+     echoed.reviewPolicyOwner!=='TAKY_LEARNING_ENGINE_CORE'||
+     echoed.scheduleOwner!=='READY_SET_PLANNER'||
+     echoed.taskId!==expected.taskId||
+     echoed.observationIsVerifiedProof!==false)return false;
+  function sameIds(a,b){
+   return Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&
+    a.every(x=>clean(x)&&b.includes(x))&&new Set(a).size===a.length&&
+    new Set(b).size===b.length;
+  }
+  if(!sameIds(echoed.lexicalIds,expected.lexicalIds)||
+     !sameIds(payload.reviewedLexicalIds,expected.lexicalIds)||
+     payload.memorySummary?.authority!=='SPECIALIST_MEMORY_ADVISORY_ONLY'||
+     payload.memorySummary?.prioritySemantics!=='ADVISORY_SIGNAL_NOT_DATE'||
+     !Array.isArray(payload.memorySummary.scopedItemIds)||
+     !Array.isArray(payload.trailSummary?.scopeItemIds)||
+     payload.memorySummary.scopedItemIds.length!==expected.lexicalIds.length||
+     !sameIds(payload.memorySummary.scopedItemIds,payload.trailSummary.scopeItemIds)||
+     payload.trailSummary.totalWordCount!==expected.lexicalIds.length)return false;
+  return true;
+ }
+ const api=Object.freeze({VERSION,forPlannerTodo,validateResult});
  if(typeof module!=='undefined'&&module.exports)module.exports=api;
  if(typeof window!=='undefined')window.ReadyCentralHideDirectiveV01=api;
 })();
