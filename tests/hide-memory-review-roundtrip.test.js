@@ -126,6 +126,22 @@ assert.equal(normalizedReturnEvent.session_id,'ready-session-1');
 assert.equal(normalizedReturnEvent.task_id,'task-review-1');
 assert.equal(normalizedReturnEvent.lap_id,'lap-1');
 assert.equal(normalizedReturnEvent.task_state,'COMPLETED');
+const partialReturn=review.normalizeHideV2ReturnEvent({
+ event_id:'evt-hide-v2-partial',event_type:'TASK_PARTIAL',source:'hide-seek',
+ payload:{...normalizedReturnEvent.result_payload,
+  taskState:'PARTIAL',learningPhase:'FIRST_FIND'}
+});
+assert.equal(partialReturn.task_state,'PARTIAL');
+assert.equal(partialReturn.task_id,'task-review-1');
+assert.equal(review.normalizeHideV2ReturnEvent({
+ event_id:'evt-hide-v2-state-mismatch',event_type:'TASK_COMPLETED',source:'hide-seek',
+ payload:{...normalizedReturnEvent.result_payload,taskState:'PARTIAL'}
+}),null);
+assert.equal(review.normalizeHideV2ReturnEvent({
+ event_id:'evt-hide-v2-event-mismatch',event_type:'TASK_PARTIAL',source:'hide-seek',
+ payload:{...normalizedReturnEvent.result_payload,taskState:'COMPLETED'}
+}),null);
+
 assert.equal(normalizedReturnEvent.from_app,'hide-seek');
 assert.equal(normalizedReturnEvent.event_id,'evt-hide-v2-1');
 assert.equal(normalizedReturnEvent.result_payload.resultContract,'HIDE_SPECIALIST_RESULT_V2');
