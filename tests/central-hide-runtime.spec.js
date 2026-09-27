@@ -60,3 +60,45 @@ test('a real Ready session binds central Planner lexical IDs into Hide V2 direct
  const before=await page.evaluate(()=>state.activeSession.rev07.tasks[0].state);
  expect(before).toBe('PENDING');
 });
+
+test('missing central Hide route or lexical directive does not start any Planner task',async({page})=>{
+ await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
+ const result=await page.evaluate(async()=>{
+  const scope={authenticated:true,family_id:'F1',selected_member_id:'A'};
+  const host=window.ReadyCentralLearningRoundtripV01.installBrowserHost({
+   eventTarget:window,activeScopeProvider:()=>scope,
+   roundtrip:{run:async()=>({ok:false,reason:'TEST_ONLY_NO_LIVE_CENTRAL_ACCOUNT'})},
+   resolveRecordOptions:()=>({})
+  });
+  const t=new Date(),date=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+
+   '-'+String(t.getDate()).padStart(2,'0');
+  const p=window.ReadySetPlanner;
+  const ordinary=p.upsertDatedTodo({todo_id:'preflight-ordinary',date,
+   label:'일반 과제',source:'PLANNER_ALLOCATION',state:'PLANNED'});
+  const central=p.upsertDatedTodo({todo_id:'preflight-central',date,
+   label:'중앙 단어 복습',source:'PLANNER_CENTRAL_LEARNING_CHECKPOINT',state:'PLANNED',
+   review_policy:{authority:'TAKY_LEARNING_ENGINE_CORE',
+    decision_contract:'TAKY_RUNTIME_DECISION_CONTRACT_V1',intent_only:true,
+    observation_is_verified_proof:false,evidence_basis_kind:'OBSERVATION_ADVISORY_ONLY'},
+   provenance:{kind:'CENTRAL_PEDAGOGICAL_CHECKPOINT',family_id:'F1',member_id:'A',
+    schedule_authority:'READY_SET_PLANNER',basis_kind:'OBSERVATION_ADVISORY_ONLY',
+    subject:'english',concept_skill_target:'vocabulary',target_learning_ids:['a::뜻']}});
+  state.selectedTodoIds=[ordinary.todo_id,central.todo_id];save();
+  document.getElementById('startBtn').click();
+  const missingRoute={active:state.activeSession,
+   states:p.snapshot().dated_todos.filter(x=>['preflight-ordinary','preflight-central']
+    .includes(x.todo_id)).map(x=>x.state)};
+  window.ReadySetSpecialistTargets={hideSeekV2:'https://hide.example.test/v2.html'};
+  p.upsertDatedTodo({...central,provenance:{...central.provenance,target_learning_ids:[]}});
+  document.getElementById('startBtn').click();
+  const missingIds={active:state.activeSession,
+   states:p.snapshot().dated_todos.filter(x=>['preflight-ordinary','preflight-central']
+    .includes(x.todo_id)).map(x=>x.state)};
+  host.detach();
+  return {missingRoute,missingIds};
+ });
+ expect(result.missingRoute.active).toBeNull();
+ expect(result.missingRoute.states).toEqual(['PLANNED','PLANNED']);
+ expect(result.missingIds.active).toBeNull();
+ expect(result.missingIds.states).toEqual(['PLANNED','PLANNED']);
+});
