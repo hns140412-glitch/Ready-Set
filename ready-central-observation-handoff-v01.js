@@ -15,6 +15,17 @@
     if(!clean(event_id)||!clean(occurred_at)||!Number.isFinite(Date.parse(occurred_at))||
        !clean(subject)||!clean(concept_skill_target))
       return {ok:false,reason:'EXPLICIT_OBSERVATION_CONTEXT_REQUIRED'};
+    // The specialist summary is observation data, not a carrier for
+    // verification receipts, schedule decisions or global mastery claims.
+    const forbidden=new Set(['verification_receipt','verification_candidate',
+      'verified_outcome','planner_date','schedule_date','due_at','deadline',
+      'global_mastery_claim','auto_award']);
+    function leaks(value){
+      if(!value||typeof value!=='object')return false;
+      return Object.entries(value).some(([key,nested])=>forbidden.has(key)||leaks(nested));
+    }
+    if(leaks(row.specialistResult.memorySummary))
+      return {ok:false,reason:'SPECIALIST_SUMMARY_AUTHORITY_LEAK'};
     const member_id=session.selected_member_id;
     // Do not let an explicitly scoped persisted outcome be rebound to a
     // different active child or family after an asynchronous account switch.
