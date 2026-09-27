@@ -25,7 +25,17 @@
       source_app:'ready-set',type:'READY_LEARNING_OBSERVATION',
       authority:'OBSERVATION_ONLY_NOT_CENTRAL_DECISION'};
   }
-  const api=Object.freeze({VERSION,fromOutcome});
+  async function enqueueOutcome(row,context,{pipeline}={}){
+    if(!pipeline||typeof pipeline.enqueueReadyObservation!=='function')
+      return {ok:false,reason:'CENTRAL_PIPELINE_REQUIRED'};
+    const mapped=fromOutcome(row,context);
+    if(!mapped.ok)return mapped;
+    // The central pipeline owns authenticated scope re-check, durable queue
+    // and transport ACK. Enqueue success is not central storage confirmation.
+    const queued=await pipeline.enqueueReadyObservation(mapped.observation);
+    return {ok:true,queued,authority:'LOCAL_OUTBOX_ONLY_NOT_CENTRAL_ACK'};
+  }
+  const api=Object.freeze({VERSION,fromOutcome,enqueueOutcome});
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   if(typeof window!=='undefined')window.ReadyCentralObservationHandoffV01=api;
 })();
