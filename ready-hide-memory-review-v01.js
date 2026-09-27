@@ -177,7 +177,9 @@
   // silently date tasks: the caller supplies Planner candidate dates.
   function planFromReadyOutcomes(outcomes,planner,options={}){
     if(!Array.isArray(outcomes))return {ok:false,reason:'READY_OUTCOMES_REQUIRED'};
-    const eligible=outcomes.filter(row=>row?.specialistResult?.sourceApp==='hide-seek' &&
+    const eligible=outcomes.filter(row=>row?.state==='COMPLETED' &&
+      clean(row?.task_id) && row?.specialistResult?.sourceApp==='hide-seek' &&
+      row?.specialistResult?.taskState==='COMPLETED' &&
       row?.memoryReviewFeedback?.ok===true &&
       row?.memoryReviewFeedback?.decision?.authority==='READY_LEARNING_ENGINE_REVIEW_POLICY');
     if(!eligible.length)return {ok:true,scheduled:[],reason:'NO_ACTIONABLE_REVIEW_FEEDBACK'};
