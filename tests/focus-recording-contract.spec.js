@@ -31,6 +31,7 @@ async function startTypedRecording(page){
 }
 test('approved mobile/tablet Focus DOM preserves real controls, tablet right anchor',async({page})=>{
   await page.goto('http://127.0.0.1:4173/');
+  await startTypedRecording(page);
   const ids=['focusView','focusSoundBtn','clockHero','hourHand','minuteHand','secondHand','remainingTime','targetTime','focusMission','pauseBtn','completeBtn','focusElapsed','issueElapsed','startClock','recBtn'];
   for(const id of ids)await expect(page.locator('#'+id)).toHaveCount(1);
   await page.setViewportSize({width:1200,height:850});
