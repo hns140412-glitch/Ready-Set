@@ -739,13 +739,13 @@ function plannerItemsForDate(date,snap=plannerSnapshot()){
     meta:x.source==='PLANNER_ALLOCATION'?'플래너':'직접 추가'
   }));
   const commitments=(snap.schedule_commitments||[]).filter(x=>String(x.start_at||'').slice(0,10)===date).map(x=>({
-    kind:'SCHEDULE',label:x.title,state:'FIXED',minutes:null,order:-1,
-    time:String(x.start_at||'').slice(11,16),meta:'고정 일정'
+    kind:'SCHEDULE',label:x.title,state:x.confirmed===false?'UNCONFIRMED':'FIXED',minutes:null,order:-1,
+    time:String(x.start_at||'').slice(11,16),meta:x.confirmed===false?'임시 입력 · 미확정':'고정 일정'
   }));
   return [...commitments,...todos].sort((a,b)=>(a.order??999)-(b.order??999));
 }
 function plannerStateLabel(v){
-  return ({PLANNED:'예정',IN_PROGRESS:'진행',COMPLETED:'완료',PARTIAL:'일부 남음',DEFERRED:'다음에',WAITING_FOR_PARENT:'부모 도움',BLOCKED:'막힘',FIXED:'고정'})[v]||v;
+  return ({PLANNED:'예정',IN_PROGRESS:'진행',COMPLETED:'완료',PARTIAL:'일부 남음',DEFERRED:'다음에',WAITING_FOR_PARENT:'부모 도움',BLOCKED:'막힘',FIXED:'고정',UNCONFIRMED:'미확정'})[v]||v;
 }
 function renderPlanner(){
   plannerSelectedDate=plannerSelectedDate||localDateKey();
