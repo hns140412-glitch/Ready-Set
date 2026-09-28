@@ -601,7 +601,8 @@ $$('[data-style]').forEach(b=>b.onclick=()=>profileRuntime.setStyle(b.dataset.st
 $('#saveProfileBtn').onclick=()=>profileRuntime.saveProfile({
   name:$('#profileName').value,
   birthdate:$('#profileBirthdate').value,
-  shareAvatar:$('#shareAvatarOptIn').checked
+  shareAvatar:$('#shareAvatarOptIn').checked,
+  theme:$('#profileTheme').value
 });
 
 
@@ -754,29 +755,39 @@ window.addEventListener('readyset-family-session',()=>{
   if(document.querySelector('#settingsView')?.classList.contains('active'))settingsRuntime.renderSettings();
 });
 
-/* REV_07 compact themed share overlay — runtime-owned after rebuild migration. */
-function readyShareTheme(){return state.share?.theme==='sail'?'sail':'drop'}
+/* Share Golden content: Profile owns theme, approved Visual ID owns avatar.
+ * UI previews image+caption; a second explicit tap invokes the native OS share menu.
+ * No Kakao SDK/API, fabricated result numbers, or theme selector at share time. */
+function readyShareTheme(){
+  return globalThis.ReadyShareGoldenTruth.themeOf(state.profile||{},state.share||{});
+}
+function projectReadyShare(kind){
+  return globalThis.ReadyShareGoldenTruth.project({
+    kind,
+    profile:state.profile||{},
+    legacyShare:state.share||{},
+    projectionApi:globalThis.CharacterVisualIdProjection,
+    guide:state.guide||{},
+    currentTasks:currentMissionLabels(),
+    targetMs:state.activeSession?.targetMs??Math.max(0,Number(state.targetMin)||0)*60000,
+    record:resultHistoryRuntime.resultSource(),
+    now:new Date()
+  });
+}
 const shareCardRuntime=rebuildShareCard.create({
-  drawAvatar,
-  currentMissionLabels,
-  resultSource:()=>resultHistoryRuntime.resultSource(),
-  resultOutcomeProfile:record=>resultHistoryRuntime.outcomeProfile(record),
-  shareTheme:readyShareTheme,
+  projectShare:projectReadyShare,
   formatTime:fmt,
-  roundRect,
   toast
 });
-function buildKakaoFeed({imageUrl,webUrl,kind='result'}={}){
-  const r=kind==='result'?resultHistoryRuntime.resultSource():null,theme=readyShareTheme(),copy=shareCardRuntime.themeCopy(theme,kind,r);
-  const description=kind==='result'?copy.sub+' · 집중 '+fmt(r?.focusMs||0):copy.sub;
-  return {objectType:'feed',content:{title:copy.title,description,imageUrl,link:{mobileWebUrl:webUrl,webUrl}},buttons:[{title:kind==='result'?'탐험 기록 보기':'탐험 응원하기',link:{mobileWebUrl:webUrl,webUrl}}]};
-}
-window.ReadySetShare={
+window.ReadySetShare=Object.freeze({
+  projectShare:projectReadyShare,
   renderShareCard:kind=>shareCardRuntime.render(kind),
   shareCard:kind=>shareCardRuntime.share(kind),
-  buildKakaoFeed,
-  setTheme(theme){state.share={...(state.share||{}),theme:theme==='sail'?'sail':'drop'};save();}
-};
+  showPreview:kind=>shareCardRuntime.showPreview(kind),
+  closePreview:()=>shareCardRuntime.release(),
+  getTheme:readyShareTheme,
+  delivery:'NATIVE_OS_SHARE_ONLY'
+});
 $('#preShareBtn').onclick=()=>shareCardRuntime.share('pre');
 $('#missionShareBtn').onclick=()=>shareCardRuntime.share('pre');
 $('#shareResultBtn').onclick=()=>shareCardRuntime.share('result');
