@@ -223,13 +223,15 @@ test('OCR review draft auto-fills Parent homework and excludes answer-reference 
     const session=await window.ReadyCaptureV01.latestSession();
     return {confirmed:!!fact,interpretation:fact?.analysis_state,
       todos:window.ReadySetPlanner.snapshot().dated_todos.filter(t=>t.assignment_id===fact?.assignment_id).length,
-      sourceCount:fact?.artifact_refs?.length,sessionStatus:session?.status,
+      sourceCount:fact?.artifact_refs?.length,answerCount:fact?.answer_reference_ids?.length,
+      sessionStatus:session?.status,
       draftReviewed:session?.analysis_result?.drafts?.[0]?.review_events?.some(e=>e.event==='PARENT_APPLIED_DRAFT')};
   });
   expect(saved.confirmed).toBe(true);
   expect(saved.interpretation).toBe('INTERPRETED');
   expect(saved.todos).toBeGreaterThan(0);
-  expect(saved.sourceCount).toBe(2);
+  expect(saved.sourceCount).toBe(1);
+  expect(saved.answerCount).toBe(1);
   expect(saved.sessionStatus).toBe('FACT_LINKED');
   expect(saved.draftReviewed).toBe(true);
 });
