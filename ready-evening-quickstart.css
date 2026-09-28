@@ -1,0 +1,18 @@
+/* Evening pilot uses existing Planner/Focus UI; no replacement illustrations. */
+.eveningQuickStart{margin:8px 0 18px;padding:14px 4px 12px;border-top:1px solid rgba(96,72,46,.18);border-bottom:1px solid rgba(96,72,46,.18)}
+.eveningQuickTitle{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.eveningQuickTitle small{letter-spacing:.1em;font-size:9px;font-weight:800;color:#86634d}
+.eveningQuickTitle h2{font-size:19px;margin:3px 0 5px}
+.eveningQuickTitle>span{font-size:11px;border-radius:30px;background:#f8e0b3;padding:5px 9px}
+.eveningQuickHelp,.eveningQuickStatus{font-size:11px;line-height:1.55;color:#715e52;margin:7px 0 12px}
+.eveningQuickRow{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(110px,1fr);gap:9px;margin:8px 0}
+.eveningQuickRow label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:750;min-width:0}
+.eveningQuickRow input{height:42px;min-width:0;width:100%;border:1px solid #d8cbbd;border-radius:10px;background:rgba(255,255,255,.8);padding:9px;color:#322a24;font-size:13px}
+.eveningQuickActions{display:flex;gap:9px}
+.eveningQuickActions button,.eveningQuickSchedule>button{min-height:42px;flex:1;border:0;border-radius:12px;background:#26352b;color:white;font-size:12px;font-weight:850;padding:8px 10px}
+.eveningQuickActions button:first-child{background:#eee3d6;color:#3b322a}
+.eveningQuickSchedule{margin:12px 0 0;padding:10px 0;border-top:1px solid #e4d9cd}
+.eveningQuickSchedule summary{font-size:12px;font-weight:800;cursor:pointer}
+.eveningQuickSchedule>button{width:100%}
+.eveningQuickStatus{min-height:15px;margin-bottom:1px}
+@media(max-width:360px){.eveningQuickRow{grid-template-columns:1fr}.eveningQuickActions{flex-direction:column}}
