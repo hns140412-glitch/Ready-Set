@@ -16,6 +16,30 @@ async function enterParentCapture(page){
   await page.locator('#plannerView [data-nav="planner-admin"]').click();
 }
 
+async function reportCaptureDiagnostic(page,label){
+  const details=await page.evaluate(async()=>{
+    const out={};
+    out.role=window.ReadyFamilySession?.current?.()?.role||null;
+    out.loaded=!!window.ReadyCaptureV01;
+    try{
+      const session=await window.ReadyCaptureV01?.currentReviewSession?.();
+      out.session=session?.status||null;
+      out.items=session?(await window.ReadyCaptureV01.listItems(session.capture_session_id)).length:0;
+    }catch(e){out.sessionError=String(e?.name||'')+':'+String(e?.message||'')}
+    out.status=document.querySelector('#captureAnalysisStatus')?.textContent||null;
+    out.toast=document.querySelector('[role="status"]')?.textContent||null;
+    if(!out.items){
+      try{
+        const synthetic=new File([new Uint8Array([1,2,3])],'diagnostic.png',{type:'image/png'});
+        const r=await window.ReadyCaptureV01.addFiles([synthetic],{group_key:'ENGLISH:PRINT',kind:'RANGE'});
+        out.directAdd='OK_'+r.length;
+      }catch(e){out.directAdd=String(e?.name||'')+':'+String(e?.message||'')}
+    }
+    return out;
+  });
+  console.log('CAPTURE_BROWSER_DIAGNOSTIC',label,JSON.stringify(details));
+}
+
 const png=Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WlMK6sAAAAASUVORK5CYII=',
   'base64'
@@ -43,6 +67,9 @@ test('iPhone-like in-app rear camera and photo library use distinct native input
   await page.locator('#homeworkCameraInput').setInputFiles({
     name:'native-camera.png',mimeType:'image/png',buffer:png
   });
+  if(await page.locator('#capturePreviewList .capturePreviewItem').count()===0){
+    await reportCaptureDiagnostic(page,'NATIVE_INPUT');
+  }
   await expect(page.locator('#capturePreviewList .capturePreviewItem')).toHaveCount(1);
   await page.locator('#homeworkGalleryInput').setInputFiles([
     {name:'library-a.png',mimeType:'image/png',buffer:png},
@@ -83,6 +110,9 @@ test('HEIC from Files with generic MIME is preserved; undecodable photo fails cl
   await page.locator('#homeworkGalleryInput').setInputFiles({
     name:'iPhone-photo.HEIC',mimeType:'application/octet-stream',buffer:bytes
   });
+  if(await page.locator('#capturePreviewList .capturePreviewItem').count()===0){
+    await reportCaptureDiagnostic(page,'GALLERY_HEIC');
+  }
   const captured=await page.evaluate(async()=>{
     const session=await window.ReadyCaptureV01.currentReviewSession();
     const rows=await window.ReadyCaptureV01.listItems(session.capture_session_id);
