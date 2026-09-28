@@ -1,5 +1,17 @@
 const {test,expect}=require('@playwright/test');
 const base='http://127.0.0.1:4173/';
+// Only a browser test fixture: this is NEVER committed as approved share art.
+async function injectSyntheticSceneFixture(page){
+  await page.evaluate(()=>{
+    window.ReadyShareVisualAssets={scene:()=>{
+      const svg='<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="800">'+
+        '<rect width="1800" height="800" fill="#bde5f4"/>'+
+        '<text x="760" y="350" font-size="70" fill="#334455">TEST FIXTURE - NOT APPROVED ART</text></svg>';
+      return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+    }};
+  });
+}
+
 test('Profile theme, actual pre-share, preview and native image+caption on second gesture',async({page})=>{
   await page.addInitScript(()=>{
     window.__shareCalls=[];
@@ -25,6 +37,11 @@ test('Profile theme, actual pre-share, preview and native image+caption on secon
   expect(await page.evaluate(()=>window.ReadySetShare.getTheme())).toBe('sail');
   expect(await page.evaluate(()=>window.ReadySetShare.delivery)).toBe('NATIVE_OS_SHARE_ONLY');
   expect(await page.evaluate(()=>Object.hasOwn(window.ReadySetShare,'setTheme'))).toBe(false);
+  // Verify production fails closed when the Golden illustrated art is missing.
+  const blocked=await page.evaluate(()=>window.ReadySetShare.showPreview('pre'));
+  expect(blocked).toMatchObject({ok:false,reason:'SHARE_GOLDEN_SCENE_NOT_APPROVED'});
+  await expect(page.locator('#readySharePreview')).toHaveCount(0);
+  await injectSyntheticSceneFixture(page);
   await page.evaluate(()=>window.ReadySetShare.showPreview('pre'));
   const preview=page.locator('#readySharePreview');
   await expect(preview).toBeVisible();
@@ -59,6 +76,7 @@ test('Verified mixed result cannot manufacture completion count or stars',async(
   let outcome=await page.evaluate(()=>window.ReadySetShare.projectShare('result'));
   expect(outcome.ok).toBe(true);expect(outcome.doneCount).toBe(1);
   expect(outcome.total).toBe(2);expect(outcome.stars).toBe(null);
+  await injectSyntheticSceneFixture(page);
   await page.evaluate(()=>window.ReadySetShare.showPreview('result'));
   await expect(page.locator('#readySharePreview pre')).toContainText('완료 1/2');
   await expect(page.locator('#readySharePreview img')).toBeVisible();
@@ -71,37 +89,3 @@ test('No record or tasks fails closed instead of sharing made-up data',async({pa
   await expect(page.locator('#readySharePreview')).toHaveCount(0);
 });
 
-test('Generate all four real PNG outputs using synthetic non-personal data',async({page})=>{
-  const fs=require('node:fs'),path=require('node:path');
-  await page.goto(base);
-  await page.evaluate(()=>{
-    const date=new Date().toLocaleDateString('sv-SE');
-    window.ReadySetPlanner.upsertDatedTodo({
-      todo_id:'synthetic_share_visual',date,label:'과학 탐험',source:'PLANNER_ALLOCATION',
-      state:'PLANNED',estimated_minutes:15
-    });
-    state.selectedTodoIds=['synthetic_share_visual'];state.profile.shareAvatar=false;
-    state.targetMin=15;
-    state.lastResult={
-      endAt:Date.now(),targetMs:900000,focusMs:810000,deltaMs:-90000,outcomeState:'COMPLETED',
-      taskOutcomes:[{task_id:'synthetic_task_one',label:'과학 탐험',state:'COMPLETED'}],
-      awardReceipt:{verified:true,awarded_stars:3}
-    };
-  });
-  fs.mkdirSync('share-artifacts',{recursive:true});
-  for(const theme of ['drop','sail']){
-    await page.evaluate(theme=>state.profile.theme=theme,theme);
-    for(const kind of ['pre','result']){
-      const image=await page.evaluate(async kind=>{
-        const canvas=await window.ReadySetShare.renderShareCard(kind);
-        if(!canvas?.toDataURL)throw new Error('GOLDEN_CANVAS_NOT_READY:'+JSON.stringify(canvas));
-        return {width:canvas.width,height:canvas.height,data:canvas.toDataURL('image/png')};
-      },kind);
-      expect(image.width).toBe(900);expect(image.height).toBe(600);
-      const name='ready-share-'+theme+'-'+kind+'.png';
-      const bytes=Buffer.from(image.data.split(',')[1],'base64');
-      expect(bytes.length).toBeGreaterThan(10000);
-      fs.writeFileSync(path.join('share-artifacts',name),bytes);
-    }
-  }
-});
