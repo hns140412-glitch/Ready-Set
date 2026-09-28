@@ -14,26 +14,41 @@
     }
     const url=URL.createObjectURL(original);
     try{
-      const image=new Image();
-      await new Promise((resolve,reject)=>{
-        image.onload=()=>resolve();
-        image.onerror=()=>reject(new Error('HEIC_DECODE_UNSUPPORTED'));
-        image.src=url;
-      });
-      const w=Number(image.naturalWidth),h=Number(image.naturalHeight);
-      if(!w||!h)return {ok:false,reason:'HEIC_CONVERSION_UNAVAILABLE'};
-      const scale=Math.min(1,4096/Math.max(w,h));
-      const canvas=document.createElement('canvas');
-      canvas.width=Math.max(1,Math.round(w*scale));
-      canvas.height=Math.max(1,Math.round(h*scale));
-      const ctx=canvas.getContext('2d');
-      if(!ctx)return {ok:false,reason:'HEIC_CONVERSION_UNAVAILABLE'};
-      ctx.drawImage(image,0,0,canvas.width,canvas.height);
-      const jpeg=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.94));
-      if(!(jpeg instanceof Blob)||jpeg.type!=='image/jpeg'||!jpeg.size){
-        return {ok:false,reason:'HEIC_CONVERSION_UNAVAILABLE'};
+      let image=null,bitmap=null;
+      try{
+        const element=new Image();
+        await new Promise((resolve,reject)=>{
+          element.onload=()=>resolve();
+          element.onerror=()=>reject(new Error('IMAGE_ELEMENT_DECODE_UNSUPPORTED'));
+          element.src=url;
+        });
+        image=element;
+      }catch{
+        // A second browser decoder is attempted before failing closed.
+        if(typeof createImageBitmap==='function'){
+          bitmap=await createImageBitmap(original).catch(()=>null);
+          image=bitmap;
+        }
       }
-      return {ok:true,blob:jpeg,width:canvas.width,height:canvas.height};
+      if(!image)return {ok:false,reason:'HEIC_CONVERSION_UNAVAILABLE'};
+      try{
+        const w=Number(image.naturalWidth||image.width),h=Number(image.naturalHeight||image.height);
+        if(!w||!h)return {ok:false,reason:'HEIC_CONVERSION_UNAVAILABLE'};
+        const scale=Math.min(1,4096/Math.max(w,h));
+        const canvas=document.createElement('canvas');
+        canvas.width=Math.max(1,Math.round(w*scale));
+        canvas.height=Math.max(1,Math.round(h*scale));
+        const ctx=canvas.getContext('2d');
+        if(!ctx)return {ok:false,reason:'HEIC_CONVERSION_UNAVAILABLE'};
+        ctx.drawImage(image,0,0,canvas.width,canvas.height);
+        const jpeg=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.94));
+        if(!(jpeg instanceof Blob)||jpeg.type!=='image/jpeg'||!jpeg.size){
+          return {ok:false,reason:'HEIC_CONVERSION_UNAVAILABLE'};
+        }
+        return {ok:true,blob:jpeg,width:canvas.width,height:canvas.height};
+      }finally{
+        bitmap?.close?.();
+      }
     }catch{
       return {ok:false,reason:'HEIC_CONVERSION_UNAVAILABLE'};
     }finally{
