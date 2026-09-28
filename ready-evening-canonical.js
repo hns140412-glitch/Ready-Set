@@ -77,7 +77,7 @@
       const el = document.getElementById(id);
       if (el) observer.observe(el,{attributes:true,attributeFilter:['class']});
     });
-    document.querySelectorAll('[data-planner-tab]').forEach(b=>b.addEventListener('click',refresh));
+    document.querySelectorAll('[data-planner-tab]').forEach(b=>b.addEventListener('click',()=>queueMicrotask(refresh)));
     // When an active Focus screen has already been restored, never reset it.
     if (targetView() !== 'focus') tab('week');
     refresh();
