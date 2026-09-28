@@ -11,6 +11,7 @@
   <link rel="icon" href="./assets/icon-192.png">
   <link rel="apple-touch-icon" href="./assets/icon-192.png">
   <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./ready-basecamp-planner-glass.css">
   <title>Ready & Set</title>
 </head>
 <body>
@@ -83,19 +84,27 @@
         <div><small>READY & SET · PLANNER</small><h2 id="plannerHeroTitle">이번 주 탐험 지도</h2><p id="plannerHeroCopy">해야 할 일과 고정 일정을 가볍게 확인해요.</p></div>
         <div class="plannerHeroActions"><button class="plannerTodayJump" id="plannerTodayJump">오늘</button><button class="plannerAdminJump" data-nav="planner-admin">관리</button></div>
       </section>
-      <div class="plannerTabs" role="tablist" aria-label="플래너 보기">
-        <button class="on" data-planner-tab="week" role="tab" aria-selected="true" aria-controls="plannerWeekPanel">주간</button>
-        <button data-planner-tab="day" role="tab" aria-selected="false" aria-controls="plannerDayPanel">일간</button>
+      <div class="plannerGlassSheet" aria-label="베이스캠프 탐험 일정">
+        <div class="plannerTabs" role="tablist" aria-label="플래너 보기">
+          <button class="on" data-planner-tab="week" role="tab" aria-selected="true" aria-controls="plannerWeekPanel">주간</button>
+          <button data-planner-tab="day" role="tab" aria-selected="false" aria-controls="plannerDayPanel">일간</button>
+        </div>
+        <section id="plannerWeekPanel" class="plannerPanel" role="tabpanel">
+          <div id="plannerWeekStrip" class="plannerWeekStrip" aria-label="이번 주 날짜"></div>
+          <div class="plannerOverviewLegend" aria-label="시간표 구분">
+            <span><i class="legendFixed"></i>고정 일정</span>
+            <span><i class="legendTodo"></i>오늘 할 일</span>
+            <span><i class="legendFree"></i>확인된 자유 시간</span>
+          </div>
+          <div id="plannerWeekOverview" class="plannerWeekOverview" aria-label="월요일부터 일요일까지 한 주의 일정"></div>
+          <div id="plannerWeekDetail" class="plannerWeekDetail" hidden></div>
+        </section>
+        <section id="plannerDayPanel" class="plannerPanel" role="tabpanel" hidden>
+          <div class="plannerDayHead"><div><small>DAILY ROUTE</small><h2 id="plannerDayTitle">오늘의 탐험길</h2></div><span id="plannerDayCount">0개</span></div>
+          <div id="plannerDayTimeline" class="plannerDayTimeline"></div>
+          <button class="btn dark" id="plannerDayMissionJump" data-nav="mission">오늘 할 일 선택하기</button>
+        </section>
       </div>
-      <section id="plannerWeekPanel" class="plannerPanel" role="tabpanel">
-        <div id="plannerWeekStrip" class="plannerWeekStrip"></div>
-        <div id="plannerWeekDetail" class="plannerWeekDetail"></div>
-      </section>
-      <section id="plannerDayPanel" class="plannerPanel" role="tabpanel" hidden>
-        <div class="plannerDayHead"><div><small>TODAY ROUTE</small><h2 id="plannerDayTitle">오늘의 탐험</h2></div><span id="plannerDayCount">0개</span></div>
-        <div id="plannerDayTimeline" class="plannerDayTimeline"></div>
-        <button class="btn dark" data-nav="mission">오늘 작전 고르기</button>
-      </section>
     </main>
   </section>
 
