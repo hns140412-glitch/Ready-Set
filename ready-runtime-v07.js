@@ -533,6 +533,8 @@
       <div class="rev07-tasks">${c.tasks.map(t => `<button class="rev07-task ${t.task_id===c.active_task_id?'active':''}" data-rev07-task="${t.task_id}"><span>${escapeHtml(t.label)}</span><strong>${labelState(t.state)}</strong></button>`).join('')}</div>`;
     const mission = document.getElementById('focusMission');
     if (mission && task) mission.textContent = task.label;
+    const rec = document.getElementById('recBtn');
+    if (rec) rec.hidden = !(task?.activity_types||[]).includes('RECORDING');
   }
 
   function ensureWrapUp() {
