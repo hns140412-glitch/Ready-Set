@@ -225,7 +225,7 @@ const homeViewRuntime=rebuildHomeView.create({
   guideData
 });
 function renderHome(){
-  homeViewRuntime.render({state,missionLabels:currentMissionLabels()});
+  homeViewRuntime.render({state,missionLabels:currentMissionLabels(),todayTodos:plannerQueryRuntime.todayProjection()});
 }
 function renderChips(root){
   homeViewRuntime.renderChips(root,currentMissionLabels());
