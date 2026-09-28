@@ -1,0 +1,7 @@
+/* Navigation-only corrective implementation. Do not fake a final island illustration. */
+body:has(#readyThreeScreenNav) #plannerView .plannerMain{padding-bottom:calc(106px + env(safe-area-inset-bottom,0px))}
+.readyThreeScreenNav{position:fixed;z-index:45;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,430px);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:9px 9px calc(9px + env(safe-area-inset-bottom,0px));background:#fffaf4;border:1px solid #e9e0d5;border-radius:18px 18px 0 0;box-shadow:0 -4px 16px rgba(35,44,36,.1)}
+.readyThreeScreenNav[hidden]{display:none}
+.readyThreeScreenNav button{min-height:46px;border:0;border-radius:11px;background:transparent;color:#4c5147;font-size:11px;font-weight:800;line-height:1.35;padding:6px 3px}
+.readyThreeScreenNav button.on{background:#e9f2df;color:#23492f}
+@media(min-width:700px){.readyThreeScreenNav{border-radius:18px 18px 0 0}}
