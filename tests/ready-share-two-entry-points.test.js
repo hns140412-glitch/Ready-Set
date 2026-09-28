@@ -5,18 +5,19 @@ const html=fs.readFileSync('index.html','utf8');
 const app=fs.readFileSync('app.js','utf8');
 const shareRuntime=fs.readFileSync('src/views/share-card-runtime.js','utf8');
 const golden=fs.readFileSync('Ready_Set_Share_Golden_Contract_REV_01.md','utf8');
-const section=id=>{
+const betweenViews=(id,nextId)=>{
   const start=html.indexOf('id="'+id+'"');
   assert.ok(start>=0,id+' must exist');
-  const end=html.indexOf('</section>',start);
-  return html.slice(start,end+10);
+  const end=html.indexOf('id="'+nextId+'"',start+1);
+  assert.ok(end>start,nextId+' next view boundary must exist');
+  return html.slice(start,end);
 };
 assert.equal((html.match(/id="missionShareBtn"/g)||[]).length,1,'one pre-start share trigger');
 assert.equal((html.match(/id="shareResultBtn"/g)||[]).length,1,'one post-completion share trigger');
 assert.doesNotMatch(html,/id="preShareBtn"/,'no redundant Home pre-share button');
 assert.doesNotMatch(html,/<section[^>]+(?:shareView|data-view="share")/i,'no extra share primary screen');
-assert.match(section('missionView'),/id="missionShareBtn"[^>]*>탐험 시작 전 공유/);
-assert.match(section('resultView'),/id="shareResultBtn"[^>]*>탐험 완료 후 공유/);
+assert.match(betweenViews('missionView','focusView'),/id="missionShareBtn"[^>]*>탐험 시작 전 공유/);
+assert.match(betweenViews('resultView','historyView'),/id="shareResultBtn"[^>]*>탐험 완료 후 공유/);
 assert.match(app,/\$\('#missionShareBtn'\)\.onclick=\(\)=>shareCardRuntime\.share\('pre'\)/);
 assert.match(app,/\$\('#shareResultBtn'\)\.onclick=\(\)=>shareCardRuntime\.share\('result'\)/);
 assert.doesNotMatch(app,/\$\('#preShareBtn'\)/);
