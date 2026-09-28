@@ -45,6 +45,11 @@ test('Golden phone viewport keeps the live Pause and Complete actions reachable'
   await page.setViewportSize({width:390,height:844});
   await page.goto('http://127.0.0.1:4173/');
   await startTypedRecording(page);
+  await expect(page.locator('#readyRev07Panel')).toBeHidden();
+  await page.locator('#focusMission').click();
+  await expect(page.locator('#readyRev07Panel')).toBeVisible();
+  await page.locator('[data-rev07-close]').click();
+  await expect(page.locator('#readyRev07Panel')).toBeHidden();
   for(const selector of ['#pauseBtn','#completeBtn']){
     const box=await page.locator(selector).boundingBox();
     expect(box,selector+' missing').toBeTruthy();
