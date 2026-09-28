@@ -4,7 +4,7 @@ const base='http://127.0.0.1:4173/';
 async function injectSyntheticSceneFixture(page){
   await page.evaluate(()=>{
     window.ReadyShareVisualAssets={scene:()=>{
-      const svg='<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="800">'+
+      const svg='<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1280">'+
         '<rect width="1800" height="800" fill="#bde5f4"/>'+
         '<text x="760" y="350" font-size="70" fill="#334455">TEST FIXTURE - NOT APPROVED ART</text></svg>';
       return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
@@ -46,16 +46,17 @@ test('Profile theme, actual pre-share, preview and native image+caption on secon
   const preview=page.locator('#readySharePreview');
   await expect(preview).toBeVisible();
   await expect(preview.locator('img')).toHaveAttribute('src',/^blob:/);
-  await expect(preview.locator('pre')).toContainText('오늘의 할 일 1개');
-  await expect(preview.locator('pre')).toContainText('목표 25:00');
+  await expect(preview.locator('textarea')).toHaveValue(/오늘의 할 일 1개/);
+  await expect(preview.locator('textarea')).toHaveValue(/목표 25:00/);
   const image=await preview.locator('img').evaluate(img=>({w:img.naturalWidth,h:img.naturalHeight}));
-  expect(image).toEqual({w:900,h:600});
+  expect(image).toEqual({w:720,h:1280});
+  await preview.locator('textarea').fill('동행탐험 공유 문구 테스트');
   await preview.getByRole('button',{name:'모바일 공유 메뉴 열기'}).click();
   const calls=await page.evaluate(()=>window.__shareCalls);
   expect(calls).toHaveLength(1);
   expect(calls[0].files[0].type).toBe('image/png');
   expect(calls[0].files[0].size).toBeGreaterThan(10000);
-  expect(calls[0].text).toContain('오늘의 할 일 1개');
+  expect(calls[0].text).toContain('동행탐험 공유 문구 테스트');
   expect(calls[0].userActivated).toBe(true);
   await preview.getByRole('button',{name:'이미지만 공유'}).click();
   const last=await page.evaluate(()=>window.__shareCalls.at(-1));
@@ -78,7 +79,7 @@ test('Verified mixed result cannot manufacture completion count or stars',async(
   expect(outcome.total).toBe(2);expect(outcome.stars).toBe(null);
   await injectSyntheticSceneFixture(page);
   await page.evaluate(()=>window.ReadySetShare.showPreview('result'));
-  await expect(page.locator('#readySharePreview pre')).toContainText('완료 1/2');
+  await expect(page.locator('#readySharePreview textarea')).toHaveValue(/완료 1\/2/);
   await expect(page.locator('#readySharePreview img')).toBeVisible();
   await page.locator('#readySharePreview').getByRole('button',{name:'닫기'}).click();
 });
