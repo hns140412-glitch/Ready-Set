@@ -27,13 +27,13 @@
         </section>
       </section>
       <section class="commandCard">
-        <button data-nav="mission"><span><b>오늘 목표 정하기</b><small>과제와 목표 시간을 정해요</small></span><strong>→</strong></button>
+        <button data-nav="mission" id="homeNextTaskBtn"><span><b id="homeNextTitle">오늘 할 일 확인</b><small id="homeNextMeta">Planner에서 오늘 할 일을 불러와요.</small></span><strong>→</strong></button>
         <button data-nav="planner"><span><b>탐험 일정 보기</b><small>이번 주와 오늘 계획을 한눈에</small></span><strong>→</strong></button>
         <button id="preShareBtn"><span><b>작전 개시 전, 응원 요청!</b><small>가족에게 오늘의 목표 공유</small></span><strong>↗</strong></button>
         <button data-nav="history"><span><b>작전 기록실</b><small>완료한 작전과 기록 보기</small></span><strong>→</strong></button>
       </section>
-      <section class="challengePanel"><div class="sectionTitle"><div><span>오늘의 작전</span><h2>어떤 과제에 도전할까요?</h2></div><button class="linkBtn" data-nav="mission">자세히</button></div>
-        <div class="categoryGrid"><button data-nav="mission"><i>01</i><b>재능</b><small>Planner 오늘 탐험 보기</small></button><button data-nav="mission"><i>02</i><b>학교</b><small>Planner 오늘 탐험 보기</small></button><button data-nav="mission"><i>03</i><b>영어</b><small>Planner 오늘 탐험 보기</small></button></div>
+      <section class="challengePanel"><div class="sectionTitle"><div><span>PLANNER · TODAY</span><h2>오늘의 남은 탐험</h2></div><button class="linkBtn" data-nav="planner">일정 보기</button></div>
+        <p class="homeTodayEmpty" id="homeTodayEmpty" hidden>오늘 배정된 Planner 할 일이 아직 없어요.</p>
         <div class="chipRow" id="homeChips"></div>
       </section>
     </main>
