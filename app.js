@@ -762,11 +762,22 @@ function readyShareTheme(){
   return globalThis.ReadyShareGoldenTruth.themeOf(state.profile||{},state.share||{});
 }
 function projectReadyShare(kind){
+  // Share inherits Profile, approved Visual ID and expedition companion without
+  // introducing a second share-side character/theme selection flow.
+  const profile=state.profile||{};
+  const api=globalThis.CharacterVisualIdProjection;
+  const projection=profile.characterVisualIdProjection||profile.visualProjection||
+    api?.fromMaster?.({
+      master:profile.characterMasterRemote||profile.remoteCharacterMaster||null,
+      localMaster:profile.characterMaster||null,
+      member_scope:profile.member_scope||state.familySession?.member_scope||null
+    })||null;
   return globalThis.ReadyShareGoldenTruth.project({
     kind,
-    profile:state.profile||{},
+    profile:{...profile,characterVisualIdProjection:projection},
+    expedition:state.expedition||{},
     legacyShare:state.share||{},
-    projectionApi:globalThis.CharacterVisualIdProjection,
+    projectionApi:api,
     guide:state.guide||{},
     currentTasks:currentMissionLabels(),
     targetMs:state.activeSession?.targetMs??Math.max(0,Number(state.targetMin)||0)*60000,
