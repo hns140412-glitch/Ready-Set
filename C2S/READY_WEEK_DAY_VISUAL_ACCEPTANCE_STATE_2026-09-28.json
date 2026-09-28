@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "authority": [
+    "latest_user_correction",
+    "C2S/READY_SET_BASE_CAMP_UI_C2S_CLOSURE_2026-09-22.md",
+    "C2S/READY_SET_3_SCREEN_UI_DESIGN_STANDARD_2026-09-22_REV1.md",
+    "C2S/READY_WEEK_DAY_SOULS_COMPOSITION_VISUAL_QA_FAIL_2026-09-28.md"
+  ],
+  "scope": "READY_WEEKLY_DAILY_ONLY",
+  "timer": "PRESERVE_EXISTING_LOCKED_UI",
+  "status": "VISUAL_QA_FAIL",
+  "source_asset": {
+    "path": null,
+    "visual_id": null,
+    "sha256": null,
+    "approval_evidence": null
+  },
+  "scene_binding": {
+    "weekly": null,
+    "daily": null
+  },
+  "rendered_evidence": {
+    "weekly": null,
+    "daily": null,
+    "mobile_and_tablet_review": null
+  },
+  "human_approval": {
+    "approved": false,
+    "evidence": null
+  },
+  "fail_reasons": [
+    "SOURCE_BASE_CAMP_ORIGINAL_NOT_BOUND",
+    "CSS_ABSTRACT_SHAPES_ARE_NOT_2_5D_ENVIRONMENT",
+    "BROWSER_LAYOUT_PASS_IS_NOT_VISUAL_APPROVAL"
+  ]
+}
