@@ -12,6 +12,16 @@
   const id=p=>p+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
   const clean=v=>String(v??'').trim();
   const clone=v=>JSON.parse(JSON.stringify(v));
+  // Some iPhone/gallery file pickers omit File.type. Never label unknown bytes JPEG.
+  function captureMime(file){
+    const known=clean(file?.type).toLowerCase();
+    if(known)return known;
+    const ext=clean(file?.name).split('.').pop().toLowerCase();
+    return ({
+      jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',
+      webp:'image/webp',heic:'image/heic',heif:'image/heif'
+    })[ext]||'application/octet-stream';
+  }
   function draftId(sessionId,groupKey,index,runNo){
     return 'review_'+String(sessionId||'capture')+'_'+String(runNo||1)+'_'+String(index)+'_'+String(groupKey||'group').replace(/[^a-zA-Z0-9가-힣]+/g,'_');
   }
@@ -181,7 +191,7 @@
         kind,
         visibility:kind==='ANSWER_REFERENCE'?'PARENT_ONLY':'FAMILY',
         file_name:clean(file.name)||'capture.jpg',
-        mime_type:clean(file.type)||'image/jpeg',
+        mime_type:captureMime(file),
         size:Number(file.size)||0,
         blob:file,
         state:'TEMP_SAVED',
