@@ -116,6 +116,18 @@
     return tx(storeName,'readwrite',store=>{store.delete(key);return true});
   }
 
+  function hydrateItem(row){
+    if(!row)return row;
+    // Previous revisions may contain an IndexedDB-native Blob/File.
+    if(row.blob instanceof Blob)return row;
+    // Store bytes in an ArrayBuffer, not a File or Blob structured clone:
+    // Linux WebKit and some Safari storage configurations reject those.
+    if(row.blob_encoding==='ARRAY_BUFFER_V1'&&row.blob_bytes instanceof ArrayBuffer){
+      return {...row,blob:new Blob([row.blob_bytes],{type:row.mime_type||'application/octet-stream'})};
+    }
+    return row;
+  }
+
   async function listByIndex(storeName,indexName,value){
     const db=await openDb();
     try{
@@ -200,7 +212,8 @@
         file_name:clean(file.name)||'capture.jpg',
         mime_type:mime,
         size:sourceBlob.size,
-        blob:sourceBlob,
+        blob_encoding:'ARRAY_BUFFER_V1',
+        blob_bytes:await sourceBlob.arrayBuffer(),
         state:'TEMP_SAVED',
         ocr_state:'NOT_REQUESTED',
         classification_state:'GROUP_LOCKED_BY_PARENT',
@@ -208,7 +221,7 @@
         updated_at:now()
       };
       await put(ITEM_STORE,item);
-      created.push({...item,blob:undefined});
+      created.push({...item,blob:undefined,blob_bytes:undefined});
     }
     await updateSession({current_group_key:groupKey,current_kind:kind});
     return created;
@@ -218,11 +231,11 @@
     const id=clean(sessionId)||(await activeSession())?.capture_session_id;
     if(!id)return [];
     const items=await listByIndex(ITEM_STORE,'capture_session_id',id);
-    return items.sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at)));
+    return items.map(hydrateItem).sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at)));
   }
 
   async function getItem(itemId){
-    return getByKey(ITEM_STORE,itemId);
+    return hydrateItem(await getByKey(ITEM_STORE,itemId));
   }
 
   async function removeItem(itemId){
