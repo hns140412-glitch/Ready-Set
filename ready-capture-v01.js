@@ -184,6 +184,13 @@
     const list=Array.from(files||[]).filter(Boolean);
     const created=[];
     for(const file of list){
+      // WebKit IndexedDB may reject structured-cloning a File instance. Store
+      // its exact bytes as a plain Blob and keep the original name/MIME in
+      // explicit metadata; File itself is not needed for later OCR transport.
+      const mime=captureMime(file);
+      const sourceBlob=file instanceof Blob
+        ?file.slice(0,file.size,mime)
+        :new Blob([file],{type:mime});
       const item={
         capture_item_id:id('capture_item'),
         capture_session_id:session.capture_session_id,
@@ -191,9 +198,9 @@
         kind,
         visibility:kind==='ANSWER_REFERENCE'?'PARENT_ONLY':'FAMILY',
         file_name:clean(file.name)||'capture.jpg',
-        mime_type:captureMime(file),
-        size:Number(file.size)||0,
-        blob:file,
+        mime_type:mime,
+        size:sourceBlob.size,
+        blob:sourceBlob,
         state:'TEMP_SAVED',
         ocr_state:'NOT_REQUESTED',
         classification_state:'GROUP_LOCKED_BY_PARENT',
