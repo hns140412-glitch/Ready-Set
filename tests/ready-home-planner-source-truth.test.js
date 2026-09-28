@@ -94,7 +94,12 @@ const ref='a675b93d0dbe7c1297ba0ad1889907ceffc1fbf1';
 const original=cp.execFileSync('git',['show',ref+':index.html'],{encoding:'utf8'});
 const focusSection=s=>s.split('<section class="view yellow" id="focusView" data-view="focus">')[1]?.split('<section class="view recordingView"')[0];
 assert.ok(focusSection(original));
-assert.equal(focusSection(index),focusSection(original),'locked timer markup may not change');
+const expectedFocus=focusSection(original)
+ .replace('<span class="focusBadge">FOCUS MODE</span>','<span class="focusBadge" aria-hidden="true"></span>')
+ .replace('<span>누가 와도 몰라요, 지금은 집중 중</span><h1>타임어택</h1>','<span>오늘도 한 걸음</span><h1>그냥! 지금 하면 돼!</h1>');
+assert.equal(focusSection(index),expectedFocus,'locked timer structure unchanged except explicit approved copy correction');
+assert.doesNotMatch(index,/타임어택|FOCUS MODE/,'obsolete product names must never appear child-facing');
+assert.match(index,/그냥! 지금 하면 돼!/,'approved Timer headline must be present');
 const changed=cp.execFileSync('git',['diff','--name-only',ref,'HEAD'],{encoding:'utf8'}).trim().split('\n');
 assert.ok(!changed.some(s=>/^src\/views\/focus-|^assets\/|^ready-runtime-v07\.js$|^ready-family-session-v01\.js$/.test(s)),'timer/assets/session source changed');
 console.log('PASS Home source-backed TODAY, empty, active-session; Week counts; Day grouping; day handoff; timer source lock');
