@@ -771,7 +771,6 @@ window.ReadySetShare={
   buildKakaoFeed,
   setTheme(theme){state.share={...(state.share||{}),theme:theme==='sail'?'sail':'drop'};save();}
 };
-$('#preShareBtn').onclick=()=>shareCardRuntime.share('pre');
 $('#missionShareBtn').onclick=()=>shareCardRuntime.share('pre');
 $('#shareResultBtn').onclick=()=>shareCardRuntime.share('result');
 
