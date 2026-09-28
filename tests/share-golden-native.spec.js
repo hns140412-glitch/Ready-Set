@@ -70,3 +70,38 @@ test('No record or tasks fails closed instead of sharing made-up data',async({pa
   expect(result.ok).toBe(false);
   await expect(page.locator('#readySharePreview')).toHaveCount(0);
 });
+
+test('Generate all four real PNG outputs using synthetic non-personal data',async({page})=>{
+  const fs=require('node:fs'),path=require('node:path');
+  await page.goto(base);
+  await page.evaluate(()=>{
+    const date=new Date().toLocaleDateString('sv-SE');
+    window.ReadySetPlanner.upsertDatedTodo({
+      todo_id:'synthetic_share_visual',date,label:'과학 탐험',source:'PLANNER_ALLOCATION',
+      state:'PLANNED',estimated_minutes:15
+    });
+    state.selectedTodoIds=['synthetic_share_visual'];state.profile.shareAvatar=false;
+    state.targetMin=15;
+    state.lastResult={
+      endAt:Date.now(),targetMs:900000,focusMs:810000,deltaMs:-90000,outcomeState:'COMPLETED',
+      taskOutcomes:[{task_id:'synthetic_task_one',label:'과학 탐험',state:'COMPLETED'}],
+      awardReceipt:{verified:true,awarded_stars:3}
+    };
+  });
+  fs.mkdirSync('share-artifacts',{recursive:true});
+  for(const theme of ['drop','sail']){
+    await page.evaluate(theme=>state.profile.theme=theme,theme);
+    for(const kind of ['pre','result']){
+      const image=await page.evaluate(async kind=>{
+        const canvas=await window.ReadySetShare.renderShareCard(kind);
+        if(!canvas?.toDataURL)throw new Error('GOLDEN_CANVAS_NOT_READY:'+JSON.stringify(canvas));
+        return {width:canvas.width,height:canvas.height,data:canvas.toDataURL('image/png')};
+      },kind);
+      expect(image.width).toBe(900);expect(image.height).toBe(600);
+      const name='ready-share-'+theme+'-'+kind+'.png';
+      const bytes=Buffer.from(image.data.split(',')[1],'base64');
+      expect(bytes.length).toBeGreaterThan(10000);
+      fs.writeFileSync(path.join('share-artifacts',name),bytes);
+    }
+  }
+});
