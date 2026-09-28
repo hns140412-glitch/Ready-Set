@@ -1,0 +1,12 @@
+const fs=require('fs'), assert=require('assert');
+const s=fs.readFileSync('ready-evening-canonical.js','utf8');
+const c=fs.readFileSync('ready-evening-canonical.css','utf8');
+const h=fs.readFileSync('evening.html','utf8');
+for (const name of ['이번 주 여정','오늘의 탐험길','그냥! 지금 하면 돼!']) assert(s.includes(name),name);
+assert(s.includes("window.nav('planner')") && s.includes("window.nav('focus')"));
+assert(s.includes('CANONICAL_SCREEN_OWNER_MISSING'));
+assert(!s.includes('localStorage.setItem') && !s.includes('upsertDatedTodo') && !s.includes('upsertScheduleCommitment'));
+assert(s.includes("targetView() !== 'focus'"),'preserve resumed focus');
+assert(h.includes('ready-evening-canonical.js') && h.includes('ready-evening-canonical.css'));
+assert(c.includes('env(safe-area-inset-bottom') && c.includes('[hidden]'));
+console.log('READY_CANONICAL_THREE_SCREEN_STATIC PASS');
