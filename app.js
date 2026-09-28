@@ -353,7 +353,10 @@ function renderFocus(){
 function tickFocus(){
   const s=state.activeSession;if(!s)return;
   focusView.renderTick(s,sessionTimes(),new Date());
-  if(!s.completed&&$('#focusView').classList.contains('active'))requestAnimationFrame(tickFocus);
+  // The same timestamp-derived session remains active through the REC screen.
+  // Updating its display must not create a second timer or an implicit pause.
+  if($('#recordingView')?.classList.contains('active'))renderRecordingContext();
+  if(!s.completed&&($('#focusView').classList.contains('active')||$('#recordingView')?.classList.contains('active')))requestAnimationFrame(tickFocus);
 }
 
 const sessionCompletionRuntime=rebuildSessionCompletionController.create({
