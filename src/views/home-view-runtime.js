@@ -23,10 +23,10 @@
       const rows=Array.isArray(todayTodos)?todayTodos.filter(x=>x&&x.state!=='SUPERSEDED'):[];
       const remaining=rows.filter(x=>x.state!=='COMPLETED');
       const completed=rows.length-remaining.length;
-      const next=remaining.find(x=>['IN_PROGRESS','PLANNED','PARTIAL'].includes(x.state))||remaining[0]||null;
+      const next=remaining.find(x=>['IN_PROGRESS','PLANNED','PARTIAL'].includes(x.state))||null;
       const rootEl=q('#homeChips');
       renderChips(rootEl,remaining.map(x=>x.label).filter(Boolean));
-      const empty=q('#homeTodayEmpty');if(empty)empty.hidden=remaining.length>0;
+      const empty=q('#homeTodayEmpty');if(empty){empty.hidden=remaining.length>0;empty.textContent=rows.length?'오늘 배정된 일을 모두 완료했어요.':'오늘 배정된 Planner 할 일이 아직 없어요.';}
       const primary=q('#homeNextTaskBtn');
       const headline=q('#homeNextTitle'),meta=q('#homeNextMeta');
       if(state.activeSession){
@@ -40,8 +40,8 @@
           (Number.isFinite(next.estimated_minutes)?' · 예상 '+next.estimated_minutes+'분':'');
       }else{
         if(primary)primary.dataset.nav='planner';
-        if(headline)headline.textContent='오늘 배정된 할 일 확인';
-        if(meta)meta.textContent=rows.length?'오늘 할 일을 모두 완료했어요.':'Planner에서 확정된 오늘 할 일을 확인해요.';
+        if(headline)headline.textContent=remaining.length?'확인이 필요한 할 일이 있어요.':'오늘 배정된 할 일 확인';
+        if(meta)meta.textContent=remaining.length?'대기·도움·막힘 상태를 Planner에서 확인해요.':rows.length?'오늘 할 일을 모두 완료했어요.':'Planner에서 확정된 오늘 할 일을 확인해요.';
       }
       applyGuide(q('#homeGuidePortrait'));
       const name=q('#homeGuideName');if(name)name.textContent=state.guide?.name||'';
