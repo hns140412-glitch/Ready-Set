@@ -66,7 +66,7 @@
       renderProfile();
     }
 
-    function saveProfile({name='',birthdate='',shareAvatar=false}={}){
+    function saveProfile({name='',birthdate='',shareAvatar=false,theme='drop'}={}){
       const state=getState();
       const birth=String(birthdate||'').trim();
       if(birth&&!/^\d{4}-\d{2}-\d{2}$/.test(birth)){toast('생년월일 형식을 확인해 주세요.');return {ok:false,reason:'INVALID_BIRTHDATE'};}
@@ -75,6 +75,8 @@
       state.profile.name=String(name||'').trim();
       state.profile.birthdate=birth;
       state.profile.shareAvatar=!!shareAvatar;
+      if(!['drop','sail'].includes(theme))return {ok:false,reason:'INVALID_PROFILE_THEME'};
+      state.profile.theme=theme;
       save();
       toast('프로필을 저장했어요.');
       renderHome();
