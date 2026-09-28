@@ -17,7 +17,7 @@ const element=selector=>{
   }
   return elements.get(selector);
 };
-const document={querySelector:element,querySelectorAll:()=>[],createElement:()=>({textContent:''})};
+const document={querySelector:element,querySelectorAll:()=>[],createElement:()=>({textContent:'',dataset:{},className:''})};
 function moduleAt(file){
   const context={document,console};
   vm.runInNewContext(fs.readFileSync(file,'utf8'),context,{filename:file});
