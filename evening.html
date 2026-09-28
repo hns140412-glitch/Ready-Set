@@ -23,7 +23,14 @@
         if (doc.getElementById('eveningQuickStart')) return;
         const css=doc.createElement('link');css.rel='stylesheet';css.href='./ready-evening-quickstart.css';
         doc.head.appendChild(css);
-        const script=doc.createElement('script');script.src='./ready-evening-quickstart.js';script.defer=true;
+        const script=doc.createElement('script');script.src='./ready-evening-quickstart.js';
+        script.onload=()=>{
+          const canonicalStyle=doc.createElement('link');canonicalStyle.rel='stylesheet';canonicalStyle.href='./ready-evening-canonical.css';
+          doc.head.appendChild(canonicalStyle);
+          const canonicalScript=doc.createElement('script');canonicalScript.src='./ready-evening-canonical.js';
+          canonicalScript.onerror=()=>{throw new Error('READY_THREE_SCREEN_SCRIPT_FAILED');};
+          doc.body.appendChild(canonicalScript);
+        };
         doc.body.appendChild(script);
       } catch(error) {
         document.body.insertAdjacentHTML('beforeend',
