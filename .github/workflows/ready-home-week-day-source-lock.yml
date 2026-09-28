@@ -30,6 +30,7 @@ jobs:
           node --check src/views/planner-screen-view-runtime.js
           node --check src/shell/app-bootstrap-controller-runtime.js
           node --check tests/ready-home-planner-source-truth.test.js
+          node --check tests/ready-home-week-day-glass.spec.js
       - name: Verify source truth and locked Timer byte identity
         run: node tests/ready-home-planner-source-truth.test.js
       - name: Package isolated source for local visual QA (no deployment)
@@ -43,3 +44,36 @@ jobs:
           path: /tmp/ready-home-week-day-review-source.zip
           if-no-files-found: error
           retention-days: 1
+
+  browser-visual:
+    needs: source-truth
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install project runtime
+        run: npm install --no-audit --no-fund
+      - name: Build browser Identity runtime without changing production
+        run: npm run build:auth
+      - name: Install browser test runner
+        run: |
+          npm install --no-save @playwright/test@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve exact checked-out source on localhost only
+        run: |
+          mkdir -p ui-audit
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/ready-planner-review-http.log 2>&1 &
+          echo $! > /tmp/ready-planner-review.pid
+      - name: Verify Home -> Week -> Day real browser at mobile/tablet widths
+        run: npx playwright test tests/ready-home-week-day-glass.spec.js --reporter=line --workers=1
+      - name: Upload actual browser visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ready-home-week-day-glass-screenshots
+          path: ui-audit/*.png
+          if-no-files-found: warn
+          retention-days: 3
