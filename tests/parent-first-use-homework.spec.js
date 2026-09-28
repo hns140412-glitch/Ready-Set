@@ -129,3 +129,107 @@ test('captured homework survives unavailable OCR and reaches Today/Timer through
     carry_source:todayTodo.todo_id,evidence:'READY_SESSION'
   });
 });
+
+
+test('OCR review draft auto-fills Parent homework and excludes answer-reference image (fixture only)',async({page})=>{
+  await page.addInitScript(()=>{
+    window.__READY_AUTH_BOOTSTRAP__={
+      authenticated:true,family_id:'TEST_FAMILY',member_id:'TEST_PARENT',
+      role:'PARENT',session_id:'OCR_REVIEW_TEST_ONLY',
+      expires_at:'2099-01-01T00:00:00.000Z',source:'TEST_ONLY'
+    };
+  });
+  await page.goto('http://127.0.0.1:4173/',{waitUntil:'load'});
+  await page.locator('[data-nav="planner"]').first().click();
+  await page.locator('#plannerView [data-nav="planner-admin"]').click();
+  await page.locator('#captureGroupSelect').selectOption('ENGLISH:WORKBOOK');
+  const fixture=Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WlMK6sAAAAASUVORK5CYII=',
+    'base64'
+  );
+  await page.locator('#homeworkGalleryInput').setInputFiles({
+    name:'homework-page.png',mimeType:'image/png',buffer:fixture
+  });
+  await expect(page.locator('#capturePreviewList .capturePreviewItem')).toHaveCount(1);
+  await page.locator('#captureKindSelect').selectOption('ANSWER_REFERENCE');
+  await page.locator('#homeworkGalleryInput').setInputFiles({
+    name:'answer-sheet.png',mimeType:'image/png',buffer:fixture
+  });
+  await expect(page.locator('#capturePreviewList .capturePreviewItem')).toHaveCount(2);
+
+  // The mocked response proves UI wiring, not provider OCR quality. Request
+  // source identity is read from the outgoing form and echoed independently.
+  await page.evaluate(()=>{
+    const normalFetch=window.fetch;
+    window.__OCR_TEST_UPLOAD__=null;
+    window.fetch=async(input,options)=>{
+      if(input!=='/api/capture/analyze')return normalFetch(input,options);
+      const form=options.body;
+      const manifest=JSON.parse(form.get('manifest'));
+      const source=manifest.find(x=>x.kind!=='ANSWER_REFERENCE');
+      const answer=manifest.find(x=>x.kind==='ANSWER_REFERENCE');
+      const files=[...form.keys()].filter(x=>x.startsWith('image__'));
+      window.__OCR_TEST_UPLOAD__={
+        source:source.capture_item_id,answer:answer.capture_item_id,
+        keys:files,mime:form.get('image__'+source.capture_item_id)?.type,
+        correlation:form.get('vision_ingest_request_id')
+      };
+      return {
+        ok:true,status:200,
+        json:async()=>({
+          ok:true,analysis_domain:'READY_ASSIGNMENT_FACT',
+          vision_ingest_request_id:form.get('vision_ingest_request_id'),
+          provider:'TEST_FIXTURE_NOT_REAL_OCR',model:'fixture',
+          family_id:'TEST_FAMILY',
+          result:{analysis_version:'FIXTURE_V1',drafts:[{
+            group_key:'ENGLISH:WORKBOOK',detected_material_type:'ENGLISH_WORKBOOK',
+            detected_subject:'영어',workbook_name:'테스트 영어 교재',
+            source_range:'Unit 3 p.12~13',teacher_instruction:'단어 암기 후 문제 풀기',
+            components:{vocabulary:'Unit 3 단어 12개',listening:'',recording:'',writing:''},
+            weekday_prints:[],confidence:0.96,
+            evidence_item_ids:[source.capture_item_id],warnings:[]
+          }]}
+        })
+      };
+    };
+  });
+  await page.locator('#captureAnalyzeBtn').click();
+  await expect.poll(()=>page.evaluate(async()=>{
+    return (await window.ReadyCaptureV01.currentReviewSession())?.analysis_state;
+  })).toBe('ANALYSIS_COMPLETE');
+  const upload=await page.evaluate(()=>window.__OCR_TEST_UPLOAD__);
+  expect(upload.keys).toEqual(['image__'+upload.source]);
+  expect(upload.keys).not.toContain('image__'+upload.answer);
+  expect(upload.mime).toBe('image/png');
+  expect(upload.correlation).toBeTruthy();
+  await expect(page.locator('#captureReviewSection')).toBeVisible();
+  await page.locator('[data-apply-capture-draft="0"]').click();
+  await expect(page.locator('#englishWorkbook')).toHaveValue('테스트 영어 교재');
+  await expect(page.locator('#englishRange')).toHaveValue('Unit 3 p.12~13');
+  await expect(page.locator('#englishInstruction')).toHaveValue('단어 암기 후 문제 풀기');
+  await expect(page.locator('#englishVocabulary')).toHaveValue('Unit 3 단어 12개');
+
+  // Only parent confirmation and a deadline remain; never auto-promote OCR.
+  const deadline=await page.evaluate(()=>{
+    const d=new Date();d.setDate(d.getDate()+7);
+    return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+  });
+  await page.locator('#englishNextAcademy').fill(deadline);
+  await page.locator('#saveEnglishFactBtn').click();
+  const saved=await page.evaluate(async()=>{
+    const state=window.ReadyAssignments.load();
+    const fact=Object.values(state.assignmentFacts).find(f=>
+      f.source_type==='ENGLISH_ACADEMY_PACKAGE'&&f.confirmation_state==='FACT_CONFIRMED');
+    const session=await window.ReadyCaptureV01.latestSession();
+    return {confirmed:!!fact,interpretation:fact?.analysis_state,
+      todos:window.ReadySetPlanner.snapshot().dated_todos.filter(t=>t.assignment_id===fact?.assignment_id).length,
+      sourceCount:fact?.artifact_refs?.length,sessionStatus:session?.status,
+      draftReviewed:session?.analysis_result?.drafts?.[0]?.review_events?.some(e=>e.event==='PARENT_APPLIED_DRAFT')};
+  });
+  expect(saved.confirmed).toBe(true);
+  expect(saved.interpretation).toBe('INTERPRETED');
+  expect(saved.todos).toBeGreaterThan(0);
+  expect(saved.sourceCount).toBe(2);
+  expect(saved.sessionStatus).toBe('FACT_LINKED');
+  expect(saved.draftReviewed).toBe(true);
+});
