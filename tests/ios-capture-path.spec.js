@@ -26,10 +26,10 @@ test('iPhone-like in-app rear camera and photo library use distinct native input
   await enterParentCapture(page);
   const inputs=await page.evaluate(()=>({
     camera:{accept:document.querySelector('#homeworkCameraInput').accept,
-      capture:document.querySelector('#homeworkCameraInput').capture,
+      capture:document.querySelector('#homeworkCameraInput').getAttribute('capture'),
       multiple:document.querySelector('#homeworkCameraInput').multiple},
     gallery:{accept:document.querySelector('#homeworkGalleryInput').accept,
-      capture:document.querySelector('#homeworkGalleryInput').capture,
+      capture:document.querySelector('#homeworkGalleryInput').getAttribute('capture'),
       multiple:document.querySelector('#homeworkGalleryInput').multiple}
   }));
   expect(inputs.camera.capture).toBe('environment');
