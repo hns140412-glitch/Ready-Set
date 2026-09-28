@@ -705,8 +705,9 @@
     });
     const end = document.getElementById('completeBtn');
     if (end) {
-      end.textContent = '세션 종료';
-      end.onclick = openWrapUp;
+      // The existing controller delegates once to ReadySetRev07.openWrapUp.
+      // Do not attach a second click handler or obscure the approved Golden label.
+      end.textContent = '완료했어요';
     }
     nav = function patchedNav(name) {
       originalNav(name);
