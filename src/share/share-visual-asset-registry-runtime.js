@@ -1,37 +1,20 @@
 (function(root){'use strict';
-// USER-ACCEPTED INTERIM SHARE ART — 2026-09-28
-// Purpose: apply the approved-enough high-detail concept now, while keeping it replaceable.
-// These are environmental scene assets only. Dynamic copy, runtime numbers, profile/Visual ID avatar
-// and Guide reaction remain rendered by the share card runtime.
+// The image layer kit was generated in a separate container as an explicitly
+// user-approved INTERIM share design (2026-09-28). Binary files are NOT in this
+// GitHub tree yet; a ref must not be elevated until those bytes are present.
+const dir='./assets/share-card/scenes/';
 const scenes=Object.freeze({
   drop:Object.freeze({
-    pre:Object.freeze({
-      path:'./assets/share/interim-drop-pre.jpg',
-      visual_id:'READY_SHARE_INTERIM_DROP_PRE_20260928',
-      review_status:'APPROVED_INTERIM_USER_ACCEPTED'
-    }),
-    result:Object.freeze({
-      path:'./assets/share/interim-drop-result.jpg',
-      visual_id:'READY_SHARE_INTERIM_DROP_RESULT_20260928',
-      review_status:'APPROVED_INTERIM_USER_ACCEPTED'
-    })
+    pre:Object.freeze({path:dir+'drop-pre.webp',visual_id:'READY-SHARE-DROP-PRE-20260928-INTERIM',review_status:'ASSET_PACKAGE_READY_REPO_BINDING_OPEN'}),
+    result:Object.freeze({path:dir+'drop-result.webp',visual_id:'READY-SHARE-DROP-RESULT-20260928-INTERIM',review_status:'ASSET_PACKAGE_READY_REPO_BINDING_OPEN'})
   }),
   sail:Object.freeze({
-    pre:Object.freeze({
-      path:'./assets/share/interim-sail-pre.jpg',
-      visual_id:'READY_SHARE_INTERIM_SAIL_PRE_20260928',
-      review_status:'APPROVED_INTERIM_USER_ACCEPTED'
-    }),
-    result:Object.freeze({
-      path:'./assets/share/interim-sail-result.jpg',
-      visual_id:'READY_SHARE_INTERIM_SAIL_RESULT_20260928',
-      review_status:'APPROVED_INTERIM_USER_ACCEPTED'
-    })
+    pre:Object.freeze({path:dir+'sail-pre.webp',visual_id:'READY-SHARE-SAIL-PRE-20260928-INTERIM',review_status:'ASSET_PACKAGE_READY_REPO_BINDING_OPEN'}),
+    result:Object.freeze({path:dir+'sail-result.webp',visual_id:'READY-SHARE-SAIL-RESULT-20260928-INTERIM',review_status:'ASSET_PACKAGE_READY_REPO_BINDING_OPEN'})
   })
 });
-function scene(theme,kind){
-  const entry=scenes[theme]?.[kind]||null;
-  return entry?.review_status&&entry.review_status.startsWith('APPROVED')&&entry.path&&entry.visual_id?entry.path:null;
+function scene(theme,kind){const x=scenes[theme]?.[kind];
+  return x&&x.review_status==='APPROVED'&&x.path&&x.visual_id?x.path:null;
 }
-root.ReadyShareVisualAssets=Object.freeze({version:'READY_SHARE_VISUAL_GATE_V02_INTERIM',scenes,scene});
+root.ReadyShareVisualAssets=Object.freeze({version:'READY_SHARE_VISUAL_GATE_V02',scenes,scene});
 })(typeof globalThis!=='undefined'?globalThis:this);
