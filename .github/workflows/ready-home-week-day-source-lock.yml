@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - taky/ready-home-week-day-source-correction-2026-09-28
+  pull_request:
+    branches:
+      - taky/ready-character-intro-integration-2026-09-24
   workflow_dispatch:
 
 permissions:
