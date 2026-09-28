@@ -6,6 +6,13 @@
     const formatTime=options.formatTime||((x)=>String(x||0));
     const applyAvatar=options.applyAvatar||(()=>{});
     const applyGuide=options.applyGuide||(()=>{});
+    let previewUrl=null;
+
+    function clearPreview(){
+      const audio=q('#audioPreview');
+      if(audio){audio.pause();audio.removeAttribute('src');audio.load?.();}
+      if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null;}
+    }
 
     function renderContext({sessionTimes,state,guideData}={}){
       const times=typeof sessionTimes==='function'?sessionTimes():{remaining:0};
@@ -34,10 +41,12 @@
       if(clock)clock.textContent=formatTime(ms);
     }
 
-    function renderReview({audioUrl,mainGuideType,guestGuideType,mainGuideName,guestGuideName,formatNote}={}){
+    function renderReview({audioBlob,mainGuideType,guestGuideType,mainGuideName,guestGuideName,formatNote}={}){
+      clearPreview();
       setRecordingActive(false);
       const state=q('#recordState'); if(state)state.textContent='REVIEW';
-      const preview=q('#audioPreview'); if(preview&&audioUrl)preview.src=audioUrl;
+      const preview=q('#audioPreview');
+      if(preview&&audioBlob){previewUrl=URL.createObjectURL(audioBlob);preview.src=previewUrl;}
       const panel=q('#reviewPanel'); if(panel)panel.hidden=false;
       applyGuide(q('#duoMainGuide'),mainGuideType);
       applyGuide(q('#duoGuestGuide'),guestGuideType);
@@ -49,6 +58,8 @@
     }
 
     function resetReview({guideName}={}){
+      clearPreview();
+      setRecordingActive(false);
       const panel=q('#reviewPanel'); if(panel)panel.hidden=true;
       const clock=q('#recordClock'); if(clock)clock.textContent='00:00';
       const state=q('#recordState'); if(state)state.textContent='READY';
@@ -58,6 +69,7 @@
 
     return Object.freeze({
       renderContext,
+      clearPreview,
       setRecordingActive,
       renderClock,
       renderReview,

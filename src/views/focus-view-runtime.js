@@ -11,8 +11,14 @@
       if(!session)return null;
       const labels=[...(session.selected||[]),...(session.tasks||[])];
       const steps=[...new Set((session.plannerLinks||[]).flatMap(x=>Array.isArray(x.activity_sequence)?x.activity_sequence:[]))];
-      const recording=(session.selected||[]).includes('영어 · 문장 녹음') ||
-        (session.plannerLinks||[]).some(x=>(x.activity_types||[]).includes('RECORDING'));
+      // REV_07 owns exactly one active task; REC must follow its typed evidence,
+      // not become visible because another task in the same session requires recording.
+      const contract=session.rev07||null;
+      const activeTask=contract?.tasks?.find(x=>x.task_id===contract.active_task_id)||null;
+      const recording=contract
+        ? !!activeTask && (activeTask.activity_types||[]).includes('RECORDING')
+        : (session.selected||[]).includes('영어 · 문장 녹음') ||
+          (session.plannerLinks||[]).some(x=>(x.activity_types||[]).includes('RECORDING'));
       return Object.freeze({
         mission:labels.join(' · ')||'오늘의 작전',
         learningGuide:steps.length?steps.map(learningStepLabel).join(' → '):'오늘 할 순서를 따라가요.',

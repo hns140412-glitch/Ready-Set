@@ -350,10 +350,16 @@ function renderFocus(){
   focusView.render(s);
   tickFocus();
 }
+let lastRecordingContextSecond=-1;
 function tickFocus(){
   const s=state.activeSession;if(!s)return;
   focusView.renderTick(s,sessionTimes(),new Date());
-  if(!s.completed&&$('#focusView').classList.contains('active'))requestAnimationFrame(tickFocus);
+  // Same timestamp-derived session: REC pauses only BGM, not elapsed focus.
+  if($('#recordingView')?.classList.contains('active')){
+    const second=Math.floor(Date.now()/1000);
+    if(second!==lastRecordingContextSecond){lastRecordingContextSecond=second;renderRecordingContext();}
+  }
+  if(!s.completed&&($('#focusView')?.classList.contains('active')||$('#recordingView')?.classList.contains('active')))requestAnimationFrame(tickFocus);
 }
 
 const sessionCompletionRuntime=rebuildSessionCompletionController.create({

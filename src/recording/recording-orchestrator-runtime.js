@@ -8,7 +8,7 @@
     const now=options.now||Date.now;
     if(!recordingService)throw new Error('RECORDING_ORCHESTRATOR_DEPENDENCY_MISSING');
 
-    let recorder=null,stream=null,chunks=[],startedAt=0,ticker=null,currentBlob=null;
+    let recorder=null,stream=null,chunks=[],startedAt=0,ticker=null,currentBlob=null,stopError=null;
 
     function isRecording(){return recorder?.state==='recording'}
     function currentAudio(){return currentBlob}
@@ -21,14 +21,16 @@
         stream=await mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
         const mime=recordingService.chooseMime(MediaRecorderCtor);
         recorder=new MediaRecorderCtor(stream,mime?{mimeType:mime}:undefined);
-        chunks=[];currentBlob=null;
+        chunks=[];currentBlob=null;stopError=null;
         recorder.ondataavailable=event=>{if(event.data?.size)chunks.push(event.data)};
+        recorder.onerror=event=>{stopError=event?.error?.name||'RECORDING_DEVICE_ERROR'};
         recorder.onstop=()=>{
           clearInterval(ticker);ticker=null;
           stream?.getTracks?.().forEach(track=>track.stop());
           const type=recorder?.mimeType||chunks[0]?.type||'audio/webm';
           currentBlob=new Blob(chunks,{type});
           const durationMs=Math.max(0,now()-startedAt);
+          if(stopError||!currentBlob.size){currentBlob=null;onStop?.({error:stopError?'RECORDING_DEVICE_ERROR':'EMPTY_AUDIO'});return;}
           onStop?.({blob:currentBlob,type,durationMs});
         };
         recorder.start(250);

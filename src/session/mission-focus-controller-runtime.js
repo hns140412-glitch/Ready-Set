@@ -155,7 +155,12 @@
       queryAll('[data-pause-reason]').forEach(button=>button.addEventListener('click',()=>setPauseReason(button)));
       queryAll('[data-close-pause]').forEach(button=>button.addEventListener('click',()=>{const sheet=query('#pauseSheet');if(sheet)sheet.hidden=true;}));
       query('#resumeFromSheetBtn')?.addEventListener('click',resumePausedSession);
-      query('#completeBtn')?.addEventListener('click',openOutcome);
+      query('#completeBtn')?.addEventListener('click',()=>{
+        // One authoritative end path: REV_07 per-task wrap-up, legacy outcome only
+        // when the canonical task runtime is genuinely unavailable.
+        if(root.ReadySetRev07?.openWrapUp)root.ReadySetRev07.openWrapUp();
+        else openOutcome();
+      });
       queryAll('[data-outcome-state]').forEach(button=>button.addEventListener('click',()=>chooseOutcome(button)));
       queryAll('[data-close-outcome]').forEach(button=>button.addEventListener('click',closeOutcome));
       return true;

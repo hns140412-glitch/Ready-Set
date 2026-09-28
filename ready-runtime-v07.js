@@ -494,10 +494,21 @@
     const style = document.createElement('style');
     style.id = 'readyRev07Style';
     style.textContent = `
-      .rev07-panel{margin:12px 0 4px;padding:14px;border-radius:22px;background:rgba(255,255,255,.72);border:1px solid rgba(40,30,25,.10);backdrop-filter:blur(12px)}
+      .rev07-panel{position:fixed;z-index:70;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,430px);max-height:min(74dvh,650px);overflow-y:auto;overscroll-behavior:contain;padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px));border-radius:24px 24px 0 0;background:#fffaf5;color:#24201d;border:1px solid rgba(40,30,25,.12);box-shadow:0 -12px 40px rgba(0,0,0,.22)}.rev07-panel[hidden]{display:none!important}.rev07-panel .rev07-panel-close{display:block;margin:0 0 12px auto;border:0;border-radius:999px;padding:10px 15px;background:#27231f;color:#fff;min-height:44px}
       .rev07-panel small{display:block;opacity:.62;font-weight:800;letter-spacing:.08em}.rev07-panel h3{margin:4px 0 10px;font-size:17px}.rev07-row{display:flex;gap:8px;flex-wrap:wrap}.rev07-row button{border:0;border-radius:999px;padding:9px 12px;font-weight:800;background:#fff}.rev07-row button.primary{background:#2a231f;color:#fff}.rev07-tasks{margin-top:10px;display:grid;gap:6px}.rev07-task{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:0;border-radius:14px;background:rgba(255,255,255,.62);font-size:13px;text-align:left}.rev07-task.active{outline:2px solid rgba(42,35,31,.3)}
       .rev07-modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;background:rgba(20,16,14,.45)}.rev07-modal[hidden]{display:none}.rev07-sheet{width:min(680px,100%);max-height:82vh;overflow:auto;background:#fffaf5;border-radius:30px 30px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -20px 60px rgba(0,0,0,.2)}.rev07-sheet h2{margin:0 0 5px}.rev07-wrap-task{padding:12px 0;border-top:1px solid rgba(0,0,0,.08)}.rev07-wrap-task b{display:block;margin-bottom:8px}.rev07-state-grid{display:flex;gap:6px;flex-wrap:wrap}.rev07-state-grid button{border:1px solid rgba(0,0,0,.12);background:#fff;border-radius:999px;padding:8px 10px}.rev07-state-grid button.on{background:#2a231f;color:#fff}.rev07-wrap-actions{display:flex;gap:8px;position:sticky;bottom:0;padding-top:14px;background:#fffaf5}.rev07-wrap-actions button{flex:1;border:0;border-radius:16px;padding:13px;font-weight:900}.rev07-wrap-actions .end{background:#2a231f;color:#fff}.rev07-wrap-actions .end:disabled{opacity:.35}.rev07-guide{padding:10px 12px;border-radius:16px;background:#f3eadf;margin-bottom:12px}.rev07-voice{margin:8px 0;border:0;border-radius:14px;padding:10px 12px;font-weight:800;background:#f1d59b}`;
     document.head.appendChild(style);
+  }
+
+  function closeTaskPanel({restoreFocus=true}={}) {
+    const panel=document.getElementById('readyRev07Panel');
+    if(panel)panel.hidden=true;
+    const mission=document.getElementById('focusMission');
+    if(mission){
+      mission.setAttribute('aria-expanded','false');
+      if(restoreFocus&&document.getElementById('focusView')?.classList.contains('active'))
+        mission.focus({preventScroll:true});
+    }
   }
 
   function ensurePanel() {
@@ -508,13 +519,38 @@
       panel = document.createElement('section');
       panel.id = 'readyRev07Panel';
       panel.className = 'rev07-panel';
-      control.before(panel);
+      panel.hidden = true; // Golden clock and control panel must never be displaced.
+      panel.setAttribute('role','dialog');
+      panel.setAttribute('aria-label','현재 탐험 상세');
+      document.body.appendChild(panel);
       panel.addEventListener('click', event => {
+        if(event.target.closest('[data-rev07-close]'))return closeTaskPanel();
         const app = event.target.closest('[data-rev07-app]')?.dataset.rev07App;
-        if (app) return launchSpecialist(app);
+        if (app){closeTaskPanel({restoreFocus:false});return launchSpecialist(app);}
         const taskId = event.target.closest('[data-rev07-task]')?.dataset.rev07Task;
-        if (taskId) return switchTask(taskId);
+        if (taskId){closeTaskPanel({restoreFocus:false});return switchTask(taskId);}
       });
+      panel.addEventListener('keydown',event=>{
+        if(event.key==='Escape'){event.preventDefault();closeTaskPanel();}
+      });
+      const mission=document.getElementById('focusMission');
+      if(mission){
+        mission.setAttribute('role','button');
+        mission.setAttribute('tabindex','0');
+        mission.setAttribute('aria-haspopup','dialog');
+        mission.setAttribute('aria-controls',panel.id);
+        mission.setAttribute('aria-expanded','false');
+        const toggle=()=>{
+          if(!document.getElementById('focusView')?.classList.contains('active'))return;
+          panel.hidden=!panel.hidden;
+          mission.setAttribute('aria-expanded',String(!panel.hidden));
+          if(!panel.hidden)panel.querySelector('[data-rev07-close]')?.focus({preventScroll:true});
+        };
+        mission.addEventListener('click',toggle);
+        mission.addEventListener('keydown',event=>{
+          if(event.key==='Enter'||event.key===' '){event.preventDefault();toggle();}
+        });
+      }
     }
     return panel;
   }
@@ -525,6 +561,7 @@
     if (!c || !panel) return;
     const task = currentTask(c);
     panel.innerHTML = `
+      <button type="button" class="rev07-panel-close" data-rev07-close>닫기</button>
       <small>ONE SESSION · CONTINUOUS TIMER</small>
       <h3>${task ? escapeHtml(task.label) : '현재 과제 없음'} · ${task ? labelState(task.state) : ''}</h3>
       <div class="rev07-row">
@@ -533,6 +570,8 @@
       <div class="rev07-tasks">${c.tasks.map(t => `<button class="rev07-task ${t.task_id===c.active_task_id?'active':''}" data-rev07-task="${t.task_id}"><span>${escapeHtml(t.label)}</span><strong>${labelState(t.state)}</strong></button>`).join('')}</div>`;
     const mission = document.getElementById('focusMission');
     if (mission && task) mission.textContent = task.label;
+    const rec = document.getElementById('recBtn');
+    if (rec) rec.hidden = !(task?.activity_types||[]).includes('RECORDING');
   }
 
   function ensureWrapUp() {
@@ -705,10 +744,12 @@
     });
     const end = document.getElementById('completeBtn');
     if (end) {
-      end.textContent = '세션 종료';
-      end.onclick = openWrapUp;
+      // The existing controller delegates once to ReadySetRev07.openWrapUp.
+      // Do not attach a second click handler or obscure the approved Golden label.
+      end.textContent = '완료했어요';
     }
     nav = function patchedNav(name) {
+      if(name!=='focus')closeTaskPanel({restoreFocus:false});
       originalNav(name);
       if (name === 'focus' && state.activeSession) setTimeout(renderContractUI, 0);
     };

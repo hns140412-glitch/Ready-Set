@@ -1,0 +1,34 @@
+name: Ready Focus and REC bounded contract validation
+on:
+  push:
+    branches:
+      - fix/focus-recording-contract-20260928
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  focus-recording:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Validate changed JS syntax
+        run: |
+          node --check app.js
+          node --check ready-runtime-v07.js
+          node --check src/views/focus-view-runtime.js
+          node --check src/views/recording-view-runtime.js
+          node --check src/recording/recording-controller-runtime.js
+          node --check src/recording/recording-orchestrator-runtime.js
+          node --check src/session/mission-focus-controller-runtime.js
+      - name: Prepare Chromium
+        run: |
+          npm install --no-save @playwright/test@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start read-only local test server
+        run: python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/ready-rec.log 2>&1 &
+      - name: Test timer, REC, session and existing contracts
+        run: npx playwright test tests/focus-recording-contract.spec.js tests/predeploy-device-provider-contract.spec.js tests/runtime-flow.spec.js --workers=1 --reporter=line
