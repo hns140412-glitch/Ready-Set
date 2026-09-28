@@ -281,7 +281,7 @@
     </main>
   </section>
 
-  <section class="view peach" id="profileView" data-view="profile"><header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MY READY PROFILE</span><h1>내 프로필</h1></div><span></span></header><main class="safe scroll"><section class="profileCard"><div class="avatarPreviewWrap"><img id="profileImage" alt="프로필 미리보기" hidden><div id="profilePlaceholder" class="profilePlaceholder">RS</div></div><label class="inputBlock">이름<input id="profileName" placeholder="이름 또는 별명"></label><label class="inputBlock">생년월일<input id="profileBirthdate" type="date"></label><p class="muted">생년월일만 사용해 현재 만 나이와 학습 단위 크기를 조정합니다. 학년·지역·교육과정은 자동 추정하지 않습니다.</p><div class="photoActions"><label class="btn outline">사진 찍기<input id="cameraInput" type="file" accept="image/*" capture="user" hidden></label><label class="btn outline">사진 선택<input id="galleryInput" type="file" accept="image/*" hidden></label></div><label class="shareAvatarToggle"><input type="checkbox" id="shareAvatarOptIn"><span><b>공유 카드에 프로필 이미지 포함</b><small>기본은 OFF · 켜면 프로필 이미지를 공유 카드에 사용합니다.</small></span></label>
+  <section class="view peach" id="profileView" data-view="profile"><header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MY READY PROFILE</span><h1>내 프로필</h1></div><span></span></header><main class="safe scroll"><section class="profileCard"><div class="avatarPreviewWrap"><img id="profileImage" alt="프로필 미리보기" hidden><div id="profilePlaceholder" class="profilePlaceholder">RS</div></div><label class="inputBlock">이름<input id="profileName" placeholder="이름 또는 별명"></label><label class="inputBlock">생년월일<input id="profileBirthdate" type="date"></label><p class="muted">생년월일만 사용해 현재 만 나이와 학습 단위 크기를 조정합니다. 학년·지역·교육과정은 자동 추정하지 않습니다.</p><div class="photoActions"><label class="btn outline">사진 찍기<input id="cameraInput" type="file" accept="image/*" capture="user" hidden></label><label class="btn outline">사진 선택<input id="galleryInput" type="file" accept="image/*" hidden></label></div><label class="inputBlock">내 탐험의 이동 테마<select id="profileTheme"><option value="drop">낙하 · 오늘의 섬으로 내려가기</option><option value="sail">항해 · 오늘의 섬으로 항해하기</option></select></label><p class="muted">프로필에서 한 번 선택하며 탐험 시작·완료 공유에도 자동 적용됩니다. 공유할 때 다시 선택하지 않아요.</p><label class="shareAvatarToggle"><input type="checkbox" id="shareAvatarOptIn"><span><b>공유 카드에 프로필 이미지 포함</b><small>기본은 OFF · 켜면 프로필 이미지를 공유 카드에 사용합니다.</small></span></label>
 <button class="btn dark" id="saveProfileBtn">프로필 저장</button><button class="btn outline" id="openCharacterSetupBtn">탐험 준비 시작 · 이어가기</button></section></main></section>
 
   <section class="view formationJourneyView" id="formationJourneyView" data-view="formation-journey" data-formation-stage="CREW_MEET">
@@ -500,7 +500,7 @@
 <script src="./src/views/home-view-runtime.js"></script>
 <script src="./src/views/planner-screen-view-runtime.js"></script>
 <script src="./src/views/planner-screen-controller-runtime.js"></script>
-<script src="./src/views/share-card-runtime.js"></script>
+<script src="./src/share/share-golden-truth-runtime.js"></script>\n<script src="./src/views/share-card-runtime.js"></script>
 <script src="./src/audio/audio-service-runtime.js"></script>
 <script src="./src/shell/accessibility-runtime.js"></script>
 <script src="./src/shell/app-bootstrap-controller-runtime.js"></script>
