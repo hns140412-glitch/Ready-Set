@@ -776,6 +776,7 @@ function projectReadyShare(kind){
 }
 const shareCardRuntime=rebuildShareCard.create({
   projectShare:projectReadyShare,
+  sceneAsset:(theme,kind)=>globalThis.ReadyShareVisualAssets?.scene?.(theme,kind)||null,
   formatTime:fmt,
   guideArt:{
     lumi:'./assets/guide-lumi.png',
