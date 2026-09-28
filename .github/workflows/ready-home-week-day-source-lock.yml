@@ -1,0 +1,31 @@
+name: Ready Home and Timetable Source-Lock Review
+
+on:
+  push:
+    branches:
+      - taky/ready-home-week-day-source-correction-2026-09-28
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-truth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse changed runtime modules
+        run: |
+          node --check app.js
+          node --check src/views/home-view-runtime.js
+          node --check src/views/planner-screen-view-runtime.js
+          node --check src/shell/app-bootstrap-controller-runtime.js
+          node --check tests/ready-home-planner-source-truth.test.js
+      - name: Verify source truth and locked Timer byte identity
+        run: node tests/ready-home-planner-source-truth.test.js
