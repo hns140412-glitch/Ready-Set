@@ -114,6 +114,7 @@ assert.equal(focusSection(index),expectedFocus,'locked timer structure unchanged
 assert.doesNotMatch(index,/타임어택|FOCUS MODE/,'obsolete product names must never appear child-facing');
 assert.match(index,/그냥! 지금 하면 돼!/,'approved Timer headline must be present');
 assert.match(index,/ready-basecamp-planner-glass.css/);
+assert.doesNotMatch(index,/\\n/,'HTML must not render literal backslash-n text nodes outside the app');
 const glassCss=fs.readFileSync('ready-basecamp-planner-glass.css','utf8');
 assert.match(glassCss,/prefers-reduced-motion/);
 assert.match(glassCss,/plannerGlassSheet/);
