@@ -68,6 +68,25 @@ assert.equal(Bridge.planAccepted({...intent,trace:{}},planner,{
 assert.equal(Bridge.planAccepted({...intent,adaptive_plan:{...intent.adaptive_plan,
  unit_span_policy:'KEEP'}},planner,{activeSession,candidate_dates:['2026-09-30']})
  .reason,'CENTRAL_CHECKPOINT_REPLAY_CONFLICT');
+const beforeTargetDrift=JSON.stringify(planner.snapshot());
+const changedTargets=Bridge.planAccepted({...intent,adaptive_plan:{...intent.adaptive_plan,
+ target_learning_ids:['word:a','word:b']}},planner,{activeSession,
+ candidate_dates:['2026-09-30']});
+assert.equal(changedTargets.ok,false);
+assert.equal(changedTargets.reason,'CENTRAL_CHECKPOINT_REPLAY_CONFLICT',
+ 'same evidence with changed Learning-owned lexical targets is not equivalent');
+assert.equal(JSON.stringify(planner.snapshot()),beforeTargetDrift,
+ 'target drift must not mutate the existing Planner todo or carry queue');
+assert.equal(Bridge.planAccepted({...intent,adaptive_plan:{...intent.adaptive_plan,
+ target_learning_ids:[]}},planner,{activeSession,
+ candidate_dates:['2026-09-30']}).reason,'CENTRAL_CHECKPOINT_REPLAY_CONFLICT',
+ 'removing the Learning targets with unchanged evidence is also a conflict');
+const duplicateEquivalent=Bridge.planAccepted({...intent,adaptive_plan:{
+ ...intent.adaptive_plan,target_learning_ids:['word:a','word:a']}},planner,{
+ activeSession,candidate_dates:[]});
+assert.equal(duplicateEquivalent.ok,true);
+assert.equal(duplicateEquivalent.reused,true);
+assert.equal(planner.snapshot().dated_todos.length,1);
 const observation=Intake.accept({...runtime,
  decision:{...runtime.decision,execution_status:'HOLD_FOR_MORE_RELIABLE_INTERPRETATION'}},
  context);

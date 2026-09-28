@@ -43,6 +43,14 @@
    subject:scope.subject,concept_skill_target:scope.concept_skill_target,
    basis_kind:basisKind,verified_receipt_id:evidenceReceipt||null,
    observation_basis_digest_sha256:observation?observationDigest:null};
+  const reviewTargets=Array.isArray(intent.adaptive_plan.target_learning_ids)
+    ?[...new Set(intent.adaptive_plan.target_learning_ids.map(clean).filter(Boolean))].slice(0,24):[];
+  const sameTargets=priorIds=>{
+   if(!Array.isArray(priorIds))return false;
+   const old=[...new Set(priorIds.map(clean).filter(Boolean))];
+   return old.length===reviewTargets.length&&
+    old.every(id=>reviewTargets.includes(id));
+  };
   const matches=t=>t?.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'&&
    Object.entries(provenanceBase).every(([k,v])=>t.provenance?.[k]===v);
   const prior=(planner.snapshot()?.dated_todos||[]).filter(matches);
@@ -61,7 +69,10 @@
    subject:scope.subject,concept_skill_target:scope.concept_skill_target
   });
   if(existing){
-   if(JSON.stringify(existing.activity_sequence||[])!==JSON.stringify(sequence))
+   // A source receipt/digest does not make a changed set of Learning-owned
+   // lexical targets equivalent. Do not silently reuse a stale Planner task.
+   if(JSON.stringify(existing.activity_sequence||[])!==JSON.stringify(sequence)||
+      !sameTargets(existing.provenance?.target_learning_ids))
     return {ok:false,reason:'CENTRAL_CHECKPOINT_REPLAY_CONFLICT'};
    const reconciled=reconcile(existing);
    if(!reconciled?.ok)return {ok:false,reason:'CENTRAL_CARRY_RECONCILIATION_FAILED'};
@@ -74,8 +85,6 @@
   const windows=planner.candidateWindowsByDate(dates)||{};
   const date=dates.find(d=>Array.isArray(windows[d])&&windows[d].length>0);
   if(!date)return {ok:false,reason:'NO_CONFIRMED_PLANNER_WINDOW'};
-  const reviewTargets=Array.isArray(intent.adaptive_plan.target_learning_ids)
-    ?[...new Set(intent.adaptive_plan.target_learning_ids.map(clean).filter(Boolean))].slice(0,24):[];
   const subjectLabel=['english','영어'].includes(scope.subject)?'영어':
     ['korean','국어'].includes(scope.subject)?'국어':
     ['math','수학'].includes(scope.subject)?'수학':scope.subject;
