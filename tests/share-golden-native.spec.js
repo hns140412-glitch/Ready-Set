@@ -13,7 +13,14 @@ test('Profile theme, actual pre-share, preview and native image+caption on secon
   await page.goto(base);
   await page.evaluate(()=>{
     state.profile.theme='sail';state.profile.shareAvatar=false;state.profile.photo='private source photo';
-    state.share={theme:'drop'};state.selected=['영어 · 단어 외우기'];state.targetMin=25;
+    state.share={theme:'drop'};state.targetMin=25;
+    const date=new Date().toLocaleDateString('sv-SE');
+    const added=window.ReadySetPlanner.upsertDatedTodo({
+      todo_id:'synthetic_share_task',date,label:'영어 · 단어 외우기',
+      source:'PLANNER_ALLOCATION',state:'PLANNED',estimated_minutes:25
+    });
+    if(!added?.ok)throw new Error('SYNTHETIC_TODO_SETUP_FAILED:'+JSON.stringify(added));
+    state.selectedTodoIds=['synthetic_share_task'];
   });
   expect(await page.evaluate(()=>window.ReadySetShare.getTheme())).toBe('sail');
   expect(await page.evaluate(()=>window.ReadySetShare.delivery)).toBe('NATIVE_OS_SHARE_ONLY');
