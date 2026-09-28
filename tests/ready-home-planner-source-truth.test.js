@@ -68,14 +68,26 @@ assert.equal(view.render({selectedDate:day,tab:'week',snapshot:{},isParent:false
 assert.equal(element('#plannerWeekStrip').children.length,7);
 assert.match(element('#plannerWeekStrip').children[0].attributes['aria-label'],/오늘 할 일 2개, 고정 일정 2개/);
 assert.equal(element('#plannerHeroTitle').textContent,'이번 주 여정');
+const overview=element('#plannerWeekOverview').innerHTML;
+assert.equal((overview.match(/class="plannerWeekOverviewRow/g)||[]).length,7,'seven readable timetable rows, not an island map');
+assert.match(overview,/학교/);
+assert.match(overview,/등교 전 영어 단어/);
+assert.match(overview,/여유 60분/,'free window only from verified availability projection');
+assert.match(indexHtml(),/id="plannerWeekOverview"/);
+assert.match(indexHtml(),/class="plannerGlassSheet"/);
 assert.equal(view.render({selectedDate:day,tab:'day',snapshot:{},isParent:false}).ok,true);
 const route=element('#plannerDayTimeline').innerHTML;
-assert.ok(route.indexOf('등교 전 할 일')<route.indexOf('고정 일정 · 시간 순서'));
-assert.ok(route.indexOf('고정 일정 · 시간 순서')<route.indexOf('오늘 할 일 · Planner 배정'));
+assert.ok(route.indexOf('등교 전 할 일')<route.indexOf('고정 일정 · 시간순'));
+assert.ok(route.indexOf('고정 일정 · 시간순')<route.indexOf('Planner 배정 할 일 · 시각 미확정'));
 assert.ok(route.indexOf('학교')<route.indexOf('태권도'),'fixed commitments must be chronologically sorted');
 assert.match(route,/가능한 자유 시간/);
 assert.match(element('#plannerDayCount').textContent,/할 일 2 · 고정 일정 2/);
 assert.equal(element('#plannerHeroTitle').textContent,'오늘의 탐험길');
+assert.equal(element('#plannerDayMissionJump').hidden,false,'same-day actionable TODO may enter Mission setup');
+const tomorrowKey=localDateKey(addDays(new Date(day+'T12:00:00'),1));
+view.render({selectedDate:tomorrowKey,tab:'day',snapshot:{},isParent:false});
+assert.equal(element('#plannerDayMissionJump').hidden,true,'do not offer Today Mission for an unrelated day');
+assert.doesNotMatch(element('#plannerDayTimeline').innerHTML,/08:00/,'unknown TODO time must never be guessed');
 
 const bootstrap=moduleAt('src/shell/app-bootstrap-controller-runtime.js').ReadyRebuildAppBootstrapController;
 let selected=null,tab=null,renders=0;
@@ -87,7 +99,8 @@ assert.equal(selected,'2026-09-30');
 assert.equal(tab,'day');
 assert.equal(renders,1);
 
-const index=fs.readFileSync('index.html','utf8');
+function indexHtml(){return fs.readFileSync('index.html','utf8');}
+const index=indexHtml();
 assert.match(index,/id="homeNextTaskBtn"/);
 assert.doesNotMatch(index,/<div class="categoryGrid"><button data-nav="mission">/);
 const ref='a675b93d0dbe7c1297ba0ad1889907ceffc1fbf1';
@@ -100,6 +113,11 @@ const expectedFocus=focusSection(original)
 assert.equal(focusSection(index),expectedFocus,'locked timer structure unchanged except explicit approved copy correction');
 assert.doesNotMatch(index,/타임어택|FOCUS MODE/,'obsolete product names must never appear child-facing');
 assert.match(index,/그냥! 지금 하면 돼!/,'approved Timer headline must be present');
+assert.match(index,/ready-basecamp-planner-glass.css/);
+const glassCss=fs.readFileSync('ready-basecamp-planner-glass.css','utf8');
+assert.match(glassCss,/prefers-reduced-motion/);
+assert.match(glassCss,/plannerGlassSheet/);
+assert.doesNotMatch(glassCss,/#focusView|#focusMain|#focusHeader/,'visual overlay must not restyle locked timer');
 const changed=cp.execFileSync('git',['diff','--name-only',ref,'HEAD'],{encoding:'utf8'}).trim().split('\n');
 assert.ok(!changed.some(s=>/^src\/views\/focus-|^assets\/|^ready-runtime-v07\.js$|^ready-family-session-v01\.js$/.test(s)),'timer/assets/session source changed');
 console.log('PASS Home source-backed TODAY, empty, active-session; Week counts; Day grouping; day handoff; timer source lock');
