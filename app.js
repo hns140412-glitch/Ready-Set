@@ -777,6 +777,11 @@ function projectReadyShare(kind){
 const shareCardRuntime=rebuildShareCard.create({
   projectShare:projectReadyShare,
   formatTime:fmt,
+  guideArt:{
+    lumi:'./assets/guide-lumi.png',
+    pico:'./assets/guide-pico.png',
+    mori:'./assets/guide-mori.png'
+  },
   toast
 });
 window.ReadySetShare=Object.freeze({
