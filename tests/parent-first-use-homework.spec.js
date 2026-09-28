@@ -216,6 +216,13 @@ test('OCR review draft auto-fills Parent homework and excludes answer-reference 
   });
   await page.locator('#englishNextAcademy').fill(deadline);
   await page.locator('#saveEnglishFactBtn').click();
+  // The UI handler performs asynchronous IndexedDB and FACT transactions.
+  // Do not sample state before the save promise chain is complete.
+  await expect.poll(()=>page.evaluate(()=>{
+    const state=window.ReadyAssignments.load();
+    return Object.values(state.assignmentFacts||{}).some(f=>
+      f.source_type==='ENGLISH_ACADEMY_PACKAGE'&&f.confirmation_state==='FACT_CONFIRMED');
+  })).toBe(true);
   const saved=await page.evaluate(async()=>{
     const state=window.ReadyAssignments.load();
     const fact=Object.values(state.assignmentFacts).find(f=>
@@ -227,20 +234,6 @@ test('OCR review draft auto-fills Parent homework and excludes answer-reference 
       sessionStatus:session?.status,
       draftReviewed:session?.analysis_result?.drafts?.[0]?.review_events?.some(e=>e.event==='PARENT_APPLIED_DRAFT')};
   });
-  if(!saved.confirmed){
-    const debug=await page.evaluate(async()=>{
-      const session=await window.ReadyCaptureV01.currentReviewSession();
-      const state=window.ReadyAssignments.load();
-      return {captureStatus:session?.status,analysisState:session?.analysis_state,
-        groupClosure:await window.ReadyCaptureV01.reviewClosureForGroup('ENGLISH:WORKBOOK'),
-        facts:Object.values(state.assignmentFacts||{}).map(f=>({id:f.assignment_id,type:f.source_type,state:f.confirmation_state})),
-        englishFields:{name:document.querySelector('#englishWorkbook')?.value,
-          range:document.querySelector('#englishRange')?.value,
-          academy:document.querySelector('#englishNextAcademy')?.value},
-        alerts:[...document.querySelectorAll('[role="status"], .toast')].map(x=>x.textContent).slice(-3)};
-    });
-    console.log('OCR_FIRST_USE_DIAGNOSTIC',JSON.stringify(debug));
-  }
   expect(saved.confirmed).toBe(true);
   expect(saved.interpretation).toBe('INTERPRETED');
   expect(saved.todos).toBeGreaterThan(0);
