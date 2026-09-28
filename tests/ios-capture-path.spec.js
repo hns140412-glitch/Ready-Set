@@ -52,19 +52,22 @@ test('iPhone-like in-app rear camera and photo library use distinct native input
   const original=await page.evaluate(async()=>{
     const session=await window.ReadyCaptureV01.currentReviewSession();
     const rows=await window.ReadyCaptureV01.listItems(session.capture_session_id);
-    return rows.map(x=>({id:x.capture_item_id,group:x.group_key,
-      mime:x.mime_type,bytes:x.blob?.size,name:x.file_name}));
+    return Promise.all(rows.map(async x=>({id:x.capture_item_id,group:x.group_key,
+      mime:x.mime_type,bytes:x.blob?.size,name:x.file_name,
+      original_hex:x.blob?Array.from(new Uint8Array(await x.blob.arrayBuffer()),b=>b.toString(16).padStart(2,'0')).join(''):null})));
   });
   expect(original).toHaveLength(3);
   expect(original.every(x=>x.group==='ENGLISH:PRINT'&&x.mime==='image/png'&&x.bytes===png.length)).toBe(true);
+  expect(original.every(x=>x.original_hex===png.toString('hex'))).toBe(true);
   await page.reload({waitUntil:'load'});
   await page.locator('[data-nav="planner"]').first().click();
   await page.locator('#plannerView [data-nav="planner-admin"]').click();
   const restored=await page.evaluate(async()=>{
     const session=await window.ReadyCaptureV01.currentReviewSession();
     const rows=await window.ReadyCaptureV01.listItems(session.capture_session_id);
-    return rows.map(x=>({id:x.capture_item_id,group:x.group_key,
-      mime:x.mime_type,bytes:x.blob?.size,name:x.file_name}));
+    return Promise.all(rows.map(async x=>({id:x.capture_item_id,group:x.group_key,
+      mime:x.mime_type,bytes:x.blob?.size,name:x.file_name,
+      original_hex:x.blob?Array.from(new Uint8Array(await x.blob.arrayBuffer()),b=>b.toString(16).padStart(2,'0')).join(''):null})));
   });
   expect(restored).toEqual(original);
 });
@@ -87,10 +90,12 @@ test('HEIC from Files with generic MIME is preserved; undecodable photo fails cl
   const captured=await page.evaluate(async()=>{
     const session=await window.ReadyCaptureV01.currentReviewSession();
     const rows=await window.ReadyCaptureV01.listItems(session.capture_session_id);
-    return {id:rows[0]?.capture_item_id,mime:rows[0]?.mime_type,size:rows[0]?.blob?.size};
+    return {id:rows[0]?.capture_item_id,mime:rows[0]?.mime_type,size:rows[0]?.blob?.size,
+      original_hex:rows[0]?.blob?Array.from(new Uint8Array(await rows[0].blob.arrayBuffer()),b=>b.toString(16).padStart(2,'0')).join(''):null};
   });
   expect(captured.mime).toBe('image/heic');
   expect(captured.size).toBe(bytes.length);
+  expect(captured.original_hex).toBe(bytes.toString('hex'));
   await page.locator('#captureAnalyzeBtn').click();
   await expect.poll(()=>page.evaluate(async()=>{
     return (await window.ReadyCaptureV01.currentReviewSession())?.analysis_state;
@@ -100,8 +105,18 @@ test('HEIC from Files with generic MIME is preserved; undecodable photo fails cl
     const session=await window.ReadyCaptureV01.currentReviewSession();
     const rows=await window.ReadyCaptureV01.listItems(session.capture_session_id);
     return {reason:session.analysis_result?.reason,id:rows[0]?.capture_item_id,size:rows[0]?.blob?.size,
+      original_hex:rows[0]?.blob?Array.from(new Uint8Array(await rows[0].blob.arrayBuffer()),b=>b.toString(16).padStart(2,'0')).join(''):null,
       facts:Object.keys(window.ReadyAssignments.load().assignmentFacts).length};
   });
-  expect(after).toEqual({reason:'HEIC_CONVERSION_UNAVAILABLE',id:captured.id,size:bytes.length,facts:0});
+  expect(after).toEqual({reason:'HEIC_CONVERSION_UNAVAILABLE',id:captured.id,size:bytes.length,
+    original_hex:bytes.toString('hex'),facts:0});
+  await page.reload({waitUntil:'load'});
+  const recovered=await page.evaluate(async()=>{
+    const session=await window.ReadyCaptureV01.currentReviewSession();
+    const rows=await window.ReadyCaptureV01.listItems(session.capture_session_id);
+    return {id:rows[0]?.capture_item_id,original_hex:rows[0]?.blob?
+      Array.from(new Uint8Array(await rows[0].blob.arrayBuffer()),b=>b.toString(16).padStart(2,'0')).join(''):null};
+  });
+  expect(recovered).toEqual({id:captured.id,original_hex:bytes.toString('hex')});
   expect(providerCalls).toBe(0);
 });
