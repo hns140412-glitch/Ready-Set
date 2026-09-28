@@ -41,6 +41,17 @@ test('approved mobile/tablet Focus DOM preserves real controls, tablet right anc
   expect(r.right).toBeGreaterThan(1000);
   await expect(page.locator('#focusView .focusTitle h1')).toHaveCount(1);
 });
+test('Golden phone viewport keeps the live Pause and Complete actions reachable',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('http://127.0.0.1:4173/');
+  await startTypedRecording(page);
+  for(const selector of ['#pauseBtn','#completeBtn']){
+    const box=await page.locator(selector).boundingBox();
+    expect(box,selector+' missing').toBeTruthy();
+    expect(box.y,selector+' above viewport').toBeGreaterThanOrEqual(0);
+    expect(box.y+box.height,selector+' below viewport').toBeLessThanOrEqual(844);
+  }
+});
 test('REC is bound to typed task, continues same timer, saves real blob, returns to Focus and result',async({page})=>{
   await page.addInitScript(fakeMicrophone(),{empty:false,denied:false});
   await page.goto('http://127.0.0.1:4173/');
