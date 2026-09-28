@@ -30,19 +30,43 @@
       const dates=Array.from({length:7},(_,i)=>addDays(start,i));
       const names=['월','화','수','목','금','토','일'];
       const todayKey=localDateKey();
-      strip.innerHTML='';
-      dates.forEach((d,i)=>{
+      const weekRows=dates.map((d,i)=>{
         const key=localDateKey(d),items=itemsForDate(key,snapshot);
+        const todos=items.filter(x=>x.kind==='TODO'&&x.state!=='SUPERSEDED');
+        const fixed=items.filter(x=>x.kind==='SCHEDULE');
+        const free=tab==='week'?freeWindowsForDate(key):[];
+        return {d,i,key,todos,fixed,free};
+      });
+      strip.replaceChildren();
+      weekRows.forEach(({d,i,key,todos,fixed})=>{
         const button=document.createElement('button');
         button.type='button';
         button.className='plannerDayChip'+(key===chosen?' on':'')+(key===todayKey?' today':'');
         button.dataset.plannerDate=key;
-        const todoCount=items.filter(x=>x.kind==='TODO').length;
-        const fixedCount=items.filter(x=>x.kind==='SCHEDULE').length;
-        button.setAttribute('aria-label',names[i]+'요일 '+d.getDate()+'일, 오늘 할 일 '+todoCount+'개, 고정 일정 '+fixedCount+'개. 일간 시간표 열기');
-        button.innerHTML=`<small>${names[i]}</small><b>${d.getDate()}</b><span>${todoCount?'할 일 '+todoCount:fixedCount?'일정 '+fixedCount:'·'}</span>${key===todayKey?'<i>오늘</i>':''}`;
+        button.setAttribute('aria-label',names[i]+'요일 '+d.getDate()+'일, 오늘 할 일 '+todos.length+'개, 고정 일정 '+fixed.length+'개. 일간 시간표 열기');
+        if(key===todayKey)button.setAttribute('aria-current','date');
+        button.innerHTML=`<small>${names[i]}</small><b>${d.getDate()}</b><span>${todos.length?'할 일 '+todos.length:fixed.length?'일정 '+fixed.length:'·'}</span>${key===todayKey?'<i>오늘</i>':''}`;
         strip.appendChild(button);
       });
+      const overview=q('#plannerWeekOverview');
+      if(overview&&tab==='week'){
+        overview.innerHTML=weekRows.map(({d,i,key,todos,fixed,free})=>{
+          const fixedLine=fixed.length
+            ?escapeHtml(fixed.slice(0,2).map(x=>x.label).join(' · '))+(fixed.length>2?' 외 '+(fixed.length-2)+'개':'')
+            :'고정 일정 없음';
+          const todoLine=todos.length
+            ?escapeHtml(todos.slice(0,2).map(x=>x.label).join(' · '))+(todos.length>2?' 외 '+(todos.length-2)+'개':'')
+            :'배정된 할 일 없음';
+          const freeMinutes=free.reduce((n,w)=>n+(Number.isFinite(w.minutes)?w.minutes:0),0);
+          const freeLine=free.length?'<span class="plannerWeekFree">여유 '+freeMinutes+'분</span>':'';
+          const label=escapeHtml(names[i]+'요일 '+d.getDate()+'일, 고정 일정 '+fixed.length+'개, 배정된 할 일 '+todos.length+'개, 일간 보기');
+          return `<button type="button" class="plannerWeekOverviewRow${key===todayKey?' today':''}" data-planner-date="${key}" aria-label="${label}">
+            <span class="plannerWeekOverviewDate"><b>${names[i]}</b><strong>${d.getDate()}</strong>${key===todayKey?'<small>오늘</small>':''}</span>
+            <span class="plannerWeekOverviewItems"><span class="plannerWeekFixed"><i></i><span>${fixedLine}</span></span>
+            <span class="plannerWeekTodo"><i></i><span>${todoLine}</span></span></span>
+            <span class="plannerWeekOverviewEnd">${freeLine}<span class="plannerWeekChevron" aria-hidden="true">›</span></span></button>`;
+        }).join('');
+      }
 
       const selectedItems=itemsForDate(chosen,snapshot);
       const freeWindows=freeWindowsForDate(chosen);
@@ -63,7 +87,7 @@
         <article class="plannerRouteItem ${x.schedule_scope==='FAMILY'?'familySchedule':''} ${x.schedule_scope==='CHILD'?'childSchedule':''} ${x.kind==='TODO'?'missionItem':''}"><i>${String(i+1).padStart(2,'0')}</i><div><small>${x.kind==='SCHEDULE'?(x.schedule_scope==='CHILD'?'MY SCHEDULE':'FAMILY SCHEDULE'):(x.daypart?daypartLabel(x.daypart)+' · MISSION':'MISSION')}</small><b>${escapeHtml(x.label)}</b><span>${x.time?escapeHtml(x.time)+' · ':''}${x.minutes?x.minutes+'분 · ':''}${escapeHtml(stateLabel(x.state))}${x.reason&&x.kind==='TODO'?' · '+escapeHtml(x.reason):''}</span></div></article>`).join('');
       const group=(title,rows)=>rows.length?'<section class="plannerRouteGroup"><h3 class="plannerRouteGroupTitle">'+title+'</h3>'+routeRows(rows)+'</section>':'';
       if(timeline){
-        const groups=group('등교 전 할 일',morningTodos)+group('고정 일정 · 시간 순서',fixedItems)+group('오늘 할 일 · Planner 배정',otherTodos);
+        const groups=group('등교 전 할 일 · 시각 미확정',morningTodos)+group('고정 일정 · 시간순',fixedItems)+group('Planner 배정 할 일 · 시각 미확정',otherTodos);
         timeline.innerHTML=groups+freeHtml||
           '<div class="plannerEmpty tall"><b>선택한 날의 일정·할 일이 없어요.</b><small>미확정 시간은 임의로 채우지 않아요.</small></div>';
       }
@@ -73,8 +97,14 @@
       const missionCount=selectedItems.filter(x=>x.kind==='TODO').length;
       const scheduleCount=selectedItems.filter(x=>x.kind==='SCHEDULE').length;
       const count=q('#plannerDayCount');if(count)count.textContent=`할 일 ${missionCount} · 고정 일정 ${scheduleCount}`;
+      const launch=q('#plannerDayMissionJump');
+      if(launch){
+        const actionable=selectedItems.some(x=>x.kind==='TODO'&&['PLANNED','IN_PROGRESS','PARTIAL'].includes(x.state));
+        launch.hidden=chosen!==todayKey||!actionable;
+        launch.textContent='오늘 할 일 선택하기';
+      }
       const hero=q('#plannerHeroTitle');if(hero)hero.textContent=tab==='week'?'이번 주 여정':chosen===todayKey?'오늘의 탐험길':'그날의 탐험길';
-      const subtitle=q('#plannerHeroCopy');if(subtitle)subtitle.textContent=tab==='week'?'고정 일정과 Planner의 할 일을 구분해 살펴봐요.':'날짜가 정해진 할 일과 고정 일정, 확인된 자유 시간을 나눠 봐요.';
+      const subtitle=q('#plannerHeroCopy');if(subtitle)subtitle.textContent=tab==='week'?'한 주의 고정 일정과 배정된 할 일을 한눈에 살펴봐요.':'실제 일정 시간과 시각이 미확정인 할 일을 구분해 확인해요.';
       return {ok:true,selectedItems};
     }
 
