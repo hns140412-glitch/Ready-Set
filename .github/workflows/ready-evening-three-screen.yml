@@ -1,0 +1,31 @@
+name: Ready canonical three-screen isolated validation
+on:
+  push:
+    branches:
+      - implementation/ready-canonical-three-screen-20260928
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-and-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Syntax, no new session owner and title contract
+        run: |
+          node --check ready-evening-canonical.js
+          node --check ready-evening-quickstart.js
+          node tests/evening-canonical-contract.test.js
+          node tests/shared-runtime-contract.test.js
+      - name: Install isolated test dependencies
+        run: |
+          npm install --no-save @playwright/test@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve localhost preview
+        run: python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/ready-three-screen.log 2>&1 &
+      - name: Browser routing and original timer integration
+        run: npx playwright test tests/evening-canonical.spec.js tests/evening-quickstart.spec.js --reporter=line --workers=1
