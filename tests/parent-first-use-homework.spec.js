@@ -47,6 +47,16 @@ test('captured homework survives unavailable OCR and reaches Today/Timer through
     };
   });
   expect(before).toEqual({source_id:source.item_id,bytes:png.length,facts:0,todos:0});
+  // iPhone-like reload must not lose the captured Blob after provider failure.
+  await page.reload({waitUntil:'load'});
+  await page.locator('[data-nav="planner"]').first().click();
+  await page.locator('#plannerView [data-nav="planner-admin"]').click();
+  const recovered=await page.evaluate(async()=>{
+    const session=await window.ReadyCaptureV01.currentReviewSession();
+    const items=await window.ReadyCaptureV01.listItems(session.capture_session_id);
+    return {id:items[0]?.capture_item_id,bytes:items[0]?.blob?.size,state:session.analysis_state};
+  });
+  expect(recovered).toEqual({id:source.item_id,bytes:png.length,state:'ANALYSIS_FAILED'});
 
   // Parent-reviewed manual correction is the fallback, never an OCR FACT.
   const dates=await page.evaluate(()=>{
@@ -99,4 +109,23 @@ test('captured homework survives unavailable OCR and reaches Today/Timer through
   }));
   expect(started.todo_id).toBe(todayTodo.todo_id);
   expect(started.active).toBe('IN_PROGRESS');
+
+  // User-visible result and carry-over must retain the same Planner TODO.
+  await page.locator('#completeBtn').click();
+  await expect(page.locator('#readyRev07Wrap')).toBeVisible();
+  const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
+  await page.locator(`[data-wrap-state="PARTIAL"][data-task-id="${taskId}"]`).click();
+  await page.locator('#rev07ConfirmEnd').click();
+  await expect(page.locator('#resultView')).toHaveClass(/active/);
+  const outcome=await page.evaluate(todoId=>{
+    const p=window.ReadySetPlanner.snapshot();
+    const todo=p.dated_todos.find(t=>t.todo_id===todoId);
+    const carry=p.carry_over_queue.find(c=>c.source_todo_id===todoId);
+    const evidence=p.execution_observations.find(e=>e.todo_id===todoId);
+    return {state:todo?.state,carry_status:carry?.status,carry_source:carry?.source_todo_id,evidence:evidence?.source};
+  },todayTodo.todo_id);
+  expect(outcome).toEqual({
+    state:'PARTIAL',carry_status:'OPEN',
+    carry_source:todayTodo.todo_id,evidence:'READY_SESSION'
+  });
 });
