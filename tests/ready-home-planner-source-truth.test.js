@@ -42,6 +42,9 @@ home.render({state:{guide:{name:'탐험대원'}},todayTodos:[]});
 assert.equal(element('#homeNextTaskBtn').dataset.nav,'planner','empty TODAY must not create a fake mission');
 assert.equal(element('#homeTodayEmpty').hidden,false);
 assert.equal(element('#homeChips').children.length,0);
+home.render({state:{guide:{name:'탐험대원'}},todayTodos:[{todo_id:'help1',label:'부모 확인 대기',state:'WAITING_FOR_PARENT'}]});
+assert.equal(element('#homeNextTaskBtn').dataset.nav,'planner','waiting task is not executable');
+assert.match(element('#homeNextMeta').textContent,/대기/);
 
 const day='2026-09-28';
 const dayItems=[
