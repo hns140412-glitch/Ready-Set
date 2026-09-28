@@ -24,7 +24,17 @@ function avatarOf(profile={},projectionApi){
   if(!permitted?.ok)return Object.freeze({shared:false,asset:null,reason:permitted?.reason||'VISUAL_ID_NOT_APPROVED'});
   if(projection.member_scope&&profile.member_scope&&projection.member_scope!==profile.member_scope)
     return Object.freeze({shared:false,asset:null,reason:'MEMBER_SCOPE_MISMATCH'});
-  return Object.freeze({shared:true,visual_id:projection.visual_id,asset:projection.assets.avatar_square,reason:null});
+  return Object.freeze({shared:true,visual_id:projection.visual_id,asset:projection.assets.avatar_square,sceneAsset:projection.assets.full_character||projection.assets.portrait_card,reason:null});
+}
+const CREW_ASSET_IDS=new Set(['dubi','lori','ink','nova','take','zero']);
+function crewOf(expedition={}){
+  const selected=Array.isArray(expedition.selectedCompanionIds)?expedition.selectedCompanionIds:[];
+  const primary=String(expedition.primaryCompanionId||'').toLowerCase();
+  const raw=[primary,...selected.map(x=>String(x||'').toLowerCase())];
+  const known=[...new Set(raw)].filter(x=>CREW_ASSET_IDS.has(x)).slice(0,3);
+  return known.map((id,i)=>Object.freeze({id,primary:id===primary,
+    name:id===primary?clean(expedition.primaryCompanionAlias)||id:id,
+    asset:'./assets/character-formation/crew/'+id+'-locked-visual-id.webp'}));
 }
 function copyFor({kind,theme,status,taskCount,doneCount,deltaMs,recordingDone,guideName}){
   const name=clean(guideName)||'탐험대';
@@ -47,6 +57,7 @@ function project(input={}){
   const kind=input.kind==='pre'?'pre':'result';
   const profile=input.profile||{},theme=themeOf(profile,input.legacyShare||{});
   const avatar=avatarOf(profile,input.projectionApi);
+  const crew=crewOf(input.expedition||{});
   const guide=input.guide||{};
   const now=input.now instanceof Date?input.now:new Date();
   if(kind==='pre'){
@@ -54,7 +65,7 @@ function project(input={}){
     if(!labels.length)return {ok:false,reason:'PRE_SHARE_TASK_CONTEXT_MISSING'};
     const targetMs=timeMs(input.targetMs);
     if(targetMs===null)return {ok:false,reason:'PRE_SHARE_TARGET_MISSING'};
-    return {ok:true,kind,theme,avatar,guide:{name:clean(guide.name)||null,type:clean(guide.type)||null},
+    return {ok:true,kind,theme,avatar,crew,guide:{name:clean(guide.name)||null,type:clean(guide.type)||null},
       tasks:labels.map(label=>({label})),doneCount:null,total:labels.length,
       targetMs,focusMs:null,stars:null,recordingDone:false,guestType:null,
       date:localDate(now),
@@ -80,7 +91,7 @@ function project(input={}){
   const stars=receipt?.verified===true&&Number.isSafeInteger(receipt.awarded_stars)&&receipt.awarded_stars>=0?
     receipt.awarded_stars:null;
   const deltaMs=timeMs(r.deltaMs)===null?(Number.isFinite(r.deltaMs)?r.deltaMs:focusMs-targetMs):r.deltaMs;
-  return {ok:true,kind,theme,avatar,guide:{name:clean(guide.name)||null,type:clean(guide.type)||null},
+  return {ok:true,kind,theme,avatar,crew,guide:{name:clean(guide.name)||null,type:clean(guide.type)||null},
     tasks,doneCount,total,status,focusMs,targetMs,deltaMs,stars,
     recordingDone:!!(r.recordingDone&&r.recordingRef?.audio_id),
     guestType:r.recordingDone&&r.recordingRef?.audio_id?clean(r.guestType)||null:null,
@@ -88,7 +99,7 @@ function project(input={}){
     copy:copyFor({kind,theme,status,taskCount:total,doneCount,deltaMs,
       recordingDone:!!(r.recordingDone&&r.recordingRef?.audio_id),guideName:guide.name})};
 }
-const api=Object.freeze({version:'READY_SHARE_GOLDEN_TRUTH_V01',themeOf,project,copyFor});
+const api=Object.freeze({version:'READY_SHARE_GOLDEN_TRUTH_V02',themeOf,project,copyFor,crewOf});
 root.ReadyShareGoldenTruth=api;
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
