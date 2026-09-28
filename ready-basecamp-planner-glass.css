@@ -289,3 +289,55 @@
   #plannerView .plannerPanel:not([hidden]) { animation: none !important; }
   #plannerView .plannerDayChip.on { transform: none; }
 }
+
+/* VISUAL SELF-CORRECTION based on actual 390/768 Chromium screenshots:
+   keep the Hero "오늘" control unbroken and three Planner semantic surfaces unmistakable. */
+#plannerView .plannerHero {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+#plannerView .plannerHero > div:first-child { min-width: 0; }
+#plannerView .plannerHero h2 { font-size: 23px; }
+#plannerView .plannerHeroActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+#plannerView .plannerTodayJump,
+#plannerView .plannerAdminJump {
+  min-width: 54px;
+  min-height: 44px;
+  padding: 10px;
+  white-space: nowrap;
+  word-break: keep-all;
+  writing-mode: horizontal-tb;
+  font-size: 12px;
+  line-height: 1.15;
+}
+#plannerView .plannerWeekOverviewRow { min-height: 67px; }
+#plannerView .plannerWeekFixed,
+#plannerView .plannerWeekTodo { font-size: 12px; }
+#plannerView .plannerWeekFree { font-size: 9px; }
+#plannerView .plannerRouteItem.childSchedule {
+  background: rgba(227,238,247,.76);
+  border-color: rgba(106,149,177,.23);
+}
+#plannerView .plannerRouteItem.familySchedule {
+  background: rgba(234,239,222,.70);
+  border-color: rgba(102,140,96,.25);
+}
+#plannerView .plannerRouteItem.missionItem {
+  background: rgba(255,246,222,.79);
+  border-color: rgba(190,147,72,.25);
+}
+#plannerView .plannerRouteGroup { position: relative; }
+#plannerView .plannerRouteGroup > .plannerRouteItem { position: relative; z-index: 1; }
+@media(max-width:390px) {
+  #plannerView .plannerHero { gap: 5px; }
+  #plannerView .plannerHeroActions { gap: 2px; }
+  #plannerView .plannerTodayJump,
+  #plannerView .plannerAdminJump { min-width: 50px; padding: 9px 7px; }
+  #plannerView .plannerHero h2 { font-size: 22px; }
+}
