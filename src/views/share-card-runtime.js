@@ -18,7 +18,7 @@ function create(options={}){
     sail:{top:'#8edafa',middle:'#d7f6ff',water:'#178dd8',land:'#58b477',dark:'#103c64',accent:'#ffcc52'}};
 
   function rr(ctx,x,y,w,h,r,fill){
-    ctx.beginPath();ctx.roundRect(x,y,w,h,r);if(fill){ctx.fillStyle=fill;ctx.fill();}
+    ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y,w,h,r);else ctx.rect(x,y,w,h);if(fill){ctx.fillStyle=fill;ctx.fill();}
   }
   function ellipse(ctx,x,y,rx,ry,fill){
     ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();
