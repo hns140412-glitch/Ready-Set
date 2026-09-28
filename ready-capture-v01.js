@@ -15,7 +15,7 @@
   // Some iPhone/gallery file pickers omit File.type. Never label unknown bytes JPEG.
   function captureMime(file){
     const known=clean(file?.type).toLowerCase();
-    if(known)return known;
+    if(known && known!=='application/octet-stream')return known;
     const ext=clean(file?.name).split('.').pop().toLowerCase();
     return ({
       jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',
