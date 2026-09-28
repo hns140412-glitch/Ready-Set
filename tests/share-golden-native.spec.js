@@ -19,7 +19,7 @@ test('Profile theme, actual pre-share, preview and native image+caption on secon
       todo_id:'synthetic_share_task',date,label:'영어 · 단어 외우기',
       source:'PLANNER_ALLOCATION',state:'PLANNED',estimated_minutes:25
     });
-    if(!added?.ok)throw new Error('SYNTHETIC_TODO_SETUP_FAILED:'+JSON.stringify(added));
+    if(added?.todo_id!=='synthetic_share_task')throw new Error('SYNTHETIC_TODO_SETUP_FAILED:'+JSON.stringify(added));
     state.selectedTodoIds=['synthetic_share_task'];
   });
   expect(await page.evaluate(()=>window.ReadySetShare.getTheme())).toBe('sail');
