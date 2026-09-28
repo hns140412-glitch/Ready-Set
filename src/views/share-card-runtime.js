@@ -90,8 +90,8 @@ function create(options={}){
     const ctx=canvas.getContext('2d');if(!ctx)throw new Error('SHARE_CANVAS_UNAVAILABLE');
     const theme=data.theme,kind=data.kind,m=color[theme];
     scene(ctx,m,theme,kind);
-    rr(ctx,27,23,190,44,22,'rgba(255,255,255,.91)');
-    label(ctx,'Ready & Set',42,53,{size:25,weight:900,color:m.dark,max:170});
+    rr(ctx,27,23,242,44,22,'rgba(255,255,255,.91)');
+    label(ctx,'Ready & Set',42,53,{size:24,weight:900,color:m.dark,max:220});
     label(ctx,kind==='pre'?'탐험 시작 공유':'탐험 완료 · 기록',36,94,{size:19,color:'#34617e'});
     const words=data.copy.title;
     const pieces=words.includes(' ')&&words.length>13?words.split(' '):[words];
