@@ -4,6 +4,7 @@
 const STATES=new Set(['COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
 function clean(v){return String(v??'').trim();}
 function timeMs(v){return Number.isFinite(v)&&v>=0?v:null;}
+function localDate(d){const x=new Date(d);return Number.isFinite(x.getTime())?new Date(x.getTime()-x.getTimezoneOffset()*60000).toISOString().slice(0,10):null;}
 function themeOf(profile={},legacyShare={}){
   const current=profile.theme;
   if(current==='drop'||current==='sail')return current;
@@ -56,7 +57,7 @@ function project(input={}){
     return {ok:true,kind,theme,avatar,guide:{name:clean(guide.name)||null,type:clean(guide.type)||null},
       tasks:labels.map(label=>({label})),doneCount:null,total:labels.length,
       targetMs,focusMs:null,stars:null,recordingDone:false,guestType:null,
-      date:now.toISOString().slice(0,10),
+      date:localDate(now),
       copy:copyFor({kind,theme,taskCount:labels.length,guideName:guide.name})};
   }
   const r=input.record||null;
@@ -83,7 +84,7 @@ function project(input={}){
     tasks,doneCount,total,status,focusMs,targetMs,deltaMs,stars,
     recordingDone:!!(r.recordingDone&&r.recordingRef?.audio_id),
     guestType:r.recordingDone&&r.recordingRef?.audio_id?clean(r.guestType)||null:null,
-    date:Number.isFinite(r.endAt)?new Date(r.endAt).toISOString().slice(0,10):null,
+    date:Number.isFinite(r.endAt)?localDate(r.endAt):null,
     copy:copyFor({kind,theme,status,taskCount:total,doneCount,deltaMs,
       recordingDone:!!(r.recordingDone&&r.recordingRef?.audio_id),guideName:guide.name})};
 }
