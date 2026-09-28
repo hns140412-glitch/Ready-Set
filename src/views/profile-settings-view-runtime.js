@@ -16,6 +16,7 @@
       const name=q('#profileName'); if(name)name.value=state.profile.name;
       const birth=q('#profileBirthdate'); if(birth)birth.value=state.profile.birthdate||'';
       const share=q('#shareAvatarOptIn'); if(share)share.checked=!!state.profile.shareAvatar;
+      const theme=q('#profileTheme');if(theme)theme.value=state.profile.theme==='sail'?'sail':'drop';
       if(state.profile.photo){
         if(img){img.src=state.profile.photo;img.hidden=false;img.style.filter=styleFilter(state.profile.style)}
         if(ph)ph.hidden=true;
