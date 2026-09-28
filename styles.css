@@ -633,3 +633,13 @@
 #missionView .eventTaskRow{background:rgba(255,252,235,.92);border:1px solid rgba(166,137,48,.14)}
 #missionView .eventTaskRow small{display:block;margin-top:3px;color:#8b7542;font-size:9px}
 #missionView #addEventTaskBtn{min-width:76px;background:#30352d;color:#fff}
+
+/* READY HOME/TIMETABLE SOURCE-TRUTH CORRECTION — preserve approved Base Camp composition. */
+#homeView .homeTodayEmpty{font-size:12px;line-height:1.5;color:#fff5e5;margin:8px 0 0;max-width:33ch}
+#homeView .commandCard #homeNextTaskBtn b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;max-width:30ch}
+#plannerView .plannerRouteGroup{display:grid;gap:8px;margin-bottom:15px}
+#plannerView .plannerRouteGroupTitle{font-size:12px;line-height:1.45;margin:6px 1px 2px;color:#f9f5e7;font-weight:850;letter-spacing:-.01em;text-shadow:0 1px 5px rgba(20,50,43,.3)}
+#plannerView .plannerFreeWindows{margin:9px 0 15px}
+@media (min-width:768px){
+  #homeView .homeTodayEmpty{color:#fff5e5}
+}
