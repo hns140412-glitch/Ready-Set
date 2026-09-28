@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#fff8f0">
+  <title>Ready & Set · 오늘 저녁 사용</title>
+  <style>
+    html,body{margin:0;height:100%;background:#efeae6}
+    iframe{display:block;width:100%;height:100vh;height:100dvh;border:0}
+    .fallback{position:absolute;inset:0;display:grid;place-items:center;background:#fff8f0;font:14px system-ui}
+  </style>
+</head>
+<body>
+  <iframe id="readyEveningApp" title="Ready & Set" src="./index.html" allow="camera; microphone; clipboard-read; clipboard-write"></iframe>
+  <script>
+  (() => {
+    const frame=document.getElementById('readyEveningApp');
+    frame.addEventListener('load',()=>{
+      try {
+        const doc=frame.contentDocument;
+        if (!doc || !frame.contentWindow?.ReadySetPlanner) throw new Error('READY_APP_NOT_LOADED');
+        if (doc.getElementById('eveningQuickStart')) return;
+        const css=doc.createElement('link');css.rel='stylesheet';css.href='./ready-evening-quickstart.css';
+        doc.head.appendChild(css);
+        const script=doc.createElement('script');script.src='./ready-evening-quickstart.js';script.defer=true;
+        doc.body.appendChild(script);
+      } catch(error) {
+        document.body.insertAdjacentHTML('beforeend',
+          '<div class="fallback"><div>프리뷰를 여는 중 문제가 생겼어요. <a href="./index.html">기본 Ready 열기</a></div></div>');
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
