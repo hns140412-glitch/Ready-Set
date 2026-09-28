@@ -5,6 +5,75 @@
   const VisionIngest=globalThis.TakyVisionIngest;
   const ENDPOINT='/api/capture/analyze';
 
+  // iOS may supply a HEIC/HEIF original even when the capture input uses image/*.
+  // Do not relabel those bytes as JPEG: decode in the browser, encode a *new*
+  // JPEG analysis copy, and leave the IndexedDB original unchanged.
+  async function convertHeicForAnalysis(original){
+    if(typeof document==='undefined'||typeof Image==='undefined'||!URL?.createObjectURL){
+      return {ok:false,reason:'HEIC_CONVERSION_UNAVAILABLE'};
+    }
+    const url=URL.createObjectURL(original);
+    try{
+      const image=new Image();
+      await new Promise((resolve,reject)=>{
+        image.onload=()=>resolve();
+        image.onerror=()=>reject(new Error('HEIC_DECODE_UNSUPPORTED'));
+        image.src=url;
+      });
+      const w=Number(image.naturalWidth),h=Number(image.naturalHeight);
+      if(!w||!h)return {ok:false,reason:'HEIC_CONVERSION_UNAVAILABLE'};
+      const scale=Math.min(1,4096/Math.max(w,h));
+      const canvas=document.createElement('canvas');
+      canvas.width=Math.max(1,Math.round(w*scale));
+      canvas.height=Math.max(1,Math.round(h*scale));
+      const ctx=canvas.getContext('2d');
+      if(!ctx)return {ok:false,reason:'HEIC_CONVERSION_UNAVAILABLE'};
+      ctx.drawImage(image,0,0,canvas.width,canvas.height);
+      const jpeg=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.94));
+      if(!(jpeg instanceof Blob)||jpeg.type!=='image/jpeg'||!jpeg.size){
+        return {ok:false,reason:'HEIC_CONVERSION_UNAVAILABLE'};
+      }
+      return {ok:true,blob:jpeg,width:canvas.width,height:canvas.height};
+    }catch{
+      return {ok:false,reason:'HEIC_CONVERSION_UNAVAILABLE'};
+    }finally{
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  async function prepareSources(manifest,getBlob){
+    const blobs=new Map(),effective=[],source_transforms=[];
+    for(const item of manifest){
+      if(item.kind==='ANSWER_REFERENCE'){effective.push(item);continue}
+      const original=await getBlob(item.capture_item_id);
+      if(!(original instanceof Blob)||!original.size){
+        return {ok:false,reason:'CAPTURE_ORIGINAL_MISSING',capture_item_id:item.capture_item_id};
+      }
+      const mime=String(item.mime_type||original.type||'').toLowerCase();
+      if(mime==='image/heic'||mime==='image/heif'){
+        const converted=await convertHeicForAnalysis(original);
+        if(!converted.ok){
+          return {ok:false,reason:converted.reason,capture_item_id:item.capture_item_id,original_preserved:true};
+        }
+        blobs.set(item.capture_item_id,converted.blob);
+        const name=String(item.file_name||item.capture_item_id).replace(/\.(heic|heif)$/i,'')+'.jpg';
+        effective.push({...item,mime_type:'image/jpeg',file_name:name,size:converted.blob.size});
+        source_transforms.push({
+          capture_item_id:item.capture_item_id,original_mime_type:mime,
+          analysis_mime_type:'image/jpeg',kind:'BROWSER_HEIC_TO_JPEG',
+          original_bytes:original.size,analysis_bytes:converted.blob.size,
+          analysis_width:converted.width,analysis_height:converted.height
+        });
+      }else if(['image/jpeg','image/png','image/webp'].includes(mime)){
+        blobs.set(item.capture_item_id,original);
+        effective.push({...item,mime_type:mime,size:original.size});
+      }else{
+        return {ok:false,reason:'OCR_IMAGE_FORMAT_UNSUPPORTED',capture_item_id:item.capture_item_id,original_preserved:true};
+      }
+    }
+    return {ok:true,blobs,manifest:effective,source_transforms};
+  }
+
   async function analyze(input={}){
     const session=input.session||{};
     const manifest=Array.isArray(input.manifest)?input.manifest:[];
@@ -16,7 +85,10 @@
       return {ok:false,reason:'SHARED_VISION_INGEST_UNAVAILABLE'};
     }
 
-    const sharedManifest=manifest.map(item=>({
+    const prepared=await prepareSources(manifest,getBlob);
+    if(!prepared.ok)return prepared;
+    const effectiveManifest=prepared.manifest;
+    const sharedManifest=effectiveManifest.map(item=>({
       source_id:item.capture_item_id,
       mime_type:item.mime_type,
       file_name:item.file_name,
@@ -38,14 +110,14 @@
     const analyzable=new Set(ingest.request.analyzable_source_ids);
     const form=new FormData();
     form.set('capture_session_id',session.capture_session_id);
-    form.set('manifest',JSON.stringify(manifest));
+    form.set('manifest',JSON.stringify(effectiveManifest));
     form.set('vision_ingest_request_id',ingest.request.request_id);
     form.set('vision_ingest_manifest',JSON.stringify(ingest.request.manifest));
 
     let attached=0;
-    for(const item of manifest){
+    for(const item of effectiveManifest){
       if(!analyzable.has(item.capture_item_id))continue;
-      const blob=await getBlob(item.capture_item_id);
+      const blob=prepared.blobs.get(item.capture_item_id);
       if(!blob)continue;
       const name=item.file_name||(`${item.capture_item_id}.jpg`);
       form.append('image__'+item.capture_item_id,blob,name);
@@ -120,6 +192,7 @@
       vision_ingest_request_id:echoedRequestId,
       vision_ingest_version:normalized.result.ingest_version,
       evidence_valid:true,
+      source_transforms:prepared.source_transforms,
       drafts:result.drafts,
       received_at:new Date().toISOString()
     };
