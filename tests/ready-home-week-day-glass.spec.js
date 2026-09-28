@@ -10,6 +10,17 @@ test.describe('Ready Base Camp glass Planner: actual browser rendering',()=>{
       await page.locator('.homePlannerPrimary').click();
       await expect(page.locator('#plannerView')).toHaveClass(/active/);
       await expect(page.locator('.plannerGlassSheet')).toBeVisible();
+      const todayButtonMetrics=await page.locator('#plannerTodayJump').evaluate(node=>({
+        text:node.textContent.trim(),height:node.getBoundingClientRect().height,
+        lines:Math.round(node.getBoundingClientRect().height/parseFloat(getComputedStyle(node).lineHeight))
+      }));
+      expect(todayButtonMetrics.text).toBe('오늘');
+      expect(todayButtonMetrics.height).toBeLessThanOrEqual(53);
+      const strayBodyNodes=await page.evaluate(()=>Array.from(document.body.childNodes)
+        .filter(node=>node.nodeType===3&&node.textContent.trim())
+        .map(node=>node.textContent.trim()));
+      console.log('OUTSIDE_APP_TEXT_NODES',JSON.stringify(strayBodyNodes));
+      expect(strayBodyNodes).toEqual([]);
       await page.evaluate(()=>{
         const local=(d=new Date())=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
         const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
@@ -63,6 +74,14 @@ test.describe('Ready Base Camp glass Planner: actual browser rendering',()=>{
       await expect(page.locator('#plannerDayTimeline')).toContainText('등교 전 단어 복습');
       await expect(page.locator('#plannerDayTimeline')).toContainText('음악 활동');
       await expect(page.locator('#plannerDayTimeline')).toContainText('15:30');
+      const surfaces=await page.evaluate(()=>{
+        const fixed=document.querySelector('.plannerRouteItem.childSchedule');
+        const todo=document.querySelector('.plannerRouteItem.missionItem');
+        const free=document.querySelector('.plannerFreeWindows');
+        return [fixed,todo,free].map(node=>node?getComputedStyle(node).backgroundColor:null);
+      });
+      expect(surfaces.every(Boolean)).toBe(true);
+      expect(new Set(surfaces).size).toBe(3);
       const routeText=await page.locator('#plannerDayTimeline').innerText();
       expect(routeText.indexOf('학교')).toBeLessThan(routeText.indexOf('음악 활동'));
       const widths=await page.evaluate(()=>({inner:window.innerWidth,document:document.documentElement.scrollWidth,view:document.querySelector('#plannerView').scrollWidth}));
