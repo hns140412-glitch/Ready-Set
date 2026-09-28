@@ -163,7 +163,12 @@ function create(options={}){
     if(previewData)return {ok:false,reason:'SHARE_PREVIEW_ALREADY_OPEN'};
     let prepared;
     try{prepared=await prepare(kind);}catch(e){prepared={ok:false,reason:e?.message||'SHARE_PREPARE_FAILED'};}
-    if(!prepared.ok){toast('실제 과제·결과 자료를 확인한 뒤 공유할 수 있어요.');return prepared;}
+    if(!prepared.ok){
+      toast(prepared.reason==='SHARE_GOLDEN_SCENE_NOT_APPROVED'
+        ?'공유카드의 승인된 원화 연결이 아직 완료되지 않았어요. 임시 그림 대신 원본 확인 후 공유할 수 있어요.'
+        :'실제 과제·결과 자료를 확인한 뒤 공유할 수 있어요.');
+      return prepared;
+    }
     previousFocus=document.activeElement;
     previewData=prepared;previewFile=prepared.file;
     previewUrl=URL.createObjectURL(prepared.blob);
