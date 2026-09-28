@@ -38,7 +38,7 @@ test('captured homework survives unavailable OCR and reaches Today/Timer through
     return (await window.ReadyCaptureV01.currentReviewSession())?.analysis_state;
   })).toBe('ANALYSIS_FAILED');
   const before=await page.evaluate(async()=>{
-    const session=await window.ReadyCaptureV01.resolveSession();
+    const session=await window.ReadyCaptureV01.currentReviewSession();
     const items=await window.ReadyCaptureV01.listItems(session.capture_session_id);
     return {
       source_id:items[0]?.capture_item_id,bytes:items[0]?.blob?.size,
@@ -68,7 +68,7 @@ test('captured homework survives unavailable OCR and reaches Today/Timer through
     const s=window.ReadyAssignments.load();
     const fact=Object.values(s.assignmentFacts).find(f=>f.source_type==='ENGLISH_ACADEMY_PACKAGE');
     const planner=window.ReadySetPlanner.snapshot();
-    const capture=await window.ReadyCaptureV01.resolveSession();
+    const capture=await window.ReadyCaptureV01.latestSession();
     return {
       fact,artifacts:s.artifacts,
       todos:planner.dated_todos.filter(t=>t.assignment_id===fact.assignment_id),
