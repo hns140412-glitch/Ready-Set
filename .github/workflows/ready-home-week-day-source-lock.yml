@@ -32,3 +32,14 @@ jobs:
           node --check tests/ready-home-planner-source-truth.test.js
       - name: Verify source truth and locked Timer byte identity
         run: node tests/ready-home-planner-source-truth.test.js
+      - name: Package isolated source for local visual QA (no deployment)
+        if: success()
+        run: git archive --format=zip --output=/tmp/ready-home-week-day-review-source.zip HEAD
+      - name: Upload short-lived visual-QA source archive
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ready-home-week-day-review-source
+          path: /tmp/ready-home-week-day-review-source.zip
+          if-no-files-found: error
+          retention-days: 1
