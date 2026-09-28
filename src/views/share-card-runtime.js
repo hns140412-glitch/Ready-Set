@@ -102,7 +102,15 @@ function create(options={}){
     }else label(ctx,words,36,157,{size:39,weight:900,max:525,color:m.dark});
     label(ctx,data.copy.sub,38,224,{size:20,max:525,color:'#42647a'});
     rr(ctx,30,259,Math.min(530,Math.max(250,data.copy.reaction.length*13+32)),40,17,'rgba(255,255,255,.87)');
-    label(ctx,data.copy.reaction,43,286,{size:17,max:502,color:m.dark});
+    let reactionStart=43,reactionWidth=502;
+    if(guideArt[data.guide.type]){
+      try{
+        const guide=await imageLoader(guideArt[data.guide.type]);
+        drawCircleImage(ctx,guide,59,279,27);
+        reactionStart=81;reactionWidth=462;
+      }catch{} // Only reuse registered original guide art. Never generate an imposter.
+    }
+    label(ctx,data.copy.reaction,reactionStart,286,{size:17,max:reactionWidth,color:m.dark});
     const assets=data.avatar;
     if(assets?.shared&&assets.asset){
       try{const img=await imageLoader(assets.asset);drawCircleImage(ctx,img,844,44,58);}
