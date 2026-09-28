@@ -7,6 +7,7 @@ function create(options={}){
   const projection=options.projectShare;
   const toast=options.toast||(()=>{});
   const guideArt=options.guideArt||{};
+  const sceneAsset=options.sceneAsset||(()=>null);
   const imageLoader=options.loadImage||function(url){
     return new Promise((resolve,reject)=>{
       const image=new Image(); image.crossOrigin='anonymous';
@@ -20,66 +21,11 @@ function create(options={}){
   function rr(ctx,x,y,w,h,r,fill){
     ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y,w,h,r);else ctx.rect(x,y,w,h);if(fill){ctx.fillStyle=fill;ctx.fill();}
   }
-  function ellipse(ctx,x,y,rx,ry,fill){
-    ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();
-  }
-  function line(ctx,points,fill){
-    ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);
-    points.slice(1).forEach(p=>ctx.lineTo(p[0],p[1]));ctx.closePath();ctx.fillStyle=fill;ctx.fill();
-  }
   function label(ctx,value,x,y,{size=25,weight=700,color='#123b65',max=740,align='left'}={}){
     ctx.fillStyle=color;ctx.font=weight+' '+size+'px system-ui, sans-serif';ctx.textBaseline='alphabetic';ctx.textAlign=align;
     let txt=String(value??'');
     while(txt.length>1&&ctx.measureText(txt).width>max)txt=txt.slice(0,-2)+'…';
     ctx.fillText(txt,x,y);return txt;
-  }
-  function scene(ctx,m,theme,kind){
-    const c=color[theme],g=ctx.createLinearGradient(0,0,0,395);
-    g.addColorStop(0,c.top);g.addColorStop(1,c.middle);ctx.fillStyle=g;ctx.fillRect(0,0,900,395);
-    // Clouds and the one shared island; movement differs, geographical world does not.
-    for(const [x,y,k] of [[90,60,1],[420,48,.65],[805,97,.8]]){
-      ellipse(ctx,x,y,75*k,21*k,'rgba(255,255,255,.76)');
-      ellipse(ctx,x-24*k,y-12*k,45*k,20*k,'rgba(255,255,255,.76)');
-      ellipse(ctx,x+31*k,y-14*k,36*k,24*k,'rgba(255,255,255,.76)');
-    }
-    ellipse(ctx,704,206,185,45,'rgba(255,255,255,.5)');
-    ctx.fillStyle=c.water;ctx.fillRect(0,311,900,84);
-    for(let i=0;i<7;i++){ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(200+i*96,352+i%2*13);ctx.lineTo(255+i*96,352+i%2*13);ctx.stroke();}
-    line(ctx,[[518,316],[672,138],[794,182],[865,318]],'#8a8061');
-    line(ctx,[[540,297],[672,138],[794,182],[849,297]],c.land);
-    ellipse(ctx,683,221,107,23,'#66d08a');
-    line(ctx,[[650,166],[673,133],[694,169]],'#cf9b62');
-    line(ctx,[[660,170],[673,133],[688,170]],'#fff1b4');
-    line(ctx,[[716,211],[746,191],[754,283],[724,283]],'#f7f9f0');
-    line(ctx,[[728,207],[746,191],[751,280],[739,280]],'#bcecff');
-    ellipse(ctx,646,233,20,26,'#277d59');ellipse(ctx,799,248,16,24,'#2c865a');
-    line(ctx,[[673,138],[673,118],[700,129],[673,137]],'#ef7b4f');
-    if(theme==='sail'){
-      ellipse(ctx,446,342,66,10,'rgba(11,66,120,.18)');
-      line(ctx,[[378,330],[506,330],[480,344],[405,344]],'#85553c');
-      ctx.strokeStyle='#755335';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(442,330);ctx.lineTo(442,204);ctx.stroke();
-      line(ctx,[[438,207],[438,319],[370,310]],'#fff8e6');
-      line(ctx,[[450,220],[497,303],[450,309]],'#f5d188');
-    }else{
-      // No unrelated/generated child character; thematic parachute motif only.
-      ctx.fillStyle='#ffbc45';ctx.beginPath();ctx.arc(440,116,60,Math.PI,Math.PI*2);ctx.closePath();ctx.fill();
-      line(ctx,[[382,116],[410,116],[439,181]],'#ef9563');
-      line(ctx,[[440,116],[468,116],[439,181]],'#fff3d1');
-      ctx.strokeStyle='#98613d';ctx.lineWidth=2;for(const a of [380,410,440,470,500]){ctx.beginPath();ctx.moveTo(a,116);ctx.lineTo(439,182);ctx.stroke();}
-      rr(ctx,428,178,22,18,5,'#936940');
-    }
-    if(kind==='result'){
-      for(const [x,y] of [[515,97],[840,57],[853,165]]){
-        ctx.fillStyle='#ffcb48';ctx.beginPath();for(let i=0;i<10;i++){
-          const a=-Math.PI/2+i*Math.PI/5,r=i%2?7:17;
-          const px=x+Math.cos(a)*r,py=y+Math.sin(a)*r;
-          if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
-        }ctx.closePath();ctx.fill();
-      }
-    }
-    const overlay=ctx.createLinearGradient(0,0,630,0);
-    overlay.addColorStop(0,'rgba(237,250,255,.93)');overlay.addColorStop(.64,'rgba(241,250,255,.66)');overlay.addColorStop(1,'rgba(241,250,255,0)');
-    ctx.fillStyle=overlay;ctx.fillRect(0,0,610,311);
   }
   function drawCircleImage(ctx,img,x,y,size){
     ctx.save();ctx.beginPath();ctx.arc(x,y,size/2,0,Math.PI*2);ctx.clip();
@@ -89,7 +35,19 @@ function create(options={}){
   async function draw(canvas,data){
     const ctx=canvas.getContext('2d');if(!ctx)throw new Error('SHARE_CANVAS_UNAVAILABLE');
     const theme=data.theme,kind=data.kind,m=color[theme];
-    scene(ctx,m,theme,kind);
+    // The approved 4-state artwork is rendered beneath dynamic factual text.
+    // Never elevate rough polygons or composite reference boards to production.
+    const scenePath=sceneAsset(theme,kind);
+    if(!scenePath)throw new Error('SHARE_GOLDEN_SCENE_NOT_APPROVED');
+    const sceneImage=await imageLoader(scenePath);
+    if((sceneImage.naturalWidth||sceneImage.width)<1400||(sceneImage.naturalHeight||sceneImage.height)<620)
+      throw new Error('SHARE_GOLDEN_SCENE_RESOLUTION_TOO_LOW');
+    ctx.drawImage(sceneImage,0,0,900,395);
+    const overlay=ctx.createLinearGradient(0,0,620,0);
+    overlay.addColorStop(0,'rgba(241,250,255,.94)');
+    overlay.addColorStop(.61,'rgba(241,250,255,.70)');
+    overlay.addColorStop(1,'rgba(241,250,255,0)');
+    ctx.fillStyle=overlay;ctx.fillRect(0,0,620,311);
     rr(ctx,27,23,242,44,22,'rgba(255,255,255,.91)');
     label(ctx,'Ready & Set',42,53,{size:24,weight:900,color:m.dark,max:220});
     label(ctx,kind==='pre'?'탐험 시작 공유':'탐험 완료 · 기록',36,94,{size:19,color:'#34617e'});
