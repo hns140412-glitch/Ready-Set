@@ -96,7 +96,7 @@ const focusSection=s=>s.split('<section class="view yellow" id="focusView" data-
 assert.ok(focusSection(original));
 const expectedFocus=focusSection(original)
  .replace('<span class="focusBadge">FOCUS MODE</span>','<span class="focusBadge" aria-hidden="true"></span>')
- .replace('<span>누가 와도 몰라요, 지금은 집중 중</span><h1>타임어택</h1>','<span>오늘도 한 걸음</span><h1>그냥! 지금 하면 돼!</h1>');
+ .replace('<span>누가 와도 몰라요, 지금은 집중 중</span><h1>타임어택</h1>','<span hidden aria-hidden="true"></span><h1>그냥! 지금 하면 돼!</h1>');
 assert.equal(focusSection(index),expectedFocus,'locked timer structure unchanged except explicit approved copy correction');
 assert.doesNotMatch(index,/타임어택|FOCUS MODE/,'obsolete product names must never appear child-facing');
 assert.match(index,/그냥! 지금 하면 돼!/,'approved Timer headline must be present');
