@@ -33,6 +33,7 @@
       const day=event.target.closest?.('[data-planner-date]');
       if(day){
         setPlannerSelectedDate(day.dataset.plannerDate);
+        setPlannerTab('day');
         renderPlanner();
       }
     }
