@@ -77,3 +77,15 @@ jobs:
           path: ui-audit/*.png
           if-no-files-found: warn
           retention-days: 3
+
+  visual-authority:
+    needs: [source-truth, browser-visual]
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Assert approved Base Camp source and visual acceptance evidence (FAIL while unresolved)
+        run: node scripts/validate-ready-week-day-visual-authority.cjs
