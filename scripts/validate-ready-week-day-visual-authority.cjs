@@ -5,6 +5,17 @@ const crypto=require('node:crypto');
 const path=require('node:path');
 const state=JSON.parse(fs.readFileSync('C2S/READY_WEEK_DAY_VISUAL_ACCEPTANCE_STATE_2026-09-28.json','utf8'));
 const problems=[];
+const latest=JSON.parse(fs.readFileSync('C2S/READY_WEEK_DAY_LATEST_SOURCE_LAYER_GATE_2026-09-29.json','utf8'));
+if(latest.status!=='PRODUCTION_SCENE_VERIFIED')problems.push('LATEST_ACCEPTED_WEEK_DAY_SOURCE_NOT_IMPLEMENTED: '+latest.status);
+for(const name of ['week','day','preparation_scene']){
+  const row=latest.references?.[name];
+  if(!row||!/^([a-f0-9]{64})$/.test(row.sha256||'')||row.width!==941||row.height!==1672)
+    problems.push('CURRENT_941PX_SOURCE_PROVENANCE_INVALID: '+name);
+}
+for(const item of ['source_image_clean_plate','full_approved_environment_1_to_1','actual_child_character_visual_binding','companion_at_preparation_table_placement']){
+  if(latest.runtime_qa?.[item]!=='PASS')problems.push('VISUAL_SCENE_MISSING_'+item.toUpperCase());
+}
+
 if(state.scope!=='READY_WEEKLY_DAILY_ONLY')problems.push('SCOPE_MUST_BE_WEEKLY_DAILY_ONLY');
 if(state.timer!=='PRESERVE_EXISTING_LOCKED_UI')problems.push('TIMER_LOCK_NOT_ACKNOWLEDGED');
 if(state.status!=='VISUAL_QA_APPROVED')problems.push('VISUAL_QA_NOT_APPROVED: '+state.status);
