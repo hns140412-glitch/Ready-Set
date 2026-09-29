@@ -95,7 +95,8 @@ function make(options={}){
   rootEl.querySelector('[data-share-title]').textContent=m.kind==='pre'?'탐험 시작 공유':'탐험 완료 공유';
   rootEl.querySelectorAll('[data-share-field]').forEach(cb=>{const key=cb.dataset.shareField;cb.closest('label').hidden=m.kind==='pre'?['focus','done','stars'].includes(key):key==='target';});
   setText(d,true);rootEl.querySelector('[data-share-message]').dataset.userEdited='';
-  setProfile(d);setCrew(d);refreshImage();
+  const identity=project?.(selected.kind,{theme:selected.theme})||d;
+  setProfile(identity);setCrew(identity);refreshImage();
  }
  function close(){
   requestId++;rootEl?.remove();rootEl=null;crewSelection=null;prior?.focus?.({preventScroll:true});prior=null;
