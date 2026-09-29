@@ -705,3 +705,33 @@
 #focusView .timeStrip{grid-template-columns:minmax(0,1fr) minmax(0,1fr);position:relative}
 #focusView .timeStrip .recButton:not([hidden]){position:absolute;left:50%;top:0;transform:translateX(-50%)}
 #focusView .timeStrip>div:last-child{grid-column:2;text-align:right}
+
+/* Ready expedition companion slots: actual formation ID and locked manifest, never CSS legacy Guide fallback. */
+#homeView #homeGuideCard[hidden],
+#missionView #missionCompanionCard[hidden],
+#resultView #resultCompanionSlot[hidden]{display:none !important}
+#homeView #homeGuidePortrait,
+#missionView #missionCompanionPortrait,
+#resultView #resultGuidePortrait{
+  background-size:contain;
+  background-position:center bottom;
+  background-repeat:no-repeat;
+  background-color:transparent;
+}
+#missionView .missionCompanionCard{
+  display:grid;grid-template-columns:68px minmax(0,1fr);align-items:center;gap:12px;
+  padding:12px;margin:0 0 12px;
+  border-radius:18px;border:1px solid rgba(255,255,255,.65);
+  background:rgba(255,251,234,.82);
+  -webkit-backdrop-filter:blur(9px);backdrop-filter:blur(9px);
+}
+#missionView .missionCompanionCard .guidePortrait{width:68px;height:68px;border-radius:12px}
+#missionView .missionCompanionCopy{min-width:0}
+#missionView .missionCompanionCopy small{font-size:10px;font-weight:850;color:#715a36}
+#missionView .missionCompanionCopy p{
+  margin:5px 0 0;font-size:12px;line-height:1.5;font-weight:800;color:#293c32;
+}
+#missionView .missionCompanionCopy p[hidden]{display:none !important}
+#resultView .resultCompanionSlot{display:flex;flex-direction:column;align-items:center;gap:4px;max-width:70px}
+#resultView .resultCompanionSlot small{font-size:10px;line-height:1.2;font-weight:850;color:#3b5141;text-align:center}
+#resultView .sceneLine{font-size:11px;line-height:1.4}
