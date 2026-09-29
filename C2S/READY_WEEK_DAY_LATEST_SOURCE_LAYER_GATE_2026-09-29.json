@@ -53,6 +53,12 @@
     "human_visual_approval": "NOT_YET",
     "timer_golden": "PRESERVE",
     "merge": "HOLD",
-    "netlify": "HOLD"
+    "netlify": "HOLD",
+    "child_source_projection_preparation": "UNIT_PASS__NOT_SCENE_BOUND",
+    "child_scene_layer_slots": "HTML_PLACEHOLDER_HIDDEN_UNTIL_SOURCE_LAYER_APPROVED",
+    "child_profile_photo_fallback": "FORBIDDEN",
+    "parent_visual_scene_status": "CURRENT_CSS_SCENE_REJECTED",
+    "browser_functional_source_review": "PASS_EXACT_RUN_36522096175",
+    "browser_visual_authority": "FAIL_INTENTIONAL_UNRESOLVED_SOURCE"
   }
 }
