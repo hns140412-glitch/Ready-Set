@@ -35,10 +35,11 @@ test.describe('Ready Focus Golden: preserve original yellow live UI',()=>{
         const clock=document.querySelector('#focusView .clockHero').getBoundingClientRect();
         const panel=document.querySelector('#focusView .controlPanel').getBoundingClientRect();
         const d=document.documentElement;
-        return {stage:{left:stage.left,right:stage.right,width:stage.width},clock:{width:clock.width,height:clock.height},panel:{top:panel.top,bottom:panel.bottom},width:d.scrollWidth,viewport:innerWidth,bg:getComputedStyle(document.querySelector('#focusView')).backgroundColor};
+        return {stage:{left:stage.left,right:stage.right,width:stage.width},clock:{width:clock.width,height:clock.height},panel:{top:panel.top,bottom:panel.bottom,right:panel.right},targetRight:document.querySelector('#targetTime').getBoundingClientRect().right,width:d.scrollWidth,viewport:innerWidth,bg:getComputedStyle(document.querySelector('#focusView')).backgroundColor};
       });
       expect(layout.width).toBeLessThanOrEqual(viewport.width+2);
       expect(Math.abs(layout.clock.width-layout.clock.height)).toBeLessThan(2);
+      expect(layout.panel.right-layout.targetRight).toBeLessThan(29); // always top-right, not center after REC hides
       if(viewport.kind==='phone'){
         expect(Math.abs(layout.stage.left-(viewport.width-layout.stage.width)/2)).toBeLessThan(4);
       }else{
