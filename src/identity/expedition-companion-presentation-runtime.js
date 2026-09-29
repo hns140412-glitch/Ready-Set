@@ -61,7 +61,7 @@
       if(line){line.textContent='';line.removeAttribute?.('data-dialogue-source');}
       return {ok:false,reason};
     }
-    const rendering={home:0,mission:0,result:0};
+    const rendering={home:0,mission:0,result:0,planner:0};
     async function render(surface){
       const entry=targets[surface];if(!entry)return {ok:false,reason:'COMPANION_SURFACE_UNSUPPORTED'};
       const revision=++rendering[surface];
