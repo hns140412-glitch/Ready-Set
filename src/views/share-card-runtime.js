@@ -3,7 +3,7 @@
 
   function create(options={}){
     const drawAvatar=options.drawAvatar||(async()=>{});
-    const currentMissionLabels=options.currentMissionLabels||(()=>[]);
+    const getPreShareContext=options.getPreShareContext||(()=>({tasks:[],targetMs:null}));
     const resultSource=options.resultSource||(()=>null);
     const resultOutcomeProfile=options.resultOutcomeProfile||(()=>({done:false,label:'결과',shareTitle:'오늘의 탐험',historyLabel:'결과',shareText:'Ready & Set'}));
     const shareTheme=options.shareTheme||(()=> 'cloud');
@@ -40,6 +40,9 @@
 
     async function render(kind='result'){
       const r=kind==='result'?resultSource():null;
+      const pre=kind==='pre'?getPreShareContext():null;
+      if(kind==='pre'&&(!Array.isArray(pre?.tasks)||!pre.tasks.length||!Number.isFinite(pre.targetMs)||pre.targetMs<=0))throw new Error('PRE_SHARE_GOAL_NOT_READY');
+      if(kind==='result'&&!r)throw new Error('RESULT_NOT_RECORDED');
       const theme=shareTheme();
       const copy=themeCopy(theme,kind,r);
       const canvas=document.createElement('canvas');canvas.width=900;canvas.height=600;
@@ -50,19 +53,13 @@
       ctx.fillStyle='#0a3265';ctx.font='900 46px sans-serif';ctx.fillText(copy.title,40,145);ctx.font='700 23px sans-serif';ctx.fillText(copy.sub,42,182);
       await drawAvatar(ctx,theme==='sail'?300:245,theme==='sail'?325:285,58);
 
-      const tasks=kind==='result'?[...(r?.selected||[]),...(r?.tasks||[])]:currentMissionLabels();
-      const profile=kind==='result'?resultOutcomeProfile(r||{}):null;
-      const total=Math.max(1,tasks.length);
-      const done=kind==='result'&&profile?.done?total:0;
-      const focus=kind==='result'&&r?formatTime(r.focusMs||0):'00:00';
-      const stars=kind==='result'&&profile?.done?Math.max(1,Math.min(30,done*5)):0;
+      const tasks=kind==='result'?[...(r.selected||[]),...(r.tasks||[])]:pre.tasks;
+      const profile=kind==='result'?resultOutcomeProfile(r):null;
 
       ctx.fillStyle='#fff';roundRect(ctx,0,430,900,170,0);ctx.fill();ctx.strokeStyle='#e5edf5';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,430);ctx.lineTo(900,430);ctx.stroke();
-      const stats=[
-        [kind==='result'?(profile?.done?done+'/'+total:profile.label):total+'개',kind==='result'?(profile?.done?'완료 미션':'결과 상태'):'오늘의 미션'],
-        [focus,'집중 시간'],
-        ['+'+stars,'획득 별']
-      ];
+      const stats=kind==='result'
+        ?[[profile.label,'결과 상태'],[formatTime(r.targetMs),'목표 시간'],[formatTime(r.focusMs),'집중 시간']]
+        :[[String(tasks.length)+'개','선택한 할 일'],[formatTime(pre.targetMs),'목표 시간'],['시작 전','공유 시점']];
       stats.forEach((v,i)=>{
         const cx=150+i*300;ctx.textAlign='center';ctx.fillStyle='#0d3569';ctx.font='900 35px sans-serif';ctx.fillText(v[0],cx,495);
         ctx.fillStyle='#718098';ctx.font='700 18px sans-serif';ctx.fillText(v[1],cx,528);
@@ -73,10 +70,17 @@
     }
 
     async function share(kind='result'){
-      const canvas=await render(kind);
+      let canvas;
+      try{canvas=await render(kind)}catch(error){
+        if(error?.message==='PRE_SHARE_GOAL_NOT_READY')toast('공유할 탐험 목표를 먼저 정해 주세요.');
+        else if(error?.message==='RESULT_NOT_RECORDED')toast('탐험 결과가 기록된 뒤 공유할 수 있어요.');
+        else toast('공유 이미지를 준비하지 못했어요.');
+        return {ok:false,reason:error?.message||'SHARE_RENDER_FAILED'};
+      }
       const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png',.94));
       const file=new File([blob],`Ready_Set_${shareTheme()}_${kind}_${Date.now()}.png`,{type:'image/png'});
-      const text=kind==='result'?resultOutcomeProfile(resultSource()||{}).shareText:'Ready & Set · 오늘의 탐험을 시작해요!';
+      const text=kind==='result'?resultOutcomeProfile(resultSource()||{}).shareText:
+        'Ready & Set · '+getPreShareContext().tasks.slice(0,2).join(' · ')+' · 목표 '+formatTime(getPreShareContext().targetMs);
       try{
         if(navigator.canShare?.({files:[file]})){
           await navigator.share({files:[file],title:'Ready & Set',text});
