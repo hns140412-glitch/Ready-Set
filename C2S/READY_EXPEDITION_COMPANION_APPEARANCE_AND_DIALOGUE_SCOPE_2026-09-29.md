@@ -30,3 +30,24 @@ VISUAL_QA=HOLD
 HUMAN_VISUAL_APPROVAL=OPEN
 MAIN_MERGE=HOLD
 NETLIFY=HOLD
+
+## Implemented review evidence — exact branch 2026-09-29
+- The existing Ready Character Formation selection (`state.expedition.primaryCompanionId`) is now consumed through `src/identity/expedition-companion-presentation-runtime.js`. User-given `primaryCompanionAlias` is the display name and does not mutate the roster key. No implicit Dubi or old Lumi/Pico/Mori is inserted in the new Home/Goal/Result speaker slots.
+- Direct canonical roster: `CharacterFormationJourneyRuntime.CREW`; all six actual Ready Core6 derivative images and SHA-256 come from `assets/character-formation/asset-manifest.json`, guarded by `HARD_LOCK`. The presentation explicitly distinguishes a **local roster character_id** from a globally mapped Visual ID; no invented cross-app Visual ID is claimed.
+- Home/intro text uses the chosen character's original, source-owned `CREW.line`. Goal preparation uses the matching original `CharacterFormationSceneRuntime.preparationLineFor(character_id)` with the same ID. Result displays actual chosen avatar + alias, while Result owner supplies the outcome summary separately without fabricated companion speech.
+- Existing formation preview now leaves an unselected companion slot empty rather than silently defaulting to Dubi. Legacy Guide settings data and histories were neither deleted nor mapped by guess.
+- `tests/ready-expedition-companion-presentation.test.js`: missing/invalid selection fail-closed; selection/name switch, display/source line and all SIX local binary SHA-256 values match locked manifest. Actual Chromium browser integration test at 390x844 (`tests/ready-companion-live-binding-review.spec.js`) validates loaded Ink image and its original Home/Goal lines and Result alias. This uses a clearly synthetic selection, not the real child's choice.
+- Browser screenshots `ready-chosen-crew-home-source-bound.png`, `ready-chosen-crew-goal-source-bound.png`, `ready-chosen-crew-result-source-bound.png` are proof of **the ID/speaker connection only**. Current backdrop remains the old CSS abstract scene; true accepted Base Camp and Week/Day final 1:1 visual composition still requires separate art binding and review.
+- Snap-Pop PR #10 `onboarding/crew-scope-contract.json` states its distinct selected 5–6 crew array, an unmerged primary-companion selection OPEN, and cross-system identity mapping requiring explicit approval. Ready local presentation integration does NOT assert cross-app Snap authority nor auto-activate its candidate originals.
+
+## Revised status
+READY_LOCAL_COMPANION_ID_AND_ALIAS=CODED_CI_BROWSER_PASS
+READY_LOCKED_CORE6_DERIVATIVE_HASHES=CI_PASS_6_OF_6
+INTRO_AND_PREPARATION_SOURCE_OWNED_LINES=CODED_CI_BROWSER_PASS
+RESULT_COMPANION_SPEECH=NOT_INVENTED__RESULT_SUMMARY_SYSTEM_OWNED
+CROSS_APP_PRIMARY_IDENTITY_MAPPING=OPEN_OWNER_RECONCILIATION_HOLD
+HOME_WEEK_DAY_ORIGINAL_SCENE_1_TO_1=OPEN
+REAL_USER_SELECTION_DEVICE_PROOF=OPEN
+VISUAL_AUTHORITY_GATE=FAIL_HOLD
+MAIN_MERGE=HOLD
+NETLIFY=HOLD
