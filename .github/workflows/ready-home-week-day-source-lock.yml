@@ -37,6 +37,8 @@ jobs:
           node --check tests/ready-share-actual-state.test.js
           node --check tests/ready-focus-golden-composition-review.spec.js
           node --check src/identity/expedition-companion-presentation-runtime.js
+          node --check src/identity/ready-planner-child-visual-consumer.js
+          node --check tests/ready-planner-child-visual-consumer.test.js
           node --check src/identity/character-formation-scene-runtime.js
           node --check tests/ready-expedition-companion-presentation.test.js
           node --check tests/ready-companion-live-binding-review.spec.js
@@ -49,6 +51,8 @@ jobs:
         run: node tests/ready-share-actual-state.test.js
       - name: Verify chosen expedition companion source, identity and speaker provenance
         run: node tests/ready-expedition-companion-presentation.test.js
+      - name: Verify child Visual ID privacy/assurance gate for future Week-Day scene
+        run: node tests/ready-planner-child-visual-consumer.test.js
       - name: Package isolated source for local visual QA (no deployment)
         if: success()
         run: git archive --format=zip --output=/tmp/ready-home-week-day-review-source.zip HEAD
