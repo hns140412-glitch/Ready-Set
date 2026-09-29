@@ -16,5 +16,10 @@ const scenes=Object.freeze({
 function scene(theme,kind){const x=scenes[theme]?.[kind];
   return x&&['APPROVED','INTERIM_ACCEPTED'].includes(x.review_status)&&x.path&&x.visual_id?x.path:null;
 }
-root.ReadyShareVisualAssets=Object.freeze({version:'READY_SHARE_VISUAL_GATE_V02',scenes,scene});
+function layers(theme,kind){
+  if(!scene(theme,kind))return null;
+  const key=theme+'-'+kind,dir='./assets/share-card/layers/'+key+'/';
+  return Object.freeze({sky:dir+'sky.png',world:dir+'world.png',foreground:dir+'foreground.png'});
+}
+root.ReadyShareVisualAssets=Object.freeze({version:'READY_SHARE_VISUAL_GATE_V03',scenes,scene,layers});
 })(typeof globalThis!=='undefined'?globalThis:this);
