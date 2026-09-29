@@ -32,3 +32,15 @@ MAIN_MERGE=HOLD
 NETLIFY=HOLD
 
 The prior flat CSS substitute is explicitly rejected. This review package is a replacement candidate, not a superseding approved source.
+
+
+## 2026-09-29 — Latest direct visual-source and optional-share corrections
+- Latest user-accepted Weekly/Day concept references: `판타지_캠프_주간_시간표_탐험.png` / `판타지_탐험가의_일일_시간표.png`. Earlier `해안_탐험가의_주간_시간표.png` / `바닷마을_일간_탐험_시간표.png` V1 crop layers remain historical candidate ONLY and cannot be silently promoted as exact current visuals.
+- Goal-setting reference: `따뜻한_판타지_탐험_계획_화면.png`; exemplar drawn character is NOT a fixed user character Visual ID or permission to insert invented companion.
+- Explicit latest **Timer Golden** from direct user upload: combined yellow Phone + Tablet source image, local review basename `57000169-232B-44CE-9953-492A482CB9FD(4).jpeg`, SHA256 `880f44a7f73251a4995a67522a7ecdfd1a60cf7f50c5149cfb9ed2366b3235f7`. Historical contract `Ready_Set_Focus_Golden_Reference_REV_01.md` identifies canonical combined `Ready_Set_Focus_UI_Phone_Tablet_Golden_Reference_REV_01.jpeg`; the direct uploaded photo is the latest confirmation. NEVER regenerate or swap it for a blue fantasy clock.
+- Optional share ONLY at two contextual button points: Goal screen `탐험 시작 전 공유` and recorded Result screen `탐험 완료 후 공유`. No separate Share screen, no forced sharing, no pre-share on Home. The current PR runtime uses selected Planner TODO/event task labels and target time for PRE, actual result fields for POST; invented star arithmetic removed.
+- Accurate original-only four-panel **review flow** and all four unmodified reference sources have been stored in Library:
+  `/TAKY/READY_SET/BASECAMP_TABLE_REVIEW_20260928/Ready_Set_Approved_Flow_Source_Review_20260929.zip`
+  SHA256 `a66e50a8a8c2bd7029fa2c500b464c7c4ef3922a92b1070e8ed95556c18da766`.
+  Full combined Timer original preserved; phone crop in contact sheet is composition-review only, never app implementation.
+- Both weekly/day references remain references for **live DOM UI**, not flat runtime screenshot/background; dynamic child identity is unresolved and requires real Visual ID binding. Asset/source proof before rendering and browser visual QA still OPEN. No main merge / Netlify deploy.
