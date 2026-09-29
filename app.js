@@ -144,6 +144,7 @@ function requireParentUi(){
   toast('부모 인증이 필요한 화면입니다.');
   return false;
 }
+let expeditionCompanionPresenter=null;
 const appNavigation=rebuildNavigation.create({
   guard(name){
     if(name==='planner-admin'&&!requireParentUi())return {ok:true,name:'planner'};
@@ -166,7 +167,7 @@ const appNavigation=rebuildNavigation.create({
     'planner-admin':()=>plannerAdminRuntime.render(),
     profile:()=>profileRuntime.renderProfile(),
     settings:()=>settingsRuntime.renderSettings(),
-    result:()=>resultHistoryRuntime.renderResult()
+    result:()=>{const rendered=resultHistoryRuntime.renderResult();if(rendered?.ok)expeditionCompanionPresenter?.renderResult();return rendered;}
   }
 });
 function nav(name){
@@ -226,6 +227,7 @@ const homeViewRuntime=rebuildHomeView.create({
 });
 function renderHome(){
   homeViewRuntime.render({state,missionLabels:currentMissionLabels(),todayTodos:plannerQueryRuntime.todayProjection()});
+  expeditionCompanionPresenter?.renderHome();
 }
 function renderChips(root){
   homeViewRuntime.renderChips(root,currentMissionLabels());
@@ -269,7 +271,7 @@ function currentPlannerMissionItems(){return missionControllerRuntime.currentMis
 function currentMissionLabels(){return missionControllerRuntime.currentMissionLabels();}
 function renderPlannerToday(){return missionControllerRuntime.renderPlannerToday();}
 function removeEventTask(eventTaskId){return missionControllerRuntime.removeEventTask(eventTaskId);}
-function renderMission(){return missionControllerRuntime.render();}
+function renderMission(){const result=missionControllerRuntime.render();expeditionCompanionPresenter?.renderMission();return result;}
 
 function bgm(){
   return $('#bgmPlayer');
@@ -422,6 +424,21 @@ const resultHistoryRuntime=rebuildResultHistoryController.create({
   getState:()=>state,
   navigate:nav
 });
+const expeditionCompanionAssets=globalThis.CharacterFormationAssetRuntime?.create({
+  manifestUrl:'./assets/character-formation/asset-manifest.json'
+});
+expeditionCompanionPresenter=globalThis.ReadyExpeditionCompanionPresentation?.create({
+  getState:()=>state,
+  query:$,
+  roster:globalThis.CharacterFormationJourneyRuntime?.CREW||[],
+  assetRegistry:expeditionCompanionAssets,
+  preparation:id=>globalThis.CharacterFormationSceneRuntime?.preparationLineFor?.(id)||null
+})||null;
+expeditionCompanionAssets?.load?.().then(()=>{
+  if($('#homeView')?.classList.contains('active'))expeditionCompanionPresenter?.renderHome();
+  if($('#missionView')?.classList.contains('active'))expeditionCompanionPresenter?.renderMission();
+  if($('#resultView')?.classList.contains('active'))expeditionCompanionPresenter?.renderResult();
+}).catch(()=>{}); // No default friend or unapproved asset is displayed if the manifest fails.
 function localDateKey(d=new Date()){
   const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${day}`;
