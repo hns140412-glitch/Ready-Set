@@ -123,7 +123,7 @@ const goldenRuntime=cp.execFileSync('git',['show',ref+':ready-runtime-v07.js'],{
 const approvedCopyOnly=goldenRuntime.replace("      end.textContent = '세션 종료';","      end.textContent = '완료했어요';");
 assert.notEqual(goldenRuntime,approvedCopyOnly,'the original Golden copy patch location must exist');
 assert.equal(fs.readFileSync('ready-runtime-v07.js','utf8'),approvedCopyOnly,'Timer session runtime must be byte-identical except user-confirmed completion label');
-assert.match(fs.readFileSync('styles.css','utf8'),/#focusView #recBtn\\[hidden\\]\\s*\\{\\s*display:none !important;\\s*\\}/,'conditional REC must stay hidden for non-recording missions');
+assert.match(fs.readFileSync('styles.css','utf8'),/#focusView #recBtn\[hidden\]\s*\{\s*display:none !important;\s*\}/,'conditional REC must stay hidden for non-recording missions');
 const changed=cp.execFileSync('git',['diff','--name-only',ref,'HEAD'],{encoding:'utf8'}).trim().split('\n');
 assert.ok(!changed.some(s=>/^src\/views\/focus-|^assets\/|^ready-family-session-v01\.js$/.test(s)),'Timer implementation, locked artwork, or session data changed');
 console.log('PASS Home source-backed TODAY, empty, active-session; Week counts; Day grouping; day handoff; timer source lock');
