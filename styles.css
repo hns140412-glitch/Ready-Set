@@ -735,3 +735,6 @@
 #resultView .resultCompanionSlot{display:flex;flex-direction:column;align-items:center;gap:4px;max-width:70px}
 #resultView .resultCompanionSlot small{font-size:10px;line-height:1.2;font-weight:850;color:#3b5141;text-align:center}
 #resultView .sceneLine{font-size:11px;line-height:1.4}
+
+/* Unselected original character-formation companion stays empty; CSS cannot override hidden. */
+#characterSetupView #cfCrewAsset[hidden]{display:none !important}
