@@ -16,7 +16,8 @@
     const targets={
       home:{card:'#homeGuideCard',portrait:'#homeGuidePortrait',name:'#homeGuideName',line:'#homeGuideLine',context:'INTRO'},
       mission:{card:'#missionCompanionCard',portrait:'#missionCompanionPortrait',name:'#missionCompanionName',line:'#missionCompanionLine',context:'PREPARATION'},
-      result:{card:'#resultCompanionSlot',portrait:'#resultGuidePortrait',name:'#resultCompanionName',line:null,context:'NONE'}
+      result:{card:'#resultCompanionSlot',portrait:'#resultGuidePortrait',name:'#resultCompanionName',line:null,context:'NONE'},
+      planner:{card:'#plannerCompanionPresence',portrait:'#plannerCompanionPortrait',name:'#plannerCompanionName',line:null,context:'NONE'}
     };
     const clean=value=>String(value??'').trim();
     function resolve(){
@@ -97,7 +98,7 @@
       return {ok:true,character_id:current.character_id,name:current.name,dialogue_source:line?.dataset.dialogueSource||null};
     }
     return Object.freeze({version:VERSION,resolve,render,renderHome:()=>render('home'),
-      renderMission:()=>render('mission'),renderResult:()=>render('result')});
+      renderMission:()=>render('mission'),renderResult:()=>render('result'),renderPlanner:()=>render('planner')});
   }
   root.ReadyExpeditionCompanionPresentation=Object.freeze({version:VERSION,create});
 })(typeof globalThis!=='undefined'?globalThis:this);
