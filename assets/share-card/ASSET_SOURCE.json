@@ -1,0 +1,13 @@
+{
+  "schema_version": "TAKY_ASSET_POINTER_V01",
+  "app": "Ready & Set",
+  "asset_id": "READY_SHARE_FOUR_STATE_INTERIM_20260929",
+  "canonical_repo": "hns140412-glitch/TAKY-ASSETS",
+  "canonical_ref": "assets/ready-share-interim-20260929",
+  "canonical_manifest": "assets/Ready-Set/share-card/interim-2026-09-29/manifest.json",
+  "runtime_stage_prefix": "assets/share-card/",
+  "canonical_status": "PENDING_BINARY_IMPORT",
+  "rule": "The 16 central binary files are authoritative; verified copies in a local isolated Ready build are derived build outputs, not separately maintained source assets.",
+  "share_ui_pr": 119,
+  "release_gate": "Draft review only; never merge main or deploy Netlify without verified binary import, source/projection tests, visual comparison and explicit approval."
+}
