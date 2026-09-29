@@ -643,3 +643,9 @@
 @media (min-width:768px){
   #homeView .homeTodayEmpty{color:#fff5e5}
 }
+
+
+/* Confirmed user Golden Focus: recording affordance only for a recording task.
+   The legacy REC CSS display must not override the HTML hidden attribute.
+   No new Timer visual or change to session lifecycle. */
+#focusView #recBtn[hidden] { display:none !important; }
