@@ -6,7 +6,7 @@ const font=(size,hand)=>'900 '+size+'px '+(hand?'"Nanum Brush Script","Apple SD 
 const time=ms=>Number.isFinite(ms)&&ms>=0?String(Math.floor(ms/60000)).padStart(2,'0')+':'+String(Math.floor(ms/1000)%60).padStart(2,'0'):'확인 중';
 function create(options={}){
  const project=options.projectShare,notify=options.toast||(()=>{}),load=options.loadImage||((src)=>new Promise((ok,fail)=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>ok(i);i.onerror=()=>fail(Error('SHARE_LAYER_LOAD_FAILED:'+src));i.src=src;}));
- const scenePath=options.sceneAsset||(()=>null),rootPath=options.assetRoot||'./assets/share-card/';
+ const scenePath=options.sceneAsset||(()=>null),sceneLayers=options.sceneLayers||(()=>null),rootPath=options.assetRoot||'./assets/share-card/';
  const src=n=>rootPath.replace(/\/?$/,'/')+n;
  let prepared=null,url=null,previous=null;
  function validate(d){
@@ -42,7 +42,25 @@ function create(options={}){
   const sw=stageW/k,sh=stageH/k;
   const focal=d.theme==='drop'?(d.kind==='pre'?.67:.63):(d.kind==='pre'?.72:.65);
   const sx=Math.max(0,Math.min(iw-sw,iw*focal-sw/2));
-  c.drawImage(scene,sx,Math.max(0,(ih-sh)/2),sw,sh,0,0,stageW,stageH);
+  const separate=sceneLayers(d.theme,d.kind);
+  if(separate){
+    // Three transparent original environment pieces instead of a composite UI
+    // board: sky -> island/water -> foreground. Character and result remain
+    // strictly separate runtime layers below.
+    const images=await Promise.all(['sky','world','foreground'].map(key=>{
+      if(!separate[key])throw Error('SHARE_SCENE_LAYER_MISSING:'+key);
+      return load(separate[key]);
+    }));
+    for(const layer of images){
+      const lw=layer.naturalWidth||layer.width,lh=layer.naturalHeight||layer.height;
+      if(lw<720||lh<1030)throw Error('SHARE_SCENE_LAYER_SIZE_INVALID');
+      c.drawImage(layer,0,0,stageW,stageH);
+    }
+  }else{
+    // Explicit browser test fixture / old scenery only. Missing approved scene
+    // already fails at scenePath gate; never extract a cropped UI mockup.
+    c.drawImage(scene,sx,Math.max(0,(ih-sh)/2),sw,sh,0,0,stageW,stageH);
+  }
   c.drawImage(fx,0,0,720,1030);
   if(canopy)c.drawImage(canopy,-50,-80,510,315);
   const grad=c.createLinearGradient(0,0,0,460);grad.addColorStop(0,d.theme==='sail'&&d.kind==='result'?'rgba(255,242,216,.55)':'rgba(225,242,255,.67)');grad.addColorStop(.65,'rgba(255,255,255,.17)');grad.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=grad;c.fillRect(0,0,720,460);
