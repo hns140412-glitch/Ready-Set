@@ -26,16 +26,27 @@
     const reduced=()=>globalThis.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches===true;
     function companionId(){
       const state=getState()||{};
-      const raw=String(state.expedition?.primaryCompanionId||state.profile?.primaryCompanionId||'dubi').toLowerCase();
-      return CREW[raw]?raw:'dubi';
+      const raw=String(state.expedition?.primaryCompanionId||'').toLowerCase();
+      return CREW[raw]?raw:null;
     }
     function render(status){
-      const id=companionId(),crew=CREW[id];
+      const id=companionId(),crew=id?CREW[id]:null;
       rootEl.dataset.cfStatus=status||rootEl.dataset.cfStatus||'START';
-      rootEl.dataset.cfCrew=id;
-      if(crewName)crewName.textContent=crew.name;
-      if(crewLine)crewLine.textContent=crew.line;
+      rootEl.dataset.cfCrew=id||'';
+      if(crewName)crewName.textContent=crew?.name||'';
+      if(crewLine)crewLine.textContent=crew?.line||'';
+      if(!id){
+        // Before the child's selection, this is an unassigned slot, not a hidden default Dubi.
+        if(crewImg){
+          crewImg.hidden=true;
+          crewImg.removeAttribute('data-cf-asset-group');
+          crewImg.removeAttribute('data-cf-asset-key');
+          crewImg.removeAttribute('src');
+        }
+        return;
+      }
       if(crewImg){
+        crewImg.hidden=false;
         crewImg.dataset.cfAssetGroup='crew';
         crewImg.dataset.cfAssetKey=id;
       }
@@ -75,5 +86,6 @@
     }
     return Object.freeze({version:VERSION,render,mount,unmount});
   }
-  root.CharacterFormationSceneRuntime=Object.freeze({version:VERSION,create});
+  root.CharacterFormationSceneRuntime=Object.freeze({version:VERSION,create,
+    preparationLineFor:id=>CREW[String(id||'').toLowerCase()]?.line||null});
 })(typeof globalThis!=='undefined'?globalThis:this);
