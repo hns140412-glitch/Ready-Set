@@ -787,7 +787,7 @@ function projectReadyShare(kind,shareOptions={}){
   if(!result.ok)return result;
   const theme=['drop','sail'].includes(shareOptions.theme)?shareOptions.theme:result.theme;
   const fields={mission:true,target:true,focus:true,done:true,stars:true,reaction:true,...(shareOptions.fields||{})};
-  const avatar=shareOptions.includeAvatar===false?{shared:false,asset:null,reason:'SHARE_UI_EXCLUDED'}:result.avatar;
+  const avatar=(shareOptions.includeAvatar===false||shareOptions.includeProfile===false)?{shared:false,asset:null,reason:'SHARE_UI_EXCLUDED'}:result.avatar;
   const ids=new Set(Array.isArray(shareOptions.crewIds)?shareOptions.crewIds:result.crew.map(x=>x.id));
   const crew=result.crew.filter(x=>ids.has(x.id)).slice(0,3);
   const base=globalThis.ReadyShareGoldenTruth.copyFor({
@@ -798,7 +798,8 @@ function projectReadyShare(kind,shareOptions={}){
   const style=['default','warm','cheer'].includes(shareOptions.messageStyle)?shareOptions.messageStyle:'default';
   const reaction=style==='warm'?(kind==='pre'?'오늘도 함께 천천히 출발하자!':'오늘의 노력을 소중하게 기록했어.') :
     style==='cheer'?(kind==='pre'?'이번 탐험도 신나게 시작해볼까!':'끝낸 만큼 한 걸음 성장했어!'):base.reaction;
-  return {...result,theme,avatar,crew,fields,copy:{...base,reaction}};
+  const direct=String(shareOptions.messageText||'').trim().slice(0,80);
+  return {...result,theme,avatar,crew,fields,copy:{...base,reaction:direct||reaction}};
 }
 const shareCardRuntime=rebuildShareCard.create({
   projectShare:projectReadyShare,
@@ -811,10 +812,12 @@ const shareCardRuntime=rebuildShareCard.create({
   },
   toast
 });
-const shareConfigurator=globalThis.ReadyShareConfigUI.create({
-  project:projectReadyShare,
+const shareConfigurator=globalThis.ReadyShareSettings.create({
+  projectShare:projectReadyShare,
   card:shareCardRuntime,
-  scene:(theme,kind)=>globalThis.ReadyShareVisualAssets?.scene?.(theme,kind)||null,
+  assets:globalThis.ReadyShareVisualAssets,
+  getProfileTheme:readyShareTheme,
+  openProfile:()=>nav('profile'),
   toast
 });
 window.ReadySetShare=Object.freeze({
