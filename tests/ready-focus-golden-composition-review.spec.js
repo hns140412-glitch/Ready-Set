@@ -27,6 +27,8 @@ test.describe('Ready Focus Golden: preserve original yellow live UI',()=>{
       await expect(page.locator('#targetTime')).toHaveText('25:00');
       await expect(page.locator('#pauseBtn')).toBeVisible();
       await expect(page.locator('#completeBtn')).toBeVisible();
+      await expect(page.locator('#completeBtn')).toHaveText('완료했어요');
+      await expect(page.locator('#recBtn')).toBeHidden();
       await expect(page.locator('#focusSoundBtn')).toBeVisible();
       const layout=await page.evaluate(()=>{
         const stage=document.querySelector('#focusView .focusMain').getBoundingClientRect();
