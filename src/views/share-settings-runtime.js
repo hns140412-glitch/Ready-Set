@@ -162,4 +162,3 @@ function make(options={}){
 }
 root.ReadyShareSettings=Object.freeze({create:make});
 })(typeof globalThis!=='undefined'?globalThis:this);
-`;
