@@ -39,6 +39,7 @@ jobs:
           node --check src/identity/expedition-companion-presentation-runtime.js
           node --check src/identity/character-formation-scene-runtime.js
           node --check tests/ready-expedition-companion-presentation.test.js
+          node --check tests/ready-companion-live-binding-review.spec.js
       - name: Verify source truth and locked Timer byte identity
         run: node tests/ready-home-planner-source-truth.test.js
       - name: Verify two optional contextual share buttons and no new Share screen
@@ -85,6 +86,8 @@ jobs:
         run: npx playwright test tests/ready-home-week-day-glass.spec.js --reporter=line --workers=1
       - name: Screenshot locked yellow Timer Phone + Tablet without changing UI
         run: npx playwright test tests/ready-focus-golden-composition-review.spec.js --reporter=line --workers=1
+      - name: Verify selected actual companion art, name and dialogue in real Chromium
+        run: npx playwright test tests/ready-companion-live-binding-review.spec.js --reporter=line --workers=1
       - name: Upload actual browser visual evidence
         if: always()
         uses: actions/upload-artifact@v4
