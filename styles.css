@@ -700,3 +700,8 @@
 @media(prefers-reduced-motion:reduce){
   #focusView .focusMain::before,#focusView .focusMain::after{animation:none}
 }
+
+/* REC is conditionally overlaid; its hidden state must never shift target time away from right edge. */
+#focusView .timeStrip{grid-template-columns:minmax(0,1fr) minmax(0,1fr);position:relative}
+#focusView .timeStrip .recButton:not([hidden]){position:absolute;left:50%;top:0;transform:translateX(-50%)}
+#focusView .timeStrip>div:last-child{grid-column:2;text-align:right}
