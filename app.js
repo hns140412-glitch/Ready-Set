@@ -761,9 +761,9 @@ window.addEventListener('readyset-family-session',()=>{
 function readyShareTheme(){
   return globalThis.ReadyShareGoldenTruth.themeOf(state.profile||{},state.share||{});
 }
-function projectReadyShare(kind){
-  // Share inherits Profile, approved Visual ID and expedition companion without
-  // introducing a second share-side character/theme selection flow.
+function projectReadyShare(kind,shareOptions={}){
+  // Profile and Expedition remain authoritative; this is only a transient
+  // share presentation override, never a write to those canonical stores.
   const profile=state.profile||{};
   const api=globalThis.CharacterVisualIdProjection;
   const projection=profile.characterVisualIdProjection||profile.visualProjection||
@@ -772,7 +772,7 @@ function projectReadyShare(kind){
       localMaster:profile.characterMaster||null,
       member_scope:profile.member_scope||state.familySession?.member_scope||null
     })||null;
-  return globalThis.ReadyShareGoldenTruth.project({
+  const result=globalThis.ReadyShareGoldenTruth.project({
     kind,
     profile:{...profile,characterVisualIdProjection:projection},
     expedition:state.expedition||{},
@@ -784,6 +784,21 @@ function projectReadyShare(kind){
     record:resultHistoryRuntime.resultSource(),
     now:new Date()
   });
+  if(!result.ok)return result;
+  const theme=['drop','sail'].includes(shareOptions.theme)?shareOptions.theme:result.theme;
+  const fields={mission:true,target:true,focus:true,done:true,stars:true,reaction:true,...(shareOptions.fields||{})};
+  const avatar=shareOptions.includeAvatar===false?{shared:false,asset:null,reason:'SHARE_UI_EXCLUDED'}:result.avatar;
+  const ids=new Set(Array.isArray(shareOptions.crewIds)?shareOptions.crewIds:result.crew.map(x=>x.id));
+  const crew=result.crew.filter(x=>ids.has(x.id)).slice(0,3);
+  const base=globalThis.ReadyShareGoldenTruth.copyFor({
+    kind:result.kind,theme,status:result.status,taskCount:result.total,
+    doneCount:result.doneCount,deltaMs:result.deltaMs,
+    recordingDone:result.recordingDone,guideName:result.guide?.name
+  });
+  const style=['default','warm','cheer'].includes(shareOptions.messageStyle)?shareOptions.messageStyle:'default';
+  const reaction=style==='warm'?(kind==='pre'?'오늘도 함께 천천히 출발하자!':'오늘의 노력을 소중하게 기록했어.') :
+    style==='cheer'?(kind==='pre'?'이번 탐험도 신나게 시작해볼까!':'끝낸 만큼 한 걸음 성장했어!'):base.reaction;
+  return {...result,theme,avatar,crew,fields,copy:{...base,reaction}};
 }
 const shareCardRuntime=rebuildShareCard.create({
   projectShare:projectReadyShare,
@@ -796,6 +811,12 @@ const shareCardRuntime=rebuildShareCard.create({
   },
   toast
 });
+const shareConfigurator=globalThis.ReadyShareConfigUI.create({
+  project:projectReadyShare,
+  card:shareCardRuntime,
+  scene:(theme,kind)=>globalThis.ReadyShareVisualAssets?.scene?.(theme,kind)||null,
+  toast
+});
 window.ReadySetShare=Object.freeze({
   projectShare:projectReadyShare,
   renderShareCard:kind=>shareCardRuntime.render(kind),
@@ -803,10 +824,11 @@ window.ReadySetShare=Object.freeze({
   showPreview:kind=>shareCardRuntime.showPreview(kind),
   closePreview:()=>shareCardRuntime.release(),
   getTheme:readyShareTheme,
-  delivery:'NATIVE_OS_SHARE_ONLY'
+  delivery:'NATIVE_OS_SHARE_ONLY',
+  configure:kind=>shareConfigurator.open(kind)
 });
-$('#preShareBtn').onclick=()=>shareCardRuntime.share('pre');
-$('#missionShareBtn').onclick=()=>shareCardRuntime.share('pre');
-$('#shareResultBtn').onclick=()=>shareCardRuntime.share('result');
+$('#preShareBtn').onclick=()=>shareConfigurator.open('pre');
+$('#missionShareBtn').onclick=()=>shareConfigurator.open('pre');
+$('#shareResultBtn').onclick=()=>shareConfigurator.open('result');
 
 rebuildAccessibility.install();
