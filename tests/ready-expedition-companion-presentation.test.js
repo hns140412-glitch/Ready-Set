@@ -101,6 +101,10 @@ const app=root.ReadyExpeditionCompanionPresentation.create({
   assert.match(realIndex,/id="resultCompanionSlot" hidden/);
   assert.match(realIndex,/id="plannerCompanionPresence" class="plannerCompanionPresence" hidden/);
   assert.doesNotMatch(realIndex,/id="homeGuideName">루미/);
+  assert.match(realIndex,/<img class="cfCrewAsset" id="cfCrewAsset" alt="" hidden>/,'formation has no default displayed member');
+  assert.match(realIndex,/<b id="cfCompanionName"><\/b>/);
+  assert.match(realIndex,/<span id="cfCompanionLine"><\/span>/);
+  assert.doesNotMatch(realIndex,/data-cf-asset-key="dubi" alt="">/,'do not prebind unselected Dubi');
   const appSource=fs.readFileSync('app.js','utf8');
   const presentationSource=fs.readFileSync('src/identity/expedition-companion-presentation-runtime.js','utf8');
   assert.match(presentationSource,/expedition\?\.primaryCompanionId/);
