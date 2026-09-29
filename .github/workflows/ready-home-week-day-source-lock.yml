@@ -32,10 +32,15 @@ jobs:
           node --check tests/ready-home-planner-source-truth.test.js
           node --check tests/ready-home-week-day-glass.spec.js
           node --check tests/ready-share-two-entry-points.test.js
+          node --check src/views/share-card-runtime.js
+          node --check src/views/mission-controller-runtime.js
+          node --check tests/ready-share-actual-state.test.js
       - name: Verify source truth and locked Timer byte identity
         run: node tests/ready-home-planner-source-truth.test.js
       - name: Verify two optional contextual share buttons and no new Share screen
         run: node tests/ready-share-two-entry-points.test.js
+      - name: Verify selected-only and actual post-result native share contract
+        run: node tests/ready-share-actual-state.test.js
       - name: Package isolated source for local visual QA (no deployment)
         if: success()
         run: git archive --format=zip --output=/tmp/ready-home-week-day-review-source.zip HEAD
