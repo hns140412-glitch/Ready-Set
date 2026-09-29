@@ -43,16 +43,9 @@
         if(headline)headline.textContent=remaining.length?'확인이 필요한 할 일이 있어요.':'오늘 배정된 할 일 확인';
         if(meta)meta.textContent=remaining.length?'대기·도움·막힘 상태를 Planner에서 확인해요.':rows.length?'오늘 할 일을 모두 완료했어요.':'Planner에서 확정된 오늘 할 일을 확인해요.';
       }
-      applyGuide(q('#homeGuidePortrait'));
-      const name=q('#homeGuideName');if(name)name.textContent=state.guide?.name||'';
-      const line=q('#homeGuideLine');
-      if(line){
-        line.textContent=state.activeSession
-          ?'진행 중인 탐험이 있어요. 이어서 가볼까요?'
-          :remaining.length
-            ?'오늘 Planner의 남은 탐험 '+remaining.length+'개를 확인해요.'
-            :guideData().home;
-      }
+      // Companion portrait/name/dialogue belongs exclusively to the selected
+      // expedition ID presenter. Never paint the legacy Guide before manifest
+      // verification or overwrite a real selected companion's sourced line.
       return {remaining:remaining.length,completed,nextTodoId:next?.todo_id||null};
     }
     return Object.freeze({render,renderChips});
