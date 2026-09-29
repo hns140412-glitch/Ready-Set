@@ -54,7 +54,7 @@ function make(options={}){
   for(const m of crew){
    const label=node('label','rss-crew-item');const img=node('img');
    img.alt='';img.src=m.asset;const name=node('span','',m.name||m.id);
-   const check=node('input');check.type='checkbox';check.value=m.id;check.checked=crewSelection.has(m.id);
+   const check=node('input');check.type='checkbox';check.value=m.id;check.dataset.shareCrew=m.id;check.checked=crewSelection.has(m.id);
    check.addEventListener('change',()=>{check.checked?crewSelection.add(m.id):crewSelection.delete(m.id);refreshImage();});
    label.append(img,name,check);holder.append(label);
   }
