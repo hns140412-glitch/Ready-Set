@@ -438,6 +438,7 @@ expeditionCompanionAssets?.load?.().then(()=>{
   if($('#homeView')?.classList.contains('active'))expeditionCompanionPresenter?.renderHome();
   if($('#missionView')?.classList.contains('active'))expeditionCompanionPresenter?.renderMission();
   if($('#resultView')?.classList.contains('active'))expeditionCompanionPresenter?.renderResult();
+  if($('#plannerView')?.classList.contains('active'))expeditionCompanionPresenter?.renderPlanner();
 }).catch(()=>{}); // No default friend or unapproved asset is displayed if the manifest fails.
 function localDateKey(d=new Date()){
   const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
@@ -470,7 +471,9 @@ const plannerScreenRuntime=rebuildPlannerScreenController.create({
   getTab:()=>plannerTab
 });
 function renderPlanner(){
-  return plannerScreenRuntime.render();
+  const value=plannerScreenRuntime.render();
+  expeditionCompanionPresenter?.renderPlanner();
+  return value;
 }
 const plannerAdminView=rebuildPlannerAdminView.create({
   query:$,
