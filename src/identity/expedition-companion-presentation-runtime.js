@@ -30,9 +30,12 @@
       if(manifest?.status!=='HARD_LOCK')return {ok:false,reason:'CREW_ASSET_MANIFEST_NOT_HARD_LOCKED',id};
       const asset=assetRegistry.path?.('crew',id)||'';
       if(!asset)return {ok:false,reason:'PRIMARY_COMPANION_APPROVED_ASSET_MISSING',id};
+      const assetSha256=manifest.asset_sources?.core6_runtime_derivatives?.sha256?.[id]||null;
+      if(!/^[a-f0-9]{64}$/i.test(assetSha256||''))return {ok:false,reason:'APPROVED_CREW_ASSET_HASH_MISSING',id};
       const alias=clean(state.expedition?.primaryCompanionAlias)||row.name;
-      return Object.freeze({ok:true,character_id:id,visual_id:id,name:alias,canonical_name:row.name,
-        asset,source:'CHARACTER_FORMATION_JOURNEY_CREW_AND_HARD_LOCK_MANIFEST',row});
+      // The local roster key is character_id, NOT an invented cross-app Visual ID.
+      return Object.freeze({ok:true,character_id:id,name:alias,canonical_name:row.name,
+        asset,asset_sha256:assetSha256,source:'CHARACTER_FORMATION_JOURNEY_CREW_AND_HARD_LOCK_MANIFEST',row});
     }
     function prove(asset){
       if(approved.has(asset))return Promise.resolve(true);
@@ -52,7 +55,7 @@
       if(portrait){
         portrait.style?.removeProperty?.('background-image');
         portrait.removeAttribute?.('data-character-id');
-        portrait.removeAttribute?.('data-visual-id');
+        portrait.removeAttribute?.('data-asset-sha256');
       }
       if(line){line.textContent='';line.removeAttribute?.('data-dialogue-source');}
       return {ok:false,reason};
@@ -75,7 +78,7 @@
       portrait.classList?.remove?.('lumi','pico','mori','guest');
       portrait.style.backgroundImage='url("'+current.asset.replace(/"/g,'%22')+'")';
       portrait.dataset.characterId=current.character_id;
-      portrait.dataset.visualId=current.visual_id;
+      portrait.dataset.assetSha256=current.asset_sha256;
       name.textContent=current.name;
       if(line){
         const approvedLine=entry.context==='INTRO'?introduction(current.row)
@@ -88,7 +91,7 @@
         line.hidden=!approvedLine;
       }
       card.dataset.characterId=current.character_id;
-      card.dataset.visualId=current.visual_id;
+      card.dataset.assetSha256=current.asset_sha256;
       card.dataset.companionState='APPROVED_ASSET_BOUND';
       card.hidden=false;
       return {ok:true,character_id:current.character_id,name:current.name,dialogue_source:line?.dataset.dialogueSource||null};
