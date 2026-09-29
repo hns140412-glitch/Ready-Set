@@ -649,3 +649,54 @@
    The legacy REC CSS display must not override the HTML hidden attribute.
    No new Timer visual or change to session lifecycle. */
 #focusView #recBtn[hidden] { display:none !important; }
+
+/* Direct Phone+Tablet Golden visual-composition correction — review only; original image preserved. */
+#focusView .clockHero{
+  width:min(70vw,280px);
+  margin-top:15px;
+  margin-bottom:20px;
+}
+#focusView .clockTicks{
+  inset:7px;
+  background:repeating-conic-gradient(from -1deg,#222 0 .85deg,transparent .85deg 6deg);
+  -webkit-mask:radial-gradient(circle,transparent 0 84%,#000 85%);
+  mask:radial-gradient(circle,transparent 0 84%,#000 85%);
+}
+#focusView .focusMain::before,#focusView .focusMain::after{
+  position:absolute;
+  z-index:2;
+  pointer-events:none;
+  display:block;
+  color:#765820;
+  white-space:pre-line;
+  font-family:"Nanum Brush Script","Bradley Hand",cursive;
+  font-weight:800;
+  letter-spacing:-.05em;
+  font-size:clamp(13px,3.7vw,17px);
+  line-height:1.28;
+  max-width:72px;
+  text-align:center;
+}
+#focusView .focusMain::before{
+  content:"오늘도\A너는 충분히\A멋져!";
+  top:210px;
+  left:0;
+  transform:rotate(-8deg);
+}
+#focusView .focusMain::after{
+  content:"집중하는\A지금이\A멋진 너야!";
+  top:315px;
+  right:0;
+  transform:rotate(7deg);
+}
+@media(min-width:768px){
+  #focusView .clockHero{width:280px}
+  #focusView .focusMain::before{left:10px;top:215px}
+  #focusView .focusMain::after{right:10px;top:315px}
+}
+@media(max-width:350px){
+  #focusView .focusMain::before,#focusView .focusMain::after{font-size:11px;max-width:47px}
+}
+@media(prefers-reduced-motion:reduce){
+  #focusView .focusMain::before,#focusView .focusMain::after{animation:none}
+}
