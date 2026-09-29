@@ -55,7 +55,7 @@ function copyFor({kind,theme,status,taskCount,doneCount,deltaMs,recordingDone,gu
 }
 function project(input={}){
   const kind=input.kind==='pre'?'pre':'result';
-  const profile=input.profile||{},theme=themeOf(profile,input.legacyShare||{});
+  const profile=input.profile||{},baseTheme=themeOf(profile,input.legacyShare||{}),theme=['drop','sail'].includes(input.themeOverride)?input.themeOverride:baseTheme;
   const avatar=avatarOf(profile,input.projectionApi);
   const crew=crewOf(input.expedition||{});
   const guide=input.guide||{};
@@ -99,7 +99,7 @@ function project(input={}){
     copy:copyFor({kind,theme,status,taskCount:total,doneCount,deltaMs,
       recordingDone:!!(r.recordingDone&&r.recordingRef?.audio_id),guideName:guide.name})};
 }
-const api=Object.freeze({version:'READY_SHARE_GOLDEN_TRUTH_V02',themeOf,project,copyFor,crewOf});
+const api=Object.freeze({version:'READY_SHARE_GOLDEN_TRUTH_V03',themeOf,project,copyFor,crewOf});
 root.ReadyShareGoldenTruth=api;
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
