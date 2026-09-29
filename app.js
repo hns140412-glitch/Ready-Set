@@ -749,10 +749,19 @@ window.addEventListener('readyset-family-session',()=>{
 });
 
 /* REV_07 compact themed share overlay — runtime-owned after rebuild migration. */
-function readyShareTheme(){return state.share?.theme==='sail'?'sail':'drop'}
+function readyShareTheme(){return (state.profile?.theme||state.share?.theme)==='sail'?'sail':'drop'}
+function getPreShareContext(){
+  const selectedIds=new Set(state.selectedTodoIds||[]);
+  const planned=plannerQueryRuntime.todayProjection()
+    .filter(item=>item.state==='PLANNED'&&selectedIds.has(item.todo_id))
+    .map(item=>item.label).filter(Boolean);
+  const events=(state.eventTasks||[]).map(item=>item?.label).filter(Boolean);
+  const target=Number(state.targetMin);
+  return {tasks:[...planned,...events],targetMs:Number.isFinite(target)&&target>0?target*60000:null};
+}
 const shareCardRuntime=rebuildShareCard.create({
   drawAvatar,
-  currentMissionLabels,
+  getPreShareContext,
   resultSource:()=>resultHistoryRuntime.resultSource(),
   resultOutcomeProfile:record=>resultHistoryRuntime.outcomeProfile(record),
   shareTheme:readyShareTheme,
