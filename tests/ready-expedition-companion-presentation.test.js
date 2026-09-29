@@ -83,7 +83,8 @@ const app=root.ReadyExpeditionCompanionPresentation.create({
   assert.match(realIndex,/id="resultCompanionSlot" hidden/);
   assert.doesNotMatch(realIndex,/id="homeGuideName">루미/);
   const appSource=fs.readFileSync('app.js','utf8');
-  assert.match(appSource,/primaryCompanionId/);
+  const presentationSource=fs.readFileSync('src/identity/expedition-companion-presentation-runtime.js','utf8');
+  assert.match(presentationSource,/expedition\?\.primaryCompanionId/);
   assert.match(appSource,/expeditionCompanionPresenter\?\.renderHome/);
   assert.match(appSource,/expeditionCompanionPresenter\?\.renderMission/);
   assert.match(appSource,/expeditionCompanionPresenter\?\.renderResult/);
