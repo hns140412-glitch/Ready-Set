@@ -2,6 +2,11 @@
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
+const crypto=require('node:crypto');
+for(const [id,path] of Object.entries(manifest.asset_files.crew)){
+  const actual=crypto.createHash('sha256').update(fs.readFileSync(path)).digest('hex');
+  assert.equal(actual,manifest.asset_sources.core6_runtime_derivatives.sha256[id],id+' canonical asset byte hash');
+}
 const manifest=JSON.parse(fs.readFileSync('assets/character-formation/asset-manifest.json','utf8'));
 assert.equal(manifest.status,'HARD_LOCK');
 const root={};
@@ -54,7 +59,7 @@ const app=root.ReadyExpeditionCompanionPresentation.create({
   assert.equal(element('#homeGuideLine').textContent,roster.find(x=>x.id==='ink').line);
   assert.equal(element('#homeGuideLine').dataset.dialogueSource,'CHARACTER_FORMATION_JOURNEY_CREW_INTRO');
   assert.equal(element('#homeGuidePortrait').dataset.characterId,'ink');
-  assert.equal(element('#homeGuidePortrait').dataset.visualId,'ink');
+  assert.equal(element('#homeGuidePortrait').dataset.assetSha256,manifest.asset_sources.core6_runtime_derivatives.sha256.ink);
   assert.equal(element('#homeGuideCard').hidden,false);
   assert.equal(images.at(-1),'./'+manifest.asset_files.crew.ink);
   out=await app.renderMission();
