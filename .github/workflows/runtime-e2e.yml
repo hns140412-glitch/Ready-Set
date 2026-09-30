@@ -53,6 +53,8 @@ jobs:
         run: node tests/shared-crew-browser-behavior.spec.js
       - name: Validate shared Crew browser relation
         run: node tests/shared-crew-browser-relation.spec.js
+      - name: Validate Crew evidence handoff
+        run: node tests/crew-evidence-handoff.spec.js
       - name: Validate Ready recording context
         run: node tests/ready-recording-context.spec.js
       - name: Validate Ready recording analysis
