@@ -9,7 +9,9 @@ const expected={
 };
 if(x.status!=='EXACT_ACCEPTED_REFERENCES_RECOVERED_AND_CENTRALIZED__RUNTIME_SCENE_STILL_OPEN')e.push('status');
 if(x.central_source?.repository!=='hns140412-glitch/TAKY-ASSETS')e.push('central repo');
-if(x.central_source?.commit!=='bfcc6d8a512b0d9600f5ec5a31d51a5bd9a12e57')e.push('central commit');
+if(!/^[a-f0-9]{40}$/.test(x.central_source?.commit||''))e.push('central commit');
+if(x.central_source?.pull_request!==2)e.push('central pull request');
+if(x.central_source?.manifest!=='assets/ready-set/references/basecamp-timetable/2026-09-28/manifest.v1.json')e.push('central manifest');
 if(x.central_source?.review_state!=='DRAFT_NOT_MAIN')e.push('central review state');
 for(const [k,[sha,blob]] of Object.entries(expected)){
  const r=x.references?.[k];
