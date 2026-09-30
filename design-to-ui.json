@@ -1,7 +1,7 @@
 {
   "schema": "TAKY_DESIGN_TO_UI_PIPELINE_V1",
   "project": "Ready-Set",
-  "source_commit": "0ea5b1a9df3c1d0529627c19499d0a3205b05ffc",
+  "source_commit": "4d953ba8fc49099e696ee1416dca7424fc012cb1",
   "pipeline_contract_source": "TAKY_PR_194_DRAFT",
   "scope_note": "Initial image-generation-independent adoption: WEEK/DAY/GOAL/TIMER. HOME remains separate authority work.",
   "policy": {
@@ -123,11 +123,11 @@
       },
       "screen_contract": {
         "path": "design/screens/goal.json",
-        "sha256": "4da40a2b20ce6ef52ee5241b67c4b6e4a9314aca2d3757a5eaaceb37f51a31ef"
+        "sha256": "4678235da3e1b96cef2064528cfefc5e8388af3541d52a00ef6a18ab0b9c2e51"
       },
       "layer_contract": {
         "path": "design/layers/goal.json",
-        "sha256": "5d5bb01b8e9897fc040bec975fb73b6f58a53b6cf23f2364c8d234f1d948e743"
+        "sha256": "8656527742f08523102e20a4b37962b6be26b98bac8ea6d1c41e633512011072"
       },
       "viewports": [
         {
