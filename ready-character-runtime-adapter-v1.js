@@ -14,6 +14,7 @@
     if(plan.asset_selection_allowed!==false)return {ok:false,reason:'CENTRAL_PLAN_SELECTED_ASSET_DIRECTLY'};
     const bound=scenePolicy.bind({
       scene_id:plan.scene_id||null,
+      surface:plan.surface||null,
       foreground_character_id:plan.foreground_character_id||null,
       speaking_order:Array.isArray(plan.speaking_order)?[...plan.speaking_order]:[],
       visible_order:Array.isArray(plan.visible_order)?[...plan.visible_order]:[],
@@ -38,6 +39,7 @@
       app_id:APP,
       scene_policy_id:bound.scene_policy_id,
       scene_id:bound.scene_id,
+      surface:bound.surface||null,
       foreground_character_id:bound.foreground_character_id,
       speaking_order:Object.freeze(bound.speaking_order),
       visible_order:Object.freeze(bound.visible_order),
