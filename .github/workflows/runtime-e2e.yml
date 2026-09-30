@@ -24,6 +24,7 @@ jobs:
         run: |
           node tests/shared-runtime-contract.test.js
           node tests/shared-crew-authority.test.js
+          node tests/explorer-crew-v2-source-lock.test.js
       - name: Install Playwright
         run: |
           npm install --no-save @playwright/test@1.55.0

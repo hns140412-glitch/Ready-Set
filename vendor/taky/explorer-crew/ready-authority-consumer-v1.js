@@ -1,30 +1,33 @@
 (function(root,factory){
   'use strict';
-  const api=factory();
-  if(typeof module==='object'&&module.exports)module.exports=api;
+  const api=factory(root?.TakyExplorerCrewSystemV2);
+  if(typeof module==='object'&&module.exports)module.exports=factory(require('./system-v2.js'));
   else if(root)root.ReadyExplorerCrewAuthorityConsumer=api;
-})(typeof globalThis!=='undefined'?globalThis:this,function(){
+})(typeof globalThis!=='undefined'?globalThis:this,function(systemV2){
   'use strict';
 
-  const VERSION='READY_EXPLORER_CREW_AUTHORITY_CONSUMER_V1';
+  const VERSION='READY_EXPLORER_CREW_AUTHORITY_CONSUMER_V2';
+  const SYSTEM_VERSION='EXPLORER_CREW_SYSTEM_V2';
+  const SYSTEM_BOUND=systemV2?.VERSION===SYSTEM_VERSION;
   const PROJECTION_KEY='ready_explorer_crew_authority_projection_v1';
   const CANONICAL_STATE_KEY='taky_explorer_crew_canonical_v1';
   const CREW_EVENT_PARAM='crew_event';
   const AUTHORITY=Object.freeze({
     repository:'hns140412-glitch/TAKY',
-    commit:'55547a7c4c859a1aae700405fdba4a302a2c20d3',
+    commit:'bdc6aeb94aaf82dffbcee4f47c170110b7eff959',
     canonical_path:'OS/EXPLORATION_CREW_CANONICAL.md',
     relationship_path:'OS/GUIDE_CHARACTER_RELATIONSHIP.md',
     contract_version:'CREW_PIPELINE_V1',
     manifest_version:'CREW_COMPOSABLE_MANIFEST_V1',
-    runtime_schema_version:'CREW_RUNTIME_TRACE_V1'
+    runtime_schema_version:'CREW_RUNTIME_TRACE_V2',
+    runtime_system_version:SYSTEM_VERSION,
+    source_lock_version:'EXPLORER_CREW_V2_SOURCE_LOCK_20261001'
   });
   const IMPLEMENTATION_EVIDENCE=Object.freeze({
     repository:'hns140412-glitch/Snap-Pop',
-    pr:10,
-    canonical_verified_head:'8ea7b985eaf792e866e4d21d174eaac824a23567',
-    later_working_head:'13083b4056b1532da1bc5ef4de259d21204a3243',
-    role:'COMPATIBILITY_EVIDENCE_ONLY_NOT_READY_AUTHORITY'
+    pr:17,
+    canonical_verified_head:'e928067cd8f79b954b4072bfabe13e891fb6d07e',
+    role:'COMMON_RUNTIME_SOURCE_LOCK_EVIDENCE_ONLY_NOT_READY_AUTHORITY'
   });
   const CORE6=new Set(['dubi','lori','ink','nova','take','zero']);
   const GUIDE_ID=/^guide-(0[7-9]|1[0-9]|2[0-4])$/;
@@ -37,14 +40,16 @@
     return CORE6.has(x)||GUIDE_ID.test(x);
   }
   function validProjection(x){
-    return !!(x&&x.version===VERSION&&validCharacterId(x.character_id)&&
+    return !!(SYSTEM_BOUND&&x&&x.version===VERSION&&validCharacterId(x.character_id)&&
       x.authority?.commit===AUTHORITY.commit&&x.authority?.contract_version===AUTHORITY.contract_version&&
+      x.system_version===SYSTEM_VERSION&&x.runtime_owner===false&&
       x.relation_write===false&&x.affinity_write===false&&x.behavior_owner===false&&x.asset_resolver===false);
   }
   function empty(){
     return Object.freeze({
       version:VERSION,
-      status:'UNBOUND',
+      system_version:SYSTEM_VERSION,
+      status:SYSTEM_BOUND?'UNBOUND':'RUNTIME_UNAVAILABLE',
       character_id:null,
       relation_state:null,
       source:null,
@@ -57,6 +62,7 @@
       memory_write:false,
       behavior_owner:false,
       asset_resolver:false,
+      runtime_owner:false,
       renderer:false
     });
   }
@@ -67,6 +73,7 @@
     }catch{return empty()}
   }
   function persist(storage,input={}){
+    if(!SYSTEM_BOUND)return {ok:false,reason:'CANONICAL_RUNTIME_REQUIRED',projection:empty()};
     const characterId=clean(input.character_id);
     if(!validCharacterId(characterId))return {ok:false,reason:'CHARACTER_ID_NOT_COMPATIBLE',projection:load(storage)};
     const incomingAt=clean(input.observed_at)||new Date().toISOString();
@@ -81,6 +88,7 @@
     }
     const next={
       version:VERSION,
+      system_version:SYSTEM_VERSION,
       status:'BOUND',
       character_id:characterId,
       relation_state:clean(input.relation_state)||'MAIN_COMPANION',
@@ -94,6 +102,7 @@
       memory_write:false,
       behavior_owner:false,
       asset_resolver:false,
+      runtime_owner:false,
       renderer:false
     };
     storage?.setItem?.(PROJECTION_KEY,JSON.stringify(next));
@@ -172,6 +181,10 @@
     host.dataset.explorerCrewContract=AUTHORITY.contract_version;
     host.dataset.explorerCrewManifest=AUTHORITY.manifest_version;
     host.dataset.explorerCrewRuntimeSchema=AUTHORITY.runtime_schema_version;
+    host.dataset.explorerCrewRuntime='CANONICAL_ONLY';
+    host.dataset.explorerCrewSystemVersion=SYSTEM_VERSION;
+    host.dataset.explorerCrewSourceLock=AUTHORITY.source_lock_version;
+    host.dataset.explorerCrewRuntimeOwner='false';
     host.dataset.explorerCrewStatus=p.status;
     if(p.character_id)host.dataset.explorerCrewCharacter=p.character_id;
     else delete host.dataset.explorerCrewCharacter;
@@ -186,15 +199,17 @@
   }
 
   return Object.freeze({
-    VERSION,PROJECTION_KEY,CANONICAL_STATE_KEY,CREW_EVENT_PARAM,AUTHORITY,IMPLEMENTATION_EVIDENCE,
+    VERSION,SYSTEM_VERSION,SYSTEM_BOUND,PROJECTION_KEY,CANONICAL_STATE_KEY,CREW_EVENT_PARAM,AUTHORITY,IMPLEMENTATION_EVIDENCE,
     validCharacterId,empty,snapshot,consumeCanonicalEnvelope,consumeCanonicalStore,consumeHandoffUrl,syncHost,
     ownership:Object.freeze({
       semantic:'CONSUMER_ONLY',
+      canonicalRuntime:SYSTEM_VERSION,
       relationWrite:false,
       affinityWrite:false,
       memoryWrite:false,
       behaviorOwner:false,
       assetResolver:false,
+      runtimeOwner:false,
       renderer:false
     })
   });

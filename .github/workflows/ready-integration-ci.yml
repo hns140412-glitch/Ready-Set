@@ -24,6 +24,10 @@ jobs:
         run: node .github/scripts/ready_learning_master_contract_test.js
       - name: Ready→Snap sourced run scope and hostile replay contract
         run: node tests/ready-snap-run-scope.test.js
+      - name: Explorer Crew Runtime V2 authority contract
+        run: |
+          node tests/shared-crew-authority.test.js
+          node tests/explorer-crew-v2-source-lock.test.js
 
   learning-master-contract:
     runs-on: ubuntu-latest
