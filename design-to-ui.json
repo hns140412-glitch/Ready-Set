@@ -1,0 +1,196 @@
+{
+  "schema": "TAKY_DESIGN_TO_UI_PIPELINE_V1",
+  "project": "Ready-Set",
+  "source_commit": "9ee93f7bba0edd99de4fa947d9690f7e78cf7f5c",
+  "pipeline_contract_source": "TAKY_PR_194_DRAFT",
+  "scope_note": "Initial image-generation-independent adoption: WEEK/DAY/GOAL/TIMER. HOME remains separate authority work.",
+  "policy": {
+    "runtime_must_not_auto_become_golden": true,
+    "flattened_mockup_runtime_forbidden": true,
+    "evidence_files_required": true,
+    "image_generation_optional": true
+  },
+  "screens": [
+    {
+      "id": "planner_week",
+      "authority_ref": "APPROVED_READY_WEEKLY_PLANNER_MOCKUP",
+      "golden": {
+        "status": "IMPORT_OPEN",
+        "source_receipt": "READY_WEEK_SOURCE_RECEIPT_20260930",
+        "path": "design/golden/planner-week.png",
+        "sha256": "cd479f1c72a58171a5873a6c06e442fecfb7d63819a741f6984650968308db42",
+        "use": "REFERENCE_ONLY"
+      },
+      "screen_contract": {
+        "path": "design/screens/planner-week.json",
+        "sha256": "a623692f402ae82adb6e3570a53c60d7604b9d0ab4b72572a80ae4379417e855"
+      },
+      "layer_contract": {
+        "path": "design/layers/planner-week.json",
+        "sha256": "a034c8ab32d10bf816c5d4fbe838401abaa29c5e958b0293bb48411638074c9c"
+      },
+      "viewports": [
+        {
+          "id": "phone390",
+          "width": 390,
+          "height": 844,
+          "dpr": 2
+        }
+      ],
+      "states": [
+        {
+          "id": "BASE_REVIEW",
+          "fixture_path": "design/fixtures/planner-week.json",
+          "fixture_sha256": "b6f513cc497692311d9b201f896c51a5f578bf682e4574ea55285cc63e7fbe9f"
+        },
+        {
+          "id": "EMPTY",
+          "fixture_path": "design/fixtures/planner-week.json",
+          "fixture_sha256": "b6f513cc497692311d9b201f896c51a5f578bf682e4574ea55285cc63e7fbe9f"
+        },
+        {
+          "id": "SELECTED_DAY",
+          "fixture_path": "design/fixtures/planner-week.json",
+          "fixture_sha256": "b6f513cc497692311d9b201f896c51a5f578bf682e4574ea55285cc63e7fbe9f"
+        }
+      ]
+    },
+    {
+      "id": "planner_day",
+      "authority_ref": "APPROVED_READY_DAILY_PLANNER_MOCKUP",
+      "golden": {
+        "status": "IMPORT_OPEN",
+        "source_receipt": "READY_DAY_SOURCE_RECEIPT_20260930",
+        "path": "design/golden/planner-day.png",
+        "sha256": "733aa39ea2972fffa04362994cb1218c60e34eb1558a86816a2388dd4f6e9ad5",
+        "use": "REFERENCE_ONLY"
+      },
+      "screen_contract": {
+        "path": "design/screens/planner-day.json",
+        "sha256": "44779b14b3a805bfc78722f4b3661f0513907ca3e563168055f926435aec3afe"
+      },
+      "layer_contract": {
+        "path": "design/layers/planner-day.json",
+        "sha256": "91e471f816ae29bcdd443cd1cd0005f66636a0f21740eb560e7db62ce7e98ad0"
+      },
+      "viewports": [
+        {
+          "id": "phone390",
+          "width": 390,
+          "height": 844,
+          "dpr": 2
+        }
+      ],
+      "states": [
+        {
+          "id": "BASE_REVIEW",
+          "fixture_path": "design/fixtures/planner-day.json",
+          "fixture_sha256": "9114da2e25f09a5de689619d32d5cdccaf1011f6f64f94432304e3215e733956"
+        },
+        {
+          "id": "EMPTY",
+          "fixture_path": "design/fixtures/planner-day.json",
+          "fixture_sha256": "9114da2e25f09a5de689619d32d5cdccaf1011f6f64f94432304e3215e733956"
+        },
+        {
+          "id": "QUICK_ADD_DRAFT",
+          "fixture_path": "design/fixtures/planner-day.json",
+          "fixture_sha256": "9114da2e25f09a5de689619d32d5cdccaf1011f6f64f94432304e3215e733956"
+        },
+        {
+          "id": "QUICK_ADD_CONFIRM",
+          "fixture_path": "design/fixtures/planner-day.json",
+          "fixture_sha256": "9114da2e25f09a5de689619d32d5cdccaf1011f6f64f94432304e3215e733956"
+        }
+      ]
+    },
+    {
+      "id": "goal",
+      "authority_ref": "APPROVED_READY_GOAL_MOCKUP_20260929",
+      "golden": {
+        "status": "IMPORT_OPEN",
+        "source_receipt": "READY_FLOW_MANIFEST_20260929_GOAL",
+        "path": "design/golden/goal.png",
+        "sha256": "9da98813eb270e086908621f9917adae2ac7c27db804002ad78a5e185608f345",
+        "use": "REFERENCE_ONLY"
+      },
+      "screen_contract": {
+        "path": "design/screens/goal.json",
+        "sha256": "4da40a2b20ce6ef52ee5241b67c4b6e4a9314aca2d3757a5eaaceb37f51a31ef"
+      },
+      "layer_contract": {
+        "path": "design/layers/goal.json",
+        "sha256": "5d5bb01b8e9897fc040bec975fb73b6f58a53b6cf23f2364c8d234f1d948e743"
+      },
+      "viewports": [
+        {
+          "id": "phone390",
+          "width": 390,
+          "height": 844,
+          "dpr": 2
+        }
+      ],
+      "states": [
+        {
+          "id": "BASE_REVIEW",
+          "fixture_path": "design/fixtures/goal.json",
+          "fixture_sha256": "423431896dcedc18389d6c77384afabc9124dcd41d48979b5912cc84e169c87c"
+        },
+        {
+          "id": "SHARE_OPTIONAL",
+          "fixture_path": "design/fixtures/goal.json",
+          "fixture_sha256": "423431896dcedc18389d6c77384afabc9124dcd41d48979b5912cc84e169c87c"
+        }
+      ]
+    },
+    {
+      "id": "focus",
+      "authority_ref": "APPROVED_READY_FOCUS_MOCKUP",
+      "golden": {
+        "status": "IMPORT_OPEN",
+        "source_receipt": "READY_FOCUS_LIBRARY_SOURCE_RECEIPT",
+        "path": "design/golden/focus.png",
+        "sha256": "880f44a7f73251a4995a67522a7ecdfd1a60cf7f50c5149cfb9ed2366b3235f7",
+        "use": "REFERENCE_ONLY"
+      },
+      "screen_contract": {
+        "path": "design/screens/focus.json",
+        "sha256": "c014f782c95bf296689a5482e3382dce691efd592d1a7f4d3406218c703ae488"
+      },
+      "layer_contract": {
+        "path": "design/layers/focus.json",
+        "sha256": "fff840752ba32eb28b3c8d769c5594de7fa0cd4deed3ee1cb3bb2892f847cc5b"
+      },
+      "viewports": [
+        {
+          "id": "phone390",
+          "width": 390,
+          "height": 844,
+          "dpr": 2
+        }
+      ],
+      "states": [
+        {
+          "id": "BASE_REVIEW",
+          "fixture_path": "design/fixtures/focus.json",
+          "fixture_sha256": "9d449dbf0980a63ceb3a3df4677e27a3d4227b8a01c055ac213ad3b3b6ba35b1"
+        },
+        {
+          "id": "RUNNING",
+          "fixture_path": "design/fixtures/focus.json",
+          "fixture_sha256": "9d449dbf0980a63ceb3a3df4677e27a3d4227b8a01c055ac213ad3b3b6ba35b1"
+        },
+        {
+          "id": "PAUSED",
+          "fixture_path": "design/fixtures/focus.json",
+          "fixture_sha256": "9d449dbf0980a63ceb3a3df4677e27a3d4227b8a01c055ac213ad3b3b6ba35b1"
+        },
+        {
+          "id": "COMPLETED",
+          "fixture_path": "design/fixtures/focus.json",
+          "fixture_sha256": "9d449dbf0980a63ceb3a3df4677e27a3d4227b8a01c055ac213ad3b3b6ba35b1"
+        }
+      ]
+    }
+  ]
+}
