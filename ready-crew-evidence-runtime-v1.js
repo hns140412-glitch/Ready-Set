@@ -34,7 +34,18 @@
     return {ok:true,event:row,state:next};
   }
   function relationship(storage,characterId){
-    const s=load(storage);return s.committed_relationships?.[characterId]?.state||'KNOWN';
+    const s=load(storage);return s.committed_relationships?.[characterId]?.state||'NOT_MET';
+  }
+  function behaviorRelationship(storage,characterId){
+    const s=load(storage),committed=s.committed_relationships?.[characterId]?.state;
+    if(committed&&committed!=='NOT_MET')return committed;
+    return s.episodes.some(x=>x.character_id===characterId&&x.type==='FIRST_MEETING'&&x.verified===true)?'KNOWN':'FIRST_ENCOUNTER';
+  }
+  function relationCandidate(storage,characterId,policy){
+    const runtime=globalThis.TakyExplorerCrewRelationRuntimeV1;
+    if(!runtime?.projectStore)return {ok:false,reason:'RELATION_RUNTIME_UNAVAILABLE'};
+    if(!policy?.approved||!policy?.authority_ref)return {ok:false,reason:'APPROVED_RELATION_POLICY_REQUIRED'};
+    return runtime.projectStore(load(storage),characterId,policy);
   }
   function commitRelationship(storage,characterId,state,authorityRef){
     if(!characterId||!STATES.has(state))return {ok:false,reason:'RELATIONSHIP_STATE_INVALID'};
@@ -51,5 +62,5 @@
       commitRelationship(globalThis.localStorage,d.character_id,d.state,d.authority_ref);
     });
   }
-  return Object.freeze({KEY,empty,load,append,relationship,commitRelationship,automaticPromotion:false,automaticReward:false,automaticPower:false});
+  return Object.freeze({KEY,empty,load,append,relationship,behaviorRelationship,relationCandidate,commitRelationship,automaticPromotion:false,automaticReward:false,automaticPower:false});
 });
