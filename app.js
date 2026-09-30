@@ -1983,3 +1983,189 @@ $('#shareResultBtn').onclick=()=>compactShareCard('result');
   syncPressed();
   syncTabs();
 })();
+
+
+/* READY APPROVED UI VOICE BRIDGE — 2026-09-30
+   Child: walkie-talkie -> structured draft -> explicit confirm.
+   Parent: natural language -> change proposal -> explicit apply.
+   No voice transcript is auto-committed. */
+(function(){
+  const q=s=>document.querySelector(s);
+  const DAY_INDEX={'일':0,'월':1,'화':2,'수':3,'목':4,'금':5,'토':6};
+
+  function isoDate(d){
+    const x=new Date(d);return [x.getFullYear(),String(x.getMonth()+1).padStart(2,'0'),String(x.getDate()).padStart(2,'0')].join('-');
+  }
+  function addDate(base,n){const d=new Date(base);d.setDate(d.getDate()+n);return d}
+  function resolveDate(text,base=new Date()){
+    if(/오늘/.test(text))return isoDate(base);
+    if(/모레/.test(text))return isoDate(addDate(base,2));
+    if(/내일/.test(text))return isoDate(addDate(base,1));
+    const md=text.match(/(\d{1,2})\s*월\s*(\d{1,2})\s*일/);
+    if(md){const d=new Date(base.getFullYear(),Number(md[1])-1,Number(md[2]),12);return isoDate(d)}
+    const wd=text.match(/(?:(이번|다음)\s*주\s*)?([일월화수목금토])요일/);
+    if(wd){
+      const target=DAY_INDEX[wd[2]],cur=base.getDay();
+      let delta=(target-cur+7)%7;
+      if(delta===0)delta=7;
+      if(wd[1]==='다음')delta+=7;
+      return isoDate(addDate(base,delta));
+    }
+    return null;
+  }
+  function resolveMinutes(text){
+    const m=text.match(/(\d{1,3})\s*분/);return m?Math.max(1,Math.min(180,Number(m[1]))):null;
+  }
+  function resolveClock(text){
+    const m=text.match(/(?:오전|오후)?\s*(\d{1,2})\s*시(?:\s*(\d{1,2})\s*분)?/);
+    if(!m)return null;
+    let h=Number(m[1]),min=Number(m[2]||0);
+    if(/오후/.test(m[0])&&h<12)h+=12;
+    if(/오전/.test(m[0])&&h===12)h=0;
+    if(h>23||min>59)return null;
+    return String(h).padStart(2,'0')+':'+String(min).padStart(2,'0');
+  }
+  function classify(text){
+    if(/단원평가|시험|평가/.test(text))return 'TEST_PREP';
+    if(/리코더|피아노|연습/.test(text))return 'PRACTICE';
+    if(/책\s*읽|독서/.test(text))return 'READING';
+    if(/준비물|챙기/.test(text))return 'MATERIAL';
+    if(/생일|가족\s*일정|병원|행사|외출|여행|약속/.test(text))return 'EVENT';
+    if(/숙제|문제|과제/.test(text))return 'SCHOOL_HOMEWORK';
+    return 'PERSONAL';
+  }
+  function stripMeta(text){
+    return String(text||'')
+      .replace(/오늘|내일|모레/g,'')
+      .replace(/(?:(?:이번|다음)\s*주\s*)?[일월화수목금토]요일(?:까지)?/g,'')
+      .replace(/\d{1,2}\s*월\s*\d{1,2}\s*일(?:까지)?/g,'')
+      .replace(/(?:오전|오후)?\s*\d{1,2}\s*시(?:\s*\d{1,2}\s*분)?/g,'')
+      .replace(/\d{1,3}\s*분/g,'')
+      .replace(/까지|할래|해야\s*해|해줘|추가해줘|추가|하기$/g,'')
+      .replace(/\s+/g,' ').trim()||String(text||'').trim();
+  }
+  function childDraft(text){
+    return {raw:text,type:classify(text),title:stripMeta(text),date:resolveDate(text),minutes:resolveMinutes(text),clock:resolveClock(text)};
+  }
+  const typeLabel={TEST_PREP:'단원평가 준비',PRACTICE:'연습',READING:'책 읽기',MATERIAL:'준비물',EVENT:'이벤트',SCHOOL_HOMEWORK:'학교 숙제',PERSONAL:'개인 할 일'};
+
+  let pendingChild=null;
+  function renderChildDraft(d){
+    pendingChild=d;
+    const card=q('#voiceDraftCard');if(!card)return;
+    card.hidden=false;
+    q('#voiceDraftTitle').textContent=d.title||d.raw;
+    const meta=q('#voiceDraftMeta');meta.innerHTML='';
+    [typeLabel[d.type],d.date?('날짜 '+d.date):null,d.clock?('시간 '+d.clock):null,d.minutes?(d.minutes+'분'):null].filter(Boolean).forEach(v=>{
+      const s=document.createElement('span');s.textContent=v;meta.appendChild(s);
+    });
+  }
+  function startChildVoice(){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    const btn=q('#voiceTaskBtn'),hint=q('#voiceHint');
+    if(!SR){if(hint)hint.textContent='이 브라우저에서는 음성 입력을 지원하지 않아요. 직접 입력을 사용해 주세요.';return}
+    const rec=new SR();rec.lang='ko-KR';rec.interimResults=false;rec.maxAlternatives=1;
+    btn?.classList.add('listening');if(hint)hint.textContent='무전 수신 중… 숙제나 일정을 말해 주세요.';
+    rec.onresult=e=>{
+      const text=e.results?.[0]?.[0]?.transcript?.trim();
+      if(text){renderChildDraft(childDraft(text));if(hint)hint.textContent='내용을 확인한 뒤 추가해 주세요.'}
+    };
+    rec.onerror=()=>{if(hint)hint.textContent='잘 듣지 못했어요. 다시 무전해 주세요.'};
+    rec.onend=()=>btn?.classList.remove('listening');
+    try{rec.start()}catch{btn?.classList.remove('listening')}
+  }
+
+  if(q('#voiceTaskBtn')) q('#voiceTaskBtn').onclick=startChildVoice;
+  q('#voiceDraftRetry')?.addEventListener('click',()=>{q('#voiceDraftCard').hidden=true;pendingChild=null;startChildVoice()});
+  q('#voiceDraftConfirm')?.addEventListener('click',()=>{
+    if(!pendingChild)return;
+    try{
+      window.ReadyAssignments?.addEventFact?.({
+        actor:'CHILD',
+        title:pendingChild.title||pendingChild.raw,
+        deadline_boundary:pendingChild.date||'',
+        provenance:{
+          kind:'CHILD_VOICE_RADIO',
+          surface:'READY_DAY',
+          raw_transcript:pendingChild.raw,
+          interpreted_type:pendingChild.type,
+          interpreted_date:pendingChild.date,
+          interpreted_clock:pendingChild.clock,
+          estimated_minutes:pendingChild.minutes,
+          human_confirmed:true
+        }
+      });
+      q('#voiceDraftCard').hidden=true;pendingChild=null;
+      if(q('#voiceHint'))q('#voiceHint').textContent='부모님 확인 목록에 보냈어요. Planner가 오늘 계획에 반영할 수 있어요.';
+      toast('무전 내용을 확인 목록에 추가했어요.');
+    }catch(e){toast('추가하지 못했어요. 다시 확인해 주세요.')}
+  });
+  q('#childRadioQuickAdd')?.addEventListener('click',()=>{
+    nav('mission');
+    setTimeout(()=>q('#voiceTaskBtn')?.click(),120);
+  });
+
+  function parentProposal(text){
+    const date=resolveDate(text),clock=resolveClock(text),minutes=resolveMinutes(text),kind=classify(text);
+    let action='REQUEST';
+    if(kind==='EVENT'&&/추가|있어|가|외출|행사|생일|병원|여행|약속/.test(text))action='EVENT_ADD';
+    else if(/추가/.test(text))action='TASK_ADD';
+    else if(/옮겨|당겨|미뤄|유보|빼줘|쉬게|건너/.test(text))action='REPLAN_REQUEST';
+    return {raw:text,action,date,clock,minutes,kind,title:stripMeta(text)};
+  }
+  let pendingParent=null;
+  function showParentProposal(p){
+    pendingParent=p;
+    const box=q('#parentVoiceProposal');if(!box)return;
+    box.hidden=false;q('#parentVoiceTranscript').textContent='“'+p.raw+'”';
+    const root=q('#parentProposalSummary');root.innerHTML='';
+    const actionLabel={EVENT_ADD:'이벤트 추가',TASK_ADD:'숙제/할 일 추가',REPLAN_REQUEST:'Planner 재배치 요청',REQUEST:'Planner 요청'}[p.action];
+    [actionLabel,p.date?('날짜 '+p.date):null,p.clock?('시간 '+p.clock):null,p.minutes?(p.minutes+'분'):null,typeLabel[p.kind]].filter(Boolean).forEach(v=>{
+      const s=document.createElement('span');s.textContent=v;root.appendChild(s);
+    });
+  }
+  function startParentVoice(){
+    if(!requireParentUi())return;
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition,btn=q('#parentVoiceBtn'),hint=q('#parentVoiceHint');
+    if(!SR){if(hint)hint.textContent='이 브라우저에서는 음성 입력을 지원하지 않아요. 아래 세부 수정 도구를 사용해 주세요.';return}
+    const rec=new SR();rec.lang='ko-KR';rec.interimResults=false;rec.maxAlternatives=1;
+    btn?.classList.add('listening');if(hint)hint.textContent='듣고 있어요… 자연스럽게 말씀해 주세요.';
+    rec.onresult=e=>{const text=e.results?.[0]?.[0]?.transcript?.trim();if(text){showParentProposal(parentProposal(text));if(hint)hint.textContent='변경 예정안을 확인해 주세요.'}};
+    rec.onerror=()=>{if(hint)hint.textContent='잘 듣지 못했어요. 다시 말씀해 주세요.'};
+    rec.onend=()=>btn?.classList.remove('listening');
+    try{rec.start()}catch{btn?.classList.remove('listening')}
+  }
+  q('#parentVoiceBtn')?.addEventListener('click',startParentVoice);
+  q('#parentProposalCancel')?.addEventListener('click',()=>{pendingParent=null;q('#parentVoiceProposal').hidden=true;q('#parentVoiceHint').textContent='취소했어요. 다시 말씀해 주세요.'});
+  q('#parentProposalApply')?.addEventListener('click',()=>{
+    if(!pendingParent||!requireParentUi())return;
+    const p=pendingParent;
+    try{
+      if(p.action==='EVENT_ADD'&&p.date&&p.clock){
+        const start=new Date(p.date+'T'+p.clock+':00');
+        const end=new Date(start.getTime()+(p.minutes||60)*60000);
+        const endClock=String(end.getHours()).padStart(2,'0')+':'+String(end.getMinutes()).padStart(2,'0');
+        window.ReadySetPlanner?.upsertScheduleCommitment?.({
+          title:p.title||p.raw,category:'EVENT',
+          start_at:p.date+'T'+p.clock+':00',end_at:p.date+'T'+endClock+':00',
+          confirmed:true,planner_movable:false,parent_editable:true,source:'PARENT_ADMIN_UI'
+        });
+        toast('이벤트 일정을 적용했어요.');
+      }else{
+        window.ReadyAssignments?.addEventFact?.({
+          actor:'PARENT',title:p.title||p.raw,deadline_boundary:p.date||'',
+          provenance:{
+            kind:'PARENT_VOICE_PLANNER_REQUEST',surface:'PARENT_ADMIN',
+            raw_transcript:p.raw,requested_action:p.action,interpreted_type:p.kind,
+            interpreted_date:p.date,interpreted_clock:p.clock,estimated_minutes:p.minutes,
+            human_confirmed:true
+          }
+        });
+        toast(p.action==='REPLAN_REQUEST'?'재배치 요청을 Planner 입력으로 보냈어요.':'부모 요청을 Planner 입력으로 추가했어요.');
+      }
+      pendingParent=null;q('#parentVoiceProposal').hidden=true;
+      q('#parentVoiceHint').textContent='적용했어요. 이어서 다른 요청도 말할 수 있어요.';
+      renderPlannerAdmin();renderPlanner();
+    }catch(e){toast('적용하지 못했어요. 세부 내용을 확인해 주세요.')}
+  });
+})();
