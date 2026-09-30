@@ -9,7 +9,7 @@
     const role=opt.role||'MAIN', action=opt.action||'IDLE', dialogue=opt.dialogue||'SHORT';
     const identity=globalThis.TakyCrewIdentityBridge?.resolve?.(id)||{character_id:'LEGACY_'+APP+':'+String(id||'guide'),visual_id:'LEGACY_'+APP+':'+String(id||'guide')};
     const cid=identity.character_id, visualId=identity.visual_id;
-    const relationshipState=opt.relationshipState||globalThis.TakyCrewEvidenceRuntime?.relationship?.(globalThis.localStorage,cid)||'KNOWN';
+    const relationshipState=opt.relationshipState||globalThis.TakyCrewEvidenceRuntime?.behaviorRelationship?.(globalThis.localStorage,cid)||'FIRST_ENCOUNTER';
     return Object.freeze({character_id:cid,visual_id:visualId,presence_role:role,relationship_state:relationshipState,action,dialogue_level:dialogue,required_roles:[],runtime_eligible:false,utterance:String(opt.utterance||''),evidence_ref:opt.evidenceRef||null,intervention_reason:opt.reason||null});
   }
   function build(args={}){
