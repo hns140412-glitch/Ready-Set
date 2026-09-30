@@ -1,0 +1,35 @@
+{
+  "schema": "TAKY_LAYER_CONTRACT_V1",
+  "screen_id": "planner_day",
+  "layers": [
+    {
+      "role": "BACKGROUND",
+      "status": "ASSET_PRODUCTION_OPEN",
+      "owner": "READY_VISUAL",
+      "note": "Approved clean production environment not bound."
+    },
+    {
+      "role": "FOREGROUND",
+      "status": "ASSET_PRODUCTION_OPEN",
+      "owner": "READY_VISUAL",
+      "note": "Base Camp desk/foreground separation open."
+    },
+    {
+      "role": "OBJECT",
+      "status": "ASSET_PRODUCTION_OPEN",
+      "owner": "READY_VISUAL",
+      "note": "Walkie-talkie/scene object production binding open."
+    },
+    {
+      "role": "CHARACTER_SLOT",
+      "status": "IMPLEMENTATION_OPEN",
+      "issue": "No selected-companion slot exists in #127 planner day DOM."
+    },
+    {
+      "role": "FUNCTION_UI",
+      "status": "LIVE_DOM",
+      "selector": "#plannerDayPanel",
+      "owner": "READY_SET_PLANNER"
+    }
+  ]
+}
