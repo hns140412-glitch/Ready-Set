@@ -214,15 +214,15 @@ function appendReadyCrewEvidence(eventId,type,characterType,evidenceRef,context=
     occurred_at:new Date().toISOString(),context
   });
 }
-function readyRecordingKind(){
-  const labels=[...(state.activeSession?.selected||[]),...(state.activeSession?.tasks||[])].join(' ').toLowerCase();
-  if(/spelling\s*bee|spelling|bee/.test(labels))return 'spelling Bee';
-  return 'grammar';
-}
+function readyRecordingLabels(){return [...(state.activeSession?.selected||[]),...(state.activeSession?.tasks||[])]}
+function readyRecordingKind(){return globalThis.ReadyRecordingContextV1?.kindFromLabels?.(readyRecordingLabels())||'grammar'}
 function readyRecordingFilename(ext){
-  const d=new Date(),date=`${d.getFullYear()} ${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getDate()).padStart(2,'0')}`;
-  const base=(state.profile.name||'Judy').replace(/[\\/:*?"<>|]/g,'_');
-  return `${base}’s Bricks ${readyRecordingKind()} recording ${date}.${ext}`;
+  return globalThis.ReadyRecordingContextV1?.filename?.({name:state.profile.name||'Judy',labels:readyRecordingLabels(),date:new Date(),ext})
+    ||`${state.profile.name||'Judy'}’s Bricks ${readyRecordingKind()} recording.${ext}`;
+}
+function readyDuoArrivalLine(){
+  const lines=['잠깐만. 이건 같이 들어봐야겠다. 친구 한 명 꼬셔왔어!','잠깐만. 같이 들어보자고 한 명 데려왔어!','이건 혼자 듣기 아깝다. 친구 한 명 잡아왔어!'];
+  return lines[Math.floor(Math.random()*lines.length)]||lines[0];
 }
 
 function centralPlannerScope(){
@@ -725,14 +725,10 @@ async function startRecording(){
   }
 }
 function chooseGuest(){
-  const all=Object.keys(GUIDE_TYPES).filter(x=>x!==state.guide.type);
   const history=Array.isArray(state.guestHistory)?state.guestHistory:[];
-  const recent=new Set(history.slice(-1));
-  let pool=all.filter(x=>!recent.has(x));if(!pool.length)pool=all;
-  const counts=Object.fromEntries(all.map(id=>[id,history.filter(x=>x===id).length]));
-  const min=Math.min(...pool.map(id=>counts[id]??0));
-  const leastUsed=pool.filter(id=>(counts[id]??0)===min);
-  currentGuestType=leastUsed[Math.floor(Math.random()*leastUsed.length)]||pool[0]||all[0]||'pico';
+  currentGuestType=globalThis.ReadySmartRandomGuestV1?.choose?.({
+    all:Object.keys(GUIDE_TYPES),main:state.guide.type,history,random:Math.random
+  })||Object.keys(GUIDE_TYPES).find(x=>x!==state.guide.type)||'pico';
   state.guestHistory=[...history,currentGuestType].slice(-12);save();
 }
 function finishRecording(){
@@ -755,7 +751,7 @@ function finishRecording(){
   applyGuide($('#duoGuestGuide'),currentGuestType);
   const guestName=GUIDE_TYPES[currentGuestType].defaultName;
   const feedback=readyRecordingEvidenceFeedback();
-  const bringLine='잠깐만. 이건 같이 들어봐야겠다. 친구 한 명 꼬셔왔어!';
+  const bringLine=readyDuoArrivalLine();
   if(!emitReadyCrewScene('recording',bringLine,{reason:'READY_DUO_GUEST_ARRIVAL'})) $('#guideDialogue').textContent=bringLine;
   const duoLine=`${state.guide.name}: 잡아왔다! · ${guestName}: ${feedback.praise} ${feedback.next}`;
   if(!emitReadyCrewScene('recording-review',duoLine,{guestType:currentGuestType,action:'IDLE',dialogue:'SHORT',evidenceRef:feedback.evidenceRef,reason:'READY_RECORDING_REVIEW'})) $('#duoText').textContent=duoLine;
