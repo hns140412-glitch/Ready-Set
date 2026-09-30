@@ -20,9 +20,9 @@ Disposition set: PRESERVE / MERGE / SUPERSEDE / ARCHIVE / OPEN
 | RDY-C2S-012 | Local-first/Outbox/conflict | PRESERVE | Product Contract |
 | RDY-C2S-013 | Parent/Child family boundary | PRESERVE | Product Contract |
 | RDY-C2S-014 | live Identity/cloud roundtrip | OPEN | production verification |
-| RDY-C2S-015 | Time Attack as product identity | SUPERSEDE | R2 |
+| RDY-C2S-015 | Time Attack as product identity | SUPERSEDE | R2 implementation / visible branding removed / validation pending |
 | RDY-C2S-016 | Focus Mode/Focus Golden active authority | ARCHIVE | R2/R6 |
-| RDY-C2S-017 | stale Time Attack manifest.json | ARCHIVE | R3 |
+| RDY-C2S-017 | stale Time Attack manifest.json | SUPERSEDE | R3 cleanup / unused legacy manifest removed |
 | RDY-C2S-018 | stale Time Attack/GitHub Pages README | SUPERSEDE | R3 |
 | RDY-C2S-019 | REV_06/07 as active version authority | SUPERSEDE | Version Registry |
 | RDY-C2S-020 | 0.9.3 / feature cache / REV mismatch | SUPERSEDE | R3 |
@@ -41,9 +41,10 @@ Disposition set: PRESERVE / MERGE / SUPERSEDE / ARCHIVE / OPEN
 | RDY-C2S-033 | historical REV docs retained as provenance | ARCHIVE | R6 |
 | RDY-C2S-034 | Parent period-scoped fixed timetable + voice review/confirm editing | PRESERVE | Planner constraint input / Parent Admin / PR #130 exact-main verified |
 | RDY-C2S-035 | Parent-confirmed lifestyle buffers: travel/meal/preparation/rest/safety | PRESERVE | R5 / Planner constraint input / PR #132 exact-main verified |
+| RDY-C2S-036 | visible product identity uses Ready & Set / Base Camp / exploration language; timing remains execution aid | MERGE | R2 / product-language regression gate |
 
 ## Coverage
-Recovered atoms registered here: 35.
+Recovered atoms registered here: 36.
 UNMAPPED_MATERIAL=0 and SILENT_LOSS=0 within the declared whole-product rewrite-review scope.
 This does not claim recovery of inaccessible historical raw turns.
 

@@ -18,7 +18,7 @@
   <section class="view active peach" id="homeView" data-view="home">
     <div class="safe topbar"><div><div class="brand">Ready & Set</div><div class="tagline">준비는 가볍게. 시작은 자신 있게.</div></div><button class="avatarButton" data-nav="profile" aria-label="프로필"><span id="homeAvatar">RS</span></button></div>
     <main class="safe homeMain">
-      <section class="heroBlock"><div class="heroCopy"><span class="kicker">FOCUS CHALLENGE</span><h1>타임어택<br>이벤트</h1><p>오늘 할 일을 정하고, 한 번에 시작해요.</p></div><div class="stopwatchArt" aria-hidden="true"><div class="watchCrown"></div><div class="watchFace"><span id="heroTime">25:00</span></div></div>
+      <section class="heroBlock"><div class="heroCopy"><span class="kicker">BASE CAMP</span><h1>오늘의<br>탐험 준비</h1><p>오늘 할 일을 정하고, 한 번에 시작해요.</p></div><div class="stopwatchArt" aria-hidden="true"><div class="watchCrown"></div><div class="watchFace"><span id="heroTime">25:00</span></div></div>
         <section class="homeGuideCard" id="homeGuideCard">
           <div class="guidePortrait" id="homeGuidePortrait" aria-hidden="true"></div>
           <div class="homeGuideCopy"><small>MY GUIDE · <span id="homeGuideName">루미</span></small><b id="homeGuideLine">오늘 작전, 내가 옆에서 같이 봐줄게.</b></div>
@@ -40,7 +40,7 @@
   </section>
 
   <section class="view peach" id="missionView" data-view="mission">
-    <header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MISSION BRIEFING</span><h1>타임어택 작전 설정</h1></div><span></span></header>
+    <header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MISSION BRIEFING</span><h1>오늘의 작전 설정</h1></div><span></span></header>
     <main class="safe scroll"><div class="progressSteps"><span class="on">1 과제 선택</span><span>2 과제 & 시간</span><span>3 작전 공유</span></div>
       <section class="glassCard"><h2>1. Planner가 준비한 오늘의 탐험</h2><p class="muted">숙제 FACT와 Planner 배정을 기준으로 표시합니다.</p><div id="missionChips" class="chipRow"></div></section>
       <section class="glassCard plannerToday" id="plannerTodaySection" hidden><div class="plannerTodayHead"><div><small>PLANNER · TODAY</small><h2>오늘의 탐험 후보</h2></div><span>내가 고르기</span></div><div id="plannerTodayList" class="plannerTodayList"></div></section>
@@ -48,13 +48,13 @@
       <section class="glassCard"><h2>3. 목표 시간을 선택하세요</h2><div class="timeButtons"><button data-minutes="10">10분</button><button data-minutes="15">15분</button><button class="on" data-minutes="25">25분</button><button data-minutes="custom">직접 입력</button></div><label class="customTime" id="customTimeWrap" hidden><input id="customMinutes" type="number" min="1" max="180" value="25"><span>분</span></label></section>
       <section class="glassCard soundCard"><div><small>오늘의 집중 사운드</small><b id="soundName">집중 피아노</b></div><button id="soundBtn">BGM 선택</button></section>
       <section class="missionPreview"><span>오늘의 작전 미리보기</span><b id="missionPreviewText">과제를 선택해 주세요 · 25분</b><small>목표 시간을 정하고, 집중해서 끝내기!</small></section>
-      <div class="stackActions"><button class="btn outline" id="missionShareBtn">작전 공유하기</button><button class="btn dark" id="startBtn">타임어택 START</button></div>
+      <div class="stackActions"><button class="btn outline" id="missionShareBtn">작전 공유하기</button><button class="btn dark" id="startBtn">작전 START</button></div>
     </main>
   </section>
 
   <section class="view yellow" id="focusView" data-view="focus">
-    <header class="safe focusHeader"><span class="focusBadge">FOCUS MODE</span><div class="focusHeaderTools"><div class="focusGuideMini" id="focusGuideMini" aria-label="내 길잡이"></div><button id="focusSoundBtn" class="iconButton" aria-label="음악">♪</button></div></header>
-    <main class="safe focusMain"><div class="focusTitle"><span>누가 와도 몰라요, 지금은 집중 중</span><h1>타임어택</h1><div id="focusMission" class="missionPill">오늘의 작전</div><p id="focusLearningGuide" class="muted center">오늘 할 순서를 따라가요.</p></div>
+    <header class="safe focusHeader"><span class="focusBadge">FOCUS RUN</span><div class="focusHeaderTools"><div class="focusGuideMini" id="focusGuideMini" aria-label="내 길잡이"></div><button id="focusSoundBtn" class="iconButton" aria-label="음악">♪</button></div></header>
+    <main class="safe focusMain"><div class="focusTitle"><span>누가 와도 몰라요, 지금은 집중 중</span><h1>집중 작전</h1><div id="focusMission" class="missionPill">오늘의 작전</div><p id="focusLearningGuide" class="muted center">오늘 할 순서를 따라가요.</p></div>
       <div class="clockHero" aria-label="아날로그 시계"><div class="clockTicks"></div><div class="clockNumber n12">12</div><div class="clockNumber n1">1</div><div class="clockNumber n2">2</div><div class="clockNumber n3">3</div><div class="clockNumber n4">4</div><div class="clockNumber n5">5</div><div class="clockNumber n6">6</div><div class="clockNumber n7">7</div><div class="clockNumber n8">8</div><div class="clockNumber n9">9</div><div class="clockNumber n10">10</div><div class="clockNumber n11">11</div><div class="hand hour" id="hourHand"></div><div class="hand minute" id="minuteHand"></div><div class="hand second" id="secondHand"></div><div class="clockPin"></div></div>
       <section class="controlPanel"><div class="timeStrip"><div><small>남은 시간</small><b id="remainingTime">25:00</b></div><button class="recButton" id="recBtn" hidden><i></i><span>REC</span></button><div><small>목표 시간</small><b id="targetTime">25:00</b></div></div><div class="focusMeta"><span id="bgmStatus">집중 피아노 · 재생 중</span><button id="changeBgm">음악 ›</button></div><div class="focusActions"><button id="pauseBtn">잠깐 멈춤</button><button class="complete" id="completeBtn">완료했어요</button></div><div class="miniStats"><span>시작 <b id="startClock">--:--</b></span><span>집중 <b id="focusElapsed">00:00</b></span><span>멈춤 <b id="issueElapsed">00:00</b></span></div></section>
     </main>
@@ -292,7 +292,7 @@
   <button data-guide-type="lumi"><span class="guidePortrait lumi"></span><b>루미</b><small>포근·위트</small></button>
   <button data-guide-type="pico"><span class="guidePortrait pico"></span><b>피코</b><small>밝고 장난기</small></button>
   <button data-guide-type="mori"><span class="guidePortrait mori"></span><b>모리</b><small>차분·든든</small></button>
-</div><div class="nameTools"><label class="inputBlock">길잡이 이름<input id="guideNameInput" value="루미"></label><button class="btn outline compactBtn" id="recommendNameBtn">이름 추천</button></div><div class="nameSuggestions" id="nameSuggestions"></div><h2 class="subSettingTitle">길잡이 목소리</h2><div class="voiceChoiceGrid"><button data-guide-voice="warm">포근한</button><button data-guide-voice="bright">밝고 씩씩한</button><button data-guide-voice="calm">차분한</button><button data-guide-voice="playful">장난기 있는</button></div><button class="btn outline compactBtn" id="voicePreviewBtn">목소리 미리듣기</button></section><section class="glassCard"><h2>집중 사운드</h2><p class="muted">실제 오디오 파일이 포함되어 있으며 타임어택 시작 후 선택한 BGM이 반복 재생됩니다.</p><div class="soundSettingsGrid"><button data-sound="집중 피아노">피아노</button><button data-sound="자연 숲">자연 숲</button><button data-sound="잔잔한 물결">물결</button><button data-sound="로파이">로파이</button><button data-sound="OFF">OFF</button></div></section><section class="glassCard authStatusCard" id="authStatusCard">
+</div><div class="nameTools"><label class="inputBlock">길잡이 이름<input id="guideNameInput" value="루미"></label><button class="btn outline compactBtn" id="recommendNameBtn">이름 추천</button></div><div class="nameSuggestions" id="nameSuggestions"></div><h2 class="subSettingTitle">길잡이 목소리</h2><div class="voiceChoiceGrid"><button data-guide-voice="warm">포근한</button><button data-guide-voice="bright">밝고 씩씩한</button><button data-guide-voice="calm">차분한</button><button data-guide-voice="playful">장난기 있는</button></div><button class="btn outline compactBtn" id="voicePreviewBtn">목소리 미리듣기</button></section><section class="glassCard"><h2>집중 사운드</h2><p class="muted">실제 오디오 파일이 포함되어 있으며 집중 작전 시작 후 선택한 BGM이 반복 재생됩니다.</p><div class="soundSettingsGrid"><button data-sound="집중 피아노">피아노</button><button data-sound="자연 숲">자연 숲</button><button data-sound="잔잔한 물결">물결</button><button data-sound="로파이">로파이</button><button data-sound="OFF">OFF</button></div></section><section class="glassCard authStatusCard" id="authStatusCard">
 <div class="syncStatusHead"><div><small>FAMILY ACCOUNT</small><h2>가족 계정</h2></div><span id="authStateBadge">로컬 모드</span></div>
 <p id="authStatusText" class="muted">로그인하지 않아도 이 기기에서 CHILD 로컬 모드로 사용할 수 있습니다.</p>
 <div id="authLoginControls">
