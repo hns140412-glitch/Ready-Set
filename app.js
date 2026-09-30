@@ -1041,7 +1041,10 @@ function parseScheduleVoiceCommand(raw){
     const until=`${y2}-${String(m2).padStart(2,'0')}-${String(d2).padStart(2,'0')}`;
     let name=namedPeriod?.name||text.replace(range[0],'').replace(/(기간|일정|시간표|로|으로|변경|바꿔|설정|해줘|해 주세요)/g,' ').replace(/\s+/g,' ').trim();
     if(!name)name=$('#schedulePeriodName')?.value.trim()||'기간 시간표';
-    return {ok:true,type:'PERIOD',period_id:namedPeriod?.period_id||$('#schedulePeriodId')?.value||null,name,valid_from:from,valid_until:until};
+    const editingId=$('#schedulePeriodId')?.value||null;
+    const editingName=$('#schedulePeriodName')?.value.trim()||'';
+    const periodId=namedPeriod?.period_id||(editingId&&editingName===name?editingId:null);
+    return {ok:true,type:'PERIOD',period_id:periodId,name,valid_from:from,valid_until:until};
   }
   const explicitDays=[...text.matchAll(/([월화수목금토일])요일/g)].map(m=>m[1]);
   const compact=explicitDays.length?[]:((text.match(/[월화수목금토일]{1,7}/)||[])[0]||'').split('');
