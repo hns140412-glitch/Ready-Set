@@ -23,8 +23,8 @@
     const row=Object.freeze({
       event_id:event.event_id||('READY_SET:'+Date.now()+':'+state.episodes.length),
       type:event.type,verified:true,evidence_ref:String(event.evidence_ref),
-      character_id:String(event.character_id),source_app:'READY_SET',
-      occurred_at:event.occurred_at||new Date().toISOString(),
+      character_id:String(event.character_id),source_app:'READY_SET',source:'READY_SET',
+      occurred_at:event.occurred_at||new Date().toISOString(),at:event.occurred_at||new Date().toISOString(),
       context:event.context&&typeof event.context==='object'?event.context:{}
     });
     const next={...state,episodes:[...state.episodes,row]};
@@ -43,6 +43,13 @@
     const next={...s,committed_relationships:{...s.committed_relationships,[characterId]:{state,authority_ref:String(authorityRef)}}};
     save(storage,next);
     return {ok:true,state};
+  }
+  if(typeof globalThis!=='undefined'&&globalThis.addEventListener){
+    globalThis.addEventListener('taky:crew-relationship-commit',event=>{
+      const d=event?.detail||{};
+      if(d.target_app&&d.target_app!=='READY_SET')return;
+      commitRelationship(globalThis.localStorage,d.character_id,d.state,d.authority_ref);
+    });
   }
   return Object.freeze({KEY,empty,load,append,relationship,commitRelationship,automaticPromotion:false,automaticReward:false,automaticPower:false});
 });
