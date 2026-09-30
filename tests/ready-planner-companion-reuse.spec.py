@@ -43,6 +43,19 @@ for sid in ("planner_week","planner_day"):
     assert slot["selector"]=="#plannerCompanionPresence", slot
     assert slot["source_pr"]==118, slot
 
+
+html=(ROOT/"index.html").read_text(encoding="utf-8")
+for token in ('id="missionCompanionCard"','id="missionCompanionPortrait"','id="missionCompanionName"'):
+    assert token in html, token
+app=(ROOT/"app.js").read_text(encoding="utf-8")
+assert "expeditionCompanionPresenter?.renderMission()" in app
+goal=next(x for x in d["screens"] if x["id"]=="goal")
+goal_layers=json.loads((ROOT/goal["layer_contract"]["path"]).read_text(encoding="utf-8"))
+goal_slot=next(x for x in goal_layers["layers"] if x["role"]=="CHARACTER_SLOT")
+assert goal_slot["status"]=="IMPLEMENTATION_OPEN"
+assert any(x["id"]=="selected-companion" and x["status"]=="RUNTIME_SLOT" for x in goal_slot["bound_subslots"])
+assert any(x["id"]=="child-full-character" and x["status"]=="IMPLEMENTATION_OPEN" for x in goal_slot["bound_subslots"])
+
 print(json.dumps({
     "schema":"READY_PLANNER_COMPANION_REUSE_CHECK_V1",
     "pass":True,
