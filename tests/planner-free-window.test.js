@@ -93,3 +93,67 @@ assert.deepEqual(fallback.free_window_coverage,{known_dates:0,total_dates:2});
 assert.equal(fallback.free_window_by_date['2026-09-22'].known,false);
 
 console.log('PASS: Planner V2 uses actual free-window evidence as secondary capacity safety without making minutes primary learning semantics');
+
+
+const bufferPlanner=createPlanner(memoryStorage());
+bufferPlanner.upsertScheduleCommitment({
+  commitment_id:'academy-buffered',
+  title:'영어학원',
+  category:'ACADEMY',
+  start_at:'2026-09-22T15:00:00',
+  end_at:'2026-09-22T19:00:00',
+  confirmed:true,
+  source:'TEST_FIXTURE'
+});
+bufferPlanner.upsertScheduleBuffer({
+  buffer_id:'travel-before',
+  kind:'TRAVEL',
+  title:'학원 이동',
+  mode:'AROUND_COMMITMENT',
+  linked_commitment_id:'academy-buffered',
+  side:'BEFORE',
+  minutes:30,
+  confirmed:true,
+  source:'TEST_FIXTURE'
+});
+bufferPlanner.upsertScheduleBuffer({
+  buffer_id:'rest-after',
+  kind:'REST',
+  title:'귀가 후 휴식',
+  mode:'AROUND_COMMITMENT',
+  linked_commitment_id:'academy-buffered',
+  side:'AFTER',
+  minutes:20,
+  confirmed:true,
+  source:'TEST_FIXTURE'
+});
+bufferPlanner.upsertScheduleBuffer({
+  buffer_id:'dinner',
+  kind:'MEAL',
+  title:'저녁 식사',
+  mode:'ABSOLUTE',
+  date:'2026-09-22',
+  start:'19:30',
+  end:'20:00',
+  confirmed:true,
+  source:'TEST_FIXTURE'
+});
+const materializedBuffers=bufferPlanner.scheduleBuffersByDate('2026-09-22');
+assert.deepEqual(materializedBuffers.map(x=>x.kind),['TRAVEL','REST','MEAL']);
+const bufferedCapacity=bufferPlanner.allocateToday({
+  date:'2026-09-22',
+  candidate_windows:[{start:'14:00',end:'20:00'}]
+});
+assert.equal(bufferedCapacity.ok,true);
+assert.equal(bufferedCapacity.available_minutes,40);
+assert.deepEqual(bufferedCapacity.open_windows.map(x=>x.minutes),[30,10]);
+
+const removedBuffer=bufferPlanner.removeScheduleBuffer('dinner');
+assert.equal(removedBuffer.ok,true);
+const capacityAfterMealRemoval=bufferPlanner.allocateToday({
+  date:'2026-09-22',
+  candidate_windows:[{start:'14:00',end:'20:00'}]
+});
+assert.equal(capacityAfterMealRemoval.available_minutes,70);
+
+console.log('PASS: parent-confirmed travel, meal, preparation/rest/safety-style buffers subtract from real Planner free windows without creating DATED TODOs');
