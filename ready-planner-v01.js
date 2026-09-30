@@ -123,9 +123,12 @@
         const before=s.schedule_periods.length;
         s.schedule_periods=s.schedule_periods.filter(x=>x.period_id!==target);
         if(before===s.schedule_periods.length)return {ok:false,reason:'PERIOD_NOT_FOUND'};
-        const linked=s.schedule_commitments.filter(x=>x.period_id===target).length;
+        const removedCommitmentIds=new Set(s.schedule_commitments.filter(x=>x.period_id===target).map(x=>x.commitment_id));
+        const linked=removedCommitmentIds.size;
         s.schedule_commitments=s.schedule_commitments.filter(x=>x.period_id!==target);
-        return {ok:true,period_id:target,removed_commitments:linked};
+        const beforeBuffers=s.schedule_buffers.length;
+        s.schedule_buffers=s.schedule_buffers.filter(x=>x.period_id!==target&&!removedCommitmentIds.has(x.linked_commitment_id));
+        return {ok:true,period_id:target,removed_commitments:linked,removed_buffers:beforeBuffers-s.schedule_buffers.length};
       });
     }
     function scheduleCommitmentsByDateFromState(state,date){
@@ -205,7 +208,10 @@
       return mutate(s=>{
         const before=s.schedule_commitments.length;
         s.schedule_commitments=s.schedule_commitments.filter(x=>x.commitment_id!==target);
-        return before===s.schedule_commitments.length?{ok:false,reason:'COMMITMENT_NOT_FOUND'}:{ok:true,commitment_id:target};
+        if(before===s.schedule_commitments.length)return {ok:false,reason:'COMMITMENT_NOT_FOUND'};
+        const beforeBuffers=s.schedule_buffers.length;
+        s.schedule_buffers=s.schedule_buffers.filter(x=>x.linked_commitment_id!==target);
+        return {ok:true,commitment_id:target,removed_buffers:beforeBuffers-s.schedule_buffers.length};
       });
     }
 
