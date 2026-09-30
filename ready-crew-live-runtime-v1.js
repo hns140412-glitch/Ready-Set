@@ -14,7 +14,8 @@
   }
   function build(args={}){
     const list=Array.isArray(args.characters)?args.characters:[];
-    return Object.freeze({pass:true,schema:'TAKY_CHARACTER_SCENE_PLAN_V1',target_app:APP,scene_id:args.sceneId||args.surface||'scene',surface:args.surface||null,semantic_only:true,generation_allowed:false,asset_selection_allowed:false,foreground_character_id:args.foregroundId||list[0]?.character_id||null,speaking_order:Object.freeze(Array.isArray(args.speakingOrder)?args.speakingOrder:list.filter(c=>c.dialogue_level!=='SILENT').map(c=>c.character_id)),visible_order:Object.freeze(Array.isArray(args.visibleOrder)?args.visibleOrder:list.map(c=>c.character_id)),characters:Object.freeze(list)});
+    const raw={pass:true,schema:'TAKY_CHARACTER_SCENE_PLAN_V1',target_app:APP,scene_id:args.sceneId||args.surface||'scene',surface:args.surface||null,semantic_only:true,generation_allowed:false,asset_selection_allowed:false,foreground_character_id:args.foregroundId||list[0]?.character_id||null,speaking_order:Object.freeze(Array.isArray(args.speakingOrder)?args.speakingOrder:list.filter(c=>c.dialogue_level!=='SILENT').map(c=>c.character_id)),visible_order:Object.freeze(Array.isArray(args.visibleOrder)?args.visibleOrder:list.map(c=>c.character_id)),characters:Object.freeze(list),behavior_state:args.behaviorState||{},max_speaking:args.maxSpeaking||1};
+    return globalThis.TakyExplorerCrewBehaviorRuntimeV1?.normalizePlan?globalThis.TakyExplorerCrewBehaviorRuntimeV1.normalizePlan(raw):Object.freeze(raw);
   }
   function emit(args={}){
     const plan=build(args);
