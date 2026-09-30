@@ -1522,6 +1522,18 @@ function captureDraftConfidence(draft){
   const n=Number(draft?.confidence);
   return Number.isFinite(n)?Math.round(Math.max(0,Math.min(1,n))*100):0;
 }
+function captureAnalysisFailureCopy(reason){
+  const messages={
+    HEIC_CONVERSION_UNAVAILABLE:'이 기기에서는 HEIC 사진을 OCR용으로 변환하지 못했어요. 원본은 보관 중입니다. 앱에서 다시 촬영하거나 JPEG 사진을 선택해 주세요.',
+    OCR_IMAGE_FORMAT_UNSUPPORTED:'이 사진 형식은 분석할 수 없어요. 원본은 보관 중입니다. 앱에서 다시 촬영하거나 JPEG·PNG 사진을 선택해 주세요.',
+    CAPTURE_ORIGINAL_MISSING:'촬영 원본을 읽을 수 없어요. 저장 상태를 확인한 뒤 다시 촬영해 주세요.',
+    ANALYSIS_PROVIDER_NOT_CONFIGURED:'분석 서버가 아직 연결되지 않았습니다. 촬영 원본은 그대로 보관 중입니다.',
+    PARENT_AUTH_REQUIRED:'부모 계정으로 로그인하면 분석을 진행할 수 있습니다.',
+    NO_CAPTURE_ITEMS:'먼저 숙제 자료를 촬영해 주세요.',
+    ANALYSIS_NETWORK_ERROR:'분석 서버 연결에 실패했습니다. 촬영 원본은 보관 중이며 다시 분석할 수 있습니다.'
+  };
+  return messages[reason]||'분석을 완료하지 못했습니다. 원본은 보관되어 다시 분석하거나 내용을 확인·수정할 수 있습니다.';
+}
 async function applyCaptureDraft(draft){
   if(!draft)return;
   const group=String(draft.group_key||'');
@@ -1659,7 +1671,7 @@ async function renderCaptureIntake(){
     : session.analysis_state==='ANALYSIS_COMPLETE'
       ? '분석 결과가 준비되었습니다. Parent 검토 후 FACT로 확정하세요.'
       : session.analysis_state==='ANALYSIS_FAILED'
-        ? `분석 실패 · ${escapeHtml(session.analysis_result?.reason||'원본은 보존되어 있으며 다시 분석할 수 있습니다.')}`
+        ? captureAnalysisFailureCopy(session.analysis_result?.reason)
         : session.status==='TEMP_CAPTURE'
           ? '촬영할 때마다 자동 임시저장 중입니다.'
           : '촬영 세션이 저장되었습니다.';
@@ -1682,6 +1694,14 @@ async function renderCaptureIntake(){
       <div><b>${escapeHtml(label)}</b><small>${escapeHtml(item.kind)} · ${Math.max(1,Math.round((item.size||0)/1024))}KB</small></div>
       ${session.status==='TEMP_CAPTURE'?`<button type="button" data-remove-capture="${item.capture_item_id}" aria-label="촬영 삭제">×</button>`:''}
     `;
+    // A HEIC source may be preserved even when the browser cannot preview it.
+    card.querySelector('img')?.addEventListener('error',()=>{
+      const image=card.querySelector('img');
+      if(image)image.replaceWith(Object.assign(document.createElement('div'),{
+        className:'capturePreviewPlaceholder',
+        textContent:'미리보기 미지원 · 원본 저장됨'
+      }));
+    },{once:true});
     previewRoot.appendChild(card);
   }
   await renderCaptureReview(session);
@@ -1693,9 +1713,13 @@ async function captureFiles(files){
   if(!requireParentUi())return;
   const group=$('#captureGroupSelect')?.value||'TALENT:연산';
   const kind=$('#captureKindSelect')?.value||'RANGE';
-  await api.setCaptureTarget(group,kind);
-  const created=await api.addFiles(files,{group_key:group,kind});
-  toast(created.length===1?'촬영 자료를 임시저장했어요.':`${created.length}장 임시저장했어요.`);
+  try{
+    await api.setCaptureTarget(group,kind);
+    const created=await api.addFiles(files,{group_key:group,kind});
+    toast(created.length===1?'촬영 자료를 임시저장했어요.':`${created.length}장 임시저장했어요.`);
+  }catch{
+    toast('사진 저장이 완료되지 않았습니다. 기존 원본은 지우지 않고 상태를 확인합니다.');
+  }
   await renderCaptureIntake();
 }
 
@@ -1765,13 +1789,7 @@ document.getElementById('captureAnalyzeBtn')?.addEventListener('click',async()=>
   const result=await window.ReadyCaptureV01?.requestAnalysis?.();
   if(!result?.ok){
     const reason=result?.result?.reason||result?.reason;
-    const message=reason==='ANALYSIS_PROVIDER_NOT_CONFIGURED'
-      ? '분석 서버 키가 아직 설정되지 않았습니다. 원본은 그대로 보존했어요.'
-      : reason==='PARENT_AUTH_REQUIRED'
-        ? 'Parent 로그인 후 분석할 수 있습니다.'
-        : reason==='NO_CAPTURE_ITEMS'
-          ? '먼저 자료를 촬영해 주세요.'
-          : '분석에 실패했습니다. 원본은 보존되어 다시 시도할 수 있어요.';
+    const message=captureAnalysisFailureCopy(reason);
     toast(message);
     await renderCaptureIntake();
     return;

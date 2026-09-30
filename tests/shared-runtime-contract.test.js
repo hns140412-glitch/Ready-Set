@@ -1,6 +1,7 @@
 const assert=require('assert');
 const fs=require('fs');
 const path=require('path');
+const { execFileSync }=require('child_process');
 const release=require('../vendor/taky/release-contract.js');
 const pwa=require('../vendor/taky/pwa-update-state.js');
 const eventEnvelope=require('../vendor/taky/event-envelope.js');
@@ -133,11 +134,27 @@ const visionResult=visionIngest.normalizeResult({
   items:[{evidence_source_ids:['src-1'],provider_payload:{domain:'opaque'}}]
 });
 assert.equal(visionResult.ok,true);
-assert.equal(visionIngest.validateEvidence(visionResult.result,['src-1','answer-1']).ok,true);
+assert.equal(visionIngest.validateForRequest(visionResult.result,visionReq.request).ok,true);
+const excludedResult=visionIngest.normalizeResult({request_id:visionReq.request.request_id,items:[
+  {evidence_source_ids:['answer-1'],provider_payload:{domain:'not-analyzable'}}
+]});
+assert.equal(visionIngest.validateForRequest(excludedResult.result,visionReq.request).ok,false);
+assert.equal(visionIngest.validateForRequest(excludedResult.result,visionReq.request).unknown[0].source_id,'answer-1');
 assert(captureAnalysis.includes("item.kind==='ANSWER_REFERENCE'"));
 assert(captureAnalysis.includes('VisionIngest.buildRequest'));
-assert(captureAnalysis.includes('VisionIngest.validateEvidence'));
+assert(captureAnalysis.includes('VisionIngest.validateForRequest'));
+assert(captureAnalysis.includes('ANALYSIS_REQUEST_BINDING_MISSING'));
+assert(captureAnalysis.includes('ANALYSIS_REQUEST_BINDING_MISMATCH'));
 assert(captureAnalysis.includes('ANALYSIS_EVIDENCE_INVALID'));
+const serverCapture=fs.readFileSync(path.join(__dirname,'..','netlify/functions/capture-analyze.mjs'),'utf8');
+assert(serverCapture.includes('validateCaptureEnvelope'));
+assert(serverCapture.includes('validateUploadedImageKeys'));
+assert(serverCapture.includes('validateReadyDrafts'));
+assert(serverCapture.includes('vision_ingest_request_id:envelope.request_id'));
+assert(serverCapture.includes('HIDE_VOCABULARY_UNSUPPORTED'));
+execFileSync(process.execPath,['tests/capture-ocr-contract.test.mjs'],{
+  cwd:path.join(__dirname,'..'),stdio:'inherit'
+});
 console.log('PASS: Ready consumes shared vision ingest mechanics while retaining Ready capture/FACT semantics');
 
 
