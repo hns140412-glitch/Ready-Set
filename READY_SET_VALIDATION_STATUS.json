@@ -1,5 +1,5 @@
 {
-  "status_version": "READY_C2S_REWRITE_01.7",
+  "status_version": "READY_C2S_REWRITE_01.8",
   "product": "Ready & Set",
   "evidence_policy": "Validation belongs to an exact code SHA; product/version labels alone never imply validation.",
   "current_main_sha_at_r0": "c82109651609440d2e9e08486f2ef5a042a68e46",
@@ -10,7 +10,7 @@
     "device_verified": false,
     "production_verified": false,
     "evidence_state": "EXACT_MAIN_CI_RUNTIME_VERIFIED",
-    "reason": "Exact main 8ccd81ef7c2fbf36b7c410fc9eb33e0cc79c4bbc (merge of PR #130) has matching PR-head tree 1b5a45dbcf4cc30705d7f8f233822915b5a9aa31 and passed Ready Integration CI, Ready Runtime E2E, and TAKY Codex Worker Self-Test on exact main. Device and production verification remain separate."
+    "reason": "Exact main 6bce95d1620303c63e6847e30b3c9e0a2e7abc6f (merge of PR #132) matches PR-head tree cebb99ebc8711d24f0f7df184d2bac36cf321237 and passed Ready Integration CI, Ready Runtime E2E, and TAKY Codex Worker Self-Test on exact main. Device and production verification remain separate."
   },
   "historical_verified_evidence": {
     "status": "HISTORICAL_REFERENCE_ONLY"
@@ -21,80 +21,85 @@
     "R2_PRODUCT_LANGUAGE_AUTHORITY": "PARTIAL_IMPLEMENTED_CANONICAL_IDENTITY_AND_README_ALIGNED",
     "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "PARTIAL_IMPLEMENTED_SHARED_RELEASE_RUNTIME_VERIFIED",
     "R4_CHILD_FACT_CONFIRMATION_PATH": "IMPLEMENTED_TARGETED_VERIFIED",
-    "R5_PLANNER_FREE_WINDOW": "IMPLEMENTED_TARGETED_VERIFIED__DAILY_AND_WEEKLY_CONFIRMED_AVAILABILITY_CONNECTED",
+    "R5_PLANNER_FREE_WINDOW": "IMPLEMENTED_EXACT_MAIN_VERIFIED__DAILY_WEEKLY_PERIOD_COMMITMENTS_AND_PARENT_CONFIRMED_LIFESTYLE_BUFFERS",
     "R6_LEGACY_AUTHORITY_ARCHIVE": "IMPLEMENTED_TARGETED_VERIFIED__LEGACY_AUTHORITY_ISOLATED",
     "R7_EXACT_MAIN_VERIFICATION": "COMPLETE__CI_AND_RUNTIME_VERIFIED_ON_MAIN"
   },
   "release_state": "REWRITE_IN_PROGRESS_NOT_RELEASE_VERIFIED",
   "latest_targeted_evidence": {
-    "sha": "313cbc50606961ffabb8fb26dfd67f2475dce449",
-    "pr": 130,
-    "scope": "Parent period-scoped weekly timetable, month/date-range editor, automatic period fallback, and voice preview/confirm editing",
+    "sha": "a1dc536a2542815f358835492b738f52fabdf57b",
+    "pr": 132,
+    "scope": "Planner real free-window semantics with Parent-confirmed TRAVEL / MEAL / PREPARATION / REST / SAFETY buffers, period/weekly reuse, UI editing, and cleanup cascades",
     "result": "TARGETED_BEHAVIOR_VERIFIED_AND_MERGED",
     "gates": {
-      "weekly_availability": {
-        "run_id": 36745359477,
-        "status": "PASS"
-      },
       "planner_free_window": {
-        "run_id": 36745359733,
+        "run_id": 36762820112,
         "status": "PASS"
       },
-      "integration_ci": {
-        "run_id": 36745359575,
-        "status": "PASS"
-      },
-      "runtime_e2e": {
-        "run_id": 36745359519,
-        "status": "PASS"
-      },
-      "codex_selftest": {
-        "run_id": 36745359506,
-        "status": "PASS"
-      },
-      "child_fact_confirmation": {
-        "run_id": 36745359786,
+      "weekly_availability": {
+        "run_id": 36762820230,
         "status": "PASS"
       },
       "daily_availability": {
-        "run_id": 36745359683,
+        "run_id": 36762820184,
+        "status": "PASS"
+      },
+      "integration_ci": {
+        "run_id": 36762820155,
+        "status": "PASS"
+      },
+      "runtime_e2e": {
+        "run_id": 36762820071,
+        "status": "PASS"
+      },
+      "codex_selftest": {
+        "run_id": 36762820339,
         "status": "PASS"
       },
       "single_active_task": {
-        "run_id": 36745359574,
+        "run_id": 36762820145,
+        "status": "PASS"
+      },
+      "child_fact_confirmation": {
+        "run_id": 36762820021,
+        "status": "PASS"
+      },
+      "hide_memory_roundtrip": {
+        "run_id": 36762820026,
         "status": "PASS"
       }
     },
     "exact_main_gates": {
       "integration_ci": {
-        "run_id": 36745597085,
+        "run_id": 36763202560,
         "status": "PASS"
       },
       "runtime_e2e": {
-        "run_id": 36745597144,
+        "run_id": 36763202562,
         "status": "PASS"
       },
       "codex_selftest": {
-        "run_id": 36745597178,
+        "run_id": 36763202586,
         "status": "PASS"
       }
     },
     "claim_boundary": "CODED / CI_VERIFIED / RUNTIME_VERIFIED on exact main; DEVICE_VERIFIED and PRODUCTION_VERIFIED not asserted",
-    "merged_main_sha": "8ccd81ef7c2fbf36b7c410fc9eb33e0cc79c4bbc"
+    "merged_main_sha": "6bce95d1620303c63e6847e30b3c9e0a2e7abc6f"
   },
   "open_product_gaps": [
-    "R2 product language/UI authority remains partially implemented outside the period-timetable scope.",
+    "R2 product language/UI authority remains partially implemented outside the current Planner scope.",
     "R3 version/build/validation unification remains partially implemented beyond the exact-main evidence recorded here.",
-    "R5 confirmed daily/weekly availability and period-scoped fixed commitments are implemented; travel/meals/preparation/rest/safety-buffer semantics remain an OPEN Planner refinement.",
     "Shared expedition-member authority consumption remains OPEN.",
+    "Base Camp naming/island identity remains OPEN post-core.",
+    "Imagination Cloud call remains OPEN post-core.",
     "DEVICE_VERIFIED has not been run for this exact main.",
     "PRODUCTION_VERIFIED has not been run; Netlify/deployment remains HOLD."
   ],
   "head_policy": "STATUS_FILE_CANNOT_SELF_ASSERT_EVENTUAL_MERGE_SHA; repository head is volatile and must be live-refreshed when material.",
   "runtime_code_basis": {
-    "sha": "8ccd81ef7c2fbf36b7c410fc9eb33e0cc79c4bbc",
-    "tree_sha": "1b5a45dbcf4cc30705d7f8f233822915b5a9aa31",
-    "relation": "CURRENT_EXACT_MAIN_AFTER_PR_130",
-    "note": "Includes parent period-scoped fixed timetable logic/UI/voice-confirm editing. Exact-main Integration CI, Runtime E2E, and TAKY Self-Test passed; device/production remain unverified."
+    "sha": "6bce95d1620303c63e6847e30b3c9e0a2e7abc6f",
+    "tree_sha": "cebb99ebc8711d24f0f7df184d2bac36cf321237",
+    "relation": "CURRENT_EXACT_MAIN_AFTER_PR_132",
+    "note": "Includes period-scoped fixed timetables plus Parent-confirmed lifestyle buffers. Exact-main Integration CI, Runtime E2E, and TAKY Self-Test passed; device/production remain unverified."
   }
 }
