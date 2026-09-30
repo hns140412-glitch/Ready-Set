@@ -205,6 +205,12 @@ function readyOneGoodReflection(r){
     : '오늘 작전에서 다음에도 그대로 해보고 싶은 건 뭐였어?';
 }
 function readyCrewCharacterId(type=state.guide.type){const localId=type||state.guide.type;return globalThis.TakyCrewIdentityBridge?.resolve?.(localId)?.character_id||'LEGACY_READY_SET:'+String(localId)}
+function applyReadyGuidePatch(patch,authorityRef='READY_USER_UI'){
+  const guard=globalThis.TakyCrewIdentityChangeV1;
+  state=guard?.apply?guard.apply(state,patch,{authority_ref:authorityRef}):{...state,guide:{...state.guide,...patch}};
+  save();
+  return state.guide;
+}
 function appendReadyCrewEvidence(eventId,type,characterType,evidenceRef,context={}){
   const ev=globalThis.TakyCrewEvidenceRuntime;
   if(!ev?.append)return {ok:false,reason:'CREW_EVIDENCE_RUNTIME_UNAVAILABLE'};
@@ -1806,23 +1812,23 @@ function renderSettings(){
   renderSyncStatus().catch(()=>{});
 }
 $('#guideNameInput').onchange=e=>{
-  state.guide.name=e.target.value.trim()||guideData().defaultName;
-  save();renderSettings();renderHome();
+  applyReadyGuidePatch({name:e.target.value.trim()||guideData().defaultName});
+  renderSettings();renderHome();
 };
 $$('[data-guide-type]').forEach(b=>b.onclick=()=>{
   const prevDefault=guideData().defaultName;
   const type=b.dataset.guideType;
-  state.guide.type=type;
-  if(!state.guide.name||state.guide.name===prevDefault)state.guide.name=guideData(type).defaultName;
-  save();renderSettings();renderHome();toast(`${state.guide.name}와 함께할게요.`);
+  const nextName=(!state.guide.name||state.guide.name===prevDefault)?guideData(type).defaultName:state.guide.name;
+  applyReadyGuidePatch({type,name:nextName});
+  renderSettings();renderHome();toast(`${state.guide.name}와 함께할게요.`);
 });
 function renderNameSuggestions(reroll=true){
   const root=$('#nameSuggestions');if(!root)return;if(!reroll&&root.children.length)return;
   const names=[guideData().defaultName,...GUIDE_NAME_POOL.filter(n=>n!==guideData().defaultName)].sort(()=>Math.random()-.5).slice(0,5);
-  root.innerHTML='';names.forEach(n=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>{state.guide.name=n;save();renderSettings();renderHome()};root.appendChild(b)});
+  root.innerHTML='';names.forEach(n=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>{applyReadyGuidePatch({name:n});renderSettings();renderHome()};root.appendChild(b)});
 }
 $('#recommendNameBtn').onclick=()=>renderNameSuggestions(true);
-$$('[data-guide-voice]').forEach(b=>b.onclick=()=>{state.guide.voice=b.dataset.guideVoice;save();renderSettings();toast('길잡이 목소리를 바꿨어요.')});
+$('[data-guide-voice]').forEach(b=>b.onclick=()=>{applyReadyGuidePatch({voice:b.dataset.guideVoice});renderSettings();toast('길잡이 목소리를 바꿨어요.')});
 function speakGuide(text){
   if(!('speechSynthesis'in window)){toast('이 브라우저에서는 음성 안내를 지원하지 않아요.');return false}
   speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';
