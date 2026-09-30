@@ -13,6 +13,7 @@ test('Ready loads TAKY shared release and PWA contracts', async ({ page }) => {
 
   expect(runtime.releaseValid).toBe(true);
   expect(runtime.release.app_id).toBe('ready-set');
+  expect(await page.evaluate(()=>globalThis.ReadySetRev07?.version)).toBe(runtime.release.runtime_version);
   expect(runtime.release.release_id).toBe('ready-set-1.0.0-alpha.1-r4');
   expect(runtime.updateStates).toContain('DOWNLOADED_WAITING');
   expect(runtime.updateStates).toContain('SAFE_TO_ACTIVATE');
