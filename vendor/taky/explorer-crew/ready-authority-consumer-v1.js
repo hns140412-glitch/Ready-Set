@@ -8,6 +8,7 @@
 
   const VERSION='READY_EXPLORER_CREW_AUTHORITY_CONSUMER_V1';
   const PROJECTION_KEY='ready_explorer_crew_authority_projection_v1';
+  const CANONICAL_STATE_KEY='taky_explorer_crew_canonical_v1';
   const CREW_EVENT_PARAM='crew_event';
   const AUTHORITY=Object.freeze({
     repository:'hns140412-glitch/TAKY',
@@ -68,6 +69,16 @@
   function persist(storage,input={}){
     const characterId=clean(input.character_id);
     if(!validCharacterId(characterId))return {ok:false,reason:'CHARACTER_ID_NOT_COMPATIBLE',projection:load(storage)};
+    const incomingAt=clean(input.observed_at)||new Date().toISOString();
+    const current=load(storage);
+    if(current.status==='BOUND'&&current.observed_at){
+      const prev=Date.parse(current.observed_at),nextAt=Date.parse(incomingAt);
+      if(Number.isFinite(prev)&&Number.isFinite(nextAt)){
+        if(nextAt<prev)return {ok:false,reason:'STALE_PROJECTION',projection:current};
+        if(nextAt===prev&&current.character_id!==characterId)
+          return {ok:false,reason:'PROJECTION_CONFLICT_SAME_TIME',projection:current};
+      }
+    }
     const next={
       version:VERSION,
       status:'BOUND',
@@ -75,7 +86,7 @@
       relation_state:clean(input.relation_state)||'MAIN_COMPANION',
       source:clean(input.source)||'CANONICAL_PROJECTION',
       source_event_id:clean(input.source_event_id)||null,
-      observed_at:clean(input.observed_at)||new Date().toISOString(),
+      observed_at:incomingAt,
       authority:AUTHORITY,
       implementation_evidence:IMPLEMENTATION_EVIDENCE,
       relation_write:false,
@@ -103,6 +114,14 @@
       observed_at:clean(envelope?.updated_at)||new Date().toISOString()
     });
     return {...saved,consumed:saved.ok};
+  }
+  function consumeCanonicalStore(storage){
+    try{
+      const raw=storage?.getItem?.(CANONICAL_STATE_KEY);
+      if(!raw)return {ok:true,consumed:false,reason:'NO_LOCAL_CANONICAL_STATE',projection:load(storage)};
+      const envelope=JSON.parse(raw);
+      return consumeCanonicalEnvelope(envelope,storage);
+    }catch{return {ok:false,consumed:false,reason:'INVALID_LOCAL_CANONICAL_STATE',projection:load(storage)}}
   }
   function b64urlDecode(text){
     if(typeof Buffer!=='undefined')return Buffer.from(text,'base64url').toString('utf8');
@@ -167,8 +186,8 @@
   }
 
   return Object.freeze({
-    VERSION,PROJECTION_KEY,CREW_EVENT_PARAM,AUTHORITY,IMPLEMENTATION_EVIDENCE,
-    validCharacterId,empty,snapshot,consumeCanonicalEnvelope,consumeHandoffUrl,syncHost,
+    VERSION,PROJECTION_KEY,CANONICAL_STATE_KEY,CREW_EVENT_PARAM,AUTHORITY,IMPLEMENTATION_EVIDENCE,
+    validCharacterId,empty,snapshot,consumeCanonicalEnvelope,consumeCanonicalStore,consumeHandoffUrl,syncHost,
     ownership:Object.freeze({
       semantic:'CONSUMER_ONLY',
       relationWrite:false,
