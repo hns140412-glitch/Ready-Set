@@ -1,0 +1,17 @@
+{
+  "schema": "TAKY_STATE_FIXTURE_V1",
+  "screen_id": "goal",
+  "synthetic": true,
+  "states": {
+    "BASE_REVIEW": {
+      "task": "SYNTHETIC_TASK",
+      "target_minutes": 25,
+      "share": false
+    },
+    "SHARE_OPTIONAL": {
+      "task": "SYNTHETIC_TASK",
+      "target_minutes": 25,
+      "share": true
+    }
+  }
+}
