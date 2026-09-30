@@ -164,6 +164,30 @@ function applyGuide(el,type=state.guide.type){
 }
 function guideData(type=state.guide.type){return GUIDE_TYPES[type]||GUIDE_TYPES.lumi}
 
+const READY_CORE6_IDS=new Set(['dubi','ink','lori','nova','take','zero']);
+function selectedReadyCompanion(){
+  const raw=String(localStorage.getItem('readyset_companion_id')||'dubi').toLowerCase();
+  return READY_CORE6_IDS.has(raw)?raw:'dubi';
+}
+function applyBaseCampCharacters(childEl,companionEl){
+  if(childEl){
+    if(state.profile?.photo){
+      childEl.textContent='';
+      childEl.style.backgroundImage=`url(${state.profile.photo})`;
+      childEl.classList.add('hasPhoto');
+    }else{
+      childEl.textContent=initials();
+      childEl.style.backgroundImage='none';
+      childEl.classList.remove('hasPhoto');
+    }
+  }
+  if(companionEl){
+    const id=selectedReadyCompanion();
+    companionEl.src=`./assets/companions/core6/${id}.png`;
+    companionEl.dataset.companionId=id;
+  }
+}
+
 function currentPlannerMissionItems(){
   const today=window.ReadySetPlanner?.todayProjection?.()||[];
   const selected=today.filter(x=>x.state==='PLANNED'&&state.selectedTodoIds.includes(x.todo_id));
@@ -260,6 +284,7 @@ function renderPlannerToday(){
 }
 
 function renderMission(){
+  applyBaseCampCharacters($('#goalChildCharacter'),$('#goalCompanionCharacter'));
   renderChips($('#missionChips'));
   renderPlannerToday();
   const tl=$('#taskList');tl.innerHTML='';
@@ -749,6 +774,7 @@ function plannerStateLabel(v){
 }
 function renderPlanner(){
   plannerSelectedDate=plannerSelectedDate||localDateKey();
+  applyBaseCampCharacters($('#plannerChildCharacter'),$('#plannerCompanionCharacter'));
   window.ReadySetPlanner?.replanReadyCarryOvers?.({date:localDateKey()});
   const adminJump=document.querySelector('.plannerAdminJump');
   if(adminJump)adminJump.hidden=!window.ReadyFamilySession?.isParent?.();
@@ -784,7 +810,11 @@ function renderPlanner(){
   const dd=new Date(plannerSelectedDate+'T12:00:00');
   $('#plannerDayTitle').textContent=`${dd.getMonth()+1}월 ${dd.getDate()}일 탐험`;
   $('#plannerDayCount').textContent=`${selectedItems.length}개`;
-  $('#plannerHeroTitle').textContent=plannerTab==='week'?'이번 주 탐험 지도':'오늘의 탐험 루트';
+  const isWeek=plannerTab==='week';
+  $('#plannerHeroTitle').textContent=isWeek?'이번 주 목표':'오늘의 목표';
+  if($('#plannerPageTitle'))$('#plannerPageTitle').textContent=isWeek?'주간 시간표':'일일 시간표';
+  if($('#baseCampPlannerTitle'))$('#baseCampPlannerTitle').textContent=isWeek?'주간 시간표':'일일 시간표';
+  if($('#baseCampPlannerCopy'))$('#baseCampPlannerCopy').textContent=isWeek?'이번 주도 작은 탐험을 함께해요!':'오늘도 탐험하는 하루를 보내요!';
 }
 
 
