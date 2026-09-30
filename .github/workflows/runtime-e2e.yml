@@ -37,6 +37,8 @@ jobs:
         run: node tests/approved-asset-resolver.spec.js
       - name: Validate staged character registry activation
         run: node tests/character-registry-state.spec.js
+      - name: Validate character contract version declaration
+        run: node tests/character-contract-versions.spec.js
       - name: Validate TAKY Design Gate authority
         run: node tools/validate-design-gate.mjs
       - uses: actions/setup-node@v4
