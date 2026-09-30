@@ -15,10 +15,10 @@
   "build_identity": {
     "release_id": "ready-set-1.0.0-alpha.1-r3",
     "cache_identity_policy": "ready-set:<release_id>",
-    "main_sha": "6bce95d1620303c63e6847e30b3c9e0a2e7abc6f",
+    "main_sha": "8a99f75fa70ca48037c80f45974718c40a2efe07",
     "build_id_policy": "release descriptor + exact git SHA/CI build evidence",
     "feature_named_cache_versions_forbidden": true,
-    "main_tree_sha": "cebb99ebc8711d24f0f7df184d2bac36cf321237",
+    "main_tree_sha": "2e7b466e8de29e64bd3eaabed232485eb7339a08",
     "validation_state": "EXACT_MAIN_CI_RUNTIME_VERIFIED__DEVICE_PRODUCTION_PENDING"
   },
   "active_authority": {
@@ -47,7 +47,7 @@
     "VERSION.json": "COMPATIBILITY_MIRROR_NON_AUTHORITY",
     "package.json.version": "TOOLING_METADATA_ALIGNED",
     "service_worker_cache_feature_label": "SUPERSEDED_BY_RELEASE_ID",
-    "manifest.json": "ARCHIVE_PENDING_R3"
+    "manifest.json": "REMOVED_SUPERSEDED_BY_MANIFEST_WEBMANIFEST"
   },
   "shared_runtime": {
     "canonical_basis": "TAKY@c53ee827c03133576f1f9c6e0c6480991f470207",
