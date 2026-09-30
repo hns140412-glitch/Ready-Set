@@ -27,7 +27,7 @@
       },
       "layer_contract": {
         "path": "design/layers/planner-week.json",
-        "sha256": "a034c8ab32d10bf816c5d4fbe838401abaa29c5e958b0293bb48411638074c9c"
+        "sha256": "ea1dfb769a997d8022c04f91940da8ffdbfc97018627006c77f5e46b1420a350"
       },
       "viewports": [
         {
@@ -74,7 +74,7 @@
       },
       "layer_contract": {
         "path": "design/layers/planner-day.json",
-        "sha256": "91e471f816ae29bcdd443cd1cd0005f66636a0f21740eb560e7db62ce7e98ad0"
+        "sha256": "ddb8f72a4ed251a6c720a695114e741de2b9053e20b8c572d8325e45d0ccfb50"
       },
       "viewports": [
         {
