@@ -11,7 +11,7 @@ const CORE=[
 './ready-central-learning-decision-http-v01.js','./ready-central-intent-to-planner-v01.js','./ready-central-hide-directive-v01.js',
 './vendor/taky-central-evidence-v1.js','./ready-central-learning-roundtrip-v01.js',
 './ready-central-browser-bootstrap-v01.js',
-'./ready-integration-v1.js','./ready-scene-policy-adapter-v1.js','./ready-character-runtime-adapter-v1.js','./ready-character-scene-bridge-v1.js','./ready-character-binding-registry-v1.js','./ready-character-ui-binding-planner-v1.js','./ready-character-ui-binding-bridge-v1.js','./ready-character-dom-binder-v1.js','./ready-approved-asset-resolver-v1.js','./ready-character-registry-state-v1.js','./ready-crew-live-runtime-v1.js','./ready-crew-dialogue-consumer-v1.js','./ready-crew-evidence-runtime-v1.js','./app.js','./ready-runtime-v07.js','./manifest.webmanifest','./VERSION.json',
+'./ready-integration-v1.js','./ready-scene-policy-adapter-v1.js','./ready-character-runtime-adapter-v1.js','./ready-character-scene-bridge-v1.js','./ready-character-binding-registry-v1.js','./ready-character-ui-binding-planner-v1.js','./ready-character-ui-binding-bridge-v1.js','./ready-character-dom-binder-v1.js','./ready-approved-asset-resolver-v1.js','./ready-character-registry-state-v1.js','./ready-crew-live-runtime-v1.js','./ready-crew-dialogue-consumer-v1.js','./ready-crew-evidence-runtime-v1.js','./ready-crew-identity-bridge-v1.js','./app.js','./ready-runtime-v07.js','./manifest.webmanifest','./VERSION.json',
 './Ready_Set_Ui_Master_Logic_REV_06.md','./Ready_Set_Ui_Master_Logic_REV_07.md',
 './assets/icon-192.png','./assets/icon-512.png',
 './assets/guide-lumi.png','./assets/guide-pico.png','./assets/guide-mori.png',
