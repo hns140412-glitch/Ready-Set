@@ -102,3 +102,226 @@
 .captureReviewDraft small{margin-top:4px;color:var(--muted);line-height:1.45}
 .captureReviewDraft .captureWarnings{color:#8b5a2b}
 
+
+
+/* READY APPROVED UI GATE 2026-09-30
+   Source lock: user-approved Base Camp WEEK / DAY / GOAL mockups.
+   This layer intentionally overrides legacy generic planner/admin styling. */
+:root{
+  --rs-navy:#113a73;
+  --rs-blue:#2f80ed;
+  --rs-paper:#fff7e8;
+  --rs-paper2:#f6ead3;
+  --rs-wood:#8d512b;
+  --rs-wood-dark:#63361f;
+  --rs-gold:#f5b33d;
+  --rs-ink:#17345f;
+}
+.plannerView,.plannerAdminView,#missionView{
+  background:
+    linear-gradient(rgba(255,248,232,.08),rgba(255,248,232,.08)),
+    url("./assets/ready-basecamp-environment.png") center top/cover fixed,
+    linear-gradient(#8fcdf4 0 28%,#d9b071 58%,#8f6b42 100%);
+}
+.plannerView:before,.plannerAdminView:before,#missionView:before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:linear-gradient(to bottom,rgba(255,255,255,.04),rgba(66,34,13,.08));
+}
+.plannerView>.pageHeader,.plannerView>.plannerMain,
+.plannerAdminView>.pageHeader,.plannerAdminView>.plannerAdminMain,
+#missionView>.pageHeader,#missionView>.goalSetupMain{position:relative;z-index:1}
+.plannerView .pageHeader,.plannerAdminView .pageHeader,#missionView .pageHeader{
+  background:rgba(255,247,232,.74);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(92,53,31,.18);
+}
+.plannerHero,.plannerPanel,.goalSetupMain .glassCard,.missionPreview,
+.parentVoiceConsole,.secondaryAdminForms{
+  background:linear-gradient(145deg,rgba(255,249,236,.96),rgba(245,229,201,.95));
+  border:1px solid rgba(104,64,36,.22);
+  box-shadow:0 14px 28px rgba(74,42,18,.18),inset 0 1px 0 rgba(255,255,255,.75);
+}
+.plannerHero{border-radius:24px;padding:18px;margin:8px 0 12px}
+.plannerHero small,.plannerDayHead small,.radioMissionHead small,.parentVoiceIntro small{
+  color:var(--rs-wood);font-weight:950;letter-spacing:.08em
+}
+.plannerHero h2,.plannerDayHead h2,.radioMissionHead h2,.parentVoiceIntro h2{
+  color:var(--rs-ink);letter-spacing:-.04em
+}
+.plannerTabs{background:rgba(255,247,231,.78);border:1px solid rgba(92,53,31,.15);padding:5px;border-radius:999px;backdrop-filter:blur(8px)}
+.plannerTabs button{border-radius:999px;font-weight:900;color:#775e50}
+.plannerTabs button.on{background:var(--rs-navy);color:#fff;box-shadow:0 5px 12px rgba(17,58,115,.2)}
+.plannerPanel{border-radius:24px;padding:14px}
+.plannerRouteItem,.plannerWeekDetail article{
+  background:rgba(255,255,255,.66)!important;border:1px solid rgba(86,55,33,.1)!important;
+  box-shadow:none!important
+}
+.approvedFlowSteps span{background:rgba(255,248,232,.82);color:#80614e;border:1px solid rgba(89,55,35,.12)}
+.approvedFlowSteps .on{background:var(--rs-navy);color:#fff}
+.goalSetupMain{padding-bottom:42px}
+.goalSetupMain .glassCard{border-radius:22px}
+.radioMissionCard{overflow:visible}
+.radioMissionHead{display:flex;gap:14px;align-items:center;justify-content:space-between}
+.radioMissionHead>div{min-width:0}
+.walkieTalkieButton{
+  position:relative;flex:0 0 84px;height:106px;border:0;background:transparent;padding:0;
+  filter:drop-shadow(0 9px 9px rgba(40,42,24,.2))
+}
+.radioAntenna{position:absolute;left:48px;top:-11px;width:7px;height:36px;border-radius:5px;background:#24312c;transform:rotate(6deg);transform-origin:bottom}
+.radioBody{
+  position:absolute;inset:16px 7px 2px;background:linear-gradient(145deg,#617a45,#31482f);
+  border:3px solid #223322;border-radius:15px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.12);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#fff
+}
+.radioBody:before{content:"";width:36px;height:25px;border-radius:6px;background:#a9c77c;border:2px solid #1d2b1d;box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+.radioBody i{width:11px;height:11px;border-radius:50%;background:#ffb324;box-shadow:16px 0 0 #d34f42,-16px 0 0 #5ab7dc}
+.radioBody b{font-size:10px}
+.walkieTalkieButton.listening .radioBody{animation:radioPulse .85s ease-in-out infinite alternate}
+@keyframes radioPulse{to{box-shadow:0 0 0 7px rgba(245,179,61,.22),inset 0 0 0 2px rgba(255,255,255,.16)}}
+.voiceDraftCard,.parentVoiceProposal{
+  margin-top:12px;padding:14px;border-radius:18px;background:rgba(255,255,255,.72);border:1px solid rgba(44,73,113,.14)
+}
+.voiceDraftCard>small,.parentVoiceProposal>small{color:#8a684f;font-weight:900}
+.voiceDraftCard>b,.parentVoiceProposal>b{display:block;margin-top:5px;color:var(--rs-ink);font-size:14px}
+.voiceDraftMeta,.parentProposalSummary{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.voiceDraftMeta span,.parentProposalSummary span{
+  padding:6px 9px;border-radius:999px;background:#eaf2ff;color:#285187;font-size:10px;font-weight:850
+}
+.voiceDraftActions{display:grid;grid-template-columns:1fr 1.3fr;gap:8px;margin-top:12px}
+.voiceDraftActions button{min-height:43px;border-radius:13px;border:1px solid rgba(39,68,104,.16);font-weight:900}
+.voiceDraftActions button:first-child{background:#fff;color:#6e5b4f}
+.voiceDraftActions button:last-child{background:var(--rs-navy);color:#fff}
+.typingFallback{margin-top:10px;color:#8b7465}
+.typingFallback summary{cursor:pointer;font-size:10px;font-weight:850}
+.plannerRadioDock{
+  width:100%;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:11px;align-items:center;
+  margin:8px 0 12px;padding:10px 12px;border:1px solid rgba(48,86,55,.18);border-radius:17px;
+  background:linear-gradient(135deg,rgba(240,248,223,.94),rgba(255,250,235,.95));color:#2e4a38;text-align:left;position:relative
+}
+.miniRadioIcon{grid-row:1/3;width:44px;height:52px;border-radius:10px;background:#47623c;color:#fff;display:grid;place-items:center;font-size:23px;border:3px solid #263b2c}
+.plannerRadioDock b{font-size:12px}.plannerRadioDock small{font-size:9px;color:#7f725f}
+.radioPing{position:absolute;left:48px;top:8px;width:9px;height:9px;border-radius:50%;background:#f2a93b;box-shadow:0 0 0 5px rgba(242,169,59,.14)}
+.parentVoiceConsole{border-radius:24px;padding:16px;margin-bottom:12px}
+.parentVoiceIntro{display:flex;gap:14px;align-items:center;justify-content:space-between}
+.parentVoiceIntro p{margin:5px 0 0;color:#755e4d;font-size:11px;line-height:1.55}
+.parentVoiceMic{
+  flex:0 0 78px;height:78px;border-radius:50%;border:5px solid rgba(255,255,255,.65);
+  background:linear-gradient(145deg,#f06f8a,#ce4166);color:#fff;box-shadow:0 9px 22px rgba(166,52,84,.23);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px
+}
+.parentVoiceMic span{width:17px;height:24px;border-radius:9px;background:#fff;position:relative}
+.parentVoiceMic span:after{content:"";position:absolute;left:50%;bottom:-8px;width:27px;height:14px;border:3px solid #fff;border-top:0;border-radius:0 0 15px 15px;transform:translateX(-50%)}
+.parentVoiceMic b{font-size:9px;margin-top:8px}
+.parentVoiceMic.listening{animation:parentMicPulse .8s ease-in-out infinite alternate}
+@keyframes parentMicPulse{to{box-shadow:0 0 0 10px rgba(234,83,120,.16),0 9px 22px rgba(166,52,84,.23)}}
+.secondaryAdminForms{opacity:.86}
+.secondaryAdminForms:before{content:"세부 수정";display:block;font-size:9px;font-weight:900;color:#8a6b56;margin-bottom:8px;letter-spacing:.1em}
+@media(max-width:380px){
+  .walkieTalkieButton{flex-basis:72px;height:96px}
+  .radioMissionHead h2{font-size:13px}
+  .parentVoiceMic{flex-basis:68px;height:68px}
+}
+
+
+/* BASE CAMP LAYERED HERO — structure matches approved WEEK/DAY/GOAL composition.
+   Environment illustration remains source-locked OPEN until the approved clean background is transferred. */
+.baseCampHero{
+  width:min(100%,430px);height:348px;margin:0 auto;position:relative;overflow:hidden;isolation:isolate;
+  background:
+    radial-gradient(circle at 72% 18%,rgba(255,255,255,.88) 0 10%,transparent 24%),
+    linear-gradient(180deg,#79c5f6 0 36%,#b5daf0 37% 49%,#9f7b52 100%);
+  border-bottom:1px solid rgba(92,53,31,.22);
+}
+.baseCampHero:before{
+  content:"";position:absolute;inset:18% -8% 26%;z-index:-1;opacity:.95;
+  background:
+    linear-gradient(135deg,transparent 0 39%,#e8edf7 40% 48%,#8cb0d4 49% 55%,transparent 56%) 40% 0/52% 100% no-repeat,
+    linear-gradient(225deg,transparent 0 37%,#f7f6ef 38% 46%,#8eacd0 47% 55%,transparent 56%) 78% 4%/48% 100% no-repeat;
+}
+.baseCampHero:after{
+  content:"";position:absolute;left:-5%;right:-5%;bottom:-4px;height:116px;z-index:0;
+  background:linear-gradient(180deg,#9c6338,#6d3d22 64%,#4d2b1a);
+  clip-path:polygon(0 30%,8% 22%,16% 31%,26% 18%,38% 26%,50% 16%,62% 27%,74% 18%,87% 29%,100% 20%,100% 100%,0 100%);
+}
+.baseCampSign{
+  position:absolute;z-index:4;left:18px;top:18px;width:230px;min-height:116px;padding:14px 15px 13px 17px;
+  background:linear-gradient(145deg,#fff6dc,#ead7b0);border:2px solid #7f532f;border-radius:9px 17px 12px 8px;
+  box-shadow:0 8px 18px rgba(67,39,20,.22);transform:rotate(-1.5deg);color:#173d78;
+}
+.baseCampSign:before,.baseCampSign:after{content:"";position:absolute;top:-14px;width:9px;height:24px;border-radius:6px;background:#714429}
+.baseCampSign:before{left:24px}.baseCampSign:after{right:28px}
+.baseCampSign small{display:block;font-weight:800;font-size:13px;letter-spacing:.02em}
+.baseCampSign strong{display:block;margin-top:2px;font-size:31px;line-height:1.05;letter-spacing:-.075em}
+.baseCampSign span{display:block;margin-top:7px;font-size:10px;line-height:1.35;color:#564c3d;font-weight:800}
+.baseCampCharacterSlot{
+  position:absolute;z-index:3;left:76px;bottom:54px;width:136px;height:154px;border-radius:46% 46% 40% 40%;
+  display:grid;place-items:center;font-size:32px;font-weight:950;color:#173d78;
+  background:linear-gradient(150deg,#f8d9c9,#f3a8ad 58%,#bd6679);border:6px solid rgba(255,255,255,.8);
+  box-shadow:0 11px 22px rgba(64,37,21,.23);
+}
+.baseCampCharacterSlot.hasPhoto{background-size:cover;background-position:center}
+.baseCampCompanion{
+  position:absolute;z-index:3;right:24px;bottom:38px;width:156px;height:186px;object-fit:contain;object-position:center bottom;
+  filter:drop-shadow(0 10px 8px rgba(52,31,18,.23));
+}
+.baseCampDesk{
+  position:absolute;z-index:2;left:32px;right:25px;bottom:16px;height:72px;border-radius:22px 22px 7px 7px;
+  background:linear-gradient(#a76e3d,#754524);border:3px solid #5d361f;box-shadow:0 9px 16px rgba(51,29,17,.28);
+}
+.baseCampDesk span{
+  position:absolute;left:20%;right:12%;top:13px;height:38px;transform:rotate(-2deg);
+  background:linear-gradient(#fff3cf,#ead5a3);border:1px solid #a77f4d;border-radius:6px;
+}
+.plannerBaseCampHero{height:350px}
+.goalBaseCampHero{height:410px}
+.goalBaseCampHero .baseCampSign{width:250px}
+.goalBaseCampHero .baseCampCharacterSlot{left:64px;bottom:67px;width:150px;height:176px}
+.goalBaseCampHero .baseCampCompanion{right:16px;bottom:50px;width:170px;height:205px}
+.goalBaseCampHero .baseCampDesk{bottom:24px;height:80px}
+.plannerMain{margin-top:-18px;position:relative;z-index:5}
+.goalSetupMain{margin-top:-18px;position:relative;z-index:5}
+.plannerMain .plannerHero{display:none}
+#missionView>.pageHeader,.plannerView>.pageHeader{
+  position:absolute;left:0;right:0;top:0;z-index:9;background:linear-gradient(rgba(255,248,233,.77),rgba(255,248,233,.12));
+  border-bottom:0;backdrop-filter:none;
+}
+#missionView>.pageHeader .kicker,.plannerView>.pageHeader .kicker{opacity:.68}
+#missionView>.pageHeader h1,.plannerView>.pageHeader h1{font-size:0}
+#missionView>.pageHeader h1:after{content:"";font-size:0}
+.plannerView>.pageHeader h1:after{content:"";font-size:0}
+#missionView>.pageHeader>div,.plannerView>.pageHeader>div{visibility:hidden}
+#missionView>.pageHeader>button,.plannerView>.pageHeader>button{visibility:visible;background:rgba(255,248,232,.84);box-shadow:0 4px 10px rgba(62,37,20,.14)}
+@media(max-width:380px){
+  .baseCampHero{height:328px}
+  .goalBaseCampHero{height:388px}
+  .baseCampSign{width:214px}.baseCampSign strong{font-size:27px}
+  .baseCampCharacterSlot{left:56px;width:126px;height:145px}
+  .baseCampCompanion{right:12px;width:148px;height:176px}
+}
+
+
+/* DESIGN GATE regression correction:
+   retain legacy functional controls as low-noise utility actions instead of hiding them. */
+.plannerMain .plannerHero{
+  display:flex!important;
+  justify-content:flex-end;
+  min-height:44px;
+  padding:0 4px!important;
+  margin:0 0 8px!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.plannerMain .plannerHero>div:first-child{display:none}
+.plannerHeroActions{display:flex!important;gap:7px;align-items:center}
+.plannerHeroActions button{
+  min-width:44px;min-height:40px;padding:0 12px;border-radius:999px;
+  border:1px solid rgba(87,60,41,.16);background:rgba(255,248,233,.86);color:#654b3b;
+  font-size:10px;font-weight:900;box-shadow:0 3px 9px rgba(62,38,21,.08)
+}
+.typingFallback{
+  margin-top:10px;padding-top:8px;border-top:1px dashed rgba(89,61,42,.15);
+}
+.typingFallback>small{display:block;margin-bottom:5px;color:#897465;font-size:9px;font-weight:850}
+.typingFallback .inputWrap{opacity:.76}
+.typingFallback .inputWrap:focus-within{opacity:1}

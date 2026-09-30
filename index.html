@@ -40,15 +40,33 @@
   </section>
 
   <section class="view peach" id="missionView" data-view="mission">
-    <header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MISSION BRIEFING</span><h1>타임어택 작전 설정</h1></div><span></span></header>
-    <main class="safe scroll"><div class="progressSteps"><span class="on">1 과제 선택</span><span>2 과제 & 시간</span><span>3 작전 공유</span></div>
+    <header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">READY & SET</span><h1>탐험 목표 정하기</h1></div><span></span></header>
+    <section class="baseCampHero goalBaseCampHero" aria-label="베이스캠프에서 탐험 준비">
+      <div class="baseCampSky" aria-hidden="true"></div>
+      <div class="baseCampSign"><small>Ready & Set</small><strong>탐험 목표 정하기</strong><span>오늘 할 일을 작게 정하고 끝까지 가보자</span></div>
+      <div class="baseCampCharacterSlot childSlot" id="goalChildCharacter" aria-label="아이 캐릭터"></div>
+      <img class="baseCampCompanion" id="goalCompanionCharacter" src="./assets/companions/core6/dubi.png" alt="동행 탐험대원">
+      <div class="baseCampDesk" aria-hidden="true"><span></span></div>
+    </section>
+    <main class="safe scroll goalSetupMain"><div class="progressSteps approvedFlowSteps"><span class="on">1 목표 정하기</span><span>2 공유하기</span><span>3 타이머</span></div>
       <section class="glassCard"><h2>1. Planner가 준비한 오늘의 탐험</h2><p class="muted">숙제 FACT와 Planner 배정을 기준으로 표시합니다.</p><div id="missionChips" class="chipRow"></div></section>
       <section class="glassCard plannerToday" id="plannerTodaySection" hidden><div class="plannerTodayHead"><div><small>PLANNER · TODAY</small><h2>오늘의 탐험 후보</h2></div><span>내가 고르기</span></div><div id="plannerTodayList" class="plannerTodayList"></div></section>
-      <section class="glassCard"><h2>2. 오늘 할 과제를 입력하세요</h2><label class="inputWrap"><input id="taskInput" placeholder="예) 수학 연산 20문제"><button id="voiceTaskBtn" type="button" aria-label="음성으로 과제 입력">🎙</button><button id="addTaskBtn" type="button">추가</button></label><p class="inputHint" id="voiceHint">텍스트로 입력하거나 마이크를 눌러 말할 수 있어요.</p><div id="taskList" class="taskList"></div></section>
+      <section class="glassCard radioMissionCard">
+        <div class="radioMissionHead"><div><small>BASE CAMP RADIO</small><h2>오늘 할 일을 무전기로 알려줘</h2><p class="muted">숙제·단원평가·리코더·책 읽기·이벤트를 말하면 확인 초안을 만들어요.</p></div>
+        <button id="voiceTaskBtn" class="walkieTalkieButton" type="button" aria-label="무전기로 오늘 할 일 말하기"><span class="radioAntenna"></span><span class="radioBody"><i></i><b>무전기</b></span></button></div>
+        <p class="inputHint" id="voiceHint">무전기를 눌러 말해 주세요. 자동으로 바로 저장하지 않아요.</p>
+        <div id="voiceDraftCard" class="voiceDraftCard" hidden>
+          <small>들어온 무전</small><b id="voiceDraftTitle">확인해 주세요</b>
+          <div id="voiceDraftMeta" class="voiceDraftMeta"></div>
+          <div class="voiceDraftActions"><button id="voiceDraftRetry" type="button">다시 말하기</button><button id="voiceDraftConfirm" type="button">추가하기</button></div>
+        </div>
+        <div class="typingFallback" aria-label="직접 입력 보조"><small>직접 입력</small><label class="inputWrap"><input id="taskInput" placeholder="말하기 어려울 때 직접 입력"><button id="addTaskBtn" type="button">추가</button></label></div>
+        <div id="taskList" class="taskList"></div>
+      </section>
       <section class="glassCard"><h2>3. 목표 시간을 선택하세요</h2><div class="timeButtons"><button data-minutes="10">10분</button><button data-minutes="15">15분</button><button class="on" data-minutes="25">25분</button><button data-minutes="custom">직접 입력</button></div><label class="customTime" id="customTimeWrap" hidden><input id="customMinutes" type="number" min="1" max="180" value="25"><span>분</span></label></section>
       <section class="glassCard soundCard"><div><small>오늘의 집중 사운드</small><b id="soundName">집중 피아노</b></div><button id="soundBtn">BGM 선택</button></section>
       <section class="missionPreview"><span>오늘의 작전 미리보기</span><b id="missionPreviewText">과제를 선택해 주세요 · 25분</b><small>목표 시간을 정하고, 집중해서 끝내기!</small></section>
-      <div class="stackActions"><button class="btn outline" id="missionShareBtn">작전 공유하기</button><button class="btn dark" id="startBtn">타임어택 START</button></div>
+      <div class="stackActions"><button class="btn outline" id="missionShareBtn">공유하기</button><button class="btn dark" id="startBtn">목표 정하고 출발하기</button></div>
     </main>
   </section>
 
@@ -74,7 +92,14 @@
   <section class="view cream" id="calendarView" data-view="calendar"><header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MISSION JOURNAL</span><h1>작전 일지</h1></div><span></span></header><main class="safe scroll"><section class="glassCard"><h2>이번 달 기록</h2><div id="calendarList" class="historyList"></div></section><p class="muted">Google Calendar 연동은 외부 OAuth 구성이 필요한 Online Enhancement입니다. 로컬 기록은 오프라인에서도 유지됩니다.</p></main></section>
 
   <section class="view cream plannerView" id="plannerView" data-view="planner">
-    <header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">EXPLORATION PLANNER</span><h1>탐험 일정</h1></div><span></span></header>
+    <header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">READY & SET</span><h1 id="plannerPageTitle">주간 시간표</h1></div><span></span></header>
+    <section class="baseCampHero plannerBaseCampHero" aria-label="베이스캠프 탐험 준비">
+      <div class="baseCampSky" aria-hidden="true"></div>
+      <div class="baseCampSign"><small>Ready & Set</small><strong id="baseCampPlannerTitle">주간 시간표</strong><span id="baseCampPlannerCopy">이번 주도 작은 탐험을 함께해요!</span></div>
+      <div class="baseCampCharacterSlot childSlot" id="plannerChildCharacter" aria-label="아이 캐릭터"></div>
+      <img class="baseCampCompanion" id="plannerCompanionCharacter" src="./assets/companions/core6/dubi.png" alt="동행 탐험대원">
+      <div class="baseCampDesk" aria-hidden="true"><span></span></div>
+    </section>
     <main class="safe scroll plannerMain">
       <section class="plannerHero">
         <div><small>READY & SET · PLANNER</small><h2 id="plannerHeroTitle">이번 주 탐험 지도</h2><p id="plannerHeroCopy">해야 할 일과 고정 일정을 가볍게 확인해요.</p></div>
@@ -90,8 +115,9 @@
       </section>
       <section id="plannerDayPanel" class="plannerPanel" role="tabpanel" hidden>
         <div class="plannerDayHead"><div><small>TODAY ROUTE</small><h2 id="plannerDayTitle">오늘의 탐험</h2></div><span id="plannerDayCount">0개</span></div>
+        <button id="childRadioQuickAdd" class="plannerRadioDock" type="button" aria-label="무전기로 숙제나 이벤트 추가"><span class="radioPing"></span><span class="miniRadioIcon">▥</span><b>숙제·이벤트 무전</b><small>말해서 빠르게 추가</small></button>
         <div id="plannerDayTimeline" class="plannerDayTimeline"></div>
-        <button class="btn dark" data-nav="mission">오늘 작전 고르기</button>
+        <button class="btn dark" data-nav="mission">오늘 목표 정하기</button>
       </section>
     </main>
   </section>
@@ -100,7 +126,18 @@
   <section class="view cream plannerAdminView" id="plannerAdminView" data-view="planner-admin">
     <header class="safe pageHeader"><button data-nav="planner" aria-label="뒤로">←</button><div><span class="kicker">PARENT / ADMIN</span><h1>탐험 일정 관리</h1></div><span></span></header>
     <main class="safe scroll plannerAdminMain">
-      <section class="glassCard adminCard">
+      <section class="glassCard parentVoiceConsole">
+        <div class="parentVoiceIntro"><div><small>PARENT RADIO</small><h2>말로 일정 관리하기</h2><p>“토요일 가족 일정 있어서 영어 숙제 금요일로 당겨줘”처럼 자연스럽게 말해 주세요.</p></div>
+        <button id="parentVoiceBtn" class="parentVoiceMic" type="button" aria-label="부모 음성 일정 관리 시작"><span></span><b>말하기</b></button></div>
+        <p id="parentVoiceHint" class="muted">요청을 들은 뒤 변경 예정안을 먼저 보여드려요.</p>
+        <div id="parentVoiceProposal" class="parentVoiceProposal" hidden>
+          <small>변경 예정안</small>
+          <b id="parentVoiceTranscript"></b>
+          <div id="parentProposalSummary" class="parentProposalSummary"></div>
+          <div class="voiceDraftActions"><button id="parentProposalCancel" type="button">취소</button><button id="parentProposalApply" type="button">이대로 적용</button></div>
+        </div>
+      </section>
+      <section class="glassCard adminCard secondaryAdminForms">
         <div class="adminSectionHead"><div><small>FIXED SCHEDULE</small><h2>고정 일정</h2></div><button class="miniAction" id="scheduleClearBtn">새 일정</button></div>
         <input id="scheduleId" type="hidden">
         <label class="inputBlock">일정명<input id="scheduleTitle" placeholder="예) 영어학원"></label>
