@@ -15,7 +15,7 @@
     }catch{return empty()}
   }
   function save(storage,state){storage?.setItem?.(KEY,JSON.stringify(state));return state}
-  function append(storage,event){
+  function append(storage,event,opt={}){
     if(!event||!EVENTS.has(event.type)||event.verified!==true||!event.evidence_ref||!event.character_id)
       return {ok:false,reason:'VERIFIED_EVIDENCE_REQUIRED'};
     const state=load(storage);
@@ -23,13 +23,17 @@
     const row=Object.freeze({
       event_id:event.event_id||('READY_SET:'+Date.now()+':'+state.episodes.length),
       type:event.type,verified:true,evidence_ref:String(event.evidence_ref),
-      character_id:String(event.character_id),source_app:'READY_SET',source:'READY_SET',
-      occurred_at:event.occurred_at||new Date().toISOString(),at:event.occurred_at||new Date().toISOString(),
-      context:event.context&&typeof event.context==='object'?event.context:{}
+      character_id:String(event.character_id),
+      source_app:String(event.source_app||'READY_SET'),
+      source:String(event.source||event.source_app||'READY_SET'),
+      occurred_at:event.occurred_at||event.at||new Date().toISOString(),
+      at:event.at||event.occurred_at||new Date().toISOString(),
+      context:event.context&&typeof event.context==='object'?event.context:{},
+      import_authority_ref:event.import_authority_ref||null
     });
     const next={...state,episodes:[...state.episodes,row]};
     save(storage,next);
-    if(typeof globalThis!=='undefined'&&globalThis.dispatchEvent&&globalThis.CustomEvent)
+    if(opt.silent!==true&&typeof globalThis!=='undefined'&&globalThis.dispatchEvent&&globalThis.CustomEvent)
       globalThis.dispatchEvent(new globalThis.CustomEvent('taky:crew-evidence',{detail:row}));
     return {ok:true,event:row,state:next};
   }
@@ -40,6 +44,10 @@
     const s=load(storage),committed=s.committed_relationships?.[characterId]?.state;
     if(committed&&committed!=='NOT_MET')return committed;
     return s.episodes.some(x=>x.character_id===characterId&&x.type==='FIRST_MEETING'&&x.verified===true)?'KNOWN':'FIRST_ENCOUNTER';
+  }
+  function importVerified(storage,event,authorityRef){
+    if(!authorityRef)return {ok:false,reason:'AUTHORITY_REF_REQUIRED'};
+    return append(storage,{...event,import_authority_ref:String(authorityRef)},{silent:true});
   }
   function relationCandidate(storage,characterId,policy){
     const runtime=globalThis.TakyExplorerCrewRelationRuntimeV1;
@@ -62,5 +70,5 @@
       commitRelationship(globalThis.localStorage,d.character_id,d.state,d.authority_ref);
     });
   }
-  return Object.freeze({KEY,empty,load,append,relationship,behaviorRelationship,relationCandidate,commitRelationship,automaticPromotion:false,automaticReward:false,automaticPower:false});
+  return Object.freeze({KEY,empty,load,append,importVerified,relationship,behaviorRelationship,relationCandidate,commitRelationship,automaticPromotion:false,automaticReward:false,automaticPower:false});
 });
