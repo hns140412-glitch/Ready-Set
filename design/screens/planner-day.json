@@ -1,0 +1,57 @@
+{
+  "schema": "TAKY_SCREEN_CONTRACT_V2",
+  "screen_id": "planner_day",
+  "authority_ref": "APPROVED_READY_DAILY_PLANNER_MOCKUP",
+  "regions": [
+    {
+      "id": "basecamp-world",
+      "role": "environment"
+    },
+    {
+      "id": "daily-route",
+      "role": "primary-information"
+    },
+    {
+      "id": "quick-add",
+      "role": "low-noise-input"
+    }
+  ],
+  "typography": {
+    "mode": "LIVE_DOM",
+    "hierarchy": [
+      "screen-title",
+      "time",
+      "task",
+      "status"
+    ]
+  },
+  "components": [
+    {
+      "id": "planner-day-panel",
+      "selector": "#plannerDayPanel",
+      "owner": "READY_SET_PLANNER"
+    }
+  ],
+  "responsive": {
+    "primary": "phone390",
+    "safe_area": "required",
+    "tablet": "OPEN_SEPARATE_REVIEW"
+  },
+  "interactions": [
+    {
+      "id": "QUICK_ADD_DRAFT",
+      "result": "CONFIRM_REQUIRED"
+    },
+    {
+      "id": "START_SELECTED_TASK",
+      "result": "goal"
+    }
+  ],
+  "states": [
+    "BASE_REVIEW",
+    "EMPTY",
+    "QUICK_ADD_DRAFT",
+    "QUICK_ADD_CONFIRM"
+  ],
+  "implementation_note": "Voice/typing creates a draft and never bypasses Planner confirmation authority."
+}
