@@ -39,6 +39,8 @@ jobs:
         run: node tests/character-registry-state.spec.js
       - name: Validate character contract version declaration
         run: node tests/character-contract-versions.spec.js
+      - name: Validate surface Scene Policy
+        run: node tests/surface-scene-policy.spec.js
       - name: Validate TAKY Design Gate authority
         run: node tools/validate-design-gate.mjs
       - uses: actions/setup-node@v4
