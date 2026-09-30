@@ -25,10 +25,14 @@
         action:c.action,
         dialogue_level:c.dialogue_level,
         required_roles:Array.isArray(c.required_roles)?[...c.required_roles]:[],
-        runtime_eligible:c.runtime_eligible===true
+        runtime_eligible:c.runtime_eligible===true,
+        utterance:typeof c.utterance==='string'?c.utterance:'',
+        evidence_ref:c.evidence_ref||null,
+        intervention_reason:c.intervention_reason||null
       })):[]
     });
-    if(bound.characters.some(c=>!c.runtime_eligible))return {ok:false,reason:'INELIGIBLE_CHARACTER_IN_PLAN'};
+    const semanticOnly=plan.semantic_only===true;
+    if(!semanticOnly&&bound.characters.some(c=>!c.runtime_eligible))return {ok:false,reason:'INELIGIBLE_CHARACTER_IN_PLAN'};
     return Object.freeze({
       ok:true,
       app_id:APP,
@@ -41,7 +45,9 @@
       max_visible:bound.max_visible,
       max_speaking:bound.max_speaking,
       design_gate_required:true,
-      approved_asset_resolution_required:true,
+      approved_asset_resolution_required:!semanticOnly,
+      semantic_only:semanticOnly,
+      visual_binding_allowed:!semanticOnly,
       runtime_mutation_allowed:false,
       asset_generation_allowed:false
     });
