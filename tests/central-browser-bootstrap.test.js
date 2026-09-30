@@ -18,6 +18,11 @@ const Bootstrap=require('../ready-central-browser-bootstrap-v01.js');
   assert.equal((await Bootstrap.installFromWindow(missingAuth)).reason,'CENTRAL_AUTH_HOST_REQUIRED');
   assert.equal(missingAuth.ReadyCentralBootstrapStatus.state,'DISABLED_AUTH_HOST_REQUIRED');
 
+  const accessTokenOnly={...missingAuth,
+    ReadyCentralAuthHost:{currentSession:async()=>({}),accessToken:async()=> 'oauth-access-token'}};
+  assert.equal((await Bootstrap.installFromWindow(accessTokenOnly)).reason,'CENTRAL_AUTH_HOST_REQUIRED');
+  assert.equal(accessTokenOnly.ReadyCentralBootstrapStatus.state,'DISABLED_AUTH_HOST_REQUIRED');
+
   const listeners=new Map();
   let createArgs=null,installArgs=null,optionsArgs=null;
   const ready={authenticated:true,family_id:'F1',member_id:'CHILD_A',role:'CHILD'};
@@ -31,7 +36,7 @@ const Bootstrap=require('../ready-central-browser-bootstrap-v01.js');
     },
     ReadyCentralAuthHost:{
       currentSession:async()=>central,
-      accessToken:async()=> 'verified-central-token'
+      idToken:async()=> 'verified-google-id-token'
     },
     ReadyFamilySession:{current:()=>ready},
     ReadyCentralEvidenceSessionV01:{resolve:({readySession,centralSession,selectedMemberId})=>{
@@ -70,7 +75,7 @@ const Bootstrap=require('../ready-central-browser-bootstrap-v01.js');
   });
   assert.equal(createArgs.evidenceEndpointUrl,'https://central.example.test/api/learning/evidence');
   assert.equal(createArgs.decisionEndpointUrl,'https://central.example.test/api/learning/decision');
-  assert.equal(await createArgs.tokenProvider(),'verified-central-token');
+  assert.equal(await createArgs.tokenProvider(),'verified-google-id-token');
   assert.equal(typeof listeners.get('readyset-family-session'),'function');
 
   const record={session_id:'S1',completed_at:'2026-09-30T08:00:00Z',task_outcomes:[{

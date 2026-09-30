@@ -1,10 +1,10 @@
-# Ready & Set PWA — 1.0.0-alpha.1 r2 Deployment Candidate
+# Ready & Set PWA — 1.0.0-alpha.1 r3 Deployment Candidate
 
 - Product authority: `READY_SET_CANONICAL_PRODUCT_CONTRACT.md`
 - Runtime: `ready-runtime-v07`
 - App: 1.0.0-alpha.1
 - Schema: 5
-- Release / Cache: `ready-set-1.0.0-alpha.1-r2`
+- Release / Cache: `ready-set-1.0.0-alpha.1-r3`
 - Central Learning basis: `TAKY@6efa6067be33ca2a04261d5abe3cd7501e90098e`
 - Historical UI references: `Ready_Set_Ui_Master_Logic_REV_06.md`, `REV_07.md`
 - Status: MAIN MERGED / CENTRAL HOST CONFIG REQUIRED / LIVE DEPLOYMENT VALIDATION BLOCKED
@@ -53,7 +53,7 @@ Central Learning stays **fail-closed** until all of the following are present:
    - path must be `/api/learning/decision`
 3. `window.ReadyCentralAuthHost`
    - `currentSession()`: returns an independently verified central session
-   - `accessToken()`: returns the bearer token for the central service
+   - `idToken()`: returns the Google OIDC ID token used as the explicit Bearer credential for TAKY central verification; an OAuth access token is not accepted
    - optional `selectedMemberId()`: required when the active member cannot safely default to the authenticated child
 4. The central session must satisfy `ReadyCentralEvidenceSessionV01`:
    - `issuer === "GOOGLE_OIDC_VERIFIED_SERVER"`
