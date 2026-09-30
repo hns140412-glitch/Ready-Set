@@ -1,16 +1,16 @@
 (function(root){'use strict';
-// The image layer kit was generated in a separate container as an explicitly
-// user-approved INTERIM share design (2026-09-28). Binary files are NOT in this
-// GitHub tree yet; a ref must not be elevated until those bytes are present.
+// User-accepted INTERIM share design. Canonical originals live in TAKY-ASSETS at
+// 302b83244cd21dfdc8ccb11e12ec068ce82cb75e; this app tree holds exact SHA-matched
+// deployment copies only. INTERIM_ACCEPTED is not final visual/release approval.
 const dir='./assets/share-card/scenes/';
 const scenes=Object.freeze({
   drop:Object.freeze({
-    pre:Object.freeze({path:dir+'drop-pre.webp',visual_id:'READY-SHARE-DROP-PRE-20260928-INTERIM',review_status:'ASSET_PACKAGE_READY_REPO_BINDING_OPEN'}),
-    result:Object.freeze({path:dir+'drop-result.webp',visual_id:'READY-SHARE-DROP-RESULT-20260928-INTERIM',review_status:'ASSET_PACKAGE_READY_REPO_BINDING_OPEN'})
+    pre:Object.freeze({path:dir+'drop-pre.webp',visual_id:'READY-SHARE-DROP-PRE-20260928-INTERIM',review_status:'INTERIM_ACCEPTED'}),
+    result:Object.freeze({path:dir+'drop-result.webp',visual_id:'READY-SHARE-DROP-RESULT-20260928-INTERIM',review_status:'INTERIM_ACCEPTED'})
   }),
   sail:Object.freeze({
-    pre:Object.freeze({path:dir+'sail-pre.webp',visual_id:'READY-SHARE-SAIL-PRE-20260928-INTERIM',review_status:'ASSET_PACKAGE_READY_REPO_BINDING_OPEN'}),
-    result:Object.freeze({path:dir+'sail-result.webp',visual_id:'READY-SHARE-SAIL-RESULT-20260928-INTERIM',review_status:'ASSET_PACKAGE_READY_REPO_BINDING_OPEN'})
+    pre:Object.freeze({path:dir+'sail-pre.webp',visual_id:'READY-SHARE-SAIL-PRE-20260928-INTERIM',review_status:'INTERIM_ACCEPTED'}),
+    result:Object.freeze({path:dir+'sail-result.webp',visual_id:'READY-SHARE-SAIL-RESULT-20260928-INTERIM',review_status:'INTERIM_ACCEPTED'})
   })
 });
 function scene(theme,kind){const x=scenes[theme]?.[kind];
