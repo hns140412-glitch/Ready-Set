@@ -30,6 +30,12 @@
       "id": "current-goal-consumer",
       "selector": "#missionView",
       "owner": "READY_SET_EXECUTION_UI"
+    },
+    {
+      "id": "goal-selected-companion",
+      "selector": "#missionCompanionCard",
+      "owner": "READY_EXPEDITION_COMPANION_PRESENTATION",
+      "source": "PR_118_VERIFIED"
     }
   ],
   "responsive": {
@@ -51,5 +57,5 @@
     "BASE_REVIEW",
     "SHARE_OPTIONAL"
   ],
-  "implementation_note": "Current missionView is a legacy consumer and must be corrected to the approved Goal composition."
+  "implementation_note": "Selected companion preparation slot is implemented from verified PR #118 source. Child full-character placement and overall approved Goal composition remain open."
 }
