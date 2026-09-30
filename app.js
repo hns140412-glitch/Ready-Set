@@ -204,6 +204,26 @@ function readyOneGoodReflection(r){
     ? '오늘 녹음에서 네가 가장 마음에 든 부분은 어디였어?'
     : '오늘 작전에서 다음에도 그대로 해보고 싶은 건 뭐였어?';
 }
+function readyCrewCharacterId(type=state.guide.type){return 'LEGACY_READY_SET:'+String(type||'guide')}
+function appendReadyCrewEvidence(eventId,type,characterType,evidenceRef,context={}){
+  const ev=globalThis.TakyCrewEvidenceRuntime;
+  if(!ev?.append)return {ok:false,reason:'CREW_EVIDENCE_RUNTIME_UNAVAILABLE'};
+  return ev.append(globalThis.localStorage,{
+    event_id:eventId,type,verified:true,evidence_ref:evidenceRef,
+    character_id:readyCrewCharacterId(characterType),
+    occurred_at:new Date().toISOString(),context
+  });
+}
+function readyRecordingKind(){
+  const labels=[...(state.activeSession?.selected||[]),...(state.activeSession?.tasks||[])].join(' ').toLowerCase();
+  if(/spelling\s*bee|spelling|bee/.test(labels))return 'spelling Bee';
+  return 'grammar';
+}
+function readyRecordingFilename(ext){
+  const d=new Date(),date=`${d.getFullYear()} ${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getDate()).padStart(2,'0')}`;
+  const base=(state.profile.name||'Judy').replace(/[\\/:*?"<>|]/g,'_');
+  return `${base}’s Bricks ${readyRecordingKind()} recording ${date}.${ext}`;
+}
 
 function centralPlannerScope(){
   // Supplied only by an explicitly installed trusted central host. Ready's
@@ -595,6 +615,9 @@ function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOu
   });
   const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs,
     outcomeState,plannerOutcomes,taskOutcomes:scopedOutcomes};
+  const mainEvidenceId=`READY_SESSION:${rec.id}:${state.guide.type}`;
+  appendReadyCrewEvidence(mainEvidenceId+':SHARED','SHARED_EPISODE',state.guide.type,'READY_SESSION_COMPLETE',{session_id:rec.id,outcome_state:outcomeState});
+  if(outcomeState==='COMPLETED')appendReadyCrewEvidence(mainEvidenceId+':COMPLETE','EXPLORATION_COMPLETE',state.guide.type,'READY_SESSION_COMPLETED',{session_id:rec.id});
   state.records.unshift(rec);state.records=state.records.slice(0,200);
   state.activeSession=null;state.lastResult=rec;save();nav('result');
   // Durable local session completion is the producer boundary. A separately
@@ -724,6 +747,10 @@ function finishRecording(){
   $('#audioPreview').src=URL.createObjectURL(currentAudio);
   $('#reviewPanel').hidden=false;
   chooseGuest();
+  const recordingEvidenceId=`READY_RECORDING:${state.activeSession?.id||Date.now()}`;
+  appendReadyCrewEvidence(`READY_FIRST_MEETING:${currentGuestType}`,'FIRST_MEETING',currentGuestType,'READY_RANDOM_GUEST_FIRST_MEETING',{surface:'recording-review'});
+  appendReadyCrewEvidence(recordingEvidenceId+':MAIN','SHARED_EPISODE',state.guide.type,'READY_RECORDING_COMPLETED',{guest_type:currentGuestType});
+  appendReadyCrewEvidence(recordingEvidenceId+':GUEST','SHARED_EPISODE',currentGuestType,'READY_RECORDING_COMPLETED',{main_type:state.guide.type});
   applyGuide($('#duoMainGuide'),state.guide.type);
   applyGuide($('#duoGuestGuide'),currentGuestType);
   const guestName=GUIDE_TYPES[currentGuestType].defaultName;
@@ -740,6 +767,7 @@ function finishRecording(){
   save();
 }
 $('#rerecordBtn').onclick=()=>{
+  appendReadyCrewEvidence(`READY_COACHING:${state.activeSession?.id||Date.now()}:${Date.now()}`,'COACHING_SHARED',state.guide.type,'READY_RERECORD_ACCEPTED',{guest_type:currentGuestType});
   $('#reviewPanel').hidden=true;currentAudio=null;
   $('#recordClock').textContent='00:00';$('#recordState').textContent='READY';
   const retryLine=`${state.guide.name}: 좋아, 이번엔 네 속도로 다시 해보자.`;
@@ -749,9 +777,7 @@ $('#saveRecordingBtn').onclick=async()=>{
   if(!currentAudio)return;
   const type=currentAudio.type||'audio/webm';
   const ext=/audio\/(mp4|m4a)/.test(type)?'m4a':'webm';
-  const d=new Date(),date=`${d.getFullYear()} ${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getDate()).padStart(2,'0')}`;
-  const base=(state.profile.name||'Judy').replace(/[\\/:*?"<>|]/g,'_');
-  const filename=`${base}'s grammar recording ${date}.${ext}`;
+  const filename=readyRecordingFilename(ext);
   await storeAudio(currentAudio,filename,type);
   if(state.activeSession){state.activeSession.recordingDone=true;state.activeSession.guestType=currentGuestType;state.activeSession.recordingMime=type}
   save();toast(`저장 완료 · ${filename}`);
