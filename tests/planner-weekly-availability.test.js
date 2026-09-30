@@ -59,4 +59,58 @@ assert.equal(allocation.free_window_by_date['2026-09-22'].total_free_minutes,120
 assert.equal(allocation.free_window_by_date['2026-09-28'].total_free_minutes,240);
 assert.equal(allocation.proposals[0].date,'2026-09-28');
 
-console.log('PASS: weekly availability expands by weekday, coexists with one-off availability, and Planner subtracts fixed commitments');
+const periodPlanner=createPlanner(storage());
+periodPlanner.upsertSchedulePeriod({
+  period_id:'semester',
+  name:'학기중',
+  valid_from:'2026-07-01',
+  valid_until:'2026-08-31',
+  priority:100,
+  source:'TEST_FIXTURE'
+});
+periodPlanner.upsertScheduleCommitment({
+  commitment_id:'semester-mon',
+  title:'피아노',
+  recurrence:'WEEKLY',
+  weekday:1,
+  start:'15:00',
+  end:'16:00',
+  period_id:'semester',
+  confirmed:true,
+  source:'TEST_FIXTURE'
+});
+periodPlanner.upsertSchedulePeriod({
+  period_id:'summer',
+  name:'여름방학',
+  valid_from:'2026-07-20',
+  valid_until:'2026-08-18',
+  priority:200,
+  source:'TEST_FIXTURE'
+});
+periodPlanner.upsertScheduleCommitment({
+  commitment_id:'summer-mon',
+  title:'영어학원',
+  recurrence:'WEEKLY',
+  weekday:1,
+  start:'10:00',
+  end:'12:00',
+  period_id:'summer',
+  confirmed:true,
+  source:'TEST_FIXTURE'
+});
+assert.equal(periodPlanner.activeSchedulePeriod('2026-07-20').period_id,'summer');
+assert.equal(periodPlanner.activeSchedulePeriod('2026-08-24').period_id,'semester');
+assert.deepEqual(periodPlanner.scheduleCommitmentsByDate('2026-07-20').map(x=>x.commitment_id),['summer-mon']);
+assert.deepEqual(periodPlanner.scheduleCommitmentsByDate('2026-08-24').map(x=>x.commitment_id),['semester-mon']);
+const vacationCapacity=periodPlanner.allocateToday({
+  date:'2026-07-20',
+  candidate_windows:[{start:'09:00',end:'13:00'}]
+});
+assert.equal(vacationCapacity.ok,true);
+assert.equal(vacationCapacity.available_minutes,120);
+const removedPeriod=periodPlanner.removeSchedulePeriod('summer');
+assert.equal(removedPeriod.ok,true);
+assert.equal(removedPeriod.removed_commitments,1);
+assert.equal(periodPlanner.scheduleCommitmentsByDate('2026-07-20').length,0);
+
+console.log('PASS: weekly availability and period-scoped fixed timetables expand by weekday, override by active period, and subtract from Planner capacity');
