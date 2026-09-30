@@ -3,7 +3,7 @@
   root.ReadySetReleaseDescriptor=Object.freeze({
     app_id:'ready-set',
     app_version:'1.0.0-alpha.1',
-    runtime_version:'ready-runtime-v07',
+    runtime_version:'2026.09.07-rev07-b',
     data_schema_version:5,
     contract_version:1,
     release_id:'ready-set-1.0.0-alpha.1-r4',
