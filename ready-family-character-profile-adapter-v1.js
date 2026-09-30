@@ -48,6 +48,32 @@ function registerProvider(next) {
   return { provider_id: String(next.id || 'custom'), version: VERSION };
 }
 
+function registerHttpProvider({baseUrl,getToken,getFamilyId,fetchImpl=fetch}={}) {
+  const base = new URL(String(baseUrl || ''), globalThis.location?.href || 'http://localhost/');
+  const local = ['localhost','127.0.0.1'].includes(base.hostname);
+  if ((!local && base.protocol !== 'https:') || typeof getToken !== 'function' || typeof getFamilyId !== 'function' || typeof fetchImpl !== 'function') {
+    throw new Error('FAMILY_CHARACTER_HTTP_PROVIDER_INVALID');
+  }
+  const endpoint = new URL('/api/family/character-profile', base).href;
+  const call = async payload => {
+    const token = String(await getToken() || '');
+    const family_id = String(await getFamilyId() || '');
+    if (!token || !family_id) throw new Error('FAMILY_CHARACTER_AUTH_CONTEXT_REQUIRED');
+    const res = await fetchImpl(endpoint,{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({family_id,...payload})});
+    const body = await res.json().catch(()=>({ok:false,reason:'INVALID_PROFILE_RESPONSE'}));
+    if (!res.ok || body.ok === false) throw Object.assign(new Error(body.reason || ('PROFILE_HTTP_'+res.status)),{status:res.status,body});
+    return body;
+  };
+  return registerProvider({
+    id:'central-family-character-http-v1',
+    publish: async projection => call({action:'PUBLISH',member_id:projection.member_id,projection}),
+    get: async member_id => {
+      const body = await call({action:'GET',member_id});
+      return body.found ? body.projection : null;
+    }
+  });
+}
+
 function status() {
   return {
     version: VERSION,
@@ -78,6 +104,7 @@ async function resolve(memberId) {
 window.ReadyFamilyCharacterProfileAdapterV1 = {
   version: VERSION,
   registerProvider,
+  registerHttpProvider,
   status,
   publish,
   resolve,
