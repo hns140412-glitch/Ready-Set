@@ -50,5 +50,6 @@ async function boot(){
   }
 }
 window.ReadyFamilyRuntimeBootstrapV1={version:VERSION,boot,syncCharacter,status:()=>({family:document.documentElement.dataset.familyRuntime||'NOT_BOOTED',character:document.documentElement.dataset.readyCharacterRuntime||'NOT_RESOLVED'})};
+window.addEventListener('taky-central-auth-ready',()=>void boot());
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>void boot(),{once:true});else void boot();
 })();
