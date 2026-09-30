@@ -1,6 +1,6 @@
 {
   "schema_version": "READY_WEEK_DAY_USER_REFERENCE_LAYER_GATE_2026_09_29",
-  "status": "CURRENT_REFERENCE_FIXED__PRODUCTION_SCENE_UNRESOLVED",
+  "status": "CURRENT_REFERENCE_EXACT_HASH_RECOVERED_AND_CENTRALIZED__PRODUCTION_SCENE_UNRESOLVED",
   "scope": [
     "READY_WEEK",
     "READY_DAY"
@@ -58,7 +58,17 @@
     "child_scene_layer_slots": "HTML_PLACEHOLDER_HIDDEN_UNTIL_SOURCE_LAYER_APPROVED",
     "child_profile_photo_fallback": "FORBIDDEN",
     "parent_visual_scene_status": "CURRENT_CSS_SCENE_REJECTED",
-    "browser_functional_source_review": "PASS_EXACT_RUN_36522096175",
-    "browser_visual_authority": "FAIL_INTENTIONAL_UNRESOLVED_SOURCE"
+    "browser_functional_source_review": "PASS_EXACT_HEAD_cd99156258df7fd63e65679fbe75b9ccdb34ea33",
+    "browser_visual_authority": "FAIL_INTENTIONAL_CLEAN_PLATE_AND_SCENE_BINDING_OPEN",
+    "current_reference_exact_hash_recovery": "PASS",
+    "central_reference_draft_registration": "PASS"
+  },
+  "central_reference_source": {
+    "repository": "hns140412-glitch/TAKY-ASSETS",
+    "commit": "bfcc6d8a512b0d9600f5ec5a31d51a5bd9a12e57",
+    "pull_request": 2,
+    "review_state": "DRAFT_NOT_MAIN",
+    "manifest": "assets/ready-set/references/basecamp-timetable/2026-09-28/manifest.v1.json",
+    "recovery_receipt": "C2S/READY_WEEK_DAY_REFERENCE_RECOVERY_2026-09-30.json"
   }
 }
