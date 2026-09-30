@@ -45,8 +45,12 @@ assert(index.includes('./vendor/taky/event-envelope.js'));
 assert(index.includes('./vendor/taky/local-queue.js'));
 assert(index.includes('./vendor/taky/vision-ingest.js'));
 assert(index.includes('./vendor/taky/http-json.js'));
+assert(index.includes('./config.js'));
 assert(index.includes('./ready-release-v01.js'));
+assert(index.includes('./ready-central-browser-bootstrap-v01.js'));
 assert(index.includes('./ready-pwa-update-v01.js'));
+assert(sw.includes("'./config.js'"));
+assert(sw.includes("'./ready-central-browser-bootstrap-v01.js'"));
 assert(app.includes('globalThis.ReadySetReleaseDescriptor'));
 assert(app.includes('globalThis.ReadySetPwaSafePoint=readyPwaSafePoint'));
 

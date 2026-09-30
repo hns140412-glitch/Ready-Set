@@ -1,11 +1,13 @@
-# Ready & Set PWA — REV_06 Deployment Candidate
+# Ready & Set PWA — 1.0.0-alpha.1 r2 Deployment Candidate
 
-- MASTER: REV_06
-- MASTER file: `Ready_Set_Ui_Master_Logic_REV_06.md`
-- App: 0.9.2
+- Product authority: `READY_SET_CANONICAL_PRODUCT_CONTRACT.md`
+- Runtime: `ready-runtime-v07`
+- App: 1.0.0-alpha.1
 - Schema: 5
-- Cache: ready-set-v092
-- Status: PRE-RC / DEPLOYABLE LIVE-VALIDATION BUILD
+- Release / Cache: `ready-set-1.0.0-alpha.1-r2`
+- Central Learning basis: `TAKY@6efa6067be33ca2a04261d5abe3cd7501e90098e`
+- Historical UI references: `Ready_Set_Ui_Master_Logic_REV_06.md`, `REV_07.md`
+- Status: MAIN MERGED / CENTRAL HOST CONFIG REQUIRED / LIVE DEPLOYMENT VALIDATION BLOCKED
 
 ## 이번 수정에서 복원/보완한 항목
 - 기존 Peach / Cream HOME, Mission, Result 계열 유지
@@ -37,3 +39,30 @@ Repository subpath에서도 동작하도록 모든 core path는 상대경로입�
 - 실제 M4A가 필요한 기기의 codec/container 결과
 
 위 항목은 실제 기기/실배포 URL 검증 전 PASS로 표시하지 않습니다.
+
+## Central Learning production bootstrap
+
+The browser now loads `config.js` and `ready-central-browser-bootstrap-v01.js`.
+Central Learning stays **fail-closed** until all of the following are present:
+
+1. `TIMEATTACK_CONFIG.CENTRAL_EVIDENCE_ENDPOINT`
+   - explicit HTTPS URL
+   - path must be the audited central evidence endpoint
+2. `TIMEATTACK_CONFIG.CENTRAL_DECISION_ENDPOINT`
+   - explicit HTTPS URL
+   - path must be `/api/learning/decision`
+3. `window.ReadyCentralAuthHost`
+   - `currentSession()`: returns an independently verified central session
+   - `accessToken()`: returns the bearer token for the central service
+   - optional `selectedMemberId()`: required when the active member cannot safely default to the authenticated child
+4. The central session must satisfy `ReadyCentralEvidenceSessionV01`:
+   - `issuer === "GOOGLE_OIDC_VERIFIED_SERVER"`
+   - family id matches the Ready family
+   - selected child is in `authorized_member_ids`
+   - session has a non-expired `expires_at`
+
+Netlify Identity session/cookie authentication is intentionally **not** treated as the central bearer credential.
+If config/auth is missing, Ready continues local operation and exposes
+`window.ReadyCentralBootstrapStatus` with a `DISABLED_*` reason instead of silently pretending the central roundtrip is active.
+
+Current deployment status: central endpoints/auth host are not yet configured in source; live HTTPS validation remains required.
