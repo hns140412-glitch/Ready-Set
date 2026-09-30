@@ -22,20 +22,13 @@
     },
     {
       "role": "CHARACTER_SLOT",
-      "status": "IMPLEMENTATION_OPEN",
-      "issue": "No selected-companion slot exists in #127 planner week DOM.",
-      "implementation_source": {
-        "repository": "hns140412-glitch/Ready-Set",
-        "pull_request": 118,
-        "head": "4d7ec48ec6a54b8dabb3fffb840e8cde00555d67",
-        "files": [
-          "src/identity/expedition-companion-presentation-runtime.js",
-          "src/identity/ready-planner-child-visual-consumer.js",
-          "index.html",
-          "tests/ready-planner-companion-source-projection.spec.js"
-        ],
-        "evidence": "phone390_and_tablet_selected_companion_projection"
-      }
+      "status": "RUNTIME_SLOT",
+      "selector": "#plannerCompanionPresence",
+      "owner": "READY_EXPEDITION_COMPANION_PRESENTATION",
+      "resolver_contract": "READY_EXPEDITION_COMPANION_PRESENTATION_V01 + CHARACTER_FORMATION_ASSET_MANIFEST_V2_HARD_LOCK",
+      "source_pr": 118,
+      "source_head": "4d7ec48ec6a54b8dabb3fffb840e8cde00555d67",
+      "behavior": "Reuse persisted expedition.primaryCompanionId; hide slot when no approved selection or asset proof."
     },
     {
       "role": "FUNCTION_UI",
