@@ -60,7 +60,7 @@
           <div id="voiceDraftMeta" class="voiceDraftMeta"></div>
           <div class="voiceDraftActions"><button id="voiceDraftRetry" type="button">다시 말하기</button><button id="voiceDraftConfirm" type="button">추가하기</button></div>
         </div>
-        <details class="typingFallback"><summary>직접 입력하기</summary><label class="inputWrap"><input id="taskInput" placeholder="예) 수학 연산 20문제"><button id="addTaskBtn" type="button">추가</button></label></details>
+        <div class="typingFallback" aria-label="직접 입력 보조"><small>직접 입력</small><label class="inputWrap"><input id="taskInput" placeholder="말하기 어려울 때 직접 입력"><button id="addTaskBtn" type="button">추가</button></label></div>
         <div id="taskList" class="taskList"></div>
       </section>
       <section class="glassCard"><h2>3. 목표 시간을 선택하세요</h2><div class="timeButtons"><button data-minutes="10">10분</button><button data-minutes="15">15분</button><button class="on" data-minutes="25">25분</button><button data-minutes="custom">직접 입력</button></div><label class="customTime" id="customTimeWrap" hidden><input id="customMinutes" type="number" min="1" max="180" value="25"><span>분</span></label></section>
