@@ -43,6 +43,9 @@ jobs:
           node --check tests/ready-expedition-companion-presentation.test.js
           node --check tests/ready-companion-live-binding-review.spec.js
           node --check tests/ready-planner-companion-source-projection.spec.js
+          node --check scripts/validate-ready-week-day-reference-recovery.cjs
+      - name: Verify exact accepted Week/Day reference recovery and central draft pointer
+        run: node scripts/validate-ready-week-day-reference-recovery.cjs
       - name: Verify source truth and locked Timer byte identity
         run: node tests/ready-home-planner-source-truth.test.js
       - name: Verify two optional contextual share buttons and no new Share screen
