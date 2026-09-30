@@ -1,0 +1,13 @@
+const assert=require('node:assert/strict');
+const e=require('../ready-crew-evidence-runtime-v1.js');
+const map=new Map();const storage={getItem:k=>map.get(k)||null,setItem:(k,v)=>map.set(k,v)};
+let x=e.append(storage,{event_id:'1',type:'SHARED_EPISODE',verified:true,evidence_ref:'EV-1',character_id:'C1'});
+assert.equal(x.ok,true);
+assert.equal(e.relationship(storage,'C1'),'KNOWN');
+assert.equal(e.commitRelationship(storage,'C1','FAMILIAR',null).ok,false);
+assert.equal(e.commitRelationship(storage,'C1','FAMILIAR','TAKY_RELATION_COMMIT:1').ok,true);
+assert.equal(e.relationship(storage,'C1'),'FAMILIAR');
+assert.equal(e.append(storage,{event_id:'1',type:'SHARED_EPISODE',verified:true,evidence_ref:'EV-1',character_id:'C1'}).reason,'DUPLICATE_EVENT');
+assert.equal(e.append(storage,{type:'HELP_ACCEPTED',verified:false,evidence_ref:'EV-X',character_id:'C1'}).ok,false);
+assert.equal(e.automaticPromotion,false);assert.equal(e.automaticReward,false);assert.equal(e.automaticPower,false);
+console.log(JSON.stringify({gate:'CREW_EVIDENCE_RUNTIME',app:'READY_SET',pass:true},null,2));
