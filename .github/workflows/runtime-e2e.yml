@@ -17,6 +17,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Validate TAKY Design Gate authority
+        run: node tools/validate-design-gate.mjs
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
