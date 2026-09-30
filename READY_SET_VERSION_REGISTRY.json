@@ -15,14 +15,20 @@
   "build_identity": {
     "release_id": "ready-set-1.0.0-alpha.1-r4",
     "cache_identity_policy": "ready-set:<release_id>",
-    "main_sha": "8a99f75fa70ca48037c80f45974718c40a2efe07",
+    "main_sha": null,
     "build_id_policy": "release descriptor + exact git SHA/CI build evidence",
     "feature_named_cache_versions_forbidden": true,
-    "main_tree_sha": "2e7b466e8de29e64bd3eaabed232485eb7339a08",
-    "validation_state": "EXACT_MAIN_CI_RUNTIME_VERIFIED__DEVICE_PRODUCTION_PENDING",
+    "main_tree_sha": null,
+    "validation_state": "PENDING_EXACT_MAIN_REFRESH_AFTER_R3_MERGE",
     "release_candidate_state": "PRE_RELEASE_NOT_FROZEN__DEPLOYMENT_HOLD",
     "release_id_rotation_policy": "ROTATE_ON_FROZEN_CANDIDATE_OR_SEMANTIC_RELEASE_CHANGE",
-    "exact_build_evidence_policy": "EXACT_GIT_SHA_AND_TREE_REFRESHED_ONLY_AFTER_VALIDATED_MAIN_MERGE"
+    "exact_build_evidence_policy": "EXACT_GIT_SHA_AND_TREE_REFRESHED_ONLY_AFTER_VALIDATED_MAIN_MERGE",
+    "last_verified_main": {
+      "sha": "8a99f75fa70ca48037c80f45974718c40a2efe07",
+      "tree_sha": "2e7b466e8de29e64bd3eaabed232485eb7339a08",
+      "release_id": "ready-set-1.0.0-alpha.1-r3",
+      "validation_state": "EXACT_MAIN_CI_RUNTIME_VERIFIED__DEVICE_PRODUCTION_PENDING"
+    }
   },
   "active_authority": {
     "product_contract": "READY_SET_CANONICAL_PRODUCT_CONTRACT.md",
