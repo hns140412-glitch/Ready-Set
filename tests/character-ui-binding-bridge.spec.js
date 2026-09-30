@@ -11,3 +11,8 @@ assert.equal(bridge.mutatesDOM,false);
 assert.equal(bridge.mutatesProductionState,false);
 assert.equal(bridge.generatesArt,false);
 console.log(JSON.stringify({gate:'CHARACTER_UI_BINDING_EVENT_BRIDGE',pass:true},null,2));
+
+const semanticSkip=bridge.accept({ok:true,semantic_only:true},null);
+assert.equal(semanticSkip.ok,true);
+assert.equal(semanticSkip.skipped,true);
+assert.equal(semanticSkip.reason,'SEMANTIC_ONLY_NO_VISUAL_BINDING');
