@@ -27,19 +27,19 @@ Disposition set: PRESERVE / MERGE / SUPERSEDE / ARCHIVE / OPEN
 | RDY-C2S-019 | REV_06/07 as active version authority | SUPERSEDE | Version Registry |
 | RDY-C2S-020 | 0.9.3 / feature cache / REV mismatch | SUPERSEDE | R3 |
 | RDY-C2S-021 | Planner real availability windows + buffers | OPEN | R5 |
-| RDY-C2S-022 | child ad-hoc FACT generic confirmation gap | OPEN | R4 |
+| RDY-C2S-022 | child ad-hoc FACT generic confirmation gap | PRESERVE | R4 implemented / exact-main regression verified |
 | RDY-C2S-023 | shared expedition-member authority | OPEN | consume upstream |
 | RDY-C2S-024 | exploration WEEK/DAY/TODAY | PRESERVE | Product Contract |
 | RDY-C2S-025 | Base Camp naming/island identity | OPEN | post-core |
 | RDY-C2S-026 | Imagination Cloud call | OPEN | post-core |
-| RDY-C2S-027 | exact current main CI/runtime failing | OPEN | R7 |
+| RDY-C2S-027 | exact current main CI/runtime failing | SUPERSEDE | R7 complete on main 8ccd81ef7c2fbf36b7c410fc9eb33e0cc79c4bbc |
 | RDY-C2S-028 | DEVICE_VERIFIED not run | OPEN | later gate |
 | RDY-C2S-029 | PRODUCTION_VERIFIED not run | OPEN | later gate |
 | RDY-C2S-030 | Learning Engine version independent | PRESERVE | Version Registry |
 | RDY-C2S-031 | validation evidence keyed by SHA | PRESERVE | Validation Status |
 | RDY-C2S-032 | append-only REV_08 approach | SUPERSEDE | semantic canonical docs |
 | RDY-C2S-033 | historical REV docs retained as provenance | ARCHIVE | R6 |
-| RDY-C2S-034 | Parent period-scoped fixed timetable + voice review/confirm editing | PRESERVE | Planner constraint input / Parent Admin |
+| RDY-C2S-034 | Parent period-scoped fixed timetable + voice review/confirm editing | PRESERVE | Planner constraint input / Parent Admin / PR #130 exact-main verified |
 
 ## Coverage
 Recovered atoms registered here: 34.

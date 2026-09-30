@@ -15,9 +15,11 @@
   "build_identity": {
     "release_id": "ready-set-1.0.0-alpha.1-r3",
     "cache_identity_policy": "ready-set:<release_id>",
-    "main_sha": "LIVE_RESOLVE_REQUIRED",
+    "main_sha": "8ccd81ef7c2fbf36b7c410fc9eb33e0cc79c4bbc",
     "build_id_policy": "release descriptor + exact git SHA/CI build evidence",
-    "feature_named_cache_versions_forbidden": true
+    "feature_named_cache_versions_forbidden": true,
+    "main_tree_sha": "1b5a45dbcf4cc30705d7f8f233822915b5a9aa31",
+    "validation_state": "EXACT_MAIN_CI_RUNTIME_VERIFIED__DEVICE_PRODUCTION_PENDING"
   },
   "active_authority": {
     "product_contract": "READY_SET_CANONICAL_PRODUCT_CONTRACT.md",
@@ -51,6 +53,6 @@
     "canonical_basis": "TAKY@c53ee827c03133576f1f9c6e0c6480991f470207",
     "release_contract": "CAP-RELEASE-COMPAT-001",
     "pwa_update_contract": "CAP-PWA-UPDATE-001",
-    "consumer_state": "READY_MIGRATION_IMPLEMENTED__CI_RUNTIME_PENDING"
+    "consumer_state": "READY_MIGRATION_IMPLEMENTED__EXACT_MAIN_CI_RUNTIME_VERIFIED"
   }
 }
