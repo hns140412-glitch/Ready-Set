@@ -9,6 +9,7 @@
   const APP='READY_SET';
   function consume(plan={}){
     if(!plan||plan.pass!==true)return {ok:false,reason:'SCENE_PLAN_INVALID'};
+    if(plan.target_app&&plan.target_app!==APP)return {ok:false,reason:'TARGET_APP_MISMATCH'};
     if(plan.generation_allowed!==false)return {ok:false,reason:'GENERATION_PATH_FORBIDDEN'};
     if(plan.asset_selection_allowed!==false)return {ok:false,reason:'CENTRAL_PLAN_SELECTED_ASSET_DIRECTLY'};
     const bound=scenePolicy.bind({
