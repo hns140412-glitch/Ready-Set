@@ -1,0 +1,73 @@
+{
+  "schema_version": "READY_WEEK_DAY_REFERENCE_RECOVERY_2026_09_30",
+  "status": "EXACT_ACCEPTED_REFERENCES_RECOVERED_AND_CENTRALIZED__RUNTIME_SCENE_STILL_OPEN",
+  "scope": [
+    "READY_WEEK",
+    "READY_DAY",
+    "READY_PREPARATION_MOOD_REFERENCE"
+  ],
+  "central_source": {
+    "repository": "hns140412-glitch/TAKY-ASSETS",
+    "commit": "bfcc6d8a512b0d9600f5ec5a31d51a5bd9a12e57",
+    "pull_request": 2,
+    "review_state": "DRAFT_NOT_MAIN",
+    "manifest": "assets/ready-set/references/basecamp-timetable/2026-09-28/manifest.v1.json"
+  },
+  "references": {
+    "week": {
+      "source_name": "판타지_캠프_주간_시간표_탐험.png",
+      "path": "assets/ready-set/references/basecamp-timetable/2026-09-28/weekly_approved_composition.png",
+      "width": 941,
+      "height": 1672,
+      "sha256": "cd479f1c72a58171a5873a6c06e442fecfb7d63819a741f6984650968308db42",
+      "git_blob_sha": "b5dd7c19319d1ec7f875439df05d8c8f8e3cf8c1",
+      "role": "LATEST_ACCEPTED_COMPOSITION_REFERENCE_NOT_RUNTIME_MASTER"
+    },
+    "day": {
+      "source_name": "판타지_탐험가의_일일_시간표.png",
+      "path": "assets/ready-set/references/basecamp-timetable/2026-09-28/daily_approved_composition.png",
+      "width": 941,
+      "height": 1672,
+      "sha256": "733aa39ea2972fffa04362994cb1218c60e34eb1558a86816a2388dd4f6e9ad5",
+      "git_blob_sha": "b0c61fec3bbc95097932b124f9254048b5717b76",
+      "role": "LATEST_ACCEPTED_COMPOSITION_REFERENCE_NOT_RUNTIME_MASTER"
+    },
+    "preparation_scene": {
+      "source_name": "설레는_출발_전_탐험_계획.png",
+      "path": "assets/ready-set/references/basecamp-timetable/2026-09-28/preparation_approved_mood_reference.png",
+      "width": 941,
+      "height": 1672,
+      "sha256": "03f3229200a20a38b875b68b0feb1e8f06bb71cd593178311595aaab6162bd53",
+      "git_blob_sha": "60f7a9d358bc589ff8395b153374dd94b708a103",
+      "role": "USER_APPROVED_BASECAMP_TABLE_MOOD_REFERENCE_NOT_CLEAN_PLATE"
+    }
+  },
+  "verification": {
+    "exact_sha256_recovered": true,
+    "exact_941x1672_dimensions": true,
+    "central_git_blob_written": true,
+    "reference_role_preserved": true
+  },
+  "runtime_constraints": {
+    "direct_full_reference_background_binding": "FORBIDDEN",
+    "reason": "Accepted compositions contain baked characters, labels, dates and sample Planner facts.",
+    "clean_plate_or_verified_semantic_layers": "REQUIRED",
+    "child_visual": "DYNAMIC_APPROVED_VISUAL_ID_ONLY",
+    "companion_visual": "DYNAMIC_SELECTED_CHARACTER_ID_ONLY",
+    "planner_content": "LIVE_DOM_ONLY"
+  },
+  "remaining_open": [
+    "CURRENT_REFERENCE_CLEAN_PLATE_OR_VERIFIED_SEMANTIC_LAYERS",
+    "WEEKLY_REAL_SOURCE_BINDING",
+    "DAILY_REAL_SOURCE_BINDING",
+    "ACTUAL_CHILD_VISUAL_BINDING",
+    "SELECTED_COMPANION_PREPARATION_TABLE_PLACEMENT",
+    "MOBILE_TABLET_VISUAL_COMPARISON",
+    "EXPLICIT_HUMAN_VISUAL_APPROVAL",
+    "PHYSICAL_DEVICE_VERIFICATION"
+  ],
+  "release": {
+    "ready_main_merge": "HOLD",
+    "netlify": "HOLD"
+  }
+}
