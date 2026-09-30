@@ -1,6 +1,6 @@
 # READY_SHARED_RUNTIME_MIGRATION_V01
 
-Status: IMPLEMENTATION BRANCH / CI + BROWSER RUNTIME VALIDATION PENDING
+Status: READY CONSUMER MERGED / CI + BROWSER RUNTIME VERIFIED / DEVICE + PRODUCTION PENDING
 
 TAKY shared foundation basis:
 `hns140412-glitch/TAKY@c53ee827c03133576f1f9c6e0c6480991f470207`
@@ -39,15 +39,15 @@ This migration does not alter:
 
 ## Remaining open
 
-- browser CI/runtime must pass on this branch;
 - real installed-PWA/device update and restore behavior remains unverified;
-- release_id/build identity may be regenerated at frozen-candidate stage;
-- Hide/Snap are not migrated by this Ready branch.
+- production deployment behavior remains unverified and deployment is HOLD;
+- release_id rotates when a frozen deployment candidate or semantic release change is declared;
+- Hide/Snap migration is outside this Ready consumer migration and does not block Ready R3 closure.
 
 ## Claim boundary
 
-CODED on branch after commit.
-CI_VERIFIED / RUNTIME_VERIFIED only after workflow evidence.
+Ready consumer migration is CODED / CI_VERIFIED / RUNTIME_VERIFIED on exact main evidence.
 DEVICE_VERIFIED / PRODUCTION_VERIFIED are not claimed.
+Semantic release authority is `ready-release-v01.js`; exact git SHA/tree evidence is recorded separately in validation/registry state.
 
 END
