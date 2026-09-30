@@ -10,6 +10,14 @@ on:
       - 'design/fixtures/**'
       - 'tools/taky-design-to-ui-*.py'
       - 'tests/design-to-ui-contract.spec.py'
+      - 'index.html'
+      - 'app.js'
+      - 'styles.css'
+      - 'src/identity/character-formation-asset-runtime.js'
+      - 'src/identity/character-formation-journey-runtime.js'
+      - 'src/identity/expedition-companion-presentation-runtime.js'
+      - 'assets/character-formation/**'
+      - 'tests/ready-planner-companion-reuse.spec.py'
       - '.github/workflows/design-to-ui-contract.yml'
   push:
     branches: ['taky/design-gate-v1']
@@ -33,8 +41,11 @@ jobs:
           python -m py_compile tools/taky-design-to-ui-validate.py
           python -m py_compile tools/taky-design-to-ui-receipt.py
           python -m py_compile tests/design-to-ui-contract.spec.py
+          python -m py_compile tests/ready-planner-companion-reuse.spec.py
       - name: Validate Ready Design-to-UI adoption
         run: python tests/design-to-ui-contract.spec.py
+      - name: Verify exact PR118 companion reuse
+        run: python tests/ready-planner-companion-reuse.spec.py
       - name: Upload contract validation
         if: always()
         uses: actions/upload-artifact@v4
