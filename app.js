@@ -18,7 +18,7 @@ const categories={
   영어:['라이팅','문장 녹음','단어 외우기','기타']
 };
 
-const GUIDE_TYPES={
+const READY_GUIDE_PRESENTATIONS={
   lumi:{defaultName:'루미',personality:'포근하고 위트 있는 길잡이',home:'오늘 작전, 내가 옆에서 같이 봐줄게.',intro:'오늘도 천천히 시작해보자. 준비되면 바로 들어가자!'},
   pico:{defaultName:'피코',personality:'밝고 장난기 있는 길잡이',home:'준비 끝? 그럼 오늘 시계가 조금 긴장하겠는데?',intro:'좋아! 오늘도 가볍게 시작해서 끝까지 가보자!'},
   mori:{defaultName:'모리',personality:'차분하고 든든한 길잡이',home:'서두르지 않아도 괜찮아. 정한 만큼 같이 가보자.',intro:'호흡 한번 정리하고, 네 속도로 시작해보자.'}
@@ -129,6 +129,14 @@ function nav(name){
   if(name==='settings')renderSettings();
   if(name==='result')renderResult();
 }
+window.addEventListener('storage',event=>{
+  if(event.key===window.ReadyExplorerCrewAuthorityConsumer?.PROJECTION_KEY){
+    syncSharedCrewAuthority();
+    renderHome();
+    if(document.querySelector('.view.active[data-view="settings"]'))renderSettings();
+    if(document.querySelector('.view.active[data-view="focus"]'))renderFocus();
+  }
+});
 window.addEventListener('readyset-central-roundtrip-result',event=>{
   const result=event.detail?.result;
   if(result?.ok!==true||result.scheduled!==true)return;
@@ -164,13 +172,40 @@ function applyAvatar(el){
     el.style.filter='none';
   }
 }
+function sharedCrewProjection(){
+  return window.ReadyExplorerCrewAuthorityConsumer?.snapshot?.(localStorage)
+    ||{status:'UNBOUND',character_id:null};
+}
+function syncSharedCrewAuthority({consumeUrl=false}={}){
+  const api=window.ReadyExplorerCrewAuthorityConsumer;
+  if(!api)return {ok:false,projection:{status:'UNAVAILABLE',character_id:null}};
+  let result={ok:true,consumed:false};
+  if(consumeUrl){
+    result=api.consumeHandoffUrl(location.href,{
+      storage:localStorage,
+      replaceUrl:clean=>history.replaceState(null,'',clean)
+    });
+  }
+  const projection=api.snapshot(localStorage);
+  api.syncHost(document.documentElement,projection);
+  [
+    $('#homeGuideCard'),$('#homeGuidePortrait'),$('#settingsGuidePortrait'),
+    $('#focusGuideMini'),$('#recordGuidePortrait'),$('#duoMainGuide'),
+    $('#resultGuidePortrait')
+  ].filter(Boolean).forEach(el=>api.syncHost(el,projection));
+  return {...result,projection};
+}
 function applyGuide(el,type=state.guide.type){
   if(!el)return;
   el.classList.remove('lumi','pico','mori','guest');
   el.classList.add('guidePortrait',type);
   el.setAttribute('data-guide',type);
+  el.dataset.guidePresentation=type;
+  window.ReadyExplorerCrewAuthorityConsumer?.syncHost?.(el,sharedCrewProjection());
 }
-function guideData(type=state.guide.type){return GUIDE_TYPES[type]||GUIDE_TYPES.lumi}
+function guideData(type=state.guide.type){return READY_GUIDE_PRESENTATIONS[type]||READY_GUIDE_PRESENTATIONS.lumi}
+
+window.ReadySetSharedCrewProjection=()=>structuredClone(sharedCrewProjection());
 
 function centralPlannerScope(){
   // Supplied only by an explicitly installed trusted central host. Ready's
@@ -688,7 +723,7 @@ function finishRecording(){
   applyGuide($('#duoMainGuide'),state.guide.type);
   applyGuide($('#duoGuestGuide'),currentGuestType);
   $('#guideDialogue').textContent='잠깐만. 같이 들어줄 친구 좀 잡아올게!';
-  $('#duoText').textContent=`${state.guide.name}: 잡아왔다!  ·  ${GUIDE_TYPES[currentGuestType].defaultName}: 좋아, 끝까지 들어보자. 지금은 자동 평가보다 녹음을 끝까지 완료한 사실을 먼저 확인할게.`;
+  $('#duoText').textContent=`${state.guide.name}: 잡아왔다!  ·  ${READY_GUIDE_PRESENTATIONS[currentGuestType].defaultName}: 좋아, 끝까지 들어보자. 지금은 자동 평가보다 녹음을 끝까지 완료한 사실을 먼저 확인할게.`;
   const isM4A=/audio\/(mp4|m4a)/.test(type);
   $('#formatNote').textContent=isM4A
     ?'실제 MP4/M4A 계열 오디오로 저장할 수 있는 브라우저입니다.'
@@ -2121,12 +2156,13 @@ $('#guideNameInput').onchange=e=>{
   state.guide.name=e.target.value.trim()||guideData().defaultName;
   save();renderSettings();renderHome();
 };
-$$('[data-guide-type]').forEach(b=>b.onclick=()=>{
+$('[data-guide-type]').forEach(b=>b.onclick=()=>{
   const prevDefault=guideData().defaultName;
   const type=b.dataset.guideType;
   state.guide.type=type;
   if(!state.guide.name||state.guide.name===prevDefault)state.guide.name=guideData(type).defaultName;
-  save();renderSettings();renderHome();toast(`${state.guide.name}와 함께할게요.`);
+  // Ready-local presentation selection only. Shared Crew identity/relation authority is read-only here.
+  save();renderSettings();renderHome();toast(`${state.guide.name} 표현으로 함께할게요.`);
 });
 function renderNameSuggestions(reroll=true){
   const root=$('#nameSuggestions');if(!root)return;if(!reroll&&root.children.length)return;
@@ -2341,6 +2377,7 @@ function reconcileReadyRuntimeState(){
 }
 
 window.addEventListener('load',()=>{
+  syncSharedCrewAuthority({consumeUrl:true});
   renderHome();renderSettings();
   const versionInfo=document.getElementById('readyVersionInfo');
   if(versionInfo) versionInfo.textContent=`APP ${VERSION.app} · MASTER ${VERSION.master} · SCHEMA ${VERSION.schema} · RELEASE ${VERSION.cache}`;
