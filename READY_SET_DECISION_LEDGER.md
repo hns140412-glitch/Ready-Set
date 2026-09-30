@@ -26,7 +26,7 @@ Disposition set: PRESERVE / MERGE / SUPERSEDE / ARCHIVE / OPEN
 | RDY-C2S-018 | stale Time Attack/GitHub Pages README | SUPERSEDE | R3 |
 | RDY-C2S-019 | REV_06/07 as active version authority | SUPERSEDE | Version Registry |
 | RDY-C2S-020 | 0.9.3 / feature cache / REV mismatch | SUPERSEDE | R3 |
-| RDY-C2S-021 | Planner real availability windows + buffers | MERGE | R5 / PR #132 implementation + validation pending |
+| RDY-C2S-021 | Planner real availability windows + buffers | PRESERVE | R5 complete / PR #132 exact-main verified |
 | RDY-C2S-022 | child ad-hoc FACT generic confirmation gap | PRESERVE | R4 implemented / exact-main regression verified |
 | RDY-C2S-023 | shared expedition-member authority | OPEN | consume upstream |
 | RDY-C2S-024 | exploration WEEK/DAY/TODAY | PRESERVE | Product Contract |
@@ -40,7 +40,7 @@ Disposition set: PRESERVE / MERGE / SUPERSEDE / ARCHIVE / OPEN
 | RDY-C2S-032 | append-only REV_08 approach | SUPERSEDE | semantic canonical docs |
 | RDY-C2S-033 | historical REV docs retained as provenance | ARCHIVE | R6 |
 | RDY-C2S-034 | Parent period-scoped fixed timetable + voice review/confirm editing | PRESERVE | Planner constraint input / Parent Admin / PR #130 exact-main verified |
-| RDY-C2S-035 | Parent-confirmed lifestyle buffers: travel/meal/preparation/rest/safety | MERGE | R5 / Planner constraint input / PR #132 |
+| RDY-C2S-035 | Parent-confirmed lifestyle buffers: travel/meal/preparation/rest/safety | PRESERVE | R5 / Planner constraint input / PR #132 exact-main verified |
 
 ## Coverage
 Recovered atoms registered here: 35.
