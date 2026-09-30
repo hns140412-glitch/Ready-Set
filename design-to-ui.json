@@ -41,17 +41,20 @@
         {
           "id": "BASE_REVIEW",
           "fixture_path": "design/fixtures/planner-week.json",
-          "fixture_sha256": "b6f513cc497692311d9b201f896c51a5f578bf682e4574ea55285cc63e7fbe9f"
+          "fixture_sha256": "b6f513cc497692311d9b201f896c51a5f578bf682e4574ea55285cc63e7fbe9f",
+          "visual_policy": "GOLDEN_PARITY"
         },
         {
           "id": "EMPTY",
           "fixture_path": "design/fixtures/planner-week.json",
-          "fixture_sha256": "b6f513cc497692311d9b201f896c51a5f578bf682e4574ea55285cc63e7fbe9f"
+          "fixture_sha256": "b6f513cc497692311d9b201f896c51a5f578bf682e4574ea55285cc63e7fbe9f",
+          "visual_policy": "LAYOUT_GUARD"
         },
         {
           "id": "SELECTED_DAY",
           "fixture_path": "design/fixtures/planner-week.json",
-          "fixture_sha256": "b6f513cc497692311d9b201f896c51a5f578bf682e4574ea55285cc63e7fbe9f"
+          "fixture_sha256": "b6f513cc497692311d9b201f896c51a5f578bf682e4574ea55285cc63e7fbe9f",
+          "visual_policy": "LAYOUT_GUARD"
         }
       ]
     },
@@ -85,22 +88,26 @@
         {
           "id": "BASE_REVIEW",
           "fixture_path": "design/fixtures/planner-day.json",
-          "fixture_sha256": "9114da2e25f09a5de689619d32d5cdccaf1011f6f64f94432304e3215e733956"
+          "fixture_sha256": "9114da2e25f09a5de689619d32d5cdccaf1011f6f64f94432304e3215e733956",
+          "visual_policy": "GOLDEN_PARITY"
         },
         {
           "id": "EMPTY",
           "fixture_path": "design/fixtures/planner-day.json",
-          "fixture_sha256": "9114da2e25f09a5de689619d32d5cdccaf1011f6f64f94432304e3215e733956"
+          "fixture_sha256": "9114da2e25f09a5de689619d32d5cdccaf1011f6f64f94432304e3215e733956",
+          "visual_policy": "LAYOUT_GUARD"
         },
         {
           "id": "QUICK_ADD_DRAFT",
           "fixture_path": "design/fixtures/planner-day.json",
-          "fixture_sha256": "9114da2e25f09a5de689619d32d5cdccaf1011f6f64f94432304e3215e733956"
+          "fixture_sha256": "9114da2e25f09a5de689619d32d5cdccaf1011f6f64f94432304e3215e733956",
+          "visual_policy": "LAYOUT_GUARD"
         },
         {
           "id": "QUICK_ADD_CONFIRM",
           "fixture_path": "design/fixtures/planner-day.json",
-          "fixture_sha256": "9114da2e25f09a5de689619d32d5cdccaf1011f6f64f94432304e3215e733956"
+          "fixture_sha256": "9114da2e25f09a5de689619d32d5cdccaf1011f6f64f94432304e3215e733956",
+          "visual_policy": "LAYOUT_GUARD"
         }
       ]
     },
@@ -134,12 +141,14 @@
         {
           "id": "BASE_REVIEW",
           "fixture_path": "design/fixtures/goal.json",
-          "fixture_sha256": "423431896dcedc18389d6c77384afabc9124dcd41d48979b5912cc84e169c87c"
+          "fixture_sha256": "423431896dcedc18389d6c77384afabc9124dcd41d48979b5912cc84e169c87c",
+          "visual_policy": "GOLDEN_PARITY"
         },
         {
           "id": "SHARE_OPTIONAL",
           "fixture_path": "design/fixtures/goal.json",
-          "fixture_sha256": "423431896dcedc18389d6c77384afabc9124dcd41d48979b5912cc84e169c87c"
+          "fixture_sha256": "423431896dcedc18389d6c77384afabc9124dcd41d48979b5912cc84e169c87c",
+          "visual_policy": "LAYOUT_GUARD"
         }
       ]
     },
@@ -173,22 +182,26 @@
         {
           "id": "BASE_REVIEW",
           "fixture_path": "design/fixtures/focus.json",
-          "fixture_sha256": "9d449dbf0980a63ceb3a3df4677e27a3d4227b8a01c055ac213ad3b3b6ba35b1"
+          "fixture_sha256": "9d449dbf0980a63ceb3a3df4677e27a3d4227b8a01c055ac213ad3b3b6ba35b1",
+          "visual_policy": "GOLDEN_PARITY"
         },
         {
           "id": "RUNNING",
           "fixture_path": "design/fixtures/focus.json",
-          "fixture_sha256": "9d449dbf0980a63ceb3a3df4677e27a3d4227b8a01c055ac213ad3b3b6ba35b1"
+          "fixture_sha256": "9d449dbf0980a63ceb3a3df4677e27a3d4227b8a01c055ac213ad3b3b6ba35b1",
+          "visual_policy": "LAYOUT_GUARD"
         },
         {
           "id": "PAUSED",
           "fixture_path": "design/fixtures/focus.json",
-          "fixture_sha256": "9d449dbf0980a63ceb3a3df4677e27a3d4227b8a01c055ac213ad3b3b6ba35b1"
+          "fixture_sha256": "9d449dbf0980a63ceb3a3df4677e27a3d4227b8a01c055ac213ad3b3b6ba35b1",
+          "visual_policy": "LAYOUT_GUARD"
         },
         {
           "id": "COMPLETED",
           "fixture_path": "design/fixtures/focus.json",
-          "fixture_sha256": "9d449dbf0980a63ceb3a3df4677e27a3d4227b8a01c055ac213ad3b3b6ba35b1"
+          "fixture_sha256": "9d449dbf0980a63ceb3a3df4677e27a3d4227b8a01c055ac213ad3b3b6ba35b1",
+          "visual_policy": "LAYOUT_GUARD"
         }
       ]
     }
