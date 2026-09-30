@@ -298,3 +298,30 @@
   .baseCampCharacterSlot{left:56px;width:126px;height:145px}
   .baseCampCompanion{right:12px;width:148px;height:176px}
 }
+
+
+/* DESIGN GATE regression correction:
+   retain legacy functional controls as low-noise utility actions instead of hiding them. */
+.plannerMain .plannerHero{
+  display:flex!important;
+  justify-content:flex-end;
+  min-height:44px;
+  padding:0 4px!important;
+  margin:0 0 8px!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.plannerMain .plannerHero>div:first-child{display:none}
+.plannerHeroActions{display:flex!important;gap:7px;align-items:center}
+.plannerHeroActions button{
+  min-width:44px;min-height:40px;padding:0 12px;border-radius:999px;
+  border:1px solid rgba(87,60,41,.16);background:rgba(255,248,233,.86);color:#654b3b;
+  font-size:10px;font-weight:900;box-shadow:0 3px 9px rgba(62,38,21,.08)
+}
+.typingFallback{
+  margin-top:10px;padding-top:8px;border-top:1px dashed rgba(89,61,42,.15);
+}
+.typingFallback>small{display:block;margin-bottom:5px;color:#897465;font-size:9px;font-weight:850}
+.typingFallback .inputWrap{opacity:.76}
+.typingFallback .inputWrap:focus-within{opacity:1}
