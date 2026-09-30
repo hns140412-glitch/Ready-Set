@@ -155,5 +155,9 @@ const capacityAfterMealRemoval=bufferPlanner.allocateToday({
   candidate_windows:[{start:'14:00',end:'20:00'}]
 });
 assert.equal(capacityAfterMealRemoval.available_minutes,70);
+const removedCommitment=bufferPlanner.removeScheduleCommitment('academy-buffered');
+assert.equal(removedCommitment.ok,true);
+assert.equal(removedCommitment.removed_buffers,2);
+assert.equal(bufferPlanner.scheduleBuffersByDate('2026-09-22').length,0);
 
 console.log('PASS: parent-confirmed travel, meal, preparation/rest/safety-style buffers subtract from real Planner free windows without creating DATED TODOs');
