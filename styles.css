@@ -31,6 +31,11 @@
 .schedulePeriodCalendar button.covered{box-shadow:inset 0 0 0 1px rgba(214,110,77,.24)}.schedulePeriodCalendar button.activePeriod{background:#fff0e7}.schedulePeriodCalendar button.selected{background:#2a231f;color:#fff}.schedulePeriodCalendar button.selected small{color:rgba(255,255,255,.72)}
 .scheduleVoiceBox{display:grid;gap:9px;padding:13px;border-radius:18px;background:#fff7f1;border:1px solid #ead8cc}.scheduleVoicePreview{padding:11px 12px;border-radius:14px;background:#fff;border:1px solid rgba(42,35,31,.08)}
 .scheduleVoicePreview b,.scheduleVoicePreview small{display:block}.scheduleVoicePreview small{margin-top:4px;font-size:10px;color:#7d7169}
+.scheduleConflictReview{display:grid;gap:8px;padding:12px;border-radius:16px;background:rgba(255,246,232,.94);border:1px solid rgba(160,101,54,.18)}
+.scheduleConflictReview[hidden]{display:none}.scheduleConflictReview>b{font-size:12px}.scheduleConflictItem{display:grid;gap:2px;padding:9px 10px;border-radius:12px;background:rgba(255,255,255,.76)}
+.scheduleConflictItem b{font-size:10px}.scheduleConflictItem small{font-size:9px;color:#786b62;line-height:1.35}.scheduleVoiceConflict{display:grid;gap:4px;margin-top:8px;padding:8px 9px;border-radius:11px;background:rgba(255,244,225,.92)}
+.scheduleVoiceConflict b{font-size:10px}.scheduleVoiceConflict small{font-size:9px;color:#786b62}
+
 .scheduleTileBoard{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:2px}.scheduleTileDay{min-width:0;padding:10px;border-radius:17px;background:rgba(255,255,255,.7);border:1px solid rgba(42,35,31,.06)}
 .scheduleTileDay header{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}.scheduleTileDay header b{font-size:12px}.scheduleTileDay header small{font-size:9px;color:#8a7d75}
 .scheduleTileDay>div{display:grid;gap:5px}.scheduleTile{border:0;border-radius:12px;padding:9px;text-align:left;background:#fff2cf;color:#403934}.scheduleTile b,.scheduleTile small{display:block}.scheduleTile b{font-size:11px}.scheduleTile small{margin-top:3px;font-size:9px;color:#786b62}.scheduleTileEmpty{display:block;padding:9px 4px;font-size:9px;color:#9a8e86}
