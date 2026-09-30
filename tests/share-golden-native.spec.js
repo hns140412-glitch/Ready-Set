@@ -1,18 +1,7 @@
 const {test,expect}=require('@playwright/test');
 const base='http://127.0.0.1:4173/';
-// Only a browser test fixture: this is NEVER committed as approved share art.
-async function injectSyntheticSceneFixture(page){
-  await page.evaluate(()=>{
-    window.ReadyShareVisualAssets={scene:()=>{
-      const svg='<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1280">'+
-        '<rect width="1800" height="800" fill="#bde5f4"/>'+
-        '<text x="760" y="350" font-size="70" fill="#334455">TEST FIXTURE - NOT APPROVED ART</text></svg>';
-      return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
-    }};
-  });
-}
 
-test('Profile theme, actual pre-share, preview and native image+caption on second gesture',async({page})=>{
+test('production interim assets, Profile theme, pre-share and native image+caption on second gesture',async({page})=>{
   await page.addInitScript(()=>{
     window.__shareCalls=[];
     Object.defineProperty(navigator,'canShare',{configurable:true,value:input=>!!input?.files?.length});
@@ -37,12 +26,26 @@ test('Profile theme, actual pre-share, preview and native image+caption on secon
   expect(await page.evaluate(()=>window.ReadySetShare.getTheme())).toBe('sail');
   expect(await page.evaluate(()=>window.ReadySetShare.delivery)).toBe('NATIVE_OS_SHARE_ONLY');
   expect(await page.evaluate(()=>Object.hasOwn(window.ReadySetShare,'setTheme'))).toBe(false);
-  // Verify production fails closed when the Golden illustrated art is missing.
-  const blocked=await page.evaluate(()=>window.ReadySetShare.showPreview('pre'));
-  expect(blocked).toMatchObject({ok:false,reason:'SHARE_GOLDEN_SCENE_NOT_APPROVED'});
-  await expect(page.locator('#readySharePreview')).toHaveCount(0);
-  await injectSyntheticSceneFixture(page);
-  await page.evaluate(()=>window.ReadySetShare.showPreview('pre'));
+
+  const assets=await page.evaluate(async()=>{
+    const out=[];
+    for(const theme of ['drop','sail'])for(const kind of ['pre','result']){
+      const scene=window.ReadyShareVisualAssets.scene(theme,kind);
+      const layers=window.ReadyShareVisualAssets.layers(theme,kind);
+      const urls=[scene,layers?.sky,layers?.world,layers?.foreground];
+      const status=await Promise.all(urls.map(async u=>({u,ok:!!u&&(await fetch(u)).ok})));
+      out.push({theme,kind,status});
+    }
+    return out;
+  });
+  expect(assets).toHaveLength(4);
+  for(const variant of assets){
+    expect(variant.status).toHaveLength(4);
+    expect(variant.status.every(x=>x.ok)).toBe(true);
+  }
+
+  const opened=await page.evaluate(()=>window.ReadySetShare.showPreview('pre'));
+  expect(opened).toMatchObject({ok:true,method:'PREVIEW_READY'});
   const preview=page.locator('#readySharePreview');
   await expect(preview).toBeVisible();
   await expect(preview.locator('img')).toHaveAttribute('src',/^blob:/);
@@ -64,7 +67,8 @@ test('Profile theme, actual pre-share, preview and native image+caption on secon
   await preview.getByRole('button',{name:'닫기'}).click();
   await expect(preview).toHaveCount(0);
 });
-test('Verified mixed result cannot manufacture completion count or stars',async({page})=>{
+
+test('Verified mixed result uses production art and cannot manufacture completion count or stars',async({page})=>{
   await page.goto(base);
   await page.evaluate(()=>{
     state.profile.theme='drop';state.profile.shareAvatar=false;
@@ -74,19 +78,19 @@ test('Verified mixed result cannot manufacture completion count or stars',async(
         {task_id:'two',label:'오늘의 연산',state:'PARTIAL'}
       ]};
   });
-  let outcome=await page.evaluate(()=>window.ReadySetShare.projectShare('result'));
+  const outcome=await page.evaluate(()=>window.ReadySetShare.projectShare('result'));
   expect(outcome.ok).toBe(true);expect(outcome.doneCount).toBe(1);
   expect(outcome.total).toBe(2);expect(outcome.stars).toBe(null);
-  await injectSyntheticSceneFixture(page);
-  await page.evaluate(()=>window.ReadySetShare.showPreview('result'));
+  const opened=await page.evaluate(()=>window.ReadySetShare.showPreview('result'));
+  expect(opened.ok).toBe(true);
   await expect(page.locator('#readySharePreview textarea')).toHaveValue(/완료 1\/2/);
   await expect(page.locator('#readySharePreview img')).toBeVisible();
   await page.locator('#readySharePreview').getByRole('button',{name:'닫기'}).click();
 });
+
 test('No record or tasks fails closed instead of sharing made-up data',async({page})=>{
   await page.goto(base);
   const result=await page.evaluate(()=>window.ReadySetShare.showPreview('result'));
   expect(result.ok).toBe(false);
   await expect(page.locator('#readySharePreview')).toHaveCount(0);
 });
-
