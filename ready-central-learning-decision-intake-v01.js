@@ -38,6 +38,18 @@
   }
   if(leaks(result)||!Array.isArray(result.decision.pedagogical_actions))
    return {ok:false,reason:'CENTRAL_DECISION_AUTHORITY_LEAK'};
+  const trace=result.trace||{};
+  if(trace.governed_activity_refs!==undefined||
+     trace.governed_activity_policy_ids!==undefined){
+   const refs=trace.governed_activity_refs,policies=trace.governed_activity_policy_ids;
+   const validRefs=Array.isArray(refs)&&refs.length>0&&refs.length<=24&&
+    refs.every(x=>!!clean(x))&&new Set(refs.map(clean)).size===refs.length;
+   const validPolicies=Array.isArray(policies)&&policies.length>0&&policies.length<=8&&
+    policies.every(x=>clean(x)==='P-F07-READY')&&
+    new Set(policies.map(clean)).size===policies.length;
+   if(!validRefs||!validPolicies)
+    return {ok:false,reason:'CENTRAL_GOVERNED_ACTIVITY_REFERENCE_INVALID'};
+  }
   return {ok:true,authority:'CENTRAL_PEDAGOGICAL_INTENT_ONLY',
    actions:structuredClone(result.decision.pedagogical_actions),
    adaptive_plan:structuredClone(result.decision.adaptive_plan),

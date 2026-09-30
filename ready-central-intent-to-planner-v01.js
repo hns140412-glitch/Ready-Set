@@ -32,6 +32,17 @@
     :(observation?'OBSERVATION_ADVISORY_ONLY':null);
   if(!basisKind||trace.basis_kind!==basisKind)
    return {ok:false,reason:'SERVER_SCOPED_DECISION_BASIS_REQUIRED'};
+  const activityRefs=Array.isArray(trace.governed_activity_refs)
+   ?trace.governed_activity_refs.map(clean).filter(Boolean):[];
+  const activityPolicies=Array.isArray(trace.governed_activity_policy_ids)
+   ?trace.governed_activity_policy_ids.map(clean).filter(Boolean):[];
+  if(activityRefs.length>24||new Set(activityRefs).size!==activityRefs.length||
+     activityPolicies.length>8||new Set(activityPolicies).size!==activityPolicies.length||
+     (activityRefs.length>0&&!activityPolicies.includes('P-F07-READY'))||
+     (activityPolicies.length>0&&activityRefs.length===0)||
+     activityPolicies.some(x=>x!=='P-F07-READY'))
+   return {ok:false,reason:'SERVER_GOVERNED_ACTIVITY_REFERENCE_REQUIRED'};
+  const activityRefsKey=JSON.stringify(activityRefs);
   if(intent.adaptive_plan.add_checkpoint!==true)
    return {ok:true,scheduled:false,reason:'NO_CENTRAL_CHECKPOINT_INTENT'};
   if(!planner||typeof planner.candidateWindowsByDate!=='function'||
@@ -46,7 +57,11 @@
   const matches=t=>t?.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'&&
    Object.entries(provenanceBase).every(([k,v])=>t.provenance?.[k]===v);
   const prior=(planner.snapshot()?.dated_todos||[]).filter(matches);
-  const existing=prior.find(x=>['PLANNED','IN_PROGRESS'].includes(x.state));
+  const refsMatch=t=>(clean(t?.provenance?.governed_activity_refs_key)||'[]')===activityRefsKey;
+  const activePrior=prior.find(x=>['PLANNED','IN_PROGRESS'].includes(x.state));
+  if(activePrior&&!refsMatch(activePrior))
+   return {ok:false,reason:'CENTRAL_CHECKPOINT_REPLAY_CONFLICT'};
+  const existing=activePrior&&refsMatch(activePrior)?activePrior:null;
   if(!existing&&prior.length)
    return {ok:false,reason:'CENTRAL_CHECKPOINT_REQUIRES_NEW_EVIDENCE',
      previous_todo_id:prior.at(-1).todo_id};
@@ -93,6 +108,11 @@
    provenance:{kind:'CENTRAL_PEDAGOGICAL_CHECKPOINT',...provenanceBase,
     central_intents:(intent.actions||[]).map(x=>clean(x.intent)).filter(Boolean),
     target_learning_ids:reviewTargets,
+    ...(activityRefs.length?{
+     governed_activity_refs:[...activityRefs],
+     governed_activity_policy_ids:[...activityPolicies],
+     governed_activity_refs_key:activityRefsKey
+    }:{}),
     schedule_authority:'READY_SET_PLANNER'}
   });
   if(!todo||!clean(todo.todo_id)||todo.date!==date)
