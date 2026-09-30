@@ -1,0 +1,15 @@
+const assert=require('node:assert/strict');
+const listeners=new Map();
+globalThis.addEventListener=(name,fn)=>{const arr=listeners.get(name)||[];arr.push(fn);listeners.set(name,arr)};
+globalThis.dispatchEvent=(evt)=>{for(const fn of listeners.get(evt.type)||[])fn(evt);return true};
+globalThis.CustomEvent=class{constructor(type,opt={}){this.type=type;this.detail=opt.detail}};
+const target={textContent:'before'};
+globalThis.document={querySelector(sel){return sel==='#homeGuideLine'?target:null}};
+require('../ready-character-scene-bridge-v1.js');
+require('../ready-crew-dialogue-consumer-v1.js');
+const runtime=require('../ready-crew-live-runtime-v1.js');
+const ch=runtime.legacyCharacter('guide',{role:'MAIN',action:'IDLE',dialogue:'SHORT',utterance:'탐험대 실제 연결 확인',evidenceRef:'TEST'});
+const plan=runtime.emit({sceneId:'home',surface:'home',characters:[ch],foregroundId:ch.character_id,speakingOrder:[ch.character_id],visibleOrder:[ch.character_id]});
+assert.equal(plan.semantic_only,true);
+assert.equal(target.textContent,'탐험대 실제 연결 확인');
+console.log(JSON.stringify({gate:'LIVE_CREW_EVENT_CHAIN',app:'READY_SET',surface:'home',pass:true},null,2));
