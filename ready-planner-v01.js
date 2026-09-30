@@ -206,6 +206,10 @@
           source:requestedSource,
           source_actor:cleanText(input.source_actor)||null,
           provenance:input.provenance||null,
+          ...(Array.isArray(input.activity_types)?{activity_types:[...input.activity_types]}:{}),
+          ...(Array.isArray(input.activity_sequence)?{activity_sequence:[...input.activity_sequence]}:{}),
+          ...(input.review_policy&&typeof input.review_policy==='object'?
+            {review_policy:structuredClone(input.review_policy)}:{}),
           order:Number.isFinite(input.order)?input.order:999,
           state,
           created_at:input.created_at||new Date().toISOString(),
@@ -217,11 +221,33 @@
       });
     }
 
+    // The existing Planner compatibility store is shared. A new central
+    // child-scoped checkpoint must be invisible and unroutable unless the
+    // independently authenticated central host supplies the active scope.
+    // Legacy carry-over rows predate explicit central_scope metadata. Resolve
+    // their ownership against the original Planner TODO rather than exposing
+    // a formerly child-scoped item when a stored projection is upgraded.
+    function centralCarryScope(carry,s){
+      const source=s.dated_todos.find(t=>t.todo_id===carry?.source_todo_id);
+      if(carry?.source_todo_source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT'&&
+         source?.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT')return null;
+      return {family_id:carry?.central_scope?.family_id||source?.provenance?.family_id||null,
+        member_id:carry?.central_scope?.member_id||source?.provenance?.member_id||null};
+    }
+    function visibleToCentralScope(todo,scope){
+      if(todo?.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT')return true;
+      return scope?.authenticated===true&&
+        cleanText(scope.family_id)===cleanText(todo.provenance?.family_id)&&
+        cleanText(scope.selected_member_id)===cleanText(todo.provenance?.member_id)&&
+        !!cleanText(todo.provenance?.family_id)&&
+        !!cleanText(todo.provenance?.member_id);
+    }
     function linkTodayItems(todoIds=[],options={}){
       const date=cleanText(options.date)||dateKey();
       const ids=new Set((todoIds||[]).map(cleanText).filter(Boolean));
       const allowedStates=new Set(Array.isArray(options.allowed_states)&&options.allowed_states.length?options.allowed_states:['PLANNED']);
-      return load().dated_todos.filter(x=>ids.has(x.todo_id)&&x.date===date&&allowedStates.has(x.state)).map(x=>({
+      return load().dated_todos.filter(x=>ids.has(x.todo_id)&&x.date===date&&allowedStates.has(x.state)&&
+        visibleToCentralScope(x,options.central_scope)).map(x=>({
         todo_id:x.todo_id,label:x.label,date:x.date,source:x.source,
         assignment_id:x.assignment_id,analysis_id:x.analysis_id,learning_unit_id:x.learning_unit_id,
         template_id:x.template_id,allocation_run_id:x.allocation_run_id,
@@ -238,7 +264,7 @@
     function linkOrCreateTodayItems(values=[],options={}){
       const s=load(),date=cleanText(options.date)||dateKey();
       const ids=(values||[]).map(v=>typeof v==='object'?v.todo_id:v).filter(v=>s.dated_todos.some(x=>x.todo_id===v));
-      return linkTodayItems(ids,{date});
+      return linkTodayItems(ids,{...options,date});
     }
 
     function allocationDates(fact,input={}){
@@ -455,6 +481,8 @@
       return mutate(s=>{const carry=s.carry_over_queue.find(x=>x.carry_over_id===carryId&&x.status==='OPEN');if(!carry)return {ok:false,reason:'CARRY_OVER_NOT_FOUND'};
         if(carry.resolution_required)return {ok:false,reason:'CARRY_OVER_REQUIRES_RESOLUTION'};
         const source=s.dated_todos.find(x=>x.todo_id===carry.source_todo_id);if(!source)return {ok:false,reason:'SOURCE_TODO_NOT_FOUND'};
+        if(source.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT')
+          return {ok:false,reason:'CENTRAL_CHECKPOINT_REQUIRES_FRESH_LEARNING_DECISION'};
         const nextDepth=Math.max(0,Number(source.provenance?.carry_over_depth)||0)+1;
         const template=s.homework_templates.find(x=>x.template_id===source.template_id)||null;
         const deadline=cleanText(template?.deadline_date)||null;
@@ -744,7 +772,16 @@
         if(todo.active_session_id&&sessionId&&todo.active_session_id!==sessionId){
           return {ok:false,reason:'SESSION_OWNERSHIP_CONFLICT',todo_id:todoId,active_session_id:todo.active_session_id};
         }
-        if(todo.state!=='IN_PROGRESS'&&!['PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].includes(todo.state)){
+        // Ready's task-state event can already mark this exact task COMPLETED
+        // before the final session-outcome recorder attaches elapsed time.
+        // Allow that one same-session completion, not an unrelated replay.
+        const sameCompletedEvent=todo.state==='COMPLETED'&&mapped==='COMPLETED'&&
+          !!sessionId&&!!cleanText(input.task_id)&&s.progress_events.some(e=>
+            e.todo_id===todoId&&e.session_id===sessionId&&
+            e.task_id===cleanText(input.task_id)&&e.state==='COMPLETED'&&
+            e.source==='READY_SESSION');
+        if(todo.state!=='IN_PROGRESS'&&!sameCompletedEvent&&
+          !['PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].includes(todo.state)){
           return {ok:false,reason:'TODO_NOT_FINISHABLE',todo_id:todoId,state:todo.state};
         }
         todo.state=mapped;
@@ -814,6 +851,9 @@
           s.carry_over_queue.push({
             carry_over_id:makeId('carry'),
             source_todo_id:todoId,
+            source_todo_source:todo.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'?todo.source:null,
+            central_scope:todo.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'
+              ?{family_id:todo.provenance?.family_id||null,member_id:todo.provenance?.member_id||null}:null,
             template_id:todo.template_id||null,
             assignment_id:todo.assignment_id||null,
             analysis_id:todo.analysis_id||null,
@@ -847,6 +887,7 @@
       const date=cleanText(input.date)||dateKey();
       const s=load();
       const ids=s.carry_over_queue
+        .filter(x=>!centralCarryScope(x,s))
         .filter(x=>x.status==='OPEN'&&x.allocation_ready===true&&x.resolution_required!==true)
         .filter(x=>cleanText(x.from_date)<date)
         .map(x=>x.carry_over_id);
@@ -855,8 +896,56 @@
       return {ok:true,date,attempted:ids.length,results};
     }
 
-    function carryOverCandidates(){
-      return load().carry_over_queue.filter(x=>x.status==='OPEN').map(x=>({...x}));
+    // A newly allocated, independently based central decision closes older
+    // terminal checkpoint carry-over for that child/skill. It never redates
+    // the previous task, creates a task or treats a self-report as proof.
+    function reconcileCentralCheckpointCarries(input={}){
+      const id=cleanText(input.new_todo_id);
+      if(!id)return {ok:false,reason:'NEW_CENTRAL_TODO_REQUIRED'};
+      return mutate(s=>{
+        const next=s.dated_todos.find(x=>x.todo_id===id);
+        if(next?.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT'||
+          !['PLANNED','IN_PROGRESS'].includes(next.state)||
+          !cleanText(next.provenance?.family_id)||
+          !cleanText(next.provenance?.member_id)||
+          !cleanText(next.provenance?.subject)||
+          !cleanText(next.provenance?.concept_skill_target))
+          return {ok:false,reason:'VALID_NEW_CENTRAL_CHECKPOINT_REQUIRED'};
+        const p=next.provenance;
+        if(input.family_id!==p.family_id||input.member_id!==p.member_id||
+          input.subject!==p.subject||input.concept_skill_target!==p.concept_skill_target)
+          return {ok:false,reason:'CENTRAL_RECONCILIATION_SCOPE_MISMATCH'};
+        const resolved=[];
+        for(const carry of s.carry_over_queue){
+          if(carry.status!=='OPEN'||carry.source_todo_id===id)continue;
+          const scope=centralCarryScope(carry,s);
+          if(!scope||scope.family_id!==p.family_id||scope.member_id!==p.member_id)continue;
+          const previous=s.dated_todos.find(x=>x.todo_id===carry.source_todo_id);
+          if(!previous||previous.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT'||
+            previous.provenance?.subject!==p.subject||
+            previous.provenance?.concept_skill_target!==p.concept_skill_target||
+            !['PARTIAL','DEFERRED','BLOCKED','WAITING_FOR_PARENT'].includes(previous.state)||
+            previous.provenance?.verified_receipt_id===p.verified_receipt_id&&
+            previous.provenance?.observation_basis_digest_sha256===
+              p.observation_basis_digest_sha256)
+            continue;
+          carry.status='RESOLVED';
+          carry.resolution='SUPERSEDED_BY_FRESH_CENTRAL_DECISION';
+          carry.rescheduled_todo_id=id;
+          carry.resolved_at=new Date().toISOString();
+          resolved.push(carry.carry_over_id);
+        }
+        return {ok:true,resolved};
+      });
+    }
+
+    function carryOverCandidates(options={}){
+      const s=load();
+      return s.carry_over_queue.filter(x=>x.status==='OPEN')
+        .filter(x=>{const bound=centralCarryScope(x,s);return !bound||
+          visibleToCentralScope({source:'PLANNER_CENTRAL_LEARNING_CHECKPOINT',
+            provenance:bound},options.central_scope)})
+        .map(x=>({...x}));
     }
 
     function resolveCarryOver(carryOverId,input={}){
@@ -865,6 +954,14 @@
         const carry=s.carry_over_queue.find(x=>x.carry_over_id===id&&x.status==='OPEN');
         if(!carry)return {ok:false,reason:'CARRY_OVER_NOT_FOUND'};
         const resolution=cleanText(input.resolution)||'READY_FOR_REPLAN';
+        const centralBound=centralCarryScope(carry,s);
+        if(centralBound){
+          if(!visibleToCentralScope({source:'PLANNER_CENTRAL_LEARNING_CHECKPOINT',
+            provenance:centralBound},input.central_scope))
+            return {ok:false,reason:'CENTRAL_CARRY_OVER_MEMBER_SCOPE_REQUIRED'};
+          if(resolution==='READY_FOR_REPLAN')
+            return {ok:false,reason:'CENTRAL_CHECKPOINT_REQUIRES_FRESH_LEARNING_DECISION'};
+        }
         if(resolution==='READY_FOR_REPLAN'){
           carry.resolution_required=false;
           carry.allocation_ready=true;
@@ -1131,15 +1228,16 @@
       };
     }
 
-    function today(date=dateKey()){
+    function today(date=dateKey(),options={}){
       const s=load();
       return s.dated_todos
-        .filter(x=>x.date===date&&isOpenTodo(x))
+        .filter(x=>x.date===date&&isOpenTodo(x)&&
+          visibleToCentralScope(x,options.central_scope))
         .sort((a,b)=>(a.order??999)-(b.order??999)||a.label.localeCompare(b.label,'ko'));
     }
 
-    function todayProjection(date=dateKey()){
-      return today(date).map(x=>({
+    function todayProjection(date=dateKey(),options={}){
+      return today(date,options).map(x=>({
         todo_id:x.todo_id,
         assignment_id:x.assignment_id||null,
         analysis_id:x.analysis_id||null,
@@ -1204,6 +1302,7 @@
       commitAllocation,
       recordSessionOutcome,
       carryOverCandidates,
+      reconcileCentralCheckpointCarries,
       resolveCarryOver,
       recentEstimateEvidence,
       crossRevisionLearningSignal,

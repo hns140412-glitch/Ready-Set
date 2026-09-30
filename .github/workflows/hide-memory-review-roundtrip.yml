@@ -1,0 +1,47 @@
+name: Hide Memory Review Roundtrip
+
+on:
+  pull_request:
+    paths:
+      - 'ready-hide-memory-review-v01.js'
+      - 'ready-central-observation-handoff-v01.js'
+      - 'ready-central-learning-decision-intake-v01.js'
+      - 'ready-central-learning-decision-http-v01.js'
+      - 'tests/central-learning-decision-http.test.js'
+      - 'ready-central-intent-to-planner-v01.js'
+      - 'ready-central-hide-directive-v01.js'
+      - 'tests/central-hide-directive.test.js'
+      - 'tests/central-intent-to-planner.test.js'
+      - 'tests/central-carry-scope.test.js'
+      - 'ready-central-learning-roundtrip-v01.js'
+      - 'tests/central-learning-roundtrip.test.js'
+      - 'tests/central-learning-browser-host.test.js'
+      - 'vendor/taky-central-evidence-v1.js'
+      - 'sw.js'
+      - 'app.js'
+      - 'tests/central-learning-decision-intake.test.js'
+      - 'tests/central-observation-handoff.test.js'
+      - 'ready-planner-v01.js'
+      - 'index.html'
+      - 'tests/hide-memory-review-roundtrip.test.js'
+      - '.github/workflows/hide-memory-review-roundtrip.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Hide memory review roundtrip
+        run: |
+          node tests/hide-memory-review-roundtrip.test.js
+          node tests/central-observation-handoff.test.js
+          node tests/central-learning-decision-intake.test.js
+          node tests/central-learning-decision-http.test.js
+          node tests/central-intent-to-planner.test.js
+          node tests/central-hide-directive.test.js
+          node tests/central-carry-scope.test.js
+          node tests/central-learning-roundtrip.test.js
+          node tests/central-learning-browser-host.test.js

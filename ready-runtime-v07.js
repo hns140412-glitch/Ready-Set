@@ -2,10 +2,36 @@
   'use strict';
 
   const RUNTIME_VERSION = '2026.09.07-rev07-b';
-  const HIDE_URL = 'https://dainty-froyo-a6e427.netlify.app';
+  const LEGACY_HIDE_URL = 'https://dainty-froyo-a6e427.netlify.app';
   const SNAP_URL = 'https://cheerful-pothos-d1c3ee.netlify.app';
   const VALID_TASK_STATES = new Set(['PENDING','COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']);
-  const TRUSTED_APP_ORIGINS = new Set([new URL(HIDE_URL).origin, new URL(SNAP_URL).origin]);
+
+  function configuredHideV2Url(){
+    const raw=String(globalThis.ReadySetSpecialistTargets?.hideSeekV2||'').trim();
+    if(!raw)return null;
+    try{
+      const url=new URL(raw,location.href);
+      const local=['127.0.0.1','localhost','[::1]'].includes(url.hostname);
+      if((url.protocol!=='https:'&&!(url.protocol==='http:'&&local))||
+         url.username||url.password||url.search||url.hash||
+         !url.pathname.endsWith('/v2.html'))return null;
+      return url.href;
+    }catch{return null}
+  }
+  function configuredSnapUrl(){
+    const raw=String(globalThis.ReadySetSpecialistTargets?.snapPop??SNAP_URL).trim();
+    try{
+      const url=new URL(raw);
+      const local=['127.0.0.1','localhost','[::1]'].includes(url.hostname);
+      if((url.protocol!=='https:'&&!(url.protocol==='http:'&&local))||
+         url.username||url.password||url.search||url.hash)return null;
+      return url.href;
+    }catch{return null;}
+  }
+  function trustedAppOrigins(){
+    const urls=[LEGACY_HIDE_URL,configuredSnapUrl(),configuredHideV2Url()].filter(Boolean);
+    return new Set(urls.map(x=>new URL(x,location.href).origin));
+  }
 
   const id = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
   const iso = ms => new Date(ms ?? Date.now()).toISOString();
@@ -45,19 +71,30 @@
     if (!session) return null;
     if (!session.rev07) {
       const linked=(session.plannerLinks||[]);
-      const tasks = linked.map((link, index) => ({
-        task_id: `task_${session.id || Date.now()}_${index + 1}`,
-        label:link.label,
-        state: 'PENDING',
-        planner_todo_id: link.todo_id,
-        assignment_id:link.assignment_id||null,
-        analysis_id:link.analysis_id||null,
-        learning_unit_id:link.learning_unit_id||null,
-        template_id:link.template_id||null,
-        allocation_run_id:link.allocation_run_id||null,
-        suggested_app: suggestedApp(link.label),
-        laps: []
-      }));
+      const plannerTodos = window.ReadySetPlanner?.snapshot?.()?.dated_todos || [];
+      const tasks = linked.map((link, index) => {
+        const taskId=`task_${session.id || Date.now()}_${index + 1}`;
+        const todo=plannerTodos.find(x=>x.todo_id===link.todo_id)||null;
+        const reviewDirective=window.ReadyCentralHideDirectiveV01?.forPlannerTodo?.(
+          todo,taskId,{boundScope:session.centralLearningScope})||
+          window.ReadyHideMemoryReviewV01?.directiveForPlannerTodo?.(todo,taskId)||null;
+        return {
+          task_id: taskId,
+          label:link.label,
+          state: 'PENDING',
+          planner_todo_id: link.todo_id,
+          assignment_id:link.assignment_id||null,
+          analysis_id:link.analysis_id||null,
+          learning_unit_id:link.learning_unit_id||null,
+          template_id:link.template_id||null,
+          allocation_run_id:link.allocation_run_id||null,
+          suggested_app: reviewDirective?'hide-seek':suggestedApp(link.label),
+          review_directive:reviewDirective,
+          central_checkpoint:todo?.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT',
+          specialist_result:null,
+          laps: []
+        };
+      });
       session.rev07 = {
         contract_version: 'REV_07',
         session_id: session.id || id('session'),
@@ -71,8 +108,6 @@
         created_at: iso(session.startAt || Date.now())
       };
       if (window.ReadySetPlanner) {
-        const plannerState = window.ReadySetPlanner.snapshot?.();
-        const plannerTodos = plannerState?.dated_todos || [];
         tasks.forEach((task, index) => {
           if (!task.planner_todo_id) return;
           const todo = plannerTodos.find(x => x.todo_id === task.planner_todo_id);
@@ -151,6 +186,12 @@
     const c = ensureContract();
     const task = c?.tasks?.find(t => t.task_id === taskId);
     if (!task || !VALID_TASK_STATES.has(nextState)) return false;
+    // Completing a targeted central specialist checkpoint requires its
+    // matching Hide V2 result, not just a wrap-up click or voice transcript.
+    if(nextState==='COMPLETED'&&task.central_checkpoint&&task.review_directive&&
+       (source!=='hide-seek'||!window.ReadyCentralHideDirectiveV01?.validateResult?.(
+         task.review_directive,task.specialist_result?.rawResult||null)))
+      return false;
     const previous = task.state;
     task.state = nextState;
     task.updated_at = iso();
@@ -204,8 +245,16 @@
     renderContractUI();
   }
 
-  function appUrl(app) {
-    return app === 'hide-seek' ? HIDE_URL : app === 'snap-pop' ? SNAP_URL : location.href;
+  function appUrl(app,task=null) {
+    // A central checkpoint cannot silently fall back to unrelated legacy
+    // specialist practice when it has no explicitly scoped target IDs.
+    if(task?.central_checkpoint&&
+       (app!=='hide-seek'||!task.review_directive))return null;
+    if(app==='hide-seek'){
+      if(task?.review_directive)return configuredHideV2Url();
+      return LEGACY_HIDE_URL;
+    }
+    return app === 'snap-pop' ? configuredSnapUrl() : location.href;
   }
 
   function launchSpecialist(app) {
@@ -214,30 +263,76 @@
     const task = currentTask(c);
     const lap = currentLap(c) || (task ? startLap(task, 'SPECIALIST_ROUTE', session) : null);
     if (!session || !c || !task || !lap || !['hide-seek','snap-pop'].includes(app)) return;
+    const centralMemberId=String(session.centralLearningScope?.member_id||'').trim();
+    if(app==='hide-seek'&&task.central_checkpoint&&task.review_directive&&
+       (!String(session.centralLearningScope?.family_id||'').trim()||!centralMemberId)){
+      emit('APP_ROUTE_BLOCKED',{to:app,reason:'CENTRAL_MEMBER_SCOPE_REQUIRED',task_id:task.task_id});
+      return false;
+    }
+    // A saved child selection is never allowed to relabel a later child's
+    // linked expression. The trusted host, not a URL, selects the live child.
+    const currentCentral=window.ReadyCentralLearningHost?.activeScope?.()||null;
+    if(app==='snap-pop'&&session.centralLearningScope&&
+       (currentCentral?.authenticated!==true||
+        session.centralLearningScope.family_id!==currentCentral.family_id||
+        session.centralLearningScope.member_id!==currentCentral.selected_member_id)){
+      emit('APP_ROUTE_BLOCKED',{to:app,reason:'READY_SNAP_SELECTED_MEMBER_CHANGED',task_id:task.task_id});
+      return false;
+    }
+    let snapBinding=null;
+    if(app==='snap-pop'){
+      const original=(window.ReadySetPlanner?.snapshot?.()?.dated_todos||[])
+        .find(row=>row.todo_id===task.planner_todo_id)||null;
+      snapBinding=window.ReadySnapRunScopeV01?.fromSource?.({
+        activeScope:currentCentral,sessionScope:session.centralLearningScope,
+        session,contract:c,task,lap,todo:original,
+        domainState:window.ReadyAssignments?.load?.()
+      })||{ok:false,reason:'READY_SNAP_SCOPE_PRODUCER_MISSING'};
+      if(!snapBinding.ok)
+        emit('APP_ROUTE_CONTEXT_UNBOUND',{to:app,reason:snapBinding.reason,
+          task_id:task.task_id,contextual_learning_outcome_enabled:false});
+    }
 
     c.active_app = app;
     emit('APP_SWITCH', { from: 'ready-set', to: app, lap_ended: false });
     save();
 
-    const url = new URL(appUrl(app));
+    const target=appUrl(app,task);
+    if(!target){
+      emit('APP_ROUTE_BLOCKED',{to:app,reason:app==='snap-pop'?'SNAP_TARGET_REQUIRED':'HIDE_V2_TARGET_REQUIRED',task_id:task.task_id});
+      c.active_app='ready-set';
+      save();
+      renderContractUI();
+      return false;
+    }
+    const url = new URL(target);
     url.searchParams.set('session_id', c.session_id);
     url.searchParams.set('goal_id', c.goal_id);
     url.searchParams.set('task_id', task.task_id);
     url.searchParams.set('lap_id', lap.lap_id);
     url.searchParams.set('return_target', `${location.origin}${location.pathname}`);
-    url.searchParams.set('snap_target', SNAP_URL);
+    if(configuredSnapUrl())url.searchParams.set('snap_target',configuredSnapUrl());
     url.searchParams.set('from_app', 'ready-set');
+    if(app==='snap-pop'&&snapBinding?.ok){
+      for(const [key,value] of Object.entries(snapBinding.fields))
+        url.searchParams.set(key,value);
+    }
+    if(app==='hide-seek'&&task.review_directive){
+      url.searchParams.set('review_directive',JSON.stringify(task.review_directive));
+      if(task.central_checkpoint)url.searchParams.set('child_id',centralMemberId);
+    }
     location.assign(url.href);
+    return true;
   }
 
   function normalizeInboundState(raw) {
     if (!raw) return null;
     if (VALID_TASK_STATES.has(raw)) return raw;
-    if (raw === 'HELP_NEEDED') return 'BLOCKED';
+    if (raw === 'HELP_NEEDED') return 'WAITING_FOR_PARENT';
     return null;
   }
 
-  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null }) {
+  function applyInboundResult({ session_id, task_id, lap_id, task_state, from_app, event_id = null, result_payload = null }) {
     const c = ensureContract();
     if (!c || !session_id || session_id !== c.session_id) return false;
     if (event_id && c.applied_event_ids?.includes(event_id)) return false;
@@ -245,6 +340,60 @@
     if (!task) return false;
 
     const normalized = normalizeInboundState(task_state);
+    if(from_app==='snap-pop'){
+      // A URL, message origin or saved child label is local continuity only,
+      // never a reason to rebind an active A run to newly selected child B.
+      const lap=currentLap(c);
+      const bound=state.activeSession?.centralLearningScope||null;
+      const live=window.ReadyCentralLearningHost?.activeScope?.()||null;
+      if(!normalized||c.active_app!=='snap-pop'||
+         c.active_task_id!==task_id||!lap||lap.ended_at||
+         !lap_id||c.active_lap_id!==lap_id||
+         lap.lap_id!==lap_id||lap.task_id!==task_id||
+         (bound&&(live?.authenticated!==true||
+            live.family_id!==bound.family_id||
+            live.selected_member_id!==bound.member_id)))
+        return false;
+    }
+    // The specialist return belongs to the currently open Ready lap, not a
+    // previously launched task or an unrelated post-reload/navigation attempt.
+    // A URL fragment is continuity evidence, never an authenticated receipt.
+    if(task.central_checkpoint&&from_app==='hide-seek'&&
+       ['COMPLETED','PARTIAL'].includes(normalized)){
+      const lap=currentLap(c),ctx=result_payload?.taskContext||{};
+      const memberId=String(state.activeSession?.centralLearningScope?.member_id||'').trim();
+      if(!memberId||ctx.child_id!==memberId||
+         c.active_task_id!==task_id||!lap||lap.ended_at||
+         !lap_id||c.active_lap_id!==lap_id||lap.lap_id!==lap_id||
+         lap.task_id!==task_id||ctx.session_id!==c.session_id||
+         ctx.task_id!==task_id||ctx.lap_id!==lap_id)return false;
+    }
+    // A review task cannot be completed by bare return URL parameters.
+    // This remains local result integrity, not a central authenticated receipt.
+    if(task.review_directive&&from_app==='hide-seek'&&
+       result_payload?.resultContract==='HIDE_SPECIALIST_RESULT_V2'){
+      const echoed=result_payload.reviewDirective||{};
+      if(echoed.authority!==task.review_directive.authority||
+         echoed.directiveId!==task.review_directive.directiveId||
+         echoed.taskId!==task.task_id)return false;
+    }
+    if(task.review_directive && from_app==='hide-seek' &&
+       (!event_id || !result_payload ||
+        !window.ReadyHideMemoryReviewV01?.normalizeHideSpecialistResult?.(result_payload))) return false;
+    if(task.review_directive && normalized==='COMPLETED' && from_app!=='hide-seek') return false;
+    if(task.central_checkpoint&&task.review_directive&&from_app==='hide-seek'&&
+       ((normalized==='COMPLETED'&&!window.ReadyCentralHideDirectiveV01?.validateResult?.(
+           task.review_directive,result_payload))||
+        (normalized==='PARTIAL'&&!window.ReadyCentralHideDirectiveV01?.validateProgress?.(
+           task.review_directive,result_payload))))return false;
+    if(from_app==='hide-seek'&&result_payload){
+      const specialistResult=window.ReadyHideMemoryReviewV01?.normalizeHideSpecialistResult?.(result_payload)||null;
+      if(specialistResult){
+        task.specialist_result=task.central_checkpoint
+          ?{...specialistResult,rawResult:structuredClone(result_payload)}
+          :specialistResult;
+      }
+    }
     c.active_app = 'ready-set';
     c.active_task_id = task.task_id;
     if (lap_id) c.active_lap_id = lap_id;
@@ -259,6 +408,27 @@
 
   function consumeReturnQuery() {
     const p = new URLSearchParams(location.search);
+    const hashParams=new URLSearchParams(location.hash.replace(/^#/,''));
+    const hashReturn=hashParams.has('learning_event');
+    const rawEvent=hashReturn
+      ?hashParams.get('learning_event'):p.get('learning_event');
+    if(rawEvent){
+      let e=null;
+      try{e=JSON.parse(rawEvent)}catch{}
+      const normalizedEvent=window.ReadyHideMemoryReviewV01?.normalizeHideV2ReturnEvent?.(e)||null;
+      if(normalizedEvent){
+        const applied=applyInboundResult(normalizedEvent);
+        if(applied){
+          p.delete('learning_event');
+          hashParams.delete('learning_event');
+          const remainingHash=hashParams.toString();
+          const clean=`${location.pathname}${p.toString()?`?${p}`:''}${remainingHash?`#${remainingHash}`:''}`;
+          history.replaceState(null,'',clean);
+          return;
+        }
+      }
+    }
+
     const args = {
       session_id: p.get('session_id'),
       task_id: p.get('task_id'),
@@ -273,12 +443,12 @@
   }
 
   function handleLearningEvent(messageEvent) {
-    if (!TRUSTED_APP_ORIGINS.has(messageEvent.origin)) return;
+    if (!trustedAppOrigins().has(messageEvent.origin)) return;
     const e = messageEvent.data?.type === 'TAKY_LEARNING_EVENT' ? messageEvent.data.event : null;
     if (!e) return;
     const taskState = e.type === 'TASK_COMPLETED' ? 'COMPLETED'
       : e.type === 'TASK_BLOCKED' ? 'BLOCKED'
-      : e.type === 'HELP_NEEDED' ? 'BLOCKED'
+      : e.type === 'HELP_NEEDED' ? 'WAITING_FOR_PARENT'
       : e.type === 'TASK_PARTIAL' ? 'PARTIAL'
       : null;
     applyInboundResult({
@@ -287,7 +457,8 @@
       lap_id: e.lap_id,
       task_state: taskState,
       from_app: e.app,
-      event_id: e.event_id
+      event_id: e.event_id,
+      result_payload: e.payload||null
     });
   }
 
@@ -333,13 +504,19 @@
     const panel = ensurePanel();
     if (!c || !panel) return;
     const task = currentTask(c);
+    const central=task?.central_checkpoint===true;
+    const canHide=!central||!!(task?.review_directive&&configuredHideV2Url());
+    const actions=central
+      ?(task?.review_directive
+        ?`<button class="primary" data-rev07-app="hide-seek" ${canHide?'':'disabled'}>Hide & Seek</button>
+           ${canHide?'':'<small>복습 화면을 준비 중이에요.</small>'}`
+        :'<small>오늘 학습 확인은 Ready에서 이어가요.</small>')
+      :`<button class="primary" data-rev07-app="hide-seek">Hide & Seek</button>
+         <button class="primary" data-rev07-app="snap-pop">Snap & Pop</button>`;
     panel.innerHTML = `
       <small>ONE SESSION · CONTINUOUS TIMER</small>
       <h3>${task ? escapeHtml(task.label) : '현재 과제 없음'} · ${task ? labelState(task.state) : ''}</h3>
-      <div class="rev07-row">
-        <button class="primary" data-rev07-app="hide-seek">Hide & Seek</button>
-        <button class="primary" data-rev07-app="snap-pop">Snap & Pop</button>
-      </div>
+      <div class="rev07-row">${actions}</div>
       <div class="rev07-tasks">${c.tasks.map(t => `<button class="rev07-task ${t.task_id===c.active_task_id?'active':''}" data-rev07-task="${t.task_id}"><span>${escapeHtml(t.label)}</span><strong>${labelState(t.state)}</strong></button>`).join('')}</div>`;
     const mission = document.getElementById('focusMission');
     if (mission && task) mission.textContent = task.label;
@@ -376,7 +553,7 @@
       : `${state.guide?.name || '길잡이'}: 좋아. 빠진 상태 없이 정리됐어.`;
     document.getElementById('rev07WrapTasks').innerHTML = c.tasks.map(t => `
       <div class="rev07-wrap-task"><b>${escapeHtml(t.label)} · ${labelState(t.state)}</b><div class="rev07-state-grid">
-      ${['COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].map(s => `<button class="${t.state===s?'on':''}" data-wrap-state="${s}" data-task-id="${t.task_id}">${labelState(s)}</button>`).join('')}
+      ${['COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].map(s => `<button class="${t.state===s?'on':''}" data-wrap-state="${s}" data-task-id="${t.task_id}" ${s==='COMPLETED'&&t.central_checkpoint&&t.review_directive&&!window.ReadyCentralHideDirectiveV01?.validateResult?.(t.review_directive,t.specialist_result?.rawResult||null)?'disabled':''}>${labelState(s)}</button>`).join('')}
       </div></div>`).join('');
     document.getElementById('rev07ConfirmEnd').disabled = unresolved.length > 0;
     modal.hidden = false;
@@ -447,6 +624,15 @@
         label: task.label,
         state: task.state,
         actual_ms: actualMs,
+        specialistResult:task.specialist_result||null,
+        // Preserve actionable review intent in the normal session outcome path.
+        // This is a local advisory projection, NOT a central verified receipt,
+        // and it never allocates a date without the Planner.
+        memoryReviewFeedback:task.state==='COMPLETED' && !task.central_checkpoint &&
+          task.specialist_result?.sourceApp==='hide-seek'
+          ? (window.ReadyHideMemoryReviewV01?.interpretHideMemorySummary?.(
+              task.specialist_result.memorySummary)||null)
+          : null,
         plannerOutcome
       });
     }
@@ -540,6 +726,8 @@
       contract: () => state.activeSession?.rev07 ? structuredClone(state.activeSession.rev07) : null,
       validate: validateContract,
       launchSpecialist,
+      hideV2TargetUrl:configuredHideV2Url,
+      snapTargetUrl:configuredSnapUrl,
       setTaskState,
       switchTask,
       openWrapUp

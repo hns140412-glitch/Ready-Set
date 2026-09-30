@@ -129,6 +129,14 @@ function nav(name){
   if(name==='settings')renderSettings();
   if(name==='result')renderResult();
 }
+window.addEventListener('readyset-central-roundtrip-result',event=>{
+  const result=event.detail?.result;
+  if(result?.ok!==true||result.scheduled!==true)return;
+  renderHome();
+  if(document.querySelector('.view.active[data-view="mission"]'))renderMission();
+  if(document.querySelector('.view.active[data-view="planner"]'))renderPlanner();
+  toast('중앙 학습 결과를 반영해 Planner에 다음 학습을 배치했어요.');
+});
 document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.nav)));
 document.addEventListener('click',e=>{const tab=e.target.closest('[data-planner-tab]');if(tab){plannerTab=tab.dataset.plannerTab;renderPlanner();return}const day=e.target.closest('[data-planner-date]');if(day){plannerSelectedDate=day.dataset.plannerDate;renderPlanner();}});
 document.getElementById('plannerTodayJump')?.addEventListener('click',()=>{plannerSelectedDate=localDateKey();plannerTab='day';renderPlanner();});
@@ -164,8 +172,15 @@ function applyGuide(el,type=state.guide.type){
 }
 function guideData(type=state.guide.type){return GUIDE_TYPES[type]||GUIDE_TYPES.lumi}
 
+function centralPlannerScope(){
+  // Supplied only by an explicitly installed trusted central host. Ready's
+  // local family session is not an independent Google/central grant.
+  const scope=window.ReadyCentralLearningHost?.activeScope?.()||null;
+  return scope?.authenticated===true?scope:null;
+}
 function currentPlannerMissionItems(){
-  const today=window.ReadySetPlanner?.todayProjection?.()||[];
+  const today=window.ReadySetPlanner?.todayProjection?.(undefined,{
+    central_scope:centralPlannerScope()})||[];
   const selected=today.filter(x=>x.state==='PLANNED'&&state.selectedTodoIds.includes(x.todo_id));
   return selected.length?selected:today.filter(x=>x.state==='PLANNED');
 }
@@ -222,7 +237,9 @@ function learningStepLabel(step){
     ENCODE:'익히기',RECALL:'떠올리기',READ:'읽기',UNDERSTAND:'이해하기',RESPOND:'답하기',
     CONNECT_CONCEPTS:'개념 연결',UNDERSTAND_CONCEPT:'개념 이해',APPLY:'적용',CHECK_ERROR:'오류 확인',
     EXPLORE:'탐색',REASON:'생각하기',EXPLAIN:'설명하기',PRACTICE:'연습',COMPLETE:'완료',
-    LISTEN:'듣기',PREPARE:'준비',SPEAK:'말하기',REVIEW:'돌아보기',PLAN:'계획',WRITE:'쓰기',REVISE:'고쳐쓰기'
+    LISTEN:'듣기',PREPARE:'준비',SPEAK:'말하기',REVIEW:'돌아보기',PLAN:'계획',WRITE:'쓰기',REVISE:'고쳐쓰기',
+    SHORT_LEARNING_UNIT:'짧게 나눠서',RETRIEVAL_CHECKPOINT:'떠올려 보기',
+    CONCEPT_CHECKPOINT:'개념 확인',ASSISTANCE_FADING:'도움 줄여보기'
   })[step]||String(step||'').replaceAll('_',' ');
 }
 function learningSequenceText(item){
@@ -234,7 +251,7 @@ function renderPlannerToday(){
   const root=$('#plannerTodayList');
   const section=$('#plannerTodaySection');
   if(!root||!section)return;
-  const items=window.ReadySetPlanner?.todayProjection?.()||[];
+  const items=window.ReadySetPlanner?.todayProjection?.(undefined,{central_scope:centralPlannerScope()})||[];
   section.hidden=!items.length;
   root.innerHTML='';
   for(const item of items){
@@ -263,7 +280,7 @@ function renderMission(){
   renderChips($('#missionChips'));
   renderPlannerToday();
   const tl=$('#taskList');tl.innerHTML='';
-  const chosen=(window.ReadySetPlanner?.todayProjection?.()||[]).filter(x=>x.state==='PLANNED'&&state.selectedTodoIds.includes(x.todo_id));
+  const chosen=(window.ReadySetPlanner?.todayProjection?.(undefined,{central_scope:centralPlannerScope()})||[]).filter(x=>x.state==='PLANNED'&&state.selectedTodoIds.includes(x.todo_id));
   chosen.forEach((t)=>{
     const row=document.createElement('div');
     row.className='taskRow';
@@ -396,10 +413,27 @@ $('#startBtn').onclick=async()=>{
   if(state.activeSession){toast('이미 진행 중인 작전이 있어요. 먼저 진행 중인 작전으로 돌아가 주세요.');nav('focus');return}
   if(!state.selectedTodoIds.length){toast('먼저 Planner가 준비한 오늘의 탐험을 선택해 주세요.');return}
   const now=Date.now();
-  const plannerLinks=window.ReadySetPlanner?.linkTodayItems(state.selectedTodoIds,{allowed_states:['PLANNED']})||[];
+  const plannerLinks=window.ReadySetPlanner?.linkTodayItems(state.selectedTodoIds,{allowed_states:['PLANNED'],central_scope:centralPlannerScope()})||[];
   if(!plannerLinks.length){toast('지금 시작할 수 있는 Planner TODO가 없어요. TODAY를 다시 확인해 주세요.');return}
   const labels=plannerLinks.map(x=>x.label);
   const sessionId=`s_${now}`;
+  const centralLinks=plannerLinks.filter(x=>x.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT');
+  if(centralLinks.length){
+    const scope=centralPlannerScope();
+    const original=window.ReadySetPlanner?.snapshot?.()?.dated_todos||[];
+    const bound={family_id:scope?.family_id,member_id:scope?.selected_member_id};
+    const allValid=plannerLinks.every((link,index)=>{
+      if(link.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT')return true;
+      const todo=original.find(x=>x.todo_id===link.todo_id);
+      return !!window.ReadyCentralHideDirectiveV01?.forPlannerTodo?.(
+        todo,`task_${sessionId}_${index+1}`,{boundScope:bound});
+    });
+    if(!allValid||!window.ReadySetRev07?.hideV2TargetUrl?.()){
+      toast('중앙 복습의 단어 대상 또는 Hide V2 연결을 확인할 수 없어요. 일정은 그대로 보존했어요.');
+      renderMission();
+      return;
+    }
+  }
   const started=[...plannerLinks];
   const firstLink=plannerLinks[0];
   const firstStarted=window.ReadySetPlanner?.recordTaskState?.({
@@ -419,6 +453,12 @@ $('#startBtn').onclick=async()=>{
     pausedAt:null,issueMs:0,completed:false,
     selected:[],tasks:labels,
     plannerLinks:started,
+    // Bind the central learner at task start; a later account/child switch
+    // cannot reattribute this completed interaction to the new learner.
+    centralLearningScope:(()=>{
+      const x=centralPlannerScope();
+      return x?{family_id:x.family_id,member_id:x.selected_member_id}:null;
+    })(),
     sound:state.sound,recordingDone:false
   };
   save();
@@ -496,9 +536,45 @@ function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOu
   const t=sessionTimes();
   const endedTodoIds=new Set((plannerOutcomes||[]).filter(x=>x?.ok).map(x=>x.todo_id));
   if(endedTodoIds.size)state.selectedTodoIds=state.selectedTodoIds.filter(id=>!endedTodoIds.has(id));
-  const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs,outcomeState,plannerOutcomes,taskOutcomes};
+  const liveCentral=centralPlannerScope();
+  const boundCentral=s.centralLearningScope&&liveCentral?.authenticated===true&&
+    liveCentral.family_id===s.centralLearningScope.family_id&&
+    liveCentral.selected_member_id===s.centralLearningScope.member_id
+      ?s.centralLearningScope:null;
+  const plannerTodos=boundCentral
+    ?window.ReadySetPlanner?.snapshot?.()?.dated_todos||[]:[];
+  const scopedOutcomes=(taskOutcomes||[]).map(row=>{
+    if(!boundCentral)return row;
+    const linked=plannerTodos.find(todo=>todo.todo_id===row.planner_todo_id&&
+      todo.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'&&
+      todo.provenance?.family_id===boundCentral.family_id&&
+      todo.provenance?.member_id===boundCentral.member_id&&
+      todo.review_policy?.authority==='TAKY_LEARNING_ENGINE_CORE'&&
+      todo.provenance?.schedule_authority==='READY_SET_PLANNER');
+    const centralCheckpoint=linked&&row.plannerOutcome?.ok===true
+      ?{todo_id:linked.todo_id,source:linked.source,
+        provenance:structuredClone(linked.provenance),
+        review_policy:structuredClone(linked.review_policy)}:null;
+    return {...row,family_id:row.family_id??boundCentral.family_id,
+      member_id:row.member_id??boundCentral.member_id,
+      ...(centralCheckpoint?{centralCheckpoint}:{})};
+  });
+  const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs,
+    outcomeState,plannerOutcomes,taskOutcomes:scopedOutcomes};
   state.records.unshift(rec);state.records=state.records.slice(0,200);
   state.activeSession=null;state.lastResult=rec;save();nav('result');
+  // Durable local session completion is the producer boundary. A separately
+  // configured central host may consume this event; no token, central ACK or
+  // Planner allocation is invented here, and local completion never waits.
+  const evidenceOutcomes=window.ReadyCentralObservationHandoffV01
+    ?.expandOutcomes?.(rec.taskOutcomes)||[];
+  if(boundCentral&&evidenceOutcomes.length){
+    window.dispatchEvent(new CustomEvent('readyset-learning-outcomes-ready',{detail:{
+      session_id:rec.id,completed_at:new Date(s.endAt).toISOString(),
+      central_learning_scope:structuredClone(boundCentral),
+      task_outcomes:structuredClone(evidenceOutcomes)
+    }}));
+  }
   return rec;
 }
 function completeSessionFromTaskOutcomes(taskOutcomes=[]){
@@ -731,7 +807,25 @@ function addDays(base,n){const d=new Date(base);d.setDate(d.getDate()+n);return 
 function weekStart(base=new Date()){
   const d=new Date(base); const dow=d.getDay(); const delta=dow===0?-6:1-dow; d.setDate(d.getDate()+delta); d.setHours(12,0,0,0); return d;
 }
-function plannerSnapshot(){return window.ReadySetPlanner?.snapshot?.()||{dated_todos:[],schedule_commitments:[],daily_availability_windows:[],carry_over_queue:[]}}
+function plannerSnapshot(){
+  const raw=window.ReadySetPlanner?.snapshot?.()||{
+    dated_todos:[],schedule_commitments:[],daily_availability_windows:[],carry_over_queue:[]};
+  const scope=centralPlannerScope();
+  return {...raw,dated_todos:(raw.dated_todos||[]).filter(x=>
+    x.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT'||
+    (scope?.authenticated===true&&scope.family_id===x.provenance?.family_id&&
+     scope.selected_member_id===x.provenance?.member_id)),
+    carry_over_queue:(raw.carry_over_queue||[]).filter(x=>{
+      const source=(raw.dated_todos||[]).find(t=>t.todo_id===x.source_todo_id);
+      const central=x.source_todo_source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'||
+        source?.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT';
+      if(!central)return true;
+      const family=x.central_scope?.family_id||source?.provenance?.family_id;
+      const member=x.central_scope?.member_id||source?.provenance?.member_id;
+      return scope?.authenticated===true&&scope.family_id===family&&
+        scope.selected_member_id===member&&!!family&&!!member;
+    })};
+}
 plannerSelectedDate=plannerSelectedDate||localDateKey();
 function plannerItemsForDate(date,snap=plannerSnapshot()){
   const todos=(snap.dated_todos||[]).filter(x=>x.date===date).map(x=>({
@@ -835,8 +929,11 @@ function renderPlannerAdmin(){
     carryRoot.innerHTML=carry.length?carry.map(x=>{
       const needs=x.resolution_required===true;
       const escalated=x.escalation_level==='PARENT_LEARNING_MASTER_REVIEW';
-      const status=escalated?'반복 검토 필요':needs?'확인 필요':'다음 일정 대기';
-      const actions=escalated
+      const centralCarry=x.source_todo_source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT';
+      const status=centralCarry?'중앙 학습 판단 필요':escalated?'반복 검토 필요':needs?'확인 필요':'다음 일정 대기';
+      const actions=centralCarry
+        ? `<div class="adminInlineActions"><button class="miniAction" data-carry-cancel="${x.carry_over_id}">종료</button></div>`
+        : escalated
         ? `<div class="adminInlineActions"><button class="miniAction" data-carry-review="${x.carry_over_id}">학습 재검토</button><button class="miniAction" data-carry-cancel="${x.carry_over_id}">종료</button></div>`
         : needs
           ? `<div class="adminInlineActions"><button class="miniAction" data-carry-ready="${x.carry_over_id}">다시 계획</button><button class="miniAction" data-carry-cancel="${x.carry_over_id}">종료</button></div>`
@@ -921,7 +1018,7 @@ document.addEventListener('click',e=>{
   const cancel=e.target.closest('[data-carry-cancel]');
   if(cancel){
     if(!requireParentUi())return;
-    const resolved=window.ReadySetPlanner?.resolveCarryOver?.(cancel.dataset.carryCancel,{resolution:'CANCEL',actor:'PARENT'});
+    const resolved=window.ReadySetPlanner?.resolveCarryOver?.(cancel.dataset.carryCancel,{resolution:'CANCEL',actor:'PARENT',central_scope:centralPlannerScope()});
     toast(resolved?.ok?'이 남은 탐험은 종료했어요.':'종료 처리하지 못했어요.');
     renderPlannerAdmin();renderPlanner();return;
   }
@@ -1807,7 +1904,35 @@ function reconcileReadyRuntimeState(){
         .filter(x=>liveById.has(x.todo_id))
         .map(x=>({...x,state:'IN_PROGRESS'}));
     }else{
-      state.activeSession=null;
+      // A specialist can return PARTIAL before the child closes the Ready
+      // session. Planner then has no IN_PROGRESS todo, but discarding the
+      // session here loses its wrapped task, evidence and continuous timer.
+      // Read the internal raw Planner for reconciliation, not the member-
+      // filtered display projection. Never rebind the original child scope.
+      const contract=state.activeSession.rev07;
+      const bound=state.activeSession.centralLearningScope||null;
+      const rawTodos=window.ReadySetPlanner?.snapshot?.()?.dated_todos||[];
+      const resumeStates=new Set(['COMPLETED','PARTIAL','DEFERRED','BLOCKED','WAITING_FOR_PARENT']);
+      const completeMatch=contract?.session_state==='ACTIVE'&&
+        contract.session_id===state.activeSession.id&&
+        Array.isArray(contract.tasks)&&contract.tasks.length>0&&
+        contract.tasks.some(task=>resumeStates.has(task.state))&&
+        contract.tasks.every(task=>{
+          const todo=rawTodos.find(t=>t.todo_id===task.planner_todo_id);
+          if(!todo||!sessionIds.has(todo.todo_id))return false;
+          if(todo.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT'&&
+            (!bound||todo.provenance?.family_id!==bound.family_id||
+             todo.provenance?.member_id!==bound.member_id))return false;
+          return resumeStates.has(task.state)?todo.state===task.state
+            :task.state==='PENDING'&&todo.state==='PLANNED';
+        });
+      if(completeMatch){
+        resumed=true;
+        state.activeSession.plannerLinks=(state.activeSession.plannerLinks||[])
+          .map(x=>({...x,state:rawTodos.find(t=>t.todo_id===x.todo_id)?.state||x.state}));
+      }else{
+        state.activeSession=null;
+      }
     }
   }
 
