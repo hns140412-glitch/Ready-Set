@@ -5,7 +5,7 @@ const crypto=require('node:crypto');
 const path=require('node:path');
 const state=JSON.parse(fs.readFileSync('C2S/READY_WEEK_DAY_VISUAL_ACCEPTANCE_STATE_2026-09-28.json','utf8'));
 const problems=[];
-const latest=JSON.parse(fs.readFileSync('C2S/READY_WEEK_DAY_LATEST_SOURCE_LAYER_GATE_2026-09-29.json','utf8'));
+const latest=JSON.parse(fs.readFileSync('C2S/READY_WEEK_DAY_LATEST_SOURCE_LAYER_GATE_2026-09-29.json','utf8'));\nconst recovery=JSON.parse(fs.readFileSync('C2S/READY_WEEK_DAY_REFERENCE_RECOVERY_2026-09-30.json','utf8'));
 if(latest.status!=='PRODUCTION_SCENE_VERIFIED')problems.push('LATEST_ACCEPTED_WEEK_DAY_SOURCE_NOT_IMPLEMENTED: '+latest.status);
 for(const name of ['week','day','preparation_scene']){
   const row=latest.references?.[name];
