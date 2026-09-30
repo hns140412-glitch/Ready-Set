@@ -101,11 +101,18 @@ function styleFilter(s){
     natural:'saturate(.86) contrast(.96) brightness(1.04)'
   }[s]||'none';
 }
+function avatarRef(){
+  const runtime=window.ReadyCharacterRuntimeAssetRef||'';
+  if(runtime)return runtime;
+  const confirmed=!!window.ReadyIdentityV1?.get?.()?.characterVisualId;
+  return confirmed?'':(state.profile.photo||'');
+}
 function applyAvatar(el){
   if(!el)return;
-  if(state.profile.photo){
+  const ref=avatarRef();
+  if(ref){
     el.textContent='';
-    el.style.backgroundImage=`url(${state.profile.photo})`;
+    el.style.backgroundImage=`url(${ref})`;
     el.style.backgroundSize='cover';
     el.style.backgroundPosition='center';
     el.style.filter=styleFilter(state.profile.style);
@@ -528,13 +535,14 @@ function renderProfile(){
   const img=$('#profileImage'),ph=$('#profilePlaceholder');
   $('#profileName').value=state.profile.name;
   $('#shareAvatarOptIn').checked=!!state.profile.shareAvatar;
-  if(state.profile.photo){
-    img.src=state.profile.photo;img.hidden=false;ph.hidden=true;img.style.filter=styleFilter(state.profile.style);
+  const ref=avatarRef();
+  if(ref){
+    img.src=ref;img.hidden=false;ph.hidden=true;img.style.filter=styleFilter(state.profile.style);
   }else{
     img.hidden=true;ph.hidden=false;ph.textContent=initials();
   }
   $$('[data-style]').forEach(b=>b.classList.toggle('on',b.dataset.style===state.profile.style));
-  document.documentElement.style.setProperty('--avatar-bg',state.profile.photo?`url(${state.profile.photo})`:'linear-gradient(145deg,#ffe7d6,#eaa789)');
+  document.documentElement.style.setProperty('--avatar-bg',ref?`url(${ref})`:'linear-gradient(145deg,#ffe7d6,#eaa789)');
 }
 function photoLoad(file){
   if(!file)return;
@@ -624,9 +632,10 @@ function drawGuide(ctx,cx,cy,r,type,expression='smile'){
   ctx.fillStyle=p.accent;ctx.beginPath();ctx.arc(cx+r*.63,cy-r*.55,r*.16,0,Math.PI*2);ctx.fill();
 }
 async function drawAvatar(ctx,cx,cy,r){
-  if(state.profile.shareAvatar&&state.profile.photo){
+  const ref=avatarRef();
+  if(state.profile.shareAvatar&&ref){
     try{
-      const img=await loadImage(state.profile.photo);
+      const img=await loadImage(ref);
       ctx.save();ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.clip();
       const scale=Math.max(r*2/img.width,r*2/img.height);
       const w=img.width*scale,h=img.height*scale;
@@ -712,6 +721,11 @@ function escapeHtml(s){
   return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 }
 
+window.addEventListener('taky-ready-character-runtime',()=>{
+  renderHome();
+  try{renderProfile()}catch{}
+  try{window.ReadyBaseNativeV2?.render?.()}catch{}
+});
 window.addEventListener('visibilitychange',()=>{
   if(!document.hidden&&state.activeSession)renderFocus();
 });
