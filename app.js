@@ -171,6 +171,39 @@ function applyGuide(el,type=state.guide.type){
   el.setAttribute('data-guide',type);
 }
 function guideData(type=state.guide.type){return GUIDE_TYPES[type]||GUIDE_TYPES.lumi}
+function emitReadyCrewScene(surface,utterance,{action='IDLE',dialogue='SHORT',guestType=null,evidenceRef=null,reason=null}={}){
+  const rt=globalThis.TakyCrewLiveRuntime;
+  if(!rt?.legacyCharacter||!rt?.emit)return false;
+  const main=rt.legacyCharacter(state.guide.type,{role:'MAIN',action,dialogue,utterance,evidenceRef,reason});
+  const chars=[main];
+  if(guestType){
+    chars.push(rt.legacyCharacter(guestType,{role:'GUEST',action:'IDLE',dialogue:'SILENT',utterance:'',evidenceRef,reason:'READY_RANDOM_GUEST'}));
+  }
+  rt.emit({sceneId:surface,surface,characters:chars,foregroundId:main.character_id,speakingOrder:[main.character_id],visibleOrder:chars.map(x=>x.character_id)});
+  return true;
+}
+function readyRecordingEvidenceFeedback(){
+  const evidence=state.activeSession?.recordingAnalysis;
+  if(evidence?.verified===true){
+    const strength=Array.isArray(evidence.strengths)?evidence.strengths.find(Boolean):null;
+    const nextHint=typeof evidence.next_hint==='string'&&evidence.next_hint.trim()?evidence.next_hint.trim():null;
+    return {
+      praise:strength||'끝까지 녹음을 마쳤어.',
+      next:nextHint||'다시 들으면서 네가 한 번 더 해보고 싶은 문장 하나만 골라보자.',
+      evidenceRef:evidence.evidence_ref||'READY_RECORDING_ANALYSIS_VERIFIED'
+    };
+  }
+  return {
+    praise:'끝까지 녹음을 마쳤어.',
+    next:'아직 발음은 함부로 판단하지 않을게. 다시 들으면서 네가 한 번 더 해보고 싶은 문장 하나만 골라보자.',
+    evidenceRef:'READY_RECORDING_COMPLETION_ONLY'
+  };
+}
+function readyOneGoodReflection(r){
+  return r?.recordingDone
+    ? '오늘 녹음에서 네가 가장 마음에 든 부분은 어디였어?'
+    : '오늘 작전에서 다음에도 그대로 해보고 싶은 건 뭐였어?';
+}
 
 function centralPlannerScope(){
   // Supplied only by an explicitly installed trusted central host. Ready's
@@ -194,11 +227,12 @@ function renderHome(){
   applyGuide($('#homeGuidePortrait'));
   $('#homeGuideName').textContent=state.guide.name;
   const labels=currentMissionLabels();
-  $('#homeGuideLine').textContent=state.activeSession
+  const homeLine=state.activeSession
     ? '진행 중인 탐험이 있어요. 이어서 가볼까요?'
     : labels.length
       ? `오늘 Planner가 준비한 탐험 ${labels.length}개가 있어요.`
       : guideData().home;
+  if(!emitReadyCrewScene('home',homeLine,{reason:'READY_HOME_CONTEXT'})) $('#homeGuideLine').textContent=homeLine;
 }
 function renderChips(root){
   if(!root)return;
@@ -635,7 +669,8 @@ function renderRecordingContext(){
   applyAvatar($('#recordAvatar'));
   applyGuide($('#recordGuidePortrait'));
   applyGuide($('#recIntroGuide'));
-  $('#guideDialogue').textContent=`${state.guide.name}: ${guideData().intro}`;
+  const recordingIntro=`${state.guide.name}: ${guideData().intro}`;
+  if(!emitReadyCrewScene('recording',recordingIntro,{reason:'READY_RECORDING_START'})) $('#guideDialogue').textContent=recordingIntro;
 }
 $('#recordAction').onclick=async()=>{
   if(mediaRecorder&&mediaRecorder.state==='recording'){mediaRecorder.stop();return}
@@ -668,10 +703,14 @@ async function startRecording(){
 }
 function chooseGuest(){
   const all=Object.keys(GUIDE_TYPES).filter(x=>x!==state.guide.type);
-  const recent=new Set((state.guestHistory||[]).slice(-1));
+  const history=Array.isArray(state.guestHistory)?state.guestHistory:[];
+  const recent=new Set(history.slice(-1));
   let pool=all.filter(x=>!recent.has(x));if(!pool.length)pool=all;
-  currentGuestType=pool[Math.floor(Math.random()*pool.length)]||all[0]||'pico';
-  state.guestHistory=[...(state.guestHistory||[]),currentGuestType].slice(-4);save();
+  const counts=Object.fromEntries(all.map(id=>[id,history.filter(x=>x===id).length]));
+  const min=Math.min(...pool.map(id=>counts[id]??0));
+  const leastUsed=pool.filter(id=>(counts[id]??0)===min);
+  currentGuestType=leastUsed[Math.floor(Math.random()*leastUsed.length)]||pool[0]||all[0]||'pico';
+  state.guestHistory=[...history,currentGuestType].slice(-12);save();
 }
 function finishRecording(){
   clearInterval(recordTicker);
@@ -687,8 +726,12 @@ function finishRecording(){
   chooseGuest();
   applyGuide($('#duoMainGuide'),state.guide.type);
   applyGuide($('#duoGuestGuide'),currentGuestType);
-  $('#guideDialogue').textContent='잠깐만. 같이 들어줄 친구 좀 잡아올게!';
-  $('#duoText').textContent=`${state.guide.name}: 잡아왔다!  ·  ${GUIDE_TYPES[currentGuestType].defaultName}: 좋아, 끝까지 들어보자. 지금은 자동 평가보다 녹음을 끝까지 완료한 사실을 먼저 확인할게.`;
+  const guestName=GUIDE_TYPES[currentGuestType].defaultName;
+  const feedback=readyRecordingEvidenceFeedback();
+  const bringLine='잠깐만. 이건 같이 들어봐야겠다. 친구 한 명 꼬셔왔어!';
+  if(!emitReadyCrewScene('recording',bringLine,{reason:'READY_DUO_GUEST_ARRIVAL'})) $('#guideDialogue').textContent=bringLine;
+  const duoLine=`${state.guide.name}: 잡아왔다! · ${guestName}: ${feedback.praise} ${feedback.next}`;
+  if(!emitReadyCrewScene('recording-review',duoLine,{guestType:currentGuestType,action:'IDLE',dialogue:'SHORT',evidenceRef:feedback.evidenceRef,reason:'READY_RECORDING_REVIEW'})) $('#duoText').textContent=duoLine;
   const isM4A=/audio\/(mp4|m4a)/.test(type);
   $('#formatNote').textContent=isM4A
     ?'실제 MP4/M4A 계열 오디오로 저장할 수 있는 브라우저입니다.'
@@ -699,7 +742,8 @@ function finishRecording(){
 $('#rerecordBtn').onclick=()=>{
   $('#reviewPanel').hidden=true;currentAudio=null;
   $('#recordClock').textContent='00:00';$('#recordState').textContent='READY';
-  $('#guideDialogue').textContent=`${state.guide.name}: 좋아, 이번엔 네 속도로 다시 해보자.`;
+  const retryLine=`${state.guide.name}: 좋아, 이번엔 네 속도로 다시 해보자.`;
+  if(!emitReadyCrewScene('recording',retryLine,{reason:'READY_RECORDING_RETRY'})) $('#guideDialogue').textContent=retryLine;
 };
 $('#saveRecordingBtn').onclick=async()=>{
   if(!currentAudio)return;
@@ -770,7 +814,8 @@ function renderResult(){
   const sc=resultSceneFor(r);
   const outcomeCopy=sc;
   $('#resultHeadline').textContent=outcomeCopy.headline;
-  $('#resultLine').textContent=outcomeCopy.line;
+  const reflectionLine=`${outcomeCopy.line} ${readyOneGoodReflection(r)}`;
+  if(!emitReadyCrewScene('result',reflectionLine,{guestType:r.recordingDone&&r.guestType?r.guestType:null,action:r.recordingDone?'CHEER':'IDLE',dialogue:'SHORT',evidenceRef:'READY_SESSION_RESULT',reason:'ONE_GOOD_REFLECTION'})) $('#resultLine').textContent=reflectionLine;
   $('#resultTasks').textContent=[...r.selected,...r.tasks].join(' · ');
   $('#resultTarget').textContent=fmt(r.targetMs);
   $('#resultFocus').textContent=fmt(r.focusMs);
