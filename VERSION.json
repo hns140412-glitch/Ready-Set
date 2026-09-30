@@ -6,14 +6,19 @@
   "runtimeVersion": "ready-runtime-v07",
   "schemaVersion": 5,
   "contractVersion": 1,
-  "releaseId": "ready-set-1.0.0-alpha.1-r3",
+  "releaseId": "ready-set-1.0.0-alpha.1-r4",
   "masterRevision": "C2S_REWRITE_01",
   "centralLearningBasis": "TAKY@6efa6067be33ca2a04261d5abe3cd7501e90098e",
-  "releaseStatus": "MAIN_MERGED__CENTRAL_HOST_CONFIG_REQUIRED__DEPLOYMENT_BLOCKED",
+  "releaseStatus": "PRE_RELEASE__DEVICE_PRODUCTION_UNVERIFIED__DEPLOYMENT_HOLD",
   "notes": [
-    "This file is a compatibility mirror, not an independent version authority.",
-    "Service-worker cache identity is derived from release_id.",
-    "Service-worker activation waits for an explicit APPLY_UPDATE message from the Ready safe-point adapter.",
-    "Real-device update/restore behavior remains separately unverified."
-  ]
+    "Compatibility mirror only; ready-release-v01.js is the sole semantic release authority.",
+    "Service-worker cache identity derives from release_id.",
+    "Exact git SHA/tree validation belongs to READY_SET_VALIDATION_STATUS.json and READY_SET_VERSION_REGISTRY.json, not this mirror.",
+    "Service-worker activation waits for explicit APPLY_UPDATE at a Ready safe point.",
+    "Device and production verification remain separate and deployment remains HOLD."
+  ],
+  "releaseChannel": "alpha",
+  "releaseIdPolicy": "ROTATE_ON_FROZEN_CANDIDATE_OR_SEMANTIC_RELEASE_CHANGE",
+  "buildIdentityPolicy": "EXACT_GIT_SHA_AND_TREE_LIVE_IN_VALIDATION_EVIDENCE",
+  "sharedRuntimeBasis": "TAKY@c53ee827c03133576f1f9c6e0c6480991f470207"
 }
