@@ -1,7 +1,7 @@
 {
   "schema": "TAKY_DESIGN_TO_UI_PIPELINE_V1",
   "project": "Ready-Set",
-  "source_commit": "9ee93f7bba0edd99de4fa947d9690f7e78cf7f5c",
+  "source_commit": "0ea5b1a9df3c1d0529627c19499d0a3205b05ffc",
   "pipeline_contract_source": "TAKY_PR_194_DRAFT",
   "scope_note": "Initial image-generation-independent adoption: WEEK/DAY/GOAL/TIMER. HOME remains separate authority work.",
   "policy": {
@@ -23,11 +23,11 @@
       },
       "screen_contract": {
         "path": "design/screens/planner-week.json",
-        "sha256": "a623692f402ae82adb6e3570a53c60d7604b9d0ab4b72572a80ae4379417e855"
+        "sha256": "fcf1d45ec664fad16952efc0a5b130041626265bf20fc83243a7f1aeb4c8afe2"
       },
       "layer_contract": {
         "path": "design/layers/planner-week.json",
-        "sha256": "ea1dfb769a997d8022c04f91940da8ffdbfc97018627006c77f5e46b1420a350"
+        "sha256": "04f7808340f3e7af57ab36f1d20981a3cc8bd44534f0832aca81e13d38895c08"
       },
       "viewports": [
         {
@@ -70,11 +70,11 @@
       },
       "screen_contract": {
         "path": "design/screens/planner-day.json",
-        "sha256": "44779b14b3a805bfc78722f4b3661f0513907ca3e563168055f926435aec3afe"
+        "sha256": "84abb63dce8128e21c6312cc5981fc30a9de9c1268dbe30774dac9b0b8f637ad"
       },
       "layer_contract": {
         "path": "design/layers/planner-day.json",
-        "sha256": "ddb8f72a4ed251a6c720a695114e741de2b9053e20b8c572d8325e45d0ccfb50"
+        "sha256": "272f01cc9d934b3ffc9835fbeb93f61e27fc26a2945070cf7e39ff4840bc365c"
       },
       "viewports": [
         {
