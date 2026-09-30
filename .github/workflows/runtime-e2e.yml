@@ -17,6 +17,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Validate app Scene Policy adapter
+        run: node tests/scene-policy-adapter.spec.js
       - name: Validate TAKY Design Gate authority
         run: node tools/validate-design-gate.mjs
       - uses: actions/setup-node@v4
