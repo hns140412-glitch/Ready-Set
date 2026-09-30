@@ -931,7 +931,41 @@ function renderPlanner(){
 const SCHEDULE_WEEKDAY_NAMES=['일','월','화','수','목','금','토'];
 const BUFFER_KIND_LABELS={TRAVEL:'이동',MEAL:'식사',PREPARATION:'준비',REST:'휴식',SAFETY:'안전 여유',OTHER:'기타'};
 let pendingScheduleVoiceAction=null;
+let pendingScheduleConflictAction=null;
 let scheduleVoiceRecognition=null;
+
+function clearScheduleConflictReview(){
+  pendingScheduleConflictAction=null;
+  const root=$('#scheduleConflictReview'),list=$('#scheduleConflictList');
+  if(root)root.hidden=true;
+  if(list)list.innerHTML='';
+}
+function showScheduleConflictReview(kind,input,conflicts=[]){
+  const root=$('#scheduleConflictReview'),list=$('#scheduleConflictList');
+  if(!root||!list)return;
+  pendingScheduleConflictAction={kind,input:{...input},conflicts:[...conflicts]};
+  list.innerHTML=conflicts.map(x=>`<div class="scheduleConflictItem"><b>${escapeHtml(x.type==='PERIOD_OVERLAP'?'기간 겹침':x.type==='LIFE_BUFFER_OVERLAP'?'생활시간 겹침':'일정 겹침')}</b><small>${escapeHtml(x.message||x.title||'겹치는 시간이 있습니다.')}</small></div>`).join('');
+  root.hidden=false;
+  root.scrollIntoView?.({block:'nearest',behavior:'smooth'});
+}
+function saveAcknowledgedScheduleConflict(){
+  const pending=pendingScheduleConflictAction;
+  if(!pending||!requireParentUi())return;
+  try{
+    if(pending.kind==='PERIOD'){
+      const period=window.ReadySetPlanner.upsertSchedulePeriod({...pending.input,conflict_acknowledged:true});
+      toast(`${period.name} 기간을 겹침 확인 후 저장했어요.`);
+      $('#schedulePeriodId').value=period.period_id;
+    }else if(pending.kind==='COMMITMENT'){
+      const item=window.ReadySetPlanner.upsertScheduleCommitment({...pending.input,conflict_acknowledged:true});
+      toast(`${item.title} 일정을 겹침 확인 후 저장했어요.`);
+      clearScheduleForm();
+    }
+    clearScheduleConflictReview();
+    renderPlannerAdmin();renderPlanner();
+  }catch(error){toast(error?.message||'시간표를 저장하지 못했어요.')}
+}
+
 
 function toggleScheduleModeFields(){
   const weekly=$('#scheduleRecurring')?.checked===true;
@@ -939,6 +973,7 @@ function toggleScheduleModeFields(){
   if($('#scheduleDateField'))$('#scheduleDateField').hidden=weekly;
 }
 function clearSchedulePeriodForm(){
+  clearScheduleConflictReview();
   if(!$('#schedulePeriodId'))return;
   $('#schedulePeriodId').value='';
   $('#schedulePeriodName').value='';
@@ -948,6 +983,7 @@ function clearSchedulePeriodForm(){
   renderSchedulePeriodCalendar(plannerSnapshot());
 }
 function clearScheduleForm(){
+  clearScheduleConflictReview();
   $('#scheduleId').value='';
   $('#scheduleTitle').value='';
   $('#scheduleCategory').value='';
@@ -1118,6 +1154,38 @@ function parseScheduleVoiceCommand(raw){
   if(!deleteMode&&timeRange&&(!end||end<=start))return {ok:false,reason:'종료 시간은 시작 시간보다 늦어야 해요.'};
   return {ok:true,type:'SCHEDULE',period_id:periodId,weekdays,title,start,end,shift_only:shiftOnly,delete:deleteMode};
 }
+function voiceScheduleInputs(action,snap=plannerSnapshot()){
+  if(action.type!=='SCHEDULE'||action.delete)return [];
+  const matching=(day)=>(snap.schedule_commitments||[]).find(x=>x.recurrence==='WEEKLY'&&x.period_id===action.period_id&&Number(x.weekday)===day&&String(x.title||'').trim()===action.title);
+  const inputs=[];
+  for(const day of action.weekdays){
+    const old=matching(day);
+    let start=action.start,end=action.end;
+    if(action.shift_only){
+      if(!old)continue;
+      const duration=scheduleMinutes(old.end)-scheduleMinutes(old.start);
+      end=scheduleTimeFromMinutes(scheduleMinutes(start)+Math.max(1,duration));
+    }
+    inputs.push({
+      commitment_id:old?.commitment_id,
+      title:action.title,
+      category:old?.category||$('#scheduleCategory')?.value.trim()||'OTHER',
+      recurrence:'WEEKLY',
+      weekday:day,
+      start,end,
+      period_id:action.period_id,
+      confirmed:true,
+      planner_movable:old?.planner_movable===true,
+      parent_editable:true,
+      source:'PARENT_ADMIN_UI'
+    });
+  }
+  return inputs;
+}
+function scheduleConflictPreviewHtml(conflicts=[]){
+  if(!conflicts.length)return '';
+  return `<div class="scheduleVoiceConflict"><b>겹침 ${conflicts.length}건 확인 필요</b>${conflicts.map(x=>`<small>${escapeHtml(x.message||x.title||'겹치는 시간이 있습니다.')}</small>`).join('')}</div>`;
+}
 function showScheduleVoicePreview(){
   const root=$('#scheduleVoicePreview'),apply=$('#scheduleVoiceApplyBtn');
   if(!root||!apply)return;
@@ -1126,44 +1194,55 @@ function showScheduleVoicePreview(){
   root.hidden=false;apply.hidden=!action.ok;
   if(!action.ok){root.innerHTML=`<b>확인 필요</b><small>${escapeHtml(action.reason)}</small>`;return}
   if(action.type==='PERIOD'){
-    root.innerHTML=`<b>기간 변경안</b><small>${escapeHtml(action.name)} · ${action.valid_from} → ${action.valid_until}</small>`;
+    const input={period_id:action.period_id||undefined,name:action.name,valid_from:action.valid_from,valid_until:action.valid_until,source:'PARENT_ADMIN_UI',parent_editable:true};
+    const review=window.ReadySetPlanner?.previewSchedulePeriod?.(input)||{conflicts:[]};
+    action.preview_input=input;
+    action.conflicts=review.conflicts||[];
+    root.innerHTML=`<b>기간 변경안</b><small>${escapeHtml(action.name)} · ${action.valid_from} → ${action.valid_until}</small>${scheduleConflictPreviewHtml(action.conflicts)}`;
+    apply.textContent=action.conflicts.length?'겹침 확인 후 적용':'확인 후 적용';
     return;
   }
   const period=(plannerSnapshot().schedule_periods||[]).find(x=>x.period_id===action.period_id);
   const days=action.weekdays.map(x=>SCHEDULE_WEEKDAY_NAMES[x]).join('·');
   const op=action.delete?'삭제':action.shift_only?`시작 ${action.start}로 변경`:`${action.start}–${action.end}`;
-  root.innerHTML=`<b>${escapeHtml(period?.name||'기간')} · ${days} · ${escapeHtml(action.title)}</b><small>${escapeHtml(op)} · 아직 저장되지 않음</small>`;
+  const inputs=voiceScheduleInputs(action);
+  const conflicts=action.delete?[]:inputs.flatMap(input=>window.ReadySetPlanner?.previewScheduleCommitment?.(input)?.conflicts||[]);
+  action.preview_inputs=inputs;
+  action.conflicts=conflicts;
+  root.innerHTML=`<b>${escapeHtml(period?.name||'기간')} · ${days} · ${escapeHtml(action.title)}</b><small>${escapeHtml(op)} · 아직 저장되지 않음</small>${scheduleConflictPreviewHtml(conflicts)}`;
+  apply.textContent=conflicts.length?'겹침 확인 후 적용':'확인 후 적용';
 }
 function applyScheduleVoiceAction(){
   const action=pendingScheduleVoiceAction;if(!action?.ok)return;
   if(!requireParentUi())return;
   const snap=plannerSnapshot();
   if(action.type==='PERIOD'){
-    window.ReadySetPlanner.upsertSchedulePeriod({period_id:action.period_id||undefined,name:action.name,valid_from:action.valid_from,valid_until:action.valid_until,source:'PARENT_ADMIN_UI',parent_editable:true});
+    const input=action.preview_input||{period_id:action.period_id||undefined,name:action.name,valid_from:action.valid_from,valid_until:action.valid_until,source:'PARENT_ADMIN_UI',parent_editable:true};
+    const result=window.ReadySetPlanner.upsertSchedulePeriod({...input,conflict_acknowledged:(action.conflicts||[]).length>0});
+    if(result?.ok===false){showScheduleConflictReview('PERIOD',input,result.conflicts||[]);return}
     toast('기간 변경을 적용했어요.');
   }else{
     const matching=(day)=>(snap.schedule_commitments||[]).find(x=>x.recurrence==='WEEKLY'&&x.period_id===action.period_id&&Number(x.weekday)===day&&String(x.title||'').trim()===action.title);
     let changed=0;
-    for(const day of action.weekdays){
-      const old=matching(day);
-      if(action.delete){
+    if(action.delete){
+      for(const day of action.weekdays){
+        const old=matching(day);
         if(old&&window.ReadySetPlanner.removeScheduleCommitment(old.commitment_id)?.ok)changed++;
-        continue;
       }
-      let start=action.start,end=action.end;
-      if(action.shift_only){
-        if(!old)continue;
-        const duration=scheduleMinutes(old.end)-scheduleMinutes(old.start);
-        end=scheduleTimeFromMinutes(scheduleMinutes(start)+Math.max(1,duration));
+    }else{
+      const inputs=Array.isArray(action.preview_inputs)&&action.preview_inputs.length?action.preview_inputs:voiceScheduleInputs(action,snap);
+      for(const input of inputs){
+        const result=window.ReadySetPlanner.upsertScheduleCommitment({...input,conflict_acknowledged:(action.conflicts||[]).length>0});
+        if(result?.ok===false){showScheduleConflictReview('COMMITMENT',input,result.conflicts||[]);return}
+        changed++;
       }
-      window.ReadySetPlanner.upsertScheduleCommitment({commitment_id:old?.commitment_id,title:action.title,category:old?.category||$('#scheduleCategory')?.value.trim()||'OTHER',recurrence:'WEEKLY',weekday:day,start,end,period_id:action.period_id,confirmed:true,planner_movable:old?.planner_movable===true,parent_editable:true,source:'PARENT_ADMIN_UI'});
-      changed++;
     }
     toast(action.delete?`${changed}개 시간표 타일을 삭제했어요.`:`${changed}개 시간표 타일을 변경했어요.`);
   }
   pendingScheduleVoiceAction=null;
   if($('#scheduleVoicePreview'))$('#scheduleVoicePreview').hidden=true;
-  if($('#scheduleVoiceApplyBtn'))$('#scheduleVoiceApplyBtn').hidden=true;
+  if($('#scheduleVoiceApplyBtn')){$('#scheduleVoiceApplyBtn').hidden=true;$('#scheduleVoiceApplyBtn').textContent='확인 후 적용'}
+  clearScheduleConflictReview();
   renderPlannerAdmin();renderPlanner();
 }
 
@@ -1308,6 +1387,14 @@ function editAvailability(id){
 }
 document.getElementById('scheduleClearBtn')?.addEventListener('click',clearScheduleForm);
 document.getElementById('schedulePeriodClearBtn')?.addEventListener('click',clearSchedulePeriodForm);
+document.getElementById('scheduleConflictConfirmBtn')?.addEventListener('click',saveAcknowledgedScheduleConflict);
+document.getElementById('scheduleConflictCancelBtn')?.addEventListener('click',clearScheduleConflictReview);
+['schedulePeriodName','schedulePeriodFrom','schedulePeriodUntil','scheduleTitle','scheduleCategory','scheduleDate','scheduleStart','scheduleEnd'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('input',clearScheduleConflictReview);
+});
+['scheduleRecurring','schedulePeriod','scheduleWeekday','scheduleMovable'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('change',clearScheduleConflictReview);
+});
 document.getElementById('scheduleRecurring')?.addEventListener('change',toggleScheduleModeFields);
 document.getElementById('schedulePeriod')?.addEventListener('change',()=>renderScheduleTileBoard(plannerSnapshot()));
 document.getElementById('scheduleMonth')?.addEventListener('change',()=>renderSchedulePeriodCalendar(plannerSnapshot()));
@@ -1420,8 +1507,15 @@ document.getElementById('saveSchedulePeriodBtn')?.addEventListener('click',()=>{
   const name=$('#schedulePeriodName').value.trim(),valid_from=$('#schedulePeriodFrom').value,valid_until=$('#schedulePeriodUntil').value;
   if(!name||!valid_from||!valid_until){toast('기간 이름·시작일·종료일을 확인해 주세요.');return}
   if(valid_until<valid_from){toast('종료일은 시작일보다 빠를 수 없어요.');return}
+  const input={period_id:$('#schedulePeriodId').value||undefined,name,valid_from,valid_until,source:'PARENT_ADMIN_UI',parent_editable:true};
   try{
-    const period=window.ReadySetPlanner.upsertSchedulePeriod({period_id:$('#schedulePeriodId').value||undefined,name,valid_from,valid_until,source:'PARENT_ADMIN_UI',parent_editable:true});
+    const period=window.ReadySetPlanner.upsertSchedulePeriod(input);
+    if(period?.ok===false&&period.reason==='PERIOD_CONFLICT_REVIEW_REQUIRED'){
+      showScheduleConflictReview('PERIOD',input,period.conflicts||[]);
+      toast('겹치는 기간이 있어 확인이 필요해요.');
+      return;
+    }
+    clearScheduleConflictReview();
     toast(`${period.name} 기간을 저장했어요.`);
     $('#schedulePeriodId').value=period.period_id;
     renderPlannerAdmin();renderPlanner();
@@ -1446,7 +1540,13 @@ document.getElementById('saveScheduleBtn')?.addEventListener('click',()=>{
   if(weekly)Object.assign(input,{recurrence:'WEEKLY',period_id:periodId,weekday:Number($('#scheduleWeekday').value),start,end});
   else Object.assign(input,{start_at:`${date}T${start}:00`,end_at:`${date}T${end}:00`});
   try{
-    window.ReadySetPlanner.upsertScheduleCommitment(input);
+    const item=window.ReadySetPlanner.upsertScheduleCommitment(input);
+    if(item?.ok===false&&item.reason==='SCHEDULE_CONFLICT_REVIEW_REQUIRED'){
+      showScheduleConflictReview('COMMITMENT',input,item.conflicts||[]);
+      toast('겹치는 일정이 있어 확인이 필요해요.');
+      return;
+    }
+    clearScheduleConflictReview();
     toast(weekly?'주간 고정 시간표 타일을 저장했어요.':'고정 일정을 저장했어요.');
     clearScheduleForm();renderPlannerAdmin();renderPlanner();
   }catch(error){toast(error?.message||'고정 일정을 저장하지 못했어요.')}

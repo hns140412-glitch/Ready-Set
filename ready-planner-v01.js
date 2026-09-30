@@ -90,12 +90,115 @@
       const item=activeSchedulePeriodFromState(load(),date);
       return item?{...item}:null;
     }
+    function rangesOverlap(aStart,aEnd,bStart,bEnd){
+      return !!(aStart&&aEnd&&bStart&&bEnd&&aStart<=bEnd&&bStart<=aEnd);
+    }
+    function timesOverlap(aStart,aEnd,bStart,bEnd){
+      return !!(aStart&&aEnd&&bStart&&bEnd&&aStart<bEnd&&bStart<aEnd);
+    }
+    function periodConflictPreviewFromState(state,input={}){
+      const periodId=cleanText(input.period_id)||null;
+      const validFrom=cleanText(input.valid_from),validUntil=cleanText(input.valid_until);
+      if(!validDateString(validFrom)||!validDateString(validUntil)||validUntil<validFrom)
+        return {ok:false,reason:'INVALID_PERIOD_RANGE',conflicts:[]};
+      const conflicts=(state.schedule_periods||[])
+        .filter(x=>x&&x.enabled!==false&&x.period_id!==periodId&&validDateString(x.valid_from)&&validDateString(x.valid_until))
+        .filter(x=>rangesOverlap(validFrom,validUntil,x.valid_from,x.valid_until))
+        .map(x=>({
+          type:'PERIOD_OVERLAP',
+          period_id:x.period_id,
+          name:x.name,
+          valid_from:x.valid_from,
+          valid_until:x.valid_until,
+          message:`${x.name} ${x.valid_from}~${x.valid_until}와 기간이 겹칩니다.`
+        }));
+      return {ok:true,requires_acknowledgement:conflicts.length>0,conflicts};
+    }
+    function scheduleConflictPreviewFromState(state,input={}){
+      const commitmentId=cleanText(input.commitment_id)||null;
+      const recurrence=cleanText(input.recurrence).toUpperCase();
+      const weekly=recurrence==='WEEKLY';
+      const periodId=cleanText(input.period_id)||null;
+      const weekday=Number.isInteger(input.weekday)?input.weekday:Number(input.weekday);
+      const start=weekly?cleanText(input.start):String(input.start_at||'').slice(11,16);
+      const end=weekly?cleanText(input.end):String(input.end_at||'').slice(11,16);
+      const date=weekly?null:String(input.start_at||'').slice(0,10);
+      const conflicts=[];
+      const pushConflict=(x,materializedDate=null,type='COMMITMENT_OVERLAP')=>{
+        if(!x||x.commitment_id===commitmentId)return;
+        conflicts.push({
+          type,
+          commitment_id:x.commitment_id,
+          title:x.title,
+          date:materializedDate||String(x.start_at||'').slice(0,10)||null,
+          weekday:Number.isFinite(Number(x.weekday))?Number(x.weekday):null,
+          start:x.start||String(x.start_at||'').slice(11,16)||null,
+          end:x.end||String(x.end_at||'').slice(11,16)||null,
+          message:`${x.title} ${x.start||String(x.start_at||'').slice(11,16)}~${x.end||String(x.end_at||'').slice(11,16)}와 시간이 겹칩니다.`
+        });
+      };
+      if(weekly){
+        for(const x of state.schedule_commitments||[]){
+          if(!x||x.confirmed===false||x.commitment_id===commitmentId)continue;
+          if(cleanText(x.recurrence).toUpperCase()==='WEEKLY'){
+            const sameScope=(cleanText(x.period_id)||null)===periodId;
+            if(sameScope&&Number(x.weekday)===weekday&&timesOverlap(start,end,x.start,x.end))pushConflict(x);
+            continue;
+          }
+          const xDate=String(x.start_at||'').slice(0,10);
+          if(!validDateString(xDate)||parseLocal(xDate,'12:00').getDay()!==weekday)continue;
+          if(periodId){
+            const period=(state.schedule_periods||[]).find(p=>p.period_id===periodId);
+            if(!period||xDate<period.valid_from||xDate>period.valid_until||activeSchedulePeriodFromState(state,xDate)?.period_id!==periodId)continue;
+          }else{
+            if(activeSchedulePeriodFromState(state,xDate))continue;
+            const validFrom=cleanText(input.valid_from),validUntil=cleanText(input.valid_until);
+            if(validFrom&&xDate<validFrom)continue;
+            if(validUntil&&xDate>validUntil)continue;
+          }
+          if(timesOverlap(start,end,String(x.start_at).slice(11,16),String(x.end_at).slice(11,16)))pushConflict(x,xDate);
+        }
+      }else if(validDateString(date)){
+        for(const x of scheduleCommitmentsByDateFromState(state,date)){
+          if(x.commitment_id===commitmentId)continue;
+          if(timesOverlap(start,end,String(x.start_at).slice(11,16),String(x.end_at).slice(11,16)))pushConflict(x,date);
+        }
+        for(const b of scheduleBuffersByDateFromState(state,date)){
+          const bStart=String(b.start_at||'').slice(11,16),bEnd=String(b.end_at||'').slice(11,16);
+          if(timesOverlap(start,end,bStart,bEnd)){
+            conflicts.push({
+              type:'LIFE_BUFFER_OVERLAP',
+              buffer_id:b.buffer_id,
+              title:b.title,
+              kind:b.kind,
+              date,
+              start:bStart,
+              end:bEnd,
+              message:`${b.title} ${bStart}~${bEnd} 생활시간과 겹칩니다.`
+            });
+          }
+        }
+      }
+      const unique=[];
+      const seen=new Set();
+      for(const x of conflicts){
+        const key=[x.type,x.commitment_id||x.buffer_id||'',x.date||'',x.start||'',x.end||''].join('|');
+        if(!seen.has(key)){seen.add(key);unique.push(x)}
+      }
+      return {ok:true,requires_acknowledgement:unique.length>0,conflicts:unique};
+    }
+    function previewSchedulePeriod(input={}){return periodConflictPreviewFromState(load(),input)}
+    function previewScheduleCommitment(input={}){return scheduleConflictPreviewFromState(load(),input)}
     function upsertSchedulePeriod(input={}){
       requireParentScheduleWrite(input.source);
       const name=cleanText(input.name)||cleanText(input.label);
       const validFrom=cleanText(input.valid_from),validUntil=cleanText(input.valid_until);
       if(!name)throw new Error('period name required');
       if(!validDateString(validFrom)||!validDateString(validUntil)||validUntil<validFrom)throw new Error('valid period range required');
+      if(cleanText(input.source)==='PARENT_ADMIN_UI'&&!input.conflict_acknowledged){
+        const review=periodConflictPreviewFromState(load(),input);
+        if(review.requires_acknowledgement)return {ok:false,reason:'PERIOD_CONFLICT_REVIEW_REQUIRED',conflicts:review.conflicts};
+      }
       return mutate(s=>{
         const id=cleanText(input.period_id)||makeId('period');
         const existing=s.schedule_periods.find(x=>x.period_id===id);
@@ -173,6 +276,14 @@
       const periodId=cleanText(input.period_id)||null;
       if(weekly&&!(weekday>=0&&weekday<=6))throw new Error('weekday required');
       if(weekly&&(!/^\d{2}:\d{2}$/.test(startTime)||!/^\d{2}:\d{2}$/.test(endTime)||endTime<=startTime))throw new Error('valid start/end required');
+      if(!weekly){
+        const startAt=String(input.start_at||''),endAt=String(input.end_at||'');
+        if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(startAt)||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(endAt)||endAt<=startAt)throw new Error('valid start/end required');
+      }
+      if(cleanText(input.source)==='PARENT_ADMIN_UI'&&!input.conflict_acknowledged){
+        const review=scheduleConflictPreviewFromState(load(),input);
+        if(review.requires_acknowledgement)return {ok:false,reason:'SCHEDULE_CONFLICT_REVIEW_REQUIRED',conflicts:review.conflicts};
+      }
       return mutate(s=>{
         if(weekly&&periodId&&!s.schedule_periods.some(x=>x.period_id===periodId))throw new Error('schedule period not found');
         const id=cleanText(input.commitment_id)||makeId('commitment');
@@ -1531,10 +1642,12 @@
       validate,
       today,
       todayProjection,
+      previewSchedulePeriod,
       upsertSchedulePeriod,
       removeSchedulePeriod,
       activeSchedulePeriod,
       scheduleCommitmentsByDate,
+      previewScheduleCommitment,
       upsertScheduleCommitment,
       removeScheduleCommitment,
       scheduleBuffersByDate,

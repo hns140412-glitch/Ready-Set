@@ -47,6 +47,20 @@ test('Schedule Commitment remains editable while legacy Parent allocation contro
   await expect(page.locator('#bufferAdminList')).toContainText('저녁 식사');
   expect(await page.evaluate(date=>window.ReadySetPlanner.scheduleBuffersByDate(date).map(x=>x.kind).sort(),today)).toEqual(['MEAL','TRAVEL']);
 
+  await page.locator('#scheduleClearBtn').click();
+  await page.locator('#scheduleTitle').fill('피아노');
+  await page.locator('#scheduleCategory').fill('피아노');
+  await page.locator('#scheduleDate').fill(today);
+  await page.locator('#scheduleStart').fill('18:00');
+  await page.locator('#scheduleEnd').fill('19:10');
+  await page.locator('#saveScheduleBtn').click();
+  await expect(page.locator('#scheduleConflictReview')).toBeVisible();
+  await expect(page.locator('#scheduleConflictList')).toContainText('영어학원');
+  expect(await page.evaluate(()=>window.ReadySetPlanner.snapshot().schedule_commitments.some(x=>x.title==='피아노'))).toBe(false);
+  await page.locator('#scheduleConflictConfirmBtn').click();
+  await expect(page.locator('#scheduleConflictReview')).toBeHidden();
+  expect(await page.evaluate(()=>window.ReadySetPlanner.snapshot().schedule_commitments.some(x=>x.title==='피아노'))).toBe(true);
+
   expect(await page.locator('#templateMinutes').count()).toBe(0);
   expect(await page.locator('#templateWeekdays').count()).toBe(0);
   expect(await page.locator('#templateRequiredToday').count()).toBe(0);
