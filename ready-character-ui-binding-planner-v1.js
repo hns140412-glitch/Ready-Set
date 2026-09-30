@@ -9,11 +9,25 @@
   function plan(viewModel={},surface){
     const reg=bindingRegistry&&bindingRegistry.registry?bindingRegistry.registry():null;
     if(!reg)return {ok:false,reason:'BINDING_REGISTRY_UNAVAILABLE'};
+    let surfacePolicy=null;
+    if(typeof module!=='undefined'&&module.exports){
+      try{ surfacePolicy=require('./ready-surface-scene-policy-v1.js').forSurface(surface||''); }catch{}
+    }else if(typeof globalThis!=='undefined'&&globalThis.TakySurfaceScenePolicy){
+      surfacePolicy=globalThis.TakySurfaceScenePolicy.forSurface(surface||'');
+    }
     if(!viewModel||viewModel.ok!==true)return {ok:false,reason:'VIEW_MODEL_INVALID'};
     if(viewModel.app_id!==reg.app_id)return {ok:false,reason:'APP_BINDING_MISMATCH'};
     if(viewModel.asset_generation_allowed!==false)return {ok:false,reason:'GENERATION_PATH_FORBIDDEN'};
     const candidates=Array.isArray(viewModel.characters)?viewModel.characters:[];
     const slots=(reg.slots||[]).filter(s=>!surface||s.surface===surface);
+    if(surfacePolicy&&surfacePolicy.ok){
+      const visibleCount=candidates.length;
+      const speakingCount=candidates.filter(x=>x.dialogue_level&&x.dialogue_level!=='SILENT').length;
+      if(visibleCount>surfacePolicy.policy.max_visible)
+        return {ok:false,reason:'SURFACE_POLICY_LIMIT_EXCEEDED',kind:'VISIBLE',allowed:surfacePolicy.policy.max_visible,actual:visibleCount};
+      if(speakingCount>surfacePolicy.policy.max_speaking)
+        return {ok:false,reason:'SURFACE_POLICY_LIMIT_EXCEEDED',kind:'SPEAKING',allowed:surfacePolicy.policy.max_speaking,actual:speakingCount};
+    }
     const used=new Set(),assignments=[],rejected=[];
     for(const c of candidates){
       const slot=slots.find(s=>!used.has(s.slot_id)&&Array.isArray(s.allowed_presence_roles)&&s.allowed_presence_roles.includes(c.presence_role));
