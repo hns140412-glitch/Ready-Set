@@ -221,3 +221,80 @@
   .radioMissionHead h2{font-size:13px}
   .parentVoiceMic{flex-basis:68px;height:68px}
 }
+
+
+/* BASE CAMP LAYERED HERO — structure matches approved WEEK/DAY/GOAL composition.
+   Environment illustration remains source-locked OPEN until the approved clean background is transferred. */
+.baseCampHero{
+  width:min(100%,430px);height:348px;margin:0 auto;position:relative;overflow:hidden;isolation:isolate;
+  background:
+    radial-gradient(circle at 72% 18%,rgba(255,255,255,.88) 0 10%,transparent 24%),
+    linear-gradient(180deg,#79c5f6 0 36%,#b5daf0 37% 49%,#9f7b52 100%);
+  border-bottom:1px solid rgba(92,53,31,.22);
+}
+.baseCampHero:before{
+  content:"";position:absolute;inset:18% -8% 26%;z-index:-1;opacity:.95;
+  background:
+    linear-gradient(135deg,transparent 0 39%,#e8edf7 40% 48%,#8cb0d4 49% 55%,transparent 56%) 40% 0/52% 100% no-repeat,
+    linear-gradient(225deg,transparent 0 37%,#f7f6ef 38% 46%,#8eacd0 47% 55%,transparent 56%) 78% 4%/48% 100% no-repeat;
+}
+.baseCampHero:after{
+  content:"";position:absolute;left:-5%;right:-5%;bottom:-4px;height:116px;z-index:0;
+  background:linear-gradient(180deg,#9c6338,#6d3d22 64%,#4d2b1a);
+  clip-path:polygon(0 30%,8% 22%,16% 31%,26% 18%,38% 26%,50% 16%,62% 27%,74% 18%,87% 29%,100% 20%,100% 100%,0 100%);
+}
+.baseCampSign{
+  position:absolute;z-index:4;left:18px;top:18px;width:230px;min-height:116px;padding:14px 15px 13px 17px;
+  background:linear-gradient(145deg,#fff6dc,#ead7b0);border:2px solid #7f532f;border-radius:9px 17px 12px 8px;
+  box-shadow:0 8px 18px rgba(67,39,20,.22);transform:rotate(-1.5deg);color:#173d78;
+}
+.baseCampSign:before,.baseCampSign:after{content:"";position:absolute;top:-14px;width:9px;height:24px;border-radius:6px;background:#714429}
+.baseCampSign:before{left:24px}.baseCampSign:after{right:28px}
+.baseCampSign small{display:block;font-weight:800;font-size:13px;letter-spacing:.02em}
+.baseCampSign strong{display:block;margin-top:2px;font-size:31px;line-height:1.05;letter-spacing:-.075em}
+.baseCampSign span{display:block;margin-top:7px;font-size:10px;line-height:1.35;color:#564c3d;font-weight:800}
+.baseCampCharacterSlot{
+  position:absolute;z-index:3;left:76px;bottom:54px;width:136px;height:154px;border-radius:46% 46% 40% 40%;
+  display:grid;place-items:center;font-size:32px;font-weight:950;color:#173d78;
+  background:linear-gradient(150deg,#f8d9c9,#f3a8ad 58%,#bd6679);border:6px solid rgba(255,255,255,.8);
+  box-shadow:0 11px 22px rgba(64,37,21,.23);
+}
+.baseCampCharacterSlot.hasPhoto{background-size:cover;background-position:center}
+.baseCampCompanion{
+  position:absolute;z-index:3;right:24px;bottom:38px;width:156px;height:186px;object-fit:contain;object-position:center bottom;
+  filter:drop-shadow(0 10px 8px rgba(52,31,18,.23));
+}
+.baseCampDesk{
+  position:absolute;z-index:2;left:32px;right:25px;bottom:16px;height:72px;border-radius:22px 22px 7px 7px;
+  background:linear-gradient(#a76e3d,#754524);border:3px solid #5d361f;box-shadow:0 9px 16px rgba(51,29,17,.28);
+}
+.baseCampDesk span{
+  position:absolute;left:20%;right:12%;top:13px;height:38px;transform:rotate(-2deg);
+  background:linear-gradient(#fff3cf,#ead5a3);border:1px solid #a77f4d;border-radius:6px;
+}
+.plannerBaseCampHero{height:350px}
+.goalBaseCampHero{height:410px}
+.goalBaseCampHero .baseCampSign{width:250px}
+.goalBaseCampHero .baseCampCharacterSlot{left:64px;bottom:67px;width:150px;height:176px}
+.goalBaseCampHero .baseCampCompanion{right:16px;bottom:50px;width:170px;height:205px}
+.goalBaseCampHero .baseCampDesk{bottom:24px;height:80px}
+.plannerMain{margin-top:-18px;position:relative;z-index:5}
+.goalSetupMain{margin-top:-18px;position:relative;z-index:5}
+.plannerMain .plannerHero{display:none}
+#missionView>.pageHeader,.plannerView>.pageHeader{
+  position:absolute;left:0;right:0;top:0;z-index:9;background:linear-gradient(rgba(255,248,233,.77),rgba(255,248,233,.12));
+  border-bottom:0;backdrop-filter:none;
+}
+#missionView>.pageHeader .kicker,.plannerView>.pageHeader .kicker{opacity:.68}
+#missionView>.pageHeader h1,.plannerView>.pageHeader h1{font-size:0}
+#missionView>.pageHeader h1:after{content:"";font-size:0}
+.plannerView>.pageHeader h1:after{content:"";font-size:0}
+#missionView>.pageHeader>div,.plannerView>.pageHeader>div{visibility:hidden}
+#missionView>.pageHeader>button,.plannerView>.pageHeader>button{visibility:visible;background:rgba(255,248,232,.84);box-shadow:0 4px 10px rgba(62,37,20,.14)}
+@media(max-width:380px){
+  .baseCampHero{height:328px}
+  .goalBaseCampHero{height:388px}
+  .baseCampSign{width:214px}.baseCampSign strong{font-size:27px}
+  .baseCampCharacterSlot{left:56px;width:126px;height:145px}
+  .baseCampCompanion{right:12px;width:148px;height:176px}
+}
