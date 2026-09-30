@@ -13,13 +13,13 @@
     "status": "MANAGED_IN_PARALLEL_THREAD"
   },
   "build_identity": {
-    "release_id": "ready-set-1.0.0-alpha.1-r4",
+    "release_id": "ready-set-1.0.0-alpha.1-r5",
     "cache_identity_policy": "ready-set:<release_id>",
     "main_sha": "183fc6f385904964d500d046875e302acc9b8745",
     "build_id_policy": "release descriptor + exact git SHA/CI build evidence",
     "feature_named_cache_versions_forbidden": true,
     "main_tree_sha": "20d7713502f039394ee4a4a9e455129b7f6807eb",
-    "validation_state": "EXACT_MAIN_CI_RUNTIME_VERIFIED__DEVICE_PRODUCTION_PENDING",
+    "validation_state": "PENDING_EXACT_MAIN_REFRESH_AFTER_SHARED_CREW_MERGE",
     "release_candidate_state": "PRE_RELEASE_NOT_FROZEN__DEPLOYMENT_HOLD",
     "release_id_rotation_policy": "ROTATE_ON_FROZEN_CANDIDATE_OR_SEMANTIC_RELEASE_CHANGE",
     "exact_build_evidence_policy": "EXACT_GIT_SHA_AND_TREE_REFRESHED_ONLY_AFTER_VALIDATED_MAIN_MERGE",
