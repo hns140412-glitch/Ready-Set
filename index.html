@@ -100,20 +100,49 @@
   <section class="view cream plannerAdminView" id="plannerAdminView" data-view="planner-admin">
     <header class="safe pageHeader"><button data-nav="planner" aria-label="뒤로">←</button><div><span class="kicker">PARENT / ADMIN</span><h1>탐험 일정 관리</h1></div><span></span></header>
     <main class="safe scroll plannerAdminMain">
-      <section class="glassCard adminCard">
-        <div class="adminSectionHead"><div><small>FIXED SCHEDULE</small><h2>고정 일정</h2></div><button class="miniAction" id="scheduleClearBtn">새 일정</button></div>
-        <input id="scheduleId" type="hidden">
-        <label class="inputBlock">일정명<input id="scheduleTitle" placeholder="예) 영어학원"></label>
+      <section class="glassCard adminCard" id="schedulePeriodCard">
+        <div class="adminSectionHead"><div><small>PERIOD TIMETABLE</small><h2>기간별 주간 시간표</h2></div><button class="miniAction" id="schedulePeriodClearBtn">새 기간</button></div>
+        <p class="muted">방학·학기중처럼 적용 기간을 정하고, 그 기간에 사용할 주간 고정 시간표를 따로 저장합니다. 겹치는 기간은 최근 수정한 기간이 우선 적용됩니다.</p>
+        <input id="schedulePeriodId" type="hidden">
+        <label class="inputBlock">기간 이름<input id="schedulePeriodName" placeholder="예) 여름방학"></label>
         <div class="adminGrid two">
-          <label class="inputBlock">분류<input id="scheduleCategory" placeholder="예) 영어"></label>
-          <label class="inputBlock">날짜<input id="scheduleDate" type="date"></label>
+          <label class="inputBlock">시작일<input id="schedulePeriodFrom" type="date"></label>
+          <label class="inputBlock">종료일<input id="schedulePeriodUntil" type="date"></label>
         </div>
+        <label class="inputBlock">월간 보기<input id="scheduleMonth" type="month"></label>
+        <div id="schedulePeriodCalendar" class="schedulePeriodCalendar" aria-label="시간표 적용 기간 선택"></div>
+        <button class="btn dark" id="saveSchedulePeriodBtn">기간 저장</button>
+        <div id="schedulePeriodList" class="adminList"></div>
+
+        <div class="adminSectionHead scheduleSubHead"><div><small>WEEKLY TILES</small><h2>고정 시간표 타일</h2></div><button class="miniAction" id="scheduleClearBtn">새 타일</button></div>
+        <input id="scheduleId" type="hidden">
+        <label class="adminToggle"><input id="scheduleRecurring" type="checkbox"><span><b>기간 주간 반복</b><small>켜면 선택한 기간의 같은 요일마다 자동 적용됩니다.</small></span></label>
+        <div class="adminGrid two" id="scheduleRecurringFields">
+          <label class="inputBlock">적용 기간<select id="schedulePeriod"></select></label>
+          <label class="inputBlock">요일<select id="scheduleWeekday"><option value="1">월</option><option value="2">화</option><option value="3">수</option><option value="4">목</option><option value="5">금</option><option value="6">토</option><option value="0">일</option></select></label>
+        </div>
+        <div class="adminGrid two">
+          <label class="inputBlock">일정명<input id="scheduleTitle" placeholder="예) 영어학원"></label>
+          <label class="inputBlock">분류<input id="scheduleCategory" placeholder="예) 영어"></label>
+        </div>
+        <label class="inputBlock" id="scheduleDateField">1회 날짜<input id="scheduleDate" type="date"></label>
         <div class="adminGrid two">
           <label class="inputBlock">시작<input id="scheduleStart" type="time"></label>
           <label class="inputBlock">종료<input id="scheduleEnd" type="time"></label>
         </div>
         <label class="adminToggle"><input id="scheduleMovable" type="checkbox"><span><b>플래너가 이동 가능</b><small>기본은 고정 일정으로 유지합니다.</small></span></label>
         <button class="btn dark" id="saveScheduleBtn">고정 일정 저장</button>
+
+        <div class="scheduleVoiceBox">
+          <div class="adminSectionHead"><div><small>VOICE EDIT</small><h2>말로 시간표 변경</h2></div><button class="miniAction" id="scheduleVoiceBtn" type="button">말하기</button></div>
+          <label class="inputBlock">명령<input id="scheduleVoiceText" placeholder="예) 월수금 영어학원 오후 4시부터 6시"></label>
+          <button class="btn outline" id="scheduleVoicePreviewBtn" type="button">변경안 만들기</button>
+          <div id="scheduleVoicePreview" class="scheduleVoicePreview" hidden></div>
+          <button class="btn dark" id="scheduleVoiceApplyBtn" type="button" hidden>확인 후 적용</button>
+          <p class="muted">음성 내용은 바로 저장하지 않습니다. 변경안을 확인한 뒤 적용해야 실제 시간표가 바뀝니다.</p>
+        </div>
+
+        <div id="scheduleTileBoard" class="scheduleTileBoard"></div>
         <div id="scheduleAdminList" class="adminList"></div>
       </section>
 

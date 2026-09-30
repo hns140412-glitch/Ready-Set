@@ -48,6 +48,8 @@ OCR is never FACT. Answer references are PARENT_ONLY. Every source item must be 
 ## Planner
 Planner uses deadlines, fixed commitments, load/difficulty/recovery and advisory execution evidence.
 Rewrite target: actual free windows after school/academy/travel/meals/preparation/rest/safety buffer.
+Parent may define and edit fixed-commitment weekly timetables by named date range (for example semester/vacation). Period-scoped timetable facts are Planner constraints, not DATED TODO allocation. Temporary overlapping periods resolve by explicit period precedence and automatically fall back to the prior/base period when the override ends.
+Parent voice timetable edits MUST be parsed into a review draft first; no voice command changes the authoritative timetable until Parent explicitly confirms the draft.
 
 ## Result / carry-over
 Result must reflect actual per-task outcomes. Incomplete tasks never display as completed. Carry-over preserves lineage and cannot loop indefinitely.

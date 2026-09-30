@@ -22,6 +22,7 @@
   const blank=()=>({
     schema_version:SCHEMA_VERSION,
     storage_backend:'LOCALSTORAGE_COMPATIBILITY_SCAFFOLD',
+    schedule_periods:[],
     schedule_commitments:[],
     daily_availability_windows:[],
     homework_templates:[],
@@ -48,6 +49,7 @@
       ...blank(),
       ...x,
       schema_version:SCHEMA_VERSION,
+      schedule_periods:Array.isArray(x.schedule_periods)?x.schedule_periods:[],
       schedule_commitments:Array.isArray(x.schedule_commitments)?x.schedule_commitments:[],
       daily_availability_windows:Array.isArray(x.daily_availability_windows)?x.daily_availability_windows:[],
       homework_templates:Array.isArray(x.homework_templates)?x.homework_templates:[],
@@ -68,30 +70,140 @@
     function save(s){const payload=JSON.stringify(normalize(s));storage.setItem(STORAGE_KEY,payload);globalThis.ReadySetLocalFirst?.capture?.('planner',payload).catch?.(()=>{})}
     function mutate(fn){const s=load();const out=fn(s);save(s);return out}
 
-    function upsertScheduleCommitment(input={}){
-      if(globalThis.ReadyFamilySession && cleanText(input.source)==='PARENT_ADMIN_UI'){
+    function requireParentScheduleWrite(source=''){
+      if(globalThis.ReadyFamilySession && (!source||cleanText(source)==='PARENT_ADMIN_UI')){
         const gate=globalThis.ReadyFamilySession.requireRole?.('PARENT');
         if(!gate?.ok) throw new Error(gate?.reason||'PARENT_AUTH_REQUIRED');
       }
-      const title=cleanText(input.title); if(!title) throw new Error('title required');
+    }
+    function validDateString(value){return /^\d{4}-\d{2}-\d{2}$/.test(cleanText(value))}
+    function activeSchedulePeriodFromState(state,date){
+      const key=cleanText(date);
+      if(!validDateString(key))return null;
+      return [...(state.schedule_periods||[])]
+        .filter(x=>x&&x.enabled!==false&&validDateString(x.valid_from)&&validDateString(x.valid_until)&&x.valid_from<=key&&key<=x.valid_until)
+        .sort((a,b)=>(Number(b.priority)||100)-(Number(a.priority)||100)||String(b.updated_at||'').localeCompare(String(a.updated_at||'')))[0]||null;
+    }
+    function activeSchedulePeriod(date=dateKey()){
+      const item=activeSchedulePeriodFromState(load(),date);
+      return item?{...item}:null;
+    }
+    function upsertSchedulePeriod(input={}){
+      requireParentScheduleWrite(input.source);
+      const name=cleanText(input.name)||cleanText(input.label);
+      const validFrom=cleanText(input.valid_from),validUntil=cleanText(input.valid_until);
+      if(!name)throw new Error('period name required');
+      if(!validDateString(validFrom)||!validDateString(validUntil)||validUntil<validFrom)throw new Error('valid period range required');
       return mutate(s=>{
+        const id=cleanText(input.period_id)||makeId('period');
+        const existing=s.schedule_periods.find(x=>x.period_id===id);
+        const item={
+          period_id:id,
+          name,
+          valid_from:validFrom,
+          valid_until:validUntil,
+          priority:Number.isFinite(input.priority)?Number(input.priority):(existing?Number(existing.priority)||100:((s.schedule_periods||[]).reduce((max,p)=>Math.max(max,Number(p.priority)||100),99)+1)),
+          enabled:input.enabled!==false,
+          parent_editable:input.parent_editable!==false,
+          source:cleanText(input.source)||existing?.source||'READY_LOCAL',
+          created_at:existing?.created_at||new Date().toISOString(),
+          updated_at:new Date().toISOString()
+        };
+        const i=s.schedule_periods.findIndex(x=>x.period_id===id);
+        if(i>=0)s.schedule_periods[i]=item;else s.schedule_periods.push(item);
+        return item;
+      });
+    }
+    function removeSchedulePeriod(id){
+      requireParentScheduleWrite();
+      const target=cleanText(id);if(!target)return {ok:false,reason:'PERIOD_ID_REQUIRED'};
+      return mutate(s=>{
+        const before=s.schedule_periods.length;
+        s.schedule_periods=s.schedule_periods.filter(x=>x.period_id!==target);
+        if(before===s.schedule_periods.length)return {ok:false,reason:'PERIOD_NOT_FOUND'};
+        const linked=s.schedule_commitments.filter(x=>x.period_id===target).length;
+        s.schedule_commitments=s.schedule_commitments.filter(x=>x.period_id!==target);
+        return {ok:true,period_id:target,removed_commitments:linked};
+      });
+    }
+    function scheduleCommitmentsByDateFromState(state,date){
+      const key=cleanText(date);
+      if(!validDateString(key))return [];
+      const dow=parseLocal(key,'12:00').getDay();
+      const activePeriod=activeSchedulePeriodFromState(state,key);
+      return (state.schedule_commitments||[])
+        .filter(x=>x&&x.confirmed!==false)
+        .filter(x=>{
+          if(cleanText(x.recurrence).toUpperCase()==='WEEKLY'){
+            if(Number(x.weekday)!==dow)return false;
+            if(x.period_id)return activePeriod?.period_id===x.period_id;
+            if(activePeriod)return false;
+            if(x.valid_from&&key<x.valid_from)return false;
+            if(x.valid_until&&key>x.valid_until)return false;
+            return true;
+          }
+          return x.start_at&&x.end_at&&String(x.start_at).slice(0,10)===key&&String(x.end_at).slice(0,10)===key;
+        })
+        .map(x=>cleanText(x.recurrence).toUpperCase()==='WEEKLY'?{
+          ...x,
+          materialized_date:key,
+          start_at:`${key}T${x.start}:00`,
+          end_at:`${key}T${x.end}:00`,
+          active_period_id:activePeriod?.period_id||null,
+          active_period_name:activePeriod?.name||null
+        }:{...x,materialized_date:key})
+        .sort((a,b)=>String(a.start_at||'').localeCompare(String(b.start_at||''))||String(a.title||'').localeCompare(String(b.title||''),'ko'));
+    }
+    function scheduleCommitmentsByDate(date=dateKey()){
+      return scheduleCommitmentsByDateFromState(load(),date).map(x=>({...x}));
+    }
+
+    function upsertScheduleCommitment(input={}){
+      requireParentScheduleWrite(input.source);
+      const title=cleanText(input.title); if(!title) throw new Error('title required');
+      const recurrence=cleanText(input.recurrence).toUpperCase();
+      const weekly=recurrence==='WEEKLY';
+      const weekday=Number.isInteger(input.weekday)?input.weekday:Number(input.weekday);
+      const startTime=cleanText(input.start),endTime=cleanText(input.end);
+      const periodId=cleanText(input.period_id)||null;
+      if(weekly&&!(weekday>=0&&weekday<=6))throw new Error('weekday required');
+      if(weekly&&(!/^\d{2}:\d{2}$/.test(startTime)||!/^\d{2}:\d{2}$/.test(endTime)||endTime<=startTime))throw new Error('valid start/end required');
+      return mutate(s=>{
+        if(weekly&&periodId&&!s.schedule_periods.some(x=>x.period_id===periodId))throw new Error('schedule period not found');
         const id=cleanText(input.commitment_id)||makeId('commitment');
+        const existing=s.schedule_commitments.find(x=>x.commitment_id===id);
         const item={
           commitment_id:id,
           title,
-          category:cleanText(input.category)||'OTHER',
-          start_at:input.start_at||null,
-          end_at:input.end_at||null,
-          recurrence:input.recurrence||null,
+          category:cleanText(input.category)||existing?.category||'OTHER',
+          start_at:weekly?null:(input.start_at||existing?.start_at||null),
+          end_at:weekly?null:(input.end_at||existing?.end_at||null),
+          recurrence:weekly?'WEEKLY':null,
+          weekday:weekly?weekday:null,
+          start:weekly?startTime:null,
+          end:weekly?endTime:null,
+          period_id:weekly?periodId:null,
+          valid_from:weekly&&!periodId?(cleanText(input.valid_from)||null):null,
+          valid_until:weekly&&!periodId?(cleanText(input.valid_until)||null):null,
           confirmed:input.confirmed!==false,
           planner_movable:!!input.planner_movable,
           parent_editable:input.parent_editable!==false,
-          source:cleanText(input.source)||'READY_LOCAL',
+          source:cleanText(input.source)||existing?.source||'READY_LOCAL',
+          created_at:existing?.created_at||new Date().toISOString(),
           updated_at:new Date().toISOString()
         };
         const i=s.schedule_commitments.findIndex(x=>x.commitment_id===id);
         if(i>=0)s.schedule_commitments[i]=item;else s.schedule_commitments.push(item);
         return item;
+      });
+    }
+    function removeScheduleCommitment(id){
+      requireParentScheduleWrite();
+      const target=cleanText(id);if(!target)return {ok:false,reason:'COMMITMENT_ID_REQUIRED'};
+      return mutate(s=>{
+        const before=s.schedule_commitments.length;
+        s.schedule_commitments=s.schedule_commitments.filter(x=>x.commitment_id!==target);
+        return before===s.schedule_commitments.length?{ok:false,reason:'COMMITMENT_NOT_FOUND'}:{ok:true,commitment_id:target};
       });
     }
 
@@ -570,9 +682,7 @@
     }
 
     function commitmentIntervals(state,date){
-      return state.schedule_commitments
-        .filter(x=>x.confirmed!==false && x.start_at && x.end_at)
-        .filter(x=>String(x.start_at).slice(0,10)===date && String(x.end_at).slice(0,10)===date)
+      return scheduleCommitmentsByDateFromState(state,date)
         .map(x=>({
           start:parseLocal(date,String(x.start_at).slice(11,16)),
           end:parseLocal(date,String(x.end_at).slice(11,16)),
@@ -1283,7 +1393,12 @@
       validate,
       today,
       todayProjection,
+      upsertSchedulePeriod,
+      removeSchedulePeriod,
+      activeSchedulePeriod,
+      scheduleCommitmentsByDate,
       upsertScheduleCommitment,
+      removeScheduleCommitment,
       upsertDailyAvailabilityWindow,
       removeDailyAvailabilityWindow,
       candidateWindowsByDate,
