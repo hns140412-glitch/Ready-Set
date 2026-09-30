@@ -1,0 +1,34 @@
+{
+  "schema": "TAKY_LAYER_CONTRACT_V1",
+  "screen_id": "focus",
+  "layers": [
+    {
+      "role": "BACKGROUND",
+      "status": "NOT_APPLICABLE",
+      "note": "Approved Timer composition is primarily live UI, not a shipped scene background."
+    },
+    {
+      "role": "FOREGROUND",
+      "status": "NOT_APPLICABLE",
+      "note": "No separate foreground art required by current Timer contract."
+    },
+    {
+      "role": "OBJECT",
+      "status": "NOT_APPLICABLE",
+      "note": "Clock/control geometry is live DOM in current runtime."
+    },
+    {
+      "role": "CHARACTER_SLOT",
+      "status": "RUNTIME_SLOT",
+      "selector": "#focusGuideMini",
+      "owner": "READY_CHARACTER_BINDING",
+      "resolver_contract": "ready-approved-asset-resolver-v1.js + ready-character-dom-binder-v1.js"
+    },
+    {
+      "role": "FUNCTION_UI",
+      "status": "LIVE_DOM",
+      "selector": "#focusView",
+      "owner": "READY_SET_TIMER"
+    }
+  ]
+}
