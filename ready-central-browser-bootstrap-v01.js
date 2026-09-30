@@ -69,7 +69,7 @@
       return {ok:false,reason:'CENTRAL_ENDPOINT_CONFIG_REQUIRED'};
     }
     const authHost=w.ReadyCentralAuthHost;
-    if(typeof authHost?.currentSession!=='function'||typeof authHost?.accessToken!=='function'){
+    if(typeof authHost?.currentSession!=='function'||typeof authHost?.idToken!=='function'){
       setStatus(w,'DISABLED_AUTH_HOST_REQUIRED',{reason:'CENTRAL_AUTH_HOST_REQUIRED'});
       return {ok:false,reason:'CENTRAL_AUTH_HOST_REQUIRED'};
     }
@@ -98,8 +98,8 @@
       return cachedScope||{authenticated:false};
     };
     const tokenProvider=async()=>{
-      const token=clean(await authHost.accessToken());
-      if(!token)throw Error('CENTRAL_ACCESS_TOKEN_REQUIRED');
+      const token=clean(await authHost.idToken());
+      if(!token)throw Error('CENTRAL_GOOGLE_ID_TOKEN_REQUIRED');
       return token;
     };
     let roundtrip;

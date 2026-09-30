@@ -13,7 +13,7 @@
     "status": "MANAGED_IN_PARALLEL_THREAD"
   },
   "build_identity": {
-    "release_id": "ready-set-1.0.0-alpha.1-r2",
+    "release_id": "ready-set-1.0.0-alpha.1-r3",
     "cache_identity_policy": "ready-set:<release_id>",
     "main_sha": "LIVE_RESOLVE_REQUIRED",
     "build_id_policy": "release descriptor + exact git SHA/CI build evidence",
