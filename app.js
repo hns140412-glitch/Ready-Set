@@ -215,6 +215,14 @@ function appendReadyCrewEvidence(eventId,type,characterType,evidenceRef,context=
   });
 }
 function readyRecordingLabels(){return [...(state.activeSession?.selected||[]),...(state.activeSession?.tasks||[])]}
+function readyRecordingReferenceText(){
+  const links=Array.isArray(state.activeSession?.plannerLinks)?state.activeSession.plannerLinks:[];
+  for(const x of links){
+    const v=x?.recording_reference_text||x?.reference_text||x?.prompt_text||x?.recording_prompt;
+    if(typeof v==='string'&&v.trim())return v.trim();
+  }
+  return null;
+}
 function readyRecordingKind(){return globalThis.ReadyRecordingContextV1?.kindFromLabels?.(readyRecordingLabels())||'grammar'}
 function readyRecordingFilename(ext){
   return globalThis.ReadyRecordingContextV1?.filename?.({name:state.profile.name||'Judy',labels:readyRecordingLabels(),date:new Date(),ext})
@@ -731,7 +739,7 @@ function chooseGuest(){
   })||Object.keys(GUIDE_TYPES).find(x=>x!==state.guide.type)||'pico';
   state.guestHistory=[...history,currentGuestType].slice(-12);save();
 }
-function finishRecording(){
+async function finishRecording(){
   clearInterval(recordTicker);
   mediaStream?.getTracks().forEach(t=>t.stop());
   $('#recordAction').classList.remove('recording');
@@ -750,6 +758,19 @@ function finishRecording(){
   applyGuide($('#duoMainGuide'),state.guide.type);
   applyGuide($('#duoGuestGuide'),currentGuestType);
   const guestName=GUIDE_TYPES[currentGuestType].defaultName;
+  const analysisResult=await globalThis.ReadyRecordingAnalysisV1?.analyze?.({
+    blob:currentAudio,
+    context:{
+      kind:readyRecordingKind(),
+      reference_text:readyRecordingReferenceText(),
+      duration_ms:Date.now()-recordStartedAt,
+      mime_type:type,
+      session_id:state.activeSession?.id||null
+    }
+  });
+  if(state.activeSession){
+    state.activeSession.recordingAnalysis=analysisResult?.ok===true?analysisResult.analysis:null;
+  }
   const feedback=readyRecordingEvidenceFeedback();
   const bringLine=readyDuoArrivalLine();
   if(!emitReadyCrewScene('recording',bringLine,{reason:'READY_DUO_GUEST_ARRIVAL'})) $('#guideDialogue').textContent=bringLine;
