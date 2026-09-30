@@ -16,4 +16,7 @@ assert.equal(a.selectsAssetPath,false);
 assert.equal(a.generatesArt,false);
 assert.equal(a.consume({...good,generation_allowed:true}).ok,false);
 assert.equal(a.consume({...good,characters:[{...good.characters[0],runtime_eligible:false}]}).ok,false);
+const wrong=a.consume({...good,target_app:'HIDE_SEEK'});
+assert.equal(wrong.ok,false);
+assert.equal(wrong.reason,'TARGET_APP_MISMATCH');
 console.log(JSON.stringify({gate:'CHARACTER_RUNTIME_ADAPTER',app:a.APP,pass:true},null,2));
