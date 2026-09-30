@@ -21,7 +21,9 @@ jobs:
         with:
           node-version: '20'
       - name: Validate shared runtime contract
-        run: node tests/shared-runtime-contract.test.js
+        run: |
+          node tests/shared-runtime-contract.test.js
+          node tests/shared-crew-authority.test.js
       - name: Install Playwright
         run: |
           npm install --no-save @playwright/test@1.55.0
