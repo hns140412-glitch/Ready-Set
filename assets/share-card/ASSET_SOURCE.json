@@ -3,11 +3,15 @@
   "app": "Ready & Set",
   "asset_id": "READY_SHARE_FOUR_STATE_INTERIM_20260929",
   "canonical_repo": "hns140412-glitch/TAKY-ASSETS",
-  "canonical_ref": "assets/ready-share-interim-20260929",
+  "canonical_ref": "302b83244cd21dfdc8ccb11e12ec068ce82cb75e",
   "canonical_manifest": "assets/Ready-Set/share-card/interim-2026-09-29/manifest.json",
   "runtime_stage_prefix": "assets/share-card/",
-  "canonical_status": "PENDING_BINARY_IMPORT",
-  "rule": "The 16 central binary files are authoritative; verified copies in a local isolated Ready build are derived build outputs, not separately maintained source assets.",
+  "canonical_status": "BINARY_IMPORTED_HASH_VERIFIED",
+  "rule": "TAKY-ASSETS is the single editable source. Ready stores exact SHA-matched deployment copies only; do not edit those binaries independently.",
   "share_ui_pr": 119,
-  "release_gate": "Draft review only; never merge main or deploy Netlify without verified binary import, source/projection tests, visual comparison and explicit approval."
+  "release_gate": "Draft review only; central binary import and derived-copy hashes verified. Keep main/Netlify HOLD until actual production-art browser render comparison, real Profile Visual ID/selected crew runtime, PWA cache/revision, and iPhone→KakaoTalk checks pass.",
+  "canonical_branch": "assets/ready-share-interim-20260929",
+  "derived_copy_status": "READY_REVIEW_BRANCH_HASH_VERIFIED",
+  "derived_copy_source_commit": "302b83244cd21dfdc8ccb11e12ec068ce82cb75e",
+  "derived_copy_initial_commit": "23a3edcdd8061487942c03676164593819f15204"
 }
