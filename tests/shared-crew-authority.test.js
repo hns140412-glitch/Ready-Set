@@ -37,6 +37,22 @@ assert.equal(result.consumed,true);
 assert.equal(consumer.snapshot(s).character_id,'dubi');
 assert.equal(consumer.snapshot(s).source,'CANONICAL_STATE_ENVELOPE');
 
+const sameOrigin=storage();
+sameOrigin.setItem(consumer.CANONICAL_STATE_KEY,JSON.stringify({
+  version:'EXPLORER_CREW_STATE_STORE_V1',
+  updated_at:'2026-10-01T00:01:30.000Z',
+  revision:4,
+  source_app:'snap-pop',
+  state:{relation:{
+    main_character_id:'ink',
+    members:{ink:{character_id:'ink',relation_state:'MAIN_COMPANION'}}
+  },memory:{}}
+}));
+result=consumer.consumeCanonicalStore(sameOrigin);
+assert.equal(result.ok,true);
+assert.equal(result.consumed,true);
+assert.equal(consumer.snapshot(sameOrigin).character_id,'ink');
+
 result=consumer.consumeCanonicalEnvelope({
   state:{relation:{
     main_character_id:'guide-25',
@@ -64,6 +80,18 @@ assert.equal(result.ok,true);
 assert.equal(result.consumed,true);
 assert.equal(result.projection.character_id,'zero');
 assert.equal(result.projection.relation_state,'MAIN_COMPANION');
+
+const staleToken=token({
+  relation_event:{
+    type:'MAIN_CHANGED',
+    character_id:'nova',
+    at:'2026-09-30T23:59:00.000Z'
+  }
+});
+const stale=consumer.consumeHandoffUrl('https://ready.test/?crew_event='+staleToken,{storage:s});
+assert.equal(stale.ok,false);
+assert.equal(stale.reason,'STALE_PROJECTION');
+assert.equal(consumer.snapshot(s).character_id,'zero');
 assert.equal(result.projection.relation_write,false);
 assert.equal(result.projection.affinity_write,false);
 assert.equal(cleaned,'/app?x=1#keep');
