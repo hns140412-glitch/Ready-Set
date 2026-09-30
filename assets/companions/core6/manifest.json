@@ -1,0 +1,19 @@
+{
+  "schema": "TAKY.ready.core6.asset-manifest.v1",
+  "status": "APPROVED_SOURCE_COPIED_VERBATIM",
+  "source": "C:/Users/YKH_1507-03/Downloads/TAKY_CORE6_APPROVED_SOURCE_FOR_CHAT",
+  "copied_to": "assets/companions/core6",
+  "assets": {
+    "dubi": {"file":"dubi.png","sha256":"611f460174a09e0ed186e909812464e8a991cc24a9891e21c087050e78d6109b"},
+    "ink": {"file":"ink.png","sha256":"5108c5d31437afda09eebd414ac3fd7000dabeca7504b469e630f2368160ef30"},
+    "lori": {"file":"lori.png","sha256":"1642e080034e48cf7a11cd3bea12be8db44e10468b20b231f5f714360f27fcac"},
+    "nova": {"file":"nova.png","sha256":"11aea6f91f0197a0c2ab70a203550530ebe2e2aad39136198851ca97092a0d34"},
+    "take": {"file":"take.png","sha256":"3cd6720c13473f20f4b23f64fa3d42c7491ea9277ba204f80f096e3f0d57d88a"},
+    "zero": {"file":"zero.png","sha256":"7eb9ad58b94349eb8367236a3058a7feb0c9e994b981915c6ef82f74dd88b233"}
+  },
+  "rules": [
+    "Do not redraw approved Core 6 from names.",
+    "Preserve source bytes and SHA-256.",
+    "Use as separate character/companion layer; never bake into background UI."
+  ]
+}
