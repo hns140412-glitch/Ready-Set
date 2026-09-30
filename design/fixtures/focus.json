@@ -1,0 +1,23 @@
+{
+  "schema": "TAKY_STATE_FIXTURE_V1",
+  "screen_id": "focus",
+  "synthetic": true,
+  "states": {
+    "BASE_REVIEW": {
+      "remaining_seconds": 1500,
+      "status": "READY"
+    },
+    "RUNNING": {
+      "remaining_seconds": 1440,
+      "status": "RUNNING"
+    },
+    "PAUSED": {
+      "remaining_seconds": 1440,
+      "status": "PAUSED"
+    },
+    "COMPLETED": {
+      "remaining_seconds": 0,
+      "status": "COMPLETED"
+    }
+  }
+}
