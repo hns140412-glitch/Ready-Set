@@ -102,7 +102,7 @@
           name,
           valid_from:validFrom,
           valid_until:validUntil,
-          priority:Number.isFinite(input.priority)?Number(input.priority):(Number(existing?.priority)||100),
+          priority:Number.isFinite(input.priority)?Number(input.priority):(existing?Number(existing.priority)||100:((s.schedule_periods||[]).reduce((max,p)=>Math.max(max,Number(p.priority)||100),99)+1)),
           enabled:input.enabled!==false,
           parent_editable:input.parent_editable!==false,
           source:cleanText(input.source)||existing?.source||'READY_LOCAL',
