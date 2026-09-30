@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "authority": [
+    "latest_user_correction",
+    "C2S/READY_SET_BASE_CAMP_UI_C2S_CLOSURE_2026-09-22.md",
+    "C2S/READY_SET_3_SCREEN_UI_DESIGN_STANDARD_2026-09-22_REV1.md",
+    "C2S/READY_WEEK_DAY_SOULS_COMPOSITION_VISUAL_QA_FAIL_2026-09-28.md"
+  ],
+  "scope": "READY_WEEKLY_DAILY_ONLY",
+  "timer": "PRESERVE_EXISTING_LOCKED_UI",
+  "status": "VISUAL_QA_FAIL",
+  "source_asset": {
+    "path": null,
+    "visual_id": null,
+    "sha256": null,
+    "approval_evidence": null,
+    "role": "RUNTIME_CLEAN_PLATE_OR_VERIFIED_SEMANTIC_LAYER_AUTHORITY_NOT_YET_CREATED"
+  },
+  "scene_binding": {
+    "weekly": null,
+    "daily": null
+  },
+  "rendered_evidence": {
+    "weekly": null,
+    "daily": null,
+    "mobile_and_tablet_review": null
+  },
+  "human_approval": {
+    "approved": false,
+    "evidence": null
+  },
+  "fail_reasons": [
+    "CURRENT_ACCEPTED_REFERENCE_RECOVERED_BUT_RUNTIME_CLEAN_PLATE_OR_VERIFIED_SEMANTIC_LAYERS_MISSING",
+    "ACTUAL_CHILD_VISUAL_AND_SELECTED_COMPANION_NOT_BOUND_IN_ACCEPTED_WEEK_DAY_SCENE",
+    "WEEK_DAY_MOBILE_TABLET_1_TO_1_VISUAL_COMPARISON_NOT_APPROVED",
+    "PHYSICAL_DEVICE_VERIFICATION_OPEN"
+  ],
+  "reference_authority": {
+    "status": "EXACT_ACCEPTED_REFERENCES_RECOVERED_AND_CENTRALIZED",
+    "receipt": "C2S/READY_WEEK_DAY_REFERENCE_RECOVERY_2026-09-30.json",
+    "central_repo": "hns140412-glitch/TAKY-ASSETS",
+    "central_commit": "bfcc6d8a512b0d9600f5ec5a31d51a5bd9a12e57"
+  }
+}

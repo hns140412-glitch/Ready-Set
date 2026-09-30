@@ -11,6 +11,7 @@
   <link rel="icon" href="./assets/icon-192.png">
   <link rel="apple-touch-icon" href="./assets/icon-192.png">
   <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./ready-basecamp-planner-glass.css">
   <title>Ready & Set</title>
 </head>
 <body>
@@ -20,20 +21,19 @@
     <div class="safe topbar homeWorldTopbar"><div><div class="brand">Ready & Set</div><div class="tagline">준비는 가볍게. 시작은 자신 있게.</div></div><button class="avatarButton" data-nav="profile" aria-label="프로필"><span id="homeAvatar">RS</span></button></div>
     <main class="safe homeMain">
       <section class="heroBlock homeBaseCampHero"><div class="heroCopy"><span class="kicker">READY BASE CAMP</span><h1>오늘의<br>베이스캠프</h1><p>이번 주 여정과 오늘 할 일을 확인하고, 준비되면 바로 출발해요.</p><button class="homePlannerPrimary" data-nav="planner">탐험 일정 열기</button></div><div class="stopwatchArt homeTimerMarker" aria-hidden="true"><div class="watchCrown"></div><div class="watchFace"><span id="heroTime">25:00</span></div></div>
-        <section class="homeGuideCard" id="homeGuideCard">
+        <section class="homeGuideCard" id="homeGuideCard" hidden aria-label="선택한 동행 탐험대원">
           <div class="guidePortrait" id="homeGuidePortrait" aria-hidden="true"></div>
-          <div class="homeGuideCopy"><small>MY GUIDE · <span id="homeGuideName">루미</span></small><b id="homeGuideLine">오늘 작전, 내가 옆에서 같이 봐줄게.</b></div>
+          <div class="homeGuideCopy"><small>동행 탐험대원 · <span id="homeGuideName"></span></small><b id="homeGuideLine"></b></div>
           <button data-nav="settings" aria-label="길잡이 설정">›</button>
         </section>
       </section>
       <section class="commandCard">
-        <button data-nav="mission"><span><b>오늘 목표 정하기</b><small>과제와 목표 시간을 정해요</small></span><strong>→</strong></button>
+        <button data-nav="mission" id="homeNextTaskBtn"><span><b id="homeNextTitle">오늘 할 일 확인</b><small id="homeNextMeta">Planner에서 오늘 할 일을 불러와요.</small></span><strong>→</strong></button>
         <button data-nav="planner"><span><b>탐험 일정 보기</b><small>이번 주와 오늘 계획을 한눈에</small></span><strong>→</strong></button>
-        <button id="preShareBtn"><span><b>작전 개시 전, 응원 요청!</b><small>가족에게 오늘의 목표 공유</small></span><strong>↗</strong></button>
         <button data-nav="history"><span><b>작전 기록실</b><small>완료한 작전과 기록 보기</small></span><strong>→</strong></button>
       </section>
-      <section class="challengePanel"><div class="sectionTitle"><div><span>오늘의 작전</span><h2>어떤 과제에 도전할까요?</h2></div><button class="linkBtn" data-nav="mission">자세히</button></div>
-        <div class="categoryGrid"><button data-nav="mission"><i>01</i><b>재능</b><small>Planner 오늘 탐험 보기</small></button><button data-nav="mission"><i>02</i><b>학교</b><small>Planner 오늘 탐험 보기</small></button><button data-nav="mission"><i>03</i><b>영어</b><small>Planner 오늘 탐험 보기</small></button></div>
+      <section class="challengePanel"><div class="sectionTitle"><div><span>PLANNER · TODAY</span><h2>오늘의 남은 탐험</h2></div><button class="linkBtn" data-nav="planner">일정 보기</button></div>
+        <p class="homeTodayEmpty" id="homeTodayEmpty" hidden>오늘 배정된 Planner 할 일이 아직 없어요.</p>
         <div class="chipRow" id="homeChips"></div>
       </section>
     </main>
@@ -45,18 +45,19 @@
     <header class="safe pageHeader missionBridgeHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MISSION BRIEFING</span><h1>출발 준비</h1></div><span></span></header>
     <main class="safe scroll missionBridgeMain"><div class="progressSteps missionBridgeSteps"><span class="on">1 탐험 선택</span><span>2 준비</span><span>3 START</span></div>
       <section class="glassCard plannerToday missionTodayPick" id="plannerTodaySection" hidden><div class="plannerTodayHead"><div><small>PLANNER · TODAY</small><h2>오늘 출발할 탐험</h2></div><span>내가 고르기</span></div><p class="muted">Planner가 오늘로 배정한 TODO 중에서 고른 항목만 Timer로 이어집니다.</p><div id="plannerTodayList" class="plannerTodayList"></div></section>
-      <section class="glassCard missionEventTaskCard"><div class="missionEventTaskHead"><div><small>EVENT TASK</small><h2>지금 바로 할 과제</h2></div><span>아이 직접 입력</span></div><p class="muted">숙제 등록이 아니라 이번 타임어택에서 바로 실행할 이벤트 과제예요.</p><label class="inputWrap"><input id="eventTaskInput" placeholder="예) 책상 정리 10분 / 피아노 한 곡 연습"><button id="addEventTaskBtn" type="button">바로 넣기</button></label><div id="eventTaskList" class="taskList eventTaskList"></div></section>
+      <section class="glassCard missionEventTaskCard"><div class="missionEventTaskHead"><div><small>EVENT TASK</small><h2>지금 바로 할 과제</h2></div><span>아이 직접 입력</span></div><p class="muted">숙제 등록이 아니라 이번 집중 시간에 바로 실행할 과제예요.</p><label class="inputWrap"><input id="eventTaskInput" placeholder="예) 책상 정리 10분 / 피아노 한 곡 연습"><button id="addEventTaskBtn" type="button">바로 넣기</button></label><div id="eventTaskList" class="taskList eventTaskList"></div></section>
       <section class="glassCard missionTimingCard"><h2>목표 시간</h2><div class="timeButtons"><button data-minutes="10">10분</button><button data-minutes="15">15분</button><button class="on" data-minutes="25">25분</button><button data-minutes="custom">직접 입력</button></div><label class="customTime" id="customTimeWrap" hidden><input id="customMinutes" type="number" min="1" max="180" value="25"><span>분</span></label></section>
       <section class="glassCard soundCard missionSoundCard"><div><small>집중 사운드</small><b id="soundName">집중 피아노</b></div><button id="soundBtn">BGM 선택</button></section>
+      <section class="missionCompanionCard" id="missionCompanionCard" hidden aria-label="함께 준비하는 동행 탐험대원"><div class="guidePortrait" id="missionCompanionPortrait" aria-hidden="true"></div><div class="missionCompanionCopy"><small>함께 준비하는 친구 · <span id="missionCompanionName"></span></small><p id="missionCompanionLine"></p></div></section>
       <section class="missionPreview missionLaunchCard"><span>지금 출발할 탐험</span><b id="missionPreviewText">과제를 선택해 주세요 · 25분</b><small>선택한 Planner TODO와 실행 기록이 그대로 이어집니다.</small></section>
-      <div class="stackActions missionLaunchActions"><button class="btn dark" id="startBtn">타임어택 START</button><button class="btn outline" id="missionShareBtn">가족에게 응원 요청</button></div>
+      <div class="stackActions missionLaunchActions"><button class="btn dark" id="startBtn">집중 시작하기</button><button class="btn outline" id="missionShareBtn" type="button">탐험 시작 전 공유</button></div>
       <details class="glassCard missionFactInbox"><summary><span><small>NEW FACT</small><b>새로 받은 할 일이 있어요</b></span><em>부모 확인으로 보내기</em></summary><div class="missionFactInboxBody"><p class="muted">여기에 적은 내용은 바로 Timer에 들어가지 않고 부모 확인 목록으로 보내집니다. 확인 후 Planner가 날짜를 배정합니다.</p><label class="inputWrap"><input id="taskInput" placeholder="예) 새로 받은 수학 숙제"><button id="voiceTaskBtn" type="button" aria-label="음성으로 새 할 일 입력">말하기</button><button id="addTaskBtn" type="button">보내기</button></label><p class="inputHint" id="voiceHint">텍스트로 입력하거나 ‘말하기’를 눌러 입력할 수 있어요.</p><div id="taskList" class="taskList"></div></div></details>
     </main>
   </section>
 
   <section class="view yellow" id="focusView" data-view="focus">
-    <header class="safe focusHeader"><span class="focusBadge">FOCUS MODE</span><div class="focusHeaderTools"><div class="focusGuideMini" id="focusGuideMini" aria-label="내 길잡이"></div><button id="focusSoundBtn" class="iconButton" aria-label="음악">♪</button></div></header>
-    <main class="safe focusMain"><div class="focusTitle"><span>누가 와도 몰라요, 지금은 집중 중</span><h1>타임어택</h1><div id="focusMission" class="missionPill">오늘의 작전</div><p id="focusLearningGuide" class="muted center">오늘 할 순서를 따라가요.</p></div>
+    <header class="safe focusHeader"><span class="focusBadge" aria-hidden="true"></span><div class="focusHeaderTools"><div class="focusGuideMini" id="focusGuideMini" aria-label="내 길잡이"></div><button id="focusSoundBtn" class="iconButton" aria-label="음악">♪</button></div></header>
+    <main class="safe focusMain"><div class="focusTitle"><span hidden aria-hidden="true"></span><h1>그냥! 지금 하면 돼!</h1><div id="focusMission" class="missionPill">오늘의 작전</div><p id="focusLearningGuide" class="muted center">오늘 할 순서를 따라가요.</p></div>
       <div class="clockHero" aria-label="아날로그 시계"><div class="clockTicks"></div><div class="clockNumber n12">12</div><div class="clockNumber n1">1</div><div class="clockNumber n2">2</div><div class="clockNumber n3">3</div><div class="clockNumber n4">4</div><div class="clockNumber n5">5</div><div class="clockNumber n6">6</div><div class="clockNumber n7">7</div><div class="clockNumber n8">8</div><div class="clockNumber n9">9</div><div class="clockNumber n10">10</div><div class="clockNumber n11">11</div><div class="hand hour" id="hourHand"></div><div class="hand minute" id="minuteHand"></div><div class="hand second" id="secondHand"></div><div class="clockPin"></div></div>
       <section class="controlPanel"><div class="timeStrip"><div><small>남은 시간</small><b id="remainingTime">25:00</b></div><button class="recButton" id="recBtn" hidden><i></i><span>REC</span></button><div><small>목표 시간</small><b id="targetTime">25:00</b></div></div><div class="focusMeta"><span id="bgmStatus">집중 피아노 · 재생 중</span><button id="changeBgm">음악 ›</button></div><div class="focusActions"><button id="pauseBtn">잠깐 멈춤</button><button class="complete" id="completeBtn">완료했어요</button></div><div class="miniStats"><span>시작 <b id="startClock">--:--</b></span><span>집중 <b id="focusElapsed">00:00</b></span><span>멈춤 <b id="issueElapsed">00:00</b></span></div></section>
     </main>
@@ -70,32 +71,40 @@
     </main>
   </section>
 
-  <section class="view peach" id="resultView" data-view="result"><header class="safe pageHeader"><span></span><div><span class="kicker">MISSION RESULT</span><h1>오늘의 작전 보고서</h1></div><span></span></header><main class="safe resultMain"><section class="resultCard"><span class="resultBadge">READY & SET</span><h2 id="resultHeadline">무사 귀환!</h2><div class="resultScene"><div class="resultAvatar" id="resultAvatar">RS</div><div class="guidePortrait small" id="resultGuidePortrait"></div><div class="guidePortrait small guest resultGuest" id="resultGuestPortrait" hidden></div><div class="sceneLine" id="resultLine">오늘도 작전 완료!</div></div><div id="resultTasks" class="resultTasks"></div><div class="resultNumbers"><div><small>목표</small><b id="resultTarget">25:00</b></div><div><small>집중</small><b id="resultFocus">00:00</b></div><div><small id="deltaLabel">차이</small><b id="resultDelta">00:00</b></div></div><div id="resultRecordingCard" class="historyItem" hidden><small>VOICE RECORDING</small><b id="resultRecordingName">저장된 녹음</b><audio id="resultRecordingAudio" controls></audio></div><button class="btn dark" id="shareResultBtn">공유 카드 만들기</button><button class="btn outline" data-nav="home">홈으로 돌아가기</button></section></main></section>
+  <section class="view peach" id="resultView" data-view="result"><header class="safe pageHeader"><span></span><div><span class="kicker">MISSION RESULT</span><h1>오늘의 작전 보고서</h1></div><span></span></header><main class="safe resultMain"><section class="resultCard"><span class="resultBadge">READY & SET</span><h2 id="resultHeadline">무사 귀환!</h2><div class="resultScene"><div class="resultAvatar" id="resultAvatar">RS</div><div class="resultCompanionSlot" id="resultCompanionSlot" hidden><div class="guidePortrait small" id="resultGuidePortrait" aria-hidden="true"></div><small id="resultCompanionName"></small></div><div class="guidePortrait small guest resultGuest" id="resultGuestPortrait" hidden></div><div class="sceneLine" id="resultLine" aria-label="결과 요약"></div></div><div id="resultTasks" class="resultTasks"></div><div class="resultNumbers"><div><small>목표</small><b id="resultTarget">25:00</b></div><div><small>집중</small><b id="resultFocus">00:00</b></div><div><small id="deltaLabel">차이</small><b id="resultDelta">00:00</b></div></div><div id="resultRecordingCard" class="historyItem" hidden><small>VOICE RECORDING</small><b id="resultRecordingName">저장된 녹음</b><audio id="resultRecordingAudio" controls></audio></div><button class="btn dark" id="shareResultBtn" type="button">탐험 완료 후 공유</button><button class="btn outline" data-nav="home">홈으로 돌아가기</button></section></main></section>
 
   <section class="view cream" id="historyView" data-view="history"><header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MISSION LOG</span><h1>작전 기록실</h1></div><span></span></header><main class="safe scroll"><div id="historyList" class="historyList"></div></main></section>
   <section class="view cream" id="calendarView" data-view="calendar"><header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MISSION JOURNAL</span><h1>작전 일지</h1></div><span></span></header><main class="safe scroll"><section class="glassCard"><h2>이번 달 기록</h2><div id="calendarList" class="historyList"></div></section><p class="muted">Google Calendar 연동은 외부 OAuth 구성이 필요한 Online Enhancement입니다. 로컬 기록은 오프라인에서도 유지됩니다.</p></main></section>
 
   <section class="view cream plannerView" id="plannerView" data-view="planner">
-    <div class="plannerWorldScene" aria-hidden="true"><div class="plannerWorldIsland"></div><div class="plannerWorldCamp"></div><div class="plannerWorldGlow"></div></div>
-    <header class="safe pageHeader plannerWorldHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">EXPLORATION PLANNER</span><h1>탐험 일정</h1></div><span></span></header>
+    <div class="plannerWorldScene" aria-hidden="true"><div class="plannerWorldIsland"></div><div class="plannerWorldCamp"></div><div class="plannerWorldGlow"></div><div class="plannerSceneCharacters" id="plannerSceneCharacters" hidden data-master-state="UNRESOLVED"><div id="plannerChildVisualSlot" hidden><img id="plannerChildVisual" alt="" hidden></div><div id="plannerDeskCompanionSlot" hidden><img id="plannerDeskCompanionVisual" alt="" hidden></div></div></div>
+    <header class="safe pageHeader plannerWorldHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">EXPLORATION PLANNER</span><h1>탐험 일정</h1></div><div id="plannerCompanionPresence" class="plannerCompanionPresence" hidden aria-label="선택한 동행 탐험대원"><div id="plannerCompanionPortrait" class="plannerCompanionPortrait" aria-hidden="true"></div><small id="plannerCompanionName"></small></div></header>
     <main class="safe scroll plannerMain">
       <section class="plannerHero">
         <div><small>READY & SET · PLANNER</small><h2 id="plannerHeroTitle">이번 주 탐험 지도</h2><p id="plannerHeroCopy">해야 할 일과 고정 일정을 가볍게 확인해요.</p></div>
         <div class="plannerHeroActions"><button class="plannerTodayJump" id="plannerTodayJump">오늘</button><button class="plannerAdminJump" data-nav="planner-admin">관리</button></div>
       </section>
-      <div class="plannerTabs" role="tablist" aria-label="플래너 보기">
-        <button class="on" data-planner-tab="week" role="tab" aria-selected="true" aria-controls="plannerWeekPanel">주간</button>
-        <button data-planner-tab="day" role="tab" aria-selected="false" aria-controls="plannerDayPanel">일간</button>
+      <div class="plannerGlassSheet" aria-label="베이스캠프 탐험 일정">
+        <div class="plannerTabs" role="tablist" aria-label="플래너 보기">
+          <button class="on" data-planner-tab="week" role="tab" aria-selected="true" aria-controls="plannerWeekPanel">주간</button>
+          <button data-planner-tab="day" role="tab" aria-selected="false" aria-controls="plannerDayPanel">일간</button>
+        </div>
+        <section id="plannerWeekPanel" class="plannerPanel" role="tabpanel">
+          <div id="plannerWeekStrip" class="plannerWeekStrip" aria-label="이번 주 날짜"></div>
+          <div class="plannerOverviewLegend" aria-label="시간표 구분">
+            <span><i class="legendFixed"></i>고정 일정</span>
+            <span><i class="legendTodo"></i>오늘 할 일</span>
+            <span><i class="legendFree"></i>확인된 자유 시간</span>
+          </div>
+          <div id="plannerWeekOverview" class="plannerWeekOverview" aria-label="월요일부터 일요일까지 한 주의 일정"></div>
+          <div id="plannerWeekDetail" class="plannerWeekDetail" hidden></div>
+        </section>
+        <section id="plannerDayPanel" class="plannerPanel" role="tabpanel" hidden>
+          <div class="plannerDayHead"><div><small>DAILY ROUTE</small><h2 id="plannerDayTitle">오늘의 탐험길</h2></div><span id="plannerDayCount">0개</span></div>
+          <div id="plannerDayTimeline" class="plannerDayTimeline"></div>
+          <button class="btn dark" id="plannerDayMissionJump" data-nav="mission">오늘 할 일 선택하기</button>
+        </section>
       </div>
-      <section id="plannerWeekPanel" class="plannerPanel" role="tabpanel">
-        <div id="plannerWeekStrip" class="plannerWeekStrip"></div>
-        <div id="plannerWeekDetail" class="plannerWeekDetail"></div>
-      </section>
-      <section id="plannerDayPanel" class="plannerPanel" role="tabpanel" hidden>
-        <div class="plannerDayHead"><div><small>TODAY ROUTE</small><h2 id="plannerDayTitle">오늘의 탐험</h2></div><span id="plannerDayCount">0개</span></div>
-        <div id="plannerDayTimeline" class="plannerDayTimeline"></div>
-        <button class="btn dark" data-nav="mission">오늘 작전 고르기</button>
-      </section>
     </main>
   </section>
 
@@ -285,7 +294,8 @@
 <button class="btn dark" id="saveProfileBtn">프로필 저장</button><button class="btn outline" id="openCharacterSetupBtn">탐험 준비 시작 · 이어가기</button></section></main></section>
 
   <section class="view formationJourneyView" id="formationJourneyView" data-view="formation-journey" data-formation-stage="CREW_MEET">
-    <div class="formationJourneyScene" aria-hidden="true">\n      <div class="formationJourneyLayer formationJourneyTabletExtension" data-cf-asset-group="background" data-cf-asset-key="prep_room_tablet_extension"></div>
+    <div class="formationJourneyScene" aria-hidden="true">
+      <div class="formationJourneyLayer formationJourneyTabletExtension" data-cf-asset-group="background" data-cf-asset-key="prep_room_tablet_extension"></div>
       <div class="formationJourneyLayer formationJourneyBase" data-cf-asset-group="background" data-cf-asset-key="prep_room_base"></div>
       <div class="formationJourneyLayer formationJourneyIslandHint" data-cf-asset-group="background" data-cf-asset-key="island_hint"></div>
       <div class="formationJourneyLayer formationJourneyMid" data-cf-asset-group="foreground" data-cf-asset-key="mid_props"></div>
@@ -303,7 +313,8 @@
   </section>
 
   <section class="view cfView" id="characterSetupView" data-view="character-setup" data-cf-status="START">
-    <div class="cfScene" id="cfScene" aria-hidden="true">\n      <div class="cfLayer cfTabletExtension" data-cf-asset-group="background" data-cf-asset-key="prep_room_tablet_extension"></div>
+    <div class="cfScene" id="cfScene" aria-hidden="true">
+      <div class="cfLayer cfTabletExtension" data-cf-asset-group="background" data-cf-asset-key="prep_room_tablet_extension"></div>
       <div class="cfLayer cfFarWorld" data-cf-asset-group="background" data-cf-asset-key="prep_room_base"></div>
       <div class="cfLayer cfDestinationHint" data-cf-asset-group="background" data-cf-asset-key="island_hint"></div>
       <div class="cfLayer cfMidProps" data-cf-asset-group="foreground" data-cf-asset-key="mid_props"></div>
@@ -317,7 +328,7 @@
         <img class="cfTool cfToolTags" data-cf-asset-group="common_tools" data-cf-asset-key="travel_tags" alt="">
         <img class="cfTool cfToolPostcard" data-cf-asset-group="common_tools" data-cf-asset-key="island_postcard" alt="">
       </div>
-      <img class="cfCrewAsset" id="cfCrewAsset" data-cf-asset-group="crew" data-cf-asset-key="dubi" alt="">
+      <img class="cfCrewAsset" id="cfCrewAsset" alt="" hidden>
       <div class="cfLayer cfForeground" data-cf-asset-group="foreground" data-cf-asset-key="prep_foreground"></div>
       <div class="cfLayer cfFxLayer" data-cf-asset-group="fx" data-cf-asset-key="warm_glow"></div>
     </div>
@@ -328,8 +339,8 @@
         <div><small>SOURCE PHOTO IDENTITY</small><b>사진 속 나는 그대로</b><p id="characterSourceMeta">먼저 프로필에서 사진을 등록해 주세요.</p></div>
       </section>
       <section class="cfCompanionCue">
-        <div><small>함께 준비하는 탐험대원</small><b id="cfCompanionName">두비</b></div>
-        <span id="cfCompanionLine">“좋아! 하나씩 챙겨보자!”</span>
+        <div><small>함께 준비하는 탐험대원</small><b id="cfCompanionName"></b></div>
+        <span id="cfCompanionLine"></span>
       </section>
       <section class="characterConsultCard cfTaskSurface">
         <div class="characterConsultHead"><small>MY SIGNATURE / DIRECTION</small><h2 id="characterSetupTitle">내 캐릭터 만들기</h2><p id="characterSetupCopy">원본 사진 다음에는 시그니처 아이템 하나와 두 번의 탐험 방향만 골라요.</p></div>
@@ -348,7 +359,7 @@
   <button data-guide-type="lumi"><span class="guidePortrait lumi"></span><b>루미</b><small>포근·위트</small></button>
   <button data-guide-type="pico"><span class="guidePortrait pico"></span><b>피코</b><small>밝고 장난기</small></button>
   <button data-guide-type="mori"><span class="guidePortrait mori"></span><b>모리</b><small>차분·든든</small></button>
-</div><div class="nameTools"><label class="inputBlock">길잡이 이름<input id="guideNameInput" value="루미"></label><button class="btn outline compactBtn" id="recommendNameBtn">이름 추천</button></div><div class="nameSuggestions" id="nameSuggestions"></div><h2 class="subSettingTitle">길잡이 목소리</h2><div class="voiceChoiceGrid"><button data-guide-voice="warm">포근한</button><button data-guide-voice="bright">밝고 씩씩한</button><button data-guide-voice="calm">차분한</button><button data-guide-voice="playful">장난기 있는</button></div><button class="btn outline compactBtn" id="voicePreviewBtn">목소리 미리듣기</button></section><section class="glassCard"><h2>집중 사운드</h2><p class="muted">실제 오디오 파일이 포함되어 있으며 타임어택 시작 후 선택한 BGM이 반복 재생됩니다.</p><div class="soundSettingsGrid"><button data-sound="집중 피아노">피아노</button><button data-sound="자연 숲">자연 숲</button><button data-sound="잔잔한 물결">물결</button><button data-sound="로파이">로파이</button><button data-sound="OFF">OFF</button></div></section><section class="glassCard authStatusCard" id="authStatusCard">
+</div><div class="nameTools"><label class="inputBlock">길잡이 이름<input id="guideNameInput" value="루미"></label><button class="btn outline compactBtn" id="recommendNameBtn">이름 추천</button></div><div class="nameSuggestions" id="nameSuggestions"></div><h2 class="subSettingTitle">길잡이 목소리</h2><div class="voiceChoiceGrid"><button data-guide-voice="warm">포근한</button><button data-guide-voice="bright">밝고 씩씩한</button><button data-guide-voice="calm">차분한</button><button data-guide-voice="playful">장난기 있는</button></div><button class="btn outline compactBtn" id="voicePreviewBtn">목소리 미리듣기</button></section><section class="glassCard"><h2>집중 사운드</h2><p class="muted">실제 오디오 파일이 포함되어 있으며 집중 시작 후 선택한 BGM이 반복 재생됩니다.</p><div class="soundSettingsGrid"><button data-sound="집중 피아노">피아노</button><button data-sound="자연 숲">자연 숲</button><button data-sound="잔잔한 물결">물결</button><button data-sound="로파이">로파이</button><button data-sound="OFF">OFF</button></div></section><section class="glassCard authStatusCard" id="authStatusCard">
 <div class="syncStatusHead"><div><small>FAMILY ACCOUNT</small><h2>가족 계정</h2></div><span id="authStateBadge">로컬 모드</span></div>
 <p id="authStatusText" class="muted">로그인하지 않아도 이 기기에서 CHILD 로컬 모드로 사용할 수 있습니다.</p>
 <div id="authLoginControls">
@@ -420,7 +431,8 @@
 <script src="./vendor/taky/vision-ingest.js"></script>
 <script src="./vendor/taky/http-json.js"></script>
 <script src="./ready-release-v01.js"></script>
-<script src="./assets/runtime/netlify-identity-runtime.js"></script>\n<script src="./ready-family-session-v01.js"></script>
+<script src="./assets/runtime/netlify-identity-runtime.js"></script>
+<script src="./ready-family-session-v01.js"></script>
 <script src="./src/persistence/member-scope-runtime.js"></script>
 <script src="./ready-sync-adapter-v01.js"></script>
 <script src="./ready-local-first-v01.js"></script>
@@ -444,12 +456,15 @@
 <script src="./src/identity/character-derivative-runtime.js"></script>
 <script src="./src/identity/character-setup-controller-runtime.js"></script>
 <script src="./src/identity/character-formation-asset-runtime.js"></script>
-<script src="./src/identity/character-formation-pose-bank-runtime.js"></script>\n<script src="./src/identity/character-formation-scene-runtime.js"></script>
+<script src="./src/identity/character-formation-pose-bank-runtime.js"></script>
+<script src="./src/identity/character-formation-scene-runtime.js"></script>
 <script src="./src/identity/character-formation-journey-runtime.js"></script>
+<script src="./src/identity/expedition-companion-presentation-runtime.js"></script>
 <script src="./src/identity/character-setup-view-runtime.js"></script>
 <script src="./src/identity/character-generation-job-runtime.js"></script>
 <script src="./src/identity/source-photo-intake-runtime.js"></script>
 <script src="./src/identity/character-visual-id-projection-runtime.js"></script>
+<script src="./src/identity/ready-planner-child-visual-consumer.js"></script>
 <script src="./ready-learning-master-v01.js"></script>
 <script src="./src/planner/planner-policy-runtime.js"></script>
 <script src="./src/planner/planner-projection-runtime.js"></script>
@@ -462,7 +477,8 @@
 <script src="./src/integrations/specialist-targets-runtime.js"></script>
 <script src="./src/learning/evidence-ontology-runtime.js"></script>
 <script src="./src/learning/central-evidence-outbox.js"></script>
-<script src="./src/learning/central-evidence-http-transport.js"></script>\n<script src="./src/learning/central-evidence-sync-runtime.js"></script>
+<script src="./src/learning/central-evidence-http-transport.js"></script>
+<script src="./src/learning/central-evidence-sync-runtime.js"></script>
 <script src="./src/learning/answer-key-verifier-runtime.js"></script>
 <script src="./src/learning/learning-engine-adapter-v2.js"></script>
 <script src="./src/learning/legacy-ready-learning-compat.js"></script>

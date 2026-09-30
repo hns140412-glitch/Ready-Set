@@ -705,7 +705,7 @@
     });
     const end = document.getElementById('completeBtn');
     if (end) {
-      end.textContent = '세션 종료';
+      end.textContent = '완료했어요';
       end.onclick = openWrapUp;
     }
     nav = function patchedNav(name) {

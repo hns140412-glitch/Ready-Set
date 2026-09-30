@@ -1,0 +1,74 @@
+{
+  "schema_version": "READY_WEEK_DAY_USER_REFERENCE_LAYER_GATE_2026_09_29",
+  "status": "CURRENT_REFERENCE_EXACT_HASH_RECOVERED_AND_CENTRALIZED__PRODUCTION_SCENE_UNRESOLVED",
+  "scope": [
+    "READY_WEEK",
+    "READY_DAY"
+  ],
+  "user_direction": "SOULS main signature informs timetable 2.5D composition only; child and actually chosen companion at preparation desk; no fixed invented characters or game HUD. Timer Golden isolated.",
+  "references": {
+    "week": {
+      "name": "판타지_캠프_주간_시간표_탐험.png",
+      "width": 941,
+      "height": 1672,
+      "sha256": "cd479f1c72a58171a5873a6c06e442fecfb7d63819a741f6984650968308db42",
+      "role": "LATEST_ACCEPTED_COMPOSITION_REFERENCE_NOT_RUNTIME_MASTER"
+    },
+    "day": {
+      "name": "판타지_탐험가의_일일_시간표.png",
+      "width": 941,
+      "height": 1672,
+      "sha256": "733aa39ea2972fffa04362994cb1218c60e34eb1558a86816a2388dd4f6e9ad5",
+      "role": "LATEST_ACCEPTED_COMPOSITION_REFERENCE_NOT_RUNTIME_MASTER"
+    },
+    "preparation_scene": {
+      "name": "설레는_출발_전_탐험_계획.png",
+      "width": 941,
+      "height": 1672,
+      "sha256": "03f3229200a20a38b875b68b0feb1e8f06bb71cd593178311595aaab6162bd53",
+      "role": "USER_APPROVED_BASECAMP_TABLE_MOOD_REFERENCE_NOT_CLEAN_PLATE"
+    }
+  },
+  "locked_dynamic_bindings": {
+    "chosen_companion": "state.expedition.primaryCompanionId (local roster character_id)",
+    "chosen_companion_alias": "state.expedition.primaryCompanionAlias",
+    "source": "assets/character-formation/asset-manifest.json (status HARD_LOCK)",
+    "asset_integrity": "per-id core6_runtime_derivatives.sha256",
+    "child_character": "use already approved child Visual ID projection only; do not embed source photo or create a placeholder child as the user's character",
+    "speaker": "must derive from actual shown approved companion, source-owned wording and task context"
+  },
+  "source_limitations": [
+    "The latest RGB composition references contain baked human-like drawn child and companion, display text, sample dates and sample homework; directly using the full screenshot as a live background would duplicate chosen profile characters and hardcode false Planner facts.",
+    "No verified character-free clean plate or individual source-object mattes for the latest accepted 941x1672 composition are currently bound in Ready PR #118.",
+    "The earlier ready-basecamp-table-v1 crop pack belongs to a historical design draft and is not the current source layer authority."
+  ],
+  "runtime_qa": {
+    "chosen_companion_home_goal_result": "CODED_BROWSER_PASS",
+    "chosen_companion_week_day": "CODED_BROWSER_PASS_LOCAL_READY_ONLY",
+    "source_image_clean_plate": "OPEN",
+    "full_approved_environment_1_to_1": "FAIL",
+    "actual_child_character_visual_binding": "OPEN",
+    "companion_at_preparation_table_placement": "OPEN",
+    "cross_app_snap_primary_selection_sync": "OPEN__SNAP_PR10_CANNOT_BE_SILENTLY_PROMOTED",
+    "human_visual_approval": "NOT_YET",
+    "timer_golden": "PRESERVE",
+    "merge": "HOLD",
+    "netlify": "HOLD",
+    "child_source_projection_preparation": "UNIT_PASS__NOT_SCENE_BOUND",
+    "child_scene_layer_slots": "HTML_PLACEHOLDER_HIDDEN_UNTIL_SOURCE_LAYER_APPROVED",
+    "child_profile_photo_fallback": "FORBIDDEN",
+    "parent_visual_scene_status": "CURRENT_CSS_SCENE_REJECTED",
+    "browser_functional_source_review": "PASS_EXACT_HEAD_cd99156258df7fd63e65679fbe75b9ccdb34ea33",
+    "browser_visual_authority": "FAIL_INTENTIONAL_CLEAN_PLATE_AND_SCENE_BINDING_OPEN",
+    "current_reference_exact_hash_recovery": "PASS",
+    "central_reference_draft_registration": "PASS"
+  },
+  "central_reference_source": {
+    "repository": "hns140412-glitch/TAKY-ASSETS",
+    "commit": "aae935d9a196cddbca43187c2d2d39e45a82160b",
+    "pull_request": 2,
+    "review_state": "DRAFT_NOT_MAIN",
+    "manifest": "assets/ready-set/references/basecamp-timetable/2026-09-28/manifest.v1.json",
+    "recovery_receipt": "C2S/READY_WEEK_DAY_REFERENCE_RECOVERY_2026-09-30.json"
+  }
+}

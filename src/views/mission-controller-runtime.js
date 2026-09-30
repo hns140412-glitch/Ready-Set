@@ -112,7 +112,7 @@
       input.value='';
       save();
       render();
-      toast('이벤트 과제를 이번 타임어택에 바로 넣었어요.');
+      toast('이벤트 과제를 이번 탐험에 추가했어요.');
       return true;
     }
 

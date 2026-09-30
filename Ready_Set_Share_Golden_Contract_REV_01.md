@@ -21,6 +21,15 @@ The existing share engine structure is PRESERVED. It is not replaced by a newly 
 
 Primary share content remains compact `image + short text` / platform feed-style presentation as appropriate. The card is an information-and-reaction surface, not an illustration poster.
 
+## 1A. SHARE PLACEMENT AND FLOW — LATEST DIRECT USER CORRECTION (2026-09-29)
+
+Sharing is a **button action**, not an additional primary screen or a required step. Exactly two contextual share triggers appear in the Ready experience:
+
+1. After a child has selected the current task and goal in the existing goal-setting/mission screen: `탐험 시작 전 공유` button. It uses the existing Pre-Mission Share Card renderer and OS native share sheet when supported. After sharing, cancellation or skipping, the child's explicitly selected start action can continue to the existing approved yellow Timer; sharing MUST NOT auto-start, block or reset a session.
+2. After the actual focus/session result has been recorded and shown: `탐험 완료 후 공유` button within the existing result UI, using the current Post-Mission Share Card renderer and actual result evidence. Sharing is optional and does not block returning home or keeping the result.
+
+No Home duplicate pre-share action; no separate sharing page, no share theme picker, no social/reward step, no fabricated share data. Preserve the existing dynamic card engine and profile opt-in. Use device native share items, no Kakao API requirement for this user flow. Exactly two share purposes, exactly two contextual share-entry buttons; no third screen. The golden Timer reference remains independent and cannot be redesigned during this work.
+
 ## 2. USER-FACING VOCABULARY NORMALIZATION — HARD LOCK
 Current Ready & Set user-facing world vocabulary is normalized around `탐험`.
 

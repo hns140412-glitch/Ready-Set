@@ -1,0 +1,120 @@
+name: Ready Home and Timetable Source-Lock Review
+
+on:
+  push:
+    branches:
+      - taky/ready-home-week-day-source-correction-2026-09-28
+  pull_request:
+    branches:
+      - taky/ready-character-intro-integration-2026-09-24
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-truth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse changed runtime modules
+        run: |
+          node --check app.js
+          node --check src/views/home-view-runtime.js
+          node --check src/views/planner-screen-view-runtime.js
+          node --check src/shell/app-bootstrap-controller-runtime.js
+          node --check tests/ready-home-planner-source-truth.test.js
+          node --check tests/ready-home-week-day-glass.spec.js
+          node --check tests/ready-share-two-entry-points.test.js
+          node --check src/views/share-card-runtime.js
+          node --check src/views/mission-controller-runtime.js
+          node --check tests/ready-share-actual-state.test.js
+          node --check tests/ready-focus-golden-composition-review.spec.js
+          node --check src/identity/expedition-companion-presentation-runtime.js
+          node --check src/identity/ready-planner-child-visual-consumer.js
+          node --check tests/ready-planner-child-visual-consumer.test.js
+          node --check src/identity/character-formation-scene-runtime.js
+          node --check tests/ready-expedition-companion-presentation.test.js
+          node --check tests/ready-companion-live-binding-review.spec.js
+          node --check tests/ready-planner-companion-source-projection.spec.js
+          node --check scripts/validate-ready-week-day-reference-recovery.cjs
+      - name: Verify exact accepted Week/Day reference recovery and central draft pointer
+        run: node scripts/validate-ready-week-day-reference-recovery.cjs
+      - name: Verify source truth and locked Timer byte identity
+        run: node tests/ready-home-planner-source-truth.test.js
+      - name: Verify two optional contextual share buttons and no new Share screen
+        run: node tests/ready-share-two-entry-points.test.js
+      - name: Verify selected-only and actual post-result native share contract
+        run: node tests/ready-share-actual-state.test.js
+      - name: Verify chosen expedition companion source, identity and speaker provenance
+        run: node tests/ready-expedition-companion-presentation.test.js
+      - name: Verify child Visual ID privacy/assurance gate for future Week-Day scene
+        run: node tests/ready-planner-child-visual-consumer.test.js
+      - name: Package isolated source for local visual QA (no deployment)
+        if: success()
+        run: git archive --format=zip --output=/tmp/ready-home-week-day-review-source.zip HEAD
+      - name: Upload short-lived visual-QA source archive
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ready-home-week-day-review-source
+          path: /tmp/ready-home-week-day-review-source.zip
+          if-no-files-found: error
+          retention-days: 1
+
+  browser-visual:
+    needs: source-truth
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install project runtime
+        run: npm install --no-audit --no-fund
+      - name: Build browser Identity runtime without changing production
+        run: npm run build:auth
+      - name: Install browser test runner
+        run: |
+          npm install --no-save @playwright/test@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Serve exact checked-out source on localhost only
+        run: |
+          mkdir -p ui-audit
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/ready-planner-review-http.log 2>&1 &
+          echo $! > /tmp/ready-planner-review.pid
+      - name: Verify Home -> Week -> Day real browser at mobile/tablet widths
+        run: npx playwright test tests/ready-home-week-day-glass.spec.js --reporter=line --workers=1
+      - name: Screenshot locked yellow Timer Phone + Tablet without changing UI
+        run: npx playwright test tests/ready-focus-golden-composition-review.spec.js --reporter=line --workers=1
+      - name: Verify selected actual companion art, name and dialogue in real Chromium
+        run: npx playwright test tests/ready-companion-live-binding-review.spec.js --reporter=line --workers=1
+      - name: Verify selected companion in real Weekly and Daily viewports
+        run: npx playwright test tests/ready-planner-companion-source-projection.spec.js --reporter=line --workers=1
+      - name: Upload actual browser visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ready-home-week-day-glass-screenshots
+          path: ui-audit/*.png
+          if-no-files-found: warn
+          retention-days: 3
+
+  visual-authority:
+    needs: [source-truth, browser-visual]
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Assert approved Base Camp source and visual acceptance evidence (FAIL while unresolved)
+        run: node scripts/validate-ready-week-day-visual-authority.cjs
