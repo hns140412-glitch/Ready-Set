@@ -33,6 +33,8 @@ jobs:
         run: node tests/character-ui-binding-bridge.spec.js
       - name: Validate fail-closed character DOM binder
         run: node tests/character-dom-binder.spec.js
+      - name: Validate approved asset resolver
+        run: node tests/approved-asset-resolver.spec.js
       - name: Validate TAKY Design Gate authority
         run: node tools/validate-design-gate.mjs
       - uses: actions/setup-node@v4
