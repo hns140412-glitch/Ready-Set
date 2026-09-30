@@ -98,6 +98,78 @@ periodPlanner.upsertScheduleCommitment({
   confirmed:true,
   source:'TEST_FIXTURE'
 });
+const periodReview=periodPlanner.previewSchedulePeriod({
+  period_id:'summer-review',
+  name:'여름방학 추가',
+  valid_from:'2026-07-25',
+  valid_until:'2026-08-10'
+});
+assert.equal(periodReview.requires_acknowledgement,true);
+assert.equal(periodReview.conflicts.some(x=>x.period_id==='summer'),true);
+assert.equal(periodReview.conflicts.some(x=>x.period_id==='semester'),true);
+
+const blockedPeriod=periodPlanner.upsertSchedulePeriod({
+  period_id:'summer-parent',
+  name:'부모 방학',
+  valid_from:'2026-07-22',
+  valid_until:'2026-08-05',
+  source:'PARENT_ADMIN_UI'
+});
+assert.equal(blockedPeriod.ok,false);
+assert.equal(blockedPeriod.reason,'PERIOD_CONFLICT_REVIEW_REQUIRED');
+assert.equal(periodPlanner.snapshot().schedule_periods.some(x=>x.period_id==='summer-parent'),false);
+
+const confirmedPeriod=periodPlanner.upsertSchedulePeriod({
+  period_id:'summer-parent',
+  name:'부모 방학',
+  valid_from:'2026-07-22',
+  valid_until:'2026-08-05',
+  source:'PARENT_ADMIN_UI',
+  conflict_acknowledged:true
+});
+assert.equal(confirmedPeriod.period_id,'summer-parent');
+
+const overlapPreview=periodPlanner.previewScheduleCommitment({
+  title:'태권도',
+  recurrence:'WEEKLY',
+  weekday:1,
+  start:'10:30',
+  end:'11:30',
+  period_id:'summer',
+  source:'PARENT_ADMIN_UI'
+});
+assert.equal(overlapPreview.requires_acknowledgement,true);
+assert.equal(overlapPreview.conflicts.some(x=>x.commitment_id==='summer-mon'),true);
+
+const blockedCommitment=periodPlanner.upsertScheduleCommitment({
+  commitment_id:'summer-taekwondo',
+  title:'태권도',
+  recurrence:'WEEKLY',
+  weekday:1,
+  start:'10:30',
+  end:'11:30',
+  period_id:'summer',
+  confirmed:true,
+  source:'PARENT_ADMIN_UI'
+});
+assert.equal(blockedCommitment.ok,false);
+assert.equal(blockedCommitment.reason,'SCHEDULE_CONFLICT_REVIEW_REQUIRED');
+assert.equal(periodPlanner.snapshot().schedule_commitments.some(x=>x.commitment_id==='summer-taekwondo'),false);
+
+const confirmedCommitment=periodPlanner.upsertScheduleCommitment({
+  commitment_id:'summer-taekwondo',
+  title:'태권도',
+  recurrence:'WEEKLY',
+  weekday:1,
+  start:'10:30',
+  end:'11:30',
+  period_id:'summer',
+  confirmed:true,
+  source:'PARENT_ADMIN_UI',
+  conflict_acknowledged:true
+});
+assert.equal(confirmedCommitment.commitment_id,'summer-taekwondo');
+
 assert.equal(periodPlanner.activeSchedulePeriod('2026-07-20').period_id,'summer');
 assert.equal(periodPlanner.activeSchedulePeriod('2026-08-24').period_id,'semester');
 assert.deepEqual(periodPlanner.scheduleCommitmentsByDate('2026-07-20').map(x=>x.commitment_id),['summer-mon']);
