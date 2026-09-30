@@ -171,7 +171,7 @@ function applyGuide(el,type=state.guide.type){
   el.setAttribute('data-guide',type);
 }
 function guideData(type=state.guide.type){return GUIDE_TYPES[type]||GUIDE_TYPES.lumi}
-function emitReadyCrewScene(surface,utterance,{action='IDLE',dialogue='SHORT',guestType=null,evidenceRef=null,reason=null}={}){
+function emitReadyCrewScene(surface,utterance,{action='IDLE',dialogue='SHORT',guestType=null,evidenceRef=null,reason=null,behaviorState={}}={}){
   const rt=globalThis.TakyCrewLiveRuntime;
   if(!rt?.legacyCharacter||!rt?.emit)return false;
   const main=rt.legacyCharacter(state.guide.type,{role:'MAIN',action,dialogue,utterance,evidenceRef,reason});
@@ -179,7 +179,7 @@ function emitReadyCrewScene(surface,utterance,{action='IDLE',dialogue='SHORT',gu
   if(guestType){
     chars.push(rt.legacyCharacter(guestType,{role:'GUEST',action:'IDLE',dialogue:'SILENT',utterance:'',evidenceRef,reason:'READY_RANDOM_GUEST'}));
   }
-  rt.emit({sceneId:surface,surface,characters:chars,foregroundId:main.character_id,speakingOrder:[main.character_id],visibleOrder:chars.map(x=>x.character_id)});
+  rt.emit({sceneId:surface,surface,characters:chars,foregroundId:main.character_id,speakingOrder:[main.character_id],visibleOrder:chars.map(x=>x.character_id),behaviorState});
   return true;
 }
 function readyRecordingEvidenceFeedback(){
@@ -260,7 +260,7 @@ function renderHome(){
     : labels.length
       ? `오늘 Planner가 준비한 탐험 ${labels.length}개가 있어요.`
       : guideData().home;
-  if(!emitReadyCrewScene('home',homeLine,{reason:'READY_HOME_CONTEXT'})) $('#homeGuideLine').textContent=homeLine;
+  if(!emitReadyCrewScene('home',homeLine,{reason:'READY_HOME_CONTEXT',behaviorState:{transition:true}})) $('#homeGuideLine').textContent=homeLine;
 }
 function renderChips(root){
   if(!root)return;
@@ -701,7 +701,7 @@ function renderRecordingContext(){
   applyGuide($('#recordGuidePortrait'));
   applyGuide($('#recIntroGuide'));
   const recordingIntro=`${state.guide.name}: ${guideData().intro}`;
-  if(!emitReadyCrewScene('recording',recordingIntro,{reason:'READY_RECORDING_START'})) $('#guideDialogue').textContent=recordingIntro;
+  if(!emitReadyCrewScene('recording',recordingIntro,{reason:'READY_RECORDING_START',behaviorState:{transition:true}})) $('#guideDialogue').textContent=recordingIntro;
 }
 $('#recordAction').onclick=async()=>{
   if(mediaRecorder&&mediaRecorder.state==='recording'){mediaRecorder.stop();return}
@@ -773,9 +773,9 @@ async function finishRecording(){
   }
   const feedback=readyRecordingEvidenceFeedback();
   const bringLine=readyDuoArrivalLine();
-  if(!emitReadyCrewScene('recording',bringLine,{reason:'READY_DUO_GUEST_ARRIVAL'})) $('#guideDialogue').textContent=bringLine;
+  if(!emitReadyCrewScene('recording',bringLine,{reason:'READY_DUO_GUEST_ARRIVAL',behaviorState:{explicit_intervention:true}})) $('#guideDialogue').textContent=bringLine;
   const duoLine=`${state.guide.name}: 잡아왔다! · ${guestName}: ${feedback.praise} ${feedback.next}`;
-  if(!emitReadyCrewScene('recording-review',duoLine,{guestType:currentGuestType,action:'IDLE',dialogue:'SHORT',evidenceRef:feedback.evidenceRef,reason:'READY_RECORDING_REVIEW'})) $('#duoText').textContent=duoLine;
+  if(!emitReadyCrewScene('recording-review',duoLine,{guestType:currentGuestType,action:'IDLE',dialogue:'SHORT',evidenceRef:feedback.evidenceRef,reason:'READY_RECORDING_REVIEW',behaviorState:{explicit_intervention:true}})) $('#duoText').textContent=duoLine;
   const isM4A=/audio\/(mp4|m4a)/.test(type);
   $('#formatNote').textContent=isM4A
     ?'실제 MP4/M4A 계열 오디오로 저장할 수 있는 브라우저입니다.'
@@ -788,7 +788,7 @@ $('#rerecordBtn').onclick=()=>{
   $('#reviewPanel').hidden=true;currentAudio=null;
   $('#recordClock').textContent='00:00';$('#recordState').textContent='READY';
   const retryLine=`${state.guide.name}: 좋아, 이번엔 네 속도로 다시 해보자.`;
-  if(!emitReadyCrewScene('recording',retryLine,{reason:'READY_RECORDING_RETRY'})) $('#guideDialogue').textContent=retryLine;
+  if(!emitReadyCrewScene('recording',retryLine,{reason:'READY_RECORDING_RETRY',behaviorState:{user_requested:true}})) $('#guideDialogue').textContent=retryLine;
 };
 $('#saveRecordingBtn').onclick=async()=>{
   if(!currentAudio)return;
@@ -858,7 +858,7 @@ function renderResult(){
   const outcomeCopy=sc;
   $('#resultHeadline').textContent=outcomeCopy.headline;
   const reflectionLine=`${outcomeCopy.line} ${readyOneGoodReflection(r)}`;
-  if(!emitReadyCrewScene('result',reflectionLine,{guestType:r.recordingDone&&r.guestType?r.guestType:null,action:r.recordingDone?'CHEER':'IDLE',dialogue:'SHORT',evidenceRef:'READY_SESSION_RESULT',reason:'ONE_GOOD_REFLECTION'})) $('#resultLine').textContent=reflectionLine;
+  if(!emitReadyCrewScene('result',reflectionLine,{guestType:r.recordingDone&&r.guestType?r.guestType:null,action:r.recordingDone?'CHEER':'IDLE',dialogue:'SHORT',evidenceRef:'READY_SESSION_RESULT',reason:'ONE_GOOD_REFLECTION',behaviorState:{reflection_due:true}})) $('#resultLine').textContent=reflectionLine;
   $('#resultTasks').textContent=[...r.selected,...r.tasks].join(' · ');
   $('#resultTarget').textContent=fmt(r.targetMs);
   $('#resultFocus').textContent=fmt(r.focusMs);
