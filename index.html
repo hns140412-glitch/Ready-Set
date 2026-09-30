@@ -103,6 +103,13 @@
       <section class="glassCard adminCard" id="schedulePeriodCard">
         <div class="adminSectionHead"><div><small>PERIOD TIMETABLE</small><h2>기간별 주간 시간표</h2></div><button class="miniAction" id="schedulePeriodClearBtn">새 기간</button></div>
         <p class="muted">방학·학기중처럼 적용 기간을 정하고, 그 기간에 사용할 주간 고정 시간표를 따로 저장합니다. 겹치는 기간은 최근 수정한 기간이 우선 적용됩니다.</p>
+        <div id="scheduleConflictReview" class="scheduleConflictReview" hidden>
+          <b>시간표 겹침 확인</b>
+          <div id="scheduleConflictList"></div>
+          <p class="muted">겹침은 자동으로 지우지 않습니다. 내용을 확인한 뒤 필요한 경우에만 그대로 저장하세요.</p>
+          <button class="btn outline" id="scheduleConflictConfirmBtn" type="button">겹침 확인 후 저장</button>
+          <button class="miniAction" id="scheduleConflictCancelBtn" type="button">취소</button>
+        </div>
         <input id="schedulePeriodId" type="hidden">
         <label class="inputBlock">기간 이름<input id="schedulePeriodName" placeholder="예) 여름방학"></label>
         <div class="adminGrid two">
