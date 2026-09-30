@@ -111,6 +111,6 @@ assert.equal(vacationCapacity.available_minutes,120);
 const removedPeriod=periodPlanner.removeSchedulePeriod('summer');
 assert.equal(removedPeriod.ok,true);
 assert.equal(removedPeriod.removed_commitments,1);
-assert.equal(periodPlanner.scheduleCommitmentsByDate('2026-07-20').length,0);
+assert.deepEqual(periodPlanner.scheduleCommitmentsByDate('2026-07-20').map(x=>x.commitment_id),['semester-mon']);
 
 console.log('PASS: weekly availability and period-scoped fixed timetables expand by weekday, override by active period, and subtract from Planner capacity');
