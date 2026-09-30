@@ -13,10 +13,12 @@
     if(!doc||typeof doc.querySelector!=='function')return {ok:false,reason:'DOCUMENT_REQUIRED'};
     const speaking=Array.isArray(vm.speaking_order)?vm.speaking_order:[];
     const speaker=(vm.characters||[]).find(c=>speaking.includes(c.character_id)&&c.dialogue_level!=='SILENT')||(vm.characters||[]).find(c=>c.dialogue_level!=='SILENT');
-    if(!speaker||!speaker.utterance)return {ok:false,reason:'NO_SPEAKING_UTTERANCE'};
+    const textOnly=(vm.characters||[]).find(c=>c.utterance);
+    const source=speaker||textOnly;
+    if(!source||!source.utterance)return {ok:false,reason:'NO_UTTERANCE'};
     const el=doc.querySelector(selector); if(!el)return {ok:false,reason:'DIALOGUE_TARGET_MISSING',selector};
-    el.textContent=speaker.utterance;
-    return {ok:true,selector,character_id:speaker.character_id,dialogue_level:speaker.dialogue_level,action:speaker.action};
+    el.textContent=source.utterance;
+    return {ok:true,selector,character_id:source.character_id,dialogue_level:source.dialogue_level,voice_allowed:source.voice_allowed===true,delivery_mode:speaker?'DIALOGUE':'TEXT_ONLY',action:source.action};
   }
   return Object.freeze({SURFACES,apply,changesVisualAsset:false,generatesArt:false});
 });
