@@ -1387,6 +1387,14 @@ function editAvailability(id){
 }
 document.getElementById('scheduleClearBtn')?.addEventListener('click',clearScheduleForm);
 document.getElementById('schedulePeriodClearBtn')?.addEventListener('click',clearSchedulePeriodForm);
+document.getElementById('scheduleConflictConfirmBtn')?.addEventListener('click',saveAcknowledgedScheduleConflict);
+document.getElementById('scheduleConflictCancelBtn')?.addEventListener('click',clearScheduleConflictReview);
+['schedulePeriodName','schedulePeriodFrom','schedulePeriodUntil','scheduleTitle','scheduleCategory','scheduleDate','scheduleStart','scheduleEnd'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('input',clearScheduleConflictReview);
+});
+['scheduleRecurring','schedulePeriod','scheduleWeekday','scheduleMovable'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('change',clearScheduleConflictReview);
+});
 document.getElementById('scheduleRecurring')?.addEventListener('change',toggleScheduleModeFields);
 document.getElementById('schedulePeriod')?.addEventListener('change',()=>renderScheduleTileBoard(plannerSnapshot()));
 document.getElementById('scheduleMonth')?.addEventListener('change',()=>renderSchedulePeriodCalendar(plannerSnapshot()));
@@ -1499,8 +1507,15 @@ document.getElementById('saveSchedulePeriodBtn')?.addEventListener('click',()=>{
   const name=$('#schedulePeriodName').value.trim(),valid_from=$('#schedulePeriodFrom').value,valid_until=$('#schedulePeriodUntil').value;
   if(!name||!valid_from||!valid_until){toast('기간 이름·시작일·종료일을 확인해 주세요.');return}
   if(valid_until<valid_from){toast('종료일은 시작일보다 빠를 수 없어요.');return}
+  const input={period_id:$('#schedulePeriodId').value||undefined,name,valid_from,valid_until,source:'PARENT_ADMIN_UI',parent_editable:true};
   try{
-    const period=window.ReadySetPlanner.upsertSchedulePeriod({period_id:$('#schedulePeriodId').value||undefined,name,valid_from,valid_until,source:'PARENT_ADMIN_UI',parent_editable:true});
+    const period=window.ReadySetPlanner.upsertSchedulePeriod(input);
+    if(period?.ok===false&&period.reason==='PERIOD_CONFLICT_REVIEW_REQUIRED'){
+      showScheduleConflictReview('PERIOD',input,period.conflicts||[]);
+      toast('겹치는 기간이 있어 확인이 필요해요.');
+      return;
+    }
+    clearScheduleConflictReview();
     toast(`${period.name} 기간을 저장했어요.`);
     $('#schedulePeriodId').value=period.period_id;
     renderPlannerAdmin();renderPlanner();
@@ -1525,7 +1540,13 @@ document.getElementById('saveScheduleBtn')?.addEventListener('click',()=>{
   if(weekly)Object.assign(input,{recurrence:'WEEKLY',period_id:periodId,weekday:Number($('#scheduleWeekday').value),start,end});
   else Object.assign(input,{start_at:`${date}T${start}:00`,end_at:`${date}T${end}:00`});
   try{
-    window.ReadySetPlanner.upsertScheduleCommitment(input);
+    const item=window.ReadySetPlanner.upsertScheduleCommitment(input);
+    if(item?.ok===false&&item.reason==='SCHEDULE_CONFLICT_REVIEW_REQUIRED'){
+      showScheduleConflictReview('COMMITMENT',input,item.conflicts||[]);
+      toast('겹치는 일정이 있어 확인이 필요해요.');
+      return;
+    }
+    clearScheduleConflictReview();
     toast(weekly?'주간 고정 시간표 타일을 저장했어요.':'고정 일정을 저장했어요.');
     clearScheduleForm();renderPlannerAdmin();renderPlanner();
   }catch(error){toast(error?.message||'고정 일정을 저장하지 못했어요.')}
