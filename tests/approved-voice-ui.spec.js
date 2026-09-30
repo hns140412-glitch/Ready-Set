@@ -37,7 +37,7 @@ test.describe('Ready approved voice interactions', () => {
     await expect(page.locator('.approvedFlowSteps')).toContainText('공유하기');
     await expect(page.locator('.approvedFlowSteps')).toContainText('타이머');
 
-    await page.locator('[data-nav="planner"]').first().click();
+    await page.evaluate(() => window.nav('planner'));
     await page.locator('[data-planner-tab="day"]').click();
     await expect(page.locator('#childRadioQuickAdd')).toBeVisible();
     await expect(page.locator('#childRadioQuickAdd')).toContainText('숙제·이벤트 무전');
