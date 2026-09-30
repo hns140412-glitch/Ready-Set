@@ -778,7 +778,7 @@ function renderPlanner(){
   window.ReadySetPlanner?.replanReadyCarryOvers?.({date:localDateKey()});
   const adminJump=document.querySelector('.plannerAdminJump');
   if(adminJump){
-    adminJump.hidden=false;
+    adminJump.hidden=!window.ReadyFamilySession?.isParent?.();
     adminJump.setAttribute('aria-label','부모 관리');
   }
   const snap=plannerSnapshot(), start=weekStart(new Date(plannerSelectedDate+'T12:00:00'));
