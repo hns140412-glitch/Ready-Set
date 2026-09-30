@@ -1,0 +1,48 @@
+{
+  "schema": "TAKY_SCREEN_CONTRACT_V2",
+  "screen_id": "planner_week",
+  "authority_ref": "APPROVED_READY_WEEKLY_PLANNER_MOCKUP",
+  "regions": [
+    {
+      "id": "basecamp-world",
+      "role": "environment"
+    },
+    {
+      "id": "weekly-planner",
+      "role": "primary-information"
+    }
+  ],
+  "typography": {
+    "mode": "LIVE_DOM",
+    "hierarchy": [
+      "screen-title",
+      "day-label",
+      "schedule-item",
+      "status"
+    ]
+  },
+  "components": [
+    {
+      "id": "planner-week-panel",
+      "selector": "#plannerWeekPanel",
+      "owner": "READY_SET_PLANNER"
+    }
+  ],
+  "responsive": {
+    "primary": "phone390",
+    "safe_area": "required",
+    "tablet": "OPEN_SEPARATE_REVIEW"
+  },
+  "interactions": [
+    {
+      "id": "DAY_SELECT",
+      "result": "planner_day"
+    }
+  ],
+  "states": [
+    "BASE_REVIEW",
+    "EMPTY",
+    "SELECTED_DAY"
+  ],
+  "implementation_note": "Planner data remains authoritative; approved Base Camp art is not yet separated/bound."
+}

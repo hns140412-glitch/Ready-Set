@@ -1,0 +1,15 @@
+const assert=require('node:assert/strict');
+const s=require('../ready-character-registry-state-v1.js');
+let st=s.initial();
+let x=s.stage(st,{pointer:'v1',version:1,content_sha256:'a'});
+assert.equal(x.ok,true);st=x.state;
+x=s.promote(st,{pass:true});assert.equal(x.action,'PROMOTE');st=x.state;
+assert.equal(st.active.pointer,'v1');
+x=s.stage(st,{pointer:'v2',version:2,content_sha256:'b'});st=x.state;
+x=s.promote(st,{pass:false});assert.equal(x.action,'KEEP_ACTIVE');st=x.state;
+assert.equal(st.active.pointer,'v1');
+x=s.stage(st,{pointer:'v2',version:2,content_sha256:'b'});st=x.state;
+x=s.promote(st,{pass:true});st=x.state;assert.equal(st.active.pointer,'v2');assert.equal(st.rollback.pointer,'v1');
+x=s.rollback(st);assert.equal(x.ok,true);assert.equal(x.state.active.pointer,'v1');
+assert.equal(s.automaticPromotion,false);
+console.log(JSON.stringify({gate:'CHARACTER_REGISTRY_STATE',pass:true},null,2));

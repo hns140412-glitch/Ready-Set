@@ -171,6 +171,73 @@ function applyGuide(el,type=state.guide.type){
   el.setAttribute('data-guide',type);
 }
 function guideData(type=state.guide.type){return GUIDE_TYPES[type]||GUIDE_TYPES.lumi}
+function emitReadyCrewScene(surface,utterance,{action='IDLE',dialogue='SHORT',guestType=null,evidenceRef=null,reason=null,behaviorState={}}={}){
+  const rt=globalThis.TakyCrewLiveRuntime;
+  if(!rt?.legacyCharacter||!rt?.emit)return false;
+  const main=rt.legacyCharacter(state.guide.type,{role:'MAIN',action,dialogue,utterance,evidenceRef,reason});
+  const chars=[main];
+  if(guestType){
+    chars.push(rt.legacyCharacter(guestType,{role:'GUEST',action:'IDLE',dialogue:'SILENT',utterance:'',evidenceRef,reason:'READY_RANDOM_GUEST'}));
+  }
+  rt.emit({sceneId:surface,surface,characters:chars,foregroundId:main.character_id,speakingOrder:[main.character_id],visibleOrder:chars.map(x=>x.character_id),behaviorState});
+  return true;
+}
+function readyRecordingEvidenceFeedback(){
+  const evidence=state.activeSession?.recordingAnalysis;
+  if(evidence?.verified===true){
+    const strength=Array.isArray(evidence.strengths)?evidence.strengths.find(Boolean):null;
+    const nextHint=typeof evidence.next_hint==='string'&&evidence.next_hint.trim()?evidence.next_hint.trim():null;
+    return {
+      praise:strength||'끝까지 녹음을 마쳤어.',
+      next:nextHint||'다시 들으면서 네가 한 번 더 해보고 싶은 문장 하나만 골라보자.',
+      evidenceRef:evidence.evidence_ref||'READY_RECORDING_ANALYSIS_VERIFIED'
+    };
+  }
+  return {
+    praise:'끝까지 녹음을 마쳤어.',
+    next:'아직 발음은 함부로 판단하지 않을게. 다시 들으면서 네가 한 번 더 해보고 싶은 문장 하나만 골라보자.',
+    evidenceRef:'READY_RECORDING_COMPLETION_ONLY'
+  };
+}
+function readyOneGoodReflection(r){
+  return r?.recordingDone
+    ? '오늘 녹음에서 네가 가장 마음에 든 부분은 어디였어?'
+    : '오늘 작전에서 다음에도 그대로 해보고 싶은 건 뭐였어?';
+}
+function readyCrewCharacterId(type=state.guide.type){const localId=type||state.guide.type;return globalThis.TakyCrewIdentityBridge?.resolve?.(localId)?.character_id||'LEGACY_READY_SET:'+String(localId)}
+function applyReadyGuidePatch(patch,authorityRef='READY_USER_UI'){
+  const guard=globalThis.TakyCrewIdentityChangeV1;
+  state=guard?.apply?guard.apply(state,patch,{authority_ref:authorityRef}):{...state,guide:{...state.guide,...patch}};
+  save();
+  return state.guide;
+}
+function appendReadyCrewEvidence(eventId,type,characterType,evidenceRef,context={}){
+  const ev=globalThis.TakyCrewEvidenceRuntime;
+  if(!ev?.append)return {ok:false,reason:'CREW_EVIDENCE_RUNTIME_UNAVAILABLE'};
+  return ev.append(globalThis.localStorage,{
+    event_id:eventId,type,verified:true,evidence_ref:evidenceRef,
+    character_id:readyCrewCharacterId(characterType),
+    occurred_at:new Date().toISOString(),context
+  });
+}
+function readyRecordingLabels(){return [...(state.activeSession?.selected||[]),...(state.activeSession?.tasks||[])]}
+function readyRecordingReferenceText(){
+  const links=Array.isArray(state.activeSession?.plannerLinks)?state.activeSession.plannerLinks:[];
+  for(const x of links){
+    const v=x?.recording_reference_text||x?.reference_text||x?.prompt_text||x?.recording_prompt;
+    if(typeof v==='string'&&v.trim())return v.trim();
+  }
+  return null;
+}
+function readyRecordingKind(){return globalThis.ReadyRecordingContextV1?.kindFromLabels?.(readyRecordingLabels())||'grammar'}
+function readyRecordingFilename(ext){
+  return globalThis.ReadyRecordingContextV1?.filename?.({name:state.profile.name||'Judy',labels:readyRecordingLabels(),date:new Date(),ext})
+    ||`${state.profile.name||'Judy'}’s Bricks ${readyRecordingKind()} recording.${ext}`;
+}
+function readyDuoArrivalLine(){
+  const lines=['잠깐만. 이건 같이 들어봐야겠다. 친구 한 명 꼬셔왔어!','잠깐만. 같이 들어보자고 한 명 데려왔어!','이건 혼자 듣기 아깝다. 친구 한 명 잡아왔어!'];
+  return lines[Math.floor(Math.random()*lines.length)]||lines[0];
+}
 
 function centralPlannerScope(){
   // Supplied only by an explicitly installed trusted central host. Ready's
@@ -194,11 +261,12 @@ function renderHome(){
   applyGuide($('#homeGuidePortrait'));
   $('#homeGuideName').textContent=state.guide.name;
   const labels=currentMissionLabels();
-  $('#homeGuideLine').textContent=state.activeSession
+  const homeLine=state.activeSession
     ? '진행 중인 탐험이 있어요. 이어서 가볼까요?'
     : labels.length
       ? `오늘 Planner가 준비한 탐험 ${labels.length}개가 있어요.`
       : guideData().home;
+  if(!emitReadyCrewScene('home',homeLine,{reason:'READY_HOME_CONTEXT',behaviorState:{transition:true}})) $('#homeGuideLine').textContent=homeLine;
 }
 function renderChips(root){
   if(!root)return;
@@ -561,6 +629,9 @@ function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOu
   });
   const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs,
     outcomeState,plannerOutcomes,taskOutcomes:scopedOutcomes};
+  const mainEvidenceId=`READY_SESSION:${rec.id}:${state.guide.type}`;
+  appendReadyCrewEvidence(mainEvidenceId+':SHARED','SHARED_EPISODE',state.guide.type,'READY_SESSION_COMPLETE',{session_id:rec.id,outcome_state:outcomeState});
+  if(outcomeState==='COMPLETED')appendReadyCrewEvidence(mainEvidenceId+':COMPLETE','EXPLORATION_COMPLETE',state.guide.type,'READY_SESSION_COMPLETED',{session_id:rec.id});
   state.records.unshift(rec);state.records=state.records.slice(0,200);
   state.activeSession=null;state.lastResult=rec;save();nav('result');
   // Durable local session completion is the producer boundary. A separately
@@ -635,7 +706,8 @@ function renderRecordingContext(){
   applyAvatar($('#recordAvatar'));
   applyGuide($('#recordGuidePortrait'));
   applyGuide($('#recIntroGuide'));
-  $('#guideDialogue').textContent=`${state.guide.name}: ${guideData().intro}`;
+  const recordingIntro=`${state.guide.name}: ${guideData().intro}`;
+  if(!emitReadyCrewScene('recording',recordingIntro,{reason:'READY_RECORDING_START',behaviorState:{transition:true}})) $('#guideDialogue').textContent=recordingIntro;
 }
 $('#recordAction').onclick=async()=>{
   if(mediaRecorder&&mediaRecorder.state==='recording'){mediaRecorder.stop();return}
@@ -667,13 +739,13 @@ async function startRecording(){
   }
 }
 function chooseGuest(){
-  const all=Object.keys(GUIDE_TYPES).filter(x=>x!==state.guide.type);
-  const recent=new Set((state.guestHistory||[]).slice(-1));
-  let pool=all.filter(x=>!recent.has(x));if(!pool.length)pool=all;
-  currentGuestType=pool[Math.floor(Math.random()*pool.length)]||all[0]||'pico';
-  state.guestHistory=[...(state.guestHistory||[]),currentGuestType].slice(-4);save();
+  const history=Array.isArray(state.guestHistory)?state.guestHistory:[];
+  currentGuestType=globalThis.ReadySmartRandomGuestV1?.choose?.({
+    all:Object.keys(GUIDE_TYPES),main:state.guide.type,history,random:Math.random
+  })||Object.keys(GUIDE_TYPES).find(x=>x!==state.guide.type)||'pico';
+  state.guestHistory=[...history,currentGuestType].slice(-12);save();
 }
-function finishRecording(){
+async function finishRecording(){
   clearInterval(recordTicker);
   mediaStream?.getTracks().forEach(t=>t.stop());
   $('#recordAction').classList.remove('recording');
@@ -685,10 +757,31 @@ function finishRecording(){
   $('#audioPreview').src=URL.createObjectURL(currentAudio);
   $('#reviewPanel').hidden=false;
   chooseGuest();
+  const recordingEvidenceId=`READY_RECORDING:${state.activeSession?.id||Date.now()}`;
+  appendReadyCrewEvidence(`READY_FIRST_MEETING:${currentGuestType}`,'FIRST_MEETING',currentGuestType,'READY_RANDOM_GUEST_FIRST_MEETING',{surface:'recording-review'});
+  appendReadyCrewEvidence(recordingEvidenceId+':MAIN','SHARED_EPISODE',state.guide.type,'READY_RECORDING_COMPLETED',{guest_type:currentGuestType});
+  appendReadyCrewEvidence(recordingEvidenceId+':GUEST','SHARED_EPISODE',currentGuestType,'READY_RECORDING_COMPLETED',{main_type:state.guide.type});
   applyGuide($('#duoMainGuide'),state.guide.type);
   applyGuide($('#duoGuestGuide'),currentGuestType);
-  $('#guideDialogue').textContent='잠깐만. 같이 들어줄 친구 좀 잡아올게!';
-  $('#duoText').textContent=`${state.guide.name}: 잡아왔다!  ·  ${GUIDE_TYPES[currentGuestType].defaultName}: 좋아, 끝까지 들어보자. 지금은 자동 평가보다 녹음을 끝까지 완료한 사실을 먼저 확인할게.`;
+  const guestName=GUIDE_TYPES[currentGuestType].defaultName;
+  const analysisResult=await globalThis.ReadyRecordingAnalysisV1?.analyze?.({
+    blob:currentAudio,
+    context:{
+      kind:readyRecordingKind(),
+      reference_text:readyRecordingReferenceText(),
+      duration_ms:Date.now()-recordStartedAt,
+      mime_type:type,
+      session_id:state.activeSession?.id||null
+    }
+  });
+  if(state.activeSession){
+    state.activeSession.recordingAnalysis=analysisResult?.ok===true?analysisResult.analysis:null;
+  }
+  const feedback=readyRecordingEvidenceFeedback();
+  const bringLine=readyDuoArrivalLine();
+  if(!emitReadyCrewScene('recording',bringLine,{reason:'READY_DUO_GUEST_ARRIVAL',behaviorState:{explicit_intervention:true}})) $('#guideDialogue').textContent=bringLine;
+  const duoLine=`${state.guide.name}: 잡아왔다! · ${guestName}: ${feedback.praise} ${feedback.next}`;
+  if(!emitReadyCrewScene('recording-review',duoLine,{guestType:currentGuestType,action:'IDLE',dialogue:'SHORT',evidenceRef:feedback.evidenceRef,reason:'READY_RECORDING_REVIEW',behaviorState:{explicit_intervention:true}})) $('#duoText').textContent=duoLine;
   const isM4A=/audio\/(mp4|m4a)/.test(type);
   $('#formatNote').textContent=isM4A
     ?'실제 MP4/M4A 계열 오디오로 저장할 수 있는 브라우저입니다.'
@@ -697,17 +790,17 @@ function finishRecording(){
   save();
 }
 $('#rerecordBtn').onclick=()=>{
+  appendReadyCrewEvidence(`READY_COACHING:${state.activeSession?.id||Date.now()}:${Date.now()}`,'COACHING_SHARED',state.guide.type,'READY_RERECORD_ACCEPTED',{guest_type:currentGuestType});
   $('#reviewPanel').hidden=true;currentAudio=null;
   $('#recordClock').textContent='00:00';$('#recordState').textContent='READY';
-  $('#guideDialogue').textContent=`${state.guide.name}: 좋아, 이번엔 네 속도로 다시 해보자.`;
+  const retryLine=`${state.guide.name}: 좋아, 이번엔 네 속도로 다시 해보자.`;
+  if(!emitReadyCrewScene('recording',retryLine,{reason:'READY_RECORDING_RETRY',behaviorState:{user_requested:true}})) $('#guideDialogue').textContent=retryLine;
 };
 $('#saveRecordingBtn').onclick=async()=>{
   if(!currentAudio)return;
   const type=currentAudio.type||'audio/webm';
   const ext=/audio\/(mp4|m4a)/.test(type)?'m4a':'webm';
-  const d=new Date(),date=`${d.getFullYear()} ${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getDate()).padStart(2,'0')}`;
-  const base=(state.profile.name||'Judy').replace(/[\\/:*?"<>|]/g,'_');
-  const filename=`${base}'s grammar recording ${date}.${ext}`;
+  const filename=readyRecordingFilename(ext);
   await storeAudio(currentAudio,filename,type);
   if(state.activeSession){state.activeSession.recordingDone=true;state.activeSession.guestType=currentGuestType;state.activeSession.recordingMime=type}
   save();toast(`저장 완료 · ${filename}`);
@@ -770,7 +863,8 @@ function renderResult(){
   const sc=resultSceneFor(r);
   const outcomeCopy=sc;
   $('#resultHeadline').textContent=outcomeCopy.headline;
-  $('#resultLine').textContent=outcomeCopy.line;
+  const reflectionLine=`${outcomeCopy.line} ${readyOneGoodReflection(r)}`;
+  if(!emitReadyCrewScene('result',reflectionLine,{guestType:r.recordingDone&&r.guestType?r.guestType:null,action:r.recordingDone?'CHEER':'IDLE',dialogue:'SHORT',evidenceRef:'READY_SESSION_RESULT',reason:'ONE_GOOD_REFLECTION',behaviorState:{reflection_due:true}})) $('#resultLine').textContent=reflectionLine;
   $('#resultTasks').textContent=[...r.selected,...r.tasks].join(' · ');
   $('#resultTarget').textContent=fmt(r.targetMs);
   $('#resultFocus').textContent=fmt(r.focusMs);
@@ -2118,23 +2212,23 @@ function renderSettings(){
   renderSyncStatus().catch(()=>{});
 }
 $('#guideNameInput').onchange=e=>{
-  state.guide.name=e.target.value.trim()||guideData().defaultName;
-  save();renderSettings();renderHome();
+  applyReadyGuidePatch({name:e.target.value.trim()||guideData().defaultName});
+  renderSettings();renderHome();
 };
 $$('[data-guide-type]').forEach(b=>b.onclick=()=>{
   const prevDefault=guideData().defaultName;
   const type=b.dataset.guideType;
-  state.guide.type=type;
-  if(!state.guide.name||state.guide.name===prevDefault)state.guide.name=guideData(type).defaultName;
-  save();renderSettings();renderHome();toast(`${state.guide.name}와 함께할게요.`);
+  const nextName=(!state.guide.name||state.guide.name===prevDefault)?guideData(type).defaultName:state.guide.name;
+  applyReadyGuidePatch({type,name:nextName});
+  renderSettings();renderHome();toast(`${state.guide.name}와 함께할게요.`);
 });
 function renderNameSuggestions(reroll=true){
   const root=$('#nameSuggestions');if(!root)return;if(!reroll&&root.children.length)return;
   const names=[guideData().defaultName,...GUIDE_NAME_POOL.filter(n=>n!==guideData().defaultName)].sort(()=>Math.random()-.5).slice(0,5);
-  root.innerHTML='';names.forEach(n=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>{state.guide.name=n;save();renderSettings();renderHome()};root.appendChild(b)});
+  root.innerHTML='';names.forEach(n=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>{applyReadyGuidePatch({name:n});renderSettings();renderHome()};root.appendChild(b)});
 }
 $('#recommendNameBtn').onclick=()=>renderNameSuggestions(true);
-$$('[data-guide-voice]').forEach(b=>b.onclick=()=>{state.guide.voice=b.dataset.guideVoice;save();renderSettings();toast('길잡이 목소리를 바꿨어요.')});
+$('[data-guide-voice]').forEach(b=>b.onclick=()=>{applyReadyGuidePatch({voice:b.dataset.guideVoice});renderSettings();toast('길잡이 목소리를 바꿨어요.')});
 function speakGuide(text){
   if(!('speechSynthesis'in window)){toast('이 브라우저에서는 음성 안내를 지원하지 않아요.');return false}
   speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';

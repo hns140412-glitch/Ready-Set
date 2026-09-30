@@ -1,0 +1,55 @@
+{
+  "schema": "TAKY_SCREEN_CONTRACT_V2",
+  "screen_id": "goal",
+  "authority_ref": "APPROVED_READY_GOAL_MOCKUP_20260929",
+  "regions": [
+    {
+      "id": "basecamp-world",
+      "role": "environment"
+    },
+    {
+      "id": "goal-surface",
+      "role": "primary-information"
+    },
+    {
+      "id": "share",
+      "role": "optional-action"
+    }
+  ],
+  "typography": {
+    "mode": "LIVE_DOM",
+    "hierarchy": [
+      "screen-title",
+      "goal",
+      "target-time",
+      "action"
+    ]
+  },
+  "components": [
+    {
+      "id": "current-goal-consumer",
+      "selector": "#missionView",
+      "owner": "READY_SET_EXECUTION_UI"
+    }
+  ],
+  "responsive": {
+    "primary": "phone390",
+    "safe_area": "required",
+    "tablet": "OPEN_SEPARATE_REVIEW"
+  },
+  "interactions": [
+    {
+      "id": "OPTIONAL_SHARE",
+      "blocking": false
+    },
+    {
+      "id": "START_EXPLORATION",
+      "result": "focus"
+    }
+  ],
+  "states": [
+    "BASE_REVIEW",
+    "SHARE_OPTIONAL"
+  ],
+  "implementation_note": "Current missionView is a legacy consumer and must be corrected to the approved Goal composition."
+}

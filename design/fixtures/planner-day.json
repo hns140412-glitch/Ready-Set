@@ -1,0 +1,40 @@
+{
+  "schema": "TAKY_STATE_FIXTURE_V1",
+  "screen_id": "planner_day",
+  "synthetic": true,
+  "states": {
+    "BASE_REVIEW": {
+      "items": [
+        {
+          "time": "08:00",
+          "type": "FIXED",
+          "label": "SCHOOL"
+        },
+        {
+          "time": null,
+          "type": "TODO",
+          "label": "READING"
+        }
+      ]
+    },
+    "EMPTY": {
+      "items": []
+    },
+    "QUICK_ADD_DRAFT": {
+      "draft": {
+        "type": "PRACTICE",
+        "label": "RECORDER",
+        "minutes": 20
+      },
+      "confirmed": false
+    },
+    "QUICK_ADD_CONFIRM": {
+      "draft": {
+        "type": "PRACTICE",
+        "label": "RECORDER",
+        "minutes": 20
+      },
+      "confirmed": true
+    }
+  }
+}

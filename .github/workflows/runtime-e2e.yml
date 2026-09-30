@@ -17,6 +17,64 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Validate app Scene Policy adapter
+        run: node tests/scene-policy-adapter.spec.js
+      - name: Validate character Runtime adapter
+        run: node tests/character-runtime-adapter.spec.js
+      - name: Validate character Scene event bridge
+        run: node tests/character-scene-bridge.spec.js
+      - name: Validate character Binding registry
+        run: node tests/character-binding-registry.spec.js
+      - name: Validate character Binding selector integrity
+        run: node tests/character-binding-selector-integrity.spec.js
+      - name: Validate character UI Binding planner
+        run: node tests/character-ui-binding-planner.spec.js
+      - name: Validate character UI Binding event bridge
+        run: node tests/character-ui-binding-bridge.spec.js
+      - name: Validate fail-closed character DOM binder
+        run: node tests/character-dom-binder.spec.js
+      - name: Validate approved asset resolver
+        run: node tests/approved-asset-resolver.spec.js
+      - name: Validate staged character registry activation
+        run: node tests/character-registry-state.spec.js
+      - name: Validate character contract version declaration
+        run: node tests/character-contract-versions.spec.js
+      - name: Validate surface Scene Policy
+        run: node tests/surface-scene-policy.spec.js
+      - name: Validate live Crew semantic runtime
+        run: node tests/live-crew-semantic-runtime.spec.js
+      - name: Validate live Crew event chain
+        run: node tests/live-crew-event-chain.spec.js
+      - name: Validate Crew evidence runtime
+        run: node tests/crew-evidence-runtime.spec.js
+      - name: Validate Crew identity bridge
+        run: node tests/crew-identity-bridge.spec.js
+      - name: Validate Crew identity change guard
+        run: node tests/crew-identity-change-guard.spec.js
+      - name: Validate shared Crew browser behavior
+        run: node tests/shared-crew-browser-behavior.spec.js
+      - name: Validate shared Crew browser relation
+        run: node tests/shared-crew-browser-relation.spec.js
+      - name: Validate Crew evidence handoff
+        run: node tests/crew-evidence-handoff.spec.js
+      - name: Validate Crew browser provider
+        run: node tests/crew-browser-provider.spec.js
+      - name: Validate Ready recording context
+        run: node tests/ready-recording-context.spec.js
+      - name: Validate Ready recording analysis
+        run: node tests/ready-recording-analysis.spec.js
+      - name: Validate Ready Smart Random Guest
+        run: node tests/ready-smart-random-guest.spec.js
+      - name: Pre-Gate JavaScript syntax check
+        run: |
+          node --check app.js
+          node --check ready-crew-live-runtime-v1.js
+          node --check ready-crew-dialogue-consumer-v1.js
+          node --check ready-character-runtime-adapter-v1.js
+          node --check ready-character-scene-bridge-v1.js
+          node --check ready-character-ui-binding-bridge-v1.js
+      - name: Validate TAKY Design Gate authority
+        run: node tools/validate-design-gate.mjs
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -32,6 +90,12 @@ jobs:
           echo $! > /tmp/readyset-http.pid
       - name: Run runtime flow
         run: npx playwright test tests/*.spec.js --reporter=line
+      - name: Install visual comparison dependency
+        run: python3 -m pip install --disable-pip-version-check pillow==11.3.0
+      - name: Compare runtime renders to approved Golden references
+        run: python3 tools/compare-golden.py
+      - name: Issue Design Gate receipt
+        run: python3 tools/issue-design-gate-receipt.py --app READY_SET --interaction-pass --responsive-pass --asset-integrity-pass
       - name: Upload UI audit screenshots
         if: always()
         uses: actions/upload-artifact@v4

@@ -1,0 +1,58 @@
+{
+  "schema": "TAKY_SCREEN_CONTRACT_V2",
+  "screen_id": "focus",
+  "authority_ref": "APPROVED_READY_FOCUS_MOCKUP",
+  "regions": [
+    {
+      "id": "timer",
+      "role": "primary-information"
+    },
+    {
+      "id": "controls",
+      "role": "interaction"
+    },
+    {
+      "id": "guide-slot",
+      "role": "character"
+    }
+  ],
+  "typography": {
+    "mode": "LIVE_DOM",
+    "hierarchy": [
+      "timer",
+      "mission",
+      "control",
+      "status"
+    ]
+  },
+  "components": [
+    {
+      "id": "focus-view",
+      "selector": "#focusView",
+      "owner": "READY_SET_TIMER"
+    }
+  ],
+  "responsive": {
+    "primary": "phone390",
+    "safe_area": "required",
+    "tablet": "OPEN_SEPARATE_GOLDEN_CROP"
+  },
+  "interactions": [
+    {
+      "id": "PAUSE"
+    },
+    {
+      "id": "COMPLETE"
+    },
+    {
+      "id": "BGM"
+    }
+  ],
+  "states": [
+    "BASE_REVIEW",
+    "RUNNING",
+    "PAUSED",
+    "COMPLETED"
+  ],
+  "implementation_note": "Existing approved Timer runtime is preserved; this pipeline does not redesign it."
+}

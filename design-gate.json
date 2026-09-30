@@ -1,0 +1,66 @@
+{
+  "schema": "TAKY_DESIGN_GATE_V1",
+  "rule_id": "TKY-ASSET-001",
+  "project": "Ready-Set",
+  "policy": {
+    "current_runtime_must_not_auto_become_golden": true,
+    "approved_reference_required": true,
+    "hash_pin_required": true,
+    "visual_diff_required": true
+  },
+  "screens": [
+    {
+      "id": "home",
+      "authority_ref": "APPROVED_READY_HOME_MOCKUP",
+      "approved_reference": "design/golden/home.png",
+      "approved_sha256": "",
+      "snapshot_name": "home.png",
+      "actual_snapshot": "01-home.png"
+    },
+    {
+      "id": "planner_week",
+      "authority_ref": "APPROVED_READY_WEEKLY_PLANNER_MOCKUP",
+      "approved_reference": "design/golden/planner-week.png",
+      "approved_sha256": "",
+      "snapshot_name": "planner-week.png",
+      "actual_snapshot": "03-planner-week.png"
+    },
+    {
+      "id": "planner_day",
+      "authority_ref": "APPROVED_READY_DAILY_PLANNER_MOCKUP",
+      "approved_reference": "design/golden/planner-day.png",
+      "approved_sha256": "",
+      "snapshot_name": "planner-day.png",
+      "actual_snapshot": "07-planner-day.png"
+    },
+    {
+      "id": "focus",
+      "authority_ref": "APPROVED_READY_FOCUS_MOCKUP",
+      "approved_reference": "design/golden/focus.png",
+      "approved_sha256": "",
+      "snapshot_name": "focus.png",
+      "actual_snapshot": "08-focus.png"
+    }
+  ],
+  "status": "BLOCKED_PENDING_APPROVED_REFERENCE_IMPORT",
+  "source_receipts": {
+    "focus": {
+      "source_file_id": "file_00000000062481fda6f898789d2aca6b",
+      "source_name": "Ready_Set_Focus_UI_Phone_Tablet_Golden_Reference_REV_01.jpeg",
+      "source_sha256": "880f44a7f73251a4995a67522a7ecdfd1a60cf7f50c5149cfb9ed2366b3235f7",
+      "status": "SOURCE_BYTES_VERIFIED_LIBRARY_IMPORT_OPEN",
+      "use": "GOLDEN_REFERENCE_ONLY_NOT_RUNTIME_ASSET"
+    },
+    "planner_week": {
+      "source_name": "판타지_캠프_주간_시간표_탐험.png",
+      "source_sha256": "cd479f1c72a58171a5873a6c06e442fecfb7d63819a741f6984650968308db42",
+      "status": "HASH_RECEIPT_VERIFIED_BINARY_IMPORT_OPEN"
+    },
+    "planner_day": {
+      "source_name": "판타지_탐험가의_일일_시간표.png",
+      "source_sha256": "733aa39ea2972fffa04362994cb1218c60e34eb1558a86816a2388dd4f6e9ad5",
+      "status": "HASH_RECEIPT_VERIFIED_BINARY_IMPORT_OPEN"
+    }
+  },
+  "visual_distance_max": 0.18
+}

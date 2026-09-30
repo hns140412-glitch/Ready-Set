@@ -1,0 +1,13 @@
+const assert=require('node:assert/strict');
+const b=require('../ready-crew-identity-bridge-v1.js');
+const legacy=b.resolve('local',{});
+assert.match(legacy.character_id,/^LEGACY_/);
+assert.equal(legacy.history_reset_allowed,false);
+const key=b.APP+':local';
+const mapped=b.resolve('local',{[key]:{approved:true,authority_ref:'AUTH:1',character_id:'GUIDE-07',visual_id:'VID-07'}});
+assert.equal(mapped.character_id,'GUIDE-07');
+assert.equal(mapped.visual_id,'VID-07');
+assert.equal(mapped.status,'CANONICAL_APPROVED_MAPPING');
+assert.equal(b.resolve('local',{[key]:{approved:false,authority_ref:'AUTH',character_id:'X',visual_id:'Y'}}).status,'LEGACY_COMPAT_UNMAPPED');
+assert.equal(b.automaticMapping,false);
+console.log(JSON.stringify({gate:'CREW_IDENTITY_BRIDGE',app:b.APP,pass:true},null,2));

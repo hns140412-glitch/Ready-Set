@@ -1,0 +1,74 @@
+(function(root,factory){
+  const api=factory();
+  if(typeof module!=='undefined'&&module.exports) module.exports=api;
+  if(root) root.TakyCrewEvidenceRuntime=api;
+})(typeof globalThis!=='undefined'?globalThis:this,function(){
+  'use strict';
+  const KEY='taky.explorer.crew.evidence.v1';
+  const STATES=new Set(['NOT_MET','KNOWN','FAMILIAR','TRUSTED']);
+  const EVENTS=new Set(['FIRST_MEETING','SHARED_EPISODE','EXPLORATION_COMPLETE','HELP_ACCEPTED','COACHING_SHARED']);
+  function empty(){return {schema:'TAKY_CREW_EVIDENCE_STORE_V1',episodes:[],committed_relationships:{}}}
+  function load(storage){
+    try{
+      const x=JSON.parse(storage?.getItem?.(KEY)||'null');
+      return x&&x.schema==='TAKY_CREW_EVIDENCE_STORE_V1'?x:empty();
+    }catch{return empty()}
+  }
+  function save(storage,state){storage?.setItem?.(KEY,JSON.stringify(state));return state}
+  function append(storage,event,opt={}){
+    if(!event||!EVENTS.has(event.type)||event.verified!==true||!event.evidence_ref||!event.character_id)
+      return {ok:false,reason:'VERIFIED_EVIDENCE_REQUIRED'};
+    const state=load(storage);
+    if(state.episodes.some(x=>x.event_id===event.event_id&&event.event_id))return {ok:false,reason:'DUPLICATE_EVENT'};
+    const row=Object.freeze({
+      event_id:event.event_id||('READY_SET:'+Date.now()+':'+state.episodes.length),
+      type:event.type,verified:true,evidence_ref:String(event.evidence_ref),
+      character_id:String(event.character_id),
+      source_app:String(event.source_app||'READY_SET'),
+      source:String(event.source||event.source_app||'READY_SET'),
+      occurred_at:event.occurred_at||event.at||new Date().toISOString(),
+      at:event.at||event.occurred_at||new Date().toISOString(),
+      context:event.context&&typeof event.context==='object'?event.context:{},
+      import_authority_ref:event.import_authority_ref||null
+    });
+    const next={...state,episodes:[...state.episodes,row]};
+    save(storage,next);
+    if(opt.silent!==true&&typeof globalThis!=='undefined'&&globalThis.dispatchEvent&&globalThis.CustomEvent)
+      globalThis.dispatchEvent(new globalThis.CustomEvent('taky:crew-evidence',{detail:row}));
+    return {ok:true,event:row,state:next};
+  }
+  function relationship(storage,characterId){
+    const s=load(storage);return s.committed_relationships?.[characterId]?.state||'NOT_MET';
+  }
+  function behaviorRelationship(storage,characterId){
+    const s=load(storage),committed=s.committed_relationships?.[characterId]?.state;
+    if(committed&&committed!=='NOT_MET')return committed;
+    return s.episodes.some(x=>x.character_id===characterId&&x.type==='FIRST_MEETING'&&x.verified===true)?'KNOWN':'FIRST_ENCOUNTER';
+  }
+  function importVerified(storage,event,authorityRef){
+    if(!authorityRef)return {ok:false,reason:'AUTHORITY_REF_REQUIRED'};
+    return append(storage,{...event,import_authority_ref:String(authorityRef)},{silent:true});
+  }
+  function relationCandidate(storage,characterId,policy){
+    const runtime=globalThis.TakyExplorerCrewRelationRuntimeV1;
+    if(!runtime?.projectStore)return {ok:false,reason:'RELATION_RUNTIME_UNAVAILABLE'};
+    if(!policy?.approved||!policy?.authority_ref)return {ok:false,reason:'APPROVED_RELATION_POLICY_REQUIRED'};
+    return runtime.projectStore(load(storage),characterId,policy);
+  }
+  function commitRelationship(storage,characterId,state,authorityRef){
+    if(!characterId||!STATES.has(state))return {ok:false,reason:'RELATIONSHIP_STATE_INVALID'};
+    if(!authorityRef)return {ok:false,reason:'AUTHORITY_REF_REQUIRED'};
+    const s=load(storage);
+    const next={...s,committed_relationships:{...s.committed_relationships,[characterId]:{state,authority_ref:String(authorityRef)}}};
+    save(storage,next);
+    return {ok:true,state};
+  }
+  if(typeof globalThis!=='undefined'&&globalThis.addEventListener){
+    globalThis.addEventListener('taky:crew-relationship-commit',event=>{
+      const d=event?.detail||{};
+      if(d.target_app&&d.target_app!=='READY_SET')return;
+      commitRelationship(globalThis.localStorage,d.character_id,d.state,d.authority_ref);
+    });
+  }
+  return Object.freeze({KEY,empty,load,append,importVerified,relationship,behaviorRelationship,relationCandidate,commitRelationship,automaticPromotion:false,automaticReward:false,automaticPower:false});
+});
