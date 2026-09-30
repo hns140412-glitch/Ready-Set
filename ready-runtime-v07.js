@@ -701,20 +701,11 @@
     };
   }
 
-  function normalizeVersionText() {
-    document.querySelectorAll('#settingsView .muted').forEach(el => {
-      if (/APP_VERSION\s+0\.9\.2/.test(el.textContent || '')) {
-        el.textContent = 'APP_VERSION 0.9.3-rc1 · MASTER REV_07 · SCHEMA 5 + REV_07 SESSION CONTRACT';
-      }
-    });
-  }
-
   function boot() {
     document.documentElement.dataset.readyRuntime = RUNTIME_VERSION;
     injectStyles();
     patchHandlers();
     ensureWrapUp();
-    normalizeVersionText();
     if (state.activeSession) {
       ensureContract();
       consumeReturnQuery();
