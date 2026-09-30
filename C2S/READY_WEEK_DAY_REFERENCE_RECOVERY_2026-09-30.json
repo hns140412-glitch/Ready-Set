@@ -8,7 +8,7 @@
   ],
   "central_source": {
     "repository": "hns140412-glitch/TAKY-ASSETS",
-    "commit": "bfcc6d8a512b0d9600f5ec5a31d51a5bd9a12e57",
+    "commit": "aae935d9a196cddbca43187c2d2d39e45a82160b",
     "pull_request": 2,
     "review_state": "DRAFT_NOT_MAIN",
     "manifest": "assets/ready-set/references/basecamp-timetable/2026-09-28/manifest.v1.json"
