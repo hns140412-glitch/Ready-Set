@@ -40,7 +40,14 @@
   </section>
 
   <section class="view peach" id="missionView" data-view="mission">
-    <header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MISSION BRIEFING</span><h1>타임어택 작전 설정</h1></div><span></span></header>
+    <header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">READY & SET</span><h1>탐험 목표 정하기</h1></div><span></span></header>
+    <section class="baseCampHero goalBaseCampHero" aria-label="베이스캠프에서 탐험 준비">
+      <div class="baseCampSky" aria-hidden="true"></div>
+      <div class="baseCampSign"><small>Ready & Set</small><strong>탐험 목표 정하기</strong><span>오늘 할 일을 작게 정하고 끝까지 가보자</span></div>
+      <div class="baseCampCharacterSlot childSlot" id="goalChildCharacter" aria-label="아이 캐릭터"></div>
+      <img class="baseCampCompanion" id="goalCompanionCharacter" src="./assets/companions/core6/dubi.png" alt="동행 탐험대원">
+      <div class="baseCampDesk" aria-hidden="true"><span></span></div>
+    </section>
     <main class="safe scroll goalSetupMain"><div class="progressSteps approvedFlowSteps"><span class="on">1 목표 정하기</span><span>2 공유하기</span><span>3 타이머</span></div>
       <section class="glassCard"><h2>1. Planner가 준비한 오늘의 탐험</h2><p class="muted">숙제 FACT와 Planner 배정을 기준으로 표시합니다.</p><div id="missionChips" class="chipRow"></div></section>
       <section class="glassCard plannerToday" id="plannerTodaySection" hidden><div class="plannerTodayHead"><div><small>PLANNER · TODAY</small><h2>오늘의 탐험 후보</h2></div><span>내가 고르기</span></div><div id="plannerTodayList" class="plannerTodayList"></div></section>
@@ -59,7 +66,7 @@
       <section class="glassCard"><h2>3. 목표 시간을 선택하세요</h2><div class="timeButtons"><button data-minutes="10">10분</button><button data-minutes="15">15분</button><button class="on" data-minutes="25">25분</button><button data-minutes="custom">직접 입력</button></div><label class="customTime" id="customTimeWrap" hidden><input id="customMinutes" type="number" min="1" max="180" value="25"><span>분</span></label></section>
       <section class="glassCard soundCard"><div><small>오늘의 집중 사운드</small><b id="soundName">집중 피아노</b></div><button id="soundBtn">BGM 선택</button></section>
       <section class="missionPreview"><span>오늘의 작전 미리보기</span><b id="missionPreviewText">과제를 선택해 주세요 · 25분</b><small>목표 시간을 정하고, 집중해서 끝내기!</small></section>
-      <div class="stackActions"><button class="btn outline" id="missionShareBtn">작전 공유하기</button><button class="btn dark" id="startBtn">타임어택 START</button></div>
+      <div class="stackActions"><button class="btn outline" id="missionShareBtn">공유하기</button><button class="btn dark" id="startBtn">목표 정하고 출발하기</button></div>
     </main>
   </section>
 
@@ -85,7 +92,14 @@
   <section class="view cream" id="calendarView" data-view="calendar"><header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">MISSION JOURNAL</span><h1>작전 일지</h1></div><span></span></header><main class="safe scroll"><section class="glassCard"><h2>이번 달 기록</h2><div id="calendarList" class="historyList"></div></section><p class="muted">Google Calendar 연동은 외부 OAuth 구성이 필요한 Online Enhancement입니다. 로컬 기록은 오프라인에서도 유지됩니다.</p></main></section>
 
   <section class="view cream plannerView" id="plannerView" data-view="planner">
-    <header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">EXPLORATION PLANNER</span><h1>탐험 일정</h1></div><span></span></header>
+    <header class="safe pageHeader"><button data-nav="home" aria-label="뒤로">←</button><div><span class="kicker">READY & SET</span><h1 id="plannerPageTitle">주간 시간표</h1></div><span></span></header>
+    <section class="baseCampHero plannerBaseCampHero" aria-label="베이스캠프 탐험 준비">
+      <div class="baseCampSky" aria-hidden="true"></div>
+      <div class="baseCampSign"><small>Ready & Set</small><strong id="baseCampPlannerTitle">주간 시간표</strong><span id="baseCampPlannerCopy">이번 주도 작은 탐험을 함께해요!</span></div>
+      <div class="baseCampCharacterSlot childSlot" id="plannerChildCharacter" aria-label="아이 캐릭터"></div>
+      <img class="baseCampCompanion" id="plannerCompanionCharacter" src="./assets/companions/core6/dubi.png" alt="동행 탐험대원">
+      <div class="baseCampDesk" aria-hidden="true"><span></span></div>
+    </section>
     <main class="safe scroll plannerMain">
       <section class="plannerHero">
         <div><small>READY & SET · PLANNER</small><h2 id="plannerHeroTitle">이번 주 탐험 지도</h2><p id="plannerHeroCopy">해야 할 일과 고정 일정을 가볍게 확인해요.</p></div>
