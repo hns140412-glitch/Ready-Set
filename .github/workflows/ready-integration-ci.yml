@@ -41,6 +41,7 @@ jobs:
           node --check netlify/functions/_taky-badge/badge-ledger-projection-bridge.js
           node --check netlify/functions/_taky-badge/badge-award-ledger-cas-store.js
           node --check netlify/functions/_taky-badge/badge-family-read-access.js
+          node --check netlify/functions/_taky-badge/badge-award-calendar.js
       - name: Authenticated badge reader regression
         run: node tests/authenticated-badge-reader.test.js
 
