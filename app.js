@@ -2158,7 +2158,7 @@ $('#guideNameInput').onchange=e=>{
   state.guide.name=e.target.value.trim()||guideData().defaultName;
   save();renderSettings();renderHome();
 };
-$('[data-guide-type]').forEach(b=>b.onclick=()=>{
+$$('[data-guide-type]').forEach(b=>b.onclick=()=>{
   const prevDefault=guideData().defaultName;
   const type=b.dataset.guideType;
   state.guide.type=type;
