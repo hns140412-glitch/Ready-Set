@@ -172,7 +172,7 @@ assert.equal(confirmedCommitment.commitment_id,'summer-taekwondo');
 
 assert.equal(periodPlanner.activeSchedulePeriod('2026-07-20').period_id,'summer');
 assert.equal(periodPlanner.activeSchedulePeriod('2026-08-24').period_id,'semester');
-assert.deepEqual(periodPlanner.scheduleCommitmentsByDate('2026-07-20').map(x=>x.commitment_id),['summer-mon']);
+assert.deepEqual(periodPlanner.scheduleCommitmentsByDate('2026-07-20').map(x=>x.commitment_id),['summer-mon','summer-taekwondo']);
 assert.deepEqual(periodPlanner.scheduleCommitmentsByDate('2026-08-24').map(x=>x.commitment_id),['semester-mon']);
 const vacationCapacity=periodPlanner.allocateToday({
   date:'2026-07-20',
