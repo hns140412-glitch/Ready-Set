@@ -1,0 +1,39 @@
+{
+  "version": "2026-10-01.1",
+  "role": "READY_READ_ONLY_SHARED_EXPLORATION_CREW_AUTHORITY_CONSUMER",
+  "canonical_authority": {
+    "repository": "hns140412-glitch/TAKY",
+    "commit": "55547a7c4c859a1aae700405fdba4a302a2c20d3",
+    "canonical_path": "OS/EXPLORATION_CREW_CANONICAL.md",
+    "relationship_path": "OS/GUIDE_CHARACTER_RELATIONSHIP.md",
+    "contract_version": "CREW_PIPELINE_V1",
+    "manifest_version": "CREW_COMPOSABLE_MANIFEST_V1",
+    "runtime_schema_version": "CREW_RUNTIME_TRACE_V1"
+  },
+  "implementation_evidence": {
+    "repository": "hns140412-glitch/Snap-Pop",
+    "pr": 10,
+    "canonical_verified_head": "8ea7b985eaf792e866e4d21d174eaac824a23567",
+    "later_working_head": "13083b4056b1532da1bc5ef4de259d21204a3243",
+    "purpose": "compatibility evidence only; not Ready semantic authority"
+  },
+  "consumer": {
+    "path": "vendor/taky/explorer-crew/ready-authority-consumer-v1.js",
+    "policy": "Read canonical main-companion projection or explicit canonical handoff only. Never mutate relation, affinity, memory, behavior semantics, asset selection, or rendering.",
+    "local_projection_key": "ready_explorer_crew_authority_projection_v1"
+  },
+  "ready_presentation_boundary": {
+    "legacy_presentation_profiles": [
+      "lumi",
+      "pico",
+      "mori"
+    ],
+    "meaning": "Ready-local visual/expression compatibility profiles only",
+    "forbidden": [
+      "treating presentation profile as canonical character identity",
+      "mutating canonical relationship from Ready presentation selection",
+      "manufacturing missing crew art",
+      "substituting local guide art for an approved shared Visual ID"
+    ]
+  }
+}

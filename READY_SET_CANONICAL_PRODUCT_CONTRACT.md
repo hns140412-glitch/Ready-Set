@@ -61,6 +61,8 @@ Preserve snapshots, Outbox, retry/conflict and Parent/Child authorization. Produ
 ## UI language
 Exploration/mission/route/base-camp language is canonical. Time Attack / Focus Mode are not product identities.
 Shared expedition-member rules are external authority; Ready consumes them.
+Ready consumes the shared Exploration Crew authority from TAKY `OS/EXPLORATION_CREW_CANONICAL.md` and `OS/GUIDE_CHARACTER_RELATIONSHIP.md` as a read-only projection. Ready SHALL NOT become the relation, affinity, memory, behavior, asset-resolution or renderer owner for shared crew identity. Explicit canonical MAIN_SELECTED / MAIN_CHANGED handoff or a canonical state envelope may update Ready's local projection; unsupported/stale events fail closed.
+Ready-local `lumi / pico / mori` guide choices are presentation/expression compatibility profiles only. Changing those profiles, voice, or user-given Guide name SHALL NOT mutate the shared `character_id`, relationship state, affinity or canonical Crew state. Missing shared art SHALL NOT be manufactured or substituted with Ready-local guide art.
 
 ## Validation labels
 CODED / CI_VERIFIED / RUNTIME_VERIFIED / DEVICE_VERIFIED / PRODUCTION_VERIFIED are independent.

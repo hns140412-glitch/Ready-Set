@@ -3,7 +3,7 @@ const RELEASE=globalThis.ReadySetReleaseDescriptor;
 const CACHE='ready-set:'+RELEASE.release_id;
 const CORE=[
 './','./index.html','./styles.css','./config.js',
-'./vendor/taky/release-contract.js','./vendor/taky/pwa-update-state.js',
+'./vendor/taky/release-contract.js','./vendor/taky/pwa-update-state.js','./vendor/taky/explorer-crew/ready-authority-consumer-v1.js',
 './ready-release-v01.js','./ready-pwa-update-v01.js',
 './ready-sync-adapter-v01.js','./ready-local-first-v01.js','./ready-assignment-domain-v2.js','./ready-subject-master-v01.js','./ready-official-standard-registry-v01.js','./ready-official-unit-map-v01.js','./ready-learning-standard-matcher-v01.js','./ready-learning-reference-v01.js','./ready-learning-master-v01.js','./ready-planner-v01.js',
 './ready-hide-memory-review-v01.js','./ready-central-evidence-session-v01.js',
