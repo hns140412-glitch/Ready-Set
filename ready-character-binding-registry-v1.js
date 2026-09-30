@@ -9,8 +9,10 @@
     app_id:'READY_SET',
     slots:Object.freeze([
   {
-    "slot_id": "mission-guide",
-    "surface": "existing mission/guide presentation",
+    "slot_id": "home-primary",
+    "surface": "home",
+    "selector": "#homeGuidePortrait",
+    "text_selector": "#homeGuideLine",
     "allowed_presence_roles": [
       "MAIN",
       "CHAPTER_OWNER"
@@ -20,12 +22,75 @@
     "allow_generation": false
   },
   {
-    "slot_id": "ambient-companion",
-    "surface": "existing scene companion area",
+    "slot_id": "focus-primary",
+    "surface": "focus",
+    "selector": "#focusGuideMini",
+    "allowed_presence_roles": [
+      "MAIN",
+      "CHAPTER_OWNER"
+    ],
+    "approved_only": true,
+    "design_gate_required": true,
+    "allow_generation": false
+  },
+  {
+    "slot_id": "record-primary",
+    "surface": "record",
+    "selector": "#recordGuidePortrait",
+    "text_selector": "#guideDialogue",
+    "allowed_presence_roles": [
+      "MAIN",
+      "CHAPTER_OWNER"
+    ],
+    "approved_only": true,
+    "design_gate_required": true,
+    "allow_generation": false
+  },
+  {
+    "slot_id": "record-duo-main",
+    "surface": "record-review",
+    "selector": "#duoMainGuide",
+    "text_selector": "#duoText",
+    "allowed_presence_roles": [
+      "MAIN",
+      "CHAPTER_OWNER"
+    ],
+    "approved_only": true,
+    "design_gate_required": true,
+    "allow_generation": false
+  },
+  {
+    "slot_id": "record-duo-guest",
+    "surface": "record-review",
+    "selector": "#duoGuestGuide",
     "allowed_presence_roles": [
       "GUEST",
-      "ACTING_CREW",
-      "AMBIENT"
+      "ACTING_CREW"
+    ],
+    "approved_only": true,
+    "design_gate_required": true,
+    "allow_generation": false
+  },
+  {
+    "slot_id": "result-primary",
+    "surface": "result",
+    "selector": "#resultGuidePortrait",
+    "text_selector": "#resultLine",
+    "allowed_presence_roles": [
+      "MAIN",
+      "CHAPTER_OWNER"
+    ],
+    "approved_only": true,
+    "design_gate_required": true,
+    "allow_generation": false
+  },
+  {
+    "slot_id": "result-guest",
+    "surface": "result",
+    "selector": "#resultGuestPortrait",
+    "allowed_presence_roles": [
+      "GUEST",
+      "ACTING_CREW"
     ],
     "approved_only": true,
     "design_gate_required": true,
