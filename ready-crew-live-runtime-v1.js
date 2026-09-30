@@ -8,7 +8,8 @@
   function legacyCharacter(id,opt={}){
     const role=opt.role||'MAIN', action=opt.action||'IDLE', dialogue=opt.dialogue||'SHORT';
     const cid='LEGACY_'+APP+':'+String(id||'guide');
-    return Object.freeze({character_id:cid,visual_id:cid,presence_role:role,relationship_state:'KNOWN',action,dialogue_level:dialogue,required_roles:[],runtime_eligible:false,utterance:String(opt.utterance||''),evidence_ref:opt.evidenceRef||null,intervention_reason:opt.reason||null});
+    const relationshipState=opt.relationshipState||globalThis.TakyCrewEvidenceRuntime?.relationship?.(globalThis.localStorage,cid)||'KNOWN';
+    return Object.freeze({character_id:cid,visual_id:cid,presence_role:role,relationship_state:relationshipState,action,dialogue_level:dialogue,required_roles:[],runtime_eligible:false,utterance:String(opt.utterance||''),evidence_ref:opt.evidenceRef||null,intervention_reason:opt.reason||null});
   }
   function build(args={}){
     const list=Array.isArray(args.characters)?args.characters:[];
