@@ -26,6 +26,12 @@
       "id": "planner-week-panel",
       "selector": "#plannerWeekPanel",
       "owner": "READY_SET_PLANNER"
+    },
+    {
+      "id": "planner-companion-presence",
+      "selector": "#plannerCompanionPresence",
+      "owner": "READY_EXPEDITION_COMPANION_PRESENTATION",
+      "source": "PR_118_VERIFIED"
     }
   ],
   "responsive": {
