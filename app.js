@@ -777,7 +777,10 @@ function renderPlanner(){
   applyBaseCampCharacters($('#plannerChildCharacter'),$('#plannerCompanionCharacter'));
   window.ReadySetPlanner?.replanReadyCarryOvers?.({date:localDateKey()});
   const adminJump=document.querySelector('.plannerAdminJump');
-  if(adminJump)adminJump.hidden=!window.ReadyFamilySession?.isParent?.();
+  if(adminJump){
+    adminJump.hidden=false;
+    adminJump.setAttribute('aria-label','부모 관리');
+  }
   const snap=plannerSnapshot(), start=weekStart(new Date(plannerSelectedDate+'T12:00:00'));
   const strip=$('#plannerWeekStrip'), detail=$('#plannerWeekDetail');
   if(!strip||!detail)return;
@@ -2138,9 +2141,9 @@ $('#shareResultBtn').onclick=()=>compactShareCard('result');
   function parentProposal(text){
     const date=resolveDate(text),clock=resolveClock(text),minutes=resolveMinutes(text),kind=classify(text);
     let action='REQUEST';
-    if(kind==='EVENT'&&/추가|있어|가|외출|행사|생일|병원|여행|약속/.test(text))action='EVENT_ADD';
+    if(/옮겨|당겨|미뤄|유보|빼줘|쉬게|건너|앞당겨/.test(text))action='REPLAN_REQUEST';
+    else if(kind==='EVENT'&&/추가|있어|가|외출|행사|생일|병원|여행|약속/.test(text))action='EVENT_ADD';
     else if(/추가/.test(text))action='TASK_ADD';
-    else if(/옮겨|당겨|미뤄|유보|빼줘|쉬게|건너/.test(text))action='REPLAN_REQUEST';
     return {raw:text,action,date,clock,minutes,kind,title:stripMeta(text)};
   }
   globalThis.ReadyVoiceParser={resolveDate,resolveMinutes,resolveClock,classify,stripMeta,childDraft,parentProposal,typeLabel};
