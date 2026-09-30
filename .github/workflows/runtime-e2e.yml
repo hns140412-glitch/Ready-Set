@@ -34,6 +34,10 @@ jobs:
           echo $! > /tmp/readyset-http.pid
       - name: Run runtime flow
         run: npx playwright test tests/*.spec.js --reporter=line
+      - name: Install visual comparison dependency
+        run: python3 -m pip install --disable-pip-version-check pillow==11.3.0
+      - name: Compare runtime renders to approved Golden references
+        run: python3 tools/compare-golden.py
       - name: Upload UI audit screenshots
         if: always()
         uses: actions/upload-artifact@v4
