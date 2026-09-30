@@ -1,0 +1,45 @@
+name: Ready Design-to-UI Contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'design-to-ui.json'
+      - 'design/screens/**'
+      - 'design/layers/**'
+      - 'design/fixtures/**'
+      - 'tools/taky-design-to-ui-*.py'
+      - 'tests/design-to-ui-contract.spec.py'
+      - '.github/workflows/design-to-ui-contract.yml'
+  push:
+    branches: ['taky/design-gate-v1']
+    paths:
+      - 'design-to-ui.json'
+      - 'design/screens/**'
+      - 'design/layers/**'
+      - 'design/fixtures/**'
+      - 'tools/taky-design-to-ui-*.py'
+      - 'tests/design-to-ui-contract.spec.py'
+      - '.github/workflows/design-to-ui-contract.yml'
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python syntax
+        run: |
+          python -m py_compile tools/taky-design-to-ui-validate.py
+          python -m py_compile tools/taky-design-to-ui-receipt.py
+          python -m py_compile tests/design-to-ui-contract.spec.py
+      - name: Validate Ready Design-to-UI adoption
+        run: python tests/design-to-ui-contract.spec.py
+      - name: Upload contract validation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ready-design-to-ui-contract
+          path: ui-audit/design-to-ui-contract-validation.json
+          if-no-files-found: error
+          retention-days: 3
