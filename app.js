@@ -931,7 +931,41 @@ function renderPlanner(){
 const SCHEDULE_WEEKDAY_NAMES=['일','월','화','수','목','금','토'];
 const BUFFER_KIND_LABELS={TRAVEL:'이동',MEAL:'식사',PREPARATION:'준비',REST:'휴식',SAFETY:'안전 여유',OTHER:'기타'};
 let pendingScheduleVoiceAction=null;
+let pendingScheduleConflictAction=null;
 let scheduleVoiceRecognition=null;
+
+function clearScheduleConflictReview(){
+  pendingScheduleConflictAction=null;
+  const root=$('#scheduleConflictReview'),list=$('#scheduleConflictList');
+  if(root)root.hidden=true;
+  if(list)list.innerHTML='';
+}
+function showScheduleConflictReview(kind,input,conflicts=[]){
+  const root=$('#scheduleConflictReview'),list=$('#scheduleConflictList');
+  if(!root||!list)return;
+  pendingScheduleConflictAction={kind,input:{...input},conflicts:[...conflicts]};
+  list.innerHTML=conflicts.map(x=>`<div class="scheduleConflictItem"><b>${escapeHtml(x.type==='PERIOD_OVERLAP'?'기간 겹침':x.type==='LIFE_BUFFER_OVERLAP'?'생활시간 겹침':'일정 겹침')}</b><small>${escapeHtml(x.message||x.title||'겹치는 시간이 있습니다.')}</small></div>`).join('');
+  root.hidden=false;
+  root.scrollIntoView?.({block:'nearest',behavior:'smooth'});
+}
+function saveAcknowledgedScheduleConflict(){
+  const pending=pendingScheduleConflictAction;
+  if(!pending||!requireParentUi())return;
+  try{
+    if(pending.kind==='PERIOD'){
+      const period=window.ReadySetPlanner.upsertSchedulePeriod({...pending.input,conflict_acknowledged:true});
+      toast(`${period.name} 기간을 겹침 확인 후 저장했어요.`);
+      $('#schedulePeriodId').value=period.period_id;
+    }else if(pending.kind==='COMMITMENT'){
+      const item=window.ReadySetPlanner.upsertScheduleCommitment({...pending.input,conflict_acknowledged:true});
+      toast(`${item.title} 일정을 겹침 확인 후 저장했어요.`);
+      clearScheduleForm();
+    }
+    clearScheduleConflictReview();
+    renderPlannerAdmin();renderPlanner();
+  }catch(error){toast(error?.message||'시간표를 저장하지 못했어요.')}
+}
+
 
 function toggleScheduleModeFields(){
   const weekly=$('#scheduleRecurring')?.checked===true;
@@ -939,6 +973,7 @@ function toggleScheduleModeFields(){
   if($('#scheduleDateField'))$('#scheduleDateField').hidden=weekly;
 }
 function clearSchedulePeriodForm(){
+  clearScheduleConflictReview();
   if(!$('#schedulePeriodId'))return;
   $('#schedulePeriodId').value='';
   $('#schedulePeriodName').value='';
@@ -948,6 +983,7 @@ function clearSchedulePeriodForm(){
   renderSchedulePeriodCalendar(plannerSnapshot());
 }
 function clearScheduleForm(){
+  clearScheduleConflictReview();
   $('#scheduleId').value='';
   $('#scheduleTitle').value='';
   $('#scheduleCategory').value='';
