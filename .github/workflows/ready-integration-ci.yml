@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - main
+      - taky/ready-family-badge-integrated-2026-09-26
 
 jobs:
   semantic-contracts:
@@ -32,6 +33,16 @@ jobs:
         run: |
           node --check netlify/functions/ready-family-auth-core.js
           node --check netlify/functions/ready-sync.mjs
+      - name: Authenticated badge reader syntax
+        run: |
+          node --check netlify/functions/badge-reader-server-core.js
+          node --check netlify/functions/badge-read.mjs
+          node --check netlify/functions/_taky-badge/badge-reaward-progress.js
+          node --check netlify/functions/_taky-badge/badge-ledger-projection-bridge.js
+          node --check netlify/functions/_taky-badge/badge-award-ledger-cas-store.js
+          node --check netlify/functions/_taky-badge/badge-family-read-access.js
+      - name: Authenticated badge reader regression
+        run: node tests/authenticated-badge-reader.test.js
 
   learning-master-contract:
     runs-on: ubuntu-latest
