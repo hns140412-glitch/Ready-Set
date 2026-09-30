@@ -51,5 +51,12 @@ test('Schedule Commitment remains editable while legacy Parent allocation contro
   await expect(page.locator('#scheduleVoicePreview')).toContainText('아직 저장되지 않음');
   await page.locator('#scheduleVoiceApplyBtn').click();
   expect(await page.evaluate(()=>window.ReadySetPlanner.snapshot().schedule_commitments.filter(x=>x.period_id&&x.title==='영어학원').length)).toBe(3);
+
+  await page.locator('#scheduleVoiceText').fill('겨울방학 12월 24일부터 2027년 2월 28일까지');
+  await page.locator('#scheduleVoicePreviewBtn').click();
+  await expect(page.locator('#scheduleVoicePreview')).toContainText('겨울방학');
+  await page.locator('#scheduleVoiceApplyBtn').click();
+  const periodNames=await page.evaluate(()=>window.ReadySetPlanner.snapshot().schedule_periods.map(x=>x.name).sort());
+  expect(periodNames).toEqual(['겨울방학','여름방학']);
   // SUPERSEDED_BY_CURRENT_TRUTH: Parent no longer sets minutes, preferred days, required_today, or DATED TODO.
 });
