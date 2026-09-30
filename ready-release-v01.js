@@ -6,7 +6,7 @@
     runtime_version:'2026.09.07-rev07-b',
     data_schema_version:5,
     contract_version:1,
-    release_id:'ready-set-1.0.0-alpha.1-r4',
+    release_id:'ready-set-1.0.0-alpha.1-r5',
     release_channel:'alpha',
     release_state:'PRE_RELEASE__DEVICE_PRODUCTION_UNVERIFIED__DEPLOYMENT_HOLD',
     release_id_policy:'ROTATE_ON_FROZEN_CANDIDATE_OR_SEMANTIC_RELEASE_CHANGE',
