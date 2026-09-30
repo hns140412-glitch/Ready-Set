@@ -14,28 +14,32 @@
       "authority_ref": "APPROVED_READY_HOME_MOCKUP",
       "approved_reference": "design/golden/home.png",
       "approved_sha256": "",
-      "snapshot_name": "home.png"
+      "snapshot_name": "home.png",
+      "actual_snapshot": "01-home.png"
     },
     {
       "id": "planner_week",
       "authority_ref": "APPROVED_READY_WEEKLY_PLANNER_MOCKUP",
       "approved_reference": "design/golden/planner-week.png",
       "approved_sha256": "",
-      "snapshot_name": "planner-week.png"
+      "snapshot_name": "planner-week.png",
+      "actual_snapshot": "03-planner-week.png"
     },
     {
       "id": "planner_day",
       "authority_ref": "APPROVED_READY_DAILY_PLANNER_MOCKUP",
       "approved_reference": "design/golden/planner-day.png",
       "approved_sha256": "",
-      "snapshot_name": "planner-day.png"
+      "snapshot_name": "planner-day.png",
+      "actual_snapshot": "07-planner-day.png"
     },
     {
       "id": "focus",
       "authority_ref": "APPROVED_READY_FOCUS_MOCKUP",
       "approved_reference": "design/golden/focus.png",
       "approved_sha256": "",
-      "snapshot_name": "focus.png"
+      "snapshot_name": "focus.png",
+      "actual_snapshot": "08-focus.png"
     }
   ],
   "status": "BLOCKED_PENDING_APPROVED_REFERENCE_IMPORT",
@@ -57,5 +61,6 @@
       "source_sha256": "733aa39ea2972fffa04362994cb1218c60e34eb1558a86816a2388dd4f6e9ad5",
       "status": "HASH_RECEIPT_VERIFIED_BINARY_IMPORT_OPEN"
     }
-  }
+  },
+  "visual_distance_max": 0.18
 }
