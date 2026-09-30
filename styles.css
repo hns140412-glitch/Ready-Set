@@ -110,3 +110,32 @@
 .plannerHero>div:first-child{min-width:0;flex:1}
 .plannerHeroActions{flex:0 0 auto;align-items:stretch}
 .plannerTodayJump,.plannerAdminJump{flex:0 0 auto;min-width:58px;white-space:nowrap;word-break:keep-all;writing-mode:horizontal-tb}
+
+
+/* MOBILE FOCUS FIT — 2026-09-30
+   Preserve the approved Focus composition while keeping primary timer controls
+   inside a short iPhone-class viewport after the REV_07 session panel is injected. */
+@media (max-width:420px) and (max-height:900px){
+  #focusView .focusHeader{min-height:52px;padding-top:calc(6px + var(--safeT))}
+  #focusView .focusMain{padding-bottom:calc(8px + var(--safeB))}
+  #focusView .focusTitle{margin-top:-8px}
+  #focusView .focusTitle h1{margin-bottom:6px}
+  #focusView .focusTitle h1:before{font-size:clamp(38px,11vw,48px);line-height:.82}
+  #focusView .missionPill{padding:7px 13px;font-size:11px}
+  #focusView .clockHero{width:min(64vw,250px);margin:8px auto 7px;border-width:6px}
+  #focusView #readyRev07Panel{margin:7px 0 3px;padding:9px 11px;border-radius:18px}
+  #focusView #readyRev07Panel small{font-size:9px}
+  #focusView #readyRev07Panel h3{margin:2px 0 6px;font-size:14px}
+  #focusView #readyRev07Panel .rev07-row{gap:6px}
+  #focusView #readyRev07Panel .rev07-row button{padding:7px 10px;font-size:11px}
+  #focusView #readyRev07Panel .rev07-tasks{margin-top:6px;gap:4px}
+  #focusView #readyRev07Panel .rev07-task{padding:6px 9px;font-size:11px}
+  #focusView .controlPanel{border-radius:24px;padding:13px 14px}
+  #focusView .timeStrip b{font-size:clamp(26px,8vw,36px)}
+  #focusView .timeStrip>div:last-child b{font-size:19px}
+  #focusView .recButton{width:48px;height:48px}
+  #focusView .focusMeta{margin-top:8px;padding:9px 11px}
+  #focusView .focusActions{margin-top:8px}
+  #focusView .focusActions button{min-height:48px}
+  #focusView .miniStats{margin-top:8px}
+}
