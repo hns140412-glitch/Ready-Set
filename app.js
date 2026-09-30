@@ -179,12 +179,14 @@ function sharedCrewProjection(){
 function syncSharedCrewAuthority({consumeUrl=false}={}){
   const api=window.ReadyExplorerCrewAuthorityConsumer;
   if(!api)return {ok:false,projection:{status:'UNAVAILABLE',character_id:null}};
-  let result={ok:true,consumed:false};
+  const canonicalResult=api.consumeCanonicalStore?.(localStorage)||{ok:true,consumed:false};
+  let result=canonicalResult;
   if(consumeUrl){
-    result=api.consumeHandoffUrl(location.href,{
+    const handoff=api.consumeHandoffUrl(location.href,{
       storage:localStorage,
       replaceUrl:clean=>history.replaceState(null,'',clean)
     });
+    if(handoff.consumed||handoff.ok===false)result=handoff;
   }
   const projection=api.snapshot(localStorage);
   api.syncHost(document.documentElement,projection);
