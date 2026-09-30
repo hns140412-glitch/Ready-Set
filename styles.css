@@ -102,3 +102,11 @@
 .captureReviewDraft small{margin-top:4px;color:var(--muted);line-height:1.45}
 .captureReviewDraft .captureWarnings{color:#8b5a2b}
 
+
+
+/* MOBILE VISUAL REGRESSION FIX — 2026-09-30
+   Reserve hero copy clearance for the absolute guide card and keep Planner actions horizontal. */
+.heroBlock{padding-bottom:82px}
+.plannerHero>div:first-child{min-width:0;flex:1}
+.plannerHeroActions{flex:0 0 auto;align-items:stretch}
+.plannerTodayJump,.plannerAdminJump{flex:0 0 auto;min-width:58px;white-space:nowrap;word-break:keep-all;writing-mode:horizontal-tb}
