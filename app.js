@@ -171,6 +171,18 @@ function applyGuide(el,type=state.guide.type){
   el.setAttribute('data-guide',type);
 }
 function guideData(type=state.guide.type){return GUIDE_TYPES[type]||GUIDE_TYPES.lumi}
+const expeditionCompanionAssets=globalThis.CharacterFormationAssetRuntime?.create({
+  manifestUrl:'./assets/character-formation/asset-manifest.json'
+});
+const expeditionCompanionPresenter=globalThis.ReadyExpeditionCompanionPresentation?.create({
+  getState:()=>state,
+  query:$,
+  roster:globalThis.CharacterFormationJourneyRuntime?.CREW||[],
+  assetRegistry:expeditionCompanionAssets
+})||null;
+expeditionCompanionAssets?.load?.().then(()=>{
+  if($('#plannerView')?.classList.contains('active'))expeditionCompanionPresenter?.renderPlanner();
+}).catch(()=>{});
 function emitReadyCrewScene(surface,utterance,{action='IDLE',dialogue='SHORT',guestType=null,evidenceRef=null,reason=null,behaviorState={}}={}){
   const rt=globalThis.TakyCrewLiveRuntime;
   if(!rt?.legacyCharacter||!rt?.emit)return false;
@@ -973,6 +985,7 @@ function renderPlanner(){
   $('#plannerDayTitle').textContent=`${dd.getMonth()+1}월 ${dd.getDate()}일 탐험`;
   $('#plannerDayCount').textContent=`${selectedItems.length}개`;
   $('#plannerHeroTitle').textContent=plannerTab==='week'?'이번 주 탐험 지도':'오늘의 탐험 루트';
+  expeditionCompanionPresenter?.renderPlanner();
 }
 
 
