@@ -113,3 +113,14 @@
 #plannerView .plannerCompanionPortrait{width:47px;height:47px;background-repeat:no-repeat;background-position:center bottom;background-size:contain;background-color:transparent}
 #plannerView .plannerCompanionPresence small{display:block;max-width:72px;font-size:10px;font-weight:900;color:#253e33;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;text-shadow:0 1px 8px rgba(255,252,240,.85)}
 @media(max-width:350px){#plannerView .plannerCompanionPresence{flex-basis:53px}#plannerView .plannerCompanionPortrait{width:40px;height:40px}}
+
+
+/* Verified Goal companion slot reused from Ready PR #118; no legacy Guide fallback. */
+#missionView #missionCompanionCard[hidden]{display:none !important}
+#missionView #missionCompanionPortrait{background-size:contain;background-position:center bottom;background-repeat:no-repeat;background-color:transparent}
+#missionView .missionCompanionCard{display:grid;grid-template-columns:68px minmax(0,1fr);align-items:center;gap:12px;padding:12px;margin:0 0 12px;border-radius:18px;border:1px solid rgba(255,255,255,.65);background:rgba(255,251,234,.82);-webkit-backdrop-filter:blur(9px);backdrop-filter:blur(9px)}
+#missionView .missionCompanionCard .guidePortrait{width:68px;height:68px;border-radius:12px}
+#missionView .missionCompanionCopy{min-width:0}
+#missionView .missionCompanionCopy small{font-size:10px;font-weight:850;color:#715a36}
+#missionView .missionCompanionCopy p{margin:5px 0 0;font-size:12px;line-height:1.5;font-weight:800;color:#293c32}
+#missionView .missionCompanionCopy p[hidden]{display:none !important}
