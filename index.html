@@ -146,6 +146,38 @@
         <div id="scheduleAdminList" class="adminList"></div>
       </section>
 
+      <section class="glassCard adminCard" id="lifeBufferCard">
+        <div class="adminSectionHead"><div><small>LIFE BUFFER</small><h2>생활시간 · 여유시간</h2></div><button class="miniAction" id="bufferClearBtn">새 버퍼</button></div>
+        <p class="muted">이동·식사·준비·휴식·안전여유를 실제 학습 가능시간에서 제외합니다. 부모가 확인한 시간만 Planner 제약조건으로 사용합니다.</p>
+        <input id="bufferId" type="hidden">
+        <div class="adminGrid two">
+          <label class="inputBlock">종류<select id="bufferKind"><option value="TRAVEL">이동</option><option value="MEAL">식사</option><option value="PREPARATION">준비</option><option value="REST">휴식</option><option value="SAFETY">안전 여유</option><option value="OTHER">기타</option></select></label>
+          <label class="inputBlock">이름<input id="bufferTitle" placeholder="예) 영어학원 이동"></label>
+        </div>
+        <label class="inputBlock">방식<select id="bufferMode"><option value="AROUND_COMMITMENT">고정 일정 앞/뒤에 붙이기</option><option value="ABSOLUTE">시간을 직접 지정</option></select></label>
+        <div id="bufferLinkedFields">
+          <label class="inputBlock">연결 일정<select id="bufferLinkedCommitment"></select></label>
+          <div class="adminGrid two">
+            <label class="inputBlock">위치<select id="bufferSide"><option value="BEFORE">일정 전</option><option value="AFTER">일정 후</option></select></label>
+            <label class="inputBlock">분<input id="bufferMinutes" type="number" min="1" max="240" value="20"></label>
+          </div>
+        </div>
+        <div id="bufferAbsoluteFields" hidden>
+          <label class="adminToggle"><input id="bufferWeekly" type="checkbox"><span><b>기간 주간 반복</b><small>방학·학기중 기간의 같은 요일마다 적용합니다.</small></span></label>
+          <div class="adminGrid two" id="bufferWeeklyFields">
+            <label class="inputBlock">적용 기간<select id="bufferPeriod"></select></label>
+            <label class="inputBlock">요일<select id="bufferWeekday"><option value="1">월</option><option value="2">화</option><option value="3">수</option><option value="4">목</option><option value="5">금</option><option value="6">토</option><option value="0">일</option></select></label>
+          </div>
+          <label class="inputBlock" id="bufferDateField">날짜<input id="bufferDate" type="date"></label>
+          <div class="adminGrid two">
+            <label class="inputBlock">시작<input id="bufferStart" type="time"></label>
+            <label class="inputBlock">종료<input id="bufferEnd" type="time"></label>
+          </div>
+        </div>
+        <button class="btn dark" id="saveBufferBtn">생활시간 저장</button>
+        <div id="bufferAdminList" class="adminList"></div>
+      </section>
+
       <section class="glassCard">
         <div class="adminSectionHead"><div><small>CONFIRMED AVAILABILITY</small><h2>학습 가능 시간</h2></div><button class="miniAction" id="availabilityClearBtn">새 시간</button></div>
         <p class="muted">부모는 가능한 시간만 확인합니다. 실제 숙제 날짜 배정은 Planner가 결정합니다.</p>

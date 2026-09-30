@@ -809,7 +809,7 @@ function weekStart(base=new Date()){
 }
 function plannerSnapshot(){
   const raw=window.ReadySetPlanner?.snapshot?.()||{
-    dated_todos:[],schedule_periods:[],schedule_commitments:[],daily_availability_windows:[],carry_over_queue:[]};
+    dated_todos:[],schedule_periods:[],schedule_commitments:[],schedule_buffers:[],daily_availability_windows:[],carry_over_queue:[]};
   const scope=centralPlannerScope();
   return {...raw,dated_todos:(raw.dated_todos||[]).filter(x=>
     x.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT'||
@@ -835,14 +835,20 @@ function plannerItemsForDate(date,snap=plannerSnapshot()){
   const materialized=window.ReadySetPlanner?.scheduleCommitmentsByDate?.(date)
     ||(snap.schedule_commitments||[]).filter(x=>String(x.start_at||'').slice(0,10)===date);
   const commitments=materialized.map(x=>({
-    kind:'SCHEDULE',label:x.title,state:'FIXED',minutes:null,order:-1,
+    kind:'SCHEDULE',label:x.title,state:'FIXED',minutes:null,order:-2,
     time:String(x.start_at||'').slice(11,16),
     meta:x.active_period_name?`${x.active_period_name} · 고정 일정`:'고정 일정'
   }));
-  return [...commitments,...todos].sort((a,b)=>(a.order??999)-(b.order??999));
+  const bufferRows=window.ReadySetPlanner?.scheduleBuffersByDate?.(date)||[];
+  const buffers=bufferRows.map(x=>({
+    kind:'BUFFER',label:x.title,state:'BUFFER',minutes:null,order:-1,
+    time:new Date(x.start_at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false}),
+    meta:`${BUFFER_KIND_LABELS[x.kind]||'생활시간'}${x.linked_title?` · ${x.linked_title} ${x.side==='BEFORE'?'전':'후'}`:''}`
+  }));
+  return [...commitments,...buffers,...todos].sort((a,b)=>(a.order??999)-(b.order??999)||String(a.time||'').localeCompare(String(b.time||'')));
 }
 function plannerStateLabel(v){
-  return ({PLANNED:'예정',IN_PROGRESS:'진행',COMPLETED:'완료',PARTIAL:'일부 남음',DEFERRED:'다음에',WAITING_FOR_PARENT:'부모 도움',BLOCKED:'막힘',FIXED:'고정'})[v]||v;
+  return ({PLANNED:'예정',IN_PROGRESS:'진행',COMPLETED:'완료',PARTIAL:'일부 남음',DEFERRED:'다음에',WAITING_FOR_PARENT:'부모 도움',BLOCKED:'막힘',FIXED:'고정',BUFFER:'생활시간'})[v]||v;
 }
 function renderPlanner(){
   plannerSelectedDate=plannerSelectedDate||localDateKey();
@@ -873,11 +879,11 @@ function renderPlanner(){
   });
   const selectedItems=plannerItemsForDate(plannerSelectedDate,snap);
   detail.innerHTML=selectedItems.length?selectedItems.map(x=>`
-    <article class="plannerWeekItem ${x.kind==='SCHEDULE'?'fixed':''}">
+    <article class="plannerWeekItem ${x.kind==='SCHEDULE'?'fixed':x.kind==='BUFFER'?'buffer':''}">
       <span class="plannerDot"></span><div><b>${escapeHtml(x.label)}</b><small>${x.time?x.time+' · ':''}${x.meta}${x.minutes?' · '+x.minutes+'분':''}</small></div><em>${plannerStateLabel(x.state)}</em>
     </article>`).join(''):`<div class="plannerEmpty"><b>비어 있는 날이에요.</b><small>필요한 탐험만 가볍게 추가해요.</small></div>`;
   const day=$('#plannerDayTimeline'); day.innerHTML=selectedItems.length?selectedItems.map((x,i)=>`
-    <article class="plannerRouteItem"><i>${String(i+1).padStart(2,'0')}</i><div><small>${x.kind==='SCHEDULE'?'FIXED ROUTE':'MISSION'}</small><b>${escapeHtml(x.label)}</b><span>${x.time?x.time+' · ':''}${x.minutes?x.minutes+'분 · ':''}${plannerStateLabel(x.state)}</span></div></article>`).join(''):`<div class="plannerEmpty tall"><b>오늘 예정된 탐험이 없어요.</b><small>Mission에서 오늘 할 일을 골라 시작할 수 있어요.</small></div>`;
+    <article class="plannerRouteItem"><i>${String(i+1).padStart(2,'0')}</i><div><small>${x.kind==='SCHEDULE'?'FIXED ROUTE':x.kind==='BUFFER'?'LIFE BUFFER':'MISSION'}</small><b>${escapeHtml(x.label)}</b><span>${x.time?x.time+' · ':''}${x.minutes?x.minutes+'분 · ':''}${plannerStateLabel(x.state)}</span></div></article>`).join(''):`<div class="plannerEmpty tall"><b>오늘 예정된 탐험이 없어요.</b><small>Mission에서 오늘 할 일을 골라 시작할 수 있어요.</small></div>`;
   const dd=new Date(plannerSelectedDate+'T12:00:00');
   $('#plannerDayTitle').textContent=`${dd.getMonth()+1}월 ${dd.getDate()}일 탐험`;
   $('#plannerDayCount').textContent=`${selectedItems.length}개`;
@@ -886,6 +892,7 @@ function renderPlanner(){
 
 
 const SCHEDULE_WEEKDAY_NAMES=['일','월','화','수','목','금','토'];
+const BUFFER_KIND_LABELS={TRAVEL:'이동',MEAL:'식사',PREPARATION:'준비',REST:'휴식',SAFETY:'안전 여유',OTHER:'기타'};
 let pendingScheduleVoiceAction=null;
 let scheduleVoiceRecognition=null;
 
@@ -1123,6 +1130,86 @@ function applyScheduleVoiceAction(){
   renderPlannerAdmin();renderPlanner();
 }
 
+function toggleBufferFields(){
+  const linked=$('#bufferMode')?.value!=='ABSOLUTE';
+  if($('#bufferLinkedFields'))$('#bufferLinkedFields').hidden=!linked;
+  if($('#bufferAbsoluteFields'))$('#bufferAbsoluteFields').hidden=linked;
+  const weekly=$('#bufferWeekly')?.checked===true;
+  if($('#bufferWeeklyFields'))$('#bufferWeeklyFields').hidden=!weekly;
+  if($('#bufferDateField'))$('#bufferDateField').hidden=weekly;
+}
+function clearBufferForm(){
+  if(!$('#bufferId'))return;
+  $('#bufferId').value='';
+  $('#bufferKind').value='TRAVEL';
+  $('#bufferTitle').value='';
+  $('#bufferMode').value='AROUND_COMMITMENT';
+  $('#bufferSide').value='BEFORE';
+  $('#bufferMinutes').value='20';
+  $('#bufferWeekly').checked=false;
+  $('#bufferWeekday').value='1';
+  $('#bufferDate').value=localDateKey();
+  $('#bufferStart').value='';
+  $('#bufferEnd').value='';
+  toggleBufferFields();
+}
+function renderBufferAdmin(snap=plannerSnapshot()){
+  const root=$('#bufferAdminList');if(!root)return;
+  const commitments=snap.schedule_commitments||[];
+  const periods=snap.schedule_periods||[];
+  const linked=$('#bufferLinkedCommitment');
+  if(linked){
+    const previous=linked.value;
+    linked.innerHTML=commitments.map(x=>{
+      const weekly=x.recurrence==='WEEKLY';
+      const when=weekly?`매주 ${SCHEDULE_WEEKDAY_NAMES[Number(x.weekday)]} ${x.start}–${x.end}`:String(x.start_at||'').slice(0,16).replace('T',' ');
+      return `<option value="${x.commitment_id}">${escapeHtml(x.title)} · ${when}</option>`;
+    }).join('');
+    if(commitments.some(x=>x.commitment_id===previous))linked.value=previous;
+  }
+  const periodSelect=$('#bufferPeriod');
+  if(periodSelect){
+    const previous=periodSelect.value;
+    periodSelect.innerHTML=periods.map(p=>`<option value="${p.period_id}">${escapeHtml(p.name)} · ${p.valid_from}~${p.valid_until}</option>`).join('');
+    if(periods.some(p=>p.period_id===previous))periodSelect.value=previous;
+    else if(periods[0])periodSelect.value=periods[0].period_id;
+  }
+  const byCommitment=new Map(commitments.map(x=>[x.commitment_id,x]));
+  root.innerHTML=(snap.schedule_buffers||[]).length?[...snap.schedule_buffers].map(x=>{
+    const kind=BUFFER_KIND_LABELS[x.kind]||'기타';
+    let detail='';
+    if(x.mode==='AROUND_COMMITMENT'){
+      const linkedItem=byCommitment.get(x.linked_commitment_id);
+      detail=`${escapeHtml(linkedItem?.title||'연결 일정')} ${x.side==='BEFORE'?'전':'후'} · ${Number(x.minutes)||0}분`;
+    }else if(x.recurrence==='WEEKLY'){
+      const period=periods.find(p=>p.period_id===x.period_id);
+      detail=`${escapeHtml(period?.name||'기본')} · 매주 ${SCHEDULE_WEEKDAY_NAMES[Number(x.weekday)]} · ${escapeHtml(x.start||'')} → ${escapeHtml(x.end||'')}`;
+    }else detail=`${escapeHtml(x.date||'')} · ${escapeHtml(x.start||'')} → ${escapeHtml(x.end||'')}`;
+    return `<div class="adminListItem bufferAdminItem"><button type="button" data-edit-buffer="${x.buffer_id}"><span><b>${escapeHtml(x.title||kind)}</b><small>${kind} · ${detail}</small></span><strong>수정</strong></button><button class="miniAction" type="button" data-delete-buffer="${x.buffer_id}">삭제</button></div>`;
+  }).join(''):'<div class="plannerEmpty"><b>등록된 생활시간이 없어요.</b><small>필요한 이동·식사·준비·휴식·안전여유만 부모가 확인해 추가합니다.</small></div>';
+  toggleBufferFields();
+}
+function editBuffer(id){
+  const x=(plannerSnapshot().schedule_buffers||[]).find(v=>v.buffer_id===id);if(!x)return;
+  $('#bufferId').value=x.buffer_id;
+  $('#bufferKind').value=x.kind||'OTHER';
+  $('#bufferTitle').value=x.title||'';
+  $('#bufferMode').value=x.mode||'ABSOLUTE';
+  if(x.mode==='AROUND_COMMITMENT'){
+    $('#bufferLinkedCommitment').value=x.linked_commitment_id||'';
+    $('#bufferSide').value=x.side||'BEFORE';
+    $('#bufferMinutes').value=String(x.minutes||20);
+  }else{
+    $('#bufferWeekly').checked=x.recurrence==='WEEKLY';
+    $('#bufferPeriod').value=x.period_id||'';
+    $('#bufferWeekday').value=String(x.weekday??1);
+    $('#bufferDate').value=x.date||localDateKey();
+    $('#bufferStart').value=x.start||'';
+    $('#bufferEnd').value=x.end||'';
+  }
+  toggleBufferFields();
+}
+
 function clearAvailabilityForm(){
   $('#availabilityId').value='';
   $('#availabilityDate').value=localDateKey();
@@ -1137,6 +1224,7 @@ function renderPlannerAdmin(){
   const scheduleRoot=$('#scheduleAdminList');
   if(!scheduleRoot)return;
   renderSchedulePeriodControls(snap);
+  renderBufferAdmin(snap);
 
   const availabilityRoot=$('#availabilityAdminList');
   if(availabilityRoot){
@@ -1199,6 +1287,9 @@ document.getElementById('scheduleVoiceBtn')?.addEventListener('click',()=>{
   scheduleVoiceRecognition.onend=()=>{$('#scheduleVoiceBtn').textContent='말하기';scheduleVoiceRecognition=null};
   try{scheduleVoiceRecognition.start()}catch{scheduleVoiceRecognition=null;$('#scheduleVoiceBtn').textContent='말하기'}
 });
+document.getElementById('bufferClearBtn')?.addEventListener('click',clearBufferForm);
+document.getElementById('bufferMode')?.addEventListener('change',toggleBufferFields);
+document.getElementById('bufferWeekly')?.addEventListener('change',toggleBufferFields);
 document.getElementById('availabilityClearBtn')?.addEventListener('click',clearAvailabilityForm);
 document.addEventListener('click',e=>{
   const childConfirm=e.target.closest('[data-child-fact-confirm]');
@@ -1242,6 +1333,14 @@ document.addEventListener('click',e=>{
     const removed=window.ReadySetPlanner?.removeScheduleCommitment?.(sd.dataset.deleteSchedule);
     toast(removed?.ok?'고정 일정 타일을 삭제했어요.':'고정 일정을 삭제하지 못했어요.');
     clearScheduleForm();renderPlannerAdmin();renderPlanner();return;
+  }
+  const be=e.target.closest('[data-edit-buffer]');if(be){editBuffer(be.dataset.editBuffer);return;}
+  const bd=e.target.closest('[data-delete-buffer]');
+  if(bd){
+    if(!requireParentUi())return;
+    const removed=window.ReadySetPlanner?.removeScheduleBuffer?.(bd.dataset.deleteBuffer);
+    toast(removed?.ok?'생활시간을 삭제했어요. Planner가 다음 계산부터 제외합니다.':'생활시간을 삭제하지 못했어요.');
+    clearBufferForm();renderPlannerAdmin();renderPlanner();return;
   }
   const s=e.target.closest('[data-edit-schedule]'); if(s){editSchedule(s.dataset.editSchedule);return;}
   const a=e.target.closest('[data-edit-availability]'); if(a){editAvailability(a.dataset.editAvailability);return;}
@@ -1314,6 +1413,34 @@ document.getElementById('saveScheduleBtn')?.addEventListener('click',()=>{
     toast(weekly?'주간 고정 시간표 타일을 저장했어요.':'고정 일정을 저장했어요.');
     clearScheduleForm();renderPlannerAdmin();renderPlanner();
   }catch(error){toast(error?.message||'고정 일정을 저장하지 못했어요.')}
+});
+document.getElementById('saveBufferBtn')?.addEventListener('click',()=>{
+  if(!requireParentUi())return;
+  const mode=$('#bufferMode').value,kind=$('#bufferKind').value;
+  const input={
+    buffer_id:$('#bufferId').value||undefined,
+    kind,
+    title:$('#bufferTitle').value.trim()||BUFFER_KIND_LABELS[kind]||'생활시간',
+    mode,
+    confirmed:true,parent_editable:true,source:'PARENT_ADMIN_UI'
+  };
+  if(mode==='AROUND_COMMITMENT'){
+    const linked_commitment_id=$('#bufferLinkedCommitment').value;
+    const minutes=Number($('#bufferMinutes').value);
+    if(!linked_commitment_id||!Number.isFinite(minutes)||minutes<=0){toast('연결 일정과 버퍼 시간을 확인해 주세요.');return}
+    Object.assign(input,{linked_commitment_id,side:$('#bufferSide').value,minutes});
+  }else{
+    const weekly=$('#bufferWeekly').checked,start=$('#bufferStart').value,end=$('#bufferEnd').value;
+    const date=$('#bufferDate').value,period_id=$('#bufferPeriod').value;
+    if(!start||!end||(weekly?!period_id:!date)){toast('생활시간의 날짜/기간과 시간을 확인해 주세요.');return}
+    if(end<=start){toast('종료 시간은 시작 시간보다 늦어야 해요.');return}
+    Object.assign(input,{date,start,end,recurrence:weekly?'WEEKLY':null,weekday:weekly?Number($('#bufferWeekday').value):null,period_id:weekly?period_id:null});
+  }
+  try{
+    window.ReadySetPlanner.upsertScheduleBuffer(input);
+    toast('생활시간을 저장했어요. Planner가 실제 가용시간에서 제외합니다.');
+    clearBufferForm();renderPlannerAdmin();renderPlanner();
+  }catch(error){toast(error?.message||'생활시간을 저장하지 못했어요.')}
 });
 document.getElementById('saveAvailabilityBtn')?.addEventListener('click',()=>{
   if(!requireParentUi())return;

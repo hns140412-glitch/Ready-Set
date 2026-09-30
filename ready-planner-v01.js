@@ -24,6 +24,7 @@
     storage_backend:'LOCALSTORAGE_COMPATIBILITY_SCAFFOLD',
     schedule_periods:[],
     schedule_commitments:[],
+    schedule_buffers:[],
     daily_availability_windows:[],
     homework_templates:[],
     dated_todos:[],
@@ -51,6 +52,7 @@
       schema_version:SCHEMA_VERSION,
       schedule_periods:Array.isArray(x.schedule_periods)?x.schedule_periods:[],
       schedule_commitments:Array.isArray(x.schedule_commitments)?x.schedule_commitments:[],
+      schedule_buffers:Array.isArray(x.schedule_buffers)?x.schedule_buffers:[],
       daily_availability_windows:Array.isArray(x.daily_availability_windows)?x.daily_availability_windows:[],
       homework_templates:Array.isArray(x.homework_templates)?x.homework_templates:[],
       dated_todos:Array.isArray(x.dated_todos)?x.dated_todos:[],
@@ -121,9 +123,12 @@
         const before=s.schedule_periods.length;
         s.schedule_periods=s.schedule_periods.filter(x=>x.period_id!==target);
         if(before===s.schedule_periods.length)return {ok:false,reason:'PERIOD_NOT_FOUND'};
-        const linked=s.schedule_commitments.filter(x=>x.period_id===target).length;
+        const removedCommitmentIds=new Set(s.schedule_commitments.filter(x=>x.period_id===target).map(x=>x.commitment_id));
+        const linked=removedCommitmentIds.size;
         s.schedule_commitments=s.schedule_commitments.filter(x=>x.period_id!==target);
-        return {ok:true,period_id:target,removed_commitments:linked};
+        const beforeBuffers=s.schedule_buffers.length;
+        s.schedule_buffers=s.schedule_buffers.filter(x=>x.period_id!==target&&!removedCommitmentIds.has(x.linked_commitment_id));
+        return {ok:true,period_id:target,removed_commitments:linked,removed_buffers:beforeBuffers-s.schedule_buffers.length};
       });
     }
     function scheduleCommitmentsByDateFromState(state,date){
@@ -203,8 +208,113 @@
       return mutate(s=>{
         const before=s.schedule_commitments.length;
         s.schedule_commitments=s.schedule_commitments.filter(x=>x.commitment_id!==target);
-        return before===s.schedule_commitments.length?{ok:false,reason:'COMMITMENT_NOT_FOUND'}:{ok:true,commitment_id:target};
+        if(before===s.schedule_commitments.length)return {ok:false,reason:'COMMITMENT_NOT_FOUND'};
+        const beforeBuffers=s.schedule_buffers.length;
+        s.schedule_buffers=s.schedule_buffers.filter(x=>x.linked_commitment_id!==target);
+        return {ok:true,commitment_id:target,removed_buffers:beforeBuffers-s.schedule_buffers.length};
       });
+    }
+
+    const BUFFER_KINDS=new Set(['TRAVEL','MEAL','PREPARATION','REST','SAFETY','OTHER']);
+    function upsertScheduleBuffer(input={}){
+      requireParentScheduleWrite(input.source);
+      const kind=cleanText(input.kind).toUpperCase()||'OTHER';
+      if(!BUFFER_KINDS.has(kind))throw new Error('invalid buffer kind');
+      const mode=cleanText(input.mode).toUpperCase()==='AROUND_COMMITMENT'?'AROUND_COMMITMENT':'ABSOLUTE';
+      const recurrence=cleanText(input.recurrence).toUpperCase();
+      const weekly=recurrence==='WEEKLY';
+      const title=cleanText(input.title)||kind;
+      const periodId=cleanText(input.period_id)||null;
+      const weekday=Number.isInteger(input.weekday)?input.weekday:Number(input.weekday);
+      const side=cleanText(input.side).toUpperCase();
+      const minutesValue=Math.max(0,Math.floor(Number(input.minutes)||0));
+      const date=cleanText(input.date),start=cleanText(input.start),end=cleanText(input.end);
+      const linkedCommitmentId=cleanText(input.linked_commitment_id)||null;
+      if(mode==='AROUND_COMMITMENT'){
+        if(!linkedCommitmentId)throw new Error('linked commitment required');
+        if(!['BEFORE','AFTER'].includes(side))throw new Error('buffer side required');
+        if(minutesValue<=0)throw new Error('buffer minutes required');
+      }else{
+        if(weekly&&!(weekday>=0&&weekday<=6))throw new Error('weekday required');
+        if(!weekly&&!validDateString(date))throw new Error('date required');
+        if(!/^\d{2}:\d{2}$/.test(start)||!/^\d{2}:\d{2}$/.test(end)||end<=start)throw new Error('valid start/end required');
+      }
+      return mutate(s=>{
+        if(mode==='AROUND_COMMITMENT'&&!s.schedule_commitments.some(x=>x.commitment_id===linkedCommitmentId))throw new Error('linked commitment not found');
+        if(mode==='ABSOLUTE'&&weekly&&periodId&&!s.schedule_periods.some(x=>x.period_id===periodId))throw new Error('schedule period not found');
+        const id=cleanText(input.buffer_id)||makeId('buffer');
+        const existing=s.schedule_buffers.find(x=>x.buffer_id===id);
+        const item={
+          buffer_id:id,
+          kind,
+          title,
+          mode,
+          linked_commitment_id:mode==='AROUND_COMMITMENT'?linkedCommitmentId:null,
+          side:mode==='AROUND_COMMITMENT'?side:null,
+          minutes:mode==='AROUND_COMMITMENT'?minutesValue:null,
+          recurrence:mode==='ABSOLUTE'&&weekly?'WEEKLY':null,
+          weekday:mode==='ABSOLUTE'&&weekly?weekday:null,
+          start:mode==='ABSOLUTE'?start:null,
+          end:mode==='ABSOLUTE'?end:null,
+          date:mode==='ABSOLUTE'&&!weekly?date:null,
+          period_id:mode==='ABSOLUTE'&&weekly?periodId:null,
+          valid_from:mode==='ABSOLUTE'&&weekly&&!periodId?(cleanText(input.valid_from)||null):null,
+          valid_until:mode==='ABSOLUTE'&&weekly&&!periodId?(cleanText(input.valid_until)||null):null,
+          confirmed:input.confirmed!==false,
+          parent_editable:input.parent_editable!==false,
+          source:cleanText(input.source)||existing?.source||'READY_LOCAL',
+          created_at:existing?.created_at||new Date().toISOString(),
+          updated_at:new Date().toISOString()
+        };
+        const i=s.schedule_buffers.findIndex(x=>x.buffer_id===id);
+        if(i>=0)s.schedule_buffers[i]=item;else s.schedule_buffers.push(item);
+        return item;
+      });
+    }
+    function removeScheduleBuffer(id){
+      requireParentScheduleWrite();
+      const target=cleanText(id);if(!target)return {ok:false,reason:'BUFFER_ID_REQUIRED'};
+      return mutate(s=>{
+        const before=s.schedule_buffers.length;
+        s.schedule_buffers=s.schedule_buffers.filter(x=>x.buffer_id!==target);
+        return before===s.schedule_buffers.length?{ok:false,reason:'BUFFER_NOT_FOUND'}:{ok:true,buffer_id:target};
+      });
+    }
+    function scheduleBuffersByDateFromState(state,date){
+      const key=cleanText(date);
+      if(!validDateString(key))return [];
+      const dow=parseLocal(key,'12:00').getDay();
+      const activePeriod=activeSchedulePeriodFromState(state,key);
+      const commitments=scheduleCommitmentsByDateFromState(state,key);
+      const byId=new Map(commitments.map(x=>[x.commitment_id,x]));
+      return (state.schedule_buffers||[])
+        .filter(x=>x&&x.confirmed!==false)
+        .flatMap(x=>{
+          if(x.mode==='AROUND_COMMITMENT'){
+            const linked=byId.get(x.linked_commitment_id);if(!linked)return [];
+            const linkedStart=parseLocal(key,String(linked.start_at).slice(11,16));
+            const linkedEnd=parseLocal(key,String(linked.end_at).slice(11,16));
+            const duration=Math.max(0,Number(x.minutes)||0)*60000;
+            if(!duration)return [];
+            const start=x.side==='BEFORE'?new Date(linkedStart-duration):linkedEnd;
+            const end=x.side==='BEFORE'?linkedStart:new Date(linkedEnd.getTime()+duration);
+            return [{...x,materialized_date:key,start_at:start.toISOString(),end_at:end.toISOString(),linked_title:linked.title}];
+          }
+          if(x.recurrence==='WEEKLY'){
+            if(Number(x.weekday)!==dow)return [];
+            if(x.period_id&&activePeriod?.period_id!==x.period_id)return [];
+            if(!x.period_id&&activePeriod)return [];
+            if(x.valid_from&&key<x.valid_from)return [];
+            if(x.valid_until&&key>x.valid_until)return [];
+            return [{...x,materialized_date:key,start_at:`${key}T${x.start}:00`,end_at:`${key}T${x.end}:00`,active_period_id:activePeriod?.period_id||null,active_period_name:activePeriod?.name||null}];
+          }
+          if(x.date!==key)return [];
+          return [{...x,materialized_date:key,start_at:`${key}T${x.start}:00`,end_at:`${key}T${x.end}:00`}];
+        })
+        .sort((a,b)=>String(a.start_at||'').localeCompare(String(b.start_at||''))||String(a.title||'').localeCompare(String(b.title||''),'ko'));
+    }
+    function scheduleBuffersByDate(date=dateKey()){
+      return scheduleBuffersByDateFromState(load(),date).map(x=>({...x}));
     }
 
     function upsertDailyAvailabilityWindow(input={}){
@@ -479,7 +589,8 @@
             difficulty:Number.isFinite(t.difficulty)?t.difficulty:3,
             recovery_need:t.recovery_need||'MEDIUM'
           }))]));
-        const scheduleByDate=Object.fromEntries(dates.map(d=>[d,(s.schedule_commitments||[]).filter(x=>x.confirmed!==false&&x.start_at&&x.end_at&&String(x.start_at).slice(0,10)===d&&String(x.end_at).slice(0,10)===d)]));
+        const scheduleByDate=Object.fromEntries(dates.map(d=>[d,scheduleCommitmentsByDateFromState(s,d)]));
+        const bufferByDate=Object.fromEntries(dates.map(d=>[d,scheduleBuffersByDateFromState(s,d)]));
         const proposals=[];
         for(const unit of units){
           const existing=s.dated_todos.find(t=>t.learning_unit_id===unit.learning_unit_id&&isOpenTodo(t));
@@ -501,9 +612,14 @@
             const score=d=>{
               const taskLoads=loadByDate[d]||[];
               const commitments=scheduleByDate[d]||[];
+              const buffers=bufferByDate[d]||[];
               const commitmentMinutes=commitments.reduce((sum,x)=>{
                 const start=parseLocal(d,String(x.start_at).slice(11,16));
                 const end=parseLocal(d,String(x.end_at).slice(11,16));
+                return sum+Math.max(0,minutes(end-start));
+              },0);
+              const bufferMinutes=buffers.reduce((sum,x)=>{
+                const start=new Date(x.start_at),end=new Date(x.end_at);
                 return sum+Math.max(0,minutes(end-start));
               },0);
               const existingLoad=taskLoads.reduce((sum,x)=>sum+(x.score||3),0);
@@ -511,7 +627,7 @@
               const highLoadStack=taskLoads.filter(x=>(x.score||3)>=4).length;
               const highDifficultyStack=taskLoads.filter(x=>(x.difficulty||3)>=4).length;
               const recoveryStack=taskLoads.filter(x=>x.recovery_need==='HIGH').length;
-              const schedulePressure=commitments.length*15+Math.min(30,Math.floor(commitmentMinutes/30));
+              const schedulePressure=commitments.length*15+buffers.length*6+Math.min(40,Math.floor((commitmentMinutes+bufferMinutes)/30));
               const recoveryPenalty=unitRecovery==='HIGH'?(highLoadStack*18+recoveryStack*15):unitRecovery==='MEDIUM'?highLoadStack*8:0;
               const difficultyPenalty=unitDifficulty>=4?highDifficultyStack*12:0;
               const historicalSignal=crossRevisionLearningSignal({
@@ -687,9 +803,26 @@
           start:parseLocal(date,String(x.start_at).slice(11,16)),
           end:parseLocal(date,String(x.end_at).slice(11,16)),
           commitment_id:x.commitment_id,
-          title:x.title
+          title:x.title,
+          source_kind:'COMMITMENT'
         }))
         .filter(x=>x.end>x.start);
+    }
+    function bufferIntervals(state,date){
+      return scheduleBuffersByDateFromState(state,date)
+        .map(x=>({
+          start:new Date(x.start_at),
+          end:new Date(x.end_at),
+          buffer_id:x.buffer_id,
+          kind:x.kind,
+          title:x.title,
+          linked_commitment_id:x.linked_commitment_id||null,
+          source_kind:'BUFFER'
+        }))
+        .filter(x=>x.end>x.start);
+    }
+    function blockedIntervals(state,date){
+      return [...commitmentIntervals(state,date),...bufferIntervals(state,date)].sort((a,b)=>a.start-b.start||a.end-b.end);
     }
 
     function subtractIntervals(base,blocks){
@@ -710,9 +843,11 @@
 
     function freeWindowEvidence(state,date,windows=[]){
       const candidate=mergeIntervals(clampWindows(date,windows||[]));
-      if(!candidate.length)return {known:false,date,total_free_minutes:null,largest_contiguous_minutes:null,window_count:0,open_windows:[]};
+      if(!candidate.length)return {known:false,date,total_free_minutes:null,largest_contiguous_minutes:null,window_count:0,open_windows:[],commitment_count:0,buffer_count:0,buffers:[]};
       const commitments=commitmentIntervals(state,date);
-      const open=candidate.flatMap(w=>subtractIntervals(w,commitments));
+      const buffers=bufferIntervals(state,date);
+      const blocks=[...commitments,...buffers];
+      const open=candidate.flatMap(w=>subtractIntervals(w,blocks));
       const spans=open.map(w=>({
         start:w.start.toISOString(),
         end:w.end.toISOString(),
@@ -726,6 +861,9 @@
         total_free_minutes:total,
         largest_contiguous_minutes:largest,
         window_count:spans.length,
+        commitment_count:commitments.length,
+        buffer_count:buffers.length,
+        buffers:buffers.map(x=>({buffer_id:x.buffer_id,kind:x.kind,title:x.title,linked_commitment_id:x.linked_commitment_id,start:x.start.toISOString(),end:x.end.toISOString()})),
         open_windows:spans
       };
     }
@@ -745,8 +883,8 @@
         return {ok:false,reason:'NO_CANDIDATE_WINDOWS',date,proposals:[],available_minutes:0};
       }
       return mutate(s=>{
-        const commitments=commitmentIntervals(s,date);
-        const open=candidateWindows.flatMap(w=>subtractIntervals(w,commitments));
+        const blocks=blockedIntervals(s,date);
+        const open=candidateWindows.flatMap(w=>subtractIntervals(w,blocks));
         const availableMinutes=open.reduce((sum,w)=>sum+minutes(w.end-w.start),0);
         const maxMinutes=Number.isFinite(input.max_minutes)
           ? Math.max(0,Math.min(input.max_minutes,availableMinutes))
@@ -1399,6 +1537,9 @@
       scheduleCommitmentsByDate,
       upsertScheduleCommitment,
       removeScheduleCommitment,
+      scheduleBuffersByDate,
+      upsertScheduleBuffer,
+      removeScheduleBuffer,
       upsertDailyAvailabilityWindow,
       removeDailyAvailabilityWindow,
       candidateWindowsByDate,

@@ -23,6 +23,30 @@ test('Schedule Commitment remains editable while legacy Parent allocation contro
   await page.locator('#scheduleEnd').fill('18:30');
   await page.locator('#saveScheduleBtn').click();
   await expect(page.locator('#scheduleAdminList')).toContainText('영어학원');
+
+  await page.locator('#bufferKind').selectOption('TRAVEL');
+  await page.locator('#bufferTitle').fill('영어학원 이동');
+  await page.locator('#bufferMode').selectOption('AROUND_COMMITMENT');
+  const linkedCommitmentId=await page.locator('#bufferLinkedCommitment option').first().getAttribute('value');
+  await page.locator('#bufferLinkedCommitment').selectOption(linkedCommitmentId);
+  await page.locator('#bufferSide').selectOption('BEFORE');
+  await page.locator('#bufferMinutes').fill('20');
+  await page.locator('#saveBufferBtn').click();
+  await expect(page.locator('#bufferAdminList')).toContainText('영어학원 이동');
+  const todayBuffers=await page.evaluate(date=>window.ReadySetPlanner.scheduleBuffersByDate(date).map(x=>({kind:x.kind,title:x.title,side:x.side,minutes:x.minutes})),today);
+  expect(todayBuffers).toEqual([{kind:'TRAVEL',title:'영어학원 이동',side:'BEFORE',minutes:20}]);
+
+  await page.locator('#bufferClearBtn').click();
+  await page.locator('#bufferKind').selectOption('MEAL');
+  await page.locator('#bufferTitle').fill('저녁 식사');
+  await page.locator('#bufferMode').selectOption('ABSOLUTE');
+  await page.locator('#bufferDate').fill(today);
+  await page.locator('#bufferStart').fill('19:00');
+  await page.locator('#bufferEnd').fill('19:30');
+  await page.locator('#saveBufferBtn').click();
+  await expect(page.locator('#bufferAdminList')).toContainText('저녁 식사');
+  expect(await page.evaluate(date=>window.ReadySetPlanner.scheduleBuffersByDate(date).map(x=>x.kind).sort(),today)).toEqual(['MEAL','TRAVEL']);
+
   expect(await page.locator('#templateMinutes').count()).toBe(0);
   expect(await page.locator('#templateWeekdays').count()).toBe(0);
   expect(await page.locator('#templateRequiredToday').count()).toBe(0);
