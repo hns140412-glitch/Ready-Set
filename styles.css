@@ -102,3 +102,14 @@
 .captureReviewDraft small{margin-top:4px;color:var(--muted);line-height:1.45}
 .captureReviewDraft .captureWarnings{color:#8b5a2b}
 
+
+
+/* Verified selected companion projection reused from Ready PR #118. */
+#plannerView .plannerWorldHeader{min-width:0;gap:8px}
+#plannerView .plannerWorldHeader>div:nth-child(2){min-width:0;flex:1 1 auto}
+#plannerView .plannerWorldHeader>div:nth-child(2) h1{white-space:nowrap}
+#plannerView .plannerCompanionPresence{display:flex;flex:0 0 65px;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;min-height:66px}
+#plannerView .plannerCompanionPresence[hidden]{display:none !important}
+#plannerView .plannerCompanionPortrait{width:47px;height:47px;background-repeat:no-repeat;background-position:center bottom;background-size:contain;background-color:transparent}
+#plannerView .plannerCompanionPresence small{display:block;max-width:72px;font-size:10px;font-weight:900;color:#253e33;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;text-shadow:0 1px 8px rgba(255,252,240,.85)}
+@media(max-width:350px){#plannerView .plannerCompanionPresence{flex-basis:53px}#plannerView .plannerCompanionPortrait{width:40px;height:40px}}
