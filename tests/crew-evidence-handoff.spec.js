@@ -1,0 +1,15 @@
+const assert=require('node:assert/strict');
+const handoff=require('../vendor/taky/explorer-crew-evidence-handoff-v1.js');
+const evidence=require('../ready-crew-evidence-runtime-v1.js');
+const map=new Map();const storage={getItem:k=>map.get(k)||null,setItem:(k,v)=>map.set(k,v)};
+const event={event_id:'E1',type:'SHARED_EPISODE',verified:true,evidence_ref:'SRC:1',character_id:'C1',source_app:'READY_SET',source:'READY_SET',at:'2026-09-30T12:00:00Z'};
+const packet={...handoff.envelope(event,'READY_SET'),authority_ref:'TAKY_CROSS_APP_MEMORY:1'};
+const imported=handoff.importPacket(packet,{targetApp:'READY_SET',evidenceRuntime:evidence,storage});
+assert.equal(imported.ok,true);assert.deepEqual(imported.imported,['E1']);
+const stored=evidence.load(storage);assert.equal(stored.episodes[0].source_app,'READY_SET');assert.equal(stored.episodes[0].import_authority_ref,'TAKY_CROSS_APP_MEMORY:1');
+const duplicate=handoff.importPacket(packet,{targetApp:'READY_SET',evidenceRuntime:evidence,storage});
+assert.equal(duplicate.ok,true);assert.deepEqual(duplicate.duplicates,['E1']);
+const bad={...packet,authority_ref:null};
+assert.equal(handoff.importPacket(bad,{targetApp:'READY_SET',evidenceRuntime:evidence,storage}).ok,false);
+assert.equal(handoff.automaticRelationCommit,false);
+console.log(JSON.stringify({gate:'CREW_EVIDENCE_HANDOFF',app:'READY_SET',pass:true},null,2));
