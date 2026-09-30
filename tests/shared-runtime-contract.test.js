@@ -25,6 +25,7 @@ const localFirst=fs.readFileSync(path.join(__dirname,'..','ready-local-first-v01
 const syncAdapter=fs.readFileSync(path.join(__dirname,'..','ready-sync-adapter-v01.js'),'utf8');
 const captureAnalysis=fs.readFileSync(path.join(__dirname,'..','ready-capture-analysis-adapter-v01.js'),'utf8');
 const migrationDoc=fs.readFileSync(path.join(__dirname,'..','READY_SHARED_RUNTIME_MIGRATION_V01.md'),'utf8');
+const runtimeV07=fs.readFileSync(path.join(__dirname,'..','ready-runtime-v07.js'),'utf8');
 
 assert.equal(versionMirror.authoritativeSource,'ready-release-v01.js');
 assert.equal(versionMirror.appVersion,descriptor.app_version);
@@ -50,6 +51,8 @@ assert.equal(registry.session_schema_status,'TRACKING_METADATA_ONLY__ACTIVE_RUNT
 assert.equal(registry.shared_runtime.migration_status,'READY_CONSUMER_MERGED_VERIFIED__DEVICE_PRODUCTION_PENDING');
 assert(!migrationDoc.includes('CI + BROWSER RUNTIME VALIDATION PENDING'));
 assert(migrationDoc.includes('CI + BROWSER RUNTIME VERIFIED'));
+assert(!runtimeV07.includes('0.9.3-rc1'));
+assert(!runtimeV07.includes('APP_VERSION 0.9.2'));
 
 assert(sw.includes("const CACHE='ready-set:'+RELEASE.release_id"));
 assert(!sw.includes(".then(()=>self.skipWaiting())"));
