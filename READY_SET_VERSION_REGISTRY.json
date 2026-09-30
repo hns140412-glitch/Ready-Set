@@ -15,18 +15,18 @@
   "build_identity": {
     "release_id": "ready-set-1.0.0-alpha.1-r6",
     "cache_identity_policy": "ready-set:<release_id>",
-    "main_sha": "183fc6f385904964d500d046875e302acc9b8745",
+    "main_sha": "e1c8afaea0f946a0176e36ef794d2380f0daefe2",
     "build_id_policy": "release descriptor + exact git SHA/CI build evidence",
     "feature_named_cache_versions_forbidden": true,
-    "main_tree_sha": "20d7713502f039394ee4a4a9e455129b7f6807eb",
-    "validation_state": "PENDING_EXACT_MAIN_REFRESH_AFTER_SCHEDULE_CONFLICT_REVIEW_MERGE",
+    "main_tree_sha": "50fc092ebc6a5feda81cd393c0784d4fae341f6f",
+    "validation_state": "EXACT_MAIN_CI_RUNTIME_VERIFIED__DEVICE_PRODUCTION_PENDING",
     "release_candidate_state": "PRE_RELEASE_NOT_FROZEN__DEPLOYMENT_HOLD",
     "release_id_rotation_policy": "ROTATE_ON_FROZEN_CANDIDATE_OR_SEMANTIC_RELEASE_CHANGE",
     "exact_build_evidence_policy": "EXACT_GIT_SHA_AND_TREE_REFRESHED_ONLY_AFTER_VALIDATED_MAIN_MERGE",
     "last_verified_main": {
-      "sha": "8a99f75fa70ca48037c80f45974718c40a2efe07",
-      "tree_sha": "2e7b466e8de29e64bd3eaabed232485eb7339a08",
-      "release_id": "ready-set-1.0.0-alpha.1-r3",
+      "sha": "e1c8afaea0f946a0176e36ef794d2380f0daefe2",
+      "tree_sha": "50fc092ebc6a5feda81cd393c0784d4fae341f6f",
+      "release_id": "ready-set-1.0.0-alpha.1-r6",
       "validation_state": "EXACT_MAIN_CI_RUNTIME_VERIFIED__DEVICE_PRODUCTION_PENDING"
     }
   },

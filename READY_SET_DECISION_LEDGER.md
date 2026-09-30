@@ -46,7 +46,7 @@ Disposition set: PRESERVE / MERGE / SUPERSEDE / ARCHIVE / OPEN
 | RDY-C2S-038 | actual runtime version must equal release descriptor runtime_version | PRESERVE | R3 complete / ReadySetRev07.version regression gate / PR #137 exact-main verified |
 | RDY-C2S-039 | Ready local guide type is presentation only, not shared Crew identity authority | MERGE | shared Crew consumer boundary / regression gate |
 | RDY-C2S-040 | stale/unsupported Crew handoff must fail closed without relation/affinity writes | MERGE | shared Crew consumer boundary / regression gate |
-| RDY-C2S-041 | Parent schedule conflict review before authoritative save | MERGE | Planner period/fixed-commitment/lifestyle-buffer conflict gate |
+| RDY-C2S-041 | Parent schedule conflict review before authoritative save | PRESERVE | Planner conflict gate / PR #140 exact-main verified |
 
 ## Coverage
 Recovered atoms registered here: 41.

@@ -1,5 +1,5 @@
 {
-  "status_version": "READY_C2S_REWRITE_01.10",
+  "status_version": "READY_C2S_REWRITE_01.11",
   "product": "Ready & Set",
   "evidence_policy": "Validation belongs to an exact code SHA; product/version labels alone never imply validation.",
   "current_main_sha_at_r0": "c82109651609440d2e9e08486f2ef5a042a68e46",
@@ -10,7 +10,7 @@
     "device_verified": false,
     "production_verified": false,
     "evidence_state": "EXACT_MAIN_CI_RUNTIME_VERIFIED",
-    "reason": "Exact main 183fc6f385904964d500d046875e302acc9b8745 (merge of PR #137) matches tree 20d7713502f039394ee4a4a9e455129b7f6807eb and passed Ready Integration CI, Ready Runtime E2E, and TAKY Codex Worker Self-Test on exact main. Device and production verification remain separate."
+    "reason": "Exact main e1c8afaea0f946a0176e36ef794d2380f0daefe2 (merge of PR #140) matches tree 50fc092ebc6a5feda81cd393c0784d4fae341f6f and passed Ready Integration CI, Ready Runtime E2E, and TAKY Codex Worker Self-Test on exact main. Device and production verification remain separate."
   },
   "historical_verified_evidence": {
     "status": "HISTORICAL_REFERENCE_ONLY"
@@ -27,44 +27,64 @@
   },
   "release_state": "REWRITE_IN_PROGRESS_NOT_RELEASE_VERIFIED",
   "latest_targeted_evidence": {
-    "sha": "6ca24293b77ea2e31cc4dc90b81cd6dc89ab9b33",
-    "pr": 137,
-    "scope": "R3 release/version/build authority unification: ready-release-v01.js semantic authority, release r4 cache identity, actual runtime version alignment, VERSION/Registry mirror normalization, stale migration-state cleanup, and legacy 0.9.x runtime override removal",
+    "sha": "6d8774aaaa909cdf850d128ce889847f0fad7b9d",
+    "pr": 140,
+    "scope": "Parent schedule conflict review for overlapping periods, fixed commitments, and confirmed lifestyle-buffer collisions before authoritative save; voice preview includes conflicts and requires explicit acknowledgement",
     "result": "TARGETED_BEHAVIOR_VERIFIED_AND_MERGED",
     "gates": {
       "integration_ci": {
-        "run_id": 36765672414,
+        "run_id": 36785580357,
         "status": "PASS"
       },
       "runtime_e2e": {
-        "run_id": 36765672412,
+        "run_id": 36785580568,
         "status": "PASS"
       },
       "codex_selftest": {
-        "run_id": 36765672398,
+        "run_id": 36785580449,
+        "status": "PASS"
+      },
+      "weekly_availability": {
+        "run_id": 36785580376,
+        "status": "PASS"
+      },
+      "planner_free_window": {
+        "run_id": 36785580543,
+        "status": "PASS"
+      },
+      "daily_availability": {
+        "run_id": 36785580408,
         "status": "PASS"
       },
       "single_active_task": {
-        "run_id": 36765672446,
+        "run_id": 36785580586,
+        "status": "PASS"
+      },
+      "child_fact_confirmation": {
+        "run_id": 36785580367,
+        "status": "PASS"
+      },
+      "hide_memory_roundtrip": {
+        "run_id": 36785580494,
         "status": "PASS"
       }
     },
     "exact_main_gates": {
       "integration_ci": {
-        "run_id": 36765841451,
+        "run_id": 36785745573,
         "status": "PASS"
       },
       "runtime_e2e": {
-        "run_id": 36765841570,
+        "run_id": 36785745537,
         "status": "PASS"
       },
       "codex_selftest": {
-        "run_id": 36765841423,
+        "run_id": 36785745660,
         "status": "PASS"
       }
     },
     "claim_boundary": "CODED / CI_VERIFIED / RUNTIME_VERIFIED on exact main; DEVICE_VERIFIED and PRODUCTION_VERIFIED not asserted",
-    "merged_main_sha": "183fc6f385904964d500d046875e302acc9b8745"
+    "merged_main_sha": "e1c8afaea0f946a0176e36ef794d2380f0daefe2"
   },
   "open_product_gaps": [
     "Shared expedition-member authority consumption remains OPEN.",
@@ -75,9 +95,9 @@
   ],
   "head_policy": "STATUS_FILE_CANNOT_SELF_ASSERT_EVENTUAL_MERGE_SHA; repository head is volatile and must be live-refreshed when material.",
   "runtime_code_basis": {
-    "sha": "183fc6f385904964d500d046875e302acc9b8745",
-    "tree_sha": "20d7713502f039394ee4a4a9e455129b7f6807eb",
-    "relation": "CURRENT_EXACT_MAIN_AFTER_PR_137",
-    "note": "R3 release/version/build authority is unified and exact-main Integration CI, Runtime E2E, and TAKY Self-Test passed. Device/production remain unverified."
+    "sha": "e1c8afaea0f946a0176e36ef794d2380f0daefe2",
+    "tree_sha": "50fc092ebc6a5feda81cd393c0784d4fae341f6f",
+    "relation": "CURRENT_EXACT_MAIN_AFTER_PR_140",
+    "note": "Parent schedule conflict review is implemented and exact-main Integration CI, Runtime E2E, and TAKY Self-Test passed. Device/production remain unverified."
   }
 }
