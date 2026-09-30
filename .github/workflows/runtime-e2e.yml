@@ -23,6 +23,12 @@ jobs:
         run: node tests/character-runtime-adapter.spec.js
       - name: Validate character Scene event bridge
         run: node tests/character-scene-bridge.spec.js
+      - name: Validate character Binding registry
+        run: node tests/character-binding-registry.spec.js
+      - name: Validate character Binding selector integrity
+        run: node tests/character-binding-selector-integrity.spec.js
+      - name: Validate character UI Binding planner
+        run: node tests/character-ui-binding-planner.spec.js
       - name: Validate TAKY Design Gate authority
         run: node tools/validate-design-gate.mjs
       - uses: actions/setup-node@v4
