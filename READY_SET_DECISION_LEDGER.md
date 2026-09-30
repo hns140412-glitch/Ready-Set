@@ -39,9 +39,10 @@ Disposition set: PRESERVE / MERGE / SUPERSEDE / ARCHIVE / OPEN
 | RDY-C2S-031 | validation evidence keyed by SHA | PRESERVE | Validation Status |
 | RDY-C2S-032 | append-only REV_08 approach | SUPERSEDE | semantic canonical docs |
 | RDY-C2S-033 | historical REV docs retained as provenance | ARCHIVE | R6 |
+| RDY-C2S-034 | Parent period-scoped fixed timetable + voice review/confirm editing | PRESERVE | Planner constraint input / Parent Admin |
 
 ## Coverage
-Recovered atoms registered here: 33.
+Recovered atoms registered here: 34.
 UNMAPPED_MATERIAL=0 and SILENT_LOSS=0 within the declared whole-product rewrite-review scope.
 This does not claim recovery of inaccessible historical raw turns.
 
