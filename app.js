@@ -376,6 +376,7 @@ function renderMission(){
   });
   $('#customMinutes').value=state.targetMin;
   $('#soundName').textContent=state.sound;
+  expeditionCompanionPresenter?.renderMission();
   const labels=chosen.map(x=>x.label);
   $('#missionPreviewText').textContent=`${labels.length?labels.join(' · '):'과제를 선택해 주세요'} · ${state.targetMin}분`;
 }
