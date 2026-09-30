@@ -46,6 +46,10 @@ jobs:
           node --check ready-runtime-v07.js
       - name: Verify Planner entity/runtime contract
         run: node .github/scripts/ready_planner_contract_test.js
+      - name: Verify GitHub CLI queue author field compatibility
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue list --state open --limit 5 --json number,title,comments,author > /tmp/taky-cli-author-fields.json
       - name: Verify queue integrity and profile binding
         run: |
           python - <<'PY'
@@ -63,14 +67,80 @@ jobs:
             'executor_automation':{'profile':'READY_SET_CODEX_V1','target_repository_local':True}
           }
           env={'envelope_version':'2026-09-19.1','task_id':task['task_id'],'provider':'CODEX','transport':'GITHUB_ISSUE_QUEUE','dispatch_status':'DISPATCH_READY','task_contract_sha256':q.digest(task),'task_contract':task}
-          issue={'number':1,'title':'[TAKY EXECUTOR QUEUE] SELFTEST-001 -> CODEX','body':q.BEGIN_DISPATCH+'\n'+json.dumps(env)+'\n'+q.END_DISPATCH,'comments':[]}
+          issue={'number':1,'title':'[TAKY EXECUTOR QUEUE] SELFTEST-001 -> CODEX','body':q.BEGIN_DISPATCH+'\n'+json.dumps(env)+'\n'+q.END_DISPATCH,'comments':[],'author':{'login':'hns140412-glitch'},'authorAssociation':'OWNER'}
           out=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'fixture-run')
           assert out['has_task'] is True, out
           assert 'Do not commit, push, merge, deploy' in out['prompt']
+          forged=json.loads(json.dumps(issue))
+          forged['author']={'login':'untrusted-user'}
+          forged['authorAssociation']='NONE'
+          forged_out=q.prepare([forged],'hns140412-glitch/Ready-Set',base,'fixture-run')
+          assert forged_out['has_task'] is False, forged_out
+          assert 'QUEUE_ISSUE_AUTHOR_UNTRUSTED:untrusted-user' in forged_out['blocked'][0]['detected'], forged_out
+          assert q.collect_executor_run_ids([forged],'hns140412-glitch/Ready-Set') == []
+
           bad=json.loads(json.dumps(env)); bad['task_contract']['repository']='other/repo'; bad['task_contract_sha256']=q.digest(bad['task_contract'])
           issue['body']=q.BEGIN_DISPATCH+'\n'+json.dumps(bad)+'\n'+q.END_DISPATCH
           blocked=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'fixture-run')
           assert blocked['has_task'] is False and 'TARGET_REPOSITORY_MISMATCH' in blocked['blocked'][0]['detected'], blocked
+
+          issue['body']=q.BEGIN_DISPATCH+'\n'+json.dumps(env)+'\n'+q.END_DISPATCH
+          prior={
+            'task_id':env['task_id'],'provider':'CODEX','task_contract_sha256':env['task_contract_sha256'],
+            'executor_run_id':'old-run','status':'ACCEPTED','attempt':1
+          }
+          issue['comments']=[{'body':q.BEGIN_RECEIPT+'\n'+json.dumps(prior)+'\n'+q.END_RECEIPT}]
+
+          active=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'new-run',{
+            'old-run':{'status':'in_progress','conclusion':None,'jobs':[]}
+          })
+          assert active['has_task'] is False
+          assert 'EXECUTOR_RUN_ACTIVE' in active['blocked'][0]['detected'], active
+
+          unknown=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'new-run',{})
+          assert unknown['has_task'] is False
+          assert 'EXECUTOR_LIVENESS_UNKNOWN' in unknown['blocked'][0]['detected'], unknown
+
+          cancelled=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'new-run',{
+            'old-run':{
+              'status':'completed','conclusion':'cancelled',
+              'jobs':[{'name':'materialize','status':'completed','conclusion':'skipped'}]
+            }
+          })
+          assert cancelled['has_task'] is False
+          assert 'EXECUTOR_CANCELLED_REQUIRES_HUMAN_DECISION' in cancelled['blocked'][0]['detected'], cancelled
+
+          recover=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'new-run',{
+            'old-run':{
+              'status':'completed','conclusion':'failure',
+              'jobs':[{'name':'materialize','status':'completed','conclusion':'skipped'}]
+            }
+          })
+          assert recover['has_task'] is True, recover
+          assert recover['attempt']==2 and recover['recovery_of_run_id']=='old-run', recover
+          recovered_receipt=q.extract(recover['receipt_body'],q.BEGIN_RECEIPT,q.END_RECEIPT)
+          assert recovered_receipt['attempt']==2
+          assert recovered_receipt['recovery_of_run_id']=='old-run'
+
+          success_missing=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'new-run',{
+            'old-run':{
+              'status':'completed','conclusion':'success',
+              'jobs':[{'name':'materialize','status':'completed','conclusion':'success'}]
+            }
+          })
+          assert success_missing['has_task'] is False
+          assert 'EXECUTOR_RESULT_MISSING_AFTER_SUCCESS' in success_missing['blocked'][0]['detected'], success_missing
+
+          side_effect_risk=q.prepare([issue],'hns140412-glitch/Ready-Set',base,'new-run',{
+            'old-run':{
+              'status':'completed','conclusion':'failure',
+              'jobs':[{'name':'materialize','status':'completed','conclusion':'failure'}]
+            }
+          })
+          assert side_effect_risk['has_task'] is False
+          assert 'EXECUTOR_RECONCILIATION_REQUIRED' in side_effect_risk['blocked'][0]['detected'], side_effect_risk
+
+          assert q.collect_executor_run_ids([issue],'hns140412-glitch/Ready-Set') == ['old-run']
           pathlib.Path("/tmp/task.json").write_text(json.dumps(task))
           pathlib.Path("/tmp/changed.txt").write_text("app.js\n")
           PY

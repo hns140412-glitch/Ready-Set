@@ -1,0 +1,29 @@
+name: Learning Runtime Bridge Validation
+
+on:
+  push:
+    branches:
+      - taky/current-learning-runtime-bridge-2026-09-26
+  pull_request:
+    paths:
+      - 'ready-integration-v1.js'
+      - 'hide-bridge.js'
+      - 'snap-bridge.js'
+      - 'scripts/validate-learning-runtime-bridge.mjs'
+      - '.github/workflows/learning-runtime-bridge.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check bridge
+        run: |
+          if [ -f ready-integration-v1.js ]; then node --check ready-integration-v1.js; fi
+          if [ -f hide-bridge.js ]; then node --check hide-bridge.js; fi
+          if [ -f snap-bridge.js ]; then node --check snap-bridge.js; fi
+      - name: Learning runtime bridge contract
+        run: node scripts/validate-learning-runtime-bridge.mjs
