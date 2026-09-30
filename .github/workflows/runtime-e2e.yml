@@ -47,6 +47,8 @@ jobs:
         run: node tests/live-crew-event-chain.spec.js
       - name: Validate Crew evidence runtime
         run: node tests/crew-evidence-runtime.spec.js
+      - name: Validate Crew identity bridge
+        run: node tests/crew-identity-bridge.spec.js
       - name: Pre-Gate JavaScript syntax check
         run: |
           node --check app.js
