@@ -1,0 +1,36 @@
+{
+  "schema": "TAKY_STATE_FIXTURE_V1",
+  "screen_id": "planner_week",
+  "synthetic": true,
+  "states": {
+    "BASE_REVIEW": {
+      "days": 7,
+      "items": [
+        {
+          "day": 1,
+          "type": "FIXED",
+          "label": "SCHOOL"
+        },
+        {
+          "day": 3,
+          "type": "TODO",
+          "label": "HOMEWORK"
+        }
+      ]
+    },
+    "EMPTY": {
+      "days": 7,
+      "items": []
+    },
+    "SELECTED_DAY": {
+      "selected_day": 3,
+      "items": [
+        {
+          "day": 3,
+          "type": "TODO",
+          "label": "HOMEWORK"
+        }
+      ]
+    }
+  }
+}
