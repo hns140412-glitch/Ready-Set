@@ -1,39 +1,56 @@
 {
-  "version": "2026-10-01.1",
-  "role": "READY_READ_ONLY_SHARED_EXPLORATION_CREW_AUTHORITY_CONSUMER",
+  "version": "2026-10-01.2",
+  "role": "READY_READ_ONLY_EXPLORER_CREW_RUNTIME_V2_CONSUMER",
   "canonical_authority": {
     "repository": "hns140412-glitch/TAKY",
-    "commit": "55547a7c4c859a1aae700405fdba4a302a2c20d3",
+    "commit": "bdc6aeb94aaf82dffbcee4f47c170110b7eff959",
     "canonical_path": "OS/EXPLORATION_CREW_CANONICAL.md",
     "relationship_path": "OS/GUIDE_CHARACTER_RELATIONSHIP.md",
     "contract_version": "CREW_PIPELINE_V1",
     "manifest_version": "CREW_COMPOSABLE_MANIFEST_V1",
-    "runtime_schema_version": "CREW_RUNTIME_TRACE_V1"
+    "runtime_schema_version": "CREW_RUNTIME_TRACE_V2",
+    "runtime_system_version": "EXPLORER_CREW_SYSTEM_V2"
   },
-  "implementation_evidence": {
-    "repository": "hns140412-glitch/Snap-Pop",
-    "pr": 10,
-    "canonical_verified_head": "8ea7b985eaf792e866e4d21d174eaac824a23567",
-    "later_working_head": "13083b4056b1532da1bc5ef4de259d21204a3243",
-    "purpose": "compatibility evidence only; not Ready semantic authority"
+  "common_runtime_source_lock": {
+    "version": "EXPLORER_CREW_V2_SOURCE_LOCK_20261001",
+    "file_count": 34,
+    "algorithm": "sha256",
+    "normalization": "utf8_crlf_lf_to_lf",
+    "reference_repository": "hns140412-glitch/Snap-Pop",
+    "reference_pr": 17,
+    "reference_head": "e928067cd8f79b954b4072bfabe13e891fb6d07e"
   },
   "consumer": {
     "path": "vendor/taky/explorer-crew/ready-authority-consumer-v1.js",
-    "policy": "Read canonical main-companion projection or explicit canonical handoff only. Never mutate relation, affinity, memory, behavior semantics, asset selection, or rendering.",
-    "local_projection_key": "ready_explorer_crew_authority_projection_v1"
+    "version": "READY_EXPLORER_CREW_AUTHORITY_CONSUMER_V2",
+    "canonical_runtime": "EXPLORER_CREW_SYSTEM_V2",
+    "policy": "Read canonical Main projection or explicit canonical handoff only. Never own or mutate relation, affinity, memory, behavior semantics, asset resolution, runtime policy, or canonical runtime state.",
+    "local_projection_key": "ready_explorer_crew_authority_projection_v1",
+    "ownership": {
+      "relation_write": false,
+      "affinity_write": false,
+      "memory_write": false,
+      "behavior_owner": false,
+      "asset_resolver": false,
+      "runtime_owner": false,
+      "renderer": false
+    }
   },
   "ready_presentation_boundary": {
-    "legacy_presentation_profiles": [
-      "lumi",
-      "pico",
-      "mori"
-    ],
-    "meaning": "Ready-local visual/expression compatibility profiles only",
+    "legacy_presentation_profiles": ["lumi", "pico", "mori"],
+    "meaning": "Ready-local visual/expression compatibility profiles only; never canonical Explorer Crew identity.",
     "forbidden": [
-      "treating presentation profile as canonical character identity",
+      "treating a local presentation profile as canonical character identity",
       "mutating canonical relationship from Ready presentation selection",
       "manufacturing missing crew art",
       "substituting local guide art for an approved shared Visual ID"
     ]
+  },
+  "release_boundary": {
+    "root_activation": false,
+    "netlify": "HOLD",
+    "image_generation": "HOLD",
+    "composable_production": "HOLD",
+    "motion_release": "HOLD"
   }
 }

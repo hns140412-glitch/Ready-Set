@@ -13,15 +13,22 @@ function token(event){
   return Buffer.from(JSON.stringify({v:1,at:'2026-10-01T00:00:00.000Z',event}),'utf8').toString('base64url');
 }
 
-assert.equal(consumer.AUTHORITY.commit,'55547a7c4c859a1aae700405fdba4a302a2c20d3');
+assert.equal(consumer.VERSION,'READY_EXPLORER_CREW_AUTHORITY_CONSUMER_V2');
+assert.equal(consumer.SYSTEM_VERSION,'EXPLORER_CREW_SYSTEM_V2');
+assert.equal(consumer.SYSTEM_BOUND,true);
+assert.equal(consumer.AUTHORITY.commit,'bdc6aeb94aaf82dffbcee4f47c170110b7eff959');
 assert.equal(consumer.AUTHORITY.contract_version,'CREW_PIPELINE_V1');
 assert.equal(consumer.AUTHORITY.manifest_version,'CREW_COMPOSABLE_MANIFEST_V1');
-assert.equal(consumer.AUTHORITY.runtime_schema_version,'CREW_RUNTIME_TRACE_V1');
+assert.equal(consumer.AUTHORITY.runtime_schema_version,'CREW_RUNTIME_TRACE_V2');
+assert.equal(consumer.AUTHORITY.runtime_system_version,'EXPLORER_CREW_SYSTEM_V2');
+assert.equal(consumer.AUTHORITY.source_lock_version,'EXPLORER_CREW_V2_SOURCE_LOCK_20261001');
 assert.equal(consumer.ownership.relationWrite,false);
 assert.equal(consumer.ownership.affinityWrite,false);
 assert.equal(consumer.ownership.memoryWrite,false);
 assert.equal(consumer.ownership.behaviorOwner,false);
 assert.equal(consumer.ownership.assetResolver,false);
+assert.equal(consumer.ownership.runtimeOwner,false);
+assert.equal(consumer.ownership.canonicalRuntime,'EXPLORER_CREW_SYSTEM_V2');
 assert.equal(consumer.ownership.renderer,false);
 
 const s=storage();
@@ -94,6 +101,8 @@ assert.equal(stale.reason,'STALE_PROJECTION');
 assert.equal(consumer.snapshot(s).character_id,'zero');
 assert.equal(result.projection.relation_write,false);
 assert.equal(result.projection.affinity_write,false);
+assert.equal(result.projection.runtime_owner,false);
+assert.equal(result.projection.system_version,'EXPLORER_CREW_SYSTEM_V2');
 assert.equal(cleaned,'/app?x=1#keep');
 
 const unsupported=token({
@@ -111,6 +120,10 @@ assert.equal(consumer.snapshot(s).character_id,'zero');
 const host={dataset:{}};
 assert.equal(consumer.syncHost(host,consumer.snapshot(s)),true);
 assert.equal(host.dataset.explorerCrewCharacter,'zero');
+assert.equal(host.dataset.explorerCrewRuntime,'CANONICAL_ONLY');
+assert.equal(host.dataset.explorerCrewSystemVersion,'EXPLORER_CREW_SYSTEM_V2');
+assert.equal(host.dataset.explorerCrewRuntimeOwner,'false');
+assert.equal(host.dataset.explorerCrewSourceLock,'EXPLORER_CREW_V2_SOURCE_LOCK_20261001');
 assert.equal(host.dataset.explorerCrewRelationWrite,'false');
 assert.equal(host.dataset.explorerCrewBehaviorOwner,'false');
 assert.equal(host.dataset.explorerCrewAssetResolver,'false');
