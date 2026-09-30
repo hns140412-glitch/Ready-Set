@@ -2113,6 +2113,7 @@ $('#shareResultBtn').onclick=()=>compactShareCard('result');
     else if(/옮겨|당겨|미뤄|유보|빼줘|쉬게|건너/.test(text))action='REPLAN_REQUEST';
     return {raw:text,action,date,clock,minutes,kind,title:stripMeta(text)};
   }
+  globalThis.ReadyVoiceParser={resolveDate,resolveMinutes,resolveClock,classify,stripMeta,childDraft,parentProposal,typeLabel};
   let pendingParent=null;
   function showParentProposal(p){
     pendingParent=p;
