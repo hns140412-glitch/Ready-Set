@@ -1,0 +1,52 @@
+/* Ready & Set Share-only sheet. Independent of Timer Golden and Ready Planner styles. */
+.rs-share-overlay{position:fixed;inset:0;z-index:9500;background:#082849b3;display:flex;justify-content:center;align-items:stretch;padding:0;overflow:auto;overscroll-behavior:contain}
+.rs-share-dialog{width:min(100%,470px);min-height:100dvh;background:#fffdf8;color:#1b2940;display:flex;flex-direction:column;box-shadow:0 14px 60px #102a4470;font-family:"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif}
+.rs-share-dialog *{box-sizing:border-box}
+.rs-share-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:9px;padding:calc(11px + env(safe-area-inset-top,0px)) 18px 14px;background:#fffdf8;border-bottom:1px solid #ecede9}
+.rs-share-head button{border:0;background:transparent;color:#1c3552;font-size:25px;min-width:42px;min-height:42px}
+.rs-share-head h2{font-size:19px;margin:0;flex:1;text-align:center;font-weight:900}
+.rs-share-head span{font-size:11px;color:#648099;font-weight:800;min-width:42px;text-align:right}
+.rs-share-body{padding:16px;display:flex;flex-direction:column;gap:13px;flex:1}
+.rs-share-body section{background:#fff;border:1px solid #e4e7e7;border-radius:19px;padding:13px;box-shadow:0 4px 13px #2341}
+.rs-share-body h3{font-size:15px;font-weight:900;margin:0 0 12px;color:#15344e}
+.rs-share-body h3 small{font-size:11px;font-weight:600;color:#73869b}
+.rs-share-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.rs-share-option{position:relative;min-width:0;border:2px solid #e8edf3;border-radius:12px;background:#fff;color:#29465d;padding:4px 4px 9px;min-height:100px;display:flex;flex-direction:column;align-items:stretch;gap:6px;font-size:10px;font-weight:800;cursor:pointer}
+.rs-share-option.selected{border-color:#1375ee;box-shadow:0 0 0 1px #1375ee55}
+.rs-share-option.selected:after{content:"✓";position:absolute;right:-4px;top:-5px;width:18px;height:18px;border-radius:50%;background:#1375ee;color:#fff;font-size:12px}
+.rs-share-option:disabled{opacity:.42;cursor:not-allowed}
+.rs-share-option-art{aspect-ratio:1/1;display:block;border-radius:8px;background-color:#d9eff9;background-position:center;background-size:cover}
+.rs-share-option>span:last-child{min-height:28px;line-height:1.35}
+.rs-share-scene{padding-bottom:12px}
+.rs-share-stage{height:300px;position:relative;overflow:hidden;border-radius:15px;isolation:isolate;background:linear-gradient(145deg,#9ed6f5,#3c9ec3);box-shadow:inset 0 0 0 1px #fff8}
+.rs-share-stage-art{position:absolute;inset:0;background-size:cover;background-position:65% center;z-index:-2}
+.rs-share-stage:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#f9fcffe8 0%,#eef9ff90 55%,transparent);z-index:-1}
+.rs-share-stage>strong{position:absolute;top:24px;left:19px;right:18px;font:900 29px/1.32 "Apple SD Gothic Neo",sans-serif;max-width:75%;text-wrap:balance;text-shadow:0 2px #fff9}
+.rs-share-stage>span{position:absolute;left:21px;top:115px;font:800 15px/1.4 "Apple SD Gothic Neo",sans-serif;max-width:72%}
+.rs-share-stage-info{position:absolute;bottom:12px;left:12px;right:12px;background:#fff9e8f0;border:2px solid #c9a475;border-radius:12px;min-height:53px;display:flex;align-items:center;justify-content:center;padding:7px;font-size:15px;font-weight:900;color:#30271d}
+.rs-share-identity-line{display:flex;align-items:center;gap:11px;min-height:73px}
+.rs-share-identity-line>span:nth-child(2){flex:1;font-size:11px;line-height:1.4;color:#566f7a}
+.rs-share-identity-line>label{display:flex;align-items:center;gap:4px;font-size:10px;color:#41596b;min-width:72px}
+.rs-share-avatar{width:59px;height:59px;border-radius:50%;object-fit:cover;box-shadow:0 2px 7px #17354c20;border:2px solid #e3edf6;flex:none}
+.rs-share-avatar-empty{display:flex;align-items:center;justify-content:center;background:#e9eef4;color:#607c92;font-size:19px;font-weight:900}
+.rs-share-crew{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.rs-share-crew-item{position:relative;display:flex;flex-direction:column;gap:4px;align-items:center;font-size:11px;color:#42576b;font-weight:800;cursor:pointer}
+.rs-share-crew-item input{position:absolute;top:0;right:9px;accent-color:#0876e9;width:17px;height:17px}
+.rs-share-crew-item img{width:61px;height:61px;object-fit:contain;border:2px solid #e2e9f1;border-radius:50%;background:#eaf6fc}
+.rs-share-note{font-size:12px;color:#789}
+.rs-share-fields{display:grid;grid-template-columns:1fr 1fr;gap:7px 13px}
+.rs-share-field{min-height:37px;display:flex;align-items:center;justify-content:space-between;gap:7px;font-size:12px;font-weight:700;border-bottom:1px solid #edf0f4}
+.rs-share-field input{appearance:none;flex:none;width:35px;height:21px;border-radius:18px;background:#d0d6dd;border:0;position:relative;cursor:pointer}
+.rs-share-field input:before{content:"";display:block;position:absolute;left:3px;top:3px;width:15px;height:15px;background:white;border-radius:50%;transition:transform .15s}
+.rs-share-field input:checked{background:#0876ec}
+.rs-share-field input:checked:before{transform:translateX(14px)}
+.rs-share-field input:disabled{opacity:.36}
+.rs-share-styles{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:5px}
+.rs-share-styles button{border:1px solid #e0e7ee;background:#fff;border-radius:11px;min-height:39px;color:#4c6175;font:800 12px system-ui}
+.rs-share-styles button.selected{background:#e8f2ff;border:2px solid #1177ec;color:#086ad8}
+.rs-share-error{border-radius:10px;padding:12px;color:#a23421;background:#fff2ee;font-size:12px}
+.rs-share-footer{position:sticky;bottom:0;z-index:2;padding:12px 16px calc(13px + env(safe-area-inset-bottom,0px));border-top:1px solid #ecedef;background:#fffdf8}
+.rs-share-submit{border:0;background:linear-gradient(105deg,#ffe84b,#ffcb25);color:#1c2633;border-radius:15px;width:100%;min-height:51px;font:900 16px system-ui;box-shadow:0 4px 12px #eea92b35}
+.rs-share-submit:disabled{opacity:.48}
+.rs-share-footer p{font-size:10px;color:#6c7782;line-height:1.4;text-align:center;margin:8px 2px 0}
+@media(min-width:700px){.rs-share-dialog{min-height:min(95dvh,970px);max-height:95dvh;border-radius:21px;margin:auto;overflow:auto}.rs-share-head{padding-top:13px}}
