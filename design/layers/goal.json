@@ -23,7 +23,23 @@
     {
       "role": "CHARACTER_SLOT",
       "status": "IMPLEMENTATION_OPEN",
-      "issue": "Approved child + selected companion preparation placement is not implemented in current missionView."
+      "issue": "Approved child full-character preparation placement remains open; selected companion slot is implemented.",
+      "bound_subslots": [
+        {
+          "id": "selected-companion",
+          "status": "RUNTIME_SLOT",
+          "selector": "#missionCompanionCard",
+          "portrait_selector": "#missionCompanionPortrait",
+          "owner": "READY_EXPEDITION_COMPANION_PRESENTATION",
+          "source_pr": 118,
+          "source_head": "4d7ec48ec6a54b8dabb3fffb840e8cde00555d67"
+        },
+        {
+          "id": "child-full-character",
+          "status": "IMPLEMENTATION_OPEN",
+          "issue": "Approved child Visual-ID preparation placement not yet bound in Goal."
+        }
+      ]
     },
     {
       "role": "FUNCTION_UI",
