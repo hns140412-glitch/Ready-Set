@@ -204,7 +204,7 @@ function readyOneGoodReflection(r){
     ? '오늘 녹음에서 네가 가장 마음에 든 부분은 어디였어?'
     : '오늘 작전에서 다음에도 그대로 해보고 싶은 건 뭐였어?';
 }
-function readyCrewCharacterId(type=state.guide.type){return 'LEGACY_READY_SET:'+String(type||'guide')}
+function readyCrewCharacterId(type=state.guide.type){const localId=type||state.guide.type;return globalThis.TakyCrewIdentityBridge?.resolve?.(localId)?.character_id||'LEGACY_READY_SET:'+String(localId)}
 function appendReadyCrewEvidence(eventId,type,characterType,evidenceRef,context={}){
   const ev=globalThis.TakyCrewEvidenceRuntime;
   if(!ev?.append)return {ok:false,reason:'CREW_EVIDENCE_RUNTIME_UNAVAILABLE'};
