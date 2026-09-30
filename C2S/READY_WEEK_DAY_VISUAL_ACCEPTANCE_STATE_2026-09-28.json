@@ -13,7 +13,8 @@
     "path": null,
     "visual_id": null,
     "sha256": null,
-    "approval_evidence": null
+    "approval_evidence": null,
+    "role": "RUNTIME_CLEAN_PLATE_OR_VERIFIED_SEMANTIC_LAYER_AUTHORITY_NOT_YET_CREATED"
   },
   "scene_binding": {
     "weekly": null,
@@ -29,8 +30,15 @@
     "evidence": null
   },
   "fail_reasons": [
-    "SOURCE_BASE_CAMP_ORIGINAL_NOT_BOUND",
-    "CSS_ABSTRACT_SHAPES_ARE_NOT_2_5D_ENVIRONMENT",
-    "BROWSER_LAYOUT_PASS_IS_NOT_VISUAL_APPROVAL"
-  ]
+    "CURRENT_ACCEPTED_REFERENCE_RECOVERED_BUT_RUNTIME_CLEAN_PLATE_OR_VERIFIED_SEMANTIC_LAYERS_MISSING",
+    "ACTUAL_CHILD_VISUAL_AND_SELECTED_COMPANION_NOT_BOUND_IN_ACCEPTED_WEEK_DAY_SCENE",
+    "WEEK_DAY_MOBILE_TABLET_1_TO_1_VISUAL_COMPARISON_NOT_APPROVED",
+    "PHYSICAL_DEVICE_VERIFICATION_OPEN"
+  ],
+  "reference_authority": {
+    "status": "EXACT_ACCEPTED_REFERENCES_RECOVERED_AND_CENTRALIZED",
+    "receipt": "C2S/READY_WEEK_DAY_REFERENCE_RECOVERY_2026-09-30.json",
+    "central_repo": "hns140412-glitch/TAKY-ASSETS",
+    "central_commit": "bfcc6d8a512b0d9600f5ec5a31d51a5bd9a12e57"
+  }
 }
