@@ -13,7 +13,8 @@ test('Ready loads TAKY shared release and PWA contracts', async ({ page }) => {
 
   expect(runtime.releaseValid).toBe(true);
   expect(runtime.release.app_id).toBe('ready-set');
-  expect(runtime.release.release_id).toBe('ready-set-1.0.0-alpha.1-r3');
+  expect(await page.evaluate(()=>globalThis.ReadySetRev07?.version)).toBe(runtime.release.runtime_version);
+  expect(runtime.release.release_id).toBe('ready-set-1.0.0-alpha.1-r4');
   expect(runtime.updateStates).toContain('DOWNLOADED_WAITING');
   expect(runtime.updateStates).toContain('SAFE_TO_ACTIVATE');
   expect(runtime.updateAdapter).toBe(true);
@@ -21,7 +22,7 @@ test('Ready loads TAKY shared release and PWA contracts', async ({ page }) => {
 
   const versionText = await page.locator('#readyVersionInfo').textContent();
   expect(versionText).toContain('1.0.0-alpha.1');
-  expect(versionText).toContain('ready-set-1.0.0-alpha.1-r3');
+  expect(versionText).toContain('ready-set-1.0.0-alpha.1-r4');
 });
 
 test('service worker uses controlled APPLY_UPDATE instead of install-time skipWaiting', async ({ request }) => {
