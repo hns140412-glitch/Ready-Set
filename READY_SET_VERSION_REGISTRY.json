@@ -15,10 +15,10 @@
   "build_identity": {
     "release_id": "ready-set-1.0.0-alpha.1-r3",
     "cache_identity_policy": "ready-set:<release_id>",
-    "main_sha": "8ccd81ef7c2fbf36b7c410fc9eb33e0cc79c4bbc",
+    "main_sha": "6bce95d1620303c63e6847e30b3c9e0a2e7abc6f",
     "build_id_policy": "release descriptor + exact git SHA/CI build evidence",
     "feature_named_cache_versions_forbidden": true,
-    "main_tree_sha": "1b5a45dbcf4cc30705d7f8f233822915b5a9aa31",
+    "main_tree_sha": "cebb99ebc8711d24f0f7df184d2bac36cf321237",
     "validation_state": "EXACT_MAIN_CI_RUNTIME_VERIFIED__DEVICE_PRODUCTION_PENDING"
   },
   "active_authority": {
