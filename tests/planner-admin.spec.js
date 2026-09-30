@@ -27,7 +27,8 @@ test('Schedule Commitment remains editable while legacy Parent allocation contro
   await page.locator('#bufferKind').selectOption('TRAVEL');
   await page.locator('#bufferTitle').fill('영어학원 이동');
   await page.locator('#bufferMode').selectOption('AROUND_COMMITMENT');
-  await page.locator('#bufferLinkedCommitment').selectOption({label:/영어학원/});
+  const linkedCommitmentId=await page.locator('#bufferLinkedCommitment option').first().getAttribute('value');
+  await page.locator('#bufferLinkedCommitment').selectOption(linkedCommitmentId);
   await page.locator('#bufferSide').selectOption('BEFORE');
   await page.locator('#bufferMinutes').fill('20');
   await page.locator('#saveBufferBtn').click();
