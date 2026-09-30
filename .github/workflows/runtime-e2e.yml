@@ -35,6 +35,8 @@ jobs:
         run: node tests/character-dom-binder.spec.js
       - name: Validate approved asset resolver
         run: node tests/approved-asset-resolver.spec.js
+      - name: Validate staged character registry activation
+        run: node tests/character-registry-state.spec.js
       - name: Validate TAKY Design Gate authority
         run: node tools/validate-design-gate.mjs
       - uses: actions/setup-node@v4
