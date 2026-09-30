@@ -43,6 +43,8 @@ jobs:
         run: node tests/surface-scene-policy.spec.js
       - name: Validate live Crew semantic runtime
         run: node tests/live-crew-semantic-runtime.spec.js
+      - name: Validate live Crew event chain
+        run: node tests/live-crew-event-chain.spec.js
       - name: Pre-Gate JavaScript syntax check
         run: |
           node --check app.js
