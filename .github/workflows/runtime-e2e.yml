@@ -53,6 +53,8 @@ jobs:
         run: node tests/shared-crew-browser-behavior.spec.js
       - name: Validate Ready recording context
         run: node tests/ready-recording-context.spec.js
+      - name: Validate Ready recording analysis
+        run: node tests/ready-recording-analysis.spec.js
       - name: Validate Ready Smart Random Guest
         run: node tests/ready-smart-random-guest.spec.js
       - name: Pre-Gate JavaScript syntax check
