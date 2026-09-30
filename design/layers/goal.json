@@ -1,0 +1,34 @@
+{
+  "schema": "TAKY_LAYER_CONTRACT_V1",
+  "screen_id": "goal",
+  "layers": [
+    {
+      "role": "BACKGROUND",
+      "status": "ASSET_PRODUCTION_OPEN",
+      "owner": "READY_VISUAL",
+      "note": "Approved Goal Base Camp environment not bound."
+    },
+    {
+      "role": "FOREGROUND",
+      "status": "ASSET_PRODUCTION_OPEN",
+      "owner": "READY_VISUAL",
+      "note": "Preparation table/foreground separation open."
+    },
+    {
+      "role": "OBJECT",
+      "status": "ASSET_PRODUCTION_OPEN",
+      "owner": "READY_VISUAL",
+      "note": "Goal props/walkie-talkie asset separation open."
+    },
+    {
+      "role": "CHARACTER_SLOT",
+      "status": "IMPLEMENTATION_OPEN",
+      "issue": "Approved child + selected companion preparation placement is not implemented in current missionView."
+    },
+    {
+      "role": "FUNCTION_UI",
+      "status": "IMPLEMENTATION_OPEN",
+      "issue": "Current missionView does not match approved Goal composition."
+    }
+  ]
+}
