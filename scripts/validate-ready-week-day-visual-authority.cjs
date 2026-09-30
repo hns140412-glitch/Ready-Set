@@ -5,7 +5,20 @@ const crypto=require('node:crypto');
 const path=require('node:path');
 const state=JSON.parse(fs.readFileSync('C2S/READY_WEEK_DAY_VISUAL_ACCEPTANCE_STATE_2026-09-28.json','utf8'));
 const problems=[];
-const latest=JSON.parse(fs.readFileSync('C2S/READY_WEEK_DAY_LATEST_SOURCE_LAYER_GATE_2026-09-29.json','utf8'));\nconst recovery=JSON.parse(fs.readFileSync('C2S/READY_WEEK_DAY_REFERENCE_RECOVERY_2026-09-30.json','utf8'));
+const latest=JSON.parse(fs.readFileSync('C2S/READY_WEEK_DAY_LATEST_SOURCE_LAYER_GATE_2026-09-29.json','utf8'));
+const recovery=JSON.parse(fs.readFileSync('C2S/READY_WEEK_DAY_REFERENCE_RECOVERY_2026-09-30.json','utf8'));
+if(recovery.status!=='EXACT_ACCEPTED_REFERENCES_RECOVERED_AND_CENTRALIZED__RUNTIME_SCENE_STILL_OPEN')
+  problems.push('REFERENCE_RECOVERY_STATE_INVALID: '+recovery.status);
+for(const name of ['week','day','preparation_scene']){
+  const a=latest.references?.[name];
+  const b=recovery.references?.[name];
+  if(!a||!b||a.sha256!==b.sha256||a.width!==b.width||a.height!==b.height)
+    problems.push('REFERENCE_RECOVERY_MISMATCH: '+name);
+}
+if(recovery.verification?.exact_sha256_recovered!==true||recovery.verification?.central_git_blob_written!==true)
+  problems.push('REFERENCE_RECOVERY_VERIFICATION_INCOMPLETE');
+if(!/^([a-f0-9]{40})$/.test(recovery.central_source?.commit||'')||!recovery.central_source?.manifest)
+  problems.push('CENTRAL_REFERENCE_POINTER_INVALID');
 if(latest.status!=='PRODUCTION_SCENE_VERIFIED')problems.push('LATEST_ACCEPTED_WEEK_DAY_SOURCE_NOT_IMPLEMENTED: '+latest.status);
 for(const name of ['week','day','preparation_scene']){
   const row=latest.references?.[name];
