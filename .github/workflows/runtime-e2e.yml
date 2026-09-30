@@ -19,6 +19,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate app Scene Policy adapter
         run: node tests/scene-policy-adapter.spec.js
+      - name: Validate character Runtime adapter
+        run: node tests/character-runtime-adapter.spec.js
       - name: Validate TAKY Design Gate authority
         run: node tools/validate-design-gate.mjs
       - uses: actions/setup-node@v4
