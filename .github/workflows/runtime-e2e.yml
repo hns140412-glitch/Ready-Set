@@ -49,6 +49,8 @@ jobs:
         run: node tests/crew-evidence-runtime.spec.js
       - name: Validate Crew identity bridge
         run: node tests/crew-identity-bridge.spec.js
+      - name: Validate shared Crew browser behavior
+        run: node tests/shared-crew-browser-behavior.spec.js
       - name: Pre-Gate JavaScript syntax check
         run: |
           node --check app.js
