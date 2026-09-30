@@ -1,5 +1,5 @@
 {
-  "status_version": "READY_C2S_REWRITE_01.8",
+  "status_version": "READY_C2S_REWRITE_01.9",
   "product": "Ready & Set",
   "evidence_policy": "Validation belongs to an exact code SHA; product/version labels alone never imply validation.",
   "current_main_sha_at_r0": "c82109651609440d2e9e08486f2ef5a042a68e46",
@@ -10,7 +10,7 @@
     "device_verified": false,
     "production_verified": false,
     "evidence_state": "EXACT_MAIN_CI_RUNTIME_VERIFIED",
-    "reason": "Exact main 6bce95d1620303c63e6847e30b3c9e0a2e7abc6f (merge of PR #132) matches PR-head tree cebb99ebc8711d24f0f7df184d2bac36cf321237 and passed Ready Integration CI, Ready Runtime E2E, and TAKY Codex Worker Self-Test on exact main. Device and production verification remain separate."
+    "reason": "Exact main 8a99f75fa70ca48037c80f45974718c40a2efe07 (merge of PR #134) matches PR-head tree 2e7b466e8de29e64bd3eaabed232485eb7339a08 and passed Ready Integration CI, Ready Runtime E2E, and TAKY Codex Worker Self-Test on exact main. Device and production verification remain separate."
   },
   "historical_verified_evidence": {
     "status": "HISTORICAL_REFERENCE_ONLY"
@@ -18,8 +18,8 @@
   "rewrite_gates": {
     "R0_CANONICAL_SKELETON": "COMPLETE",
     "R1_SINGLE_SESSION_ENGINE": "IMPLEMENTED_TARGETED_VERIFIED__SINGLE_PLANNER_ACTIVE_TASK_CONSOLIDATED",
-    "R2_PRODUCT_LANGUAGE_AUTHORITY": "PARTIAL_IMPLEMENTED_CANONICAL_IDENTITY_AND_README_ALIGNED",
-    "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "PARTIAL_IMPLEMENTED_SHARED_RELEASE_RUNTIME_VERIFIED",
+    "R2_PRODUCT_LANGUAGE_AUTHORITY": "COMPLETE__VISIBLE_UI_BASE_CAMP_IDENTITY_AND_LEGACY_TIME_ATTACK_MANIFEST_REMOVED",
+    "R3_VERSION_BUILD_VALIDATION_UNIFICATION": "PARTIAL_IMPLEMENTED__SHARED_RELEASE_RUNTIME_VERIFIED__LEGACY_MANIFEST_REMOVED",
     "R4_CHILD_FACT_CONFIRMATION_PATH": "IMPLEMENTED_TARGETED_VERIFIED",
     "R5_PLANNER_FREE_WINDOW": "IMPLEMENTED_EXACT_MAIN_VERIFIED__DAILY_WEEKLY_PERIOD_COMMITMENTS_AND_PARENT_CONFIRMED_LIFESTYLE_BUFFERS",
     "R6_LEGACY_AUTHORITY_ARCHIVE": "IMPLEMENTED_TARGETED_VERIFIED__LEGACY_AUTHORITY_ISOLATED",
@@ -27,68 +27,55 @@
   },
   "release_state": "REWRITE_IN_PROGRESS_NOT_RELEASE_VERIFIED",
   "latest_targeted_evidence": {
-    "sha": "a1dc536a2542815f358835492b738f52fabdf57b",
-    "pr": 132,
-    "scope": "Planner real free-window semantics with Parent-confirmed TRAVEL / MEAL / PREPARATION / REST / SAFETY buffers, period/weekly reuse, UI editing, and cleanup cascades",
+    "sha": "2a0a95c49d038794b1465b3604777a5dae055447",
+    "pr": 134,
+    "scope": "Visible product identity alignment to Ready & Set / Base Camp / exploration language, removal of Time Attack / FOCUS MODE branding, deletion of unused legacy manifest.json, and product-language regression gate",
     "result": "TARGETED_BEHAVIOR_VERIFIED_AND_MERGED",
     "gates": {
-      "planner_free_window": {
-        "run_id": 36762820112,
-        "status": "PASS"
-      },
-      "weekly_availability": {
-        "run_id": 36762820230,
-        "status": "PASS"
-      },
-      "daily_availability": {
-        "run_id": 36762820184,
-        "status": "PASS"
-      },
       "integration_ci": {
-        "run_id": 36762820155,
+        "run_id": 36764101304,
         "status": "PASS"
       },
       "runtime_e2e": {
-        "run_id": 36762820071,
+        "run_id": 36764101201,
         "status": "PASS"
       },
       "codex_selftest": {
-        "run_id": 36762820339,
+        "run_id": 36764101174,
         "status": "PASS"
       },
-      "single_active_task": {
-        "run_id": 36762820145,
+      "daily_availability": {
+        "run_id": 36764101278,
         "status": "PASS"
       },
-      "child_fact_confirmation": {
-        "run_id": 36762820021,
+      "weekly_availability": {
+        "run_id": 36764101303,
         "status": "PASS"
       },
       "hide_memory_roundtrip": {
-        "run_id": 36762820026,
+        "run_id": 36764101309,
         "status": "PASS"
       }
     },
     "exact_main_gates": {
       "integration_ci": {
-        "run_id": 36763202560,
+        "run_id": 36764298178,
         "status": "PASS"
       },
       "runtime_e2e": {
-        "run_id": 36763202562,
+        "run_id": 36764298214,
         "status": "PASS"
       },
       "codex_selftest": {
-        "run_id": 36763202586,
+        "run_id": 36764298226,
         "status": "PASS"
       }
     },
     "claim_boundary": "CODED / CI_VERIFIED / RUNTIME_VERIFIED on exact main; DEVICE_VERIFIED and PRODUCTION_VERIFIED not asserted",
-    "merged_main_sha": "6bce95d1620303c63e6847e30b3c9e0a2e7abc6f"
+    "merged_main_sha": "8a99f75fa70ca48037c80f45974718c40a2efe07"
   },
   "open_product_gaps": [
-    "R2 product language/UI authority remains partially implemented outside the current Planner scope.",
-    "R3 version/build/validation unification remains partially implemented beyond the exact-main evidence recorded here.",
+    "R3 version/build/validation unification remains partially implemented; legacy Time Attack manifest cleanup is complete, but remaining release/version mirrors and migration-status consistency still require closure.",
     "Shared expedition-member authority consumption remains OPEN.",
     "Base Camp naming/island identity remains OPEN post-core.",
     "Imagination Cloud call remains OPEN post-core.",
@@ -97,9 +84,9 @@
   ],
   "head_policy": "STATUS_FILE_CANNOT_SELF_ASSERT_EVENTUAL_MERGE_SHA; repository head is volatile and must be live-refreshed when material.",
   "runtime_code_basis": {
-    "sha": "6bce95d1620303c63e6847e30b3c9e0a2e7abc6f",
-    "tree_sha": "cebb99ebc8711d24f0f7df184d2bac36cf321237",
-    "relation": "CURRENT_EXACT_MAIN_AFTER_PR_132",
-    "note": "Includes period-scoped fixed timetables plus Parent-confirmed lifestyle buffers. Exact-main Integration CI, Runtime E2E, and TAKY Self-Test passed; device/production remain unverified."
+    "sha": "8a99f75fa70ca48037c80f45974718c40a2efe07",
+    "tree_sha": "2e7b466e8de29e64bd3eaabed232485eb7339a08",
+    "relation": "CURRENT_EXACT_MAIN_AFTER_PR_134",
+    "note": "Visible Ready identity is aligned to Base Camp/exploration language and the unused legacy Time Attack manifest is removed. Exact-main Integration CI, Runtime E2E, and TAKY Self-Test passed; device/production remain unverified."
   }
 }
