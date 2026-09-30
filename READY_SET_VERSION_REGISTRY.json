@@ -65,5 +65,8 @@
     "consumer_state": "READY_MIGRATION_IMPLEMENTED__CI_RUNTIME_VERIFIED__DEVICE_PRODUCTION_PENDING",
     "migration_document": "READY_SHARED_RUNTIME_MIGRATION_V01.md",
     "migration_status": "READY_CONSUMER_MERGED_VERIFIED__DEVICE_PRODUCTION_PENDING"
-  }
+  },
+  "runtime_version": "2026.09.07-rev07-b",
+  "runtime_version_source": "ready-release-v01.js",
+  "runtime_implementation": "ready-runtime-v07.js"
 }
