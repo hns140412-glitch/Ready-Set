@@ -90,6 +90,80 @@
       source_app:'ready-set',type:'READY_LEARNING_OBSERVATION',
       authority:'CHECKPOINT_PROGRESS_ONLY_NOT_VERIFIED_PERFORMANCE'};
   }
+  function fromExecutionFriction(candidate={}, {session}={}){
+    if(session?.authenticated!==true||!clean(session.family_id)||!clean(session.selected_member_id))
+      return {ok:false,reason:'TRUSTED_SELECTED_MEMBER_SESSION_REQUIRED'};
+    if(candidate?.authority!=='READY_EXECUTION_FRICTION_OBSERVATION_ONLY'||
+       candidate?.observation_only!==true||candidate?.global_mastery_claim!==false)
+      return {ok:false,reason:'READY_EXECUTION_FRICTION_OBSERVATION_REQUIRED'};
+    if(!clean(candidate.event_id)||!clean(candidate.observed_at)||
+       !Number.isFinite(Date.parse(candidate.observed_at))||
+       !clean(candidate.assignment_id)||!clean(candidate.subject)||
+       !clean(candidate.concept_skill_target))
+      return {ok:false,reason:'READY_EXECUTION_FRICTION_SCOPE_REQUIRED'};
+    if(['DEADLINE_EXCEEDED','REPEATED_CARRY_NEAR_DEADLINE']
+       .includes(clean(candidate.escalation_reason)))
+      return {ok:false,reason:'SCHEDULE_PRESSURE_IS_NOT_LEARNING_FRICTION'};
+    const forbidden=new Set([
+      'verification_receipt','verification_candidate','verified_outcome',
+      'planner_date','schedule_date','due_at','deadline','deadline_date',
+      'global_mastery_claim_true','auto_award'
+    ]);
+    function leaks(value){
+      if(!value||typeof value!=='object')return false;
+      return Object.entries(value).some(([key,nested])=>forbidden.has(key)||leaks(nested));
+    }
+    if(leaks(candidate))return {ok:false,reason:'READY_EXECUTION_FRICTION_AUTHORITY_LEAK'};
+
+    const payload={
+      family_id:session.family_id,
+      member_id:session.selected_member_id,
+      subject:clean(candidate.subject),
+      concept_skill_target:clean(candidate.concept_skill_target),
+      assignment_id:clean(candidate.assignment_id),
+      source_carry_over_id:clean(candidate.carry_over_id)||null,
+      carry_over_depth:Number.isFinite(Number(candidate.carry_over_depth))
+        ?Math.max(0,Number(candidate.carry_over_depth)):null,
+      carry_over_state:clean(candidate.carry_over_state)||null,
+      escalation_reason:clean(candidate.escalation_reason)||'REPEATED_CARRY_LIMIT',
+      observation_count:Number.isFinite(Number(candidate.observation_count))
+        ?Math.max(0,Number(candidate.observation_count)):0,
+      friction_states:Array.isArray(candidate.states)
+        ?candidate.states.map(clean).filter(Boolean).slice(-12):[],
+      actual_minutes:Array.isArray(candidate.actual_minutes)
+        ?candidate.actual_minutes.filter(Number.isFinite).slice(-12):[],
+      observation_only:true,
+      global_mastery_claim:false,
+      verified_performance:false,
+      evidence_type:'READY_EXECUTION_FRICTION_OBSERVATION',
+      instrument_version:'READY_CARRY_FRICTION_V1',
+      forwarded_ready_friction_observation:true
+    };
+    return {
+      ok:true,
+      observation:{
+        event_id:clean(candidate.event_id),
+        occurred_at:clean(candidate.observed_at),
+        member_id:session.selected_member_id,
+        payload
+      },
+      source_app:'ready-set',
+      type:'READY_LEARNING_OBSERVATION',
+      authority:'EXECUTION_FRICTION_OBSERVATION_ONLY_NOT_PERFORMANCE'
+    };
+  }
+
+  async function enqueueExecutionFriction(candidate,{session,pipeline}={}){
+    if(!pipeline||typeof pipeline.enqueueReadyObservation!=='function')
+      return {ok:false,reason:'CENTRAL_PIPELINE_REQUIRED'};
+    const mapped=fromExecutionFriction(candidate,{session});
+    if(!mapped.ok)return mapped;
+    const queued=await pipeline.enqueueReadyObservation(mapped.observation);
+    if(!queued||queued.queued!==true&&queued.duplicate!==true)
+      return {ok:false,reason:'CENTRAL_OUTBOX_ENQUEUE_NOT_CONFIRMED',queued:queued||null};
+    return {ok:true,queued,authority:'LOCAL_OUTBOX_ONLY_NOT_CENTRAL_ACK'};
+  }
+
   async function enqueueOutcome(row,context,{pipeline}={}){
     if(!pipeline||typeof pipeline.enqueueReadyObservation!=='function')
       return {ok:false,reason:'CENTRAL_PIPELINE_REQUIRED'};
@@ -161,7 +235,8 @@
     }
     return {ok:true,results,authority:'LOCAL_OUTBOX_ONLY_NOT_CENTRAL_ACK'};
   }
-  const api=Object.freeze({VERSION,fromOutcome,fromCheckpointOutcome,expandOutcomes,enqueueOutcome,enqueueBatch});
+  const api=Object.freeze({VERSION,fromOutcome,fromCheckpointOutcome,fromExecutionFriction,
+    expandOutcomes,enqueueOutcome,enqueueExecutionFriction,enqueueBatch});
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   if(typeof window!=='undefined')window.ReadyCentralObservationHandoffV01=api;
 })();
