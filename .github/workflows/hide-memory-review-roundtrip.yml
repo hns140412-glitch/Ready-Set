@@ -1,6 +1,13 @@
 name: Hide Memory Review Roundtrip
 
 on:
+  push:
+    branches:
+      - taky/ready-growth-authority-cleanup-2026-10-02
+    paths:
+      - 'ready-hide-memory-review-v01.js'
+      - 'tests/hide-memory-review-roundtrip.test.js'
+      - '.github/workflows/hide-memory-review-roundtrip.yml'
   pull_request:
     paths:
       - 'ready-hide-memory-review-v01.js'
