@@ -13,7 +13,7 @@
        row.specialistResult?.memorySummary?.authority!=='SPECIALIST_MEMORY_ADVISORY_ONLY')
       return {ok:false,reason:'COMPLETED_HIDE_EVIDENCE_REQUIRED'};
     if(!clean(event_id)||!clean(occurred_at)||!Number.isFinite(Date.parse(occurred_at))||
-       !clean(subject)||!clean(concept_skill_target))
+       !clean(session_id||row.session_id)||!clean(subject)||!clean(concept_skill_target))
       return {ok:false,reason:'EXPLICIT_OBSERVATION_CONTEXT_REQUIRED'};
     // The specialist summary is observation data, not a carrier for
     // verification receipts, schedule decisions or global mastery claims.
@@ -80,7 +80,7 @@
        row.family_id!==session.family_id||
        row.member_id!==session.selected_member_id)
       return {ok:false,reason:'CENTRAL_CHECKPOINT_MEMBER_SCOPE_MISMATCH'};
-    if(!clean(subject)||!clean(concept_skill_target)||
+    if(!clean(session_id||row.session_id)||!clean(subject)||!clean(concept_skill_target)||
        provenance.subject!==clean(subject).toLowerCase()||
        provenance.concept_skill_target!==clean(concept_skill_target).toLowerCase()||
        !clean(event_id)||!Number.isFinite(Date.parse(occurred_at||'')))
