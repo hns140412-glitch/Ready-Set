@@ -210,6 +210,10 @@
           ...(Array.isArray(input.activity_sequence)?{activity_sequence:[...input.activity_sequence]}:{}),
           ...(input.review_policy&&typeof input.review_policy==='object'?
             {review_policy:structuredClone(input.review_policy)}:{}),
+          ...(input.planner_allocation&&typeof input.planner_allocation==='object'?
+            {planner_allocation:structuredClone(input.planner_allocation)}:{}),
+          ...(input.specialist_growth_intent&&typeof input.specialist_growth_intent==='object'?
+            {specialist_growth_intent:structuredClone(input.specialist_growth_intent)}:{}),
           order:Number.isFinite(input.order)?input.order:999,
           state,
           created_at:input.created_at||new Date().toISOString(),
@@ -258,6 +262,8 @@
         difficulty:Number.isFinite(x.difficulty)?x.difficulty:null,
         recovery_need:x.recovery_need||null,
         review_policy:x.review_policy||null,
+        planner_allocation:x.planner_allocation||null,
+        specialist_growth_intent:x.specialist_growth_intent||null,
         parent_help_dependency:x.parent_help_dependency||null
       }));
     }
@@ -1255,6 +1261,8 @@
         difficulty:Number.isFinite(x.difficulty)?x.difficulty:null,
         recovery_need:x.recovery_need||null,
         review_policy:x.review_policy||null,
+        planner_allocation:x.planner_allocation||null,
+        specialist_growth_intent:x.specialist_growth_intent||null,
         parent_help_dependency:x.parent_help_dependency||null,
         planner_owned:/^PLANNER/.test(x.source||'')
       }));
@@ -1267,6 +1275,20 @@
         if(!t.todo_id||todoIds.has(t.todo_id))issues.push('DATED_TODO_ID_INVALID');
         todoIds.add(t.todo_id);
         if(!TODO_STATES.has(t.state))issues.push('DATED_TODO_STATE_INVALID');
+        if(t.planner_allocation){
+          if(t.planner_allocation.authority!=='READY_SET_PLANNER_ALLOCATION')
+            issues.push('PLANNER_ALLOCATION_AUTHORITY_INVALID');
+          if(t.planner_allocation.date!==t.date)
+            issues.push('PLANNER_ALLOCATION_DATE_MISMATCH');
+          if(t.planner_allocation.date_and_quantity_owner!=='READY_SET_PLANNER')
+            issues.push('PLANNER_ALLOCATION_OWNER_INVALID');
+          if(t.planner_allocation.learning_engine_date_authority!==false||
+             t.planner_allocation.learning_engine_quantity_authority!==false)
+            issues.push('LEARNING_ENGINE_ALLOCATION_AUTHORITY_LEAK');
+        }
+        if(t.specialist_growth_intent&&
+           t.specialist_growth_intent.authority!=='LEARNING_ENGINE_GROWTH_INTENT_ONLY')
+          issues.push('SPECIALIST_GROWTH_INTENT_AUTHORITY_INVALID');
       }
       for(const e of s.progress_events){
         if(e.todo_id&&!todoIds.has(e.todo_id))issues.push('ORPHAN_PROGRESS_EVENT');
