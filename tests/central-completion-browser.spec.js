@@ -143,6 +143,8 @@ test('one real Ready task returning Hide also preserves separate central checkpo
    ids:detail?.task_outcomes?.map(x=>x.task_id)};
  });
  expect(result.persistedCount).toBe(1);
- expect(result.kinds).toEqual(['HIDE_MEMORY','CENTRAL_CHECKPOINT_PROGRESS']);
- expect(result.ids).toEqual(['dual-task','dual-task']);
+ expect(result.kinds).toEqual([
+  'READY_EXECUTION_FACT','HIDE_MEMORY','CENTRAL_CHECKPOINT_PROGRESS'
+ ]);
+ expect(result.ids).toEqual(['dual-task','dual-task','dual-task']);
 });
