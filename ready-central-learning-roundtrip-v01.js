@@ -241,9 +241,9 @@
   };
   const attached=attachReadySession({eventTarget:target,roundtrip,
    resolveRecordOptions,onResult:handler});
-  const frictionAttached=attachReadyFriction({
-   eventTarget:target,roundtrip,onResult:handler
-  });
+  const frictionAttached=typeof roundtrip?.recordExecutionFriction==='function'
+   ?attachReadyFriction({eventTarget:target,roundtrip,onResult:handler})
+   :Object.freeze({detach(){}});
   const host=Object.freeze({
    activeScope(){
     const scope=activeScopeProvider();
