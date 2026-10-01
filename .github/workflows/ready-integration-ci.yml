@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - taky/ready-integration-v01
+      - taky/ready-growth-authority-cleanup-2026-10-02
   pull_request:
     branches:
       - main
