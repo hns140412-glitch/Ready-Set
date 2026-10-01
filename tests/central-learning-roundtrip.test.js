@@ -205,6 +205,48 @@ const context=row=>({event_id:'evt:'+row.task_id,
  assert.equal(crossCheckpoint.reason,'CENTRAL_CHECKPOINT_MEMBER_SCOPE_MISMATCH');
  assert.equal(evidenceResponses,beforeCheckpoint+1);
  await observational.close();
+
+ const frictionStore=store();
+ const frictionHost=Orchestrator.create({
+  sessionProvider,tokenProvider:async()=> 'verified-test-token-friction',fetchImpl,
+  evidenceEndpointUrl:'https://central.example.test/api/learning/evidence',
+  decisionEndpointUrl:'https://central.example.test/api/learning/decision',
+  storageAdapter:frictionStore,cryptoProvider:webcrypto,
+  centralPipelineFactory:browser.TakyCentralEvidence.pipeline.create
+ });
+ const beforeFrictionTodos=planner.snapshot().dated_todos.length;
+ const frictionCandidate={
+  authority:'READY_EXECUTION_FRICTION_OBSERVATION_ONLY',
+  event_id:'ready-friction:carry-1:4',
+  observed_at:'2026-09-27T02:00:00.000Z',
+  escalation_reason:'REPEATED_CARRY_LIMIT',
+  carry_over_id:'carry-1',carry_over_state:'OPEN',carry_over_depth:4,
+  observation_count:4,states:['PARTIAL','DEFERRED','PARTIAL','BLOCKED'],
+  actual_minutes:[20,22,25,24],assignment_id:'assignment-1',
+  subject:'english',concept_skill_target:'vocabulary',
+  observation_only:true,global_mastery_claim:false
+ };
+ const frictionRecorded=await frictionHost.recordExecutionFriction({
+  candidate:frictionCandidate
+ });
+ assert.equal(frictionRecorded.ok,true,JSON.stringify(frictionRecorded));
+ assert.equal(frictionRecorded.scheduled,false);
+ assert.equal(frictionRecorded.reason,
+  'EXECUTION_FRICTION_RECORDED_DIAGNOSTIC_EVIDENCE_PENDING');
+ assert.equal(frictionRecorded.observation_acknowledged,true);
+ assert.equal(planner.snapshot().dated_todos.length,beforeFrictionTodos,
+  'friction observation must never mutate Planner directly');
+ assert.equal(seenObservation.evidence_type,'READY_EXECUTION_FRICTION_OBSERVATION');
+ assert.equal(seenObservation.forwarded_ready_friction_observation,true);
+ assert.equal(seenObservation.escalation_reason,'REPEATED_CARRY_LIMIT');
+ const schedulePressure=await frictionHost.recordExecutionFriction({candidate:{
+  ...frictionCandidate,event_id:'ready-friction:carry-deadline:4',
+  escalation_reason:'DEADLINE_EXCEEDED'
+ }});
+ assert.equal(schedulePressure.ok,false);
+ assert.equal(schedulePressure.reason,'SCHEDULE_PRESSURE_IS_NOT_LEARNING_FRICTION');
+ await frictionHost.close();
+
  const appSource=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
  assert(appSource.includes("new CustomEvent('readyset-learning-outcomes-ready'"));
  assert(appSource.includes('central_learning_scope:structuredClone(boundCentral)'));
