@@ -4,7 +4,7 @@
   if(root) root.ReadyHideMemoryReviewV01=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
-  const VERSION='0.1.0';
+  const VERSION='0.2.0';
   const clean=v=>String(v??'').trim();
   const uniq=a=>[...new Set((a||[]).map(clean).filter(Boolean))];
 
@@ -32,14 +32,21 @@
     if(!rows.length)return {ok:true,decision:null,reason:'NO_REVIEW_NEEDED'};
     const lexicalIds=uniq(rows.map(x=>x.lexicalId));
     return {ok:true,decision:{
-      authority:'READY_LEARNING_ENGINE_REVIEW_POLICY',
-      reviewPolicyOwner:'READY_LEARNING_ENGINE',
+      authority:'READY_LOCAL_MEMORY_REVIEW_ADVISORY_ONLY',
+      reviewPolicyOwner:'TAKY_LEARNING_ENGINE_CORE',
       scheduleOwner:'READY_SET_PLANNER',
+      plannerMutationAuthorized:false,
       policyState:rows.some(x=>x.reviewNeed==='REQUIRED')?'REVIEW_REQUIRED':'REVIEW_RECOMMENDED',
       lexicalIds,
       evidence:rows,
       date:null,
-      todoId:null
+      todoId:null,
+      guards:{
+        hide_memory_is_observation:true,
+        ready_local_review_policy_authority:false,
+        central_learning_engine_required:true,
+        planner_owns_dates:true
+      }
     }};
   }
 
@@ -112,54 +119,13 @@
   }
 
   function planReview(decision,planner,options={}){
-    if(decision?.authority!=='READY_LEARNING_ENGINE_REVIEW_POLICY')return {ok:false,reason:'READY_REVIEW_DECISION_REQUIRED'};
-    if(decision?.scheduleOwner!=='READY_SET_PLANNER')return {ok:false,reason:'PLANNER_SCHEDULE_OWNER_REQUIRED'};
-    if(!planner?.candidateWindowsByDate||!planner?.upsertDatedTodo)return {ok:false,reason:'PLANNER_RUNTIME_REQUIRED'};
-    const sourceTaskId=clean(options.source_task_id);
-    const existing=sourceTaskId&&typeof planner.snapshot==='function'
-      ? (planner.snapshot()?.dated_todos||[]).find(x=>
-          x?.source==='PLANNER_SPECIALIST_MEMORY_REVIEW' &&
-          x?.provenance?.source_task_id===sourceTaskId) : null;
-    if(existing){
-      const directive=directiveForPlannerTodo(existing,existing.todo_id);
-      if(!directive)return {ok:false,reason:'EXISTING_REVIEW_TODO_INVALID'};
-      if(uniq(directive.lexicalIds).join('|')!==uniq(decision.lexicalIds).join('|'))
-        return {ok:false,reason:'REPLAY_REVIEW_DECISION_CONFLICT'};
-      return {ok:true,todo:existing,directive,reused:true};
-    }
-    const dates=uniq(options.candidate_dates);
-    if(!dates.length)return {ok:false,reason:'CANDIDATE_DATES_REQUIRED'};
-    const windows=planner.candidateWindowsByDate(dates)||{};
-    const date=dates.find(d=>Array.isArray(windows[d])&&windows[d].length>0);
-    if(!date)return {ok:false,reason:'NO_CONFIRMED_REVIEW_WINDOW'};
-    const todo=planner.upsertDatedTodo({
-      date,
-      label:clean(options.label)||'Language Memory 복습',
-      source:'PLANNER_SPECIALIST_MEMORY_REVIEW',
-      source_actor:'READY_SET_PLANNER',
-      learning_unit_id:clean(options.learning_unit_id)||null,
-      provenance:{
-        kind:'HIDE_MEMORY_REVIEW',
-        source_task_id:sourceTaskId||null,
-        review_policy_authority:'READY_LEARNING_ENGINE',
-        schedule_authority:'READY_SET_PLANNER',
-        lexical_ids:[...decision.lexicalIds],
-        policy_state:decision.policyState
-      },
-      state:'PLANNED'
-    });
-    if(!todo||!clean(todo.todo_id)||!dates.includes(clean(todo.date))||!/^\d{4}-\d{2}-\d{2}$/.test(clean(todo.date)))
-      return {ok:false,reason:'PLANNER_DATED_TODO_NOT_CONFIRMED'};
-    const directive={
-      authority:'EXPLICIT_READY_PLANNER_REVIEW_DIRECTIVE',
-      reviewPolicyOwner:'READY_LEARNING_ENGINE',
-      scheduleOwner:'READY_SET_PLANNER',
-      lexicalIds:[...decision.lexicalIds],
-      directiveId:'hide-review:'+todo.todo_id,
-      taskId:todo.todo_id,
-      scheduledDate:todo.date
+    return {
+      ok:false,
+      reason:'CENTRAL_LEARNING_ENGINE_REVIEW_REQUIRED',
+      legacy_local_planning_disabled:true,
+      decision:decision||null,
+      plannerMutationAttempted:false
     };
-    return {ok:true,todo,directive};
   }
 
   // Complete a local advisory review cycle without claiming central verification.
@@ -170,11 +136,13 @@
     if(!normalized)return {ok:false,reason:'VALID_HIDE_SPECIALIST_RESULT_REQUIRED'};
     const interpreted=interpretHideMemorySummary(normalized.memorySummary);
     if(!interpreted.ok)return interpreted;
-    if(!interpreted.decision)return {ok:true,scheduled:false,reason:'NO_REVIEW_NEEDED',decision:null};
-    const planned=planReview(interpreted.decision,planner,options);
-    if(!planned.ok)return {...planned,decision:interpreted.decision};
-    return {ok:true,scheduled:true,decision:interpreted.decision,
-      todo:planned.todo,directive:planned.directive};
+    return {
+      ok:true,
+      scheduled:false,
+      reason:interpreted.decision?'CENTRAL_LEARNING_ENGINE_REVIEW_REQUIRED':'NO_REVIEW_NEEDED',
+      decision:interpreted.decision||null,
+      plannerMutationAttempted:false
+    };
   }
 
   // A single explicit consumer for persisted Ready task outcomes. Do not
@@ -184,35 +152,15 @@
     const eligible=outcomes.filter(row=>row?.state==='COMPLETED' &&
       row?.centralCheckpoint?.source!=='PLANNER_CENTRAL_LEARNING_CHECKPOINT' &&
       clean(row?.task_id) && row?.specialistResult?.sourceApp==='hide-seek' &&
-      row?.specialistResult?.taskState==='COMPLETED' &&
-      row?.memoryReviewFeedback?.ok===true &&
-      row?.memoryReviewFeedback?.decision?.authority==='READY_LEARNING_ENGINE_REVIEW_POLICY');
+      row?.specialistResult?.taskState==='COMPLETED');
     if(!eligible.length)return {ok:true,scheduled:[],reason:'NO_ACTIONABLE_REVIEW_FEEDBACK'};
-    // Validate the entire batch before the first Planner mutation. A later
-    // corrupted projection must not leave earlier rows partially scheduled.
-    const validated=[];
-    const seen=new Map();
-    for(const row of eligible){
-      const derived=interpretHideMemorySummary(row.specialistResult.memorySummary);
-      if(!derived.ok||!derived.decision||
-        JSON.stringify(derived.decision)!==JSON.stringify(row.memoryReviewFeedback.decision))
-        return {ok:false,reason:'PERSISTED_REVIEW_FEEDBACK_MISMATCH',scheduled:[]};
-      const key=clean(row.task_id),fingerprint=JSON.stringify(derived.decision);
-      if(seen.has(key)){
-        if(seen.get(key)!==fingerprint)
-          return {ok:false,reason:'BATCH_SOURCE_TASK_CONFLICT',scheduled:[]};
-        continue;
-      }
-      seen.set(key,fingerprint);
-      validated.push({row,decision:derived.decision});
-    }
-    const scheduled=[];
-    for(const {row,decision} of validated){
-      const result=planReview(decision,planner,{...options,source_task_id:row.task_id});
-      if(!result.ok)return {ok:false,reason:result.reason,scheduled};
-      scheduled.push({source_task_id:clean(row.task_id),...result});
-    }
-    return {ok:true,scheduled};
+    return {
+      ok:true,
+      scheduled:[],
+      reason:'CENTRAL_LEARNING_ENGINE_REVIEW_REQUIRED',
+      plannerMutationAttempted:false,
+      observation_task_ids:uniq(eligible.map(x=>x.task_id))
+    };
   }
 
   return Object.freeze({version:VERSION,interpretHideMemorySummary,planReview,directiveForPlannerTodo,normalizeHideSpecialistResult,normalizeHideV2ReturnEvent,nextReviewFromSpecialistResult,planFromReadyOutcomes});
