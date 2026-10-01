@@ -17,6 +17,23 @@ const adaptive_plan={ok:true,adaptive_plan_contract:'TAKY_ADAPTIVE_PLAN_INTENT_V
  unit_span_policy:'REDUCE',add_checkpoint:true,add_retrieval_checkpoint:true,
  recovery_floor:'HIGH',assistance_policy:'FADE_GRADUALLY',
  target_learning_ids:['word:a']};
+const growth_next_step={
+ ok:true,version:'TAKY_GROWTH_NEXT_STEP_POLICY_V2',
+ authority:'LEARNING_ENGINE_GROWTH_INTENT_ONLY',
+ support_phase:'ELICIT_PULL',
+ growth_control:{
+  evidence_confidence:'MEDIUM',
+  learning_intensity:'BUILD_CONNECT',
+  expression_level:'L3_EXPANDED_SENTENCE',
+  easy_english_level:'EASY_ENGLISH',
+  question_depth:3,
+  hint_strength:'PARTIAL_FRAME',
+  hint_fade:'FADE_ONE_STEP_WHEN_SUCCESSFUL',
+  target_dimensions:['VOCABULARY','EXPRESSION'],
+  challenge_direction:'EXTEND'
+ },
+ guards:{planner_owns_dates:true}
+};
 const runtime={ok:true,authority:'TAKY_LEARNING_ENGINE_CORE',
  engine_runtime:'TAKY_LEARNING_ENGINE_RUNTIME_V1',scope:coreScope,
  decision:{ok:true,authority:'LEARNING_DECISION_INTENT_ONLY',
@@ -25,6 +42,7 @@ const runtime={ok:true,authority:'TAKY_LEARNING_ENGINE_CORE',
   execution_status:'PEDAGOGICAL_ACTION_AVAILABLE',
   pedagogical_actions:[{intent:'TARGETED_RECOVERY_PRACTICE',priority:'HIGH'}],
   adaptive_plan},
+ growth_next_step,
  trace:{verified_receipt_id:'real-evidence:server-r1',verified_evidence_count:1,
   basis_kind:'VERIFIED_ONLY',evidence_ids:['server-e1']}};
 const intent=Intake.accept(runtime,context);
@@ -43,6 +61,18 @@ assert.deepEqual(planned.todo.activity_sequence,
  ['SHORT_LEARNING_UNIT','RETRIEVAL_CHECKPOINT','ASSISTANCE_FADING']);
 assert.equal(planned.todo.provenance.verified_receipt_id,'real-evidence:server-r1');
 assert.equal(planned.todo.provenance.schedule_authority,'READY_SET_PLANNER');
+assert.equal(planned.todo.planner_allocation.authority,'READY_SET_PLANNER_ALLOCATION');
+assert.equal(planned.todo.planner_allocation.date,'2026-09-30');
+assert.equal(planned.todo.planner_allocation.quantity_kind,'LEARNING_TARGET_COUNT');
+assert.equal(planned.todo.planner_allocation.quantity,1);
+assert.deepEqual(planned.todo.planner_allocation.allocated_learning_target_ids,['word:a']);
+assert.equal(planned.todo.planner_allocation.learning_intensity,'BUILD_CONNECT');
+assert.equal(planned.todo.planner_allocation.expression_level,'L3_EXPANDED_SENTENCE');
+assert.equal(planned.todo.planner_allocation.date_and_quantity_owner,'READY_SET_PLANNER');
+assert.equal(planned.todo.planner_allocation.learning_engine_date_authority,false);
+assert.equal(planned.todo.planner_allocation.learning_engine_quantity_authority,false);
+assert.equal(planned.todo.specialist_growth_intent.authority,'LEARNING_ENGINE_GROWTH_INTENT_ONLY');
+assert.equal(planned.todo.specialist_growth_intent.growth_control.question_depth,3);
 assert.equal(planner.todayProjection('2026-09-30').length,0);
 assert.equal(planner.linkTodayItems([planned.todo.todo_id],{date:'2026-09-30'}).length,0);
 assert.equal(planner.todayProjection('2026-09-30',{central_scope:{
@@ -55,6 +85,9 @@ const linked=planner.linkTodayItems([planned.todo.todo_id],{date:'2026-09-30',
 assert.equal(linked.length,1);
 assert.deepEqual(linked[0].activity_sequence,planned.todo.activity_sequence);
 assert.equal(linked[0].review_policy.authority,'TAKY_LEARNING_ENGINE_CORE');
+assert.equal(linked[0].planner_allocation.quantity,1);
+assert.equal(linked[0].specialist_growth_intent.growth_control.expression_level,'L3_EXPANDED_SENTENCE');
+assert.equal(planner.validate().ok,true,JSON.stringify(planner.validate()));
 const replay=Bridge.planAccepted(intent,planner,{activeSession,candidate_dates:[]});
 assert.equal(replay.ok,true);
 assert.equal(replay.reused,true);
