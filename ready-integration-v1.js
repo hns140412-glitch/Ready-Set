@@ -51,43 +51,50 @@
     return {ok:committed.ok,assignment_id:assignmentId,analysis_id:fact.current_analysis_id,allocation_run_id:allocation.allocation_run_id,todos:committed.created||[],revision_impact:revisionImpact};
   }
   function reviewEscalatedCarryOver(carryOverId,input={}){
-    if(!window.ReadyAssignments||!window.ReadyLearningMasterV01||!window.ReadySetPlanner)return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
-    const carry=window.ReadySetPlanner.carryOverCandidates?.().find(x=>x.carry_over_id===carryOverId);
+    if(!window.ReadyAssignments||!window.ReadyLearningMasterV01||!window.ReadySetPlanner)
+      return {ok:false,reason:'RUNTIME_MODULE_MISSING'};
+    const carry=window.ReadySetPlanner.carryOverCandidates?.()
+      .find(x=>x.carry_over_id===carryOverId);
     if(!carry)return {ok:false,reason:'CARRY_OVER_NOT_FOUND'};
-    if(carry.escalation_level!=='PARENT_LEARNING_MASTER_REVIEW')return {ok:false,reason:'ESCALATION_REVIEW_NOT_REQUIRED'};
+    if(carry.escalation_level!=='PARENT_LEARNING_MASTER_REVIEW')
+      return {ok:false,reason:'ESCALATION_REVIEW_NOT_REQUIRED'};
     const assignmentId=carry.assignment_id;
     if(!assignmentId)return {ok:false,reason:'ASSIGNMENT_ID_REQUIRED'};
-    const state=window.ReadyAssignments.load(),fact=state.assignmentFacts?.[assignmentId];
+    const state=window.ReadyAssignments.load();
+    const fact=state.assignmentFacts?.[assignmentId];
     if(!fact)return {ok:false,reason:'ASSIGNMENT_FACT_NOT_FOUND'};
-    const history=window.ReadySetPlanner.learningHistory?.(assignmentId,{current_revision:Number(fact.fact_revision)||1})||[];
+    const history=window.ReadySetPlanner.learningHistory?.(assignmentId,{
+      current_revision:Number(fact.fact_revision)||1
+    })||[];
     const recent=history.slice(-12);
     const escalationSignal={
-      authority:'ESCALATION_ADVISORY_ONLY',
+      authority:'READY_EXECUTION_FRICTION_OBSERVATION_ONLY',
       escalation_reason:carry.escalation_reason||null,
       carry_over_id:carry.carry_over_id,
       carry_over_state:carry.state,
-      carry_over_depth:Number(carry.next_carry_over_depth)||Number(carry.carry_over_depth)||null,
+      carry_over_depth:Number(carry.next_carry_over_depth)||
+        Number(carry.carry_over_depth)||null,
       deadline_date:carry.deadline_date||null,
       observation_count:recent.length,
       states:recent.map(x=>x.ready_state||x.state).filter(Boolean),
       actual_minutes:recent.map(x=>x.actual_minutes).filter(Number.isFinite),
-      cannot_influence:['ASSIGNMENT_FACT','SOURCE_RANGE','DEADLINE','FACT_CONFIRMATION']
+      assignment_id:assignmentId,
+      subject:fact.book_subject||fact.subject||null,
+      concept_skill_target:fact.teacher_instruction||null,
+      cannot_influence:[
+        'ASSIGNMENT_FACT','SOURCE_RANGE','DEADLINE','FACT_CONFIRMATION',
+        'LEARNER_STATE','PEDAGOGICAL_PLAN','CARRY_RESOLUTION','PLANNER_DATE'
+      ]
     };
-    const reviewed=window.ReadyLearningMasterV01.interpretConfirmed(assignmentId,{
-      actor:'LEARNING_MASTER_ESCALATION_REVIEW',
-      force_review:true,
-      review_reason:carry.escalation_reason||'CARRY_OVER_ESCALATION',
-      escalation_review_signal:escalationSignal
-    });
-    const resolved=window.ReadySetPlanner.resolveCarryOver?.(carryOverId,{resolution:'CANCEL',actor:'PARENT_LEARNING_MASTER_REVIEW'});
-    const processed=processAssignment(assignmentId,{start_date:input.start_date});
     return {
-      ok:!!processed?.ok,
+      ok:false,
+      reason:'CENTRAL_LEARNING_ENGINE_REVIEW_REQUIRED',
       assignment_id:assignmentId,
       carry_over_id:carryOverId,
-      review_analysis_id:reviewed?.analysis?.analysis_id||null,
-      processed,
-      resolved
+      carry_preserved:true,
+      planner_mutation_performed:false,
+      local_reinterpretation_performed:false,
+      central_learning_evidence_candidate:escalationSignal
     };
   }
 
