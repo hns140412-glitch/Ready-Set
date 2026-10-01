@@ -139,6 +139,7 @@
       subject:clean(candidate.subject),
       concept_skill_target:clean(candidate.concept_skill_target),
       assignment_id:clean(candidate.assignment_id),
+      evidence_scope_kind:'AGGREGATED_EXECUTION',
       source_carry_over_id:clean(candidate.carry_over_id)||null,
       carry_over_depth:Number.isFinite(Number(candidate.carry_over_depth))
         ?Math.max(0,Number(candidate.carry_over_depth)):null,
