@@ -4,7 +4,7 @@
   if(root) root.ReadyHideMemoryReviewV01=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
-  const VERSION='0.1.0';
+  const VERSION='0.1.1';
   const clean=v=>String(v??'').trim();
   const uniq=a=>[...new Set((a||[]).map(clean).filter(Boolean))];
 
@@ -33,7 +33,12 @@
     const lexicalIds=uniq(rows.map(x=>x.lexicalId));
     return {ok:true,decision:{
       authority:'READY_LEARNING_ENGINE_REVIEW_POLICY',
+      authorityScope:'LOCAL_FALLBACK_ONLY',
+      centralLearningOwner:'TAKY_LEARNING_ENGINE_CORE',
       reviewPolicyOwner:'READY_LEARNING_ENGINE',
+      growthControlAuthority:false,
+      learnerStateAuthority:false,
+      centralOverrideRequired:true,
       scheduleOwner:'READY_SET_PLANNER',
       policyState:rows.some(x=>x.reviewNeed==='REQUIRED')?'REVIEW_REQUIRED':'REVIEW_RECOMMENDED',
       lexicalIds,
@@ -53,6 +58,8 @@
     if(!lexicalIds.length||!clean(todo.todo_id)||!/^\d{4}-\d{2}-\d{2}$/.test(clean(todo.date)))return null;
     return Object.freeze({
       authority:'EXPLICIT_READY_PLANNER_REVIEW_DIRECTIVE',
+      authorityScope:'LOCAL_FALLBACK_ONLY',
+      centralLearningOwner:'TAKY_LEARNING_ENGINE_CORE',
       reviewPolicyOwner:'READY_LEARNING_ENGINE',
       scheduleOwner:'READY_SET_PLANNER',
       lexicalIds,
@@ -113,6 +120,13 @@
 
   function planReview(decision,planner,options={}){
     if(decision?.authority!=='READY_LEARNING_ENGINE_REVIEW_POLICY')return {ok:false,reason:'READY_REVIEW_DECISION_REQUIRED'};
+    if(decision?.authorityScope!=='LOCAL_FALLBACK_ONLY'||
+       decision?.centralLearningOwner!=='TAKY_LEARNING_ENGINE_CORE'||
+       decision?.growthControlAuthority!==false||
+       decision?.learnerStateAuthority!==false)
+      return {ok:false,reason:'READY_LOCAL_FALLBACK_SCOPE_REQUIRED'};
+    if(options.central_learning_available===true)
+      return {ok:false,reason:'CENTRAL_LEARNING_ENGINE_TAKES_PRECEDENCE'};
     if(decision?.scheduleOwner!=='READY_SET_PLANNER')return {ok:false,reason:'PLANNER_SCHEDULE_OWNER_REQUIRED'};
     if(!planner?.candidateWindowsByDate||!planner?.upsertDatedTodo)return {ok:false,reason:'PLANNER_RUNTIME_REQUIRED'};
     const sourceTaskId=clean(options.source_task_id);
@@ -142,6 +156,8 @@
         kind:'HIDE_MEMORY_REVIEW',
         source_task_id:sourceTaskId||null,
         review_policy_authority:'READY_LEARNING_ENGINE',
+        authority_scope:'LOCAL_FALLBACK_ONLY',
+        central_learning_owner:'TAKY_LEARNING_ENGINE_CORE',
         schedule_authority:'READY_SET_PLANNER',
         lexical_ids:[...decision.lexicalIds],
         policy_state:decision.policyState
