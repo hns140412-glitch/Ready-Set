@@ -6,7 +6,6 @@ on:
       - main
       - taky/ready-integration-v01
       - taky/ready-learning-authority-reconcile-2026-10-02
-      - taky/ready-learning-authority-reconcile-2026-10-02
   pull_request:
     branches:
       - main
@@ -32,6 +31,12 @@ jobs:
         run: node tests/carry-escalation-routing.test.js
       - name: Ready→Snap sourced run scope and hostile replay contract
         run: node tests/ready-snap-run-scope.test.js
+      - name: Central observation handoff I/O contract
+        run: node tests/central-observation-handoff.test.js
+      - name: Central Learning roundtrip
+        run: node tests/central-learning-roundtrip.test.js
+      - name: Central intent to Planner allocation
+        run: node tests/central-intent-to-planner.test.js
 
   learning-master-contract:
     runs-on: ubuntu-latest
