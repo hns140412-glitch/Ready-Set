@@ -34,6 +34,18 @@ assert.equal(good.observation.payload.performed_quantity,3);
 assert.equal(good.authority,'OBSERVATION_ONLY_NOT_CENTRAL_DECISION');
 assert.equal('planner_date' in good.observation.payload,false);
 assert.equal('memoryReviewFeedback' in good.observation.payload,false);
+const execution=H.fromExecutionOutcome(row,context);
+assert.equal(execution.ok,true,JSON.stringify(execution));
+assert.equal(execution.authority,'READY_EXECUTION_FACT_ONLY_NOT_PERFORMANCE');
+assert.equal(execution.observation.payload.evidence_type,'READY_EXECUTION_FACT');
+assert.equal(execution.observation.payload.session_id,'ready-session-1');
+assert.equal(execution.observation.payload.task_id,'ready-task-1');
+assert.equal(execution.observation.payload.planner_allocation.quantity,4);
+assert.equal(execution.observation.payload.started_at,'2026-09-27T00:40:00Z');
+assert.equal(execution.observation.payload.ended_at,'2026-09-27T01:00:00Z');
+assert.equal(execution.observation.payload.actual_minutes,20);
+assert.equal(execution.observation.payload.performed_quantity,3);
+assert.equal(execution.observation.payload.completion_state,'COMPLETED');
 assert.equal(H.fromOutcome({...row,state:'PARTIAL'},context).ok,false);
 assert.equal(H.fromOutcome({...row,specialistResult:{...row.specialistResult,taskState:'PARTIAL'}},context).ok,false);
 assert.equal(H.fromOutcome(row,{...context,session:{...session,authenticated:false}}).ok,false);
@@ -69,7 +81,9 @@ assert.equal(row.specialistResult.memorySummary.reviewAdvisories[0].lexicalId,'w
   'CENTRAL_OUTBOX_ENQUEUE_NOT_CONFIRMED');
  assert.equal((await H.enqueueOutcome(row,context,{pipeline:{enqueueReadyObservation:async()=>({duplicate:true})}})).ok,true);
  assert.equal((await H.enqueueOutcome(row,context)).reason,'CENTRAL_PIPELINE_REQUIRED');
- const batchContext=r=>({...context,event_id:'event:'+r.task_id});
+ const batchContext=r=>({...context,event_id:'event:'+r.task_id+
+  (r.centralFeedbackKind==='READY_EXECUTION_FACT'?':execution':
+   r.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'?':checkpoint':'')});
  let batchCalls=0;
  const batchPipeline={enqueueReadyObservation:async()=>{batchCalls++;return {queued:true}}};
  const invalid={...row,task_id:'bad',member_id:'child-B'};
@@ -78,12 +92,14 @@ assert.equal(row.specialistResult.memorySummary.reviewAdvisories[0].lexicalId,'w
  assert.equal(batchCalls,0);
  const deduped=await H.enqueueBatch([row,row],batchContext,{pipeline:batchPipeline});
  assert.equal(deduped.ok,true);
- assert.equal(deduped.results.length,1);
- assert.equal(batchCalls,1);
- const conflict=await H.enqueueBatch([row,{...row,task_id:'other'}],
-  r=>({...context,event_id:'same-event'}),{pipeline:batchPipeline});
+ assert.equal(deduped.results.length,2);
+ assert.equal(batchCalls,2);
+ const conflict=await H.enqueueBatch([
+  {...row,centralFeedbackKind:'HIDE_MEMORY'},
+  {...row,task_id:'other',centralFeedbackKind:'HIDE_MEMORY'}
+ ],r=>({...context,event_id:'same-event'}),{pipeline:batchPipeline});
  assert.equal(conflict.reason,'BATCH_OBSERVATION_ID_CONFLICT');
- assert.equal(batchCalls,1);
+ assert.equal(batchCalls,2);
  let partialCalls=0;
  const partial=await H.enqueueBatch([row,{...row,task_id:'second'}],batchContext,
   {pipeline:{enqueueReadyObservation:async()=>++partialCalls===1?{queued:true}:{queued:false}}});
@@ -140,7 +156,7 @@ assert.equal(row.specialistResult.memorySummary.reviewAdvisories[0].lexicalId,'w
  const checkpointBatch=await H.enqueueBatch([checkpoint],
   r=>({...context,event_id:'checkpoint:'+r.task_id}),{pipeline:batchPipeline});
  assert.equal(checkpointBatch.ok,true);
- assert.equal(checkpointBatch.results.length,1);
+ assert.equal(checkpointBatch.results.length,2);
  assert.equal(H.fromCheckpointOutcome({...checkpoint,member_id:'child-B'},context).reason,
   'CENTRAL_CHECKPOINT_MEMBER_SCOPE_MISMATCH');
  assert.equal(H.fromCheckpointOutcome({...checkpoint,centralCheckpoint:{
@@ -149,17 +165,19 @@ assert.equal(row.specialistResult.memorySummary.reviewAdvisories[0].lexicalId,'w
  const dual={...checkpoint,state:'COMPLETED',specialistResult:row.specialistResult};
  const split=H.expandOutcomes([dual]);
  assert.deepEqual(split.map(x=>x.centralFeedbackKind),
-  ['HIDE_MEMORY','CENTRAL_CHECKPOINT_PROGRESS']);
+  ['READY_EXECUTION_FACT','HIDE_MEMORY','CENTRAL_CHECKPOINT_PROGRESS']);
  let kinds=[];
  const splitBatch=await H.enqueueBatch([dual],r=>({...context,
   event_id:'dual:'+r.task_id+
-   (r.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'?':checkpoint':'')}),
+   (r.centralFeedbackKind==='READY_EXECUTION_FACT'?':execution':
+    r.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'?':checkpoint':'')}),
   {pipeline:{enqueueReadyObservation:async observation=>{
    kinds.push({id:observation.event_id,type:observation.payload.evidence_type});
    return {queued:true};
   }}});
  assert.equal(splitBatch.ok,true,JSON.stringify(splitBatch));
  assert.deepEqual(kinds,[
+  {id:'dual:checkpoint-task-1:execution',type:'READY_EXECUTION_FACT'},
   {id:'dual:checkpoint-task-1',type:'MEMORY_RETRIEVAL_EVIDENCE'},
   {id:'dual:checkpoint-task-1:checkpoint',type:'CHILD_SELF_REPORT'}]);
  assert.equal(H.expandOutcomes(split).length,2);
