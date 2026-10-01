@@ -60,6 +60,58 @@
       source_app:'ready-set',type:'READY_LEARNING_OBSERVATION',
       authority:'OBSERVATION_ONLY_NOT_CENTRAL_DECISION'};
   }
+  function fromExecutionOutcome(row,{session,event_id,occurred_at,session_id,
+    subject,concept_skill_target}={}){
+    if(session?.authenticated!==true||!clean(session.family_id)||
+       !clean(session.selected_member_id))
+      return {ok:false,reason:'TRUSTED_SELECTED_MEMBER_SESSION_REQUIRED'};
+    if(!['COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].includes(row?.state)||
+       !clean(row.task_id))
+      return {ok:false,reason:'READY_EXECUTION_OUTCOME_REQUIRED'};
+    const sid=clean(session_id||row.session_id);
+    if(!clean(event_id)||!Number.isFinite(Date.parse(occurred_at||''))||
+       !sid||!clean(subject)||!clean(concept_skill_target))
+      return {ok:false,reason:'READY_EXECUTION_CONTEXT_REQUIRED'};
+    const member_id=session.selected_member_id;
+    for(const member of [row.member_id,row.selected_member_id]){
+      if(member!=null&&member!==member_id)
+        return {ok:false,reason:'OUTCOME_MEMBER_SCOPE_MISMATCH'};
+    }
+    for(const family of [row.family_id]){
+      if(family!=null&&family!==session.family_id)
+        return {ok:false,reason:'OUTCOME_FAMILY_SCOPE_MISMATCH'};
+    }
+    const payload={
+      family_id:session.family_id,
+      member_id,
+      session_id:sid,
+      task_id:row.task_id,
+      lap_id:row.lap_id||null,
+      assignment_id:row.assignment_id||null,
+      subject,concept_skill_target,
+      evidence_type:'READY_EXECUTION_FACT',
+      instrument_version:'READY_EXECUTION_FACT_V1',
+      observation_only:true,
+      global_mastery_claim:false,
+      planner_allocation:row.planner_allocation?structuredClone(row.planner_allocation):null,
+      started_at:row.started_at||null,
+      ended_at:row.ended_at||null,
+      actual_minutes:Number.isFinite(row.actual_minutes)?row.actual_minutes:
+        Number.isFinite(row.actual_ms)?Math.round(row.actual_ms/60000):null,
+      performed_quantity:Number.isFinite(row.performed_quantity)?row.performed_quantity:null,
+      completion_state:row.state,
+      blocked_reason:row.blocked_reason||null,
+      parent_confirmation:row.parent_confirmation??null
+    };
+    return {
+      ok:true,
+      observation:{event_id,occurred_at,member_id,payload},
+      source_app:'ready-set',
+      type:'READY_LEARNING_OBSERVATION',
+      authority:'READY_EXECUTION_FACT_ONLY_NOT_PERFORMANCE'
+    };
+  }
+
   // The next Ready checkpoint's completion is a self-report. It closes the
   // execution feedback loop without pretending to verify recall correctness.
   function fromCheckpointOutcome(row,{session,event_id,occurred_at,session_id,subject,
@@ -200,10 +252,13 @@
   function expandOutcomes(outcomes=[]){
     const expanded=[];
     for(const row of(Array.isArray(outcomes)?outcomes:[])){
-      if(row?.centralFeedbackKind==='HIDE_MEMORY'||
-         row?.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'){
+      if(['READY_EXECUTION_FACT','HIDE_MEMORY','CENTRAL_CHECKPOINT_PROGRESS']
+         .includes(row?.centralFeedbackKind)){
         expanded.push(row);continue;
       }
+      if(['COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED']
+         .includes(row?.state))
+        expanded.push({...row,centralFeedbackKind:'READY_EXECUTION_FACT'});
       if(row?.state==='COMPLETED'&&
          row?.specialistResult?.sourceApp==='hide-seek')
         expanded.push({...row,centralFeedbackKind:'HIDE_MEMORY'});
@@ -222,14 +277,17 @@
       return {ok:false,reason:'CENTRAL_PIPELINE_REQUIRED',results:[]};
     const prepared=[],seen=new Map();
     for(const row of expandOutcomes(outcomes)){
+      const isExecution=row?.centralFeedbackKind==='READY_EXECUTION_FACT'&&
+        ['COMPLETED','PARTIAL','DEFERRED','WAITING_FOR_PARENT','BLOCKED'].includes(row?.state);
       const isHide=row?.centralFeedbackKind==='HIDE_MEMORY'&&
         row?.state==='COMPLETED'&&row?.specialistResult?.sourceApp==='hide-seek';
       const isCheckpoint=row?.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'&&
         ['COMPLETED','PARTIAL','BLOCKED'].includes(row?.state)&&
         row?.centralCheckpoint?.source==='PLANNER_CENTRAL_LEARNING_CHECKPOINT';
-      if(!isHide&&!isCheckpoint)continue;
+      if(!isExecution&&!isHide&&!isCheckpoint)continue;
       const context=contextForRow(row);
-      const mapped=isCheckpoint?fromCheckpointOutcome(row,context):fromOutcome(row,context);
+      const mapped=isExecution?fromExecutionOutcome(row,context):
+        isCheckpoint?fromCheckpointOutcome(row,context):fromOutcome(row,context);
       if(!mapped.ok)return {ok:false,reason:mapped.reason,results:[]};
       const key=mapped.observation.event_id;
       const fingerprint=JSON.stringify(mapped.observation);
@@ -254,7 +312,8 @@
     }
     return {ok:true,results,authority:'LOCAL_OUTBOX_ONLY_NOT_CENTRAL_ACK'};
   }
-  const api=Object.freeze({VERSION,fromOutcome,fromCheckpointOutcome,fromExecutionFriction,
+  const api=Object.freeze({VERSION,fromOutcome,fromExecutionOutcome,
+    fromCheckpointOutcome,fromExecutionFriction,
     expandOutcomes,enqueueOutcome,enqueueExecutionFriction,enqueueBatch});
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   if(typeof window!=='undefined')window.ReadyCentralObservationHandoffV01=api;
