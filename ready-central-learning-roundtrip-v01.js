@@ -172,6 +172,7 @@
     event_id:'ready:'+sessionId+':'+row.task_id+
       (row.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'?':checkpoint':''),
     occurred_at:occurredAt,
+    session_id:sessionId,
     subject,concept_skill_target
    })}};
  }
