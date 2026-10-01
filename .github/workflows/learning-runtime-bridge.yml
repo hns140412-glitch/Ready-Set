@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - taky/current-learning-runtime-bridge-2026-09-26
+      - taky/ready-learning-authority-reconcile-2026-10-02
   pull_request:
     paths:
       - 'ready-integration-v1.js'
