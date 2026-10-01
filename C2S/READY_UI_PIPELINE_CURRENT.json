@@ -1,0 +1,84 @@
+{
+  "schema": "READY_UI_PIPELINE_CURRENT_V2",
+  "date": "2026-10-01",
+  "status": "READY_TO_EXECUTE_V2",
+  "execution_branch": "taky/ready-ui-pipeline-v2-2026-10-01",
+  "authority": {
+    "ready_repository": "hns140412-glitch/Ready-Set",
+    "branch_base": "main",
+    "main_sha": "daed2ebd072061b870bfd0d2f2472dd344661bad",
+    "validated_runtime_code_basis": "e1c8afaea0f946a0176e36ef794d2380f0daefe2",
+    "planner_dated_todo_owner": "PLANNER_ONLY",
+    "parent_direct_dated_todo_write": "FORBIDDEN",
+    "explorer_crew_consumer": "ReadyExplorerCrewAuthorityConsumer",
+    "selected_companion_owner": "SHARED_CHARACTER_ID"
+  },
+  "references": {
+    "central_repo": "hns140412-glitch/TAKY-ASSETS",
+    "central_pr": 2,
+    "central_head": "aae935d9a196cddbca43187c2d2d39e45a82160b",
+    "week": {
+      "width": 941,
+      "height": 1672,
+      "sha256": "cd479f1c72a58171a5873a6c06e442fecfb7d63819a741f6984650968308db42",
+      "role": "COMPOSITION_REFERENCE_ONLY"
+    },
+    "day": {
+      "width": 941,
+      "height": 1672,
+      "sha256": "733aa39ea2972fffa04362994cb1218c60e34eb1558a86816a2388dd4f6e9ad5",
+      "role": "COMPOSITION_REFERENCE_ONLY"
+    },
+    "preparation": {
+      "width": 941,
+      "height": 1672,
+      "sha256": "03f3229200a20a38b875b68b0feb1e8f06bb71cd593178311595aaab6162bd53",
+      "role": "MOOD_COMPOSITION_REFERENCE_ONLY"
+    }
+  },
+  "reuse_policy": {
+    "pr121": "SELECTIVE_CONCEPT_PORT_ONLY",
+    "pr118": "REFERENCE_AND_FUNCTIONAL_REVIEW_SOURCE_ONLY",
+    "pr127": "DESIGN_GATE_RULE_REFERENCE_ONLY",
+    "wholesale_old_branch_merge": "FORBIDDEN"
+  },
+  "required_current_features": [
+    "schedule_periods",
+    "period_weekly_commitments",
+    "period_override_and_fallback",
+    "parent_confirmed_lifestyle_buffers",
+    "planner_free_window_subtraction",
+    "schedule_conflict_preview",
+    "explicit_parent_conflict_acknowledgement",
+    "shared_explorer_crew_authority"
+  ],
+  "voice": {
+    "child": "WALKIE_TALKIE_TO_STRUCTURED_DRAFT_TO_CONFIRM_TO_ASSIGNMENT_FACT",
+    "parent": "EXTEND_EXISTING_PARSE_SCHEDULE_VOICE_COMMAND",
+    "auto_commit": "FORBIDDEN",
+    "duplicate_parent_parser": "FORBIDDEN"
+  },
+  "visual": {
+    "direct_reference_background_binding": "FORBIDDEN",
+    "clean_plate_or_verified_semantic_layers": "REQUIRED",
+    "baked_runtime_text_or_fake_planner_facts": "FORBIDDEN",
+    "timer": "LOCK_EXISTING_APPROVED_UI"
+  },
+  "gates": {
+    "source_asset": "OPEN",
+    "child_walkie_talkie": "OPEN",
+    "parent_voice_extension": "OPEN",
+    "week_day_goal_binding": "OPEN",
+    "shared_companion_binding": "OPEN",
+    "phone_tablet_render": "OPEN",
+    "design_overlay": "OPEN",
+    "full_regression": "OPEN",
+    "human_visual_approval": "OPEN"
+  },
+  "release": {
+    "main_merge": "HOLD",
+    "netlify": "HOLD",
+    "device_verified": false,
+    "production_verified": false
+  }
+}
