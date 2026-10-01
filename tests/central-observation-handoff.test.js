@@ -107,7 +107,7 @@ assert.equal(row.specialistResult.memorySummary.reviewAdvisories[0].lexicalId,'w
   {pipeline:{enqueueReadyObservation:async()=>++partialCalls===1?{queued:true}:{queued:false}}});
  assert.equal(partial.ok,false);
  assert.equal(partial.results.length,1);
- assert.equal(partial.failed_event_id,'event:second');
+ assert.equal(partial.failed_event_id,'event:ready-task-1');
  const frictionCandidate={
   authority:'READY_EXECUTION_FRICTION_OBSERVATION_ONLY',
   event_id:'friction-1',
