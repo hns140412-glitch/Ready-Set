@@ -51,7 +51,9 @@ assert.equal(H.fromOutcome({...row,specialistResult:{...row.specialistResult,tas
 assert.equal(H.fromOutcome(row,{...context,session:{...session,authenticated:false}}).ok,false);
 assert.equal(H.fromOutcome(row,{...context,concept_skill_target:''}).ok,false);
 assert.equal(H.fromOutcome(row,{...context,event_id:''}).ok,false);
-assert.equal(H.fromOutcome(row,{...context,session_id:''}).ok,false);
+assert.equal(H.fromOutcome(row,{...context,session_id:''}).ok,true,
+ 'persisted row session identity may satisfy the common identity contract');
+assert.equal(H.fromOutcome({...row,session_id:null},{...context,session_id:''}).ok,false);
 assert.equal(H.fromOutcome({...row,specialistResult:{...row.specialistResult,
  memorySummary:{...row.specialistResult.memorySummary,nested:{verification_receipt:{ok:true}}}}},context).reason,
  'SPECIALIST_SUMMARY_AUTHORITY_LEAK');
