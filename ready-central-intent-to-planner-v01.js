@@ -91,6 +91,27 @@
   if(!date)return {ok:false,reason:'NO_CONFIRMED_PLANNER_WINDOW'};
   const reviewTargets=Array.isArray(intent.adaptive_plan.target_learning_ids)
     ?[...new Set(intent.adaptive_plan.target_learning_ids.map(clean).filter(Boolean))].slice(0,24):[];
+  const growth=intent.growth_next_step||null;
+  const growthControl=growth?.growth_control||null;
+  if(growth&&(
+     growth.authority!=='LEARNING_ENGINE_GROWTH_INTENT_ONLY'||
+     growth.guards?.planner_owns_dates!==true))
+   return {ok:false,reason:'CENTRAL_GROWTH_INTENT_INVALID'};
+  const plannerAllocation={
+    authority:'READY_SET_PLANNER_ALLOCATION',
+    date,
+    quantity_kind:reviewTargets.length?'LEARNING_TARGET_COUNT':'CHECKPOINT_COUNT',
+    quantity:reviewTargets.length||1,
+    allocated_learning_target_ids:[...reviewTargets],
+    allocation_basis:reviewTargets.length?'CENTRAL_TARGET_SET_MATERIALIZED_BY_PLANNER':'CENTRAL_CHECKPOINT_INTENT',
+    learning_intensity:growthControl?.learning_intensity||null,
+    expression_level:growthControl?.expression_level||null,
+    question_depth:Number.isInteger(growthControl?.question_depth)?growthControl.question_depth:null,
+    pedagogical_intent_owner:'TAKY_LEARNING_ENGINE_CORE',
+    date_and_quantity_owner:'READY_SET_PLANNER',
+    learning_engine_date_authority:false,
+    learning_engine_quantity_authority:false
+  };
   const subjectLabel=['english','영어'].includes(scope.subject)?'영어':
     ['korean','국어'].includes(scope.subject)?'국어':
     ['math','수학'].includes(scope.subject)?'수학':scope.subject;
@@ -105,6 +126,13 @@
    review_policy:{authority:'TAKY_LEARNING_ENGINE_CORE',
     decision_contract:'TAKY_RUNTIME_DECISION_CONTRACT_V1',intent_only:true,
     evidence_basis_kind:basisKind,observation_is_verified_proof:false},
+   planner_allocation:plannerAllocation,
+   specialist_growth_intent:growth?{
+    authority:growth.authority,
+    version:growth.version||null,
+    support_phase:growth.support_phase||null,
+    growth_control:growthControl?structuredClone(growthControl):null
+   }:null,
    provenance:{kind:'CENTRAL_PEDAGOGICAL_CHECKPOINT',...provenanceBase,
     central_intents:(intent.actions||[]).map(x=>clean(x.intent)).filter(Boolean),
     target_learning_ids:reviewTargets,
@@ -121,6 +149,7 @@
   if(!reconciled?.ok)return {ok:false,reason:'CENTRAL_CARRY_RECONCILIATION_FAILED',
     created_todo_id:todo.todo_id};
   return {ok:true,scheduled:true,todo,
+   planner_allocation:structuredClone(plannerAllocation),
    previous_carry_reconciled:reconciled.resolved};
  }
  const api=Object.freeze({VERSION,planAccepted});
