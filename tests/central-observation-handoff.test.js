@@ -185,6 +185,6 @@ assert.equal(row.specialistResult.memorySummary.reviewAdvisories[0].lexicalId,'w
   {id:'dual:checkpoint-task-1:execution',type:'READY_EXECUTION_FACT'},
   {id:'dual:checkpoint-task-1',type:'MEMORY_RETRIEVAL_EVIDENCE'},
   {id:'dual:checkpoint-task-1:checkpoint',type:'CHILD_SELF_REPORT'}]);
- assert.equal(H.expandOutcomes(split).length,2);
+ assert.equal(H.expandOutcomes(split).length,3);
  console.log('READY_CENTRAL_OBSERVATION_HANDOFF_PASS');
 })().catch(e=>{console.error(e);process.exitCode=1});
