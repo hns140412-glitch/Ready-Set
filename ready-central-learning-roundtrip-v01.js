@@ -106,7 +106,49 @@
    return {...planned,stage:planned.ok?'READY_EXECUTION_READY':'PLANNER',
     observation_acknowledged:true,central_intent_authority:intent.authority};
   }
-  return Object.freeze({VERSION,run,close:()=>pipeline.close?.()});
+  async function recordExecutionFriction({
+   candidate,owner='ready-central-friction',maxFlushAttempts=30
+  }={}){
+   if(!candidate||!clean(owner)||!Number.isInteger(maxFlushAttempts)||
+      maxFlushAttempts<1||maxFlushAttempts>100)
+    return {ok:false,reason:'EXPLICIT_FRICTION_RECORD_INPUT_REQUIRED'};
+   const before=await sessionProvider();
+   if(before?.authenticated!==true||!clean(before.family_id)||
+      !clean(before.selected_member_id))
+    return {ok:false,reason:'ACTIVE_CENTRAL_SESSION_REQUIRED'};
+   const queued=await Handoff.enqueueExecutionFriction(candidate,{session:before,pipeline});
+   if(!queued.ok)return {...queued,stage:'OBSERVATION_OUTBOX'};
+   const expected='ready-set:ready-set:'+clean(candidate.event_id);
+   let entries=[];
+   try{
+    for(let attempt=0;attempt<maxFlushAttempts;attempt++){
+     entries=await pipeline.listActive('ready-set');
+     if(entries.some(x=>x.key===expected&&x.status==='ACKED'&&
+       ['OBSERVATION_INGEST_RECEIPT','REAL_EVIDENCE_RECEIPT'].includes(x.receipt?.kind)))
+      break;
+     if(entries.some(x=>x.key===expected&&x.status==='BLOCKED'))
+      return {ok:false,reason:'CENTRAL_EVIDENCE_OUTBOX_BLOCKED',stage:'CENTRAL_ACK'};
+     const flush=await pipeline.flushOne('ready-set',owner);
+     if(!flush?.processed)break;
+    }
+    entries=await pipeline.listActive('ready-set');
+   }catch{
+    return {ok:false,reason:'CENTRAL_EVIDENCE_OUTBOX_UNAVAILABLE',stage:'CENTRAL_ACK'};
+   }
+   if(!entries.some(x=>x.key===expected&&x.status==='ACKED'&&
+      ['OBSERVATION_INGEST_RECEIPT','REAL_EVIDENCE_RECEIPT'].includes(x.receipt?.kind)))
+    return {ok:false,reason:'CENTRAL_EVIDENCE_ACK_PENDING',stage:'CENTRAL_ACK'};
+   const after=await sessionProvider();
+   if(!same(before,after))
+    return {ok:false,reason:'CENTRAL_ROUNDTRIP_SESSION_CHANGED',stage:'CENTRAL_ACK'};
+   return {
+    ok:true,scheduled:false,
+    reason:'EXECUTION_FRICTION_RECORDED_DIAGNOSTIC_EVIDENCE_PENDING',
+    stage:'CENTRAL_ACK',observation_acknowledged:true,
+    authority:'CENTRAL_OBSERVATION_ONLY_NO_PEDAGOGICAL_DECISION'
+   };
+  }
+  return Object.freeze({VERSION,run,recordExecutionFriction,close:()=>pipeline.close?.()});
  }
  // Rehydrate a previously persisted Ready record without fabricating a new
  // event time or silently rebinding a legacy unscoped child outcome.
@@ -158,6 +200,30 @@
    attached=false;eventTarget.removeEventListener('readyset-learning-outcomes-ready',handler);
   }});
  }
+ function attachReadyFriction({eventTarget,roundtrip,onResult}={}){
+  if(typeof eventTarget?.addEventListener!=='function'||
+     typeof eventTarget?.removeEventListener!=='function'||
+     typeof roundtrip?.recordExecutionFriction!=='function'||
+     typeof onResult!=='function')
+   throw Error('EXPLICIT_READY_FRICTION_CENTRAL_HOST_REQUIRED');
+  let attached=true;
+  const handler=event=>{
+   const candidate=event?.detail;
+   if(!attached||candidate?.authority!=='READY_EXECUTION_FRICTION_OBSERVATION_ONLY')
+    return;
+   Promise.resolve()
+    .then(()=>roundtrip.recordExecutionFriction({candidate}))
+    .then(result=>{if(attached)onResult({friction_event_id:candidate.event_id,result})})
+    .catch(()=>{if(attached)onResult({friction_event_id:candidate.event_id,
+      result:{ok:false,reason:'CENTRAL_FRICTION_HOST_UNAVAILABLE'}})});
+  };
+  eventTarget.addEventListener('readyset-learning-friction-observation-ready',handler);
+  return Object.freeze({detach(){
+   attached=false;
+   eventTarget.removeEventListener('readyset-learning-friction-observation-ready',handler);
+  }});
+ }
+
  // Registration is opt-in. It only bridges a separately configured host's
  // authenticated central session and credentials; Ready cannot mint these.
  function installBrowserHost({eventTarget,roundtrip,resolveRecordOptions,
@@ -175,6 +241,9 @@
   };
   const attached=attachReadySession({eventTarget:target,roundtrip,
    resolveRecordOptions,onResult:handler});
+  const frictionAttached=attachReadyFriction({
+   eventTarget:target,roundtrip,onResult:handler
+  });
   const host=Object.freeze({
    activeScope(){
     const scope=activeScopeProvider();
@@ -185,6 +254,7 @@
    },
    detach(){
     attached.detach();
+    frictionAttached.detach();
     if(window.ReadyCentralLearningHost===host)
      delete window.ReadyCentralLearningHost;
    }
@@ -192,5 +262,6 @@
   window.ReadyCentralLearningHost=host;
   return host;
  }
- return Object.freeze({VERSION,create,optionsFromPersistedRecord,attachReadySession,installBrowserHost});
+ return Object.freeze({VERSION,create,optionsFromPersistedRecord,
+  attachReadySession,attachReadyFriction,installBrowserHost});
 });
