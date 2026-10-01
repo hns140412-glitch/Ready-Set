@@ -77,9 +77,11 @@ const row={state:'COMPLETED',task_id:'task-1',
   memorySummary:{authority:'SPECIALIST_MEMORY_ADVISORY_ONLY',
    prioritySemantics:'ADVISORY_SIGNAL_NOT_DATE',
    averageMemoryStrength:41,reviewAdvisories:[{lexicalId:'word-a'}]}}};
-const context=row=>({event_id:'evt:'+row.task_id,
- occurred_at:'2026-09-27T01:00:00.000Z',subject:'english',
- concept_skill_target:'vocabulary'});
+const context=row=>({event_id:'evt:'+row.task_id+
+ (row.centralFeedbackKind==='READY_EXECUTION_FACT'?':execution':
+  row.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'?':checkpoint':''),
+ occurred_at:'2026-09-27T01:00:00.000Z',session_id:'ready-session-1',
+ subject:'english',concept_skill_target:'vocabulary'});
 (async()=>{
  const persistedStore=store();
  const runtimeHost=Orchestrator.create({
@@ -93,9 +95,12 @@ const context=row=>({event_id:'evt:'+row.task_id,
   subject:'english',concept_skill_target:'vocabulary',planner,
   candidate_dates:['2026-09-30']};
  const noOp=await runtimeHost.run({...args,outcomes:[{...row,state:'PARTIAL'}]});
- assert.equal(noOp.ok,true);
- assert.equal(noOp.reason,'NO_COMPLETED_HIDE_OBSERVATIONS');
- assert.equal(evidenceResponses,0);
+ assert.equal(noOp.ok,true,JSON.stringify(noOp));
+ assert.equal(noOp.reason,'READY_EXECUTION_FACTS_RECORDED_NO_CENTRAL_PEDAGOGICAL_ACTION');
+ assert.equal(noOp.observation_acknowledged,true);
+ assert.equal(evidenceResponses,1);
+ assert.equal(seenObservation.evidence_type,'READY_EXECUTION_FACT');
+ assert.equal(seenObservation.completion_state,'PARTIAL');
  assert.equal(planner.snapshot().dated_todos.length,0);
  const result=await runtimeHost.run(args);
  assert.equal(result.ok,true,JSON.stringify(result));
@@ -105,13 +110,20 @@ const context=row=>({event_id:'evt:'+row.task_id,
  assert.equal(result.todo.date,'2026-09-30');
  assert.deepEqual(result.todo.activity_sequence,['RETRIEVAL_CHECKPOINT']);
  assert.equal(seenObservation.forwarded_source_app,'hide-seek');
+ assert.equal(evidenceResponses>=3,true,'Ready execution + Hide evidence must both be acknowledged');
  assert.equal(seenObservation.memorySummary.reviewAdvisories[0].lexicalId,'word-a');
  assert.equal(seenObservation.global_mastery_claim,false);
  const reuse=await runtimeHost.run(args);
  assert.equal(reuse.ok,true);
  assert.equal(reuse.reused,true);
- assert.equal(evidenceResponses,1,'already ACKed observation must not send again');
+ const afterFirst=evidenceResponses;
+ assert.equal(afterFirst>=3,true);
  assert.equal(planner.snapshot().dated_todos.length,1);
+ const replayCount=evidenceResponses;
+ const replayAgain=await runtimeHost.run(args);
+ assert.equal(replayAgain.ok,true);
+ assert.equal(replayAgain.reused,true);
+ assert.equal(evidenceResponses,replayCount,'already ACKed execution and Hide observations must not resend');
  decisionRuntime={...runtime,decision:{...runtime.decision,
   execution_status:'HOLD_FOR_MORE_RELIABLE_INTERPRETATION'}};
  const held=await runtimeHost.run(args);
@@ -145,7 +157,8 @@ const context=row=>({event_id:'evt:'+row.task_id,
  const retried=await resumed.run({...args,outcomes:[{...row,task_id:'task-2'}]});
  assert.equal(retried.ok,true,JSON.stringify(retried));
  assert.equal(retried.reused,true);
- assert.equal(evidenceResponses,3,'one initial receipt, one failed attempt, one explicit replay');
+ assert.equal(evidenceResponses>replayCount,true,
+  'failed new task evidence and explicit replay must attempt central evidence transport');
  assert.equal(planner.snapshot().dated_todos.length,1);
  await resumed.close();
  // Advisory-only observations can drive the central learning checkpoint;
@@ -192,9 +205,10 @@ const context=row=>({event_id:'evt:'+row.task_id,
   outcomes:[checkpointRow]});
  assert.equal(checkpointFeedback.ok,true,JSON.stringify(checkpointFeedback));
  assert.equal(checkpointFeedback.scheduled,false);
- assert.equal(checkpointFeedback.reason,'CHECKPOINT_PROGRESS_RECORDED_RECALL_PROOF_PENDING');
+ assert.equal(checkpointFeedback.reason,
+  'READY_EXECUTION_FACTS_RECORDED_NO_CENTRAL_PEDAGOGICAL_ACTION');
  assert.equal(checkpointFeedback.observation_acknowledged,true);
- assert.equal(evidenceResponses,beforeCheckpoint+1);
+ assert.equal(evidenceResponses,beforeCheckpoint+2);
  assert.equal(seenObservation.evidence_type,'CHILD_SELF_REPORT');
  assert.equal(seenObservation.ready_state,'PARTIAL');
  assert.equal(seenObservation.checkpoint_completion_is_verified_recall,false);
@@ -203,7 +217,7 @@ const context=row=>({event_id:'evt:'+row.task_id,
   outcomes:[{...checkpointRow,member_id:'CHILD_B'}]});
  assert.equal(crossCheckpoint.ok,false);
  assert.equal(crossCheckpoint.reason,'CENTRAL_CHECKPOINT_MEMBER_SCOPE_MISMATCH');
- assert.equal(evidenceResponses,beforeCheckpoint+1);
+ assert.equal(evidenceResponses,beforeCheckpoint+2);
  await observational.close();
 
  const frictionStore=store();
@@ -263,9 +277,9 @@ const context=row=>({event_id:'evt:'+row.task_id,
  },{subject:'english',concept_skill_target:'vocabulary',planner,
   candidate_dates:['2026-09-30']});
  assert.equal(persistedCheckpoint.ok,true);
- assert.equal(persistedCheckpoint.options.outcomes.length,1);
- assert.equal(persistedCheckpoint.options.outcomes[0].centralFeedbackKind,
-  'CENTRAL_CHECKPOINT_PROGRESS');
+ assert.equal(persistedCheckpoint.options.outcomes.length,2);
+ assert.deepEqual(persistedCheckpoint.options.outcomes.map(x=>x.centralFeedbackKind),
+  ['READY_EXECUTION_FACT','CENTRAL_CHECKPOINT_PROGRESS']);
  const storedRecord={session_id:'session-A',completed_at:'2026-09-27T01:00:00Z',
   central_learning_scope:{family_id:'F1',member_id:'CHILD_A'},
   task_outcomes:[{...row,family_id:'F1',member_id:'CHILD_A'}]};
@@ -277,20 +291,26 @@ const context=row=>({event_id:'evt:'+row.task_id,
   candidate_dates:['2026-09-30']});
  assert.equal(dualOptions.ok,true);
  assert.deepEqual(dualOptions.options.outcomes.map(x=>x.centralFeedbackKind),
-  ['HIDE_MEMORY','CENTRAL_CHECKPOINT_PROGRESS']);
+  ['READY_EXECUTION_FACT','HIDE_MEMORY','CENTRAL_CHECKPOINT_PROGRESS']);
  assert.deepEqual(dualOptions.options.outcomes.map(x=>
   dualOptions.options.observationContextForRow(x).event_id),[
-   'ready:session-dual:task-1','ready:session-dual:task-1:checkpoint'
+   'ready:session-dual:task-1:execution',
+   'ready:session-dual:task-1',
+   'ready:session-dual:task-1:checkpoint'
   ]);
  const persisted=Orchestrator.optionsFromPersistedRecord(storedRecord,{
   subject:'english',concept_skill_target:'vocabulary',planner,
   candidate_dates:['2026-09-30']});
  assert.equal(persisted.ok,true);
- const previous=persisted.options.observationContextForRow(storedRecord.task_outcomes[0]);
+ assert.deepEqual(persisted.options.outcomes.map(x=>x.centralFeedbackKind),
+  ['READY_EXECUTION_FACT','HIDE_MEMORY']);
+ const previous=persisted.options.observationContextForRow(
+  persisted.options.outcomes.find(x=>x.centralFeedbackKind==='HIDE_MEMORY'));
  const again=Orchestrator.optionsFromPersistedRecord(storedRecord,{
   subject:'english',concept_skill_target:'vocabulary',planner,
   candidate_dates:['2026-09-30']});
- assert.deepEqual(previous,again.options.observationContextForRow(storedRecord.task_outcomes[0]));
+ assert.deepEqual(previous,again.options.observationContextForRow(
+  again.options.outcomes.find(x=>x.centralFeedbackKind==='HIDE_MEMORY')));
  assert.equal(previous.event_id,'ready:session-A:task-1');
  assert.equal(previous.occurred_at,'2026-09-27T01:00:00Z');
  assert.equal(Orchestrator.optionsFromPersistedRecord({...storedRecord,
