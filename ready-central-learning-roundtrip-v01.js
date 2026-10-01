@@ -170,8 +170,11 @@
   return {ok:true,options:{outcomes:relevant,subject,concept_skill_target,planner,
    candidate_dates,maxFlushAttempts,observationContextForRow:row=>({
     event_id:'ready:'+sessionId+':'+row.task_id+
-      (row.centralFeedbackKind==='READY_EXECUTION_FACT'?':execution':
-       row.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'?':checkpoint':''),
+      (row.centralFeedbackKind==='READY_EXECUTION_FACT'
+        ?':execution:'+String(row.state||'UNKNOWN').toLowerCase()
+        :row.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'
+          ?':checkpoint:'+String(row.state||'UNKNOWN').toLowerCase()
+          :''),
 
     occurred_at:occurredAt,
     session_id:sessionId,
