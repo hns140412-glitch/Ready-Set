@@ -82,9 +82,9 @@
      row?.specialistResult?.sourceApp==='hide-seek');
    if(!actionableHide)
     return {ok:true,scheduled:false,
-      reason:'CHECKPOINT_PROGRESS_RECORDED_RECALL_PROOF_PENDING',
+      reason:'READY_EXECUTION_FACTS_RECORDED_NO_CENTRAL_PEDAGOGICAL_ACTION',
       stage:'CENTRAL_ACK',observation_acknowledged:true,
-      authority:'CENTRAL_CHECKPOINT_PROGRESS_ONLY'};
+      authority:'CENTRAL_OBSERVATION_ONLY_NO_PEDAGOGICAL_DECISION'};
    const intent=await Intake.receive({sessionProvider,
     decisionProvider:client.request,subject,concept_skill_target});
    if(!intent.ok)return {ok:false,reason:intent.reason,stage:'CENTRAL_DECISION',
@@ -170,7 +170,9 @@
   return {ok:true,options:{outcomes:relevant,subject,concept_skill_target,planner,
    candidate_dates,maxFlushAttempts,observationContextForRow:row=>({
     event_id:'ready:'+sessionId+':'+row.task_id+
-      (row.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'?':checkpoint':''),
+      (row.centralFeedbackKind==='READY_EXECUTION_FACT'?':execution':
+       row.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'?':checkpoint':''),
+
     occurred_at:occurredAt,
     session_id:sessionId,
     subject,concept_skill_target
