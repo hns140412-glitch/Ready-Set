@@ -78,8 +78,11 @@ const row={state:'COMPLETED',task_id:'task-1',
    prioritySemantics:'ADVISORY_SIGNAL_NOT_DATE',
    averageMemoryStrength:41,reviewAdvisories:[{lexicalId:'word-a'}]}}};
 const context=row=>({event_id:'evt:'+row.task_id+
- (row.centralFeedbackKind==='READY_EXECUTION_FACT'?':execution':
-  row.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'?':checkpoint':''),
+ (row.centralFeedbackKind==='READY_EXECUTION_FACT'
+   ?':execution:'+String(row.state||'UNKNOWN').toLowerCase()
+   :row.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'
+     ?':checkpoint:'+String(row.state||'UNKNOWN').toLowerCase()
+     :''),
  occurred_at:'2026-09-27T01:00:00.000Z',session_id:'ready-session-1',
  subject:'english',concept_skill_target:'vocabulary'});
 (async()=>{
@@ -294,9 +297,9 @@ const context=row=>({event_id:'evt:'+row.task_id+
   ['READY_EXECUTION_FACT','HIDE_MEMORY','CENTRAL_CHECKPOINT_PROGRESS']);
  assert.deepEqual(dualOptions.options.outcomes.map(x=>
   dualOptions.options.observationContextForRow(x).event_id),[
-   'ready:session-dual:task-1:execution',
+   'ready:session-dual:task-1:execution:completed',
    'ready:session-dual:task-1',
-   'ready:session-dual:task-1:checkpoint'
+   'ready:session-dual:task-1:checkpoint:completed'
   ]);
  const persisted=Orchestrator.optionsFromPersistedRecord(storedRecord,{
   subject:'english',concept_skill_target:'vocabulary',planner,
