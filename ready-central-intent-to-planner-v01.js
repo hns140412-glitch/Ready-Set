@@ -91,6 +91,19 @@
   if(!date)return {ok:false,reason:'NO_CONFIRMED_PLANNER_WINDOW'};
   const reviewTargets=Array.isArray(intent.adaptive_plan.target_learning_ids)
     ?[...new Set(intent.adaptive_plan.target_learning_ids.map(clean).filter(Boolean))].slice(0,24):[];
+  const learningOutput=intent.learning_output||null;
+  const quantityIntent=learningOutput?.recommended_quantity||null;
+  if(learningOutput&&(
+     learningOutput.authority!=='TAKY_LEARNING_ENGINE_CORE'||
+     learningOutput.date_authority!==false||
+     learningOutput.allocated_quantity_authority!==false||
+     quantityIntent?.authority!=='LEARNING_ENGINE_QUANTITY_INTENT_ONLY'||
+     quantityIntent?.planner_must_materialize!==true||
+     quantityIntent?.allocated_quantity!==null))
+    return {ok:false,reason:'CENTRAL_LEARNING_OUTPUT_INVALID'};
+  const requestedTargets=Array.isArray(quantityIntent?.target_ids)
+    ?[...new Set(quantityIntent.target_ids.map(clean).filter(Boolean))].slice(0,24):[];
+  const allocationTargets=requestedTargets.length?requestedTargets:reviewTargets;
   const growth=intent.growth_next_step||null;
   const growthControl=growth?.growth_control||null;
   if(growth&&(
@@ -100,10 +113,18 @@
   const plannerAllocation={
     authority:'READY_SET_PLANNER_ALLOCATION',
     date,
-    quantity_kind:reviewTargets.length?'LEARNING_TARGET_COUNT':'CHECKPOINT_COUNT',
-    quantity:reviewTargets.length||1,
-    allocated_learning_target_ids:[...reviewTargets],
-    allocation_basis:reviewTargets.length?'CENTRAL_TARGET_SET_MATERIALIZED_BY_PLANNER':'CENTRAL_CHECKPOINT_INTENT',
+    quantity_kind:allocationTargets.length?'LEARNING_TARGET_COUNT':'CHECKPOINT_COUNT',
+    quantity:allocationTargets.length||1,
+    allocated_learning_target_ids:[...allocationTargets],
+    allocation_basis:allocationTargets.length
+      ?'LEARNING_QUANTITY_INTENT_MATERIALIZED_BY_PLANNER'
+      :'CENTRAL_CHECKPOINT_INTENT',
+    source_quantity_intent:quantityIntent?{
+      authority:quantityIntent.authority,
+      target_count_hint:quantityIntent.target_count_hint??null,
+      quantity_band:quantityIntent.quantity_band||null,
+      planner_must_materialize:true
+    }:null,
     learning_intensity:growthControl?.learning_intensity||null,
     expression_level:growthControl?.expression_level||null,
     question_depth:Number.isInteger(growthControl?.question_depth)?growthControl.question_depth:null,
@@ -135,7 +156,7 @@
    }:null,
    provenance:{kind:'CENTRAL_PEDAGOGICAL_CHECKPOINT',...provenanceBase,
     central_intents:(intent.actions||[]).map(x=>clean(x.intent)).filter(Boolean),
-    target_learning_ids:reviewTargets,
+    target_learning_ids:allocationTargets,
     ...(activityRefs.length?{
      governed_activity_refs:[...activityRefs],
      governed_activity_policy_ids:[...activityPolicies],
