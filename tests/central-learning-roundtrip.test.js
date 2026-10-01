@@ -219,7 +219,7 @@ const context=row=>({event_id:'evt:'+row.task_id+
  const crossCheckpoint=await observational.run({...args,
   outcomes:[{...checkpointRow,member_id:'CHILD_B'}]});
  assert.equal(crossCheckpoint.ok,false);
- assert.equal(crossCheckpoint.reason,'CENTRAL_CHECKPOINT_MEMBER_SCOPE_MISMATCH');
+ assert.equal(crossCheckpoint.reason,'OUTCOME_MEMBER_SCOPE_MISMATCH');
  assert.equal(evidenceResponses,beforeCheckpoint+2);
  await observational.close();
 
