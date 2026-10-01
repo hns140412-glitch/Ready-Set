@@ -4,7 +4,7 @@
   // decision, or Planner scheduling is inferred from a completed Ready task.
   const VERSION='READY_CENTRAL_OBSERVATION_HANDOFF_V1';
   const clean=x=>typeof x==='string'?x.trim():'';
-  function fromOutcome(row,{session,event_id,occurred_at,subject,concept_skill_target}={}){
+  function fromOutcome(row,{session,event_id,occurred_at,session_id,subject,concept_skill_target}={}){
     if(session?.authenticated!==true||!clean(session.family_id)||!clean(session.selected_member_id))
       return {ok:false,reason:'TRUSTED_SELECTED_MEMBER_SESSION_REQUIRED'};
     if(row?.state!=='COMPLETED'||!clean(row.task_id)||
@@ -39,8 +39,18 @@
         return {ok:false,reason:'OUTCOME_FAMILY_SCOPE_MISMATCH'};
     }
     const payload={
-      member_id,family_id:session.family_id,subject,concept_skill_target,
+      member_id,family_id:session.family_id,session_id:clean(session_id||row.session_id),
+      task_id:row.task_id,lap_id:row.lap_id||null,assignment_id:row.assignment_id||null,
+      subject,concept_skill_target,
       source_task_id:row.task_id,observation_only:true,global_mastery_claim:false,
+      planner_allocation:row.planner_allocation?structuredClone(row.planner_allocation):null,
+      started_at:row.started_at||null,ended_at:row.ended_at||null,
+      actual_minutes:Number.isFinite(row.actual_minutes)?row.actual_minutes:
+        Number.isFinite(row.actual_ms)?Math.round(row.actual_ms/60000):null,
+      performed_quantity:Number.isFinite(row.performed_quantity)?row.performed_quantity:null,
+      completion_state:row.state,
+      blocked_reason:row.blocked_reason||null,
+      parent_confirmation:row.parent_confirmation??null,
       evidence_type:'MEMORY_RETRIEVAL_EVIDENCE',
       instrument_version:clean(row.specialistResult.resultContract)||'HIDE_SPECIALIST_RESULT_V1',
       forwarded_source_app:'hide-seek',ready_state:'COMPLETED',
@@ -52,7 +62,7 @@
   }
   // The next Ready checkpoint's completion is a self-report. It closes the
   // execution feedback loop without pretending to verify recall correctness.
-  function fromCheckpointOutcome(row,{session,event_id,occurred_at,subject,
+  function fromCheckpointOutcome(row,{session,event_id,occurred_at,session_id,subject,
     concept_skill_target}={}){
     const todo=row?.centralCheckpoint,provenance=todo?.provenance||{};
     if(session?.authenticated!==true||!clean(session.family_id)||
@@ -76,8 +86,16 @@
        !clean(event_id)||!Number.isFinite(Date.parse(occurred_at||'')))
       return {ok:false,reason:'CENTRAL_CHECKPOINT_LEARNING_CONTEXT_REQUIRED'};
     const payload={family_id:session.family_id,
-      member_id:session.selected_member_id,subject,concept_skill_target,
+      member_id:session.selected_member_id,session_id:clean(session_id||row.session_id),
+      task_id:row.task_id,lap_id:row.lap_id||null,assignment_id:row.assignment_id||null,
+      subject,concept_skill_target,
       source_task_id:row.task_id,source_planner_todo_id:row.planner_todo_id,
+      planner_allocation:todo.planner_allocation?structuredClone(todo.planner_allocation):null,
+      started_at:row.started_at||null,ended_at:row.ended_at||null,
+      performed_quantity:Number.isFinite(row.performed_quantity)?row.performed_quantity:null,
+      completion_state:row.state,
+      blocked_reason:row.blocked_reason||null,
+      parent_confirmation:row.parent_confirmation??null,
       observation_only:true,global_mastery_claim:false,
       evidence_type:'CHILD_SELF_REPORT',
       instrument_version:'READY_CENTRAL_CHECKPOINT_V1',
