@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.5.1';
+  const VERSION='0.6.0';
   const referenceApi=()=>{
     if(typeof globalThis!=='undefined'&&globalThis.ReadyLearningReferenceV01)return globalThis.ReadyLearningReferenceV01;
     if(typeof require==='function'){try{return require('./ready-learning-reference-v01.js')}catch{}}
@@ -232,7 +232,7 @@
     return chunks;
   }
 
-  function adaptiveReviewPolicy(analysis,profile){
+  function legacyAdaptiveReviewCandidate(analysis,profile){
     const signal=analysis?.escalation_review_signal;
     if(!signal||signal.authority!=='ESCALATION_ADVISORY_ONLY')return null;
     const states=(signal.states||[]).map(clean).filter(Boolean);
@@ -241,14 +241,29 @@
     const depth=Math.max(0,Number(signal.carry_over_depth)||0);
     const baseSpan=Number(profile?.split_policy?.max_span)||null;
     return {
-      authority:'ADAPTIVE_REVIEW_ONLY',
+      authority:'LEGACY_READY_ADAPTIVE_REVIEW_CANDIDATE_ONLY',
+      execution_authorized:false,
+      central_learning_engine_required:true,
       reduce_unit_span:!!(baseSpan&&repeatedFriction>=2&&depth>=3),
       max_span:baseSpan?Math.max(1,Math.ceil(baseSpan/2)):null,
       add_checkpoint:repeatedFriction>=2,
       recovery_floor:(depth>=4||repeatedFriction>=3)?'HIGH':repeatedFriction>=2?'MEDIUM':null,
       parent_help_floor:helpBlocked?'HIGH':repeatedFriction>=3?'MEDIUM':null,
-      evidence:{repeated_friction_count:repeatedFriction,carry_over_depth:depth,states:[...states]}
+      evidence:{repeated_friction_count:repeatedFriction,carry_over_depth:depth,states:[...states]},
+      guards:{
+        assignment_structure_only:true,
+        learner_state_authority:false,
+        pedagogical_decision_authority:false,
+        planner_date_authority:false
+      }
     };
+  }
+
+  function adaptiveReviewPolicy(){
+    // Local Ready Learning Master no longer owns learner-adaptive pedagogy.
+    // Central TAKY Learning Engine may emit an explicit adaptive intent,
+    // which Ready consumes through the central decision -> Planner bridge.
+    return null;
   }
 
   function reviewAdjustedSequence(sequence=[],policy){
@@ -286,6 +301,7 @@
     const profile=(kind==='WORKBOOK_RANGE'&&PROFILE[subjectKey])?PROFILE[subjectKey]:(PROFILE[kind]||PROFILE[subjectKey]||PROFILE.WORKBOOK_RANGE);
     const desc=extra.range_descriptor||rangeDescriptor(extra.source_range??fact.source_range);
     const reviewPolicy=adaptiveReviewPolicy(analysis,profile);
+    const legacyReviewCandidate=legacyAdaptiveReviewCandidate(analysis,profile);
     const unresolved=[...(extra.unresolved_flags||[])];
     if(!clean(fact.teacher_instruction)&&!extra.concept_skill_target)unresolved.push('CONCEPT_TARGET_INFERRED_FROM_SUBJECT_PROFILE');
     if(desc.kind==='AMBIGUOUS_NUMERIC_RANGE')unresolved.push('RANGE_SEMANTICS_AMBIGUOUS_NOT_SPLIT');
@@ -323,6 +339,7 @@
         cross_revision_learning_signal:analysis.cross_revision_learning_signal?clone(analysis.cross_revision_learning_signal):null,
         escalation_review_signal:analysis.escalation_review_signal?clone(analysis.escalation_review_signal):null,
         adaptive_review_policy:reviewPolicy?clone(reviewPolicy):null,
+        legacy_adaptive_review_candidate:legacyReviewCandidate?clone(legacyReviewCandidate):null,
         learning_reference:(()=>{
           const ref=referenceApi()?.resolve?.(subjectKey,{
             workbook_name:fact.workbook_name||fact.workbook_ref_id||null,
@@ -350,8 +367,7 @@
 
   function talentUnits(fact,analysis){
     const profile=PROFILE[fact.book_subject]||PROFILE.WORKBOOK_RANGE;
-    const reviewPolicy=adaptiveReviewPolicy(analysis,profile);
-    const chunks=splitRange(fact.source_range,profile,{max_span:reviewPolicy?.reduce_unit_span?reviewPolicy.max_span:null});
+    const chunks=splitRange(fact.source_range,profile);
     return chunks.map((chunk,index)=>unitBase(fact,analysis,fact.book_subject,index,{
       source_range:chunk.source_range,
       range_descriptor:chunk.range_descriptor,
@@ -364,8 +380,7 @@
     const out=[];let n=0;
     if(clean(fact.source_range)){
       const profile=PROFILE.WORKBOOK_RANGE;
-      const reviewPolicy=adaptiveReviewPolicy(analysis,profile);
-      for(const chunk of splitRange(fact.source_range,profile,{max_span:reviewPolicy?.reduce_unit_span?reviewPolicy.max_span:null})){
+      for(const chunk of splitRange(fact.source_range,profile)){
         out.push(unitBase(fact,analysis,'WORKBOOK_RANGE',n++,{
           source_range:chunk.source_range,
           range_descriptor:chunk.range_descriptor,
@@ -418,7 +433,17 @@
     analysis.minutes_role='OBSERVATION_ONLY';
     analysis.load_model='SUBJECT_ACTIVITY_DIFFICULTY_RECOVERY';
     analysis.subject_profile=fact.book_subject||fact.subject||null;
-    analysis.adaptive_review_policy=adaptiveReviewPolicy(analysis,PROFILE[analysis.subject_profile]||PROFILE.WORKBOOK_RANGE);
+    analysis.adaptive_review_policy=null;
+    analysis.legacy_adaptive_review_candidate=legacyAdaptiveReviewCandidate(
+      analysis,PROFILE[analysis.subject_profile]||PROFILE.WORKBOOK_RANGE
+    );
+    analysis.authority_contract={
+      assignment_interpretation_owner:'READY_LEARNING_MASTER',
+      learner_state_owner:'TAKY_LEARNING_ENGINE_CORE',
+      pedagogical_adaptation_owner:'TAKY_LEARNING_ENGINE_CORE',
+      dated_allocation_owner:'READY_SET_PLANNER',
+      local_adaptive_review_execution_authorized:false
+    };
     const ref=referenceApi()?.resolve?.(analysis.subject_profile,{
       workbook_name:fact.workbook_name||fact.workbook_ref_id||null,
       title:fact.title||null,
