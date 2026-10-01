@@ -607,7 +607,12 @@
     endActiveLap('SESSION_END', currentTask(c)?.state || 'PENDING');
     const taskOutcomes = [];
     for (const task of c.tasks) {
-      const actualMs = (task.laps || []).reduce((sum, lap) => sum + (Number.isFinite(lap.elapsed_ms) ? lap.elapsed_ms : 0), 0);
+      const laps=Array.isArray(task.laps)?task.laps:[];
+      const actualMs = laps.reduce((sum, lap) => sum + (Number.isFinite(lap.elapsed_ms) ? lap.elapsed_ms : 0), 0);
+      const plannerTodo=task.planner_todo_id
+        ?(window.ReadySetPlanner?.snapshot?.()?.dated_todos||[])
+          .find(x=>x.todo_id===task.planner_todo_id)||null
+        :null;
       const plannerOutcome = task.planner_todo_id && window.ReadySetPlanner
         ? window.ReadySetPlanner.recordSessionOutcome({
             todo_id: task.planner_todo_id,
@@ -619,11 +624,22 @@
           })
         : null;
       taskOutcomes.push({
+        session_id:c.session_id,
         task_id: task.task_id,
+        lap_id:laps.at(-1)?.lap_id||null,
         planner_todo_id: task.planner_todo_id || null,
+        assignment_id:task.assignment_id||null,
         label: task.label,
         state: task.state,
+        started_at:laps[0]?.started_at||null,
+        ended_at:laps.at(-1)?.ended_at||c.ended_at||null,
         actual_ms: actualMs,
+        actual_minutes:Math.round(actualMs/60000),
+        performed_quantity:Number.isFinite(task.performed_quantity)?task.performed_quantity:null,
+        planner_allocation:plannerTodo?.planner_allocation
+          ?structuredClone(plannerTodo.planner_allocation):null,
+        parent_confirmation:task.parent_confirmation??null,
+        blocked_reason:task.blocked_reason||null,
         specialistResult:task.specialist_result||null,
         // Preserve a compatibility-only local memory advisory in the normal
         // session outcome path. It is NOT Ready learning-policy authority.
