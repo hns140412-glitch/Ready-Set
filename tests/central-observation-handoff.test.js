@@ -156,7 +156,10 @@ assert.equal(row.specialistResult.memorySummary.reviewAdvisories[0].lexicalId,'w
  assert.equal(mappedCheckpoint.observation.payload.checkpoint_completion_is_verified_recall,false);
  assert.equal('verified_outcome' in mappedCheckpoint.observation.payload,false);
  const checkpointBatch=await H.enqueueBatch([checkpoint],
-  r=>({...context,event_id:'checkpoint:'+r.task_id}),{pipeline:batchPipeline});
+  r=>({...context,event_id:'checkpoint:'+r.task_id+
+   (r.centralFeedbackKind==='READY_EXECUTION_FACT'?':execution':
+    r.centralFeedbackKind==='CENTRAL_CHECKPOINT_PROGRESS'?':checkpoint':'')}),
+  {pipeline:batchPipeline});
  assert.equal(checkpointBatch.ok,true);
  assert.equal(checkpointBatch.results.length,2);
  assert.equal(H.fromCheckpointOutcome({...checkpoint,member_id:'child-B'},context).reason,
