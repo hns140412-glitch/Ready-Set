@@ -625,9 +625,9 @@
         state: task.state,
         actual_ms: actualMs,
         specialistResult:task.specialist_result||null,
-        // Preserve actionable review intent in the normal session outcome path.
-        // This is a local advisory projection, NOT a central verified receipt,
-        // and it never allocates a date without the Planner.
+        // Preserve a compatibility-only local memory advisory in the normal
+        // session outcome path. It is NOT Ready learning-policy authority.
+        // Central TAKY Learning Engine owns review policy; Planner owns dates.
         memoryReviewFeedback:task.state==='COMPLETED' && !task.central_checkpoint &&
           task.specialist_result?.sourceApp==='hide-seek'
           ? (window.ReadyHideMemoryReviewV01?.interpretHideMemorySummary?.(
