@@ -5,7 +5,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
 
-  const VERSION='0.5.1';
+  const VERSION='0.5.2';
   const referenceApi=()=>{
     if(typeof globalThis!=='undefined'&&globalThis.ReadyLearningReferenceV01)return globalThis.ReadyLearningReferenceV01;
     if(typeof require==='function'){try{return require('./ready-learning-reference-v01.js')}catch{}}
@@ -241,7 +241,13 @@
     const depth=Math.max(0,Number(signal.carry_over_depth)||0);
     const baseSpan=Number(profile?.split_policy?.max_span)||null;
     return {
-      authority:'ADAPTIVE_REVIEW_ONLY',
+      authority:'READY_EXECUTION_LOAD_ADVISORY_ONLY',
+      scope:'ASSIGNMENT_DECOMPOSITION_AND_EXECUTION_LOAD_ONLY',
+      learner_state_authority:false,
+      growth_control_authority:false,
+      review_policy_authority:false,
+      schedule_authority:false,
+      central_learning_owner:'TAKY_LEARNING_ENGINE_CORE',
       reduce_unit_span:!!(baseSpan&&repeatedFriction>=2&&depth>=3),
       max_span:baseSpan?Math.max(1,Math.ceil(baseSpan/2)):null,
       add_checkpoint:repeatedFriction>=2,
@@ -317,6 +323,10 @@
       ),
       analysis_provenance:{
         engine:'READY_LEARNING_MASTER',
+        role:'ASSIGNMENT_DECOMPOSITION_AND_EXECUTION_LOAD_ONLY',
+        learner_state_authority:false,
+        growth_control_authority:false,
+        central_learning_owner:'TAKY_LEARNING_ENGINE_CORE',
         version:VERSION,
         assignment_id:fact.assignment_id,
         source_claim_ids:(fact.claims||[]).filter(x=>x.status!=='SUPERSEDED').map(x=>x.claim_id),
@@ -403,6 +413,15 @@
       escalation_review_signal:input.escalation_review_signal?clone(input.escalation_review_signal):null,
       review_reason:clean(input.review_reason)||null,
       confidence:clean(fact.teacher_instruction)?0.78:0.62,
+      role_contract:{
+        role:'ASSIGNMENT_DECOMPOSITION_AND_EXECUTION_LOAD_ONLY',
+        learner_state_authority:false,
+        growth_control_authority:false,
+        review_policy_authority:false,
+        dated_allocation_authority:false,
+        central_learning_owner:'TAKY_LEARNING_ENGINE_CORE',
+        planner_owner:'READY_SET_PLANNER'
+      },
       unresolved_flags:[]
     };
     const units=fact.source_type==='TALENT_BOOK_ASSIGNMENT'
