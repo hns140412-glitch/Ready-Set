@@ -90,6 +90,30 @@ assert.equal(row.specialistResult.memorySummary.reviewAdvisories[0].lexicalId,'w
  assert.equal(partial.ok,false);
  assert.equal(partial.results.length,1);
  assert.equal(partial.failed_event_id,'event:second');
+ const frictionCandidate={
+  authority:'READY_EXECUTION_FRICTION_OBSERVATION_ONLY',
+  event_id:'friction-1',
+  observed_at:'2026-09-27T02:00:00Z',
+  assignment_id:'assignment-1',
+  subject:'english',
+  concept_skill_target:'vocabulary',
+  carry_over_id:'carry-1',
+  carry_over_depth:4,
+  carry_over_state:'OPEN',
+  escalation_reason:'REPEATED_CARRY_LIMIT',
+  observation_count:4,
+  states:['PARTIAL','DEFERRED','BLOCKED'],
+  actual_minutes:[20,22,25],
+  observation_only:true,
+  global_mastery_claim:false
+ };
+ const mappedFriction=H.fromExecutionFriction(frictionCandidate,{session});
+ assert.equal(mappedFriction.ok,true,JSON.stringify(mappedFriction));
+ assert.equal(mappedFriction.observation.payload.evidence_scope_kind,'AGGREGATED_EXECUTION');
+ assert.equal(mappedFriction.observation.payload.assignment_id,'assignment-1');
+ assert.equal(mappedFriction.observation.payload.verified_performance,false);
+ assert.equal(mappedFriction.authority,'EXECUTION_FRICTION_OBSERVATION_ONLY_NOT_PERFORMANCE');
+
  const checkpoint={state:'PARTIAL',session_id:'ready-session-1',task_id:'checkpoint-task-1',
   lap_id:'checkpoint-lap-1',planner_todo_id:'central-todo-1',family_id:session.family_id,
   member_id:session.selected_member_id,actual_ms:120000,
