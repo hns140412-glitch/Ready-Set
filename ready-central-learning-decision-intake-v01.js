@@ -38,6 +38,16 @@
   }
   if(leaks(result)||!Array.isArray(result.decision.pedagogical_actions))
    return {ok:false,reason:'CENTRAL_DECISION_AUTHORITY_LEAK'};
+  const growth=result.growth_next_step||null;
+  if(growth){
+   const gc=growth.growth_control||{};
+   if(growth.authority!=='LEARNING_ENGINE_GROWTH_INTENT_ONLY'||
+      growth.guards?.planner_owns_dates!==true||
+      !['SUPPORT_BUILD','BUILD_CONNECT','STRETCH_TRANSFER'].includes(gc.learning_intensity)||
+      !/^L[1-5]_/.test(clean(gc.expression_level))||
+      !Number.isInteger(gc.question_depth)||gc.question_depth<1||gc.question_depth>5)
+    return {ok:false,reason:'CENTRAL_GROWTH_INTENT_INVALID'};
+  }
   const trace=result.trace||{};
   if(trace.governed_activity_refs!==undefined||
      trace.governed_activity_policy_ids!==undefined){
@@ -53,6 +63,7 @@
   return {ok:true,authority:'CENTRAL_PEDAGOGICAL_INTENT_ONLY',
    actions:structuredClone(result.decision.pedagogical_actions),
    adaptive_plan:structuredClone(result.decision.adaptive_plan),
+   growth_next_step:growth?structuredClone(growth):null,
    scope:structuredClone(scope),receipt_scope:{family_id,member_id},
    trace:structuredClone(result.trace||{})};
  }
