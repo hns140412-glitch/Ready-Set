@@ -17,6 +17,11 @@ assert.strictEqual(all.length,6);
 assert(all.every(x=>x.analysis.primary_split_basis==='LEARNING_ACTIVITY_BOUNDARY'));
 assert(all.every(x=>x.analysis.minutes_role==='OBSERVATION_ONLY'));
 assert(all.every(x=>x.learning_units.length===1));
+assert(all.every(x=>x.analysis.role_contract.role==='ASSIGNMENT_DECOMPOSITION_AND_EXECUTION_LOAD_ONLY'));
+assert(all.every(x=>x.analysis.role_contract.learner_state_authority===false));
+assert(all.every(x=>x.analysis.role_contract.growth_control_authority===false));
+assert(all.every(x=>x.analysis.role_contract.central_learning_owner==='TAKY_LEARNING_ENGINE_CORE'));
+assert(all.flatMap(x=>x.learning_units).every(x=>x.analysis_provenance.growth_control_authority===false));
 const math=all.flatMap(x=>x.learning_units).find(x=>x.subject==='수학');
 assert(math.activity_types.includes('CONCEPT'));
 assert(math.cognitive_load_profile.includes('ERROR_CORRECTION'));
@@ -386,7 +391,7 @@ assert.strictEqual(partialContextInterpreted.learning_units[0].analysis_provenan
 assert.strictEqual(standardMatcher.version,'0.4.1');
 assert.strictEqual(standardMatcher.OFFICIAL_STANDARD_DATASET.standard_codes_bound,true);
 assert.strictEqual(standardMatcher.OFFICIAL_STANDARD_DATASET.standard_code_binding,'CONDITIONAL_VERIFIED_RECORD_ONLY');
-assert.strictEqual(learning.version,'0.5.1');
+assert.strictEqual(learning.version,'0.5.2');
 
 assert.strictEqual(subjectMaster.version,'0.2.1');
 const scienceSubjectGap=subjectMaster.resolve('과학',{teacher_instruction:'지층의 특징을 설명'});
