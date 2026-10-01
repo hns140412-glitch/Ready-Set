@@ -38,6 +38,18 @@
   }
   if(leaks(result)||!Array.isArray(result.decision.pedagogical_actions))
    return {ok:false,reason:'CENTRAL_DECISION_AUTHORITY_LEAK'};
+  const learningOutput=result.learning_output||null;
+  if(learningOutput){
+   const rq=learningOutput.recommended_quantity||{};
+   if(learningOutput.ok!==true||
+      learningOutput.authority!=='TAKY_LEARNING_ENGINE_CORE'||
+      learningOutput.date_authority!==false||
+      learningOutput.allocated_quantity_authority!==false||
+      rq.authority!=='LEARNING_ENGINE_QUANTITY_INTENT_ONLY'||
+      rq.planner_must_materialize!==true||
+      rq.allocated_quantity!==null)
+    return {ok:false,reason:'CENTRAL_LEARNING_OUTPUT_INVALID'};
+  }
   const growth=result.growth_next_step||null;
   if(growth){
    const gc=growth.growth_control||{};
@@ -63,6 +75,7 @@
   return {ok:true,authority:'CENTRAL_PEDAGOGICAL_INTENT_ONLY',
    actions:structuredClone(result.decision.pedagogical_actions),
    adaptive_plan:structuredClone(result.decision.adaptive_plan),
+   learning_output:learningOutput?structuredClone(learningOutput):null,
    growth_next_step:growth?structuredClone(growth):null,
    scope:structuredClone(scope),receipt_scope:{family_id,member_id},
    trace:structuredClone(result.trace||{})};
