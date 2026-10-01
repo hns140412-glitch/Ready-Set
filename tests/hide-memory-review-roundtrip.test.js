@@ -19,6 +19,11 @@ const packet={
 const interpreted=review.interpretHideMemorySummary(packet);
 assert.equal(interpreted.ok,true);
 assert.equal(interpreted.decision.authority,'READY_LEARNING_ENGINE_REVIEW_POLICY');
+assert.equal(interpreted.decision.authorityScope,'LOCAL_FALLBACK_ONLY');
+assert.equal(interpreted.decision.centralLearningOwner,'TAKY_LEARNING_ENGINE_CORE');
+assert.equal(interpreted.decision.growthControlAuthority,false);
+assert.equal(interpreted.decision.learnerStateAuthority,false);
+assert.equal(interpreted.decision.centralOverrideRequired,true);
 assert.equal(interpreted.decision.policyState,'REVIEW_REQUIRED');
 assert.deepEqual(interpreted.decision.lexicalIds,['word-a','word-b']);
 assert.equal(interpreted.decision.date,null);
@@ -27,6 +32,12 @@ assert.equal('scheduledDate' in interpreted.decision,false);
 
 const planner=createPlanner(memoryStorage());
 planner.upsertDailyAvailabilityWindow({date:'2026-09-22',start:'16:00',end:'17:00',confirmed:true,source:'PARENT_CONFIRMED'});
+const centralPreferred=review.planReview(interpreted.decision,planner,{
+ candidate_dates:['2026-09-22'],central_learning_available:true
+});
+assert.equal(centralPreferred.ok,false);
+assert.equal(centralPreferred.reason,'CENTRAL_LEARNING_ENGINE_TAKES_PRECEDENCE');
+assert.equal(planner.snapshot().dated_todos.length,0);
 const planned=review.planReview(interpreted.decision,planner,{candidate_dates:['2026-09-22','2026-09-23'],learning_unit_id:'unit-language-memory'});
 assert.equal(planned.ok,true);
 assert.equal(planned.todo.date,'2026-09-22');
