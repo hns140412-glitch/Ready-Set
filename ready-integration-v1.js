@@ -63,29 +63,66 @@
     const state=window.ReadyAssignments.load();
     const fact=state.assignmentFacts?.[assignmentId];
     if(!fact)return {ok:false,reason:'ASSIGNMENT_FACT_NOT_FOUND'};
+
+    const escalationReason=String(carry.escalation_reason||'').trim();
+    const scheduleDriven=['DEADLINE_EXCEEDED','REPEATED_CARRY_NEAR_DEADLINE']
+      .includes(escalationReason);
+    if(scheduleDriven){
+      return {
+        ok:false,
+        reason:'PLANNER_PARENT_RESOLUTION_REQUIRED',
+        resolution_owner:'READY_SET_PLANNER_AND_PARENT',
+        assignment_id:assignmentId,
+        carry_over_id:carryOverId,
+        carry_preserved:true,
+        planner_mutation_performed:false,
+        local_reinterpretation_performed:false,
+        central_learning_evidence_candidate:null,
+        classification:{
+          execution_friction:false,
+          schedule_pressure:true,
+          escalation_reason:escalationReason
+        }
+      };
+    }
+
     const history=window.ReadySetPlanner.learningHistory?.(assignmentId,{
       current_revision:Number(fact.fact_revision)||1
     })||[];
     const recent=history.slice(-12);
+    const depth=Number(carry.next_carry_over_depth)||
+      Number(carry.carry_over_depth)||null;
+    const observedAt=carry.escalated_at||carry.updated_at||null;
     const escalationSignal={
       authority:'READY_EXECUTION_FRICTION_OBSERVATION_ONLY',
-      escalation_reason:carry.escalation_reason||null,
+      event_id:'ready-friction:'+String(carry.carry_over_id)+':'+String(depth||0),
+      observed_at:observedAt,
+      escalation_reason:escalationReason||'REPEATED_CARRY_LIMIT',
       carry_over_id:carry.carry_over_id,
       carry_over_state:carry.state,
-      carry_over_depth:Number(carry.next_carry_over_depth)||
-        Number(carry.carry_over_depth)||null,
-      deadline_date:carry.deadline_date||null,
+      carry_over_depth:depth,
       observation_count:recent.length,
       states:recent.map(x=>x.ready_state||x.state).filter(Boolean),
       actual_minutes:recent.map(x=>x.actual_minutes).filter(Number.isFinite),
       assignment_id:assignmentId,
       subject:fact.book_subject||fact.subject||null,
       concept_skill_target:fact.teacher_instruction||null,
+      observation_only:true,
+      global_mastery_claim:false,
       cannot_influence:[
         'ASSIGNMENT_FACT','SOURCE_RANGE','DEADLINE','FACT_CONFIRMATION',
         'LEARNER_STATE','PEDAGOGICAL_PLAN','CARRY_RESOLUTION','PLANNER_DATE'
       ]
     };
+    try{
+      if(escalationSignal.observed_at&&escalationSignal.subject&&
+         escalationSignal.concept_skill_target){
+        window.dispatchEvent(new CustomEvent(
+          'readyset-learning-friction-observation-ready',
+          {detail:structuredClone(escalationSignal)}
+        ));
+      }
+    }catch{}
     return {
       ok:false,
       reason:'CENTRAL_LEARNING_ENGINE_REVIEW_REQUIRED',
@@ -94,7 +131,12 @@
       carry_preserved:true,
       planner_mutation_performed:false,
       local_reinterpretation_performed:false,
-      central_learning_evidence_candidate:escalationSignal
+      central_learning_evidence_candidate:escalationSignal,
+      classification:{
+        execution_friction:true,
+        schedule_pressure:false,
+        escalation_reason:escalationSignal.escalation_reason
+      }
     };
   }
 
