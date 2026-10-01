@@ -17,6 +17,30 @@ const adaptive_plan={ok:true,adaptive_plan_contract:'TAKY_ADAPTIVE_PLAN_INTENT_V
  unit_span_policy:'REDUCE',add_checkpoint:true,add_retrieval_checkpoint:true,
  recovery_floor:'HIGH',assistance_policy:'FADE_GRADUALLY',
  target_learning_ids:['word:a']};
+const learning_output={
+ ok:true,version:'TAKY_LEARNING_ENGINE_OUTPUT_CONTRACT_V1',
+ authority:'TAKY_LEARNING_ENGINE_CORE',
+ date_authority:false,
+ allocated_quantity_authority:false,
+ review_need:{
+  required:true,retrieval_checkpoint:true,checkpoint:true,recovery_floor:'HIGH',
+  authority:'LEARNING_ENGINE_REVIEW_NEED_INTENT_ONLY'
+ },
+ learning_intensity:'BUILD_CONNECT',
+ recommended_quantity:{
+  authority:'LEARNING_ENGINE_QUANTITY_INTENT_ONLY',
+  unit:'LEARNING_TARGET',
+  target_ids:['word:a'],
+  target_count_hint:1,
+  quantity_band:'FOCUSED',
+  planner_must_materialize:true,
+  planner_may_adjust_to_available_time:true,
+  allocated_quantity:null
+ },
+ next_growth_intent:null,
+ reference_gaps:[],
+ cannot_influence:['SCHEDULE_DATE','ALLOCATED_QUANTITY']
+};
 const growth_next_step={
  ok:true,version:'TAKY_GROWTH_NEXT_STEP_POLICY_V2',
  authority:'LEARNING_ENGINE_GROWTH_INTENT_ONLY',
@@ -42,6 +66,7 @@ const runtime={ok:true,authority:'TAKY_LEARNING_ENGINE_CORE',
   execution_status:'PEDAGOGICAL_ACTION_AVAILABLE',
   pedagogical_actions:[{intent:'TARGETED_RECOVERY_PRACTICE',priority:'HIGH'}],
   adaptive_plan},
+ learning_output,
  growth_next_step,
  trace:{verified_receipt_id:'real-evidence:server-r1',verified_evidence_count:1,
   basis_kind:'VERIFIED_ONLY',evidence_ids:['server-e1']}};
@@ -65,6 +90,10 @@ assert.equal(planned.todo.planner_allocation.authority,'READY_SET_PLANNER_ALLOCA
 assert.equal(planned.todo.planner_allocation.date,'2026-09-30');
 assert.equal(planned.todo.planner_allocation.quantity_kind,'LEARNING_TARGET_COUNT');
 assert.equal(planned.todo.planner_allocation.quantity,1);
+assert.equal(planned.todo.planner_allocation.source_quantity_intent.authority,
+ 'LEARNING_ENGINE_QUANTITY_INTENT_ONLY');
+assert.equal(planned.todo.planner_allocation.source_quantity_intent.quantity_band,'FOCUSED');
+assert.equal(planned.todo.planner_allocation.source_quantity_intent.target_count_hint,1);
 assert.deepEqual(planned.todo.planner_allocation.allocated_learning_target_ids,['word:a']);
 assert.equal(planned.todo.planner_allocation.learning_intensity,'BUILD_CONNECT');
 assert.equal(planned.todo.planner_allocation.expression_level,'L3_EXPANDED_SENTENCE');
@@ -101,6 +130,11 @@ assert.equal(Bridge.planAccepted({...intent,trace:{}},planner,{
 assert.equal(Bridge.planAccepted({...intent,adaptive_plan:{...intent.adaptive_plan,
  unit_span_policy:'KEEP'}},planner,{activeSession,candidate_dates:['2026-09-30']})
  .reason,'CENTRAL_CHECKPOINT_REPLAY_CONFLICT');
+const leakedQuantity=Intake.accept({...runtime,learning_output:{
+ ...learning_output,allocated_quantity_authority:true
+}},context);
+assert.equal(leakedQuantity.ok,false);
+assert.equal(leakedQuantity.reason,'CENTRAL_LEARNING_OUTPUT_INVALID');
 const observation=Intake.accept({...runtime,
  decision:{...runtime.decision,execution_status:'HOLD_FOR_MORE_RELIABLE_INTERPRETATION'}},
  context);
