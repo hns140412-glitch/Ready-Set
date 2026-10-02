@@ -695,6 +695,21 @@ $('#pauseBtn').onclick=async()=>{
   if(s.pausedAt){await resumePausedSession('FOCUS_PAUSE_BUTTON');return}
   s.pausedAt=Date.now();s.pauseReason='';await pauseBgm();save();renderFocus();$('#pauseSheet').hidden=false;
 };
+$('#persistBtn')?.addEventListener('click',()=>{
+  const s=state.activeSession;if(!s)return;
+  const contract=window.ReadySetRev07?.contract?.();
+  const task=contract?.tasks?.find(x=>x.task_id===contract.active_task_id);
+  if(!task){toast('현재 과제를 확인할 수 없어요.');return}
+  const now=Date.now();
+  s.persistenceEvidence={
+    taskId:task.task_id,
+    plannerTodoId:task.planner_todo_id||null,
+    blockedEvidenceRef:`ready-child-blocked:${s.id}:${task.task_id}:${now}`,
+    continueActionRef:`ready-child-continue:${s.id}:${task.task_id}:${now}`,
+    at:new Date(now).toISOString()
+  };
+  save();toast('막힌 지점에서도 계속 시도한 기록을 남겼어요.');
+});
 async function resumePausedSession(resumeSource=''){
   const s=state.activeSession;if(!s||!s.pausedAt)return;
   const pauseStartedAt=s.pausedAt;
