@@ -131,3 +131,52 @@ test('Ready emits CARRY_OVER_COMPLETE only from explicit child wrap-up on a carr
   expect(selfCheck.payload.resolvedTaskIds).toContain(taskId);
   expect(selfCheck.payload.resolvedStates).toContain('COMPLETED');
 });
+
+test('Ready emits SELF_RETURN only from explicit pause then resume control', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  const seeded=await page.evaluate((today)=>{
+    return window.ReadySetPlanner.upsertDatedTodo({
+      todo_id:'badge_return_todo',
+      date:today,
+      label:'잠깐 쉬었다 돌아올 탐험',
+      source:'PLANNER_ALLOCATION',
+      source_actor:'PLANNER_MAIN',
+      state:'PLANNED'
+    });
+  },todayKey());
+  expect(seeded?.todo_id).toBe('badge_return_todo');
+
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="badge_return_todo"]').click();
+  await page.locator('#startBtn').click();
+  await expect(page.locator('#focusView')).toHaveClass(/active/);
+
+  await page.locator('#pauseBtn').click();
+  await expect(page.locator('#pauseSheet')).toBeVisible();
+  const paused=await page.evaluate(()=>({pausedAt:window.__READY_SET_STATE__?.activeSession?.pausedAt||null}));
+  // Runtime state is intentionally private; visible pause UI is the source-action gate.
+  expect(await page.locator('#pauseBtn').textContent()).toContain('다시');
+
+  await page.locator('#resumeFromSheetBtn').click();
+  await expect(page.locator('#pauseSheet')).toBeHidden();
+
+  const evidence=await page.evaluate(()=>{
+    const c=window.ReadySetRev07.contract();
+    return c.badge_source_observations||[];
+  });
+  const returned=evidence.find(x=>x.behavior_code==='SELF_RETURN');
+  expect(returned).toMatchObject({
+    contract_version:'TAKY_BADGE_SOURCE_OBSERVATION_V1',
+    app_id:'READY_SET',
+    event_family:'RETURN_RECOVERY',
+    behavior_code:'SELF_RETURN',
+    source_contract_id:'READY_EXPLICIT_PAUSE_RETURN_V1',
+    explicit_child_action:true,
+    disposition:'OBSERVATION_ONLY',
+    badge_award_authorized:false,
+    economy_mutation_authorized:false,
+    catalog_activation_allowed:false,
+    payload:{resumeSource:'PAUSE_SHEET_BUTTON'}
+  });
+  expect(evidence.filter(x=>x.behavior_code==='SELF_RETURN')).toHaveLength(1);
+});
