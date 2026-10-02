@@ -704,7 +704,7 @@ function renderChunkProgress(){
   const plan=s?.chunkPlans?.[task?.task_id||''];
   if(!plan){root.innerHTML='';return}
   root.innerHTML=plan.chunks.map((chunk,index)=>`<button type="button" data-chunk-index="${index}" class="${chunk.completed?'on':''}"><span><b>${escapeHtml(chunk.label)}</b></span><strong>${chunk.completed?'완료':'완료 표시'}</strong></button>`).join('');
-  $('[data-chunk-index]',root).forEach(btn=>btn.onclick=()=>{
+  $$('[data-chunk-index]',root).forEach(btn=>btn.onclick=()=>{
     const i=Number(btn.dataset.chunkIndex);
     const current=state.activeSession?.chunkPlans?.[task.task_id];
     if(!current?.chunks?.[i])return;
@@ -744,8 +744,8 @@ function tickFocus(){
   if(!s.completed&&$('#focusView').classList.contains('active'))requestAnimationFrame(tickFocus);
 }
 $('#radioBtn')?.addEventListener('click',()=>{$('#radioSheet').hidden=false;});
-$('[data-close-radio]').forEach(b=>b.onclick=()=>$('#radioSheet').hidden=true);
-$('[data-radio-action]').forEach(btn=>btn.onclick=()=>{
+$$('[data-close-radio]').forEach(b=>b.onclick=()=>$('#radioSheet').hidden=true);
+$$('[data-radio-action]').forEach(btn=>btn.onclick=()=>{
   const action=btn.dataset.radioAction;
   const s=state.activeSession;if(!s)return;
   const contract=window.ReadySetRev07?.contract?.();
@@ -944,10 +944,10 @@ $('#fiveMinuteBreakBtn')?.addEventListener('click',()=>{
   },300000);
   save();toast('5분 휴식을 시작했어요.');
 });
-$('[data-pause-reason]').forEach(b=>b.onclick=()=>{
+$$('[data-pause-reason]').forEach(b=>b.onclick=()=>{
   const s=state.activeSession;if(!s)return;
   s.pauseReason=b.dataset.pauseReason;s.pauseEvents=s.pauseEvents||[];s.pauseEvents.push({reason:s.pauseReason,at:Date.now()});
-  $$('[data-pause-reason]').forEach(x=>x.classList.toggle('on',x===b));save();
+  $$$('[data-pause-reason]').forEach(x=>x.classList.toggle('on',x===b));save();
 });
 $$('[data-close-pause]').forEach(b=>b.onclick=()=>$('#pauseSheet').hidden=true);
 $('#resumeFromSheetBtn').onclick=()=>resumePausedSession('PAUSE_SHEET_BUTTON');
