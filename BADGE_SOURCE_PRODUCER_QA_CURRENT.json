@@ -3,17 +3,17 @@
   "updated_at": "2026-10-02",
   "repository": "hns140412-glitch/Ready-Set",
   "branch": "taky/badge-source-producers-20261002",
-  "validation_cutoff_sha": "e3b3be5a644b69d70caaffb2f0b28f1e0ef5efb9",
+  "validation_cutoff_sha": "7d0e257d2515581f8e851fc2302f76cd1ff7d7b1",
   "runtime_e2e": {
-    "run_id": 36968446580,
+    "run_id": 36979777480,
     "conclusion": "success",
     "tests": "PASS",
     "workflow_gates": "10/10 PASS"
   },
   "counts": {
     "catalog": 60,
-    "producer_qa_pass": 44,
-    "producer_qa_open": 16,
+    "producer_qa_pass": 47,
+    "producer_qa_open": 13,
     "active": 0
   },
   "invariants": [
@@ -270,8 +270,8 @@
     },
     {
       "badge_id": "BDG-DRAFT-036",
-      "producer_qa": "OPEN",
-      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "producer_qa": "PASS",
+      "evidence_basis": "HIDE_RETRACE_CORRECTION_COURAGE_QA_PASS",
       "activation": "HOLD",
       "active": false
     },
@@ -284,15 +284,15 @@
     },
     {
       "badge_id": "BDG-DRAFT-038",
-      "producer_qa": "OPEN",
-      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "producer_qa": "PASS",
+      "evidence_basis": "SNAP_REFLECTION_TO_COMPLETION_QA_PASS",
       "activation": "HOLD",
       "active": false
     },
     {
       "badge_id": "BDG-DRAFT-039",
-      "producer_qa": "OPEN",
-      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_STRATEGY_SWITCH_TO_SAME_TASK_COMPLETION_E2E_PASS",
       "activation": "HOLD",
       "active": false
     },
@@ -445,7 +445,10 @@
     }
   ],
   "notes": [
+    "First acquisition uses minimum explicit child evidence needed to prove the behavior; badges are not made difficult merely to be rare.",
+    "Tier-promotion strengthening is a separate policy axis and does not retroactively harden first acquisition.",
     "BDG-DRAFT-013 uses explicit child focus commitment via READY_EXPLICIT_SINGLE_TASK_FOCUS_V1; passive focus duration/silence is never sufficient.",
-    "Remaining OPEN: 001,002,005,007,009,010,018,019,030,031,035,036,038,039,042,054."
+    "BDG-DRAFT-039 uses explicit strategy switch followed by same-task completion via READY_CHILD_STRATEGY_TO_COMPLETION_V1.",
+    "Remaining OPEN: 001,002,005,007,009,010,018,019,030,031,035,042,054."
   ]
 }
