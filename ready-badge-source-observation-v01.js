@@ -275,6 +275,21 @@
 
 
 
+  function recordTaskRestart({contract,sessionId,taskRef,restartActionRef,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),action=clean(restartActionRef,180);
+    if(!contract||!session||!task||!action)return null;
+    return record(contract,{
+      event_id:'ready_badge_task_restart_'+session+'_'+task,
+      event_family:'RETURN_RECOVERY',
+      behavior_code:'TASK_RESTART',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_EXPLICIT_TASK_RESTART_V1',
+      evidence_ref:'ready-task-restart:'+session+':'+task,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,restartActionRef:action}
+    });
+  }
+
   function recordCarefulComplete({contract,sessionId,taskRef,plannedMinutes,actualMinutes,checkActionRef,completionEventRef,at}={}){
     const session=clean(sessionId,160),task=clean(taskRef,180),check=clean(checkActionRef,180),completion=clean(completionEventRef,180);
     const planned=Number(plannedMinutes),actual=Number(actualMinutes);
@@ -619,6 +634,6 @@
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordCarefulComplete,recordFocusReturn,recordMeaningfulOverrun,recordRootCause,recordConceptUnderstanding,recordSelfExplanation,recordStrategySwitch,recordDistractionResistance,recordSelfNoticeReturn,recordRereadCheck,recordReflectBeforeProceed,recordStopAtRightTime,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordTaskRestart,recordCarefulComplete,recordFocusReturn,recordMeaningfulOverrun,recordRootCause,recordConceptUnderstanding,recordSelfExplanation,recordStrategySwitch,recordDistractionResistance,recordSelfNoticeReturn,recordRereadCheck,recordReflectBeforeProceed,recordStopAtRightTime,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
   });
 })();
