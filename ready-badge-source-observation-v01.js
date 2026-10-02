@@ -232,6 +232,23 @@
     });
   }
 
+  function recordPreparationToStart({contract,sessionId,taskRef,checklistId,checkedItems,preparationConfirmActionRef,startedTaskRef,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),checklist=clean(checklistId,120),confirm=clean(preparationConfirmActionRef,180),started=clean(startedTaskRef,180);
+    const items=Array.isArray(checkedItems)?checkedItems.map(x=>clean(x,100)).filter(Boolean):[];
+    const required=['TASK_MATERIALS_READY','WORKSPACE_READY'];
+    if(!contract||!session||!task||checklist!=='READY_PRESTART_CHECKLIST_V1'||!confirm||!started||started!==task||required.some(x=>!items.includes(x)))return null;
+    return record(contract,{
+      event_id:`ready_badge_preparation_complete_${session}_${task}`,
+      event_family:'GOAL_COMPLETE',
+      behavior_code:'PREPARATION_COMPLETE',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_PREPARATION_TO_START_V1',
+      evidence_ref:`ready-preparation-complete:${session}:${task}`,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,checklistId:checklist,checkedItems:required,preparationConfirmActionRef:confirm,startedTaskRef:started}
+    });
+  }
+
   function recordResponsiveStart({contract,sessionId,taskRef,promptEventRef,promptKind,childStartActionRef,at}={}){
     const session=clean(sessionId,160),task=clean(taskRef,180),prompt=clean(promptEventRef,180),kind=clean(promptKind,80),action=clean(childStartActionRef,180);
     if(!contract||!session||!task||!prompt||kind!=='MISSION_BRIEFING'||!action)return null;
@@ -709,6 +726,6 @@
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordResponsiveStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordTaskRestart,recordCarefulComplete,recordFocusReturn,recordMeaningfulOverrun,recordRootCause,recordConceptUnderstanding,recordSelfExplanation,recordStrategySwitch,recordBlockResolved,recordDistractionResistance,recordSelfNoticeReturn,recordSingleTaskFocus,recordSustainedFocusCompletion,recordQuietImmersionCompletion,recordRereadCheck,recordReflectBeforeProceed,recordStopAtRightTime,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordPreparationToStart,recordResponsiveStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordTaskRestart,recordCarefulComplete,recordFocusReturn,recordMeaningfulOverrun,recordRootCause,recordConceptUnderstanding,recordSelfExplanation,recordStrategySwitch,recordBlockResolved,recordDistractionResistance,recordSelfNoticeReturn,recordSingleTaskFocus,recordSustainedFocusCompletion,recordQuietImmersionCompletion,recordRereadCheck,recordReflectBeforeProceed,recordStopAtRightTime,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
   });
 })();
