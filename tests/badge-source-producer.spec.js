@@ -347,6 +347,7 @@ test('Ready records MICRO_TASK_COMPLETE only from an explicitly marked completed
   const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
   await page.locator(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`).click();
   await page.locator('#rev07ConfirmEnd').click();
+  await page.locator('#resultView [data-nav="home"]').click();
   await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('#mealStartBtn').click();
   const obs=await page.evaluate(()=>window.__READY_SET_STATE__?.records?.[0]?.rev07?.badge_source_observations||[]);
@@ -370,6 +371,7 @@ test('Ready emits POST_MEAL_RESTART only after explicit meal start/end then chil
   const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
   await page.locator(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`).click();
   await page.locator('#rev07ConfirmEnd').click();
+  await page.locator('#resultView [data-nav="home"]').click();
   await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('#mealStartBtn').click();
   await page.locator('#mealEndBtn').click();
