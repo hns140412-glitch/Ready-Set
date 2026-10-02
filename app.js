@@ -661,6 +661,24 @@ function fmt(ms){
   const m=Math.floor(ms/60),s=ms%60;
   return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
+function renderChunkProgress(){
+  const panel=$('#chunkPanel'),root=$('#chunkProgress');
+  if(!panel||!root)return;
+  const s=state.activeSession;
+  const contract=window.ReadySetRev07?.contract?.();
+  const task=contract?.tasks?.find(x=>x.task_id===contract.active_task_id);
+  const plan=s?.chunkPlans?.[task?.task_id||''];
+  if(!plan){root.innerHTML='';return}
+  root.innerHTML=plan.chunks.map((chunk,index)=>`<button type="button" data-chunk-index="${index}" class="${chunk.completed?'on':''}"><span><b>${escapeHtml(chunk.label)}</b></span><strong>${chunk.completed?'완료':'완료 표시'}</strong></button>`).join('');
+  $('[data-chunk-index]',root).forEach(btn=>btn.onclick=()=>{
+    const i=Number(btn.dataset.chunkIndex);
+    const current=state.activeSession?.chunkPlans?.[task.task_id];
+    if(!current?.chunks?.[i])return;
+    current.chunks[i].completed=true;
+    current.chunks[i].completedRef=`ready-child-chunk-complete:${s.id}:${task.task_id}:${i}:${Date.now()}`;
+    save();renderChunkProgress();
+  });
+}
 function renderFocus(){
   const s=state.activeSession;
   if(!s){if($('#focusView')?.classList.contains('active'))nav('mission');return}
@@ -675,6 +693,7 @@ function renderFocus(){
   $('#startClock').textContent=new Date(s.startAt).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false});
   applyGuide($('#focusGuideMini'));
   updateBgmStatus();
+  renderChunkProgress();
   tickFocus();
 }
 function tickFocus(){
@@ -690,6 +709,34 @@ function tickFocus(){
   $('#hourHand').style.transform=`rotate(${((d.getHours()%12)*30)+d.getMinutes()*.5}deg)`;
   if(!s.completed&&$('#focusView').classList.contains('active'))requestAnimationFrame(tickFocus);
 }
+$('#chunkTaskBtn')?.addEventListener('click',()=>{
+  const s=state.activeSession;if(!s)return;
+  const contract=window.ReadySetRev07?.contract?.();
+  const task=contract?.tasks?.find(x=>x.task_id===contract.active_task_id);
+  if(!task){toast('현재 과제를 확인할 수 없어요.');return}
+  $('#chunkPanel').hidden=false;
+  $('#chunkInput1').focus();
+});
+$('#saveChunkPlanBtn')?.addEventListener('click',()=>{
+  const s=state.activeSession;if(!s)return;
+  const contract=window.ReadySetRev07?.contract?.();
+  const task=contract?.tasks?.find(x=>x.task_id===contract.active_task_id);
+  if(!task)return;
+  const labels=[$('#chunkInput1').value,$('#chunkInput2').value].map(x=>String(x||'').trim()).filter(Boolean);
+  if(labels.length<2){toast('단계를 두 개 이상 적어 주세요.');return}
+  const now=Date.now();
+  s.chunkPlans=s.chunkPlans||{};
+  s.chunkPlans[task.task_id]={
+    taskId:task.task_id,
+    plannerTodoId:task.planner_todo_id||null,
+    chunkConfirmActionRef:`ready-child-chunk-confirm:${s.id}:${task.task_id}:${now}`,
+    chunks:labels.map((label,index)=>({
+      ref:`ready-child-chunk:${s.id}:${task.task_id}:${index+1}:${now}`,
+      label,completed:false,completedRef:null
+    }))
+  };
+  save();renderChunkProgress();toast('작은 단계로 나눈 계획을 기록했어요.');
+});
 $('#reviewBtn')?.addEventListener('click',()=>{
   const s=state.activeSession;if(!s)return;
   const contract=window.ReadySetRev07?.contract?.();
