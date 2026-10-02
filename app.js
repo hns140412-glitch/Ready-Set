@@ -559,6 +559,14 @@ $('#conditionStartBtn')?.addEventListener('click',()=>{
   };
   save();toast('컨디션을 고려해 가능한 만큼 시작하는 선택으로 기록했어요.');
 });
+$('#taskRestartStartBtn')?.addEventListener('click',()=>{
+  const signals=badgeSignals(),now=Date.now();
+  signals.pendingStart={
+    type:'TASK_RESTART',
+    restartActionRef:`ready-child-task-restart:${now}`
+  };
+  save();toast('다시 꺼내 시작하는 선택으로 기록했어요.');
+});
 $('#startBtn').onclick=async()=>{
   if(state.activeSession){toast('이미 진행 중인 작전이 있어요. 먼저 진행 중인 작전으로 돌아가 주세요.');nav('focus');return}
   if(!state.selectedTodoIds.length){toast('먼저 Planner가 준비한 오늘의 탐험을 선택해 주세요.');return}
