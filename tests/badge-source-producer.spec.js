@@ -633,3 +633,28 @@ test('Ready UI emits FAST_COMPLETE_WITH_CHECK after explicit review on a fast co
   });
   expect(evidence.filter(x=>x.behavior_code==='FAST_COMPLETE_WITH_CHECK')).toHaveLength(1);
 });
+
+
+test('Ready emits CHILD_CHUNKED_TASK_COMPLETE only after child-defined chunks are all marked complete', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'chunk_ui_todo',date:today,label:'큰 과제',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="chunk_ui_todo"]').click();
+  await page.locator('#startBtn').click();
+  await page.locator('#chunkTaskBtn').click();
+  await page.locator('#chunkInput1').fill('앞부분');
+  await page.locator('#chunkInput2').fill('뒷부분');
+  await page.locator('#saveChunkPlanBtn').click();
+  const chunkButtons=page.locator('#chunkProgress [data-chunk-index]');
+  await expect(chunkButtons).toHaveCount(2);
+  await chunkButtons.nth(0).click();
+  await chunkButtons.nth(1).click();
+  await page.locator('#completeBtn').click();
+  const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
+  await page.locator(\`[data-wrap-state="COMPLETED"][data-task-id="\${taskId}"]\`).click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='CHILD_CHUNKED_TASK_COMPLETE')).toHaveLength(1);
+});
