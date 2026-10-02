@@ -131,6 +131,21 @@
         });
       }
       if (tasks[0]) startLap(tasks[0], 'SESSION_START', session);
+      const badgeCtx=session.badgeStartContext;
+      if(badgeCtx?.type==='POST_MEAL_RESTART'&&badgeCtx.priorSessionRef&&badgeCtx.mealEventRef&&badgeCtx.mealEndActionRef){
+        window.ReadyBadgeSourceObservationV01?.recordPostMealRestart?.({
+          contract:session.rev07,sessionId:session.rev07.session_id,
+          priorSessionRef:badgeCtx.priorSessionRef,mealBufferRef:badgeCtx.mealEventRef,
+          restartActionRef:badgeCtx.mealEndActionRef,at:iso()
+        });
+      }else if(badgeCtx?.type==='FREE_WINDOW_SELF_START'&&badgeCtx.openWindowRef&&badgeCtx.childStartActionRef&&tasks[0]?.planner_todo_id){
+        window.ReadyBadgeSourceObservationV01?.recordFreeWindowSelfStart?.({
+          contract:session.rev07,sessionId:session.rev07.session_id,
+          openWindowRef:badgeCtx.openWindowRef,taskRef:tasks[0].planner_todo_id,
+          childStartActionRef:badgeCtx.childStartActionRef,at:iso()
+        });
+      }
+      session.badgeStartContext=null;
       save();
     }
     return session.rev07;
