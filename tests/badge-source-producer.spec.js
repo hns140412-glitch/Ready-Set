@@ -1067,3 +1067,69 @@ test('Ready responsive start producer rejects missing named prompt linkage', asy
   expect(out.wrongPrompt).toBeNull();
   expect(out.count).toBe(0);
 });
+
+
+test('Ready emits PREPARATION_COMPLETE only after explicit checklist confirmation and same-task start', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'badge_preparation_todo',date:today,label:'준비하고 시작하기',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+
+  await page.locator('[data-nav="mission"]:visible').first().click();
+  await page.locator('[data-todo-id="badge_preparation_todo"]').click();
+  await page.locator('#preparationReadyBtn').click();
+
+  const before=await page.evaluate(()=>{
+    const state=JSON.parse(localStorage.getItem('readyset_state')||'{}');
+    return state.badgeSignals?.preparationCompleteEvidence||null;
+  });
+  expect(before).toMatchObject({
+    taskRef:'badge_preparation_todo',
+    checklistId:'READY_PRESTART_CHECKLIST_V1',
+    checkedItems:['TASK_MATERIALS_READY','WORKSPACE_READY']
+  });
+
+  await page.locator('#startBtn').click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  const rows=evidence.filter(x=>x.behavior_code==='PREPARATION_COMPLETE');
+  expect(rows).toHaveLength(1);
+  expect(rows[0]).toMatchObject({
+    contract_version:'TAKY_BADGE_SOURCE_OBSERVATION_V1',
+    app_id:'READY_SET',
+    event_family:'GOAL_COMPLETE',
+    behavior_code:'PREPARATION_COMPLETE',
+    source_contract_id:'READY_PREPARATION_TO_START_V1',
+    explicit_child_action:true,
+    disposition:'OBSERVATION_ONLY',
+    badge_award_authorized:false,
+    economy_mutation_authorized:false,
+    catalog_activation_allowed:false,
+    payload:{
+      taskRef:'badge_preparation_todo',
+      checklistId:'READY_PRESTART_CHECKLIST_V1',
+      checkedItems:['TASK_MATERIALS_READY','WORKSPACE_READY'],
+      startedTaskRef:'badge_preparation_todo'
+    }
+  });
+});
+
+test('Ready preparation producer rejects incomplete checklist or different started task', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  const out=await page.evaluate(()=>{
+    const api=window.ReadyBadgeSourceObservationV01;
+    const contract={badge_source_observations:[]};
+    const base={
+      contract,sessionId:'s1',taskRef:'t1',checklistId:'READY_PRESTART_CHECKLIST_V1',
+      preparationConfirmActionRef:'prep1',startedTaskRef:'t1'
+    };
+    return {
+      incomplete:api.recordPreparationToStart({...base,checkedItems:['TASK_MATERIALS_READY']}),
+      wrongTask:api.recordPreparationToStart({...base,checkedItems:['TASK_MATERIALS_READY','WORKSPACE_READY'],startedTaskRef:'t2'}),
+      count:contract.badge_source_observations.length
+    };
+  });
+  expect(out.incomplete).toBeNull();
+  expect(out.wrongTask).toBeNull();
+  expect(out.count).toBe(0);
+});
