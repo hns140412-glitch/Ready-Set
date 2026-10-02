@@ -743,6 +743,39 @@ function tickFocus(){
   $('#hourHand').style.transform=`rotate(${((d.getHours()%12)*30)+d.getMinutes()*.5}deg)`;
   if(!s.completed&&$('#focusView').classList.contains('active'))requestAnimationFrame(tickFocus);
 }
+$('#radioBtn')?.addEventListener('click',()=>{$('#radioSheet').hidden=false;});
+$('[data-close-radio]').forEach(b=>b.onclick=()=>$('#radioSheet').hidden=true);
+$('[data-radio-action]').forEach(btn=>btn.onclick=()=>{
+  const action=btn.dataset.radioAction;
+  const s=state.activeSession;if(!s)return;
+  const contract=window.ReadySetRev07?.contract?.();
+  const task=contract?.tasks?.find(x=>x.task_id===contract.active_task_id);
+  if(!task){toast('현재 과제를 확인할 수 없어요.');return}
+  const taskRef=task.planner_todo_id||task.task_id,now=Date.now(),at=new Date(now).toISOString();
+  if(action==='REVIEW')$('#reviewBtn')?.click();
+  else if(action==='CHUNK')$('#chunkTaskBtn')?.click();
+  else if(action==='PERSIST')$('#persistBtn')?.click();
+  else if(action==='REREAD'){
+    window.ReadyBadgeSourceObservationV01?.recordRereadCheck?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      rereadActionRef:`ready-radio-reread:${s.id}:${task.task_id}:${now}`,at
+    });
+    toast('다시 읽은 행동을 기록했어요.');
+  }else if(action==='REFLECT'){
+    window.ReadyBadgeSourceObservationV01?.recordReflectBeforeProceed?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      reflectionActionRef:`ready-radio-reflect:${s.id}:${task.task_id}:${now}`,at
+    });
+    toast('다시 생각한 행동을 기록했어요.');
+  }else if(action==='STOP_RIGHT'){
+    s.stopRightEvidence={
+      taskId:task.task_id,taskRef,
+      stopActionRef:`ready-radio-stop-right:${s.id}:${task.task_id}:${now}`,at
+    };
+    save();toast('여기서 멈추기로 한 선택을 기록했어요.');
+  }
+  $('#radioSheet').hidden=true;
+});
 $('#chunkTaskBtn')?.addEventListener('click',()=>{
   const s=state.activeSession;if(!s)return;
   const contract=window.ReadySetRev07?.contract?.();
@@ -903,6 +936,15 @@ function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOu
       member_id:row.member_id??boundCentral.member_id,
       ...(centralCheckpoint?{centralCheckpoint}:{})};
   });
+  const stopEvidence=s.stopRightEvidence;
+  if(stopEvidence){
+    window.ReadyBadgeSourceObservationV01?.recordStopAtRightTime?.({
+      contract:s.rev07,sessionId:s.id,taskRef:stopEvidence.taskRef,
+      stopActionRef:stopEvidence.stopActionRef,
+      sessionEndRef:`ready-session-end:${s.id}:${s.endAt}`,
+      at:new Date(s.endAt).toISOString()
+    });
+  }
   for(const outcome of (plannerOutcomes||[])){
     if(outcome?.state!=='COMPLETED')continue;
     const link=(s.plannerLinks||[]).find(x=>x.todo_id===outcome.todo_id);
