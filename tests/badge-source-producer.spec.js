@@ -915,3 +915,47 @@ test('Ready BLOCK_RESOLVED producer rejects missing strategy switch or completio
   expect(out.noCompletion).toBeNull();
   expect(out.count).toBe(0);
 });
+
+
+test('Ready emits LONG_FOCUS only after explicit single-focus commitment and same-task completion', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  const today=todayKey();
+  await page.evaluate((date)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'badge_long_focus_todo',date,label:'집중 이어가기',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),today);
+
+  await page.locator('[data-nav="mission"]:visible').first().click();
+  await page.locator('[data-todo-id="badge_long_focus_todo"]').click();
+  await page.locator('#startBtn').click();
+  await expect(page.locator('#focusView')).toHaveClass(/active/);
+
+  await page.locator('#radioBtn').click();
+  await page.locator('[data-radio-action="SINGLE_FOCUS"]').click();
+
+  let observations=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(observations.filter(x=>x.behavior_code==='SINGLE_TASK_FOCUS')).toHaveLength(1);
+  expect(observations.filter(x=>x.behavior_code==='LONG_FOCUS')).toHaveLength(0);
+
+  await page.locator('#completeBtn').click();
+  await page.locator('[data-outcome-state="COMPLETED"]').click();
+
+  observations=await page.evaluate(()=>{
+    const state=JSON.parse(localStorage.getItem('readyset_state')||'{}');
+    return state.records?.[0]?.rev07?.badge_source_observations||[];
+  });
+  const longFocus=observations.filter(x=>x.behavior_code==='LONG_FOCUS');
+  expect(longFocus).toHaveLength(1);
+  expect(longFocus[0]).toMatchObject({
+    contract_version:'TAKY_BADGE_SOURCE_OBSERVATION_V1',
+    app_id:'READY_SET',
+    event_family:'FOCUS',
+    behavior_code:'LONG_FOCUS',
+    source_contract_id:'READY_CHILD_SUSTAINED_FOCUS_V1',
+    explicit_child_action:true,
+    disposition:'OBSERVATION_ONLY',
+    badge_award_authorized:false,
+    economy_mutation_authorized:false,
+    catalog_activation_allowed:false
+  });
+});
