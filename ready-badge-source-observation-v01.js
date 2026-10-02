@@ -93,7 +93,7 @@
       event_id:eventId,
       event_family:'SELF_CHOICE',
       behavior_code:'SELF_CHOICE',
-      occurred_at:resumedAt,
+      occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_EXPLICIT_TASK_SWITCH_V1',
       evidence_ref:`ready-task-choice:${session}`,
       explicit_child_action:true,
