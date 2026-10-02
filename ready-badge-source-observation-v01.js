@@ -269,6 +269,22 @@
 
 
 
+
+  function recordStartDespiteCondition({contract,sessionId,conditionEvidenceRef,childStartActionRef,startedTaskRef,at}={}){
+    const session=clean(sessionId,160),condition=clean(conditionEvidenceRef,180),action=clean(childStartActionRef,180),started=clean(startedTaskRef,180);
+    if(!contract||!session||!condition||!action||!started)return null;
+    return record(contract,{
+      event_id:\`ready_badge_condition_start_\${session}_\${started}\`,
+      event_family:'SELF_START',
+      behavior_code:'START_DESPITE_CONDITION',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_START_DESPITE_CONDITION_V1',
+      evidence_ref:\`ready-condition-start:\${session}:\${started}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,conditionEvidenceRef:condition,childStartActionRef:action,startedTaskRef:started}
+    });
+  }
+
   function recordVoluntaryFlowContinuation({contract,sessionId,previousTaskRef,previousCompletionEventRef,nextTaskRef,nextChoiceActionRef,startedTaskRef,at}={}){
     const session=clean(sessionId,160),previous=clean(previousTaskRef,180),completed=clean(previousCompletionEventRef,180);
     const next=clean(nextTaskRef,180),choice=clean(nextChoiceActionRef,180),started=clean(startedTaskRef,180);
@@ -352,6 +368,6 @@
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
   });
 })();
