@@ -581,6 +581,22 @@ $('#startBtn').onclick=async()=>{
       if(signals.pendingStart)contexts.push(structuredClone(signals.pendingStart));
       signals.pendingStart=null;
       const choice=state.childChoiceEvidence;
+      const plannerSnapshot=window.ReadySetPlanner?.snapshot?.()||{};
+      const today=localDateKey(new Date());
+      const requiredTodos=(plannerSnapshot.dated_todos||[]).filter(x=>x.date===today&&x.required_today===true);
+      if(choice&&choice.selectedTaskRef===firstLink.todo_id&&firstLink.required_today!==true&&requiredTodos.length&&requiredTodos.every(x=>x.state==='COMPLETED')){
+        const completeRefs=requiredTodos.map(todo=>{
+          const event=[...(plannerSnapshot.progress_events||[])].reverse().find(e=>e.todo_id===todo.todo_id&&e.state==='COMPLETED');
+          return event?.event_id?`planner-progress:${event.event_id}`:null;
+        }).filter(Boolean);
+        if(completeRefs.length===requiredTodos.length)contexts.push({
+          type:'VOLUNTARY_EXTRA_AFTER_REQUIRED',
+          requiredSetRef:`planner-required-set:${today}:${requiredTodos.map(x=>x.todo_id).join(',')}`,
+          requiredCompleteEventRefs:completeRefs,
+          selectedExtraTaskRef:firstLink.todo_id,
+          extraChoiceRef:choice.choiceSetRef
+        });
+      }
       if(choice&&choice.selectedTaskRef===firstLink.todo_id&&Array.isArray(choice.choices)){
         const values=choice.choices.map(x=>Number(x.difficulty)).filter(Number.isFinite);
         const selectedDifficulty=Number(firstLink.difficulty);
