@@ -457,3 +457,26 @@ test('Ready emits SELF_PLANNED_SEQUENCE only after explicit child order confirma
   expect(planned.payload.orderedTaskRefs).toEqual(['sequence_b','sequence_a']);
   expect(contract.tasks[0].planner_todo_id).toBe('sequence_b');
 });
+
+
+test('Ready emits VOLUNTARY_EXTRA_AFTER_REQUIRED_COMPLETE only after required work is explicitly completed', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>{
+    const p=window.ReadySetPlanner;
+    p.upsertDatedTodo({
+      todo_id:'required_done',date:today,label:'필수 과제',
+      source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',required_today:true
+    });
+    p.recordTaskState({todo_id:'required_done',ready_state:'IN_PROGRESS',session_id:'required_session',task_id:'required_task'});
+    p.recordTaskState({todo_id:'required_done',ready_state:'COMPLETED',session_id:'required_session',task_id:'required_task'});
+    p.upsertDatedTodo({
+      todo_id:'optional_extra',date:today,label:'추가 과제',
+      source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',required_today:false
+    });
+  },todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="optional_extra"]').click();
+  await page.locator('#startBtn').click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='VOLUNTARY_EXTRA_AFTER_REQUIRED_COMPLETE')).toHaveLength(1);
+});
