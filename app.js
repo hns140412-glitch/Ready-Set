@@ -367,6 +367,21 @@ function renderMission(){
   $('#soundName').textContent=state.sound;
   const labels=chosen.map(x=>x.label);
   $('#missionPreviewText').textContent=`${labels.length?labels.join(' · '):'과제를 선택해 주세요'} · ${state.targetMin}분`;
+  const signals=badgeSignals(),firstChosen=chosen[0]||null;
+  if(firstChosen){
+    const existing=signals.guidancePrompt;
+    if(!existing||existing.taskRef!==firstChosen.todo_id||existing.promptKind!=='MISSION_BRIEFING'){
+      const promptAt=Date.now();
+      signals.guidancePrompt={
+        promptEventRef:`ready-mission-briefing:${firstChosen.todo_id}:${promptAt}`,
+        taskRef:firstChosen.todo_id,
+        promptKind:'MISSION_BRIEFING',
+        promptText:'MISSION BRIEFING · 준비되면 작전 START',
+        at:new Date(promptAt).toISOString()
+      };
+      save();
+    }
+  }else if(signals.guidancePrompt){signals.guidancePrompt=null;save();}
 }
 $('#addTaskBtn').onclick=()=>{
   const v=$('#taskInput').value.trim();
@@ -615,6 +630,17 @@ $('#startBtn').onclick=async()=>{
       const signals=badgeSignals(),contexts=[];
       if(signals.pendingStart)contexts.push(structuredClone(signals.pendingStart));
       signals.pendingStart=null;
+      const guidance=signals.guidancePrompt;
+      if(guidance?.taskRef===firstLink.todo_id&&guidance?.promptKind==='MISSION_BRIEFING'&&guidance?.promptEventRef){
+        contexts.push({
+          type:'NAMED_PROMPT_RESPONSE_START',
+          promptEventRef:guidance.promptEventRef,
+          promptKind:guidance.promptKind,
+          taskRef:firstLink.todo_id,
+          childStartActionRef:`ready-mission-start:${sessionId}:${firstLink.todo_id}:${now}`
+        });
+      }
+      signals.guidancePrompt=null;
       const choice=state.childChoiceEvidence;
       const plannerSnapshot=window.ReadySetPlanner?.snapshot?.()||{};
       const today=localDateKey(new Date());
