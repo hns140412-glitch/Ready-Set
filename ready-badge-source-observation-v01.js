@@ -275,6 +275,53 @@
 
 
 
+  function recordCarefulComplete({contract,sessionId,taskRef,plannedMinutes,actualMinutes,checkActionRef,completionEventRef,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),check=clean(checkActionRef,180),completion=clean(completionEventRef,180);
+    const planned=Number(plannedMinutes),actual=Number(actualMinutes);
+    if(!contract||!session||!task||!check||!completion||!Number.isFinite(planned)||planned<=0||!Number.isFinite(actual)||actual<=planned)return null;
+    return record(contract,{
+      event_id:'ready_badge_careful_complete_'+session+'_'+task,
+      event_family:'GOAL_COMPLETE',
+      behavior_code:'ACCURACY_COMPLETE',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_CAREFUL_OVERRUN_COMPLETE_V1',
+      evidence_ref:'ready-careful-complete:'+session+':'+task,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,plannedMinutes:planned,actualMinutes:actual,checkActionRef:check,completionEventRef:completion}
+    });
+  }
+
+  function recordFocusReturn({contract,sessionId,taskRef,returnActionRef,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),action=clean(returnActionRef,180);
+    if(!contract||!session||!task||!action)return null;
+    return record(contract,{
+      event_id:'ready_badge_focus_return_'+session+'_'+task+'_'+action,
+      event_family:'RETURN_RECOVERY',
+      behavior_code:'FOCUS_RETURN',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_EXPLICIT_FOCUS_RETURN_V1',
+      evidence_ref:'ready-focus-return:'+session+':'+task,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,returnActionRef:action}
+    });
+  }
+
+  function recordMeaningfulOverrun({contract,sessionId,taskRef,plannedMinutes,actualMinutes,meaningArtifactRef,meaningText,completionEventRef,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),artifact=clean(meaningArtifactRef,180),note=clean(meaningText,180),completion=clean(completionEventRef,180);
+    const planned=Number(plannedMinutes),actual=Number(actualMinutes);
+    if(!contract||!session||!task||!artifact||!note||!completion||!Number.isFinite(planned)||planned<=0||!Number.isFinite(actual)||actual<=planned)return null;
+    return record(contract,{
+      event_id:'ready_badge_meaningful_overrun_'+session+'_'+task,
+      event_family:'ISSUE_DURATION',
+      behavior_code:'MEANINGFUL_OVERRUN',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_CHILD_MEANINGFUL_OVERRUN_V1',
+      evidence_ref:'ready-meaningful-overrun:'+session+':'+task,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,plannedMinutes:planned,actualMinutes:actual,meaningArtifactRef:artifact,meaningText:note,completionEventRef:completion}
+    });
+  }
+
   function recordRootCause({contract,sessionId,taskRef,causeArtifactRef,causeText,at}={}){
     const session=clean(sessionId,160),task=clean(taskRef,180),artifact=clean(causeArtifactRef,180),note=clean(causeText,180);
     if(!contract||!session||!task||!artifact||!note)return null;
@@ -572,6 +619,6 @@
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordRootCause,recordConceptUnderstanding,recordSelfExplanation,recordStrategySwitch,recordDistractionResistance,recordSelfNoticeReturn,recordRereadCheck,recordReflectBeforeProceed,recordStopAtRightTime,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordCarefulComplete,recordFocusReturn,recordMeaningfulOverrun,recordRootCause,recordConceptUnderstanding,recordSelfExplanation,recordStrategySwitch,recordDistractionResistance,recordSelfNoticeReturn,recordRereadCheck,recordReflectBeforeProceed,recordStopAtRightTime,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
   });
 })();
