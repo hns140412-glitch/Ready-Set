@@ -3,17 +3,17 @@
   "updated_at": "2026-10-02",
   "repository": "hns140412-glitch/Ready-Set",
   "branch": "taky/badge-source-producers-20261002",
-  "validation_cutoff_sha": "b49ff5fbb76cdeece132264e91c2324d7d034b92",
+  "validation_cutoff_sha": "d6ad1d918914870e8df4f72d1ed32afffe9d402c",
   "runtime_e2e": {
-    "run_id": 36966387336,
+    "run_id": 36966865172,
     "conclusion": "success",
     "tests": "100/100 PASS",
     "workflow_gates": "10/10 PASS"
   },
   "counts": {
     "catalog": 60,
-    "producer_qa_pass": 31,
-    "producer_qa_open": 29,
+    "producer_qa_pass": 42,
+    "producer_qa_open": 18,
     "active": 0
   },
   "invariants": [
@@ -123,8 +123,8 @@
     },
     {
       "badge_id": "BDG-DRAFT-015",
-      "producer_qa": "OPEN",
-      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
       "activation": "HOLD",
       "active": false
     },
@@ -172,15 +172,15 @@
     },
     {
       "badge_id": "BDG-DRAFT-022",
-      "producer_qa": "OPEN",
-      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
       "activation": "HOLD",
       "active": false
     },
     {
       "badge_id": "BDG-DRAFT-023",
-      "producer_qa": "OPEN",
-      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
       "activation": "HOLD",
       "active": false
     },
@@ -242,22 +242,22 @@
     },
     {
       "badge_id": "BDG-DRAFT-032",
-      "producer_qa": "OPEN",
-      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
       "activation": "HOLD",
       "active": false
     },
     {
       "badge_id": "BDG-DRAFT-033",
-      "producer_qa": "OPEN",
-      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
       "activation": "HOLD",
       "active": false
     },
     {
       "badge_id": "BDG-DRAFT-034",
-      "producer_qa": "OPEN",
-      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
       "activation": "HOLD",
       "active": false
     },
@@ -298,8 +298,8 @@
     },
     {
       "badge_id": "BDG-DRAFT-040",
-      "producer_qa": "OPEN",
-      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
       "activation": "HOLD",
       "active": false
     },
@@ -333,15 +333,15 @@
     },
     {
       "badge_id": "BDG-DRAFT-045",
-      "producer_qa": "OPEN",
-      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
       "activation": "HOLD",
       "active": false
     },
     {
       "badge_id": "BDG-DRAFT-046",
-      "producer_qa": "OPEN",
-      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
       "activation": "HOLD",
       "active": false
     },
@@ -382,15 +382,15 @@
     },
     {
       "badge_id": "BDG-DRAFT-052",
-      "producer_qa": "OPEN",
-      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
       "activation": "HOLD",
       "active": false
     },
     {
       "badge_id": "BDG-DRAFT-053",
-      "producer_qa": "OPEN",
-      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
       "activation": "HOLD",
       "active": false
     },
@@ -443,5 +443,9 @@
       "activation": "HOLD",
       "active": false
     }
+  ],
+  "notes": [
+    "11 additional badges map exactly to already-tested explicit radio/source producers; no award activation implied.",
+    "Remaining OPEN: 001,002,005,007,009,010,013,018,019,030,031,035,036,038,039,041,042,054."
   ]
 }
