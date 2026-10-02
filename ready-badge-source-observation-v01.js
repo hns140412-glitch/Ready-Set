@@ -106,6 +106,27 @@
     });
   }
 
+  function recordSelfCheckCompletion({contract,sessionId,tasks,at}={}){
+    const session=clean(sessionId,160);
+    const list=Array.isArray(tasks)?tasks:[];
+    if(!contract||!session||!list.length||list.some(t=>t?.state==='PENDING'))return null;
+    const eventId=`ready_badge_selfcheck_${session}`;
+    return record(contract,{
+      event_id:eventId,
+      event_family:'GOAL_COMPLETE',
+      behavior_code:'SELF_CHECK_COMPLETE',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_WRAP_UP_SELF_CHECK_V1',
+      evidence_ref:`ready-wrap-self-check:${session}`,
+      explicit_child_action:true,
+      payload:{
+        sessionId:session,
+        resolvedTaskIds:list.map(t=>clean(t?.task_id,160)).filter(Boolean),
+        resolvedStates:list.map(t=>clean(t?.state,80)).filter(Boolean)
+      }
+    });
+  }
+
   function recordCarryOverCompletion({contract,sessionId,task,plannerTodo,completionSource,at}={}){
     const source=clean(completionSource,80);
     if(!['WRAP_UP','VOICE_WRAP_UP'].includes(source))return null;
@@ -139,6 +160,6 @@
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,hasForbiddenKeyDeep
   });
 })();
