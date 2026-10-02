@@ -1134,3 +1134,40 @@ test('Ready preparation producer rejects incomplete checklist or different start
   expect(out.wrongTask).toBeNull();
   expect(out.count).toBe(0);
 });
+
+
+test('Ready emits EARLY_START only from a trusted future Planner availability boundary plus explicit child start', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>{
+    const now=new Date(), hhmm=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const start=new Date(now.getTime()+10*60000), end=new Date(now.getTime()+40*60000);
+    window.ReadySetPlanner.upsertDailyAvailabilityWindow({availability_id:'badge_early_boundary',date:today,start:hhmm(start),end:hhmm(end),confirmed:true,source:'PLANNER_CONFIRMED'});
+    window.ReadySetPlanner.upsertDatedTodo({todo_id:'badge_early_todo',date:today,label:'조금 일찍 시작',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'});
+  },todayKey());
+  await page.locator('[data-nav="mission"]:visible').first().click();
+  await page.locator('[data-todo-id="badge_early_todo"]').click();
+  await page.locator('#startBtn').click();
+  const rows=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  const early=rows.filter(x=>x.behavior_code==='EARLY_START');
+  expect(early).toHaveLength(1);
+  expect(early[0]).toMatchObject({event_family:'SELF_START',source_contract_id:'READY_EARLY_START_BOUNDARY_V1',explicit_child_action:true,disposition:'OBSERVATION_ONLY',badge_award_authorized:false});
+  expect(early[0].payload.boundaryRef).toContain('planner-availability:badge_early_boundary');
+});
+
+
+test('Ready emits TIME_CREATION_EXTRA only from child-created extra slot followed by same-task execution', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'badge_extra_time_todo',date:today,label:'내가 만든 10분',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+  await page.locator('[data-nav="mission"]:visible').first().click();
+  await page.locator('[data-todo-id="badge_extra_time_todo"]').click();
+  await page.locator('#extraTimeStartBtn').click();
+  await page.locator('#startBtn').click();
+  const rows=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  const extra=rows.filter(x=>x.behavior_code==='TIME_CREATION_EXTRA');
+  expect(extra).toHaveLength(1);
+  expect(extra[0]).toMatchObject({event_family:'TIME_CREATION',source_contract_id:'READY_CHILD_EXTRA_TIME_EXECUTION_V1',explicit_child_action:true,disposition:'OBSERVATION_ONLY',badge_award_authorized:false});
+  expect(extra[0].payload.taskRef).toBe('badge_extra_time_todo');
+  expect(extra[0].payload.startedTaskRef).toBe('badge_extra_time_todo');
+});

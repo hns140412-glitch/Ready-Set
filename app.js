@@ -565,6 +565,13 @@ $('#freeWindowStartBtn')?.addEventListener('click',()=>{
   };
   save();toast('지금 빈시간을 활용하는 선택으로 기록했어요.');
 });
+$('#extraTimeStartBtn')?.addEventListener('click',()=>{
+  const taskRef=state.selectedTodoIds?.[0]||'';
+  if(!taskRef){toast('먼저 시작할 과제를 하나 선택해 주세요.');return}
+  const now=Date.now(),signals=badgeSignals();
+  signals.pendingStart={type:'CHILD_EXTRA_TIME',taskRef,extraSlotRef:`ready-child-extra-slot:${taskRef}:${now}`,slotStartAt:new Date(now).toISOString(),slotEndAt:new Date(now+10*60*1000).toISOString(),childCreateActionRef:`ready-child-extra-time-create:${taskRef}:${now}`};
+  save();toast('내가 만든 10분으로 바로 시작할 준비를 기록했어요.');
+});
 $('#conditionStartBtn')?.addEventListener('click',()=>{
   const signals=badgeSignals(),now=Date.now();
   signals.pendingStart={
@@ -642,6 +649,14 @@ $('#startBtn').onclick=async()=>{
     badgeStartContexts:(()=>{
       const signals=badgeSignals(),contexts=[];
       if(signals.pendingStart)contexts.push(structuredClone(signals.pendingStart));
+      const plannerSnapshotForStart=window.ReadySetPlanner?.snapshot?.()||{};
+      const todayForStart=localDateKey(new Date(now));
+      const boundaries=(plannerSnapshotForStart.daily_availability_windows||[])
+        .filter(x=>x.confirmed!==false&&x.date===todayForStart&&typeof x.start==='string')
+        .map(x=>({ref:`planner-availability:${x.availability_id}`,at:`${todayForStart}T${x.start}:00`}))
+        .filter(x=>Number.isFinite(Date.parse(x.at))&&now<=Date.parse(x.at))
+        .sort((a,b)=>Date.parse(a.at)-Date.parse(b.at));
+      if(boundaries[0])contexts.push({type:'EARLY_START_BOUNDARY',taskRef:firstLink.todo_id,boundaryRef:boundaries[0].ref,boundaryAt:boundaries[0].at,childStartActionRef:`ready-mission-start:${sessionId}:${firstLink.todo_id}:${now}`});
       signals.pendingStart=null;
       const guidance=signals.guidancePrompt;
       if(guidance?.taskRef===firstLink.todo_id&&guidance?.promptKind==='MISSION_BRIEFING'&&guidance?.promptEventRef){

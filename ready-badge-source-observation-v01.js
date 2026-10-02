@@ -723,9 +723,23 @@
     });
   }
 
+
+  function recordEarlyStart({contract,sessionId,taskRef,boundaryRef,boundaryAt,childStartActionRef,startedAt,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),boundary=clean(boundaryRef,180),action=clean(childStartActionRef,180);
+    const boundaryMs=Date.parse(clean(boundaryAt,80)),startIso=clean(startedAt,80)||clean(at,80)||new Date().toISOString(),startMs=Date.parse(startIso);
+    if(!contract||!session||!task||!boundary||!action||!Number.isFinite(boundaryMs)||!Number.isFinite(startMs)||startMs>boundaryMs)return null;
+    return record(contract,{event_id:`ready_badge_early_start_${session}_${task}`,event_family:'SELF_START',behavior_code:'EARLY_START',occurred_at:startIso,source_contract_id:'READY_EARLY_START_BOUNDARY_V1',evidence_ref:`ready-early-start:${session}:${task}`,explicit_child_action:true,payload:{sessionId:session,taskRef:task,boundaryRef:boundary,boundaryAt:clean(boundaryAt,80),childStartActionRef:action}});
+  }
+  function recordChildExtraTimeExecution({contract,sessionId,taskRef,extraSlotRef,slotStartAt,slotEndAt,childCreateActionRef,startedTaskRef,startedAt,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),slot=clean(extraSlotRef,180),action=clean(childCreateActionRef,180),started=clean(startedTaskRef,180);
+    const startIso=clean(startedAt,80)||clean(at,80)||new Date().toISOString(),a=Date.parse(clean(slotStartAt,80)),b=Date.parse(clean(slotEndAt,80)),x=Date.parse(startIso);
+    if(!contract||!session||!task||!slot||!action||started!==task||!Number.isFinite(a)||!Number.isFinite(b)||!Number.isFinite(x)||x<a||x>b)return null;
+    return record(contract,{event_id:`ready_badge_extra_time_${session}_${task}`,event_family:'TIME_CREATION',behavior_code:'TIME_CREATION_EXTRA',occurred_at:startIso,source_contract_id:'READY_CHILD_EXTRA_TIME_EXECUTION_V1',evidence_ref:`ready-child-extra-time:${session}:${task}`,explicit_child_action:true,payload:{sessionId:session,taskRef:task,extraSlotRef:slot,slotStartAt:clean(slotStartAt,80),slotEndAt:clean(slotEndAt,80),childCreateActionRef:action,startedTaskRef:started}});
+  }
+
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordPreparationToStart,recordResponsiveStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordTaskRestart,recordCarefulComplete,recordFocusReturn,recordMeaningfulOverrun,recordRootCause,recordConceptUnderstanding,recordSelfExplanation,recordStrategySwitch,recordBlockResolved,recordDistractionResistance,recordSelfNoticeReturn,recordSingleTaskFocus,recordSustainedFocusCompletion,recordQuietImmersionCompletion,recordRereadCheck,recordReflectBeforeProceed,recordStopAtRightTime,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordPreparationToStart,recordResponsiveStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordTaskRestart,recordCarefulComplete,recordFocusReturn,recordMeaningfulOverrun,recordRootCause,recordConceptUnderstanding,recordSelfExplanation,recordStrategySwitch,recordBlockResolved,recordDistractionResistance,recordSelfNoticeReturn,recordSingleTaskFocus,recordSustainedFocusCompletion,recordQuietImmersionCompletion,recordRereadCheck,recordReflectBeforeProceed,recordStopAtRightTime,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,recordEarlyStart,recordChildExtraTimeExecution,hasForbiddenKeyDeep
   });
 })();

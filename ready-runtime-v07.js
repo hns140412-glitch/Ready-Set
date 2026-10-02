@@ -152,6 +152,10 @@
             taskRef:tasks[0].planner_todo_id,promptEventRef:badgeCtx.promptEventRef,
             promptKind:badgeCtx.promptKind,childStartActionRef:badgeCtx.childStartActionRef,at:iso()
           });
+        }else if(badgeCtx?.type==='EARLY_START_BOUNDARY'&&badgeCtx.boundaryRef&&badgeCtx.boundaryAt&&badgeCtx.childStartActionRef&&tasks[0]?.planner_todo_id===badgeCtx.taskRef){
+          window.ReadyBadgeSourceObservationV01?.recordEarlyStart?.({contract:session.rev07,sessionId:session.rev07.session_id,taskRef:tasks[0].planner_todo_id,boundaryRef:badgeCtx.boundaryRef,boundaryAt:badgeCtx.boundaryAt,childStartActionRef:badgeCtx.childStartActionRef,startedAt:iso()});
+        }else if(badgeCtx?.type==='CHILD_EXTRA_TIME'&&badgeCtx.extraSlotRef&&badgeCtx.childCreateActionRef&&tasks[0]?.planner_todo_id===badgeCtx.taskRef){
+          window.ReadyBadgeSourceObservationV01?.recordChildExtraTimeExecution?.({contract:session.rev07,sessionId:session.rev07.session_id,taskRef:tasks[0].planner_todo_id,extraSlotRef:badgeCtx.extraSlotRef,slotStartAt:badgeCtx.slotStartAt,slotEndAt:badgeCtx.slotEndAt,childCreateActionRef:badgeCtx.childCreateActionRef,startedTaskRef:tasks[0].planner_todo_id,startedAt:iso()});
         }else if(badgeCtx?.type==='FREE_WINDOW_SELF_START'&&badgeCtx.openWindowRef&&badgeCtx.childStartActionRef&&tasks[0]?.planner_todo_id){
           window.ReadyBadgeSourceObservationV01?.recordFreeWindowSelfStart?.({
             contract:session.rev07,sessionId:session.rev07.session_id,
