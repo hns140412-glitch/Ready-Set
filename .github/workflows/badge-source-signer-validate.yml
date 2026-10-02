@@ -14,5 +14,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Check signer syntax
-        run: node --check taky-badge-source-signer-v01.js
+      - name: Check badge source helper syntax
+        run: |
+          node --check taky-badge-source-signer-v01.js
+          node --check taky-badge-source-identity-v01.js
