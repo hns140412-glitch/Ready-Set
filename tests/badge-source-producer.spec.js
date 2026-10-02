@@ -332,3 +332,77 @@ test('Ready five-minute break UI does not award TIMER_RETURN before timer expiry
   expect(evidence.filter(x=>x.behavior_code==='TIMER_RETURN')).toHaveLength(0);
   expect(evidence.filter(x=>x.behavior_code==='SELF_RETURN')).toHaveLength(0);
 });
+
+
+test('Ready records MICRO_TASK_COMPLETE only from an explicitly marked completed task before meal start', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'badge_micro_todo',date:today,label:'작은 마무리',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',small_task:true
+  }),todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="badge_micro_todo"]').click();
+  await page.locator('#startBtn').click();
+  await page.locator('#completeBtn').click();
+  const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
+  await page.locator(\`[data-wrap-state="COMPLETED"][data-task-id="\${taskId}"]\`).click();
+  await page.locator('#rev07ConfirmEnd').click();
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('#mealStartBtn').click();
+  const obs=await page.evaluate(()=>window.__READY_SET_STATE__?.records?.[0]?.rev07?.badge_source_observations||[]);
+  const direct=await page.evaluate(()=>{
+    const raw=JSON.parse(localStorage.getItem('readyset_state')||'{}');
+    return raw.records?.[0]?.rev07?.badge_source_observations||[];
+  });
+  expect(direct.filter(x=>x.behavior_code==='MICRO_TASK_COMPLETE')).toHaveLength(1);
+});
+
+test('Ready emits POST_MEAL_RESTART only after explicit meal start/end then child session start', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'badge_meal_prior',date:today,label:'식사 전 탐험',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="badge_meal_prior"]').click();
+  await page.locator('#startBtn').click();
+  await page.locator('#completeBtn').click();
+  const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
+  await page.locator(\`[data-wrap-state="COMPLETED"][data-task-id="\${taskId}"]\`).click();
+  await page.locator('#rev07ConfirmEnd').click();
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('#mealStartBtn').click();
+  await page.locator('#mealEndBtn').click();
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'badge_meal_after',date:today,label:'식사 후 탐험',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+  await page.locator('[data-todo-id="badge_meal_after"]').click();
+  await page.locator('#startBtn').click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='POST_MEAL_RESTART')).toHaveLength(1);
+});
+
+test('Ready emits SELF_START_IN_FREE_WINDOW only after explicit free-window choice', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>{
+    const now=new Date();
+    const hhmm=d=>\`\${String(d.getHours()).padStart(2,'0')}:\${String(d.getMinutes()).padStart(2,'0')}\`;
+    window.ReadySetPlanner.upsertDailyAvailabilityWindow({
+      availability_id:'badge_free_now',date:today,
+      start:hhmm(new Date(now.getTime()-60000)),
+      end:hhmm(new Date(now.getTime()+10*60000)),
+      confirmed:true,source:'TEST_CONFIRMED'
+    });
+    window.ReadySetPlanner.upsertDatedTodo({
+      todo_id:'badge_free_todo',date:today,label:'빈시간 탐험',
+      source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+    });
+  },todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="badge_free_todo"]').click();
+  await page.locator('#freeWindowStartBtn').click();
+  await page.locator('#startBtn').click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='SELF_START_IN_FREE_WINDOW')).toHaveLength(1);
+});
