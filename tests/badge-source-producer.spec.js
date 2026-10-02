@@ -582,3 +582,54 @@ test('Ready child chunking and plan adaptation producers fail closed without exp
   expect(result.blockedAdapt).toBeNull();
   expect(result.observations).toHaveLength(2);
 });
+
+
+test('Ready FAST_COMPLETE_WITH_CHECK requires explicit review and <= 70 percent of Planner estimate', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  const direct=await page.evaluate(()=>{
+    const api=window.ReadyBadgeSourceObservationV01;
+    const contract={badge_source_observations:[]};
+    const pass=api.recordFastCompleteWithCheck({
+      contract,sessionId:'fast_ok',taskRef:'task_ok',
+      plannedMinutes:10,actualMinutes:7,checkActionRef:'check_ok',completionEventRef:'done_ok'
+    });
+    const tooSlow=api.recordFastCompleteWithCheck({
+      contract,sessionId:'fast_no',taskRef:'task_no',
+      plannedMinutes:10,actualMinutes:8,checkActionRef:'check_no',completionEventRef:'done_no'
+    });
+    const noCheck=api.recordFastCompleteWithCheck({
+      contract,sessionId:'fast_missing',taskRef:'task_missing',
+      plannedMinutes:10,actualMinutes:5,completionEventRef:'done_missing'
+    });
+    return {pass,tooSlow,noCheck,observations:contract.badge_source_observations};
+  });
+  expect(direct.pass).toMatchObject({
+    behavior_code:'FAST_COMPLETE_WITH_CHECK',
+    source_contract_id:'READY_FAST_COMPLETE_WITH_CHECK_V1',
+    payload:{thresholdRatio:0.7,plannedMinutes:10,actualMinutes:7}
+  });
+  expect(direct.tooSlow).toBeNull();
+  expect(direct.noCheck).toBeNull();
+  expect(direct.observations).toHaveLength(1);
+});
+
+test('Ready UI emits FAST_COMPLETE_WITH_CHECK after explicit review on a fast completed estimated task', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'fast_checked_todo',date:today,label:'빠른 검토 과제',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',estimated_minutes:10
+  }),todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="fast_checked_todo"]').click();
+  await page.locator('#startBtn').click();
+  await page.locator('#reviewBtn').click();
+  await page.locator('#completeBtn').click();
+  const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
+  await page.locator(\`[data-wrap-state="COMPLETED"][data-task-id="\${taskId}"]\`).click();
+  await page.locator('#rev07ConfirmEnd').click();
+  const evidence=await page.evaluate(()=>{
+    const raw=JSON.parse(localStorage.getItem('readyset_state')||'{}');
+    return raw.records?.[0]?.rev07?.badge_source_observations||[];
+  });
+  expect(evidence.filter(x=>x.behavior_code==='FAST_COMPLETE_WITH_CHECK')).toHaveLength(1);
+});
