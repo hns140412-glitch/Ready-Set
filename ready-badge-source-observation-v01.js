@@ -272,6 +272,24 @@
 
 
 
+
+  function recordFastCompleteWithCheck({contract,sessionId,taskRef,plannedMinutes,actualMinutes,checkActionRef,completionEventRef,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),check=clean(checkActionRef,180),completion=clean(completionEventRef,180);
+    const planned=Number(plannedMinutes),actual=Number(actualMinutes);
+    if(!contract||!session||!task||!check||!completion||!Number.isFinite(planned)||planned<=0||!Number.isFinite(actual)||actual<0)return null;
+    if(actual>planned*0.7)return null;
+    return record(contract,{
+      event_id:\`ready_badge_fast_checked_\${session}_\${task}\`,
+      event_family:'GOAL_COMPLETE',
+      behavior_code:'FAST_COMPLETE_WITH_CHECK',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_FAST_COMPLETE_WITH_CHECK_V1',
+      evidence_ref:\`ready-fast-checked:\${session}:\${task}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,plannedMinutes:planned,actualMinutes:actual,checkActionRef:check,completionEventRef:completion,thresholdRatio:0.7}
+    });
+  }
+
   function recordChildChunkedTask({contract,sessionId,taskRef,childChunkRefs,chunkConfirmActionRef,completedChunkRefs,at}={}){
     const session=clean(sessionId,160),task=clean(taskRef,180),confirm=clean(chunkConfirmActionRef,180);
     const chunks=Array.isArray(childChunkRefs)?childChunkRefs.map(x=>clean(x,160)).filter(Boolean):[];
@@ -417,6 +435,6 @@
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
   });
 })();
