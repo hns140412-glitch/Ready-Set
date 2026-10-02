@@ -180,3 +180,50 @@ test('Ready emits SELF_RETURN only from explicit pause then resume control', asy
   });
   expect(evidence.filter(x=>x.behavior_code==='SELF_RETURN')).toHaveLength(1);
 });
+
+
+test('Ready maps explicit condition-adjustment pause to REST_AND_RETURN without duplicate SELF_RETURN', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>{
+    window.ReadySetPlanner.upsertDatedTodo({
+      todo_id:'badge_condition_return_todo',
+      date:today,
+      label:'컨디션 조절 후 돌아올 탐험',
+      source:'PLANNER_ALLOCATION',
+      source_actor:'PLANNER_MAIN',
+      state:'PLANNED'
+    });
+  },todayKey());
+
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="badge_condition_return_todo"]').click();
+  await page.locator('#startBtn').click();
+  await expect(page.locator('#focusView')).toHaveClass(/active/);
+
+  await page.locator('#pauseBtn').click();
+  await expect(page.locator('#pauseSheet')).toBeVisible();
+  await page.locator('[data-pause-reason="컨디션 조절"]').click();
+  await page.locator('#resumeFromSheetBtn').click();
+  await expect(page.locator('#pauseSheet')).toBeHidden();
+
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  const rest=evidence.find(x=>x.behavior_code==='REST_AND_RETURN');
+  expect(rest).toMatchObject({
+    contract_version:'TAKY_BADGE_SOURCE_OBSERVATION_V1',
+    app_id:'READY_SET',
+    event_family:'RETURN_RECOVERY',
+    behavior_code:'REST_AND_RETURN',
+    source_contract_id:'READY_CONDITION_PAUSE_RETURN_V1',
+    explicit_child_action:true,
+    disposition:'OBSERVATION_ONLY',
+    badge_award_authorized:false,
+    economy_mutation_authorized:false,
+    catalog_activation_allowed:false,
+    payload:{
+      pauseReason:'컨디션 조절',
+      resumeSource:'PAUSE_SHEET_BUTTON'
+    }
+  });
+  expect(evidence.filter(x=>x.behavior_code==='SELF_RETURN')).toHaveLength(0);
+  expect(evidence.filter(x=>x.behavior_code==='REST_AND_RETURN')).toHaveLength(1);
+});
