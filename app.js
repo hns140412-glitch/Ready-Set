@@ -1048,6 +1048,16 @@ function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOu
         at:new Date(s.endAt).toISOString()
       });
     }
+    const focusCommit=(s.rev07?.badge_source_observations||[]).find(x=>
+      x?.behavior_code==='SINGLE_TASK_FOCUS'&&x?.payload?.taskRef===outcome.todo_id);
+    if(focusCommit){
+      window.ReadyBadgeSourceObservationV01?.recordSustainedFocusCompletion?.({
+        contract:s.rev07,sessionId:s.id,taskRef:outcome.todo_id,
+        focusCommitEventRef:focusCommit.event_id,
+        completionEventRef:`ready-session-complete:${s.id}:${outcome.todo_id}`,
+        at:new Date(s.endAt).toISOString()
+      });
+    }
     const overrun=s.meaningfulOverrunEvidence;
     if(link&&overrun&&overrun.taskRef===outcome.todo_id){
       window.ReadyBadgeSourceObservationV01?.recordMeaningfulOverrun?.({
