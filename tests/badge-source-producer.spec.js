@@ -480,3 +480,38 @@ test('Ready emits VOLUNTARY_EXTRA_AFTER_REQUIRED_COMPLETE only after required wo
   const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
   expect(evidence.filter(x=>x.behavior_code==='VOLUNTARY_EXTRA_AFTER_REQUIRED_COMPLETE')).toHaveLength(1);
 });
+
+
+test('Ready emits MICRO_TASK_COMPLETE from explicit Planner small-task metadata on completion', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'micro_only',date:today,label:'작은 과제',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',small_task:true
+  }),todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="micro_only"]').click();
+  await page.locator('#startBtn').click();
+  await page.locator('#completeBtn').click();
+  const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
+  await page.locator(\`[data-wrap-state="COMPLETED"][data-task-id="\${taskId}"]\`).click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.source_contract_id==='READY_EXPLICIT_MICRO_TASK_COMPLETE_V1')).toHaveLength(1);
+});
+
+test('Ready emits VOLUNTARY_NEXT_TASK_CONTINUE only when child starts a next task after completing the prior one', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>{
+    const p=window.ReadySetPlanner;
+    p.upsertDatedTodo({todo_id:'flow_a',date:today,label:'첫 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'});
+    p.upsertDatedTodo({todo_id:'flow_b',date:today,label:'다음 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'});
+  },todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="flow_a"]').click();
+  await page.locator('[data-todo-id="flow_b"]').click();
+  await page.locator('#startBtn').click();
+  const tasks=await page.evaluate(()=>window.ReadySetRev07.contract().tasks);
+  await page.evaluate((id)=>window.ReadySetRev07.setTaskState(id,'COMPLETED','READY_UI'),tasks[0].task_id);
+  await page.locator(\`[data-rev07-task="\${tasks[1].task_id}"]\`).click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='VOLUNTARY_NEXT_TASK_CONTINUE')).toHaveLength(1);
+});
