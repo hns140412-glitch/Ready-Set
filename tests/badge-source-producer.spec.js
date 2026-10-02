@@ -227,3 +227,49 @@ test('Ready maps explicit condition-adjustment pause to REST_AND_RETURN without 
   expect(evidence.filter(x=>x.behavior_code==='SELF_RETURN')).toHaveLength(0);
   expect(evidence.filter(x=>x.behavior_code==='REST_AND_RETURN')).toHaveLength(1);
 });
+
+
+test('Ready fail-closes seven minimal badge producer contracts and dedupes identical evidence', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  const result=await page.evaluate(()=>{
+    const api=window.ReadyBadgeSourceObservationV01;
+    const contract={badge_source_observations:[]};
+    const good=[
+      api.recordPreMealMicroComplete({contract,sessionId:'s1',taskRef:'t1',mealBufferRef:'meal1',smallTaskRef:'small1',completionEventRef:'done1'}),
+      api.recordPostMealRestart({contract,sessionId:'s2',priorSessionRef:'prior1',mealBufferRef:'meal2',restartActionRef:'restart1'}),
+      api.recordFreeWindowSelfStart({contract,sessionId:'s3',openWindowRef:'window1',taskRef:'t3',childStartActionRef:'start3'}),
+      api.recordScheduledBreakReturn({contract,sessionId:'s4',breakRef:'break1',scheduledReturnAt:'2026-10-02T13:30:00+09:00',resumeActionRef:'resume4'}),
+      api.recordBreakTimerReturn({contract,sessionId:'s5',timerRef:'timer5',timerExpiredAt:'2026-10-02T13:35:00+09:00',resumeActionRef:'resume5'}),
+      api.recordChildPriorityChoice({contract,sessionId:'s6',choiceSetRef:'set6',selectedTaskRef:'hard6',childSelectionOrder:1,difficulty:5,startedTaskRef:'hard6',mode:'HARD_FIRST'}),
+      api.recordChildPriorityChoice({contract,sessionId:'s7',choiceSetRef:'set7',selectedTaskRef:'easy7',childSelectionOrder:1,difficulty:1,startedTaskRef:'easy7',mode:'EASY_FIRST'})
+    ];
+    const blocked=[
+      api.recordPreMealMicroComplete({contract,sessionId:'x1',taskRef:'t'}),
+      api.recordPostMealRestart({contract,sessionId:'x2',priorSessionRef:'p'}),
+      api.recordFreeWindowSelfStart({contract,sessionId:'x3',openWindowRef:'w',taskRef:'t'}),
+      api.recordScheduledBreakReturn({contract,sessionId:'x4',breakRef:'b'}),
+      api.recordBreakTimerReturn({contract,sessionId:'x5',timerRef:'timer'}),
+      api.recordChildPriorityChoice({contract,sessionId:'x6',choiceSetRef:'set',selectedTaskRef:'t',childSelectionOrder:1,difficulty:5,startedTaskRef:'t',mode:'PLANNER_ORDER'})
+    ];
+    const duplicate=api.recordBreakTimerReturn({contract,sessionId:'s5',timerRef:'timer5',timerExpiredAt:'2026-10-02T13:35:00+09:00',resumeActionRef:'resume5'});
+    return {
+      good:good.map(x=>x&&({family:x.event_family,behavior:x.behavior_code,source:x.source_contract_id,explicit:x.explicit_child_action,award:x.badge_award_authorized})),
+      blocked,
+      duplicateEventId:duplicate?.event_id||null,
+      observations:contract.badge_source_observations
+    };
+  });
+  expect(result.good).toEqual([
+    {family:'GOAL_COMPLETE',behavior:'MICRO_TASK_COMPLETE',source:'READY_PRE_MEAL_MICRO_COMPLETE_V1',explicit:true,award:false},
+    {family:'RETURN_RECOVERY',behavior:'POST_MEAL_RESTART',source:'READY_POST_MEAL_RESTART_V1',explicit:true,award:false},
+    {family:'TIME_CREATION',behavior:'SELF_START_IN_FREE_WINDOW',source:'READY_FREE_WINDOW_SELF_START_V1',explicit:true,award:false},
+    {family:'RETURN_RECOVERY',behavior:'BREAK_RETURN',source:'READY_SCHEDULED_BREAK_RETURN_V1',explicit:true,award:false},
+    {family:'RETURN_RECOVERY',behavior:'TIMER_RETURN',source:'READY_BREAK_TIMER_RETURN_V1',explicit:true,award:false},
+    {family:'SELF_CHOICE',behavior:'PRIORITIZE_HARD',source:'READY_CHILD_PRIORITY_CHOICE_V1',explicit:true,award:false},
+    {family:'SELF_CHOICE',behavior:'WARM_START',source:'READY_CHILD_PRIORITY_CHOICE_V1',explicit:true,award:false}
+  ]);
+  expect(result.blocked).toEqual([null,null,null,null,null,null]);
+  expect(result.observations).toHaveLength(7);
+  expect(result.observations.filter(x=>x.behavior_code==='TIMER_RETURN')).toHaveLength(1);
+  expect(result.duplicateEventId).toBe(result.observations.find(x=>x.behavior_code==='TIMER_RETURN').event_id);
+});
