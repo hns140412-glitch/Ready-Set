@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+test.use({serviceWorkers:'block'});
 const READY='http://127.0.0.1:4173/';
 const SNAP='https://cheerful-pothos-d1c3ee.netlify.app/';
 
