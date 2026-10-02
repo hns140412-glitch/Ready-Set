@@ -406,3 +406,34 @@ test('Ready emits SELF_START_IN_FREE_WINDOW only after explicit free-window choi
   const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
   expect(evidence.filter(x=>x.behavior_code==='SELF_START_IN_FREE_WINDOW')).toHaveLength(1);
 });
+
+
+test('Ready emits PRIORITIZE_HARD when the child explicitly chooses the hardest available task first', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>{
+    const p=window.ReadySetPlanner;
+    p.upsertDatedTodo({todo_id:'hard_first_h',date:today,label:'어려운 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',difficulty:5});
+    p.upsertDatedTodo({todo_id:'hard_first_e',date:today,label:'쉬운 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',difficulty:2});
+  },todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="hard_first_h"]').click();
+  await page.locator('[data-todo-id="hard_first_e"]').click();
+  await page.locator('#startBtn').click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='PRIORITIZE_HARD')).toHaveLength(1);
+});
+
+test('Ready emits WARM_START when the child explicitly chooses the easiest available task first', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>{
+    const p=window.ReadySetPlanner;
+    p.upsertDatedTodo({todo_id:'easy_first_h',date:today,label:'어려운 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',difficulty:5});
+    p.upsertDatedTodo({todo_id:'easy_first_e',date:today,label:'쉬운 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',difficulty:2});
+  },todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="easy_first_e"]').click();
+  await page.locator('[data-todo-id="easy_first_h"]').click();
+  await page.locator('#startBtn').click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='WARM_START')).toHaveLength(1);
+});
