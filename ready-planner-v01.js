@@ -577,10 +577,12 @@
     }
     function linkTodayItems(todoIds=[],options={}){
       const date=cleanText(options.date)||dateKey();
-      const ids=new Set((todoIds||[]).map(cleanText).filter(Boolean));
+      const orderedIds=[...new Set((todoIds||[]).map(cleanText).filter(Boolean))];
       const allowedStates=new Set(Array.isArray(options.allowed_states)&&options.allowed_states.length?options.allowed_states:['PLANNED']);
-      return load().dated_todos.filter(x=>ids.has(x.todo_id)&&x.date===date&&allowedStates.has(x.state)&&
-        visibleToCentralScope(x,options.central_scope)).map(x=>({
+      const rows=load().dated_todos.filter(x=>x.date===date&&allowedStates.has(x.state)&&
+        visibleToCentralScope(x,options.central_scope));
+      const byId=new Map(rows.map(x=>[x.todo_id,x]));
+      return orderedIds.map(id=>byId.get(id)).filter(Boolean).map((x,childSelectionIndex)=>({
         todo_id:x.todo_id,label:x.label,date:x.date,source:x.source,
         assignment_id:x.assignment_id,analysis_id:x.analysis_id,learning_unit_id:x.learning_unit_id,
         template_id:x.template_id,allocation_run_id:x.allocation_run_id,
@@ -591,7 +593,8 @@
         difficulty:Number.isFinite(x.difficulty)?x.difficulty:null,
         recovery_need:x.recovery_need||null,
         review_policy:x.review_policy||null,
-        parent_help_dependency:x.parent_help_dependency||null
+        parent_help_dependency:x.parent_help_dependency||null,
+        child_selection_order:childSelectionIndex+1
       }));
     }
     function linkOrCreateTodayItems(values=[],options={}){
