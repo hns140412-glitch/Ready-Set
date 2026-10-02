@@ -292,7 +292,7 @@ test('Ready scheduled break UI emits BREAK_RETURN only inside an explicit REST b
   await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
   const seeded=await page.evaluate((today)=>{
     const now=new Date();
-    const hhmm=d=>\`\${String(d.getHours()).padStart(2,'0')}:\${String(d.getMinutes()).padStart(2,'0')}\`;
+    const hhmm=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     const start=new Date(now.getTime()-60000);
     const end=new Date(now.getTime()+10*60000);
     window.ReadySetPlanner.upsertScheduleBuffer({
@@ -345,7 +345,7 @@ test('Ready records MICRO_TASK_COMPLETE only from an explicitly marked completed
   await page.locator('#startBtn').click();
   await page.locator('#completeBtn').click();
   const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
-  await page.locator(\`[data-wrap-state="COMPLETED"][data-task-id="\${taskId}"]\`).click();
+  await page.locator(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`).click();
   await page.locator('#rev07ConfirmEnd').click();
   await page.locator('[data-nav="mission"]').first().click();
   await page.locator('#mealStartBtn').click();
@@ -368,7 +368,7 @@ test('Ready emits POST_MEAL_RESTART only after explicit meal start/end then chil
   await page.locator('#startBtn').click();
   await page.locator('#completeBtn').click();
   const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
-  await page.locator(\`[data-wrap-state="COMPLETED"][data-task-id="\${taskId}"]\`).click();
+  await page.locator(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`).click();
   await page.locator('#rev07ConfirmEnd').click();
   await page.locator('[data-nav="mission"]').first().click();
   await page.locator('#mealStartBtn').click();
@@ -387,7 +387,7 @@ test('Ready emits SELF_START_IN_FREE_WINDOW only after explicit free-window choi
   await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
   await page.evaluate((today)=>{
     const now=new Date();
-    const hhmm=d=>\`\${String(d.getHours()).padStart(2,'0')}:\${String(d.getMinutes()).padStart(2,'0')}\`;
+    const hhmm=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     window.ReadySetPlanner.upsertDailyAvailabilityWindow({
       availability_id:'badge_free_now',date:today,
       start:hhmm(new Date(now.getTime()-60000)),
@@ -493,7 +493,7 @@ test('Ready emits MICRO_TASK_COMPLETE from explicit Planner small-task metadata 
   await page.locator('#startBtn').click();
   await page.locator('#completeBtn').click();
   const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
-  await page.locator(\`[data-wrap-state="COMPLETED"][data-task-id="\${taskId}"]\`).click();
+  await page.locator(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`).click();
   const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
   expect(evidence.filter(x=>x.source_contract_id==='READY_EXPLICIT_MICRO_TASK_COMPLETE_V1')).toHaveLength(1);
 });
@@ -511,7 +511,7 @@ test('Ready emits VOLUNTARY_NEXT_TASK_CONTINUE only when child starts a next tas
   await page.locator('#startBtn').click();
   const tasks=await page.evaluate(()=>window.ReadySetRev07.contract().tasks);
   await page.evaluate((id)=>window.ReadySetRev07.setTaskState(id,'COMPLETED','READY_UI'),tasks[0].task_id);
-  await page.locator(\`[data-rev07-task="\${tasks[1].task_id}"]\`).click();
+  await page.locator(`[data-rev07-task="${tasks[1].task_id}"]`).click();
   const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
   expect(evidence.filter(x=>x.behavior_code==='VOLUNTARY_NEXT_TASK_CONTINUE')).toHaveLength(1);
 });
@@ -544,7 +544,7 @@ test('Ready emits PERSIST_TO_COMPLETE only after explicit blocked-but-continue a
   await page.locator('#persistBtn').click();
   await page.locator('#completeBtn').click();
   const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
-  await page.locator(\`[data-wrap-state="COMPLETED"][data-task-id="\${taskId}"]\`).click();
+  await page.locator(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`).click();
   const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
   expect(evidence.filter(x=>x.behavior_code==='PERSIST_TO_COMPLETE')).toHaveLength(1);
 });
@@ -625,7 +625,7 @@ test('Ready UI emits FAST_COMPLETE_WITH_CHECK after explicit review on a fast co
   await page.locator('#reviewBtn').click();
   await page.locator('#completeBtn').click();
   const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
-  await page.locator(\`[data-wrap-state="COMPLETED"][data-task-id="\${taskId}"]\`).click();
+  await page.locator(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`).click();
   await page.locator('#rev07ConfirmEnd').click();
   const evidence=await page.evaluate(()=>{
     const raw=JSON.parse(localStorage.getItem('readyset_state')||'{}');
@@ -654,7 +654,7 @@ test('Ready emits CHILD_CHUNKED_TASK_COMPLETE only after child-defined chunks ar
   await chunkButtons.nth(1).click();
   await page.locator('#completeBtn').click();
   const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
-  await page.locator(\`[data-wrap-state="COMPLETED"][data-task-id="\${taskId}"]\`).click();
+  await page.locator(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`).click();
   const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
   expect(evidence.filter(x=>x.behavior_code==='CHILD_CHUNKED_TASK_COMPLETE')).toHaveLength(1);
 });
@@ -666,7 +666,7 @@ test('Ready emits CHILD_PLAN_ADAPTATION only after schedule change, changed chil
     const p=window.ReadySetPlanner;
     p.upsertScheduleCommitment({
       commitment_id:'replan_change_1',title:'갑작스러운 일정',category:'OTHER',
-      start_at:\`\${today}T18:00:00\`,end_at:\`\${today}T19:00:00\`,source:'TEST'
+      start_at:`${today}T18:00:00`,end_at:`${today}T19:00:00`,source:'TEST'
     });
     p.upsertDatedTodo({todo_id:'replan_a',date:today,label:'A 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'});
     p.upsertDatedTodo({todo_id:'replan_b',date:today,label:'B 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'});
