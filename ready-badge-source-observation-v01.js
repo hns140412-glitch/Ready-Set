@@ -93,7 +93,7 @@
       event_id:eventId,
       event_family:'SELF_CHOICE',
       behavior_code:'SELF_CHOICE',
-      occurred_at:at||new Date().toISOString(),
+      occurred_at:resumedAt,
       source_contract_id:'READY_EXPLICIT_TASK_SWITCH_V1',
       evidence_ref:`ready-task-choice:${session}`,
       explicit_child_action:true,
@@ -234,12 +234,14 @@
 
   function recordScheduledBreakReturn({contract,sessionId,breakRef,scheduledReturnAt,resumeActionRef,at}={}){
     const session=clean(sessionId,160),br=clean(breakRef,180),scheduled=clean(scheduledReturnAt,80),resume=clean(resumeActionRef,180);
-    if(!contract||!session||!br||!scheduled||!resume)return null;
+    const resumedAt=clean(at,80)||new Date().toISOString();
+    const scheduledMs=Date.parse(scheduled),resumedMs=Date.parse(resumedAt);
+    if(!contract||!session||!br||!scheduled||!resume||!Number.isFinite(scheduledMs)||!Number.isFinite(resumedMs)||resumedMs>scheduledMs)return null;
     return record(contract,{
       event_id:\`ready_badge_break_return_\${session}_\${br}\`,
       event_family:'RETURN_RECOVERY',
       behavior_code:'BREAK_RETURN',
-      occurred_at:at||new Date().toISOString(),
+      occurred_at:resumedAt,
       source_contract_id:'READY_SCHEDULED_BREAK_RETURN_V1',
       evidence_ref:\`ready-scheduled-break-return:\${session}:\${br}\`,
       explicit_child_action:true,
@@ -249,12 +251,14 @@
 
   function recordBreakTimerReturn({contract,sessionId,timerRef,timerExpiredAt,resumeActionRef,at}={}){
     const session=clean(sessionId,160),timer=clean(timerRef,180),expired=clean(timerExpiredAt,80),resume=clean(resumeActionRef,180);
-    if(!contract||!session||!timer||!expired||!resume)return null;
+    const resumedAt=clean(at,80)||new Date().toISOString();
+    const expiredMs=Date.parse(expired),resumedMs=Date.parse(resumedAt);
+    if(!contract||!session||!timer||!expired||!resume||!Number.isFinite(expiredMs)||!Number.isFinite(resumedMs)||resumedMs<expiredMs)return null;
     return record(contract,{
       event_id:\`ready_badge_timer_return_\${session}_\${timer}\`,
       event_family:'RETURN_RECOVERY',
       behavior_code:'TIMER_RETURN',
-      occurred_at:at||new Date().toISOString(),
+      occurred_at:resumedAt,
       source_contract_id:'READY_BREAK_TIMER_RETURN_V1',
       evidence_ref:\`ready-break-timer-return:\${session}:\${timer}\`,
       explicit_child_action:true,
