@@ -279,6 +279,17 @@
         });
         state.activeSession.persistenceEvidence=null;
       }
+      const chunkPlan=state.activeSession?.chunkPlans?.[task.task_id];
+      if(chunkPlan?.chunks?.length>=2&&chunkPlan.chunks.every(x=>x.completed===true&&x.completedRef)){
+        window.ReadyBadgeSourceObservationV01?.recordChildChunkedTask?.({
+          contract:c,sessionId:c.session_id,
+          taskRef:task.planner_todo_id||task.task_id,
+          childChunkRefs:chunkPlan.chunks.map(x=>x.ref),
+          chunkConfirmActionRef:chunkPlan.chunkConfirmActionRef,
+          completedChunkRefs:chunkPlan.chunks.map(x=>x.ref),
+          at:task.updated_at
+        });
+      }
     }
     save();
     renderContractUI();
