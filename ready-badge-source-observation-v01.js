@@ -106,6 +106,29 @@
     });
   }
 
+  function recordPauseReturn({contract,sessionId,pauseStartedAt,resumeSource,at}={}){
+    const session=clean(sessionId,160);
+    const source=clean(resumeSource,80);
+    const pauseAt=Number(pauseStartedAt);
+    if(!contract||!session||!Number.isFinite(pauseAt)||
+       !['FOCUS_PAUSE_BUTTON','PAUSE_SHEET_BUTTON'].includes(source))return null;
+    const eventId=`ready_badge_return_${session}_${pauseAt}`;
+    return record(contract,{
+      event_id:eventId,
+      event_family:'RETURN_RECOVERY',
+      behavior_code:'SELF_RETURN',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_EXPLICIT_PAUSE_RETURN_V1',
+      evidence_ref:`ready-pause-return:${session}:${pauseAt}`,
+      explicit_child_action:true,
+      payload:{
+        sessionId:session,
+        pauseEventRef:`ready-pause:${session}:${pauseAt}`,
+        resumeSource:source
+      }
+    });
+  }
+
   function recordSelfCheckCompletion({contract,sessionId,tasks,at}={}){
     const session=clean(sessionId,160);
     const list=Array.isArray(tasks)?tasks:[];
@@ -160,6 +183,6 @@
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,hasForbiddenKeyDeep
   });
 })();
