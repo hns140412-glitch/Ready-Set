@@ -84,10 +84,40 @@
     });
   }
 
-  async function signingMaterial(appId){
+  async function setRegistration(appId,{keyId,registeredAt}={}){
+    if(!keyId)throw new Error('BADGE_SOURCE_IDENTITY_KEY_ID_REQUIRED');
+    const identity=await ensureIdentity(appId);
+    const record={
+      ...identity,
+      keyId:String(keyId),
+      registeredAt:registeredAt||new Date().toISOString()
+    };
+    await putRecord(record);
+    return Object.freeze({
+      appId:record.appId,
+      installationId:record.installationId,
+      keyId:record.keyId,
+      registeredAt:record.registeredAt
+    });
+  }
+
+  async function registrationState(appId){
     const identity=await ensureIdentity(appId);
     return Object.freeze({
+      appId:identity.appId,
       installationId:identity.installationId,
+      keyId:identity.keyId||null,
+      registeredAt:identity.registeredAt||null,
+      registered:Boolean(identity.keyId)
+    });
+  }
+
+  async function signingMaterial(appId){
+    const identity=await ensureIdentity(appId);
+    if(!identity.keyId)throw new Error('BADGE_SOURCE_IDENTITY_NOT_REGISTERED');
+    return Object.freeze({
+      installationId:identity.installationId,
+      keyId:identity.keyId,
       privateKey:identity.privateKey
     });
   }
@@ -96,6 +126,8 @@
     version:VERSION,
     ensureIdentity,
     pairingPayload,
+    setRegistration,
+    registrationState,
     signingMaterial
   });
 })();
