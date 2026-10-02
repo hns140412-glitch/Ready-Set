@@ -76,6 +76,10 @@ test('Ready emits CARRY_OVER_COMPLETE only from explicit child wrap-up on a carr
   await page.locator('[data-todo-id="badge_carry_todo"]').click();
   await page.locator('#startBtn').click();
   await expect(page.locator('#focusView')).toHaveClass(/active/);
+  await page.evaluate(()=>{
+    window.__readyBadgeSourceEvents=[];
+    window.addEventListener('ready-badge-source-observation',event=>window.__readyBadgeSourceEvents.push(event.detail));
+  });
   await page.locator('#completeBtn').click();
   await expect(page.locator('#readyRev07Wrap')).toBeVisible();
 
@@ -107,4 +111,23 @@ test('Ready emits CARRY_OVER_COMPLETE only from explicit child wrap-up on a carr
       completionSource:'WRAP_UP'
     }
   });
+
+  await page.locator('#rev07ConfirmEnd').click();
+  await expect(page.locator('#resultView')).toHaveClass(/active/);
+  const emitted=await page.evaluate(()=>window.__readyBadgeSourceEvents||[]);
+  const selfCheck=emitted.find(x=>x.behavior_code==='SELF_CHECK_COMPLETE');
+  expect(selfCheck).toMatchObject({
+    contract_version:'TAKY_BADGE_SOURCE_OBSERVATION_V1',
+    app_id:'READY_SET',
+    event_family:'GOAL_COMPLETE',
+    behavior_code:'SELF_CHECK_COMPLETE',
+    source_contract_id:'READY_WRAP_UP_SELF_CHECK_V1',
+    explicit_child_action:true,
+    disposition:'OBSERVATION_ONLY',
+    badge_award_authorized:false,
+    economy_mutation_authorized:false,
+    catalog_activation_allowed:false
+  });
+  expect(selfCheck.payload.resolvedTaskIds).toContain(taskId);
+  expect(selfCheck.payload.resolvedStates).toContain('COMPLETED');
 });
