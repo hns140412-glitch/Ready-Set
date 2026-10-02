@@ -45,7 +45,8 @@ const initial={
   records:[],
   activeSession:null,
   recordingMeta:null,
-  badgeSignals:{activeMeal:null,lastMeal:null,pendingStart:null}
+  badgeSignals:{activeMeal:null,lastMeal:null,pendingStart:null},
+  childChoiceEvidence:null
 };
 
 let state=load();
@@ -322,9 +323,19 @@ function renderPlannerToday(){
     const stateNote=startable?(selected?'선택됨':'담기'):(item.state==='IN_PROGRESS'?'진행 중':'선택 불가');
     b.innerHTML=`<span><b>${escapeHtml(item.label)}</b><small>${item.planner_owned?'플래너 제안':'오늘 할 일'}${steps?` · ${escapeHtml(steps)}`:''}</small></span><strong>${stateNote}</strong>`;
     if(startable)b.onclick=()=>{
+      if(!selected&&state.selectedTodoIds.length===0){
+        state.childChoiceEvidence={
+          choiceSetRef:`ready-choice-set:${Date.now()}`,
+          selectedTaskRef:item.todo_id,
+          childSelectionOrder:1,
+          choices:items.filter(x=>Number.isFinite(x.difficulty)).map(x=>({todo_id:x.todo_id,difficulty:x.difficulty})),
+          at:new Date().toISOString()
+        };
+      }
       state.selectedTodoIds=selected
         ? state.selectedTodoIds.filter(x=>x!==item.todo_id)
         : [...state.selectedTodoIds,item.todo_id];
+      if(!state.selectedTodoIds.length)state.childChoiceEvidence=null;
       save();
       renderMission();
     };
@@ -553,11 +564,28 @@ $('#startBtn').onclick=async()=>{
     pausedAt:null,issueMs:0,completed:false,
     selected:[],tasks:labels,
     plannerLinks:started,
-    badgeStartContext:(()=>{
-      const signals=badgeSignals();
-      const pending=signals.pendingStart?structuredClone(signals.pendingStart):null;
+    badgeStartContexts:(()=>{
+      const signals=badgeSignals(),contexts=[];
+      if(signals.pendingStart)contexts.push(structuredClone(signals.pendingStart));
       signals.pendingStart=null;
-      return pending;
+      const choice=state.childChoiceEvidence;
+      if(choice&&choice.selectedTaskRef===firstLink.todo_id&&Array.isArray(choice.choices)){
+        const values=choice.choices.map(x=>Number(x.difficulty)).filter(Number.isFinite);
+        const selectedDifficulty=Number(firstLink.difficulty);
+        if(values.length>=2&&Number.isFinite(selectedDifficulty)){
+          const max=Math.max(...values),min=Math.min(...values);
+          if(max>min&&selectedDifficulty===max)contexts.push({
+            type:'CHILD_PRIORITY_CHOICE',mode:'HARD_FIRST',choiceSetRef:choice.choiceSetRef,
+            selectedTaskRef:firstLink.todo_id,childSelectionOrder:1,difficulty:selectedDifficulty
+          });
+          else if(max>min&&selectedDifficulty===min)contexts.push({
+            type:'CHILD_PRIORITY_CHOICE',mode:'EASY_FIRST',choiceSetRef:choice.choiceSetRef,
+            selectedTaskRef:firstLink.todo_id,childSelectionOrder:1,difficulty:selectedDifficulty
+          });
+        }
+      }
+      state.childChoiceEvidence=null;
+      return contexts;
     })(),
     // Bind the central learner at task start; a later account/child switch
     // cannot reattribute this completed interaction to the new learner.
