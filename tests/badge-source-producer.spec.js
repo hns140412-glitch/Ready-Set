@@ -292,7 +292,7 @@ test('Ready scheduled break UI emits BREAK_RETURN only inside an explicit REST b
   await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
   const seeded=await page.evaluate((today)=>{
     const now=new Date();
-    const hhmm=d=>\`\${String(d.getHours()).padStart(2,'0')}:\${String(d.getMinutes()).padStart(2,'0')}\`;
+    const hhmm=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     const start=new Date(now.getTime()-60000);
     const end=new Date(now.getTime()+10*60000);
     window.ReadySetPlanner.upsertScheduleBuffer({
