@@ -266,6 +266,23 @@
     });
   }
 
+
+  function recordChildSequencePlan({contract,sessionId,choiceSetRef,orderedTaskRefs,sequenceConfirmActionRef,startedTaskRef,at}={}){
+    const session=clean(sessionId,160),choiceSet=clean(choiceSetRef,180),confirm=clean(sequenceConfirmActionRef,180),started=clean(startedTaskRef,180);
+    const ordered=Array.isArray(orderedTaskRefs)?orderedTaskRefs.map(x=>clean(x,160)).filter(Boolean):[];
+    if(!contract||!session||!choiceSet||ordered.length<2||!confirm||!started||ordered[0]!==started)return null;
+    return record(contract,{
+      event_id:\`ready_badge_sequence_\${session}_\${choiceSet}\`,
+      event_family:'SELF_PLANNING',
+      behavior_code:'SELF_PLANNED_SEQUENCE',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_CHILD_SEQUENCE_PLAN_V1',
+      evidence_ref:\`ready-child-sequence:\${session}:\${choiceSet}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,choiceSetRef:choiceSet,orderedTaskRefs:ordered,sequenceConfirmActionRef:confirm,startedTaskRef:started}
+    });
+  }
+
   function recordChildPriorityChoice({contract,sessionId,choiceSetRef,selectedTaskRef,childSelectionOrder,difficulty,startedTaskRef,mode,at}={}){
     const session=clean(sessionId,160),choiceSet=clean(choiceSetRef,180),selected=clean(selectedTaskRef,180),started=clean(startedTaskRef,180);
     const choiceMode=clean(mode,40).toUpperCase(),order=Number(childSelectionOrder),level=Number(difficulty);
@@ -286,6 +303,6 @@
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordChildPriorityChoice,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
   });
 })();
