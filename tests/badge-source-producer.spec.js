@@ -286,3 +286,49 @@ test('Ready preserves explicit child selection order instead of Planner order', 
   expect(rows.map(x=>x.todo_id)).toEqual(['choice_order_b','choice_order_a']);
   expect(rows.map(x=>x.child_selection_order)).toEqual([1,2]);
 });
+
+
+test('Ready scheduled break UI emits BREAK_RETURN only inside an explicit REST buffer', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  const seeded=await page.evaluate((today)=>{
+    const now=new Date();
+    const hhmm=d=>\`\${String(d.getHours()).padStart(2,'0')}:\${String(d.getMinutes()).padStart(2,'0')}\`;
+    const start=new Date(now.getTime()-60000);
+    const end=new Date(now.getTime()+10*60000);
+    window.ReadySetPlanner.upsertScheduleBuffer({
+      buffer_id:'badge_rest_now',kind:'REST',mode:'ABSOLUTE',date:today,
+      start:hhmm(start),end:hhmm(end),confirmed:true,source:'PARENT_CONFIRMED'
+    });
+    return window.ReadySetPlanner.upsertDatedTodo({
+      todo_id:'badge_break_todo',date:today,label:'휴식 복귀 탐험',
+      source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+    });
+  },todayKey());
+  expect(seeded?.todo_id).toBe('badge_break_todo');
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="badge_break_todo"]').click();
+  await page.locator('#startBtn').click();
+  await page.locator('#pauseBtn').click();
+  await page.locator('#scheduledBreakBtn').click();
+  await page.locator('#resumeFromSheetBtn').click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='BREAK_RETURN')).toHaveLength(1);
+  expect(evidence.filter(x=>x.behavior_code==='SELF_RETURN')).toHaveLength(0);
+});
+
+test('Ready five-minute break UI does not award TIMER_RETURN before timer expiry', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'badge_timer_todo',date:today,label:'5분 휴식 탐험',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="badge_timer_todo"]').click();
+  await page.locator('#startBtn').click();
+  await page.locator('#pauseBtn').click();
+  await page.locator('#fiveMinuteBreakBtn').click();
+  await page.locator('#resumeFromSheetBtn').click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='TIMER_RETURN')).toHaveLength(0);
+  expect(evidence.filter(x=>x.behavior_code==='SELF_RETURN')).toHaveLength(0);
+});
