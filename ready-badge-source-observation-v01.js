@@ -191,12 +191,12 @@
     const small=clean(smallTaskRef,180),completion=clean(completionEventRef,180);
     if(!contract||!session||!task||!meal||!small||!completion)return null;
     return record(contract,{
-      event_id:\`ready_badge_pre_meal_micro_\${session}_\${task}\`,
+      event_id:`ready_badge_pre_meal_micro_${session}_${task}`,
       event_family:'GOAL_COMPLETE',
       behavior_code:'MICRO_TASK_COMPLETE',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_PRE_MEAL_MICRO_COMPLETE_V1',
-      evidence_ref:\`ready-pre-meal-micro:\${session}:\${task}\`,
+      evidence_ref:`ready-pre-meal-micro:${session}:${task}`,
       explicit_child_action:true,
       payload:{sessionId:session,taskRef:task,mealBufferRef:meal,smallTaskRef:small,completionEventRef:completion}
     });
@@ -206,12 +206,12 @@
     const session=clean(sessionId,160),prior=clean(priorSessionRef,180),meal=clean(mealBufferRef,180),action=clean(restartActionRef,180);
     if(!contract||!session||!prior||!meal||!action)return null;
     return record(contract,{
-      event_id:\`ready_badge_post_meal_restart_\${session}_\${prior}\`,
+      event_id:`ready_badge_post_meal_restart_${session}_${prior}`,
       event_family:'RETURN_RECOVERY',
       behavior_code:'POST_MEAL_RESTART',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_POST_MEAL_RESTART_V1',
-      evidence_ref:\`ready-post-meal-restart:\${session}:\${prior}\`,
+      evidence_ref:`ready-post-meal-restart:${session}:${prior}`,
       explicit_child_action:true,
       payload:{sessionId:session,priorSessionRef:prior,mealBufferRef:meal,restartActionRef:action}
     });
@@ -221,12 +221,12 @@
     const session=clean(sessionId,160),windowRef=clean(openWindowRef,180),task=clean(taskRef,180),action=clean(childStartActionRef,180);
     if(!contract||!session||!windowRef||!task||!action)return null;
     return record(contract,{
-      event_id:\`ready_badge_free_window_start_\${session}_\${task}\`,
+      event_id:`ready_badge_free_window_start_${session}_${task}`,
       event_family:'TIME_CREATION',
       behavior_code:'SELF_START_IN_FREE_WINDOW',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_FREE_WINDOW_SELF_START_V1',
-      evidence_ref:\`ready-free-window-start:\${session}:\${task}\`,
+      evidence_ref:`ready-free-window-start:${session}:${task}`,
       explicit_child_action:true,
       payload:{sessionId:session,openWindowRef:windowRef,taskRef:task,childStartActionRef:action}
     });
@@ -238,12 +238,12 @@
     const scheduledMs=Date.parse(scheduled),resumedMs=Date.parse(resumedAt);
     if(!contract||!session||!br||!scheduled||!resume||!Number.isFinite(scheduledMs)||!Number.isFinite(resumedMs)||resumedMs>scheduledMs)return null;
     return record(contract,{
-      event_id:\`ready_badge_break_return_\${session}_\${br}\`,
+      event_id:`ready_badge_break_return_${session}_${br}`,
       event_family:'RETURN_RECOVERY',
       behavior_code:'BREAK_RETURN',
       occurred_at:resumedAt,
       source_contract_id:'READY_SCHEDULED_BREAK_RETURN_V1',
-      evidence_ref:\`ready-scheduled-break-return:\${session}:\${br}\`,
+      evidence_ref:`ready-scheduled-break-return:${session}:${br}`,
       explicit_child_action:true,
       payload:{sessionId:session,breakRef:br,scheduledReturnAt:scheduled,resumeActionRef:resume}
     });
@@ -255,12 +255,12 @@
     const expiredMs=Date.parse(expired),resumedMs=Date.parse(resumedAt);
     if(!contract||!session||!timer||!expired||!resume||!Number.isFinite(expiredMs)||!Number.isFinite(resumedMs)||resumedMs<expiredMs)return null;
     return record(contract,{
-      event_id:\`ready_badge_timer_return_\${session}_\${timer}\`,
+      event_id:`ready_badge_timer_return_${session}_${timer}`,
       event_family:'RETURN_RECOVERY',
       behavior_code:'TIMER_RETURN',
       occurred_at:resumedAt,
       source_contract_id:'READY_BREAK_TIMER_RETURN_V1',
-      evidence_ref:\`ready-break-timer-return:\${session}:\${timer}\`,
+      evidence_ref:`ready-break-timer-return:${session}:${timer}`,
       explicit_child_action:true,
       payload:{sessionId:session,timerRef:timer,timerExpiredAt:expired,resumeActionRef:resume}
     });
@@ -279,12 +279,12 @@
     const session=clean(sessionId,160),task=clean(taskRef,180),artifact=clean(causeArtifactRef,180),note=clean(causeText,180);
     if(!contract||!session||!task||!artifact||!note)return null;
     return record(contract,{
-      event_id:\`ready_badge_root_cause_\${session}_\${task}_\${artifact}\`,
+      event_id:`ready_badge_root_cause_${session}_${task}_${artifact}`,
       event_family:'ERROR_ANALYSIS',
       behavior_code:'ROOT_CAUSE',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_CHILD_ROOT_CAUSE_V1',
-      evidence_ref:\`ready-root-cause:\${session}:\${task}\`,
+      evidence_ref:`ready-root-cause:${session}:${task}`,
       explicit_child_action:true,
       payload:{sessionId:session,taskRef:task,causeArtifactRef:artifact,causeText:note}
     });
@@ -294,12 +294,12 @@
     const session=clean(sessionId,160),task=clean(taskRef,180),artifact=clean(explanationArtifactRef,180),note=clean(explanationText,180);
     if(!contract||!session||!task||!artifact||!note)return null;
     return record(contract,{
-      event_id:\`ready_badge_concept_\${session}_\${task}_\${artifact}\`,
+      event_id:`ready_badge_concept_${session}_${task}_${artifact}`,
       event_family:'CONCEPT_UNDERSTANDING',
       behavior_code:'CONCEPT_UNDERSTANDING',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_CHILD_CONCEPT_EXPLANATION_V1',
-      evidence_ref:\`ready-concept-understanding:\${session}:\${task}\`,
+      evidence_ref:`ready-concept-understanding:${session}:${task}`,
       explicit_child_action:true,
       payload:{sessionId:session,taskRef:task,explanationArtifactRef:artifact,explanationText:note}
     });
@@ -309,12 +309,12 @@
     const session=clean(sessionId,160),task=clean(taskRef,180),artifact=clean(explanationArtifactRef,180),note=clean(explanationText,180);
     if(!contract||!session||!task||!artifact||!note)return null;
     return record(contract,{
-      event_id:\`ready_badge_self_explain_\${session}_\${task}_\${artifact}\`,
+      event_id:`ready_badge_self_explain_${session}_${task}_${artifact}`,
       event_family:'SELF_EXPLANATION',
       behavior_code:'SELF_EXPLANATION',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_CHILD_SELF_EXPLANATION_V1',
-      evidence_ref:\`ready-self-explanation:\${session}:\${task}\`,
+      evidence_ref:`ready-self-explanation:${session}:${task}`,
       explicit_child_action:true,
       payload:{sessionId:session,taskRef:task,explanationArtifactRef:artifact,explanationText:note}
     });
@@ -324,12 +324,12 @@
     const session=clean(sessionId,160),task=clean(taskRef,180),from=clean(fromStrategy,100),to=clean(toStrategy,100),action=clean(switchActionRef,180);
     if(!contract||!session||!task||!from||!to||from===to||!action)return null;
     return record(contract,{
-      event_id:\`ready_badge_strategy_switch_\${session}_\${task}_\${action}\`,
+      event_id:`ready_badge_strategy_switch_${session}_${task}_${action}`,
       event_family:'STRATEGY_SWITCH',
       behavior_code:'STRATEGY_SWITCH',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_CHILD_STRATEGY_SWITCH_V1',
-      evidence_ref:\`ready-strategy-switch:\${session}:\${task}\`,
+      evidence_ref:`ready-strategy-switch:${session}:${task}`,
       explicit_child_action:true,
       payload:{sessionId:session,taskRef:task,fromStrategy:from,toStrategy:to,switchActionRef:action}
     });
@@ -339,12 +339,12 @@
     const session=clean(sessionId,160),task=clean(taskRef,180),action=clean(resistanceActionRef,180);
     if(!contract||!session||!task||!action)return null;
     return record(contract,{
-      event_id:\`ready_badge_distraction_\${session}_\${task}_\${action}\`,
+      event_id:`ready_badge_distraction_${session}_${task}_${action}`,
       event_family:'SELF_REGULATION',
       behavior_code:'DISTRACTION_RESISTANCE',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_EXPLICIT_DISTRACTION_RESISTANCE_V1',
-      evidence_ref:\`ready-distraction-resistance:\${session}:\${task}\`,
+      evidence_ref:`ready-distraction-resistance:${session}:${task}`,
       explicit_child_action:true,
       payload:{sessionId:session,taskRef:task,resistanceActionRef:action}
     });
@@ -354,12 +354,12 @@
     const session=clean(sessionId,160),task=clean(taskRef,180),notice=clean(noticeActionRef,180),returned=clean(returnActionRef,180);
     if(!contract||!session||!task||!notice||!returned)return null;
     return record(contract,{
-      event_id:\`ready_badge_self_notice_return_\${session}_\${task}_\${notice}\`,
+      event_id:`ready_badge_self_notice_return_${session}_${task}_${notice}`,
       event_family:'RETURN_RECOVERY',
       behavior_code:'SELF_NOTICE_RETURN',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_EXPLICIT_SELF_NOTICE_RETURN_V1',
-      evidence_ref:\`ready-self-notice-return:\${session}:\${task}\`,
+      evidence_ref:`ready-self-notice-return:${session}:${task}`,
       explicit_child_action:true,
       payload:{sessionId:session,taskRef:task,noticeActionRef:notice,returnActionRef:returned}
     });
@@ -369,12 +369,12 @@
     const session=clean(sessionId,160),task=clean(taskRef,180),action=clean(rereadActionRef,180);
     if(!contract||!session||!task||!action)return null;
     return record(contract,{
-      event_id:\`ready_badge_reread_\${session}_\${task}_\${action}\`,
+      event_id:`ready_badge_reread_${session}_${task}_${action}`,
       event_family:'SELF_REGULATION',
       behavior_code:'REREAD_CHECK',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_EXPLICIT_REREAD_CHECK_V1',
-      evidence_ref:\`ready-reread-check:\${session}:\${task}\`,
+      evidence_ref:`ready-reread-check:${session}:${task}`,
       explicit_child_action:true,
       payload:{sessionId:session,taskRef:task,rereadActionRef:action}
     });
@@ -384,12 +384,12 @@
     const session=clean(sessionId,160),task=clean(taskRef,180),action=clean(reflectionActionRef,180);
     if(!contract||!session||!task||!action)return null;
     return record(contract,{
-      event_id:\`ready_badge_reflect_\${session}_\${task}_\${action}\`,
+      event_id:`ready_badge_reflect_${session}_${task}_${action}`,
       event_family:'SELF_REGULATION',
       behavior_code:'REFLECT_BEFORE_PROCEED',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_EXPLICIT_REFLECTION_V1',
-      evidence_ref:\`ready-reflect-before-proceed:\${session}:\${task}\`,
+      evidence_ref:`ready-reflect-before-proceed:${session}:${task}`,
       explicit_child_action:true,
       payload:{sessionId:session,taskRef:task,reflectionActionRef:action}
     });
@@ -399,12 +399,12 @@
     const session=clean(sessionId,160),task=clean(taskRef,180),action=clean(stopActionRef,180),ended=clean(sessionEndRef,180);
     if(!contract||!session||!task||!action||!ended)return null;
     return record(contract,{
-      event_id:\`ready_badge_stop_right_\${session}_\${task}\`,
+      event_id:`ready_badge_stop_right_${session}_${task}`,
       event_family:'SELF_REGULATION',
       behavior_code:'STOP_AT_RIGHT_TIME',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_EXPLICIT_STOP_AT_RIGHT_TIME_V1',
-      evidence_ref:\`ready-stop-at-right-time:\${session}:\${task}\`,
+      evidence_ref:`ready-stop-at-right-time:${session}:${task}`,
       explicit_child_action:true,
       payload:{sessionId:session,taskRef:task,stopActionRef:action,sessionEndRef:ended}
     });
@@ -416,12 +416,12 @@
     if(!contract||!session||!task||!check||!completion||!Number.isFinite(planned)||planned<=0||!Number.isFinite(actual)||actual<0)return null;
     if(actual>planned*0.7)return null;
     return record(contract,{
-      event_id:\`ready_badge_fast_checked_\${session}_\${task}\`,
+      event_id:`ready_badge_fast_checked_${session}_${task}`,
       event_family:'GOAL_COMPLETE',
       behavior_code:'FAST_COMPLETE_WITH_CHECK',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_FAST_COMPLETE_WITH_CHECK_V1',
-      evidence_ref:\`ready-fast-checked:\${session}:\${task}\`,
+      evidence_ref:`ready-fast-checked:${session}:${task}`,
       explicit_child_action:true,
       payload:{sessionId:session,taskRef:task,plannedMinutes:planned,actualMinutes:actual,checkActionRef:check,completionEventRef:completion,thresholdRatio:0.7}
     });
@@ -433,12 +433,12 @@
     const completed=Array.isArray(completedChunkRefs)?completedChunkRefs.map(x=>clean(x,160)).filter(Boolean):[];
     if(!contract||!session||!task||chunks.length<2||!confirm||completed.length!==chunks.length||chunks.some(x=>!completed.includes(x)))return null;
     return record(contract,{
-      event_id:\`ready_badge_chunked_\${session}_\${task}\`,
+      event_id:`ready_badge_chunked_${session}_${task}`,
       event_family:'GOAL_COMPLETE',
       behavior_code:'CHILD_CHUNKED_TASK_COMPLETE',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_CHILD_CHUNKED_TASK_V1',
-      evidence_ref:\`ready-child-chunked:\${session}:\${task}\`,
+      evidence_ref:`ready-child-chunked:${session}:${task}`,
       explicit_child_action:true,
       payload:{sessionId:session,taskRef:task,childChunkRefs:chunks,chunkConfirmActionRef:confirm,completedChunkRefs:completed}
     });
@@ -448,12 +448,12 @@
     const session=clean(sessionId,160),change=clean(scheduleChangeRef,180),prior=clean(priorPlanRef,180),action=clean(childReplanActionRef,180),plan=clean(newPlanRef,180),performed=clean(performedTaskRef,180);
     if(!contract||!session||!change||!prior||!action||!plan||!performed)return null;
     return record(contract,{
-      event_id:\`ready_badge_plan_adapt_\${session}_\${performed}\`,
+      event_id:`ready_badge_plan_adapt_${session}_${performed}`,
       event_family:'PLAN_ADAPTATION',
       behavior_code:'CHILD_PLAN_ADAPTATION',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_CHILD_REPLAN_AFTER_CHANGE_V1',
-      evidence_ref:\`ready-child-plan-adaptation:\${session}:\${performed}\`,
+      evidence_ref:`ready-child-plan-adaptation:${session}:${performed}`,
       explicit_child_action:true,
       payload:{sessionId:session,scheduleChangeRef:change,priorPlanRef:prior,childReplanActionRef:action,newPlanRef:plan,performedTaskRef:performed}
     });
@@ -463,12 +463,12 @@
     const session=clean(sessionId,160),task=clean(taskRef,180),blocked=clean(blockedEvidenceRef,180),continued=clean(continueActionRef,180),completed=clean(completionEventRef,180);
     if(!contract||!session||!task||!blocked||!continued||!completed)return null;
     return record(contract,{
-      event_id:\`ready_badge_persist_complete_\${session}_\${task}\`,
+      event_id:`ready_badge_persist_complete_${session}_${task}`,
       event_family:'GOAL_COMPLETE',
       behavior_code:'PERSIST_TO_COMPLETE',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_PERSIST_TO_COMPLETE_V1',
-      evidence_ref:\`ready-persist-complete:\${session}:\${task}\`,
+      evidence_ref:`ready-persist-complete:${session}:${task}`,
       explicit_child_action:true,
       payload:{sessionId:session,taskRef:task,blockedEvidenceRef:blocked,continueActionRef:continued,completionEventRef:completed}
     });
@@ -478,12 +478,12 @@
     const session=clean(sessionId,160),condition=clean(conditionEvidenceRef,180),action=clean(childStartActionRef,180),started=clean(startedTaskRef,180);
     if(!contract||!session||!condition||!action||!started)return null;
     return record(contract,{
-      event_id:\`ready_badge_condition_start_\${session}_\${started}\`,
+      event_id:`ready_badge_condition_start_${session}_${started}`,
       event_family:'SELF_START',
       behavior_code:'START_DESPITE_CONDITION',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_START_DESPITE_CONDITION_V1',
-      evidence_ref:\`ready-condition-start:\${session}:\${started}\`,
+      evidence_ref:`ready-condition-start:${session}:${started}`,
       explicit_child_action:true,
       payload:{sessionId:session,conditionEvidenceRef:condition,childStartActionRef:action,startedTaskRef:started}
     });
@@ -494,12 +494,12 @@
     const next=clean(nextTaskRef,180),choice=clean(nextChoiceActionRef,180),started=clean(startedTaskRef,180);
     if(!contract||!session||!previous||!completed||!next||!choice||!started||next!==started||previous===next)return null;
     return record(contract,{
-      event_id:\`ready_badge_flow_continue_\${session}_\${previous}_\${next}\`,
+      event_id:`ready_badge_flow_continue_${session}_${previous}_${next}`,
       event_family:'SELF_CHOICE',
       behavior_code:'VOLUNTARY_NEXT_TASK_CONTINUE',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_VOLUNTARY_FLOW_CONTINUATION_V1',
-      evidence_ref:\`ready-flow-continue:\${session}:\${previous}:\${next}\`,
+      evidence_ref:`ready-flow-continue:${session}:${previous}:${next}`,
       explicit_child_action:true,
       payload:{sessionId:session,previousTaskRef:previous,previousCompletionEventRef:completed,nextTaskRef:next,nextChoiceActionRef:choice,startedTaskRef:started}
     });
@@ -509,12 +509,12 @@
     const session=clean(sessionId,160),task=clean(taskRef,180),small=clean(smallTaskRef,180),completion=clean(completionEventRef,180);
     if(!contract||!session||!task||!small||!completion)return null;
     return record(contract,{
-      event_id:\`ready_badge_micro_complete_\${session}_\${task}\`,
+      event_id:`ready_badge_micro_complete_${session}_${task}`,
       event_family:'GOAL_COMPLETE',
       behavior_code:'MICRO_TASK_COMPLETE',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_EXPLICIT_MICRO_TASK_COMPLETE_V1',
-      evidence_ref:\`ready-micro-complete:\${session}:\${task}\`,
+      evidence_ref:`ready-micro-complete:${session}:${task}`,
       explicit_child_action:true,
       payload:{sessionId:session,taskRef:task,smallTaskRef:small,completionEventRef:completion}
     });
@@ -525,12 +525,12 @@
     const completed=Array.isArray(requiredCompleteEventRefs)?requiredCompleteEventRefs.map(x=>clean(x,180)).filter(Boolean):[];
     if(!contract||!session||!required||!completed.length||!selected||!choice||!started||selected!==started)return null;
     return record(contract,{
-      event_id:\`ready_badge_extra_after_required_\${session}_\${selected}\`,
+      event_id:`ready_badge_extra_after_required_${session}_${selected}`,
       event_family:'EXTRA_TASK',
       behavior_code:'VOLUNTARY_EXTRA_AFTER_REQUIRED_COMPLETE',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_VOLUNTARY_EXTRA_CHOICE_V1',
-      evidence_ref:\`ready-extra-after-required:\${session}:\${selected}\`,
+      evidence_ref:`ready-extra-after-required:${session}:${selected}`,
       explicit_child_action:true,
       payload:{sessionId:session,requiredSetRef:required,requiredCompleteEventRefs:completed,selectedExtraTaskRef:selected,extraChoiceRef:choice,startedTaskRef:started}
     });
@@ -541,12 +541,12 @@
     const ordered=Array.isArray(orderedTaskRefs)?orderedTaskRefs.map(x=>clean(x,160)).filter(Boolean):[];
     if(!contract||!session||!choiceSet||ordered.length<2||!confirm||!started||ordered[0]!==started)return null;
     return record(contract,{
-      event_id:\`ready_badge_sequence_\${session}_\${choiceSet}\`,
+      event_id:`ready_badge_sequence_${session}_${choiceSet}`,
       event_family:'SELF_PLANNING',
       behavior_code:'SELF_PLANNED_SEQUENCE',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_CHILD_SEQUENCE_PLAN_V1',
-      evidence_ref:\`ready-child-sequence:\${session}:\${choiceSet}\`,
+      evidence_ref:`ready-child-sequence:${session}:${choiceSet}`,
       explicit_child_action:true,
       payload:{sessionId:session,choiceSetRef:choiceSet,orderedTaskRefs:ordered,sequenceConfirmActionRef:confirm,startedTaskRef:started}
     });
@@ -558,12 +558,12 @@
     if(!contract||!session||!choiceSet||!selected||!started||!Number.isInteger(order)||order<1||!Number.isFinite(level))return null;
     if(!['HARD_FIRST','EASY_FIRST'].includes(choiceMode))return null;
     return record(contract,{
-      event_id:\`ready_badge_priority_\${session}_\${choiceMode}_\${selected}\`,
+      event_id:`ready_badge_priority_${session}_${choiceMode}_${selected}`,
       event_family:'SELF_CHOICE',
       behavior_code:choiceMode==='HARD_FIRST'?'PRIORITIZE_HARD':'WARM_START',
       occurred_at:at||new Date().toISOString(),
       source_contract_id:'READY_CHILD_PRIORITY_CHOICE_V1',
-      evidence_ref:\`ready-child-priority:\${session}:\${selected}\`,
+      evidence_ref:`ready-child-priority:${session}:${selected}`,
       explicit_child_action:true,
       payload:{sessionId:session,choiceSetRef:choiceSet,selectedTaskRef:selected,childSelectionOrder:order,difficulty:level,startedTaskRef:started,mode:choiceMode}
     });
