@@ -530,3 +530,21 @@ test('Ready emits START_DESPITE_CONDITION only after explicit child condition-aw
   const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
   expect(evidence.filter(x=>x.behavior_code==='START_DESPITE_CONDITION')).toHaveLength(1);
 });
+
+
+test('Ready emits PERSIST_TO_COMPLETE only after explicit blocked-but-continue action then completion', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'persist_todo',date:today,label:'끝까지 해볼 과제',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="persist_todo"]').click();
+  await page.locator('#startBtn').click();
+  await page.locator('#persistBtn').click();
+  await page.locator('#completeBtn').click();
+  const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
+  await page.locator(\`[data-wrap-state="COMPLETED"][data-task-id="\${taskId}"]\`).click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='PERSIST_TO_COMPLETE')).toHaveLength(1);
+});
