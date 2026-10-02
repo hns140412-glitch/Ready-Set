@@ -274,6 +274,97 @@
 
 
 
+
+  function recordRootCause({contract,sessionId,taskRef,causeArtifactRef,causeText,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),artifact=clean(causeArtifactRef,180),note=clean(causeText,180);
+    if(!contract||!session||!task||!artifact||!note)return null;
+    return record(contract,{
+      event_id:\`ready_badge_root_cause_\${session}_\${task}_\${artifact}\`,
+      event_family:'ERROR_ANALYSIS',
+      behavior_code:'ROOT_CAUSE',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_CHILD_ROOT_CAUSE_V1',
+      evidence_ref:\`ready-root-cause:\${session}:\${task}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,causeArtifactRef:artifact,causeText:note}
+    });
+  }
+
+  function recordConceptUnderstanding({contract,sessionId,taskRef,explanationArtifactRef,explanationText,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),artifact=clean(explanationArtifactRef,180),note=clean(explanationText,180);
+    if(!contract||!session||!task||!artifact||!note)return null;
+    return record(contract,{
+      event_id:\`ready_badge_concept_\${session}_\${task}_\${artifact}\`,
+      event_family:'CONCEPT_UNDERSTANDING',
+      behavior_code:'CONCEPT_UNDERSTANDING',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_CHILD_CONCEPT_EXPLANATION_V1',
+      evidence_ref:\`ready-concept-understanding:\${session}:\${task}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,explanationArtifactRef:artifact,explanationText:note}
+    });
+  }
+
+  function recordSelfExplanation({contract,sessionId,taskRef,explanationArtifactRef,explanationText,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),artifact=clean(explanationArtifactRef,180),note=clean(explanationText,180);
+    if(!contract||!session||!task||!artifact||!note)return null;
+    return record(contract,{
+      event_id:\`ready_badge_self_explain_\${session}_\${task}_\${artifact}\`,
+      event_family:'SELF_EXPLANATION',
+      behavior_code:'SELF_EXPLANATION',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_CHILD_SELF_EXPLANATION_V1',
+      evidence_ref:\`ready-self-explanation:\${session}:\${task}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,explanationArtifactRef:artifact,explanationText:note}
+    });
+  }
+
+  function recordStrategySwitch({contract,sessionId,taskRef,fromStrategy,toStrategy,switchActionRef,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),from=clean(fromStrategy,100),to=clean(toStrategy,100),action=clean(switchActionRef,180);
+    if(!contract||!session||!task||!from||!to||from===to||!action)return null;
+    return record(contract,{
+      event_id:\`ready_badge_strategy_switch_\${session}_\${task}_\${action}\`,
+      event_family:'STRATEGY_SWITCH',
+      behavior_code:'STRATEGY_SWITCH',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_CHILD_STRATEGY_SWITCH_V1',
+      evidence_ref:\`ready-strategy-switch:\${session}:\${task}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,fromStrategy:from,toStrategy:to,switchActionRef:action}
+    });
+  }
+
+  function recordDistractionResistance({contract,sessionId,taskRef,resistanceActionRef,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),action=clean(resistanceActionRef,180);
+    if(!contract||!session||!task||!action)return null;
+    return record(contract,{
+      event_id:\`ready_badge_distraction_\${session}_\${task}_\${action}\`,
+      event_family:'SELF_REGULATION',
+      behavior_code:'DISTRACTION_RESISTANCE',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_EXPLICIT_DISTRACTION_RESISTANCE_V1',
+      evidence_ref:\`ready-distraction-resistance:\${session}:\${task}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,resistanceActionRef:action}
+    });
+  }
+
+  function recordSelfNoticeReturn({contract,sessionId,taskRef,noticeActionRef,returnActionRef,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),notice=clean(noticeActionRef,180),returned=clean(returnActionRef,180);
+    if(!contract||!session||!task||!notice||!returned)return null;
+    return record(contract,{
+      event_id:\`ready_badge_self_notice_return_\${session}_\${task}_\${notice}\`,
+      event_family:'RETURN_RECOVERY',
+      behavior_code:'SELF_NOTICE_RETURN',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_EXPLICIT_SELF_NOTICE_RETURN_V1',
+      evidence_ref:\`ready-self-notice-return:\${session}:\${task}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,noticeActionRef:notice,returnActionRef:returned}
+    });
+  }
+
   function recordRereadCheck({contract,sessionId,taskRef,rereadActionRef,at}={}){
     const session=clean(sessionId,160),task=clean(taskRef,180),action=clean(rereadActionRef,180);
     if(!contract||!session||!task||!action)return null;
@@ -481,6 +572,6 @@
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordRereadCheck,recordReflectBeforeProceed,recordStopAtRightTime,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordRootCause,recordConceptUnderstanding,recordSelfExplanation,recordStrategySwitch,recordDistractionResistance,recordSelfNoticeReturn,recordRereadCheck,recordReflectBeforeProceed,recordStopAtRightTime,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
   });
 })();
