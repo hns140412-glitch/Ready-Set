@@ -380,6 +380,8 @@ test('Ready emits POST_MEAL_RESTART only after explicit meal start/end then chil
     todo_id:'badge_meal_after',date:today,label:'식사 후 탐험',
     source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
   }),todayKey());
+  await page.locator('[data-nav="home"]:visible').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="badge_meal_after"]').click();
   await page.locator('#startBtn').click();
   const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
