@@ -588,6 +588,7 @@
         todo_id:x.todo_id,label:x.label,date:x.date,source:x.source,
         assignment_id:x.assignment_id,analysis_id:x.analysis_id,learning_unit_id:x.learning_unit_id,
         template_id:x.template_id,allocation_run_id:x.allocation_run_id,
+        estimated_minutes:Number.isFinite(x.estimated_minutes)?x.estimated_minutes:null,
         activity_types:Array.isArray(x.activity_types)?x.activity_types:[],
         activity_sequence:Array.isArray(x.activity_sequence)?x.activity_sequence:[],
         cognitive_load_profile:Array.isArray(x.cognitive_load_profile)?x.cognitive_load_profile:[],
