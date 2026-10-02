@@ -273,6 +273,52 @@
 
 
 
+
+  function recordRereadCheck({contract,sessionId,taskRef,rereadActionRef,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),action=clean(rereadActionRef,180);
+    if(!contract||!session||!task||!action)return null;
+    return record(contract,{
+      event_id:\`ready_badge_reread_\${session}_\${task}_\${action}\`,
+      event_family:'SELF_REGULATION',
+      behavior_code:'REREAD_CHECK',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_EXPLICIT_REREAD_CHECK_V1',
+      evidence_ref:\`ready-reread-check:\${session}:\${task}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,rereadActionRef:action}
+    });
+  }
+
+  function recordReflectBeforeProceed({contract,sessionId,taskRef,reflectionActionRef,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),action=clean(reflectionActionRef,180);
+    if(!contract||!session||!task||!action)return null;
+    return record(contract,{
+      event_id:\`ready_badge_reflect_\${session}_\${task}_\${action}\`,
+      event_family:'SELF_REGULATION',
+      behavior_code:'REFLECT_BEFORE_PROCEED',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_EXPLICIT_REFLECTION_V1',
+      evidence_ref:\`ready-reflect-before-proceed:\${session}:\${task}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,reflectionActionRef:action}
+    });
+  }
+
+  function recordStopAtRightTime({contract,sessionId,taskRef,stopActionRef,sessionEndRef,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),action=clean(stopActionRef,180),ended=clean(sessionEndRef,180);
+    if(!contract||!session||!task||!action||!ended)return null;
+    return record(contract,{
+      event_id:\`ready_badge_stop_right_\${session}_\${task}\`,
+      event_family:'SELF_REGULATION',
+      behavior_code:'STOP_AT_RIGHT_TIME',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_EXPLICIT_STOP_AT_RIGHT_TIME_V1',
+      evidence_ref:\`ready-stop-at-right-time:\${session}:\${task}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,stopActionRef:action,sessionEndRef:ended}
+    });
+  }
+
   function recordFastCompleteWithCheck({contract,sessionId,taskRef,plannedMinutes,actualMinutes,checkActionRef,completionEventRef,at}={}){
     const session=clean(sessionId,160),task=clean(taskRef,180),check=clean(checkActionRef,180),completion=clean(completionEventRef,180);
     const planned=Number(plannedMinutes),actual=Number(actualMinutes);
@@ -435,6 +481,6 @@
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordRereadCheck,recordReflectBeforeProceed,recordStopAtRightTime,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
   });
 })();
