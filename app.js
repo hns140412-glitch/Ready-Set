@@ -764,6 +764,13 @@ $$('[data-radio-action]').forEach(btn=>btn.onclick=()=>{
   if(action==='REVIEW')$('#reviewBtn')?.click();
   else if(action==='CHUNK')$('#chunkTaskBtn')?.click();
   else if(action==='PERSIST')$('#persistBtn')?.click();
+  else if(action==='SINGLE_FOCUS'){
+    window.ReadyBadgeSourceObservationV01?.recordSingleTaskFocus?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      focusCommitActionRef:`ready-radio-single-focus:${s.id}:${task.task_id}:${now}`,at
+    });
+    toast('지금 이 한 과제에 집중하기로 한 선택을 기록했어요.');
+  }
   else if(action==='REREAD'){
     window.ReadyBadgeSourceObservationV01?.recordRereadCheck?.({
       contract:s.rev07,sessionId:s.id,taskRef,
