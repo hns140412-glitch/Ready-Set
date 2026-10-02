@@ -763,3 +763,59 @@ test('Ready radio explicit self-regulation actions do not rely on elapsed time',
   expect(evidence.filter(x=>x.behavior_code==='DISTRACTION_RESISTANCE')).toHaveLength(1);
   expect(evidence.filter(x=>x.behavior_code==='SELF_NOTICE_RETURN')).toHaveLength(1);
 });
+
+
+test('Ready careful completion requires explicit review and actual time over Planner estimate', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  const result=await page.evaluate(()=>{
+    const api=window.ReadyBadgeSourceObservationV01;
+    const contract={badge_source_observations:[]};
+    const pass=api.recordCarefulComplete({
+      contract,sessionId:'careful_ok',taskRef:'t1',plannedMinutes:10,actualMinutes:11,
+      checkActionRef:'check1',completionEventRef:'done1'
+    });
+    const fail=api.recordCarefulComplete({
+      contract,sessionId:'careful_no',taskRef:'t2',plannedMinutes:10,actualMinutes:9,
+      checkActionRef:'check2',completionEventRef:'done2'
+    });
+    return {pass,fail,observations:contract.badge_source_observations};
+  });
+  expect(result.pass).toMatchObject({behavior_code:'ACCURACY_COMPLETE',source_contract_id:'READY_CAREFUL_OVERRUN_COMPLETE_V1'});
+  expect(result.fail).toBeNull();
+  expect(result.observations).toHaveLength(1);
+});
+
+test('Ready radio emits FOCUS_RETURN from explicit child return action', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'focus_return_todo',date:today,label:'집중 복귀 과제',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="focus_return_todo"]').click();
+  await page.locator('#startBtn').click();
+  await page.locator('#radioBtn').click();
+  await page.locator('[data-radio-action="FOCUS_RETURN"]').click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='FOCUS_RETURN')).toHaveLength(1);
+});
+
+test('Ready meaningful overrun requires both explicit meaning text and actual overrun', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  const result=await page.evaluate(()=>{
+    const api=window.ReadyBadgeSourceObservationV01;
+    const contract={badge_source_observations:[]};
+    const pass=api.recordMeaningfulOverrun({
+      contract,sessionId:'over_ok',taskRef:'t1',plannedMinutes:10,actualMinutes:12,
+      meaningArtifactRef:'meaning1',meaningText:'이 부분을 끝까지 이해하고 싶었어요',completionEventRef:'done1'
+    });
+    const fail=api.recordMeaningfulOverrun({
+      contract,sessionId:'over_no',taskRef:'t2',plannedMinutes:10,actualMinutes:8,
+      meaningArtifactRef:'meaning2',meaningText:'계속했어요',completionEventRef:'done2'
+    });
+    return {pass,fail,observations:contract.badge_source_observations};
+  });
+  expect(result.pass).toMatchObject({behavior_code:'MEANINGFUL_OVERRUN',source_contract_id:'READY_CHILD_MEANINGFUL_OVERRUN_V1'});
+  expect(result.fail).toBeNull();
+  expect(result.observations).toHaveLength(1);
+});
