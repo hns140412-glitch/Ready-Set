@@ -185,9 +185,103 @@
     });
   }
 
+
+  function recordPreMealMicroComplete({contract,sessionId,taskRef,mealBufferRef,smallTaskRef,completionEventRef,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),meal=clean(mealBufferRef,180);
+    const small=clean(smallTaskRef,180),completion=clean(completionEventRef,180);
+    if(!contract||!session||!task||!meal||!small||!completion)return null;
+    return record(contract,{
+      event_id:\`ready_badge_pre_meal_micro_\${session}_\${task}\`,
+      event_family:'GOAL_COMPLETE',
+      behavior_code:'MICRO_TASK_COMPLETE',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_PRE_MEAL_MICRO_COMPLETE_V1',
+      evidence_ref:\`ready-pre-meal-micro:\${session}:\${task}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,mealBufferRef:meal,smallTaskRef:small,completionEventRef:completion}
+    });
+  }
+
+  function recordPostMealRestart({contract,sessionId,priorSessionRef,mealBufferRef,restartActionRef,at}={}){
+    const session=clean(sessionId,160),prior=clean(priorSessionRef,180),meal=clean(mealBufferRef,180),action=clean(restartActionRef,180);
+    if(!contract||!session||!prior||!meal||!action)return null;
+    return record(contract,{
+      event_id:\`ready_badge_post_meal_restart_\${session}_\${prior}\`,
+      event_family:'RETURN_RECOVERY',
+      behavior_code:'POST_MEAL_RESTART',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_POST_MEAL_RESTART_V1',
+      evidence_ref:\`ready-post-meal-restart:\${session}:\${prior}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,priorSessionRef:prior,mealBufferRef:meal,restartActionRef:action}
+    });
+  }
+
+  function recordFreeWindowSelfStart({contract,sessionId,openWindowRef,taskRef,childStartActionRef,at}={}){
+    const session=clean(sessionId,160),windowRef=clean(openWindowRef,180),task=clean(taskRef,180),action=clean(childStartActionRef,180);
+    if(!contract||!session||!windowRef||!task||!action)return null;
+    return record(contract,{
+      event_id:\`ready_badge_free_window_start_\${session}_\${task}\`,
+      event_family:'TIME_CREATION',
+      behavior_code:'SELF_START_IN_FREE_WINDOW',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_FREE_WINDOW_SELF_START_V1',
+      evidence_ref:\`ready-free-window-start:\${session}:\${task}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,openWindowRef:windowRef,taskRef:task,childStartActionRef:action}
+    });
+  }
+
+  function recordScheduledBreakReturn({contract,sessionId,breakRef,scheduledReturnAt,resumeActionRef,at}={}){
+    const session=clean(sessionId,160),br=clean(breakRef,180),scheduled=clean(scheduledReturnAt,80),resume=clean(resumeActionRef,180);
+    if(!contract||!session||!br||!scheduled||!resume)return null;
+    return record(contract,{
+      event_id:\`ready_badge_break_return_\${session}_\${br}\`,
+      event_family:'RETURN_RECOVERY',
+      behavior_code:'BREAK_RETURN',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_SCHEDULED_BREAK_RETURN_V1',
+      evidence_ref:\`ready-scheduled-break-return:\${session}:\${br}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,breakRef:br,scheduledReturnAt:scheduled,resumeActionRef:resume}
+    });
+  }
+
+  function recordBreakTimerReturn({contract,sessionId,timerRef,timerExpiredAt,resumeActionRef,at}={}){
+    const session=clean(sessionId,160),timer=clean(timerRef,180),expired=clean(timerExpiredAt,80),resume=clean(resumeActionRef,180);
+    if(!contract||!session||!timer||!expired||!resume)return null;
+    return record(contract,{
+      event_id:\`ready_badge_timer_return_\${session}_\${timer}\`,
+      event_family:'RETURN_RECOVERY',
+      behavior_code:'TIMER_RETURN',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_BREAK_TIMER_RETURN_V1',
+      evidence_ref:\`ready-break-timer-return:\${session}:\${timer}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,timerRef:timer,timerExpiredAt:expired,resumeActionRef:resume}
+    });
+  }
+
+  function recordChildPriorityChoice({contract,sessionId,choiceSetRef,selectedTaskRef,childSelectionOrder,difficulty,startedTaskRef,mode,at}={}){
+    const session=clean(sessionId,160),choiceSet=clean(choiceSetRef,180),selected=clean(selectedTaskRef,180),started=clean(startedTaskRef,180);
+    const choiceMode=clean(mode,40).toUpperCase(),order=Number(childSelectionOrder),level=Number(difficulty);
+    if(!contract||!session||!choiceSet||!selected||!started||!Number.isInteger(order)||order<1||!Number.isFinite(level))return null;
+    if(!['HARD_FIRST','EASY_FIRST'].includes(choiceMode))return null;
+    return record(contract,{
+      event_id:\`ready_badge_priority_\${session}_\${choiceMode}_\${selected}\`,
+      event_family:'SELF_CHOICE',
+      behavior_code:choiceMode==='HARD_FIRST'?'PRIORITIZE_HARD':'WARM_START',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_CHILD_PRIORITY_CHOICE_V1',
+      evidence_ref:\`ready-child-priority:\${session}:\${selected}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,choiceSetRef:choiceSet,selectedTaskRef:selected,childSelectionOrder:order,difficulty:level,startedTaskRef:started,mode:choiceMode}
+    });
+  }
+
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordChildPriorityChoice,hasForbiddenKeyDeep
   });
 })();
