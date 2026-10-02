@@ -947,7 +947,7 @@ $('#fiveMinuteBreakBtn')?.addEventListener('click',()=>{
 $$('[data-pause-reason]').forEach(b=>b.onclick=()=>{
   const s=state.activeSession;if(!s)return;
   s.pauseReason=b.dataset.pauseReason;s.pauseEvents=s.pauseEvents||[];s.pauseEvents.push({reason:s.pauseReason,at:Date.now()});
-  $$$('[data-pause-reason]').forEach(x=>x.classList.toggle('on',x===b));save();
+  $('[data-pause-reason]').forEach(x=>x.classList.toggle('on',x===b));save();
 });
 $$('[data-close-pause]').forEach(b=>b.onclick=()=>$('#pauseSheet').hidden=true);
 $('#resumeFromSheetBtn').onclick=()=>resumePausedSession('PAUSE_SHEET_BUTTON');
