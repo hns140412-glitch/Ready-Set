@@ -811,10 +811,14 @@ $$('[data-radio-action]').forEach(btn=>btn.onclick=()=>{
     const note=String($('#radioNote')?.value||'').trim();
     const parts=note.split(/\s*(?:→|->)\s*/).map(x=>x.trim()).filter(Boolean);
     if(parts.length!==2||parts[0]===parts[1]){toast('예: 풀어쓰기 → 그림으로 보기처럼 적어 주세요.');return}
+    const switchActionRef=`ready-radio-strategy-switch:${s.id}:${task.task_id}:${now}`;
     window.ReadyBadgeSourceObservationV01?.recordStrategySwitch?.({
       contract:s.rev07,sessionId:s.id,taskRef,fromStrategy:parts[0],toStrategy:parts[1],
-      switchActionRef:`ready-radio-strategy-switch:${s.id}:${task.task_id}:${now}`,at
+      switchActionRef,at
     });
+    s.blockResolutionEvidence=s.blockResolutionEvidence||{};
+    s.blockResolutionEvidence[task.task_id]={taskRef,strategySwitchActionRef:switchActionRef,at};
+    save();
     toast('다른 방법으로 바꾼 기록을 남겼어요.');
   }else if(action==='DISTRACTION'){
     window.ReadyBadgeSourceObservationV01?.recordDistractionResistance?.({
