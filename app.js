@@ -44,7 +44,8 @@ const initial={
   sound:'집중 피아노',
   records:[],
   activeSession:null,
-  recordingMeta:null
+  recordingMeta:null,
+  badgeSignals:{activeMeal:null,lastMeal:null,pendingStart:null}
 };
 
 let state=load();
@@ -74,6 +75,7 @@ function migrate(x){
     x.selected=x.selected||[];
     x.tasks=x.tasks||[];
     x.selectedTodoIds=Array.isArray(x.selectedTodoIds)?x.selectedTodoIds:[];
+    x.badgeSignals=x.badgeSignals&&typeof x.badgeSignals==='object'?x.badgeSignals:{activeMeal:null,lastMeal:null,pendingStart:null};
     x.targetMin=x.targetMin||25;
     if(x.sound==='자연음')x.sound='자연 숲';
     x.sound=x.sound||'집중 피아노';
@@ -85,6 +87,23 @@ function migrate(x){
     profile:{...initial.profile,...x.profile},
     guide:{...initial.guide,...x.guide}
   };
+}
+function badgeSignals(){
+  state.badgeSignals=state.badgeSignals&&typeof state.badgeSignals==='object'
+    ?state.badgeSignals:{activeMeal:null,lastMeal:null,pendingStart:null};
+  return state.badgeSignals;
+}
+function currentOpenWindowEvidence(){
+  const now=new Date(),today=localDateKey(now);
+  const evidence=window.ReadySetPlanner?.freeWindowEvidenceForDate?.(today);
+  const open=(evidence?.open_windows||[]).find(w=>{
+    const start=new Date(w.start),end=new Date(w.end);
+    return Number.isFinite(start.getTime())&&Number.isFinite(end.getTime())&&now>=start&&now<=end;
+  });
+  return open?{...open,date:today}:null;
+}
+function latestCompletedRecordBefore(ms){
+  return (state.records||[]).find(r=>r?.completed===true&&Number(r.endAt)>0&&Number(r.endAt)<=ms)||null;
 }
 function readyPwaSafePoint(){
   return !state.activeSession;
@@ -446,6 +465,50 @@ $$('[data-sheet-sound]').forEach(b=>b.onclick=async()=>{
   renderFocus();
 });
 
+$('#mealStartBtn')?.addEventListener('click',()=>{
+  const signals=badgeSignals();
+  if(signals.activeMeal){toast('이미 식사 시작이 기록되어 있어요.');return}
+  const now=Date.now(),mealEventRef=`ready-meal:${now}`;
+  const prior=latestCompletedRecordBefore(now);
+  signals.activeMeal={mealEventRef,startedAt:new Date(now).toISOString(),priorSessionRef:prior?.id||null};
+  if(prior?.rev07){
+    const micro=(prior.plannerLinks||[]).find(x=>x.small_task===true);
+    const completed=(prior.plannerOutcomes||[]).find(x=>x?.ok&&x.todo_id===micro?.todo_id);
+    if(micro&&completed){
+      window.ReadyBadgeSourceObservationV01?.recordPreMealMicroComplete?.({
+        contract:prior.rev07,sessionId:prior.id,taskRef:micro.todo_id,
+        mealBufferRef:mealEventRef,smallTaskRef:`planner-small-task:${micro.todo_id}`,
+        completionEventRef:`ready-completion:${prior.id}:${micro.todo_id}`,at:new Date(now).toISOString()
+      });
+    }
+  }
+  save();toast('식사 시작을 기록했어요.');
+});
+$('#mealEndBtn')?.addEventListener('click',()=>{
+  const signals=badgeSignals(),meal=signals.activeMeal;
+  if(!meal){toast('먼저 식사 시작을 기록해 주세요.');return}
+  const now=Date.now();
+  signals.lastMeal={...meal,endedAt:new Date(now).toISOString(),mealEndActionRef:`ready-meal-end:${now}`};
+  signals.activeMeal=null;
+  signals.pendingStart={
+    type:'POST_MEAL_RESTART',
+    priorSessionRef:meal.priorSessionRef||null,
+    mealEventRef:meal.mealEventRef,
+    mealEndActionRef:signals.lastMeal.mealEndActionRef
+  };
+  save();toast('식사 끝을 기록했어요.');
+});
+$('#freeWindowStartBtn')?.addEventListener('click',()=>{
+  const open=currentOpenWindowEvidence();
+  if(!open){toast('지금은 확인된 빈시간 구간이 아니에요.');return}
+  const signals=badgeSignals(),now=Date.now();
+  signals.pendingStart={
+    type:'FREE_WINDOW_SELF_START',
+    openWindowRef:`ready-free-window:${open.date}:${open.start}:${open.end}`,
+    childStartActionRef:`ready-free-window-choice:${now}`
+  };
+  save();toast('지금 빈시간을 활용하는 선택으로 기록했어요.');
+});
 $('#startBtn').onclick=async()=>{
   if(state.activeSession){toast('이미 진행 중인 작전이 있어요. 먼저 진행 중인 작전으로 돌아가 주세요.');nav('focus');return}
   if(!state.selectedTodoIds.length){toast('먼저 Planner가 준비한 오늘의 탐험을 선택해 주세요.');return}
@@ -490,6 +553,12 @@ $('#startBtn').onclick=async()=>{
     pausedAt:null,issueMs:0,completed:false,
     selected:[],tasks:labels,
     plannerLinks:started,
+    badgeStartContext:(()=>{
+      const signals=badgeSignals();
+      const pending=signals.pendingStart?structuredClone(signals.pendingStart):null;
+      signals.pendingStart=null;
+      return pending;
+    })(),
     // Bind the central learner at task start; a later account/child switch
     // cannot reattribute this completed interaction to the new learner.
     centralLearningScope:(()=>{
