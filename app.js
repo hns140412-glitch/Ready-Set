@@ -690,6 +690,19 @@ function tickFocus(){
   $('#hourHand').style.transform=`rotate(${((d.getHours()%12)*30)+d.getMinutes()*.5}deg)`;
   if(!s.completed&&$('#focusView').classList.contains('active'))requestAnimationFrame(tickFocus);
 }
+$('#reviewBtn')?.addEventListener('click',()=>{
+  const s=state.activeSession;if(!s)return;
+  const contract=window.ReadySetRev07?.contract?.();
+  const task=contract?.tasks?.find(x=>x.task_id===contract.active_task_id);
+  if(!task){toast('현재 과제를 확인할 수 없어요.');return}
+  const now=Date.now();
+  s.reviewEvidence=s.reviewEvidence||{};
+  s.reviewEvidence[task.planner_todo_id||task.task_id]={
+    checkActionRef:`ready-child-review:${s.id}:${task.task_id}:${now}`,
+    at:new Date(now).toISOString()
+  };
+  save();toast('검토 완료를 기록했어요.');
+});
 $('#pauseBtn').onclick=async()=>{
   const s=state.activeSession;if(!s)return;
   if(s.pausedAt){await resumePausedSession('FOCUS_PAUSE_BUTTON');return}
@@ -809,6 +822,19 @@ function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOu
       member_id:row.member_id??boundCentral.member_id,
       ...(centralCheckpoint?{centralCheckpoint}:{})};
   });
+  for(const outcome of (plannerOutcomes||[])){
+    if(outcome?.state!=='COMPLETED')continue;
+    const link=(s.plannerLinks||[]).find(x=>x.todo_id===outcome.todo_id);
+    const review=s.reviewEvidence?.[outcome.todo_id];
+    if(!link||!review)continue;
+    window.ReadyBadgeSourceObservationV01?.recordFastCompleteWithCheck?.({
+      contract:s.rev07,sessionId:s.id,taskRef:outcome.todo_id,
+      plannedMinutes:link.estimated_minutes,actualMinutes:outcome.actual_minutes,
+      checkActionRef:review.checkActionRef,
+      completionEventRef:`ready-session-complete:${s.id}:${outcome.todo_id}`,
+      at:new Date(s.endAt).toISOString()
+    });
+  }
   const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs,
     outcomeState,plannerOutcomes,taskOutcomes:scopedOutcomes};
   state.records.unshift(rec);state.records=state.records.slice(0,200);
