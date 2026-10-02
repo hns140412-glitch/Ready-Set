@@ -862,3 +862,56 @@ test('Ready emits TASK_RESTART only from explicit child restart choice followed 
   const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
   expect(evidence.filter(x=>x.behavior_code==='TASK_RESTART')).toHaveLength(1);
 });
+
+
+test('Ready BLOCK_RESOLVED first acquisition requires explicit strategy switch then same-task completion', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'block_resolved_todo',date:today,label:'막힘 해결 과제',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+  await page.locator('[data-nav="mission"]:visible').first().click();
+  await page.locator('[data-todo-id="block_resolved_todo"]').click();
+  await page.locator('#startBtn').click();
+
+  await page.locator('#radioBtn').click();
+  await page.locator('#radioNote').fill('식으로 풀기 → 그림으로 보기');
+  await page.locator('[data-radio-action="STRATEGY_SWITCH"]').click();
+
+  await page.locator('#completeBtn').click();
+  const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
+  await page.locator(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`).click();
+
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  const resolved=evidence.filter(x=>x.behavior_code==='BLOCK_RESOLVED');
+  expect(resolved).toHaveLength(1);
+  expect(resolved[0]).toMatchObject({
+    event_family:'BREAKTHROUGH',
+    source_contract_id:'READY_CHILD_STRATEGY_TO_COMPLETION_V1',
+    explicit_child_action:true,
+    disposition:'OBSERVATION_ONLY',
+    badge_award_authorized:false,
+    economy_mutation_authorized:false,
+    catalog_activation_allowed:false
+  });
+});
+
+test('Ready BLOCK_RESOLVED producer rejects missing strategy switch or completion', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  const out=await page.evaluate(()=>{
+    const api=window.ReadyBadgeSourceObservationV01;
+    const contract={badge_source_observations:[]};
+    return {
+      noStrategy:api.recordBlockResolved({
+        contract,sessionId:'s1',taskRef:'t1',strategySwitchActionRef:'',completionEventRef:'done1'
+      }),
+      noCompletion:api.recordBlockResolved({
+        contract,sessionId:'s1',taskRef:'t1',strategySwitchActionRef:'switch1',completionEventRef:''
+      }),
+      count:contract.badge_source_observations.length
+    };
+  });
+  expect(out.noStrategy).toBeNull();
+  expect(out.noCompletion).toBeNull();
+  expect(out.count).toBe(0);
+});
