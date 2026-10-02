@@ -152,6 +152,19 @@
             taskRef:tasks[0].planner_todo_id,promptEventRef:badgeCtx.promptEventRef,
             promptKind:badgeCtx.promptKind,childStartActionRef:badgeCtx.childStartActionRef,at:iso()
           });
+        }else if(badgeCtx?.type==='AUTHORITATIVE_ALARM_RESPONSE'&&badgeCtx.alarmRef&&badgeCtx.alarmAt&&badgeCtx.childStartActionRef&&tasks[0]?.planner_todo_id===badgeCtx.taskRef){
+          window.ReadyBadgeSourceObservationV01?.recordAlarmResponse?.({
+            contract:session.rev07,sessionId:session.rev07.session_id,taskRef:tasks[0].planner_todo_id,
+            alarmRef:badgeCtx.alarmRef,alarmAt:badgeCtx.alarmAt,alarmFiredEventRef:badgeCtx.alarmFiredEventRef,
+            childStartActionRef:badgeCtx.childStartActionRef,startedAt:iso()
+          });
+        }else if(badgeCtx?.type==='AUTHORITATIVE_BEFORE_PROMPT'&&badgeCtx.promptCycleRef&&badgeCtx.promptCycleOpenedAt&&badgeCtx.childStartActionRef&&tasks[0]?.planner_todo_id===badgeCtx.taskRef){
+          window.ReadyBadgeSourceObservationV01?.recordBeforePrompt?.({
+            contract:session.rev07,sessionId:session.rev07.session_id,taskRef:tasks[0].planner_todo_id,
+            promptCycleRef:badgeCtx.promptCycleRef,promptCycleOpenedAt:badgeCtx.promptCycleOpenedAt,
+            firstPromptAt:badgeCtx.firstPromptAt,firstPromptEventRef:badgeCtx.firstPromptEventRef,
+            childStartActionRef:badgeCtx.childStartActionRef,startedAt:iso()
+          });
         }else if(badgeCtx?.type==='EARLY_START_BOUNDARY'&&badgeCtx.boundaryRef&&badgeCtx.boundaryAt&&badgeCtx.childStartActionRef&&tasks[0]?.planner_todo_id===badgeCtx.taskRef){
           window.ReadyBadgeSourceObservationV01?.recordEarlyStart?.({contract:session.rev07,sessionId:session.rev07.session_id,taskRef:tasks[0].planner_todo_id,boundaryRef:badgeCtx.boundaryRef,boundaryAt:badgeCtx.boundaryAt,childStartActionRef:badgeCtx.childStartActionRef,startedAt:iso()});
         }else if(badgeCtx?.type==='CHILD_EXTRA_TIME'&&badgeCtx.extraSlotRef&&badgeCtx.childCreateActionRef&&tasks[0]?.planner_todo_id===badgeCtx.taskRef){

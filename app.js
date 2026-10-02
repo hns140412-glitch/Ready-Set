@@ -96,6 +96,10 @@ function badgeSignals(){
     ?state.badgeSignals:{activeMeal:null,lastMeal:null,pendingStart:null};
   return state.badgeSignals;
 }
+window.addEventListener('ready-alarm-fired',event=>{
+  const taskRef=event.detail?.taskRef||'';
+  if(taskRef&&state.selectedTodoIds?.includes(taskRef))toast('시작 알림 · 지금 시작할 시간이에요.');
+});
 function currentOpenWindowEvidence(){
   const now=new Date(),today=localDateKey(now);
   const evidence=window.ReadySetPlanner?.freeWindowEvidenceForDate?.(today);
@@ -369,6 +373,20 @@ function renderMission(){
   $('#missionPreviewText').textContent=`${labels.length?labels.join(' · '):'과제를 선택해 주세요'} · ${state.targetMin}분`;
   const signals=badgeSignals(),firstChosen=chosen[0]||null;
   if(firstChosen){
+    const startBoundary=window.ReadyStartBoundaryV01;
+    startBoundary?.openPromptCycle?.({taskRef:firstChosen.todo_id,cycleRef:`ready-prompt-cycle:${localDateKey(new Date())}:${firstChosen.todo_id}`});
+    const plannerSnapshot=window.ReadySetPlanner?.snapshot?.()||{};
+    const today=localDateKey(new Date()),now=Date.now();
+    const nextStart=(plannerSnapshot.daily_availability_windows||[])
+      .filter(x=>x.confirmed!==false&&x.date===today&&typeof x.start==='string')
+      .map(x=>({ref:x.availability_id,at:`${today}T${x.start}:00`}))
+      .filter(x=>Number.isFinite(Date.parse(x.at))&&Date.parse(x.at)>now)
+      .sort((a,b)=>Date.parse(a.at)-Date.parse(b.at))[0];
+    if(nextStart)startBoundary?.scheduleAlarm?.({
+      taskRef:firstChosen.todo_id,
+      alarmRef:`ready-planner-start-alarm:${nextStart.ref}:${firstChosen.todo_id}`,
+      alarmAt:nextStart.at
+    });
     const existing=signals.guidancePrompt;
     if(!existing||existing.taskRef!==firstChosen.todo_id||existing.promptKind!=='MISSION_BRIEFING'){
       const promptAt=Date.now();
@@ -657,6 +675,28 @@ $('#startBtn').onclick=async()=>{
         .filter(x=>Number.isFinite(Date.parse(x.at))&&now<=Date.parse(x.at))
         .sort((a,b)=>Date.parse(a.at)-Date.parse(b.at));
       if(boundaries[0])contexts.push({type:'EARLY_START_BOUNDARY',taskRef:firstLink.todo_id,boundaryRef:boundaries[0].ref,boundaryAt:boundaries[0].at,childStartActionRef:`ready-mission-start:${sessionId}:${firstLink.todo_id}:${now}`});
+      const startBoundary=window.ReadyStartBoundaryV01;
+      const startActionRef=`ready-mission-start:${sessionId}:${firstLink.todo_id}:${now}`;
+      const alarm=startBoundary?.currentAlarm?.(firstLink.todo_id)||null;
+      if(alarm&&Number.isFinite(Date.parse(alarm.alarmAt))){
+        const firedAt=alarm.firedAt?Date.parse(alarm.firedAt):NaN;
+        const qualifiesBefore=now<=Date.parse(alarm.alarmAt);
+        const qualifiesAfter=Number.isFinite(firedAt)&&firedAt<=now&&!!alarm.fireEventRef;
+        if(qualifiesBefore||qualifiesAfter)contexts.push({
+          type:'AUTHORITATIVE_ALARM_RESPONSE',
+          taskRef:firstLink.todo_id,alarmRef:alarm.alarmRef,alarmAt:alarm.alarmAt,
+          alarmFiredEventRef:alarm.fireEventRef||null,childStartActionRef:startActionRef
+        });
+      }
+      const promptCycle=startBoundary?.promptStatus?.(firstLink.todo_id)||null;
+      if(promptCycle?.cycleRef&&promptCycle?.openedAt&&!promptCycle.firstPromptAt&&!promptCycle.firstPromptEventRef){
+        contexts.push({
+          type:'AUTHORITATIVE_BEFORE_PROMPT',
+          taskRef:firstLink.todo_id,promptCycleRef:promptCycle.cycleRef,
+          promptCycleOpenedAt:promptCycle.openedAt,firstPromptAt:null,firstPromptEventRef:null,
+          childStartActionRef:startActionRef
+        });
+      }
       signals.pendingStart=null;
       const guidance=signals.guidancePrompt;
       if(guidance?.taskRef===firstLink.todo_id&&guidance?.promptKind==='MISSION_BRIEFING'&&guidance?.promptEventRef){

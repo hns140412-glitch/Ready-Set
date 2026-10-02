@@ -737,9 +737,40 @@
     return record(contract,{event_id:`ready_badge_extra_time_${session}_${task}`,event_family:'TIME_CREATION',behavior_code:'TIME_CREATION_EXTRA',occurred_at:startIso,source_contract_id:'READY_CHILD_EXTRA_TIME_EXECUTION_V1',evidence_ref:`ready-child-extra-time:${session}:${task}`,explicit_child_action:true,payload:{sessionId:session,taskRef:task,extraSlotRef:slot,slotStartAt:clean(slotStartAt,80),slotEndAt:clean(slotEndAt,80),childCreateActionRef:action,startedTaskRef:started}});
   }
 
+  function recordAlarmResponse({contract,sessionId,taskRef,alarmRef,alarmAt,alarmFiredEventRef,childStartActionRef,startedAt,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),alarm=clean(alarmRef,180),action=clean(childStartActionRef,180);
+    const alarmIso=clean(alarmAt,80),startIso=clean(startedAt,80)||clean(at,80)||new Date().toISOString();
+    const alarmMs=Date.parse(alarmIso),startMs=Date.parse(startIso),fired=clean(alarmFiredEventRef,180);
+    if(!contract||!session||!task||!alarm||!action||!Number.isFinite(alarmMs)||!Number.isFinite(startMs))return null;
+    const relation=startMs<=alarmMs?'BEFORE_ALARM':(fired?'AFTER_ALARM_FIRED':null);
+    if(!relation)return null;
+    return record(contract,{
+      event_id:`ready_badge_alarm_response_${session}_${task}`,
+      event_family:'SELF_START',behavior_code:'ALARM_RESPONSE',occurred_at:startIso,
+      source_contract_id:'READY_AUTHORITATIVE_ALARM_RESPONSE_V1',
+      evidence_ref:`ready-alarm-response:${alarm}:${session}`,explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,alarmRef:alarm,alarmAt:alarmIso,alarmFiredEventRef:fired||null,alarmRelation:relation,childStartActionRef:action}
+    });
+  }
+
+  function recordBeforePrompt({contract,sessionId,taskRef,promptCycleRef,promptCycleOpenedAt,firstPromptAt,firstPromptEventRef,childStartActionRef,startedAt,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),cycle=clean(promptCycleRef,180),action=clean(childStartActionRef,180);
+    const opened=clean(promptCycleOpenedAt,80),startIso=clean(startedAt,80)||clean(at,80)||new Date().toISOString();
+    const openedMs=Date.parse(opened),startMs=Date.parse(startIso),promptAt=clean(firstPromptAt,80),promptRef=clean(firstPromptEventRef,180);
+    if(!contract||!session||!task||!cycle||!action||!Number.isFinite(openedMs)||!Number.isFinite(startMs)||startMs<openedMs)return null;
+    if(promptAt||promptRef)return null;
+    return record(contract,{
+      event_id:`ready_badge_before_prompt_${session}_${task}`,
+      event_family:'SELF_START',behavior_code:'BEFORE_PROMPT',occurred_at:startIso,
+      source_contract_id:'READY_AUTHORITATIVE_PROMPT_LEDGER_V1',
+      evidence_ref:`ready-before-prompt:${cycle}:${session}`,explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,promptCycleRef:cycle,promptCycleOpenedAt:opened,firstPromptAt:null,firstPromptEventRef:null,childStartActionRef:action}
+    });
+  }
+
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordPreparationToStart,recordResponsiveStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordTaskRestart,recordCarefulComplete,recordFocusReturn,recordMeaningfulOverrun,recordRootCause,recordConceptUnderstanding,recordSelfExplanation,recordStrategySwitch,recordBlockResolved,recordDistractionResistance,recordSelfNoticeReturn,recordSingleTaskFocus,recordSustainedFocusCompletion,recordQuietImmersionCompletion,recordRereadCheck,recordReflectBeforeProceed,recordStopAtRightTime,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,recordEarlyStart,recordChildExtraTimeExecution,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordPreparationToStart,recordResponsiveStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordTaskRestart,recordCarefulComplete,recordFocusReturn,recordMeaningfulOverrun,recordRootCause,recordConceptUnderstanding,recordSelfExplanation,recordStrategySwitch,recordBlockResolved,recordDistractionResistance,recordSelfNoticeReturn,recordSingleTaskFocus,recordSustainedFocusCompletion,recordQuietImmersionCompletion,recordRereadCheck,recordReflectBeforeProceed,recordStopAtRightTime,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,recordEarlyStart,recordChildExtraTimeExecution,recordAlarmResponse,recordBeforePrompt,hasForbiddenKeyDeep
   });
 })();

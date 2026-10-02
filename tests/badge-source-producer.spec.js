@@ -1171,3 +1171,55 @@ test('Ready emits TIME_CREATION_EXTRA only from child-created extra slot followe
   expect(extra[0].payload.taskRef).toBe('badge_extra_time_todo');
   expect(extra[0].payload.startedTaskRef).toBe('badge_extra_time_todo');
 });
+
+
+test('Ready emits ALARM_RESPONSE and BEFORE_PROMPT from authoritative Planner start boundary state', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>{
+    const now=new Date(), start=new Date(now.getTime()+5*60000), end=new Date(now.getTime()+35*60000);
+    const hhmm=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    window.ReadySetPlanner.upsertDailyAvailabilityWindow({availability_id:'badge_alarm_window',date:today,start:hhmm(start),end:hhmm(end),confirmed:true,source:'PLANNER_CONFIRMED'});
+    window.ReadySetPlanner.upsertDatedTodo({todo_id:'badge_alarm_prompt_todo',date:today,label:'알림 전에 시작',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'});
+  },todayKey());
+  await page.locator('[data-nav="mission"]:visible').first().click();
+  await page.locator('[data-todo-id="badge_alarm_prompt_todo"]').click();
+  await page.locator('#startBtn').click();
+  const rows=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  const alarm=rows.filter(x=>x.behavior_code==='ALARM_RESPONSE');
+  const beforePrompt=rows.filter(x=>x.behavior_code==='BEFORE_PROMPT');
+  expect(alarm).toHaveLength(1);
+  expect(alarm[0]).toMatchObject({event_family:'SELF_START',source_contract_id:'READY_AUTHORITATIVE_ALARM_RESPONSE_V1',explicit_child_action:true,badge_award_authorized:false});
+  expect(alarm[0].payload.alarmRelation).toBe('BEFORE_ALARM');
+  expect(beforePrompt).toHaveLength(1);
+  expect(beforePrompt[0]).toMatchObject({event_family:'SELF_START',source_contract_id:'READY_AUTHORITATIVE_PROMPT_LEDGER_V1',explicit_child_action:true,badge_award_authorized:false});
+});
+
+
+test('Ready BEFORE_PROMPT is blocked once authoritative prompt ledger records a request', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'badge_prompt_block_todo',date:today,label:'요청 후 시작',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+  await page.locator('[data-nav="mission"]:visible').first().click();
+  await page.locator('[data-todo-id="badge_prompt_block_todo"]').click();
+  await page.evaluate(()=>window.ReadyStartBoundaryV01.recordPrompt({
+    taskRef:'badge_prompt_block_todo',promptEventRef:'parent-request:badge_prompt_block_todo:1',promptKind:'PARENT_REQUEST'
+  }));
+  await page.locator('#startBtn').click();
+  const rows=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(rows.filter(x=>x.behavior_code==='BEFORE_PROMPT')).toHaveLength(0);
+});
+
+
+test('Ready alarm and prompt producers fail closed without authoritative boundaries', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  const out=await page.evaluate(()=>{
+    const api=window.ReadyBadgeSourceObservationV01,contract=window.ReadySetRev07.contract();
+    return {
+      lateWithoutFire:api.recordAlarmResponse({contract,sessionId:'s1',taskRef:'t1',alarmRef:'a1',alarmAt:'2026-10-02T10:00:00.000Z',alarmFiredEventRef:'',childStartActionRef:'start1',startedAt:'2026-10-02T10:01:00.000Z'}),
+      promptAlreadyExists:api.recordBeforePrompt({contract,sessionId:'s1',taskRef:'t1',promptCycleRef:'c1',promptCycleOpenedAt:'2026-10-02T09:00:00.000Z',firstPromptAt:'2026-10-02T09:30:00.000Z',firstPromptEventRef:'p1',childStartActionRef:'start1',startedAt:'2026-10-02T10:00:00.000Z'})
+    };
+  });
+  expect(out.lateWithoutFire).toBeNull();
+  expect(out.promptAlreadyExists).toBeNull();
+});
