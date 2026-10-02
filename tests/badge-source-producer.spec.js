@@ -961,3 +961,41 @@ test('Ready emits LONG_FOCUS only after explicit single-focus commitment and sam
     catalog_activation_allowed:false
   });
 });
+
+
+test('Ready emits QUIET_IMMERSION only after explicit quiet-mode selection and same-task completion', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'badge_quiet_immersion_todo',date:today,label:'조용히 몰입하기',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+
+  await page.locator('[data-nav="mission"]:visible').first().click();
+  await page.locator('[data-todo-id="badge_quiet_immersion_todo"]').click();
+  await page.locator('#startBtn').click();
+  await page.locator('#radioBtn').click();
+  await page.locator('[data-radio-action="QUIET_IMMERSION"]').click();
+
+  let observations=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(observations.filter(x=>x.behavior_code==='QUIET_IMMERSION')).toHaveLength(0);
+
+  await page.locator('#completeBtn').click();
+  const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
+  await page.locator(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`).click();
+
+  observations=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  const rows=observations.filter(x=>x.behavior_code==='QUIET_IMMERSION');
+  expect(rows).toHaveLength(1);
+  expect(rows[0]).toMatchObject({
+    contract_version:'TAKY_BADGE_SOURCE_OBSERVATION_V1',
+    app_id:'READY_SET',
+    event_family:'FOCUS',
+    behavior_code:'QUIET_IMMERSION',
+    source_contract_id:'READY_CHILD_QUIET_IMMERSION_V1',
+    explicit_child_action:true,
+    disposition:'OBSERVATION_ONLY',
+    badge_award_authorized:false,
+    economy_mutation_authorized:false,
+    catalog_activation_allowed:false
+  });
+});
