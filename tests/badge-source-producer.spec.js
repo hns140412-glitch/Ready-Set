@@ -19,7 +19,7 @@ test('Ready emits one observation-only SELF_CHOICE source event for an explicit 
   expect(seeded.a?.todo_id).toBe('badge_choice_a');
   expect(seeded.b?.todo_id).toBe('badge_choice_b');
 
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="badge_choice_a"]').click();
   await page.locator('[data-todo-id="badge_choice_b"]').click();
   await page.locator('#startBtn').click();
@@ -72,7 +72,7 @@ test('Ready emits CARRY_OVER_COMPLETE only from explicit child wrap-up on a carr
   },todayKey());
   expect(seeded?.source).toBe('PLANNER_V2_CARRY_OVER');
 
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="badge_carry_todo"]').click();
   await page.locator('#startBtn').click();
   await expect(page.locator('#focusView')).toHaveClass(/active/);
@@ -146,7 +146,7 @@ test('Ready emits SELF_RETURN only from explicit pause then resume control', asy
   },todayKey());
   expect(seeded?.todo_id).toBe('badge_return_todo');
 
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="badge_return_todo"]').click();
   await page.locator('#startBtn').click();
   await expect(page.locator('#focusView')).toHaveClass(/active/);
@@ -195,7 +195,7 @@ test('Ready maps explicit condition-adjustment pause to REST_AND_RETURN without 
     });
   },todayKey());
 
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="badge_condition_return_todo"]').click();
   await page.locator('#startBtn').click();
   await expect(page.locator('#focusView')).toHaveClass(/active/);
@@ -238,7 +238,7 @@ test('Ready fail-closes seven minimal badge producer contracts and dedupes ident
       api.recordPreMealMicroComplete({contract,sessionId:'s1',taskRef:'t1',mealBufferRef:'meal1',smallTaskRef:'small1',completionEventRef:'done1'}),
       api.recordPostMealRestart({contract,sessionId:'s2',priorSessionRef:'prior1',mealBufferRef:'meal2',restartActionRef:'restart1'}),
       api.recordFreeWindowSelfStart({contract,sessionId:'s3',openWindowRef:'window1',taskRef:'t3',childStartActionRef:'start3'}),
-      api.recordScheduledBreakReturn({contract,sessionId:'s4',breakRef:'break1',scheduledReturnAt:'2026-10-02T13:30:00+09:00',resumeActionRef:'resume4'}),
+      api.recordScheduledBreakReturn({contract,sessionId:'s4',breakRef:'break1',scheduledReturnAt:new Date(Date.now()+10*60*1000).toISOString(),resumeActionRef:'resume4'}),
       api.recordBreakTimerReturn({contract,sessionId:'s5',timerRef:'timer5',timerExpiredAt:'2026-10-02T13:35:00+09:00',resumeActionRef:'resume5'}),
       api.recordChildPriorityChoice({contract,sessionId:'s6',choiceSetRef:'set6',selectedTaskRef:'hard6',childSelectionOrder:1,difficulty:5,startedTaskRef:'hard6',mode:'HARD_FIRST'}),
       api.recordChildPriorityChoice({contract,sessionId:'s7',choiceSetRef:'set7',selectedTaskRef:'easy7',childSelectionOrder:1,difficulty:1,startedTaskRef:'easy7',mode:'EASY_FIRST'})
@@ -305,7 +305,7 @@ test('Ready scheduled break UI emits BREAK_RETURN only inside an explicit REST b
     });
   },todayKey());
   expect(seeded?.todo_id).toBe('badge_break_todo');
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="badge_break_todo"]').click();
   await page.locator('#startBtn').click();
   await page.locator('#pauseBtn').click();
@@ -322,7 +322,7 @@ test('Ready five-minute break UI does not award TIMER_RETURN before timer expiry
     todo_id:'badge_timer_todo',date:today,label:'5분 휴식 탐험',
     source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
   }),todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="badge_timer_todo"]').click();
   await page.locator('#startBtn').click();
   await page.locator('#pauseBtn').click();
@@ -340,14 +340,14 @@ test('Ready records MICRO_TASK_COMPLETE only from an explicitly marked completed
     todo_id:'badge_micro_todo',date:today,label:'작은 마무리',
     source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',small_task:true
   }),todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="badge_micro_todo"]').click();
   await page.locator('#startBtn').click();
   await page.locator('#completeBtn').click();
   const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
   await page.locator(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`).click();
   await page.locator('#rev07ConfirmEnd').click();
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('#mealStartBtn').click();
   const obs=await page.evaluate(()=>window.__READY_SET_STATE__?.records?.[0]?.rev07?.badge_source_observations||[]);
   const direct=await page.evaluate(()=>{
@@ -363,14 +363,14 @@ test('Ready emits POST_MEAL_RESTART only after explicit meal start/end then chil
     todo_id:'badge_meal_prior',date:today,label:'식사 전 탐험',
     source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
   }),todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="badge_meal_prior"]').click();
   await page.locator('#startBtn').click();
   await page.locator('#completeBtn').click();
   const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
   await page.locator(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`).click();
   await page.locator('#rev07ConfirmEnd').click();
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('#mealStartBtn').click();
   await page.locator('#mealEndBtn').click();
   await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
@@ -399,7 +399,7 @@ test('Ready emits SELF_START_IN_FREE_WINDOW only after explicit free-window choi
       source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
     });
   },todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="badge_free_todo"]').click();
   await page.locator('#freeWindowStartBtn').click();
   await page.locator('#startBtn').click();
@@ -415,7 +415,7 @@ test('Ready emits PRIORITIZE_HARD when the child explicitly chooses the hardest 
     p.upsertDatedTodo({todo_id:'hard_first_h',date:today,label:'어려운 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',difficulty:5});
     p.upsertDatedTodo({todo_id:'hard_first_e',date:today,label:'쉬운 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',difficulty:2});
   },todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="hard_first_h"]').click();
   await page.locator('[data-todo-id="hard_first_e"]').click();
   await page.locator('#startBtn').click();
@@ -430,7 +430,7 @@ test('Ready emits WARM_START when the child explicitly chooses the easiest avail
     p.upsertDatedTodo({todo_id:'easy_first_h',date:today,label:'어려운 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',difficulty:5});
     p.upsertDatedTodo({todo_id:'easy_first_e',date:today,label:'쉬운 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',difficulty:2});
   },todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="easy_first_e"]').click();
   await page.locator('[data-todo-id="easy_first_h"]').click();
   await page.locator('#startBtn').click();
@@ -446,7 +446,7 @@ test('Ready emits SELF_PLANNED_SEQUENCE only after explicit child order confirma
     p.upsertDatedTodo({todo_id:'sequence_a',date:today,label:'첫 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'});
     p.upsertDatedTodo({todo_id:'sequence_b',date:today,label:'둘째 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'});
   },todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="sequence_b"]').click();
   await page.locator('[data-todo-id="sequence_a"]').click();
   await page.locator('#confirmTaskOrderBtn').click();
@@ -474,7 +474,7 @@ test('Ready emits VOLUNTARY_EXTRA_AFTER_REQUIRED_COMPLETE only after required wo
       source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',required_today:false
     });
   },todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="optional_extra"]').click();
   await page.locator('#startBtn').click();
   const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
@@ -488,7 +488,7 @@ test('Ready emits MICRO_TASK_COMPLETE from explicit Planner small-task metadata 
     todo_id:'micro_only',date:today,label:'작은 과제',
     source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',small_task:true
   }),todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="micro_only"]').click();
   await page.locator('#startBtn').click();
   await page.locator('#completeBtn').click();
@@ -505,7 +505,7 @@ test('Ready emits VOLUNTARY_NEXT_TASK_CONTINUE only when child starts a next tas
     p.upsertDatedTodo({todo_id:'flow_a',date:today,label:'첫 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'});
     p.upsertDatedTodo({todo_id:'flow_b',date:today,label:'다음 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'});
   },todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="flow_a"]').click();
   await page.locator('[data-todo-id="flow_b"]').click();
   await page.locator('#startBtn').click();
@@ -523,7 +523,7 @@ test('Ready emits START_DESPITE_CONDITION only after explicit child condition-aw
     todo_id:'condition_start_todo',date:today,label:'가능한 만큼 시작',
     source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
   }),todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="condition_start_todo"]').click();
   await page.locator('#conditionStartBtn').click();
   await page.locator('#startBtn').click();
@@ -538,10 +538,11 @@ test('Ready emits PERSIST_TO_COMPLETE only after explicit blocked-but-continue a
     todo_id:'persist_todo',date:today,label:'끝까지 해볼 과제',
     source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
   }),todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="persist_todo"]').click();
   await page.locator('#startBtn').click();
-  await page.locator('#persistBtn').click();
+  await page.locator('#radioBtn').click();
+  await page.locator('[data-radio-action="PERSIST"]').click();
   await page.locator('#completeBtn').click();
   const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
   await page.locator(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`).click();
@@ -619,10 +620,11 @@ test('Ready UI emits FAST_COMPLETE_WITH_CHECK after explicit review on a fast co
     todo_id:'fast_checked_todo',date:today,label:'빠른 검토 과제',
     source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',estimated_minutes:10
   }),todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="fast_checked_todo"]').click();
   await page.locator('#startBtn').click();
-  await page.locator('#reviewBtn').click();
+  await page.locator('#radioBtn').click();
+  await page.locator('[data-radio-action="REVIEW"]').click();
   await page.locator('#completeBtn').click();
   const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
   await page.locator(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`).click();
@@ -641,10 +643,11 @@ test('Ready emits CHILD_CHUNKED_TASK_COMPLETE only after child-defined chunks ar
     todo_id:'chunk_ui_todo',date:today,label:'큰 과제',
     source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
   }),todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="chunk_ui_todo"]').click();
   await page.locator('#startBtn').click();
-  await page.locator('#chunkTaskBtn').click();
+  await page.locator('#radioBtn').click();
+  await page.locator('[data-radio-action="CHUNK"]').click();
   await page.locator('#chunkInput1').fill('앞부분');
   await page.locator('#chunkInput2').fill('뒷부분');
   await page.locator('#saveChunkPlanBtn').click();
@@ -671,7 +674,7 @@ test('Ready emits CHILD_PLAN_ADAPTATION only after schedule change, changed chil
     p.upsertDatedTodo({todo_id:'replan_a',date:today,label:'A 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'});
     p.upsertDatedTodo({todo_id:'replan_b',date:today,label:'B 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'});
   },todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="replan_a"]').click();
   await page.locator('[data-todo-id="replan_b"]').click();
   await page.locator('#replanAfterChangeBtn').click();
@@ -687,7 +690,7 @@ test('Ready emits CHILD_PLAN_ADAPTATION only after schedule change, changed chil
 test('Ready radio records reread and reflection as explicit child evidence only', async ({ page }) => {
   await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
   await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({todo_id:'radio_todo',date:today,label:'무전기 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'}),todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="radio_todo"]').click();
   await page.locator('#startBtn').click();
   await page.locator('#radioBtn').click();
@@ -702,7 +705,7 @@ test('Ready radio records reread and reflection as explicit child evidence only'
 test('Ready radio STOP_AT_RIGHT_TIME is emitted only when the session actually ends', async ({ page }) => {
   await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
   await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({todo_id:'radio_stop_todo',date:today,label:'멈춤 판단 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'}),todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="radio_stop_todo"]').click();
   await page.locator('#startBtn').click();
   await page.locator('#radioBtn').click();
@@ -724,7 +727,7 @@ test('Ready radio note actions require explicit child text where semantics requi
     todo_id:'radio_note_todo',date:today,label:'무전기 메모 과제',
     source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
   }),todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="radio_note_todo"]').click();
   await page.locator('#startBtn').click();
 
@@ -752,7 +755,7 @@ test('Ready radio explicit self-regulation actions do not rely on elapsed time',
     todo_id:'radio_reg_todo',date:today,label:'자기조절 과제',
     source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
   }),todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="radio_reg_todo"]').click();
   await page.locator('#startBtn').click();
   await page.locator('#radioBtn').click();
@@ -791,7 +794,7 @@ test('Ready radio emits FOCUS_RETURN from explicit child return action', async (
     todo_id:'focus_return_todo',date:today,label:'집중 복귀 과제',
     source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
   }),todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="focus_return_todo"]').click();
   await page.locator('#startBtn').click();
   await page.locator('#radioBtn').click();
@@ -827,7 +830,7 @@ test('Ready emits TASK_RESTART only from explicit child restart choice followed 
     todo_id:'restart_todo',date:today,label:'다시 시작 과제',
     source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
   }),todayKey());
-  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-nav="mission"]:visible').first().click();
   await page.locator('[data-todo-id="restart_todo"]').click();
   await page.locator('#taskRestartStartBtn').click();
   await page.locator('#startBtn').click();
