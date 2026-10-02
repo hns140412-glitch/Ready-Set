@@ -813,6 +813,20 @@ $$('[data-radio-action]').forEach(btn=>btn.onclick=()=>{
       returnActionRef:`ready-radio-self-return:${s.id}:${task.task_id}:${now}`,at
     });
     toast('스스로 알아차리고 돌아온 행동을 기록했어요.');
+  }else if(action==='FOCUS_RETURN'){
+    window.ReadyBadgeSourceObservationV01?.recordFocusReturn?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      returnActionRef:`ready-radio-focus-return:${s.id}:${task.task_id}:${now}`,at
+    });
+    toast('다시 집중한 행동을 기록했어요.');
+  }else if(action==='MEANINGFUL_OVERRUN'){
+    const note=String($('#radioNote')?.value||'').trim();
+    if(!note){toast('왜 더 해볼 가치가 있었는지 적어 주세요.');return}
+    s.meaningfulOverrunEvidence={
+      taskId:task.task_id,taskRef,meaningText:note,
+      meaningArtifactRef:`ready-radio-meaningful-overrun:${s.id}:${task.task_id}:${now}`,at
+    };
+    save();toast('시간을 넘겨 계속한 이유를 기록했어요.');
   }else if(action==='STOP_RIGHT'){
     s.stopRightEvidence={
       taskId:task.task_id,taskRef,
@@ -996,14 +1010,32 @@ function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOu
     if(outcome?.state!=='COMPLETED')continue;
     const link=(s.plannerLinks||[]).find(x=>x.todo_id===outcome.todo_id);
     const review=s.reviewEvidence?.[outcome.todo_id];
-    if(!link||!review)continue;
-    window.ReadyBadgeSourceObservationV01?.recordFastCompleteWithCheck?.({
-      contract:s.rev07,sessionId:s.id,taskRef:outcome.todo_id,
-      plannedMinutes:link.estimated_minutes,actualMinutes:outcome.actual_minutes,
-      checkActionRef:review.checkActionRef,
-      completionEventRef:`ready-session-complete:${s.id}:${outcome.todo_id}`,
-      at:new Date(s.endAt).toISOString()
-    });
+    if(link&&review){
+      window.ReadyBadgeSourceObservationV01?.recordFastCompleteWithCheck?.({
+        contract:s.rev07,sessionId:s.id,taskRef:outcome.todo_id,
+        plannedMinutes:link.estimated_minutes,actualMinutes:outcome.actual_minutes,
+        checkActionRef:review.checkActionRef,
+        completionEventRef:`ready-session-complete:${s.id}:${outcome.todo_id}`,
+        at:new Date(s.endAt).toISOString()
+      });
+      window.ReadyBadgeSourceObservationV01?.recordCarefulComplete?.({
+        contract:s.rev07,sessionId:s.id,taskRef:outcome.todo_id,
+        plannedMinutes:link.estimated_minutes,actualMinutes:outcome.actual_minutes,
+        checkActionRef:review.checkActionRef,
+        completionEventRef:`ready-session-complete:${s.id}:${outcome.todo_id}`,
+        at:new Date(s.endAt).toISOString()
+      });
+    }
+    const overrun=s.meaningfulOverrunEvidence;
+    if(link&&overrun&&overrun.taskRef===outcome.todo_id){
+      window.ReadyBadgeSourceObservationV01?.recordMeaningfulOverrun?.({
+        contract:s.rev07,sessionId:s.id,taskRef:outcome.todo_id,
+        plannedMinutes:link.estimated_minutes,actualMinutes:outcome.actual_minutes,
+        meaningArtifactRef:overrun.meaningArtifactRef,meaningText:overrun.meaningText,
+        completionEventRef:`ready-session-complete:${s.id}:${outcome.todo_id}`,
+        at:new Date(s.endAt).toISOString()
+      });
+    }
   }
   const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs,
     outcomeState,plannerOutcomes,taskOutcomes:scopedOutcomes};
