@@ -658,3 +658,27 @@ test('Ready emits CHILD_CHUNKED_TASK_COMPLETE only after child-defined chunks ar
   const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
   expect(evidence.filter(x=>x.behavior_code==='CHILD_CHUNKED_TASK_COMPLETE')).toHaveLength(1);
 });
+
+
+test('Ready emits CHILD_PLAN_ADAPTATION only after schedule change, changed child plan, and actual start', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>{
+    const p=window.ReadySetPlanner;
+    p.upsertScheduleCommitment({
+      commitment_id:'replan_change_1',title:'갑작스러운 일정',category:'OTHER',
+      start_at:\`\${today}T18:00:00\`,end_at:\`\${today}T19:00:00\`,source:'TEST'
+    });
+    p.upsertDatedTodo({todo_id:'replan_a',date:today,label:'A 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'});
+    p.upsertDatedTodo({todo_id:'replan_b',date:today,label:'B 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'});
+  },todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="replan_a"]').click();
+  await page.locator('[data-todo-id="replan_b"]').click();
+  await page.locator('#replanAfterChangeBtn').click();
+  await page.locator('[data-todo-id="replan_a"]').click();
+  await page.locator('[data-todo-id="replan_a"]').click();
+  await page.locator('#confirmTaskOrderBtn').click();
+  await page.locator('#startBtn').click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='CHILD_PLAN_ADAPTATION')).toHaveLength(1);
+});
