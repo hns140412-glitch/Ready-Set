@@ -767,6 +767,52 @@ $('[data-radio-action]').forEach(btn=>btn.onclick=()=>{
       reflectionActionRef:`ready-radio-reflect:${s.id}:${task.task_id}:${now}`,at
     });
     toast('다시 생각한 행동을 기록했어요.');
+  }else if(action==='ROOT_CAUSE'){
+    const note=String($('#radioNote')?.value||'').trim();
+    if(!note){toast('왜 틀렸는지 내 말로 적어 주세요.');return}
+    window.ReadyBadgeSourceObservationV01?.recordRootCause?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      causeArtifactRef:`ready-radio-root-cause:${s.id}:${task.task_id}:${now}`,causeText:note,at
+    });
+    toast('틀린 원인을 찾은 기록을 남겼어요.');
+  }else if(action==='CONCEPT'){
+    const note=String($('#radioNote')?.value||'').trim();
+    if(!note){toast('이해한 내용을 내 말로 적어 주세요.');return}
+    window.ReadyBadgeSourceObservationV01?.recordConceptUnderstanding?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      explanationArtifactRef:`ready-radio-concept:${s.id}:${task.task_id}:${now}`,explanationText:note,at
+    });
+    toast('이해한 내용을 기록했어요.');
+  }else if(action==='SELF_EXPLAIN'){
+    const note=String($('#radioNote')?.value||'').trim();
+    if(!note){toast('설명한 내용을 적어 주세요.');return}
+    window.ReadyBadgeSourceObservationV01?.recordSelfExplanation?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      explanationArtifactRef:`ready-radio-self-explain:${s.id}:${task.task_id}:${now}`,explanationText:note,at
+    });
+    toast('내 말로 설명한 기록을 남겼어요.');
+  }else if(action==='STRATEGY_SWITCH'){
+    const note=String($('#radioNote')?.value||'').trim();
+    const parts=note.split(/\s*(?:→|->)\s*/).map(x=>x.trim()).filter(Boolean);
+    if(parts.length!==2||parts[0]===parts[1]){toast('예: 풀어쓰기 → 그림으로 보기처럼 적어 주세요.');return}
+    window.ReadyBadgeSourceObservationV01?.recordStrategySwitch?.({
+      contract:s.rev07,sessionId:s.id,taskRef,fromStrategy:parts[0],toStrategy:parts[1],
+      switchActionRef:`ready-radio-strategy-switch:${s.id}:${task.task_id}:${now}`,at
+    });
+    toast('다른 방법으로 바꾼 기록을 남겼어요.');
+  }else if(action==='DISTRACTION'){
+    window.ReadyBadgeSourceObservationV01?.recordDistractionResistance?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      resistanceActionRef:`ready-radio-distraction-resist:${s.id}:${task.task_id}:${now}`,at
+    });
+    toast('딴짓 유혹을 이긴 행동을 기록했어요.');
+  }else if(action==='SELF_NOTICE_RETURN'){
+    window.ReadyBadgeSourceObservationV01?.recordSelfNoticeReturn?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      noticeActionRef:`ready-radio-self-notice:${s.id}:${task.task_id}:${now}`,
+      returnActionRef:`ready-radio-self-return:${s.id}:${task.task_id}:${now}`,at
+    });
+    toast('스스로 알아차리고 돌아온 행동을 기록했어요.');
   }else if(action==='STOP_RIGHT'){
     s.stopRightEvidence={
       taskId:task.task_id,taskRef,
@@ -774,6 +820,7 @@ $('[data-radio-action]').forEach(btn=>btn.onclick=()=>{
     };
     save();toast('여기서 멈추기로 한 선택을 기록했어요.');
   }
+  if($('#radioNote'))$('#radioNote').value='';
   $('#radioSheet').hidden=true;
 });
 $('#chunkTaskBtn')?.addEventListener('click',()=>{
