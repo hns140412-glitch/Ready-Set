@@ -180,6 +180,11 @@
             childStartActionRef:badgeCtx.childStartActionRef,
             startedTaskRef:tasks[0].planner_todo_id,at:iso()
           });
+        }else if(badgeCtx?.type==='TASK_RESTART'&&badgeCtx.restartActionRef&&tasks[0]?.planner_todo_id){
+          window.ReadyBadgeSourceObservationV01?.recordTaskRestart?.({
+            contract:session.rev07,sessionId:session.rev07.session_id,
+            taskRef:tasks[0].planner_todo_id,restartActionRef:badgeCtx.restartActionRef,at:iso()
+          });
         }
       }
       session.badgeStartContexts=[];
