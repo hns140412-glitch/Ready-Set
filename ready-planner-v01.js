@@ -541,6 +541,13 @@
           provenance:input.provenance||null,
           ...(Array.isArray(input.activity_types)?{activity_types:[...input.activity_types]}:{}),
           ...(Array.isArray(input.activity_sequence)?{activity_sequence:[...input.activity_sequence]}:{}),
+          small_task:input.small_task===true,
+          required_today:input.required_today===true,
+          ...(Number.isFinite(input.estimated_minutes)?{estimated_minutes:Math.max(0,input.estimated_minutes)}:{}),
+          ...(Number.isFinite(input.difficulty)?{difficulty:input.difficulty}:{}),
+          ...(Array.isArray(input.cognitive_load_profile)?{cognitive_load_profile:[...input.cognitive_load_profile]}:{}),
+          ...(Number.isFinite(input.activity_load_score)?{activity_load_score:input.activity_load_score}:{}),
+          ...(input.recovery_need!=null?{recovery_need:input.recovery_need}:{}),
           ...(input.review_policy&&typeof input.review_policy==='object'?
             {review_policy:structuredClone(input.review_policy)}:{}),
           order:Number.isFinite(input.order)?input.order:999,
@@ -577,13 +584,16 @@
     }
     function linkTodayItems(todoIds=[],options={}){
       const date=cleanText(options.date)||dateKey();
-      const ids=new Set((todoIds||[]).map(cleanText).filter(Boolean));
+      const orderedIds=[...new Set((todoIds||[]).map(cleanText).filter(Boolean))];
       const allowedStates=new Set(Array.isArray(options.allowed_states)&&options.allowed_states.length?options.allowed_states:['PLANNED']);
-      return load().dated_todos.filter(x=>ids.has(x.todo_id)&&x.date===date&&allowedStates.has(x.state)&&
-        visibleToCentralScope(x,options.central_scope)).map(x=>({
+      const rows=load().dated_todos.filter(x=>x.date===date&&allowedStates.has(x.state)&&
+        visibleToCentralScope(x,options.central_scope));
+      const byId=new Map(rows.map(x=>[x.todo_id,x]));
+      return orderedIds.map(id=>byId.get(id)).filter(Boolean).map((x,childSelectionIndex)=>({
         todo_id:x.todo_id,label:x.label,date:x.date,source:x.source,
         assignment_id:x.assignment_id,analysis_id:x.analysis_id,learning_unit_id:x.learning_unit_id,
         template_id:x.template_id,allocation_run_id:x.allocation_run_id,
+        estimated_minutes:Number.isFinite(x.estimated_minutes)?x.estimated_minutes:null,
         activity_types:Array.isArray(x.activity_types)?x.activity_types:[],
         activity_sequence:Array.isArray(x.activity_sequence)?x.activity_sequence:[],
         cognitive_load_profile:Array.isArray(x.cognitive_load_profile)?x.cognitive_load_profile:[],
@@ -591,7 +601,10 @@
         difficulty:Number.isFinite(x.difficulty)?x.difficulty:null,
         recovery_need:x.recovery_need||null,
         review_policy:x.review_policy||null,
-        parent_help_dependency:x.parent_help_dependency||null
+        parent_help_dependency:x.parent_help_dependency||null,
+        small_task:x.small_task===true,
+        required_today:x.required_today===true,
+        child_selection_order:childSelectionIndex+1
       }));
     }
     function linkOrCreateTodayItems(values=[],options={}){
@@ -979,6 +992,11 @@
       };
     }
 
+    function freeWindowEvidenceForDate(date=dateKey()){
+      const windows=candidateWindowsByDate([date])?.[date]||[];
+      return freeWindowEvidence(load(),date,windows);
+    }
+
     function eligibleTemplate(template,date){
       if(template.confirmation_state && template.confirmation_state!=='CONFIRMED')return false;
       if(template.deadline_date && date>template.deadline_date)return false;
@@ -1096,6 +1114,7 @@
               order:created.length,
               state:'PLANNED',
               estimated_minutes:p.estimated_minutes,
+              required_today:p.reason==='REQUIRED_TODAY',
               created_at:new Date().toISOString(),
               updated_at:new Date().toISOString()
             };
@@ -1615,6 +1634,8 @@
         recovery_need:x.recovery_need||null,
         review_policy:x.review_policy||null,
         parent_help_dependency:x.parent_help_dependency||null,
+        small_task:x.small_task===true,
+        required_today:x.required_today===true,
         planner_owned:/^PLANNER/.test(x.source||'')
       }));
     }
@@ -1656,6 +1677,7 @@
       upsertDailyAvailabilityWindow,
       removeDailyAvailabilityWindow,
       candidateWindowsByDate,
+      freeWindowEvidenceForDate,
       upsertHomeworkTemplate,
       upsertDatedTodo,
       linkTodayItems,

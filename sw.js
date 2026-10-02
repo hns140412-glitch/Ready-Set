@@ -54,7 +54,7 @@ const CORE=[
 './ready-central-observation-handoff-v01.js','./ready-central-learning-decision-intake-v01.js',
 './ready-central-learning-decision-http-v01.js','./ready-central-intent-to-planner-v01.js','./ready-central-hide-directive-v01.js',
 './vendor/taky-central-evidence-v1.js','./ready-central-learning-roundtrip-v01.js',
-'./ready-central-browser-bootstrap-v01.js',
+'./ready-central-browser-bootstrap-v01.js','./ready-badge-source-observation-v01.js','./ready-start-boundary-v01.js',
 './ready-integration-v1.js','./app.js','./ready-runtime-v07.js','./manifest.webmanifest','./VERSION.json',
 './Ready_Set_Ui_Master_Logic_REV_06.md','./Ready_Set_Ui_Master_Logic_REV_07.md',
 './assets/icon-192.png','./assets/icon-512.png',

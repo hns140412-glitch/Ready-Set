@@ -1,0 +1,454 @@
+{
+  "contract": "TAKY_BADGE_SOURCE_PRODUCER_QA_CURRENT_V1",
+  "updated_at": "2026-10-02",
+  "repository": "hns140412-glitch/Ready-Set",
+  "branch": "taky/badge-source-producers-20261002",
+  "validation_cutoff_sha": "7d0e257d2515581f8e851fc2302f76cd1ff7d7b1",
+  "runtime_e2e": {
+    "run_id": 36979777480,
+    "conclusion": "success",
+    "tests": "PASS",
+    "workflow_gates": "10/10 PASS"
+  },
+  "counts": {
+    "catalog": 60,
+    "producer_qa_pass": 47,
+    "producer_qa_open": 13,
+    "active": 0
+  },
+  "invariants": [
+    "PRODUCER_QA_PASS_DOES_NOT_ACTIVATE_BADGE",
+    "NO_ELAPSED_TIME_SILENCE_PLANNER_ORDER_SCORE_AI_CONFIDENCE_INFERENCE",
+    "EXPLICIT_CHILD_EVIDENCE_REQUIRED_WHERE_SEMANTICS_REQUIRE_IT",
+    "DEPLOYMENT_NETLIFY_HOLD"
+  ],
+  "items": [
+    {
+      "badge_id": "BDG-DRAFT-001",
+      "producer_qa": "OPEN",
+      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-002",
+      "producer_qa": "OPEN",
+      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-003",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_PR143_FULL_RUNTIME_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-004",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_PR143_FULL_RUNTIME_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-005",
+      "producer_qa": "OPEN",
+      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-006",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_PR143_FULL_RUNTIME_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-007",
+      "producer_qa": "OPEN",
+      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-008",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_PR143_FULL_RUNTIME_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-009",
+      "producer_qa": "OPEN",
+      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-010",
+      "producer_qa": "OPEN",
+      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-011",
+      "producer_qa": "PASS",
+      "evidence_basis": "INHERITED_VERIFIED_BASELINE",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-012",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_PR143_FULL_RUNTIME_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-013",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_EXPLICIT_SINGLE_TASK_FOCUS_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-014",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_PR143_FULL_RUNTIME_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-015",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-016",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_PR143_FULL_RUNTIME_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-017",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_PR143_FULL_RUNTIME_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-018",
+      "producer_qa": "OPEN",
+      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-019",
+      "producer_qa": "OPEN",
+      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-020",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_PR143_FULL_RUNTIME_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-021",
+      "producer_qa": "PASS",
+      "evidence_basis": "INHERITED_VERIFIED_BASELINE",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-022",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-023",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-024",
+      "producer_qa": "PASS",
+      "evidence_basis": "INHERITED_VERIFIED_BASELINE",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-025",
+      "producer_qa": "PASS",
+      "evidence_basis": "INHERITED_VERIFIED_BASELINE",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-026",
+      "producer_qa": "PASS",
+      "evidence_basis": "INHERITED_VERIFIED_BASELINE",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-027",
+      "producer_qa": "PASS",
+      "evidence_basis": "INHERITED_VERIFIED_BASELINE",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-028",
+      "producer_qa": "PASS",
+      "evidence_basis": "INHERITED_VERIFIED_BASELINE",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-029",
+      "producer_qa": "PASS",
+      "evidence_basis": "INHERITED_VERIFIED_BASELINE",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-030",
+      "producer_qa": "OPEN",
+      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-031",
+      "producer_qa": "OPEN",
+      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-032",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-033",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-034",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-035",
+      "producer_qa": "OPEN",
+      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-036",
+      "producer_qa": "PASS",
+      "evidence_basis": "HIDE_RETRACE_CORRECTION_COURAGE_QA_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-037",
+      "producer_qa": "PASS",
+      "evidence_basis": "INHERITED_VERIFIED_BASELINE",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-038",
+      "producer_qa": "PASS",
+      "evidence_basis": "SNAP_REFLECTION_TO_COMPLETION_QA_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-039",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_STRATEGY_SWITCH_TO_SAME_TASK_COMPLETION_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-040",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-041",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_CHILD_MEANINGFUL_OVERRUN_EXPLICIT_REASON_PLUS_PLANNER_ESTIMATE_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-042",
+      "producer_qa": "OPEN",
+      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-043",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_PR143_FULL_RUNTIME_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-044",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_PR143_FULL_RUNTIME_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-045",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-046",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-047",
+      "producer_qa": "PASS",
+      "evidence_basis": "INHERITED_VERIFIED_BASELINE",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-048",
+      "producer_qa": "PASS",
+      "evidence_basis": "INHERITED_VERIFIED_BASELINE",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-049",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_PR143_FULL_RUNTIME_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-050",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_PR143_FULL_RUNTIME_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-051",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_PR143_FULL_RUNTIME_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-052",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-053",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_RADIO_EXPLICIT_EVIDENCE_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-054",
+      "producer_qa": "OPEN",
+      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-055",
+      "producer_qa": "PASS",
+      "evidence_basis": "INHERITED_VERIFIED_BASELINE",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-056",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_PR143_FULL_RUNTIME_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-057",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_PR143_FULL_RUNTIME_E2E_PASS",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-058",
+      "producer_qa": "PASS",
+      "evidence_basis": "INHERITED_VERIFIED_BASELINE",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-059",
+      "producer_qa": "PASS",
+      "evidence_basis": "INHERITED_VERIFIED_BASELINE",
+      "activation": "HOLD",
+      "active": false
+    },
+    {
+      "badge_id": "BDG-DRAFT-060",
+      "producer_qa": "PASS",
+      "evidence_basis": "INHERITED_VERIFIED_BASELINE",
+      "activation": "HOLD",
+      "active": false
+    }
+  ],
+  "notes": [
+    "First acquisition uses minimum explicit child evidence needed to prove the behavior; badges are not made difficult merely to be rare.",
+    "Tier-promotion strengthening is a separate policy axis and does not retroactively harden first acquisition.",
+    "BDG-DRAFT-013 uses explicit child focus commitment via READY_EXPLICIT_SINGLE_TASK_FOCUS_V1; passive focus duration/silence is never sufficient.",
+    "BDG-DRAFT-039 uses explicit strategy switch followed by same-task completion via READY_CHILD_STRATEGY_TO_COMPLETION_V1.",
+    "Remaining OPEN: 001,002,005,007,009,010,018,019,030,031,035,042,054."
+  ]
+}

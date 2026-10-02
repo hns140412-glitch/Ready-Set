@@ -44,7 +44,11 @@ const initial={
   sound:'집중 피아노',
   records:[],
   activeSession:null,
-  recordingMeta:null
+  recordingMeta:null,
+  badgeSignals:{activeMeal:null,lastMeal:null,pendingStart:null},
+  childChoiceEvidence:null,
+  childPlanSequenceEvidence:null,
+  childReplanEvidence:null
 };
 
 let state=load();
@@ -74,6 +78,7 @@ function migrate(x){
     x.selected=x.selected||[];
     x.tasks=x.tasks||[];
     x.selectedTodoIds=Array.isArray(x.selectedTodoIds)?x.selectedTodoIds:[];
+    x.badgeSignals=x.badgeSignals&&typeof x.badgeSignals==='object'?x.badgeSignals:{activeMeal:null,lastMeal:null,pendingStart:null};
     x.targetMin=x.targetMin||25;
     if(x.sound==='자연음')x.sound='자연 숲';
     x.sound=x.sound||'집중 피아노';
@@ -85,6 +90,27 @@ function migrate(x){
     profile:{...initial.profile,...x.profile},
     guide:{...initial.guide,...x.guide}
   };
+}
+function badgeSignals(){
+  state.badgeSignals=state.badgeSignals&&typeof state.badgeSignals==='object'
+    ?state.badgeSignals:{activeMeal:null,lastMeal:null,pendingStart:null};
+  return state.badgeSignals;
+}
+window.addEventListener('ready-alarm-fired',event=>{
+  const taskRef=event.detail?.taskRef||'';
+  if(taskRef&&state.selectedTodoIds?.includes(taskRef))toast('시작 알림 · 지금 시작할 시간이에요.');
+});
+function currentOpenWindowEvidence(){
+  const now=new Date(),today=localDateKey(now);
+  const evidence=window.ReadySetPlanner?.freeWindowEvidenceForDate?.(today);
+  const open=(evidence?.open_windows||[]).find(w=>{
+    const start=new Date(w.start),end=new Date(w.end);
+    return Number.isFinite(start.getTime())&&Number.isFinite(end.getTime())&&now>=start&&now<=end;
+  });
+  return open?{...open,date:today}:null;
+}
+function latestCompletedRecordBefore(ms){
+  return (state.records||[]).find(r=>r?.completed===true&&Number(r.endAt)>0&&Number(r.endAt)<=ms)||null;
 }
 function readyPwaSafePoint(){
   return !state.activeSession;
@@ -303,9 +329,19 @@ function renderPlannerToday(){
     const stateNote=startable?(selected?'선택됨':'담기'):(item.state==='IN_PROGRESS'?'진행 중':'선택 불가');
     b.innerHTML=`<span><b>${escapeHtml(item.label)}</b><small>${item.planner_owned?'플래너 제안':'오늘 할 일'}${steps?` · ${escapeHtml(steps)}`:''}</small></span><strong>${stateNote}</strong>`;
     if(startable)b.onclick=()=>{
+      if(!selected&&state.selectedTodoIds.length===0){
+        state.childChoiceEvidence={
+          choiceSetRef:`ready-choice-set:${Date.now()}`,
+          selectedTaskRef:item.todo_id,
+          childSelectionOrder:1,
+          choices:items.filter(x=>Number.isFinite(x.difficulty)).map(x=>({todo_id:x.todo_id,difficulty:x.difficulty})),
+          at:new Date().toISOString()
+        };
+      }
       state.selectedTodoIds=selected
         ? state.selectedTodoIds.filter(x=>x!==item.todo_id)
         : [...state.selectedTodoIds,item.todo_id];
+      if(!state.selectedTodoIds.length)state.childChoiceEvidence=null;
       save();
       renderMission();
     };
@@ -335,6 +371,35 @@ function renderMission(){
   $('#soundName').textContent=state.sound;
   const labels=chosen.map(x=>x.label);
   $('#missionPreviewText').textContent=`${labels.length?labels.join(' · '):'과제를 선택해 주세요'} · ${state.targetMin}분`;
+  const signals=badgeSignals(),firstChosen=chosen[0]||null;
+  if(firstChosen){
+    const startBoundary=window.ReadyStartBoundaryV01;
+    startBoundary?.openPromptCycle?.({taskRef:firstChosen.todo_id,cycleRef:`ready-prompt-cycle:${localDateKey(new Date())}:${firstChosen.todo_id}`});
+    const plannerSnapshot=window.ReadySetPlanner?.snapshot?.()||{};
+    const today=localDateKey(new Date()),now=Date.now();
+    const nextStart=(plannerSnapshot.daily_availability_windows||[])
+      .filter(x=>x.confirmed!==false&&x.date===today&&typeof x.start==='string')
+      .map(x=>({ref:x.availability_id,at:`${today}T${x.start}:00`}))
+      .filter(x=>Number.isFinite(Date.parse(x.at))&&Date.parse(x.at)>now)
+      .sort((a,b)=>Date.parse(a.at)-Date.parse(b.at))[0];
+    if(nextStart)startBoundary?.scheduleAlarm?.({
+      taskRef:firstChosen.todo_id,
+      alarmRef:`ready-planner-start-alarm:${nextStart.ref}:${firstChosen.todo_id}`,
+      alarmAt:nextStart.at
+    });
+    const existing=signals.guidancePrompt;
+    if(!existing||existing.taskRef!==firstChosen.todo_id||existing.promptKind!=='MISSION_BRIEFING'){
+      const promptAt=Date.now();
+      signals.guidancePrompt={
+        promptEventRef:`ready-mission-briefing:${firstChosen.todo_id}:${promptAt}`,
+        taskRef:firstChosen.todo_id,
+        promptKind:'MISSION_BRIEFING',
+        promptText:'MISSION BRIEFING · 준비되면 작전 START',
+        at:new Date(promptAt).toISOString()
+      };
+      save();
+    }
+  }else if(signals.guidancePrompt){signals.guidancePrompt=null;save();}
 }
 $('#addTaskBtn').onclick=()=>{
   const v=$('#taskInput').value.trim();
@@ -446,6 +511,115 @@ $$('[data-sheet-sound]').forEach(b=>b.onclick=async()=>{
   renderFocus();
 });
 
+$('#replanAfterChangeBtn')?.addEventListener('click',()=>{
+  const snapshot=window.ReadySetPlanner?.snapshot?.()||{};
+  const candidates=[
+    ...(snapshot.schedule_commitments||[]).map(x=>({kind:'commitment',id:x.commitment_id,updated_at:x.updated_at})),
+    ...(snapshot.schedule_buffers||[]).map(x=>({kind:'buffer',id:x.buffer_id,updated_at:x.updated_at}))
+  ].filter(x=>x.id&&x.updated_at).sort((a,b)=>String(b.updated_at).localeCompare(String(a.updated_at)));
+  const latest=candidates[0];
+  if(!latest){toast('확인할 수 있는 일정 변경 기록이 없어요.');return}
+  const now=Date.now();
+  state.childReplanEvidence={
+    scheduleChangeRef:`ready-schedule-${latest.kind}:${latest.id}:${latest.updated_at}`,
+    priorPlanRef:`ready-prior-plan:${localDateKey(new Date())}:${state.selectedTodoIds.join(',')||'none'}`,
+    priorOrderedTaskRefs:[...state.selectedTodoIds],
+    childReplanActionRef:`ready-child-replan:${now}`
+  };
+  save();toast('일정 변경을 확인했어요. 새 순서를 고른 뒤 확정해 주세요.');
+});
+$('#confirmTaskOrderBtn')?.addEventListener('click',()=>{
+  if(state.selectedTodoIds.length<2){toast('과제를 두 개 이상 골라 순서를 정해 주세요.');return}
+  const now=Date.now();
+  state.childPlanSequenceEvidence={
+    choiceSetRef:`ready-sequence-set:${now}`,
+    orderedTaskRefs:[...state.selectedTodoIds],
+    sequenceConfirmActionRef:`ready-sequence-confirm:${now}`,
+    at:new Date(now).toISOString()
+  };
+  save();toast('이 순서로 진행하는 계획을 기록했어요.');
+});
+$('#mealStartBtn')?.addEventListener('click',()=>{
+  const signals=badgeSignals();
+  if(signals.activeMeal){toast('이미 식사 시작이 기록되어 있어요.');return}
+  const now=Date.now(),mealEventRef=`ready-meal:${now}`;
+  const prior=latestCompletedRecordBefore(now);
+  signals.activeMeal={mealEventRef,startedAt:new Date(now).toISOString(),priorSessionRef:prior?.id||null};
+  if(prior?.rev07){
+    const micro=(prior.plannerLinks||[]).find(x=>x.small_task===true);
+    const completed=(prior.plannerOutcomes||[]).find(x=>x?.ok&&x.todo_id===micro?.todo_id);
+    if(micro&&completed){
+      window.ReadyBadgeSourceObservationV01?.recordPreMealMicroComplete?.({
+        contract:prior.rev07,sessionId:prior.id,taskRef:micro.todo_id,
+        mealBufferRef:mealEventRef,smallTaskRef:`planner-small-task:${micro.todo_id}`,
+        completionEventRef:`ready-completion:${prior.id}:${micro.todo_id}`,at:new Date(now).toISOString()
+      });
+    }
+  }
+  save();toast('식사 시작을 기록했어요.');
+});
+$('#mealEndBtn')?.addEventListener('click',()=>{
+  const signals=badgeSignals(),meal=signals.activeMeal;
+  if(!meal){toast('먼저 식사 시작을 기록해 주세요.');return}
+  const now=Date.now();
+  signals.lastMeal={...meal,endedAt:new Date(now).toISOString(),mealEndActionRef:`ready-meal-end:${now}`};
+  signals.activeMeal=null;
+  signals.pendingStart={
+    type:'POST_MEAL_RESTART',
+    priorSessionRef:meal.priorSessionRef||null,
+    mealEventRef:meal.mealEventRef,
+    mealEndActionRef:signals.lastMeal.mealEndActionRef
+  };
+  save();toast('식사 끝을 기록했어요.');
+});
+$('#freeWindowStartBtn')?.addEventListener('click',()=>{
+  const open=currentOpenWindowEvidence();
+  if(!open){toast('지금은 확인된 빈시간 구간이 아니에요.');return}
+  const signals=badgeSignals(),now=Date.now();
+  signals.pendingStart={
+    type:'FREE_WINDOW_SELF_START',
+    openWindowRef:`ready-free-window:${open.date}:${open.start}:${open.end}`,
+    childStartActionRef:`ready-free-window-choice:${now}`
+  };
+  save();toast('지금 빈시간을 활용하는 선택으로 기록했어요.');
+});
+$('#extraTimeStartBtn')?.addEventListener('click',()=>{
+  const taskRef=state.selectedTodoIds?.[0]||'';
+  if(!taskRef){toast('먼저 시작할 과제를 하나 선택해 주세요.');return}
+  const now=Date.now(),signals=badgeSignals();
+  signals.pendingStart={type:'CHILD_EXTRA_TIME',taskRef,extraSlotRef:`ready-child-extra-slot:${taskRef}:${now}`,slotStartAt:new Date(now).toISOString(),slotEndAt:new Date(now+10*60*1000).toISOString(),childCreateActionRef:`ready-child-extra-time-create:${taskRef}:${now}`};
+  save();toast('내가 만든 10분으로 바로 시작할 준비를 기록했어요.');
+});
+$('#conditionStartBtn')?.addEventListener('click',()=>{
+  const signals=badgeSignals(),now=Date.now();
+  signals.pendingStart={
+    type:'START_DESPITE_CONDITION',
+    conditionEvidenceRef:`ready-child-condition:${now}`,
+    childStartActionRef:`ready-condition-start-choice:${now}`
+  };
+  save();toast('컨디션을 고려해 가능한 만큼 시작하는 선택으로 기록했어요.');
+});
+$('#taskRestartStartBtn')?.addEventListener('click',()=>{
+  const signals=badgeSignals(),now=Date.now();
+  signals.pendingStart={
+    type:'TASK_RESTART',
+    restartActionRef:`ready-child-task-restart:${now}`
+  };
+  save();toast('다시 꺼내 시작하는 선택으로 기록했어요.');
+});
+$('#preparationReadyBtn')?.addEventListener('click',()=>{
+  const taskRef=state.selectedTodoIds?.[0]||'';
+  if(!taskRef){toast('먼저 시작할 과제를 하나 선택해 주세요.');return}
+  const signals=badgeSignals(),now=Date.now();
+  signals.preparationCompleteEvidence={
+    taskRef,
+    checklistId:'READY_PRESTART_CHECKLIST_V1',
+    checkedItems:['TASK_MATERIALS_READY','WORKSPACE_READY'],
+    preparationConfirmActionRef:`ready-preparation-confirm:${taskRef}:${now}`,
+    at:new Date(now).toISOString()
+  };
+  save();toast('필요한 것과 시작할 자리를 준비한 기록을 남겼어요.');
+});
 $('#startBtn').onclick=async()=>{
   if(state.activeSession){toast('이미 진행 중인 작전이 있어요. 먼저 진행 중인 작전으로 돌아가 주세요.');nav('focus');return}
   if(!state.selectedTodoIds.length){toast('먼저 Planner가 준비한 오늘의 탐험을 선택해 주세요.');return}
@@ -490,6 +664,123 @@ $('#startBtn').onclick=async()=>{
     pausedAt:null,issueMs:0,completed:false,
     selected:[],tasks:labels,
     plannerLinks:started,
+    badgeStartContexts:(()=>{
+      const signals=badgeSignals(),contexts=[];
+      if(signals.pendingStart)contexts.push(structuredClone(signals.pendingStart));
+      const plannerSnapshotForStart=window.ReadySetPlanner?.snapshot?.()||{};
+      const todayForStart=localDateKey(new Date(now));
+      const boundaries=(plannerSnapshotForStart.daily_availability_windows||[])
+        .filter(x=>x.confirmed!==false&&x.date===todayForStart&&typeof x.start==='string')
+        .map(x=>({ref:`planner-availability:${x.availability_id}`,at:`${todayForStart}T${x.start}:00`}))
+        .filter(x=>Number.isFinite(Date.parse(x.at))&&now<=Date.parse(x.at))
+        .sort((a,b)=>Date.parse(a.at)-Date.parse(b.at));
+      if(boundaries[0])contexts.push({type:'EARLY_START_BOUNDARY',taskRef:firstLink.todo_id,boundaryRef:boundaries[0].ref,boundaryAt:boundaries[0].at,childStartActionRef:`ready-mission-start:${sessionId}:${firstLink.todo_id}:${now}`});
+      const startBoundary=window.ReadyStartBoundaryV01;
+      const startActionRef=`ready-mission-start:${sessionId}:${firstLink.todo_id}:${now}`;
+      const alarm=startBoundary?.currentAlarm?.(firstLink.todo_id)||null;
+      if(alarm&&Number.isFinite(Date.parse(alarm.alarmAt))){
+        const firedAt=alarm.firedAt?Date.parse(alarm.firedAt):NaN;
+        const qualifiesBefore=now<=Date.parse(alarm.alarmAt);
+        const qualifiesAfter=Number.isFinite(firedAt)&&firedAt<=now&&!!alarm.fireEventRef;
+        if(qualifiesBefore||qualifiesAfter)contexts.push({
+          type:'AUTHORITATIVE_ALARM_RESPONSE',
+          taskRef:firstLink.todo_id,alarmRef:alarm.alarmRef,alarmAt:alarm.alarmAt,
+          alarmFiredEventRef:alarm.fireEventRef||null,childStartActionRef:startActionRef
+        });
+      }
+      const promptCycle=startBoundary?.promptStatus?.(firstLink.todo_id)||null;
+      if(promptCycle?.cycleRef&&promptCycle?.openedAt&&!promptCycle.firstPromptAt&&!promptCycle.firstPromptEventRef){
+        contexts.push({
+          type:'AUTHORITATIVE_BEFORE_PROMPT',
+          taskRef:firstLink.todo_id,promptCycleRef:promptCycle.cycleRef,
+          promptCycleOpenedAt:promptCycle.openedAt,firstPromptAt:null,firstPromptEventRef:null,
+          childStartActionRef:startActionRef
+        });
+      }
+      signals.pendingStart=null;
+      const guidance=signals.guidancePrompt;
+      if(guidance?.taskRef===firstLink.todo_id&&guidance?.promptKind==='MISSION_BRIEFING'&&guidance?.promptEventRef){
+        contexts.push({
+          type:'NAMED_PROMPT_RESPONSE_START',
+          promptEventRef:guidance.promptEventRef,
+          promptKind:guidance.promptKind,
+          taskRef:firstLink.todo_id,
+          childStartActionRef:`ready-mission-start:${sessionId}:${firstLink.todo_id}:${now}`
+        });
+      }
+      signals.guidancePrompt=null;
+      const preparation=signals.preparationCompleteEvidence;
+      if(preparation?.taskRef===firstLink.todo_id&&preparation?.checklistId==='READY_PRESTART_CHECKLIST_V1'&&preparation?.preparationConfirmActionRef){
+        contexts.push({
+          type:'PREPARATION_TO_START',
+          taskRef:firstLink.todo_id,
+          checklistId:preparation.checklistId,
+          checkedItems:Array.isArray(preparation.checkedItems)?[...preparation.checkedItems]:[],
+          preparationConfirmActionRef:preparation.preparationConfirmActionRef
+        });
+      }
+      signals.preparationCompleteEvidence=null;
+      const choice=state.childChoiceEvidence;
+      const plannerSnapshot=window.ReadySetPlanner?.snapshot?.()||{};
+      const today=localDateKey(new Date());
+      const requiredTodos=(plannerSnapshot.dated_todos||[]).filter(x=>x.date===today&&x.required_today===true);
+      if(choice&&choice.selectedTaskRef===firstLink.todo_id&&firstLink.required_today!==true&&requiredTodos.length&&requiredTodos.every(x=>x.state==='COMPLETED')){
+        const completeRefs=requiredTodos.map(todo=>{
+          const event=[...(plannerSnapshot.progress_events||[])].reverse().find(e=>e.todo_id===todo.todo_id&&e.state==='COMPLETED');
+          return event?.event_id?`planner-progress:${event.event_id}`:null;
+        }).filter(Boolean);
+        if(completeRefs.length===requiredTodos.length)contexts.push({
+          type:'VOLUNTARY_EXTRA_AFTER_REQUIRED',
+          requiredSetRef:`planner-required-set:${today}:${requiredTodos.map(x=>x.todo_id).join(',')}`,
+          requiredCompleteEventRefs:completeRefs,
+          selectedExtraTaskRef:firstLink.todo_id,
+          extraChoiceRef:choice.choiceSetRef
+        });
+      }
+      if(choice&&choice.selectedTaskRef===firstLink.todo_id&&Array.isArray(choice.choices)){
+        const values=choice.choices.map(x=>Number(x.difficulty)).filter(Number.isFinite);
+        const selectedChoice=choice.choices.find(x=>x.todo_id===firstLink.todo_id);
+        const selectedDifficulty=Number(selectedChoice?.difficulty ?? firstLink.difficulty);
+        if(values.length>=2&&Number.isFinite(selectedDifficulty)){
+          const max=Math.max(...values),min=Math.min(...values);
+          if(max>min&&selectedDifficulty===max)contexts.push({
+            type:'CHILD_PRIORITY_CHOICE',mode:'HARD_FIRST',choiceSetRef:choice.choiceSetRef,
+            selectedTaskRef:firstLink.todo_id,childSelectionOrder:1,difficulty:selectedDifficulty
+          });
+          else if(max>min&&selectedDifficulty===min)contexts.push({
+            type:'CHILD_PRIORITY_CHOICE',mode:'EASY_FIRST',choiceSetRef:choice.choiceSetRef,
+            selectedTaskRef:firstLink.todo_id,childSelectionOrder:1,difficulty:selectedDifficulty
+          });
+        }
+      }
+      state.childChoiceEvidence=null;
+      const sequence=state.childPlanSequenceEvidence;
+      if(sequence&&Array.isArray(sequence.orderedTaskRefs)&&sequence.orderedTaskRefs.length>=2&&sequence.orderedTaskRefs[0]===firstLink.todo_id){
+        contexts.push({
+          type:'CHILD_SEQUENCE_PLAN',choiceSetRef:sequence.choiceSetRef,
+          orderedTaskRefs:[...sequence.orderedTaskRefs],
+          sequenceConfirmActionRef:sequence.sequenceConfirmActionRef
+        });
+      }
+      const replan=state.childReplanEvidence;
+      if(replan&&sequence&&Array.isArray(sequence.orderedTaskRefs)&&sequence.orderedTaskRefs.length){
+        const before=JSON.stringify(replan.priorOrderedTaskRefs||[]);
+        const after=JSON.stringify(sequence.orderedTaskRefs);
+        if(before!==after&&sequence.orderedTaskRefs[0]===firstLink.todo_id){
+          contexts.push({
+            type:'CHILD_PLAN_ADAPTATION',
+            scheduleChangeRef:replan.scheduleChangeRef,
+            priorPlanRef:replan.priorPlanRef,
+            childReplanActionRef:replan.childReplanActionRef,
+            newPlanRef:sequence.choiceSetRef,
+            performedTaskRef:firstLink.todo_id
+          });
+        }
+      }
+      state.childPlanSequenceEvidence=null;
+      state.childReplanEvidence=null;
+      return contexts;
+    })(),
     // Bind the central learner at task start; a later account/child switch
     // cannot reattribute this completed interaction to the new learner.
     centralLearningScope:(()=>{
@@ -518,6 +809,24 @@ function fmt(ms){
   const m=Math.floor(ms/60),s=ms%60;
   return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
+function renderChunkProgress(){
+  const panel=$('#chunkPanel'),root=$('#chunkProgress');
+  if(!panel||!root)return;
+  const s=state.activeSession;
+  const contract=window.ReadySetRev07?.contract?.();
+  const task=contract?.tasks?.find(x=>x.task_id===contract.active_task_id);
+  const plan=s?.chunkPlans?.[task?.task_id||''];
+  if(!plan){root.innerHTML='';return}
+  root.innerHTML=plan.chunks.map((chunk,index)=>`<button type="button" data-chunk-index="${index}" class="${chunk.completed?'on':''}"><span><b>${escapeHtml(chunk.label)}</b></span><strong>${chunk.completed?'완료':'완료 표시'}</strong></button>`).join('');
+  $$('[data-chunk-index]',root).forEach(btn=>btn.onclick=()=>{
+    const i=Number(btn.dataset.chunkIndex);
+    const current=state.activeSession?.chunkPlans?.[task.task_id];
+    if(!current?.chunks?.[i])return;
+    current.chunks[i].completed=true;
+    current.chunks[i].completedRef=`ready-child-chunk-complete:${s.id}:${task.task_id}:${i}:${Date.now()}`;
+    save();renderChunkProgress();
+  });
+}
 function renderFocus(){
   const s=state.activeSession;
   if(!s){if($('#focusView')?.classList.contains('active'))nav('mission');return}
@@ -532,6 +841,7 @@ function renderFocus(){
   $('#startClock').textContent=new Date(s.startAt).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',hour12:false});
   applyGuide($('#focusGuideMini'));
   updateBgmStatus();
+  renderChunkProgress();
   tickFocus();
 }
 function tickFocus(){
@@ -547,23 +857,251 @@ function tickFocus(){
   $('#hourHand').style.transform=`rotate(${((d.getHours()%12)*30)+d.getMinutes()*.5}deg)`;
   if(!s.completed&&$('#focusView').classList.contains('active'))requestAnimationFrame(tickFocus);
 }
+$('#radioBtn')?.addEventListener('click',()=>{$('#radioSheet').hidden=false;});
+$$('[data-close-radio]').forEach(b=>b.onclick=()=>$('#radioSheet').hidden=true);
+$$('[data-radio-action]').forEach(btn=>btn.onclick=()=>{
+  const action=btn.dataset.radioAction;
+  const s=state.activeSession;if(!s)return;
+  const contract=window.ReadySetRev07?.contract?.();
+  const task=contract?.tasks?.find(x=>x.task_id===contract.active_task_id);
+  if(!task){toast('현재 과제를 확인할 수 없어요.');return}
+  const taskRef=task.planner_todo_id||task.task_id,now=Date.now(),at=new Date(now).toISOString();
+  if(action==='REVIEW')$('#reviewBtn')?.click();
+  else if(action==='CHUNK')$('#chunkTaskBtn')?.click();
+  else if(action==='PERSIST')$('#persistBtn')?.click();
+  else if(action==='SINGLE_FOCUS'){
+    window.ReadyBadgeSourceObservationV01?.recordSingleTaskFocus?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      focusCommitActionRef:`ready-radio-single-focus:${s.id}:${task.task_id}:${now}`,at
+    });
+    toast('지금 이 한 과제에 집중하기로 한 선택을 기록했어요.');
+  }
+  else if(action==='QUIET_IMMERSION'){
+    s.quietImmersionEvidence=s.quietImmersionEvidence||{};
+    s.quietImmersionEvidence[taskRef]={
+      taskRef,
+      quietModeActionRef:`ready-radio-quiet-immersion:${s.id}:${task.task_id}:${now}`,
+      at
+    };
+    save();
+    toast('조용히 몰입 모드로 이어가기로 한 선택을 기록했어요.');
+  }
+  else if(action==='REREAD'){
+    window.ReadyBadgeSourceObservationV01?.recordRereadCheck?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      rereadActionRef:`ready-radio-reread:${s.id}:${task.task_id}:${now}`,at
+    });
+    toast('다시 읽은 행동을 기록했어요.');
+  }else if(action==='REFLECT'){
+    window.ReadyBadgeSourceObservationV01?.recordReflectBeforeProceed?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      reflectionActionRef:`ready-radio-reflect:${s.id}:${task.task_id}:${now}`,at
+    });
+    toast('다시 생각한 행동을 기록했어요.');
+  }else if(action==='ROOT_CAUSE'){
+    const note=String($('#radioNote')?.value||'').trim();
+    if(!note){toast('왜 틀렸는지 내 말로 적어 주세요.');return}
+    window.ReadyBadgeSourceObservationV01?.recordRootCause?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      causeArtifactRef:`ready-radio-root-cause:${s.id}:${task.task_id}:${now}`,causeText:note,at
+    });
+    toast('틀린 원인을 찾은 기록을 남겼어요.');
+  }else if(action==='CONCEPT'){
+    const note=String($('#radioNote')?.value||'').trim();
+    if(!note){toast('이해한 내용을 내 말로 적어 주세요.');return}
+    window.ReadyBadgeSourceObservationV01?.recordConceptUnderstanding?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      explanationArtifactRef:`ready-radio-concept:${s.id}:${task.task_id}:${now}`,explanationText:note,at
+    });
+    toast('이해한 내용을 기록했어요.');
+  }else if(action==='SELF_EXPLAIN'){
+    const note=String($('#radioNote')?.value||'').trim();
+    if(!note){toast('설명한 내용을 적어 주세요.');return}
+    window.ReadyBadgeSourceObservationV01?.recordSelfExplanation?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      explanationArtifactRef:`ready-radio-self-explain:${s.id}:${task.task_id}:${now}`,explanationText:note,at
+    });
+    toast('내 말로 설명한 기록을 남겼어요.');
+  }else if(action==='STRATEGY_SWITCH'){
+    const note=String($('#radioNote')?.value||'').trim();
+    const parts=note.split(/\s*(?:→|->)\s*/).map(x=>x.trim()).filter(Boolean);
+    if(parts.length!==2||parts[0]===parts[1]){toast('예: 풀어쓰기 → 그림으로 보기처럼 적어 주세요.');return}
+    const switchActionRef=`ready-radio-strategy-switch:${s.id}:${task.task_id}:${now}`;
+    window.ReadyBadgeSourceObservationV01?.recordStrategySwitch?.({
+      contract:s.rev07,sessionId:s.id,taskRef,fromStrategy:parts[0],toStrategy:parts[1],
+      switchActionRef,at
+    });
+    s.blockResolutionEvidence=s.blockResolutionEvidence||{};
+    s.blockResolutionEvidence[task.task_id]={taskRef,strategySwitchActionRef:switchActionRef,at};
+    save();
+    toast('다른 방법으로 바꾼 기록을 남겼어요.');
+  }else if(action==='DISTRACTION'){
+    window.ReadyBadgeSourceObservationV01?.recordDistractionResistance?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      resistanceActionRef:`ready-radio-distraction-resist:${s.id}:${task.task_id}:${now}`,at
+    });
+    toast('딴짓 유혹을 이긴 행동을 기록했어요.');
+  }else if(action==='SELF_NOTICE_RETURN'){
+    window.ReadyBadgeSourceObservationV01?.recordSelfNoticeReturn?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      noticeActionRef:`ready-radio-self-notice:${s.id}:${task.task_id}:${now}`,
+      returnActionRef:`ready-radio-self-return:${s.id}:${task.task_id}:${now}`,at
+    });
+    toast('스스로 알아차리고 돌아온 행동을 기록했어요.');
+  }else if(action==='FOCUS_RETURN'){
+    window.ReadyBadgeSourceObservationV01?.recordFocusReturn?.({
+      contract:s.rev07,sessionId:s.id,taskRef,
+      returnActionRef:`ready-radio-focus-return:${s.id}:${task.task_id}:${now}`,at
+    });
+    toast('다시 집중한 행동을 기록했어요.');
+  }else if(action==='MEANINGFUL_OVERRUN'){
+    const note=String($('#radioNote')?.value||'').trim();
+    if(!note){toast('왜 더 해볼 가치가 있었는지 적어 주세요.');return}
+    s.meaningfulOverrunEvidence={
+      taskId:task.task_id,taskRef,meaningText:note,
+      meaningArtifactRef:`ready-radio-meaningful-overrun:${s.id}:${task.task_id}:${now}`,at
+    };
+    save();toast('시간을 넘겨 계속한 이유를 기록했어요.');
+  }else if(action==='STOP_RIGHT'){
+    s.stopRightEvidence={
+      taskId:task.task_id,taskRef,
+      stopActionRef:`ready-radio-stop-right:${s.id}:${task.task_id}:${now}`,at
+    };
+    save();toast('여기서 멈추기로 한 선택을 기록했어요.');
+  }
+  if($('#radioNote'))$('#radioNote').value='';
+  $('#radioSheet').hidden=true;
+});
+$('#chunkTaskBtn')?.addEventListener('click',()=>{
+  const s=state.activeSession;if(!s)return;
+  const contract=window.ReadySetRev07?.contract?.();
+  const task=contract?.tasks?.find(x=>x.task_id===contract.active_task_id);
+  if(!task){toast('현재 과제를 확인할 수 없어요.');return}
+  $('#chunkPanel').hidden=false;
+  $('#chunkInput1').focus();
+});
+$('#saveChunkPlanBtn')?.addEventListener('click',()=>{
+  const s=state.activeSession;if(!s)return;
+  const contract=window.ReadySetRev07?.contract?.();
+  const task=contract?.tasks?.find(x=>x.task_id===contract.active_task_id);
+  if(!task)return;
+  const labels=[$('#chunkInput1').value,$('#chunkInput2').value].map(x=>String(x||'').trim()).filter(Boolean);
+  if(labels.length<2){toast('단계를 두 개 이상 적어 주세요.');return}
+  const now=Date.now();
+  s.chunkPlans=s.chunkPlans||{};
+  s.chunkPlans[task.task_id]={
+    taskId:task.task_id,
+    plannerTodoId:task.planner_todo_id||null,
+    chunkConfirmActionRef:`ready-child-chunk-confirm:${s.id}:${task.task_id}:${now}`,
+    chunks:labels.map((label,index)=>({
+      ref:`ready-child-chunk:${s.id}:${task.task_id}:${index+1}:${now}`,
+      label,completed:false,completedRef:null
+    }))
+  };
+  save();renderChunkProgress();toast('작은 단계로 나눈 계획을 기록했어요.');
+});
+$('#reviewBtn')?.addEventListener('click',()=>{
+  const s=state.activeSession;if(!s)return;
+  const contract=window.ReadySetRev07?.contract?.();
+  const task=contract?.tasks?.find(x=>x.task_id===contract.active_task_id);
+  if(!task){toast('현재 과제를 확인할 수 없어요.');return}
+  const now=Date.now();
+  s.reviewEvidence=s.reviewEvidence||{};
+  s.reviewEvidence[task.planner_todo_id||task.task_id]={
+    checkActionRef:`ready-child-review:${s.id}:${task.task_id}:${now}`,
+    at:new Date(now).toISOString()
+  };
+  save();toast('검토 완료를 기록했어요.');
+});
 $('#pauseBtn').onclick=async()=>{
   const s=state.activeSession;if(!s)return;
-  if(s.pausedAt){await resumePausedSession();return}
+  if(s.pausedAt){await resumePausedSession('FOCUS_PAUSE_BUTTON');return}
   s.pausedAt=Date.now();s.pauseReason='';await pauseBgm();save();renderFocus();$('#pauseSheet').hidden=false;
 };
-async function resumePausedSession(){
+$('#persistBtn')?.addEventListener('click',()=>{
+  const s=state.activeSession;if(!s)return;
+  const contract=window.ReadySetRev07?.contract?.();
+  const task=contract?.tasks?.find(x=>x.task_id===contract.active_task_id);
+  if(!task){toast('현재 과제를 확인할 수 없어요.');return}
+  const now=Date.now();
+  s.persistenceEvidence={
+    taskId:task.task_id,
+    plannerTodoId:task.planner_todo_id||null,
+    blockedEvidenceRef:`ready-child-blocked:${s.id}:${task.task_id}:${now}`,
+    continueActionRef:`ready-child-continue:${s.id}:${task.task_id}:${now}`,
+    at:new Date(now).toISOString()
+  };
+  save();toast('막힌 지점에서도 계속 시도한 기록을 남겼어요.');
+});
+async function resumePausedSession(resumeSource=''){
   const s=state.activeSession;if(!s||!s.pausedAt)return;
-  s.issueMs+=(Date.now()-s.pausedAt);s.pausedAt=null;save();$('#pauseSheet').hidden=true;renderFocus();
+  const pauseStartedAt=s.pausedAt;
+  const resumedAt=new Date().toISOString();
+  if(s.breakPlan?.type==='SCHEDULED'){
+    window.ReadyBadgeSourceObservationV01?.recordScheduledBreakReturn?.({
+      contract:s.rev07,sessionId:s.id,breakRef:s.breakPlan.breakRef,
+      scheduledReturnAt:s.breakPlan.scheduledReturnAt,resumeActionRef:resumeSource,at:resumedAt
+    });
+  }else if(s.breakPlan?.type==='FIVE_MIN_TIMER'){
+    if(s.breakPlan.timerExpiredAt){
+      window.ReadyBadgeSourceObservationV01?.recordBreakTimerReturn?.({
+        contract:s.rev07,sessionId:s.id,timerRef:s.breakPlan.timerRef,
+        timerExpiredAt:s.breakPlan.timerExpiredAt,resumeActionRef:resumeSource,at:resumedAt
+      });
+    }
+  }else{
+    window.ReadyBadgeSourceObservationV01?.recordPauseReturn?.({
+      contract:s.rev07,sessionId:s.id,pauseStartedAt,pauseReason:s.pauseReason||'',resumeSource,at:resumedAt
+    });
+  }
+  if(s.breakTimerHandle){clearTimeout(s.breakTimerHandle);s.breakTimerHandle=null}
+  s.breakPlan=null;
+  s.issueMs+=(Date.now()-pauseStartedAt);s.pausedAt=null;save();$('#pauseSheet').hidden=true;renderFocus();
   if(s.sound!=='OFF')await resumeBgm(s.sound);
 }
+function currentRestBuffer(){
+  const now=new Date(),today=localDateKey(now);
+  const rows=window.ReadySetPlanner?.scheduleBuffersByDate?.(today)||[];
+  return rows.find(x=>{
+    if(x.kind!=='REST'||!x.confirmed||!x.start_at||!x.end_at)return false;
+    const start=new Date(x.start_at),end=new Date(x.end_at);
+    return Number.isFinite(start.getTime())&&Number.isFinite(end.getTime())&&now>=start&&now<=end;
+  })||null;
+}
+$('#scheduledBreakBtn')?.addEventListener('click',()=>{
+  const s=state.activeSession;if(!s||!s.pausedAt)return;
+  const rest=currentRestBuffer();
+  if(!rest){toast('지금 적용되는 정해진 휴식 시간이 없어요.');return}
+  s.breakPlan={
+    type:'SCHEDULED',
+    breakRef:`ready-rest-buffer:${rest.buffer_id||rest.start_at}`,
+    scheduledReturnAt:rest.end_at
+  };
+  s.pauseReason='정해진 휴식';
+  save();toast('정해진 휴식으로 기록했어요.');
+});
+$('#fiveMinuteBreakBtn')?.addEventListener('click',()=>{
+  const s=state.activeSession;if(!s||!s.pausedAt)return;
+  if(s.breakTimerHandle)clearTimeout(s.breakTimerHandle);
+  const timerRef=`ready-5m-timer:${s.id}:${s.pausedAt}`;
+  s.breakPlan={type:'FIVE_MIN_TIMER',timerRef,expectedExpireAt:new Date(Date.now()+300000).toISOString(),timerExpiredAt:null};
+  s.pauseReason='5분 휴식';
+  s.breakTimerHandle=setTimeout(()=>{
+    const current=state.activeSession;
+    if(!current?.pausedAt||current.breakPlan?.timerRef!==timerRef)return;
+    current.breakPlan.timerExpiredAt=new Date().toISOString();
+    current.breakTimerHandle=null;
+    save();toast('5분 휴식이 끝났어요. 다시 시작해 볼까요?');
+  },300000);
+  save();toast('5분 휴식을 시작했어요.');
+});
 $$('[data-pause-reason]').forEach(b=>b.onclick=()=>{
   const s=state.activeSession;if(!s)return;
   s.pauseReason=b.dataset.pauseReason;s.pauseEvents=s.pauseEvents||[];s.pauseEvents.push({reason:s.pauseReason,at:Date.now()});
-  $$('[data-pause-reason]').forEach(x=>x.classList.toggle('on',x===b));save();
+  $('[data-pause-reason]').forEach(x=>x.classList.toggle('on',x===b));save();
 });
 $$('[data-close-pause]').forEach(b=>b.onclick=()=>$('#pauseSheet').hidden=true);
-$('#resumeFromSheetBtn').onclick=resumePausedSession;
+$('#resumeFromSheetBtn').onclick=()=>resumePausedSession('PAUSE_SHEET_BUTTON');
 $('#completeBtn').onclick=()=>{$('#outcomeModal').hidden=false};
 function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOutcomes=[]}={}){
   const s=state.activeSession;if(!s)return null;
@@ -596,6 +1134,65 @@ function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOu
       member_id:row.member_id??boundCentral.member_id,
       ...(centralCheckpoint?{centralCheckpoint}:{})};
   });
+  const stopEvidence=s.stopRightEvidence;
+  if(stopEvidence){
+    window.ReadyBadgeSourceObservationV01?.recordStopAtRightTime?.({
+      contract:s.rev07,sessionId:s.id,taskRef:stopEvidence.taskRef,
+      stopActionRef:stopEvidence.stopActionRef,
+      sessionEndRef:`ready-session-end:${s.id}:${s.endAt}`,
+      at:new Date(s.endAt).toISOString()
+    });
+  }
+  for(const outcome of (plannerOutcomes||[])){
+    if(outcome?.state!=='COMPLETED')continue;
+    const link=(s.plannerLinks||[]).find(x=>x.todo_id===outcome.todo_id);
+    const review=s.reviewEvidence?.[outcome.todo_id];
+    if(link&&review){
+      window.ReadyBadgeSourceObservationV01?.recordFastCompleteWithCheck?.({
+        contract:s.rev07,sessionId:s.id,taskRef:outcome.todo_id,
+        plannedMinutes:link.estimated_minutes,actualMinutes:outcome.actual_minutes,
+        checkActionRef:review.checkActionRef,
+        completionEventRef:`ready-session-complete:${s.id}:${outcome.todo_id}`,
+        at:new Date(s.endAt).toISOString()
+      });
+      window.ReadyBadgeSourceObservationV01?.recordCarefulComplete?.({
+        contract:s.rev07,sessionId:s.id,taskRef:outcome.todo_id,
+        plannedMinutes:link.estimated_minutes,actualMinutes:outcome.actual_minutes,
+        checkActionRef:review.checkActionRef,
+        completionEventRef:`ready-session-complete:${s.id}:${outcome.todo_id}`,
+        at:new Date(s.endAt).toISOString()
+      });
+    }
+    const quiet=s.quietImmersionEvidence?.[outcome.todo_id];
+    if(quiet&&quiet.taskRef===outcome.todo_id){
+      window.ReadyBadgeSourceObservationV01?.recordQuietImmersionCompletion?.({
+        contract:s.rev07,sessionId:s.id,taskRef:outcome.todo_id,
+        quietModeActionRef:quiet.quietModeActionRef,
+        completionEventRef:`ready-session-complete:${s.id}:${outcome.todo_id}`,
+        at:new Date(s.endAt).toISOString()
+      });
+    }
+    const focusCommit=(s.rev07?.badge_source_observations||[]).find(x=>
+      x?.behavior_code==='SINGLE_TASK_FOCUS'&&x?.payload?.taskRef===outcome.todo_id);
+    if(focusCommit){
+      window.ReadyBadgeSourceObservationV01?.recordSustainedFocusCompletion?.({
+        contract:s.rev07,sessionId:s.id,taskRef:outcome.todo_id,
+        focusCommitEventRef:focusCommit.event_id,
+        completionEventRef:`ready-session-complete:${s.id}:${outcome.todo_id}`,
+        at:new Date(s.endAt).toISOString()
+      });
+    }
+    const overrun=s.meaningfulOverrunEvidence;
+    if(link&&overrun&&overrun.taskRef===outcome.todo_id){
+      window.ReadyBadgeSourceObservationV01?.recordMeaningfulOverrun?.({
+        contract:s.rev07,sessionId:s.id,taskRef:outcome.todo_id,
+        plannedMinutes:link.estimated_minutes,actualMinutes:outcome.actual_minutes,
+        meaningArtifactRef:overrun.meaningArtifactRef,meaningText:overrun.meaningText,
+        completionEventRef:`ready-session-complete:${s.id}:${outcome.todo_id}`,
+        at:new Date(s.endAt).toISOString()
+      });
+    }
+  }
   const rec={...s,focusMs:t.focus,issueMs:t.issue,deltaMs:t.focus-s.targetMs,
     outcomeState,plannerOutcomes,taskOutcomes:scopedOutcomes};
   state.records.unshift(rec);state.records=state.records.slice(0,200);
