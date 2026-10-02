@@ -634,7 +634,8 @@ $('#startBtn').onclick=async()=>{
       }
       if(choice&&choice.selectedTaskRef===firstLink.todo_id&&Array.isArray(choice.choices)){
         const values=choice.choices.map(x=>Number(x.difficulty)).filter(Number.isFinite);
-        const selectedDifficulty=Number(firstLink.difficulty);
+        const selectedChoice=choice.choices.find(x=>x.todo_id===firstLink.todo_id);
+        const selectedDifficulty=Number(selectedChoice?.difficulty ?? firstLink.difficulty);
         if(values.length>=2&&Number.isFinite(selectedDifficulty)){
           const max=Math.max(...values),min=Math.min(...values);
           if(max>min&&selectedDifficulty===max)contexts.push({
@@ -915,11 +916,13 @@ async function resumePausedSession(resumeSource=''){
       contract:s.rev07,sessionId:s.id,breakRef:s.breakPlan.breakRef,
       scheduledReturnAt:s.breakPlan.scheduledReturnAt,resumeActionRef:resumeSource,at:resumedAt
     });
-  }else if(s.breakPlan?.type==='FIVE_MIN_TIMER'&&s.breakPlan.timerExpiredAt){
-    window.ReadyBadgeSourceObservationV01?.recordBreakTimerReturn?.({
-      contract:s.rev07,sessionId:s.id,timerRef:s.breakPlan.timerRef,
-      timerExpiredAt:s.breakPlan.timerExpiredAt,resumeActionRef:resumeSource,at:resumedAt
-    });
+  }else if(s.breakPlan?.type==='FIVE_MIN_TIMER'){
+    if(s.breakPlan.timerExpiredAt){
+      window.ReadyBadgeSourceObservationV01?.recordBreakTimerReturn?.({
+        contract:s.rev07,sessionId:s.id,timerRef:s.breakPlan.timerRef,
+        timerExpiredAt:s.breakPlan.timerExpiredAt,resumeActionRef:resumeSource,at:resumedAt
+      });
+    }
   }else{
     window.ReadyBadgeSourceObservationV01?.recordPauseReturn?.({
       contract:s.rev07,sessionId:s.id,pauseStartedAt,pauseReason:s.pauseReason||'',resumeSource,at:resumedAt
