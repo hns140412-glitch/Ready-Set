@@ -271,6 +271,39 @@
 
 
 
+
+  function recordChildChunkedTask({contract,sessionId,taskRef,childChunkRefs,chunkConfirmActionRef,completedChunkRefs,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),confirm=clean(chunkConfirmActionRef,180);
+    const chunks=Array.isArray(childChunkRefs)?childChunkRefs.map(x=>clean(x,160)).filter(Boolean):[];
+    const completed=Array.isArray(completedChunkRefs)?completedChunkRefs.map(x=>clean(x,160)).filter(Boolean):[];
+    if(!contract||!session||!task||chunks.length<2||!confirm||completed.length!==chunks.length||chunks.some(x=>!completed.includes(x)))return null;
+    return record(contract,{
+      event_id:\`ready_badge_chunked_\${session}_\${task}\`,
+      event_family:'GOAL_COMPLETE',
+      behavior_code:'CHILD_CHUNKED_TASK_COMPLETE',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_CHILD_CHUNKED_TASK_V1',
+      evidence_ref:\`ready-child-chunked:\${session}:\${task}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,childChunkRefs:chunks,chunkConfirmActionRef:confirm,completedChunkRefs:completed}
+    });
+  }
+
+  function recordChildPlanAdaptation({contract,sessionId,scheduleChangeRef,priorPlanRef,childReplanActionRef,newPlanRef,performedTaskRef,at}={}){
+    const session=clean(sessionId,160),change=clean(scheduleChangeRef,180),prior=clean(priorPlanRef,180),action=clean(childReplanActionRef,180),plan=clean(newPlanRef,180),performed=clean(performedTaskRef,180);
+    if(!contract||!session||!change||!prior||!action||!plan||!performed)return null;
+    return record(contract,{
+      event_id:\`ready_badge_plan_adapt_\${session}_\${performed}\`,
+      event_family:'PLAN_ADAPTATION',
+      behavior_code:'CHILD_PLAN_ADAPTATION',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_CHILD_REPLAN_AFTER_CHANGE_V1',
+      evidence_ref:\`ready-child-plan-adaptation:\${session}:\${performed}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,scheduleChangeRef:change,priorPlanRef:prior,childReplanActionRef:action,newPlanRef:plan,performedTaskRef:performed}
+    });
+  }
+
   function recordPersistToComplete({contract,sessionId,taskRef,blockedEvidenceRef,continueActionRef,completionEventRef,at}={}){
     const session=clean(sessionId,160),task=clean(taskRef,180),blocked=clean(blockedEvidenceRef,180),continued=clean(continueActionRef,180),completed=clean(completionEventRef,180);
     if(!contract||!session||!task||!blocked||!continued||!completed)return null;
@@ -384,6 +417,6 @@
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
   });
 })();
