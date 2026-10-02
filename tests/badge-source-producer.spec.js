@@ -273,3 +273,16 @@ test('Ready fail-closes seven minimal badge producer contracts and dedupes ident
   expect(result.observations.filter(x=>x.behavior_code==='TIMER_RETURN')).toHaveLength(1);
   expect(result.duplicateEventId).toBe(result.observations.find(x=>x.behavior_code==='TIMER_RETURN').event_id);
 });
+
+
+test('Ready preserves explicit child selection order instead of Planner order', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  const rows=await page.evaluate((today)=>{
+    const p=window.ReadySetPlanner;
+    p.upsertDatedTodo({todo_id:'choice_order_a',date:today,label:'A',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',order:1,difficulty:5});
+    p.upsertDatedTodo({todo_id:'choice_order_b',date:today,label:'B',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED',order:2,difficulty:1});
+    return p.linkTodayItems(['choice_order_b','choice_order_a'],{allowed_states:['PLANNED']});
+  },todayKey());
+  expect(rows.map(x=>x.todo_id)).toEqual(['choice_order_b','choice_order_a']);
+  expect(rows.map(x=>x.child_selection_order)).toEqual([1,2]);
+});
