@@ -437,3 +437,23 @@ test('Ready emits WARM_START when the child explicitly chooses the easiest avail
   const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
   expect(evidence.filter(x=>x.behavior_code==='WARM_START')).toHaveLength(1);
 });
+
+
+test('Ready emits SELF_PLANNED_SEQUENCE only after explicit child order confirmation', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>{
+    const p=window.ReadySetPlanner;
+    p.upsertDatedTodo({todo_id:'sequence_a',date:today,label:'첫 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'});
+    p.upsertDatedTodo({todo_id:'sequence_b',date:today,label:'둘째 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'});
+  },todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="sequence_b"]').click();
+  await page.locator('[data-todo-id="sequence_a"]').click();
+  await page.locator('#confirmTaskOrderBtn').click();
+  await page.locator('#startBtn').click();
+  const contract=await page.evaluate(()=>window.ReadySetRev07.contract());
+  const planned=contract.badge_source_observations.find(x=>x.behavior_code==='SELF_PLANNED_SEQUENCE');
+  expect(planned).toBeTruthy();
+  expect(planned.payload.orderedTaskRefs).toEqual(['sequence_b','sequence_a']);
+  expect(contract.tasks[0].planner_todo_id).toBe('sequence_b');
+});
