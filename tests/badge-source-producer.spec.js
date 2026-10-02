@@ -982,8 +982,12 @@ test('Ready emits QUIET_IMMERSION only after explicit quiet-mode selection and s
   await page.locator('#completeBtn').click();
   const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
   await page.locator(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`).click();
+  await page.locator('#rev07ConfirmEnd').click();
 
-  observations=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  observations=await page.evaluate(()=>{
+    const state=JSON.parse(localStorage.getItem('readyset_state')||'{}');
+    return state.records?.[0]?.rev07?.badge_source_observations||[];
+  });
   const rows=observations.filter(x=>x.behavior_code==='QUIET_IMMERSION');
   expect(rows).toHaveLength(1);
   expect(rows[0]).toMatchObject({
