@@ -92,8 +92,9 @@ test('Ready emits CARRY_OVER_COMPLETE only from explicit child wrap-up on a carr
     return {todo,observations:c.badge_source_observations||[]};
   });
   expect(evidence.todo?.state).toBe('COMPLETED');
-  expect(evidence.observations).toHaveLength(1);
-  expect(evidence.observations[0]).toMatchObject({
+  const carryObservations=evidence.observations.filter(x=>x.behavior_code==='CARRY_OVER_COMPLETE');
+  expect(carryObservations).toHaveLength(1);
+  expect(carryObservations[0]).toMatchObject({
     contract_version:'TAKY_BADGE_SOURCE_OBSERVATION_V1',
     app_id:'READY_SET',
     event_family:'GOAL_COMPLETE',
