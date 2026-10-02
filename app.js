@@ -46,7 +46,8 @@ const initial={
   activeSession:null,
   recordingMeta:null,
   badgeSignals:{activeMeal:null,lastMeal:null,pendingStart:null},
-  childChoiceEvidence:null
+  childChoiceEvidence:null,
+  childPlanSequenceEvidence:null
 };
 
 let state=load();
@@ -476,6 +477,17 @@ $$('[data-sheet-sound]').forEach(b=>b.onclick=async()=>{
   renderFocus();
 });
 
+$('#confirmTaskOrderBtn')?.addEventListener('click',()=>{
+  if(state.selectedTodoIds.length<2){toast('과제를 두 개 이상 골라 순서를 정해 주세요.');return}
+  const now=Date.now();
+  state.childPlanSequenceEvidence={
+    choiceSetRef:`ready-sequence-set:${now}`,
+    orderedTaskRefs:[...state.selectedTodoIds],
+    sequenceConfirmActionRef:`ready-sequence-confirm:${now}`,
+    at:new Date(now).toISOString()
+  };
+  save();toast('이 순서로 진행하는 계획을 기록했어요.');
+});
 $('#mealStartBtn')?.addEventListener('click',()=>{
   const signals=badgeSignals();
   if(signals.activeMeal){toast('이미 식사 시작이 기록되어 있어요.');return}
@@ -585,6 +597,15 @@ $('#startBtn').onclick=async()=>{
         }
       }
       state.childChoiceEvidence=null;
+      const sequence=state.childPlanSequenceEvidence;
+      if(sequence&&Array.isArray(sequence.orderedTaskRefs)&&sequence.orderedTaskRefs.length>=2&&sequence.orderedTaskRefs[0]===firstLink.todo_id){
+        contexts.push({
+          type:'CHILD_SEQUENCE_PLAN',choiceSetRef:sequence.choiceSetRef,
+          orderedTaskRefs:[...sequence.orderedTaskRefs],
+          sequenceConfirmActionRef:sequence.sequenceConfirmActionRef
+        });
+      }
+      state.childPlanSequenceEvidence=null;
       return contexts;
     })(),
     // Bind the central learner at task start; a later account/child switch
