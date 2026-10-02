@@ -267,6 +267,23 @@
   }
 
 
+
+  function recordVoluntaryExtraAfterRequiredComplete({contract,sessionId,requiredSetRef,requiredCompleteEventRefs,selectedExtraTaskRef,extraChoiceRef,startedTaskRef,at}={}){
+    const session=clean(sessionId,160),required=clean(requiredSetRef,180),selected=clean(selectedExtraTaskRef,180),choice=clean(extraChoiceRef,180),started=clean(startedTaskRef,180);
+    const completed=Array.isArray(requiredCompleteEventRefs)?requiredCompleteEventRefs.map(x=>clean(x,180)).filter(Boolean):[];
+    if(!contract||!session||!required||!completed.length||!selected||!choice||!started||selected!==started)return null;
+    return record(contract,{
+      event_id:\`ready_badge_extra_after_required_\${session}_\${selected}\`,
+      event_family:'EXTRA_TASK',
+      behavior_code:'VOLUNTARY_EXTRA_AFTER_REQUIRED_COMPLETE',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_VOLUNTARY_EXTRA_CHOICE_V1',
+      evidence_ref:\`ready-extra-after-required:\${session}:\${selected}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,requiredSetRef:required,requiredCompleteEventRefs:completed,selectedExtraTaskRef:selected,extraChoiceRef:choice,startedTaskRef:started}
+    });
+  }
+
   function recordChildSequencePlan({contract,sessionId,choiceSetRef,orderedTaskRefs,sequenceConfirmActionRef,startedTaskRef,at}={}){
     const session=clean(sessionId,160),choiceSet=clean(choiceSetRef,180),confirm=clean(sequenceConfirmActionRef,180),started=clean(startedTaskRef,180);
     const ordered=Array.isArray(orderedTaskRefs)?orderedTaskRefs.map(x=>clean(x,160)).filter(Boolean):[];
@@ -303,6 +320,6 @@
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
   });
 })();
