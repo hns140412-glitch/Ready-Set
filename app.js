@@ -555,13 +555,64 @@ $('#pauseBtn').onclick=async()=>{
 async function resumePausedSession(resumeSource=''){
   const s=state.activeSession;if(!s||!s.pausedAt)return;
   const pauseStartedAt=s.pausedAt;
-  window.ReadyBadgeSourceObservationV01?.recordPauseReturn?.({
-    contract:s.rev07,sessionId:s.id,pauseStartedAt,pauseReason:s.pauseReason||'',resumeSource,at:new Date().toISOString()
-  });
+  const resumedAt=new Date().toISOString();
+  if(s.breakPlan?.type==='SCHEDULED'){
+    window.ReadyBadgeSourceObservationV01?.recordScheduledBreakReturn?.({
+      contract:s.rev07,sessionId:s.id,breakRef:s.breakPlan.breakRef,
+      scheduledReturnAt:s.breakPlan.scheduledReturnAt,resumeActionRef:resumeSource,at:resumedAt
+    });
+  }else if(s.breakPlan?.type==='FIVE_MIN_TIMER'&&s.breakPlan.timerExpiredAt){
+    window.ReadyBadgeSourceObservationV01?.recordBreakTimerReturn?.({
+      contract:s.rev07,sessionId:s.id,timerRef:s.breakPlan.timerRef,
+      timerExpiredAt:s.breakPlan.timerExpiredAt,resumeActionRef:resumeSource,at:resumedAt
+    });
+  }else{
+    window.ReadyBadgeSourceObservationV01?.recordPauseReturn?.({
+      contract:s.rev07,sessionId:s.id,pauseStartedAt,pauseReason:s.pauseReason||'',resumeSource,at:resumedAt
+    });
+  }
+  if(s.breakTimerHandle){clearTimeout(s.breakTimerHandle);s.breakTimerHandle=null}
+  s.breakPlan=null;
   s.issueMs+=(Date.now()-pauseStartedAt);s.pausedAt=null;save();$('#pauseSheet').hidden=true;renderFocus();
   if(s.sound!=='OFF')await resumeBgm(s.sound);
 }
-$$('[data-pause-reason]').forEach(b=>b.onclick=()=>{
+function currentRestBuffer(){
+  const now=new Date(),today=localDateKey(now);
+  const rows=window.ReadySetPlanner?.scheduleBuffersByDate?.(today)||[];
+  return rows.find(x=>{
+    if(x.kind!=='REST'||!x.confirmed||!x.start_at||!x.end_at)return false;
+    const start=new Date(x.start_at),end=new Date(x.end_at);
+    return Number.isFinite(start.getTime())&&Number.isFinite(end.getTime())&&now>=start&&now<=end;
+  })||null;
+}
+$('#scheduledBreakBtn')?.addEventListener('click',()=>{
+  const s=state.activeSession;if(!s||!s.pausedAt)return;
+  const rest=currentRestBuffer();
+  if(!rest){toast('지금 적용되는 정해진 휴식 시간이 없어요.');return}
+  s.breakPlan={
+    type:'SCHEDULED',
+    breakRef:`ready-rest-buffer:${rest.buffer_id||rest.start_at}`,
+    scheduledReturnAt:rest.end_at
+  };
+  s.pauseReason='정해진 휴식';
+  save();toast('정해진 휴식으로 기록했어요.');
+});
+$('#fiveMinuteBreakBtn')?.addEventListener('click',()=>{
+  const s=state.activeSession;if(!s||!s.pausedAt)return;
+  if(s.breakTimerHandle)clearTimeout(s.breakTimerHandle);
+  const timerRef=`ready-5m-timer:${s.id}:${s.pausedAt}`;
+  s.breakPlan={type:'FIVE_MIN_TIMER',timerRef,expectedExpireAt:new Date(Date.now()+300000).toISOString(),timerExpiredAt:null};
+  s.pauseReason='5분 휴식';
+  s.breakTimerHandle=setTimeout(()=>{
+    const current=state.activeSession;
+    if(!current?.pausedAt||current.breakPlan?.timerRef!==timerRef)return;
+    current.breakPlan.timerExpiredAt=new Date().toISOString();
+    current.breakTimerHandle=null;
+    save();toast('5분 휴식이 끝났어요. 다시 시작해 볼까요?');
+  },300000);
+  save();toast('5분 휴식을 시작했어요.');
+});
+$('[data-pause-reason]').forEach(b=>b.onclick=()=>{
   const s=state.activeSession;if(!s)return;
   s.pauseReason=b.dataset.pauseReason;s.pauseEvents=s.pauseEvents||[];s.pauseEvents.push({reason:s.pauseReason,at:Date.now()});
   $$('[data-pause-reason]').forEach(x=>x.classList.toggle('on',x===b));save();
