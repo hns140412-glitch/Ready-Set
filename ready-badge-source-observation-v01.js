@@ -106,24 +106,29 @@
     });
   }
 
-  function recordPauseReturn({contract,sessionId,pauseStartedAt,resumeSource,at}={}){
+  function recordPauseReturn({contract,sessionId,pauseStartedAt,pauseReason,resumeSource,at}={}){
     const session=clean(sessionId,160);
     const source=clean(resumeSource,80);
+    const reason=clean(pauseReason,80);
     const pauseAt=Number(pauseStartedAt);
     if(!contract||!session||!Number.isFinite(pauseAt)||
        !['FOCUS_PAUSE_BUTTON','PAUSE_SHEET_BUTTON'].includes(source))return null;
+    const conditionReturn=reason==='컨디션 조절';
+    const behaviorCode=conditionReturn?'REST_AND_RETURN':'SELF_RETURN';
+    const sourceContractId=conditionReturn?'READY_CONDITION_PAUSE_RETURN_V1':'READY_EXPLICIT_PAUSE_RETURN_V1';
     const eventId=`ready_badge_return_${session}_${pauseAt}`;
     return record(contract,{
       event_id:eventId,
       event_family:'RETURN_RECOVERY',
-      behavior_code:'SELF_RETURN',
+      behavior_code:behaviorCode,
       occurred_at:at||new Date().toISOString(),
-      source_contract_id:'READY_EXPLICIT_PAUSE_RETURN_V1',
+      source_contract_id:sourceContractId,
       evidence_ref:`ready-pause-return:${session}:${pauseAt}`,
       explicit_child_action:true,
       payload:{
         sessionId:session,
         pauseEventRef:`ready-pause:${session}:${pauseAt}`,
+        pauseReason:reason,
         resumeSource:source
       }
     });
