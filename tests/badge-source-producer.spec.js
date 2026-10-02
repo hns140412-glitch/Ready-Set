@@ -754,6 +754,26 @@ test('Ready radio note actions require explicit child text where semantics requi
   expect(evidence.filter(x=>x.behavior_code==='STRATEGY_SWITCH')).toHaveLength(1);
 });
 
+test('Ready radio emits SINGLE_TASK_FOCUS only from explicit child focus commitment', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'single_focus_todo',date:today,label:'한 과제 집중',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+  await page.locator('[data-nav="mission"]:visible').first().click();
+  await page.locator('[data-todo-id="single_focus_todo"]').click();
+  await page.locator('#startBtn').click();
+  await page.locator('#radioBtn').click();
+  await page.locator('[data-radio-action="SINGLE_FOCUS"]').click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='SINGLE_TASK_FOCUS')).toHaveLength(1);
+  expect(evidence.find(x=>x.behavior_code==='SINGLE_TASK_FOCUS')).toMatchObject({
+    event_family:'FOCUS',
+    source_contract_id:'READY_EXPLICIT_SINGLE_TASK_FOCUS_V1',
+    explicit_child_action:true
+  });
+});
+
 test('Ready radio explicit self-regulation actions do not rely on elapsed time', async ({ page }) => {
   await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
   await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
