@@ -290,6 +290,17 @@
         });
         state.activeSession.persistenceEvidence=null;
       }
+      const blockResolution=state.activeSession?.blockResolutionEvidence?.[task.task_id]||null;
+      if(blockResolution?.strategySwitchActionRef){
+        window.ReadyBadgeSourceObservationV01?.recordBlockResolved?.({
+          contract:c,sessionId:c.session_id,
+          taskRef:task.planner_todo_id||task.task_id,
+          strategySwitchActionRef:blockResolution.strategySwitchActionRef,
+          completionEventRef:`ready-task-complete:${c.session_id}:${task.task_id}`,
+          at:task.updated_at
+        });
+        delete state.activeSession.blockResolutionEvidence[task.task_id];
+      }
       const chunkPlan=state.activeSession?.chunkPlans?.[task.task_id];
       if(chunkPlan?.chunks?.length>=2&&chunkPlan.chunks.every(x=>x.completed===true&&x.completedRef)){
         window.ReadyBadgeSourceObservationV01?.recordChildChunkedTask?.({
