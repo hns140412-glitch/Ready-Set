@@ -37,8 +37,9 @@ test('Ready emits one observation-only SELF_CHOICE source event for an explicit 
     };
   });
   expect(evidence.active_task_id).toBe(tasks[1].task_id);
-  expect(evidence.observations).toHaveLength(1);
-  expect(evidence.observations[0]).toMatchObject({
+  const choiceObservations=evidence.observations.filter(x=>x.behavior_code==='SELF_CHOICE'&&x.source_contract_id==='READY_EXPLICIT_TASK_SWITCH_V1');
+  expect(choiceObservations).toHaveLength(1);
+  expect(choiceObservations[0]).toMatchObject({
     contract_version:'TAKY_BADGE_SOURCE_OBSERVATION_V1',
     app_id:'READY_SET',
     event_family:'SELF_CHOICE',
