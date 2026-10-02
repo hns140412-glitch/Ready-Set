@@ -61,6 +61,14 @@ test('Real confirmed assignment→Learning Master→Planner→Ready sends exact 
  expect(url.searchParams.get('subject')).toBe(data.subject);
  expect(url.searchParams.get('concept_skill_target')).toBe(data.skill);
  expect(url.searchParams.get('learning_target_id')).toBe(data.target);
+ const encoded=url.searchParams.get('learning_context');
+ expect(encoded).toBeTruthy();
+ const normalized=encoded.replace(/-/g,'+').replace(/_/g,'/');
+ const padded=normalized+'='.repeat((4-normalized.length%4)%4);
+ const context=JSON.parse(Buffer.from(padded,'base64').toString('utf8'));
+ expect(context.contract_version).toBe('READY_LEARNING_CONTEXT_V1');
+ expect(context.learning_unit_id).toBe(data.target);
+ expect(context.provenance.confirmation_state).toBe('FACT_CONFIRMED');
  expect(url.searchParams.get('return_target')).toBe('http://127.0.0.1:4173/');
  expect(url.searchParams.get('from_app')).toBe('ready-set');
  expect(url.searchParams.get('task_id')).toBeTruthy();
