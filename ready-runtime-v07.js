@@ -422,6 +422,17 @@
           :specialistResult;
       }
     }
+    if(from_app==='snap-pop'&&result_payload){
+      const provenance=result_payload.learning_provenance||null;
+      task.specialist_result={
+        sourceApp:'snap-pop',
+        childAuthored:result_payload.child_authored===true,
+        landmark:result_payload.landmark||null,
+        vocabularyMaterial:result_payload.vocabulary_material||null,
+        learningProvenance:provenance?structuredClone(provenance):null,
+        rawResult:structuredClone(result_payload)
+      };
+    }
     c.active_app = 'ready-set';
     c.active_task_id = task.task_id;
     if (lap_id) c.active_lap_id = lap_id;
