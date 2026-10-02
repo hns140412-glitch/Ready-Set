@@ -152,6 +152,13 @@
             childSelectionOrder:badgeCtx.childSelectionOrder,difficulty:badgeCtx.difficulty,
             startedTaskRef:tasks[0].planner_todo_id,mode:badgeCtx.mode,at:iso()
           });
+        }else if(badgeCtx?.type==='CHILD_SEQUENCE_PLAN'&&badgeCtx.choiceSetRef&&Array.isArray(badgeCtx.orderedTaskRefs)&&tasks[0]?.planner_todo_id===badgeCtx.orderedTaskRefs[0]){
+          window.ReadyBadgeSourceObservationV01?.recordChildSequencePlan?.({
+            contract:session.rev07,sessionId:session.rev07.session_id,
+            choiceSetRef:badgeCtx.choiceSetRef,orderedTaskRefs:badgeCtx.orderedTaskRefs,
+            sequenceConfirmActionRef:badgeCtx.sequenceConfirmActionRef,
+            startedTaskRef:tasks[0].planner_todo_id,at:iso()
+          });
         }
       }
       session.badgeStartContexts=[];
