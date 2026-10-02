@@ -251,6 +251,14 @@
         contract:c,sessionId:c.session_id,task,plannerTodo,
         completionSource:source,at:task.updated_at
       });
+      if(plannerTodo?.small_task===true){
+        window.ReadyBadgeSourceObservationV01?.recordExplicitMicroTaskComplete?.({
+          contract:c,sessionId:c.session_id,taskRef:plannerTodo.todo_id,
+          smallTaskRef:`planner-small-task:${plannerTodo.todo_id}`,
+          completionEventRef:`ready-task-complete:${c.session_id}:${task.task_id}`,
+          at:task.updated_at
+        });
+      }
     }
     save();
     renderContractUI();
@@ -287,9 +295,19 @@
     }
 
     c.active_task_id = next.task_id;
+    const switchedAt=iso();
     window.ReadyBadgeSourceObservationV01?.recordTaskChoice?.({
-      contract:c,sessionId:c.session_id,fromTask:previous,toTask:next,at:iso()
+      contract:c,sessionId:c.session_id,fromTask:previous,toTask:next,at:switchedAt
     });
+    if(previous?.state==='COMPLETED'){
+      window.ReadyBadgeSourceObservationV01?.recordVoluntaryFlowContinuation?.({
+        contract:c,sessionId:c.session_id,previousTaskRef:previous.planner_todo_id||previous.task_id,
+        previousCompletionEventRef:`ready-task-complete:${c.session_id}:${previous.task_id}`,
+        nextTaskRef:next.planner_todo_id||next.task_id,
+        nextChoiceActionRef:`ready-task-switch:${c.session_id}:${next.task_id}`,
+        startedTaskRef:next.planner_todo_id||next.task_id,at:switchedAt
+      });
+    }
     startLap(next, 'NEXT_TASK', state.activeSession);
     save();
     renderContractUI();
