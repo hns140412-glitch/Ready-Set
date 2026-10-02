@@ -819,3 +819,18 @@ test('Ready meaningful overrun requires both explicit meaning text and actual ov
   expect(result.fail).toBeNull();
   expect(result.observations).toHaveLength(1);
 });
+
+
+test('Ready emits TASK_RESTART only from explicit child restart choice followed by start', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'restart_todo',date:today,label:'다시 시작 과제',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="restart_todo"]').click();
+  await page.locator('#taskRestartStartBtn').click();
+  await page.locator('#startBtn').click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='TASK_RESTART')).toHaveLength(1);
+});
