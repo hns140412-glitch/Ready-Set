@@ -3,17 +3,17 @@
   "updated_at": "2026-10-02",
   "repository": "hns140412-glitch/Ready-Set",
   "branch": "taky/badge-source-producers-20261002",
-  "validation_cutoff_sha": "d6ad1d918914870e8df4f72d1ed32afffe9d402c",
+  "validation_cutoff_sha": "e3b3be5a644b69d70caaffb2f0b28f1e0ef5efb9",
   "runtime_e2e": {
-    "run_id": 36966865172,
+    "run_id": 36968446580,
     "conclusion": "success",
-    "tests": "100/100 PASS",
+    "tests": "PASS",
     "workflow_gates": "10/10 PASS"
   },
   "counts": {
     "catalog": 60,
-    "producer_qa_pass": 43,
-    "producer_qa_open": 17,
+    "producer_qa_pass": 44,
+    "producer_qa_open": 16,
     "active": 0
   },
   "invariants": [
@@ -109,8 +109,8 @@
     },
     {
       "badge_id": "BDG-DRAFT-013",
-      "producer_qa": "OPEN",
-      "evidence_basis": "NOT_YET_EXACTLY_MAPPED",
+      "producer_qa": "PASS",
+      "evidence_basis": "READY_EXPLICIT_SINGLE_TASK_FOCUS_E2E_PASS",
       "activation": "HOLD",
       "active": false
     },
@@ -445,7 +445,7 @@
     }
   ],
   "notes": [
-    "BDG-DRAFT-041 is distinct from persistence/accuracy: it requires Planner estimate overrun + child-authored meaning artifact + completion.",
-    "Remaining OPEN: 001,002,005,007,009,010,013,018,019,030,031,035,036,038,039,042,054."
+    "BDG-DRAFT-013 uses explicit child focus commitment via READY_EXPLICIT_SINGLE_TASK_FOCUS_V1; passive focus duration/silence is never sufficient.",
+    "Remaining OPEN: 001,002,005,007,009,010,018,019,030,031,035,036,038,039,042,054."
   ]
 }
