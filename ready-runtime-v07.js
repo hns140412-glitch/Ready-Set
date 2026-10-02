@@ -616,6 +616,9 @@
       toast('미확정 과제 상태를 먼저 정리해 주세요.');
       return renderWrapUp();
     }
+    window.ReadyBadgeSourceObservationV01?.recordSelfCheckCompletion?.({
+      contract:c,sessionId:c.session_id,tasks:c.tasks,at:iso()
+    });
     endActiveLap('SESSION_END', currentTask(c)?.state || 'PENDING');
     const taskOutcomes = [];
     for (const task of c.tasks) {
