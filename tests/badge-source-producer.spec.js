@@ -682,3 +682,37 @@ test('Ready emits CHILD_PLAN_ADAPTATION only after schedule change, changed chil
   const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
   expect(evidence.filter(x=>x.behavior_code==='CHILD_PLAN_ADAPTATION')).toHaveLength(1);
 });
+
+
+test('Ready radio records reread and reflection as explicit child evidence only', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({todo_id:'radio_todo',date:today,label:'무전기 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'}),todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="radio_todo"]').click();
+  await page.locator('#startBtn').click();
+  await page.locator('#radioBtn').click();
+  await page.locator('[data-radio-action="REREAD"]').click();
+  await page.locator('#radioBtn').click();
+  await page.locator('[data-radio-action="REFLECT"]').click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='REREAD_CHECK')).toHaveLength(1);
+  expect(evidence.filter(x=>x.behavior_code==='REFLECT_BEFORE_PROCEED')).toHaveLength(1);
+});
+
+test('Ready radio STOP_AT_RIGHT_TIME is emitted only when the session actually ends', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({todo_id:'radio_stop_todo',date:today,label:'멈춤 판단 과제',source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'}),todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="radio_stop_todo"]').click();
+  await page.locator('#startBtn').click();
+  await page.locator('#radioBtn').click();
+  await page.locator('[data-radio-action="STOP_RIGHT"]').click();
+  let evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='STOP_AT_RIGHT_TIME')).toHaveLength(0);
+  await page.locator('#completeBtn').click();
+  const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
+  await page.locator('[data-wrap-state="DEFERRED"][data-task-id="'+taskId+'"]').click();
+  await page.locator('#rev07ConfirmEnd').click();
+  evidence=await page.evaluate(()=>{const raw=JSON.parse(localStorage.getItem('readyset_state')||'{}');return raw.records?.[0]?.rev07?.badge_source_observations||[];});
+  expect(evidence.filter(x=>x.behavior_code==='STOP_AT_RIGHT_TIME')).toHaveLength(1);
+});
