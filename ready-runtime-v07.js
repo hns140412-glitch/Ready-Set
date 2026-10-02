@@ -196,6 +196,7 @@
     task.state = nextState;
     task.updated_at = iso();
     emit('TASK_STATE_CHANGED', { task_id: taskId, previous, next: nextState, source });
+    let plannerTodo=null;
     if (task.planner_todo_id && window.ReadySetPlanner) {
       window.ReadySetPlanner.recordTaskState({
         todo_id: task.planner_todo_id,
@@ -203,6 +204,14 @@
         session_id: c.session_id,
         task_id: task.task_id,
         at: iso()
+      });
+      plannerTodo=(window.ReadySetPlanner.snapshot?.()?.dated_todos||[])
+        .find(x=>x.todo_id===task.planner_todo_id)||null;
+    }
+    if(nextState==='COMPLETED'){
+      window.ReadyBadgeSourceObservationV01?.recordCarryOverCompletion?.({
+        contract:c,sessionId:c.session_id,task,plannerTodo,
+        completionSource:source,at:task.updated_at
       });
     }
     save();
@@ -240,6 +249,9 @@
     }
 
     c.active_task_id = next.task_id;
+    window.ReadyBadgeSourceObservationV01?.recordTaskChoice?.({
+      contract:c,sessionId:c.session_id,fromTask:previous,toTask:next,at:iso()
+    });
     startLap(next, 'NEXT_TASK', state.activeSession);
     save();
     renderContractUI();
