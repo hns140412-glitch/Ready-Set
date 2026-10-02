@@ -270,6 +270,22 @@
 
 
 
+
+  function recordPersistToComplete({contract,sessionId,taskRef,blockedEvidenceRef,continueActionRef,completionEventRef,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),blocked=clean(blockedEvidenceRef,180),continued=clean(continueActionRef,180),completed=clean(completionEventRef,180);
+    if(!contract||!session||!task||!blocked||!continued||!completed)return null;
+    return record(contract,{
+      event_id:\`ready_badge_persist_complete_\${session}_\${task}\`,
+      event_family:'GOAL_COMPLETE',
+      behavior_code:'PERSIST_TO_COMPLETE',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_PERSIST_TO_COMPLETE_V1',
+      evidence_ref:\`ready-persist-complete:\${session}:\${task}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,blockedEvidenceRef:blocked,continueActionRef:continued,completionEventRef:completed}
+    });
+  }
+
   function recordStartDespiteCondition({contract,sessionId,conditionEvidenceRef,childStartActionRef,startedTaskRef,at}={}){
     const session=clean(sessionId,160),condition=clean(conditionEvidenceRef,180),action=clean(childStartActionRef,180),started=clean(startedTaskRef,180);
     if(!contract||!session||!condition||!action||!started)return null;
@@ -368,6 +384,6 @@
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
   });
 })();
