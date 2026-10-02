@@ -355,7 +355,8 @@ test('Ready records MICRO_TASK_COMPLETE only from an explicitly marked completed
     const raw=JSON.parse(localStorage.getItem('readyset_state')||'{}');
     return raw.records?.[0]?.rev07?.badge_source_observations||[];
   });
-  expect(direct.filter(x=>x.behavior_code==='MICRO_TASK_COMPLETE')).toHaveLength(1);
+  expect(direct.filter(x=>x.source_contract_id==='READY_PRE_MEAL_MICRO_COMPLETE_V1')).toHaveLength(1);
+  expect(direct.filter(x=>x.source_contract_id==='READY_EXPLICIT_MICRO_TASK_COMPLETE_V1')).toHaveLength(1);
 });
 
 test('Ready emits POST_MEAL_RESTART only after explicit meal start/end then child session start', async ({ page }) => {
