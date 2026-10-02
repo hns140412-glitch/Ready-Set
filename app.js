@@ -582,6 +582,19 @@ $('#taskRestartStartBtn')?.addEventListener('click',()=>{
   };
   save();toast('다시 꺼내 시작하는 선택으로 기록했어요.');
 });
+$('#preparationReadyBtn')?.addEventListener('click',()=>{
+  const taskRef=state.selectedTodoIds?.[0]||'';
+  if(!taskRef){toast('먼저 시작할 과제를 하나 선택해 주세요.');return}
+  const signals=badgeSignals(),now=Date.now();
+  signals.preparationCompleteEvidence={
+    taskRef,
+    checklistId:'READY_PRESTART_CHECKLIST_V1',
+    checkedItems:['TASK_MATERIALS_READY','WORKSPACE_READY'],
+    preparationConfirmActionRef:`ready-preparation-confirm:${taskRef}:${now}`,
+    at:new Date(now).toISOString()
+  };
+  save();toast('필요한 것과 시작할 자리를 준비한 기록을 남겼어요.');
+});
 $('#startBtn').onclick=async()=>{
   if(state.activeSession){toast('이미 진행 중인 작전이 있어요. 먼저 진행 중인 작전으로 돌아가 주세요.');nav('focus');return}
   if(!state.selectedTodoIds.length){toast('먼저 Planner가 준비한 오늘의 탐험을 선택해 주세요.');return}
@@ -641,6 +654,17 @@ $('#startBtn').onclick=async()=>{
         });
       }
       signals.guidancePrompt=null;
+      const preparation=signals.preparationCompleteEvidence;
+      if(preparation?.taskRef===firstLink.todo_id&&preparation?.checklistId==='READY_PRESTART_CHECKLIST_V1'&&preparation?.preparationConfirmActionRef){
+        contexts.push({
+          type:'PREPARATION_TO_START',
+          taskRef:firstLink.todo_id,
+          checklistId:preparation.checklistId,
+          checkedItems:Array.isArray(preparation.checkedItems)?[...preparation.checkedItems]:[],
+          preparationConfirmActionRef:preparation.preparationConfirmActionRef
+        });
+      }
+      signals.preparationCompleteEvidence=null;
       const choice=state.childChoiceEvidence;
       const plannerSnapshot=window.ReadySetPlanner?.snapshot?.()||{};
       const today=localDateKey(new Date());
