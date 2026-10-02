@@ -543,6 +543,11 @@
           ...(Array.isArray(input.activity_sequence)?{activity_sequence:[...input.activity_sequence]}:{}),
           small_task:input.small_task===true,
           required_today:input.required_today===true,
+          ...(Number.isFinite(input.estimated_minutes)?{estimated_minutes:Math.max(0,input.estimated_minutes)}:{}),
+          ...(Number.isFinite(input.difficulty)?{difficulty:input.difficulty}:{}),
+          ...(Array.isArray(input.cognitive_load_profile)?{cognitive_load_profile:[...input.cognitive_load_profile]}:{}),
+          ...(Number.isFinite(input.activity_load_score)?{activity_load_score:input.activity_load_score}:{}),
+          ...(input.recovery_need!=null?{recovery_need:input.recovery_need}:{}),
           ...(input.review_policy&&typeof input.review_policy==='object'?
             {review_policy:structuredClone(input.review_policy)}:{}),
           order:Number.isFinite(input.order)?input.order:999,
