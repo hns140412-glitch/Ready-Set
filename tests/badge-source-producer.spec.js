@@ -1003,3 +1003,67 @@ test('Ready emits QUIET_IMMERSION only after explicit quiet-mode selection and s
     catalog_activation_allowed:false
   });
 });
+
+
+test('Ready emits RESPONSIVE_START only from named mission briefing linked to child start', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'badge_responsive_start_todo',date:today,label:'안내 받고 시작하기',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+
+  await page.locator('[data-nav="mission"]:visible').first().click();
+  await page.locator('[data-todo-id="badge_responsive_start_todo"]').click();
+
+  const prompt=await page.evaluate(()=>{
+    const state=JSON.parse(localStorage.getItem('readyset_state')||'{}');
+    return state.badgeSignals?.guidancePrompt||null;
+  });
+  expect(prompt).toMatchObject({
+    taskRef:'badge_responsive_start_todo',
+    promptKind:'MISSION_BRIEFING'
+  });
+  expect(prompt.promptEventRef).toContain('ready-mission-briefing:badge_responsive_start_todo:');
+
+  await page.locator('#startBtn').click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  const rows=evidence.filter(x=>x.behavior_code==='RESPONSIVE_START');
+  expect(rows).toHaveLength(1);
+  expect(rows[0]).toMatchObject({
+    contract_version:'TAKY_BADGE_SOURCE_OBSERVATION_V1',
+    app_id:'READY_SET',
+    event_family:'SELF_START',
+    behavior_code:'RESPONSIVE_START',
+    source_contract_id:'READY_NAMED_PROMPT_RESPONSE_START_V1',
+    explicit_child_action:true,
+    disposition:'OBSERVATION_ONLY',
+    badge_award_authorized:false,
+    economy_mutation_authorized:false,
+    catalog_activation_allowed:false,
+    payload:{
+      taskRef:'badge_responsive_start_todo',
+      promptKind:'MISSION_BRIEFING'
+    }
+  });
+  expect(rows[0].payload.promptEventRef).toBe(prompt.promptEventRef);
+});
+
+test('Ready responsive start producer rejects missing named prompt linkage', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  const out=await page.evaluate(()=>{
+    const api=window.ReadyBadgeSourceObservationV01;
+    const contract={badge_source_observations:[]};
+    return {
+      noPrompt:api.recordResponsiveStart({
+        contract,sessionId:'s1',taskRef:'t1',promptEventRef:'',promptKind:'MISSION_BRIEFING',childStartActionRef:'start1'
+      }),
+      wrongPrompt:api.recordResponsiveStart({
+        contract,sessionId:'s1',taskRef:'t1',promptEventRef:'p1',promptKind:'CLOCK_INFERENCE',childStartActionRef:'start1'
+      }),
+      count:contract.badge_source_observations.length
+    };
+  });
+  expect(out.noPrompt).toBeNull();
+  expect(out.wrongPrompt).toBeNull();
+  expect(out.count).toBe(0);
+});
