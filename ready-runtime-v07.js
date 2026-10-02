@@ -139,6 +139,13 @@
             priorSessionRef:badgeCtx.priorSessionRef,mealBufferRef:badgeCtx.mealEventRef,
             restartActionRef:badgeCtx.mealEndActionRef,at:iso()
           });
+        }else if(badgeCtx?.type==='PREPARATION_TO_START'&&badgeCtx.checklistId==='READY_PRESTART_CHECKLIST_V1'&&badgeCtx.preparationConfirmActionRef&&tasks[0]?.planner_todo_id===badgeCtx.taskRef){
+          window.ReadyBadgeSourceObservationV01?.recordPreparationToStart?.({
+            contract:session.rev07,sessionId:session.rev07.session_id,
+            taskRef:tasks[0].planner_todo_id,checklistId:badgeCtx.checklistId,
+            checkedItems:badgeCtx.checkedItems,preparationConfirmActionRef:badgeCtx.preparationConfirmActionRef,
+            startedTaskRef:tasks[0].planner_todo_id,at:iso()
+          });
         }else if(badgeCtx?.type==='NAMED_PROMPT_RESPONSE_START'&&badgeCtx.promptEventRef&&badgeCtx.promptKind==='MISSION_BRIEFING'&&badgeCtx.childStartActionRef&&tasks[0]?.planner_todo_id===badgeCtx.taskRef){
           window.ReadyBadgeSourceObservationV01?.recordResponsiveStart?.({
             contract:session.rev07,sessionId:session.rev07.session_id,
