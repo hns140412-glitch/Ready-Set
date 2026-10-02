@@ -427,6 +427,21 @@
     });
   }
 
+  function recordSingleTaskFocus({contract,sessionId,taskRef,focusCommitActionRef,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),action=clean(focusCommitActionRef,180);
+    if(!contract||!session||!task||!action)return null;
+    return record(contract,{
+      event_id:`ready_badge_single_task_focus_${session}_${task}_${action}`,
+      event_family:'FOCUS',
+      behavior_code:'SINGLE_TASK_FOCUS',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_EXPLICIT_SINGLE_TASK_FOCUS_V1',
+      evidence_ref:`ready-single-task-focus:${session}:${task}`,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,focusCommitActionRef:action}
+    });
+  }
+
   function recordRereadCheck({contract,sessionId,taskRef,rereadActionRef,at}={}){
     const session=clean(sessionId,160),task=clean(taskRef,180),action=clean(rereadActionRef,180);
     if(!contract||!session||!task||!action)return null;
@@ -634,6 +649,6 @@
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordTaskRestart,recordCarefulComplete,recordFocusReturn,recordMeaningfulOverrun,recordRootCause,recordConceptUnderstanding,recordSelfExplanation,recordStrategySwitch,recordDistractionResistance,recordSelfNoticeReturn,recordRereadCheck,recordReflectBeforeProceed,recordStopAtRightTime,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordTaskRestart,recordCarefulComplete,recordFocusReturn,recordMeaningfulOverrun,recordRootCause,recordConceptUnderstanding,recordSelfExplanation,recordStrategySwitch,recordDistractionResistance,recordSelfNoticeReturn,recordSingleTaskFocus,recordRereadCheck,recordReflectBeforeProceed,recordStopAtRightTime,recordFastCompleteWithCheck,recordChildChunkedTask,recordChildPlanAdaptation,recordPersistToComplete,recordStartDespiteCondition,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
   });
 })();
