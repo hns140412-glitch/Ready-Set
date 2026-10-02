@@ -716,3 +716,50 @@ test('Ready radio STOP_AT_RIGHT_TIME is emitted only when the session actually e
   evidence=await page.evaluate(()=>{const raw=JSON.parse(localStorage.getItem('readyset_state')||'{}');return raw.records?.[0]?.rev07?.badge_source_observations||[];});
   expect(evidence.filter(x=>x.behavior_code==='STOP_AT_RIGHT_TIME')).toHaveLength(1);
 });
+
+
+test('Ready radio note actions require explicit child text where semantics require it', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'radio_note_todo',date:today,label:'무전기 메모 과제',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="radio_note_todo"]').click();
+  await page.locator('#startBtn').click();
+
+  await page.locator('#radioBtn').click();
+  await page.locator('#radioNote').fill('계산 순서를 반대로 봤어요');
+  await page.locator('[data-radio-action="ROOT_CAUSE"]').click();
+
+  await page.locator('#radioBtn').click();
+  await page.locator('#radioNote').fill('분수는 같은 크기로 나눠진 조각이라는 뜻이에요');
+  await page.locator('[data-radio-action="CONCEPT"]').click();
+
+  await page.locator('#radioBtn').click();
+  await page.locator('#radioNote').fill('식을 바로 세우기 → 그림으로 관계 보기');
+  await page.locator('[data-radio-action="STRATEGY_SWITCH"]').click();
+
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='ROOT_CAUSE')).toHaveLength(1);
+  expect(evidence.filter(x=>x.behavior_code==='CONCEPT_UNDERSTANDING')).toHaveLength(1);
+  expect(evidence.filter(x=>x.behavior_code==='STRATEGY_SWITCH')).toHaveLength(1);
+});
+
+test('Ready radio explicit self-regulation actions do not rely on elapsed time', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'radio_reg_todo',date:today,label:'자기조절 과제',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="radio_reg_todo"]').click();
+  await page.locator('#startBtn').click();
+  await page.locator('#radioBtn').click();
+  await page.locator('[data-radio-action="DISTRACTION"]').click();
+  await page.locator('#radioBtn').click();
+  await page.locator('[data-radio-action="SELF_NOTICE_RETURN"]').click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='DISTRACTION_RESISTANCE')).toHaveLength(1);
+  expect(evidence.filter(x=>x.behavior_code==='SELF_NOTICE_RETURN')).toHaveLength(1);
+});
