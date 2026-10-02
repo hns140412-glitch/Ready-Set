@@ -267,6 +267,18 @@
           at:task.updated_at
         });
       }
+      const persist=state.activeSession?.persistenceEvidence;
+      if(persist&&persist.taskId===task.task_id){
+        window.ReadyBadgeSourceObservationV01?.recordPersistToComplete?.({
+          contract:c,sessionId:c.session_id,
+          taskRef:task.planner_todo_id||task.task_id,
+          blockedEvidenceRef:persist.blockedEvidenceRef,
+          continueActionRef:persist.continueActionRef,
+          completionEventRef:`ready-task-complete:${c.session_id}:${task.task_id}`,
+          at:task.updated_at
+        });
+        state.activeSession.persistenceEvidence=null;
+      }
     }
     save();
     renderContractUI();
