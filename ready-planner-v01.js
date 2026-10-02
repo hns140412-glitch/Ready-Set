@@ -542,6 +542,7 @@
           ...(Array.isArray(input.activity_types)?{activity_types:[...input.activity_types]}:{}),
           ...(Array.isArray(input.activity_sequence)?{activity_sequence:[...input.activity_sequence]}:{}),
           small_task:input.small_task===true,
+          required_today:input.required_today===true,
           ...(input.review_policy&&typeof input.review_policy==='object'?
             {review_policy:structuredClone(input.review_policy)}:{}),
           order:Number.isFinite(input.order)?input.order:999,
@@ -596,6 +597,7 @@
         review_policy:x.review_policy||null,
         parent_help_dependency:x.parent_help_dependency||null,
         small_task:x.small_task===true,
+        required_today:x.required_today===true,
         child_selection_order:childSelectionIndex+1
       }));
     }
@@ -1106,6 +1108,7 @@
               order:created.length,
               state:'PLANNED',
               estimated_minutes:p.estimated_minutes,
+              required_today:p.reason==='REQUIRED_TODAY',
               created_at:new Date().toISOString(),
               updated_at:new Date().toISOString()
             };
@@ -1626,6 +1629,7 @@
         review_policy:x.review_policy||null,
         parent_help_dependency:x.parent_help_dependency||null,
         small_task:x.small_task===true,
+        required_today:x.required_today===true,
         planner_owned:/^PLANNER/.test(x.source||'')
       }));
     }
