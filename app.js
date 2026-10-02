@@ -549,12 +549,16 @@ function tickFocus(){
 }
 $('#pauseBtn').onclick=async()=>{
   const s=state.activeSession;if(!s)return;
-  if(s.pausedAt){await resumePausedSession();return}
+  if(s.pausedAt){await resumePausedSession('FOCUS_PAUSE_BUTTON');return}
   s.pausedAt=Date.now();s.pauseReason='';await pauseBgm();save();renderFocus();$('#pauseSheet').hidden=false;
 };
-async function resumePausedSession(){
+async function resumePausedSession(resumeSource=''){
   const s=state.activeSession;if(!s||!s.pausedAt)return;
-  s.issueMs+=(Date.now()-s.pausedAt);s.pausedAt=null;save();$('#pauseSheet').hidden=true;renderFocus();
+  const pauseStartedAt=s.pausedAt;
+  window.ReadyBadgeSourceObservationV01?.recordPauseReturn?.({
+    contract:s.rev07,sessionId:s.id,pauseStartedAt,resumeSource,at:new Date().toISOString()
+  });
+  s.issueMs+=(Date.now()-pauseStartedAt);s.pausedAt=null;save();$('#pauseSheet').hidden=true;renderFocus();
   if(s.sound!=='OFF')await resumeBgm(s.sound);
 }
 $$('[data-pause-reason]').forEach(b=>b.onclick=()=>{
@@ -563,7 +567,7 @@ $$('[data-pause-reason]').forEach(b=>b.onclick=()=>{
   $$('[data-pause-reason]').forEach(x=>x.classList.toggle('on',x===b));save();
 });
 $$('[data-close-pause]').forEach(b=>b.onclick=()=>$('#pauseSheet').hidden=true);
-$('#resumeFromSheetBtn').onclick=resumePausedSession;
+$('#resumeFromSheetBtn').onclick=()=>resumePausedSession('PAUSE_SHEET_BUTTON');
 $('#completeBtn').onclick=()=>{$('#outcomeModal').hidden=false};
 function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOutcomes=[]}={}){
   const s=state.activeSession;if(!s)return null;
