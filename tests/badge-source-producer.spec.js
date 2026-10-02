@@ -548,3 +548,37 @@ test('Ready emits PERSIST_TO_COMPLETE only after explicit blocked-but-continue a
   const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
   expect(evidence.filter(x=>x.behavior_code==='PERSIST_TO_COMPLETE')).toHaveLength(1);
 });
+
+
+test('Ready child chunking and plan adaptation producers fail closed without explicit evidence', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  const result=await page.evaluate(()=>{
+    const api=window.ReadyBadgeSourceObservationV01;
+    const contract={badge_source_observations:[]};
+    const chunk=api.recordChildChunkedTask({
+      contract,sessionId:'chunk_s',taskRef:'task_big',
+      childChunkRefs:['chunk_1','chunk_2'],chunkConfirmActionRef:'confirm_chunks',
+      completedChunkRefs:['chunk_1','chunk_2']
+    });
+    const adapt=api.recordChildPlanAdaptation({
+      contract,sessionId:'adapt_s',scheduleChangeRef:'schedule_change_1',
+      priorPlanRef:'plan_before',childReplanActionRef:'child_replan_1',
+      newPlanRef:'plan_after',performedTaskRef:'task_after'
+    });
+    const blockedChunk=api.recordChildChunkedTask({
+      contract,sessionId:'bad_chunk',taskRef:'task_big',
+      childChunkRefs:['chunk_1','chunk_2'],chunkConfirmActionRef:'confirm_chunks',
+      completedChunkRefs:['chunk_1']
+    });
+    const blockedAdapt=api.recordChildPlanAdaptation({
+      contract,sessionId:'bad_adapt',priorPlanRef:'plan_before',
+      childReplanActionRef:'child_replan_1',newPlanRef:'plan_after',performedTaskRef:'task_after'
+    });
+    return {chunk,adapt,blockedChunk,blockedAdapt,observations:contract.badge_source_observations};
+  });
+  expect(result.chunk).toMatchObject({behavior_code:'CHILD_CHUNKED_TASK_COMPLETE',source_contract_id:'READY_CHILD_CHUNKED_TASK_V1'});
+  expect(result.adapt).toMatchObject({behavior_code:'CHILD_PLAN_ADAPTATION',source_contract_id:'READY_CHILD_REPLAN_AFTER_CHANGE_V1'});
+  expect(result.blockedChunk).toBeNull();
+  expect(result.blockedAdapt).toBeNull();
+  expect(result.observations).toHaveLength(2);
+});
