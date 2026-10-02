@@ -541,6 +541,7 @@
           provenance:input.provenance||null,
           ...(Array.isArray(input.activity_types)?{activity_types:[...input.activity_types]}:{}),
           ...(Array.isArray(input.activity_sequence)?{activity_sequence:[...input.activity_sequence]}:{}),
+          small_task:input.small_task===true,
           ...(input.review_policy&&typeof input.review_policy==='object'?
             {review_policy:structuredClone(input.review_policy)}:{}),
           order:Number.isFinite(input.order)?input.order:999,
@@ -594,6 +595,7 @@
         recovery_need:x.recovery_need||null,
         review_policy:x.review_policy||null,
         parent_help_dependency:x.parent_help_dependency||null,
+        small_task:x.small_task===true,
         child_selection_order:childSelectionIndex+1
       }));
     }
@@ -980,6 +982,11 @@
         buffers:buffers.map(x=>({buffer_id:x.buffer_id,kind:x.kind,title:x.title,linked_commitment_id:x.linked_commitment_id,start:x.start.toISOString(),end:x.end.toISOString()})),
         open_windows:spans
       };
+    }
+
+    function freeWindowEvidenceForDate(date=dateKey()){
+      const windows=candidateWindowsByDate([date])?.[date]||[];
+      return freeWindowEvidence(load(),date,windows);
     }
 
     function eligibleTemplate(template,date){
@@ -1618,6 +1625,7 @@
         recovery_need:x.recovery_need||null,
         review_policy:x.review_policy||null,
         parent_help_dependency:x.parent_help_dependency||null,
+        small_task:x.small_task===true,
         planner_owned:/^PLANNER/.test(x.source||'')
       }));
     }
@@ -1659,6 +1667,7 @@
       upsertDailyAvailabilityWindow,
       removeDailyAvailabilityWindow,
       candidateWindowsByDate,
+      freeWindowEvidenceForDate,
       upsertHomeworkTemplate,
       upsertDatedTodo,
       linkTodayItems,
