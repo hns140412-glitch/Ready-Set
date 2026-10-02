@@ -166,8 +166,14 @@
             selectedExtraTaskRef:badgeCtx.selectedExtraTaskRef,extraChoiceRef:badgeCtx.extraChoiceRef,
             startedTaskRef:tasks[0].planner_todo_id,at:iso()
           });
-        }
-        else if(badgeCtx?.type==='START_DESPITE_CONDITION'&&badgeCtx.conditionEvidenceRef&&badgeCtx.childStartActionRef&&tasks[0]?.planner_todo_id){
+        }else if(badgeCtx?.type==='CHILD_PLAN_ADAPTATION'&&badgeCtx.performedTaskRef&&tasks[0]?.planner_todo_id===badgeCtx.performedTaskRef){
+          window.ReadyBadgeSourceObservationV01?.recordChildPlanAdaptation?.({
+            contract:session.rev07,sessionId:session.rev07.session_id,
+            scheduleChangeRef:badgeCtx.scheduleChangeRef,priorPlanRef:badgeCtx.priorPlanRef,
+            childReplanActionRef:badgeCtx.childReplanActionRef,newPlanRef:badgeCtx.newPlanRef,
+            performedTaskRef:tasks[0].planner_todo_id,at:iso()
+          });
+        }else if(badgeCtx?.type==='START_DESPITE_CONDITION'&&badgeCtx.conditionEvidenceRef&&badgeCtx.childStartActionRef&&tasks[0]?.planner_todo_id){
           window.ReadyBadgeSourceObservationV01?.recordStartDespiteCondition?.({
             contract:session.rev07,sessionId:session.rev07.session_id,
             conditionEvidenceRef:badgeCtx.conditionEvidenceRef,
