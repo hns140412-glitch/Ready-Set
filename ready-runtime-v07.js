@@ -353,6 +353,18 @@
     return true;
   }
 
+  function decodeSnapResultPayload(raw) {
+    if(!raw || typeof raw!=='string' || raw.length>6000)return null;
+    try{
+      const normalized=raw.replace(/-/g,'+').replace(/_/g,'/');
+      const padded=normalized+'='.repeat((4-normalized.length%4)%4);
+      const binary=atob(padded);
+      const bytes=Uint8Array.from(binary,ch=>ch.charCodeAt(0));
+      const value=JSON.parse(new TextDecoder().decode(bytes));
+      return value && typeof value==='object' ? value : null;
+    }catch{return null;}
+  }
+
   function normalizeInboundState(raw) {
     if (!raw) return null;
     if (VALID_TASK_STATES.has(raw)) return raw;
@@ -473,10 +485,12 @@
       task_id: p.get('task_id'),
       lap_id: p.get('lap_id'),
       task_state: p.get('task_state'),
-      from_app: p.get('from_app')
+      from_app: p.get('from_app'),
+      event_id: p.get('event_id'),
+      result_payload: decodeSnapResultPayload(p.get('result_payload'))
     };
     if (!args.session_id || !args.task_id || !applyInboundResult(args)) return;
-    ['session_id','goal_id','task_id','lap_id','task_state','from_app'].forEach(k => p.delete(k));
+    ['session_id','goal_id','task_id','lap_id','task_state','from_app','event_id','result_payload'].forEach(k => p.delete(k));
     const clean = `${location.pathname}${p.toString() ? `?${p}` : ''}${location.hash}`;
     history.replaceState(null, '', clean);
   }
