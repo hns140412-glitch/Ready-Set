@@ -515,3 +515,18 @@ test('Ready emits VOLUNTARY_NEXT_TASK_CONTINUE only when child starts a next tas
   const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
   expect(evidence.filter(x=>x.behavior_code==='VOLUNTARY_NEXT_TASK_CONTINUE')).toHaveLength(1);
 });
+
+
+test('Ready emits START_DESPITE_CONDITION only after explicit child condition-aware start choice', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173/', { waitUntil:'domcontentloaded' });
+  await page.evaluate((today)=>window.ReadySetPlanner.upsertDatedTodo({
+    todo_id:'condition_start_todo',date:today,label:'가능한 만큼 시작',
+    source:'PLANNER_ALLOCATION',source_actor:'PLANNER_MAIN',state:'PLANNED'
+  }),todayKey());
+  await page.locator('[data-nav="mission"]').first().click();
+  await page.locator('[data-todo-id="condition_start_todo"]').click();
+  await page.locator('#conditionStartBtn').click();
+  await page.locator('#startBtn').click();
+  const evidence=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  expect(evidence.filter(x=>x.behavior_code==='START_DESPITE_CONDITION')).toHaveLength(1);
+});
