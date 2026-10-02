@@ -771,6 +771,16 @@ $$('[data-radio-action]').forEach(btn=>btn.onclick=()=>{
     });
     toast('지금 이 한 과제에 집중하기로 한 선택을 기록했어요.');
   }
+  else if(action==='QUIET_IMMERSION'){
+    s.quietImmersionEvidence=s.quietImmersionEvidence||{};
+    s.quietImmersionEvidence[task.task_id]={
+      taskRef,
+      quietModeActionRef:`ready-radio-quiet-immersion:${s.id}:${task.task_id}:${now}`,
+      at
+    };
+    save();
+    toast('조용히 몰입 모드로 이어가기로 한 선택을 기록했어요.');
+  }
   else if(action==='REREAD'){
     window.ReadyBadgeSourceObservationV01?.recordRereadCheck?.({
       contract:s.rev07,sessionId:s.id,taskRef,
@@ -1044,6 +1054,15 @@ function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOu
         contract:s.rev07,sessionId:s.id,taskRef:outcome.todo_id,
         plannedMinutes:link.estimated_minutes,actualMinutes:outcome.actual_minutes,
         checkActionRef:review.checkActionRef,
+        completionEventRef:`ready-session-complete:${s.id}:${outcome.todo_id}`,
+        at:new Date(s.endAt).toISOString()
+      });
+    }
+    const quiet=s.quietImmersionEvidence?.[(s.rev07?.tasks||[]).find(t=>t?.planner_todo_id===outcome.todo_id||t?.task_id===outcome.todo_id)?.task_id];
+    if(quiet&&quiet.taskRef===outcome.todo_id){
+      window.ReadyBadgeSourceObservationV01?.recordQuietImmersionCompletion?.({
+        contract:s.rev07,sessionId:s.id,taskRef:outcome.todo_id,
+        quietModeActionRef:quiet.quietModeActionRef,
         completionEventRef:`ready-session-complete:${s.id}:${outcome.todo_id}`,
         at:new Date(s.endAt).toISOString()
       });
