@@ -940,8 +940,12 @@ test('Ready emits LONG_FOCUS only after explicit single-focus commitment and sam
   await page.locator('#completeBtn').click();
   const taskId=await page.evaluate(()=>window.ReadySetRev07.contract().tasks[0].task_id);
   await page.locator(`[data-wrap-state="COMPLETED"][data-task-id="${taskId}"]`).click();
+  await page.locator('#rev07ConfirmEnd').click();
 
-  observations=await page.evaluate(()=>window.ReadySetRev07.contract().badge_source_observations||[]);
+  observations=await page.evaluate(()=>{
+    const state=JSON.parse(localStorage.getItem('readyset_state')||'{}');
+    return state.records?.[0]?.rev07?.badge_source_observations||[];
+  });
   const longFocus=observations.filter(x=>x.behavior_code==='LONG_FOCUS');
   expect(longFocus).toHaveLength(1);
   expect(longFocus[0]).toMatchObject({
