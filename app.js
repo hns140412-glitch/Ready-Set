@@ -773,7 +773,7 @@ $$('[data-radio-action]').forEach(btn=>btn.onclick=()=>{
   }
   else if(action==='QUIET_IMMERSION'){
     s.quietImmersionEvidence=s.quietImmersionEvidence||{};
-    s.quietImmersionEvidence[task.task_id]={
+    s.quietImmersionEvidence[taskRef]={
       taskRef,
       quietModeActionRef:`ready-radio-quiet-immersion:${s.id}:${task.task_id}:${now}`,
       at
@@ -1058,7 +1058,7 @@ function finishSessionRecord({outcomeState='COMPLETED',plannerOutcomes=[],taskOu
         at:new Date(s.endAt).toISOString()
       });
     }
-    const quiet=s.quietImmersionEvidence?.[(s.rev07?.tasks||[]).find(t=>t?.planner_todo_id===outcome.todo_id||t?.task_id===outcome.todo_id)?.task_id];
+    const quiet=s.quietImmersionEvidence?.[outcome.todo_id];
     if(quiet&&quiet.taskRef===outcome.todo_id){
       window.ReadyBadgeSourceObservationV01?.recordQuietImmersionCompletion?.({
         contract:s.rev07,sessionId:s.id,taskRef:outcome.todo_id,
