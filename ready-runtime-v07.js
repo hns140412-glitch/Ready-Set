@@ -159,6 +159,13 @@
             sequenceConfirmActionRef:badgeCtx.sequenceConfirmActionRef,
             startedTaskRef:tasks[0].planner_todo_id,at:iso()
           });
+        }else if(badgeCtx?.type==='VOLUNTARY_EXTRA_AFTER_REQUIRED'&&badgeCtx.selectedExtraTaskRef&&tasks[0]?.planner_todo_id===badgeCtx.selectedExtraTaskRef){
+          window.ReadyBadgeSourceObservationV01?.recordVoluntaryExtraAfterRequiredComplete?.({
+            contract:session.rev07,sessionId:session.rev07.session_id,
+            requiredSetRef:badgeCtx.requiredSetRef,requiredCompleteEventRefs:badgeCtx.requiredCompleteEventRefs,
+            selectedExtraTaskRef:badgeCtx.selectedExtraTaskRef,extraChoiceRef:badgeCtx.extraChoiceRef,
+            startedTaskRef:tasks[0].planner_todo_id,at:iso()
+          });
         }
       }
       session.badgeStartContexts=[];
