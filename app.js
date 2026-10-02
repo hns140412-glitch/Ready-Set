@@ -47,7 +47,8 @@ const initial={
   recordingMeta:null,
   badgeSignals:{activeMeal:null,lastMeal:null,pendingStart:null},
   childChoiceEvidence:null,
-  childPlanSequenceEvidence:null
+  childPlanSequenceEvidence:null,
+  childReplanEvidence:null
 };
 
 let state=load();
@@ -477,6 +478,23 @@ $$('[data-sheet-sound]').forEach(b=>b.onclick=async()=>{
   renderFocus();
 });
 
+$('#replanAfterChangeBtn')?.addEventListener('click',()=>{
+  const snapshot=window.ReadySetPlanner?.snapshot?.()||{};
+  const candidates=[
+    ...(snapshot.schedule_commitments||[]).map(x=>({kind:'commitment',id:x.commitment_id,updated_at:x.updated_at})),
+    ...(snapshot.schedule_buffers||[]).map(x=>({kind:'buffer',id:x.buffer_id,updated_at:x.updated_at}))
+  ].filter(x=>x.id&&x.updated_at).sort((a,b)=>String(b.updated_at).localeCompare(String(a.updated_at)));
+  const latest=candidates[0];
+  if(!latest){toast('확인할 수 있는 일정 변경 기록이 없어요.');return}
+  const now=Date.now();
+  state.childReplanEvidence={
+    scheduleChangeRef:`ready-schedule-${latest.kind}:${latest.id}:${latest.updated_at}`,
+    priorPlanRef:`ready-prior-plan:${localDateKey(new Date())}:${state.selectedTodoIds.join(',')||'none'}`,
+    priorOrderedTaskRefs:[...state.selectedTodoIds],
+    childReplanActionRef:`ready-child-replan:${now}`
+  };
+  save();toast('일정 변경을 확인했어요. 새 순서를 고른 뒤 확정해 주세요.');
+});
 $('#confirmTaskOrderBtn')?.addEventListener('click',()=>{
   if(state.selectedTodoIds.length<2){toast('과제를 두 개 이상 골라 순서를 정해 주세요.');return}
   const now=Date.now();
@@ -630,7 +648,23 @@ $('#startBtn').onclick=async()=>{
           sequenceConfirmActionRef:sequence.sequenceConfirmActionRef
         });
       }
+      const replan=state.childReplanEvidence;
+      if(replan&&sequence&&Array.isArray(sequence.orderedTaskRefs)&&sequence.orderedTaskRefs.length){
+        const before=JSON.stringify(replan.priorOrderedTaskRefs||[]);
+        const after=JSON.stringify(sequence.orderedTaskRefs);
+        if(before!==after&&sequence.orderedTaskRefs[0]===firstLink.todo_id){
+          contexts.push({
+            type:'CHILD_PLAN_ADAPTATION',
+            scheduleChangeRef:replan.scheduleChangeRef,
+            priorPlanRef:replan.priorPlanRef,
+            childReplanActionRef:replan.childReplanActionRef,
+            newPlanRef:sequence.choiceSetRef,
+            performedTaskRef:firstLink.todo_id
+          });
+        }
+      }
       state.childPlanSequenceEvidence=null;
+      state.childReplanEvidence=null;
       return contexts;
     })(),
     // Bind the central learner at task start; a later account/child switch
