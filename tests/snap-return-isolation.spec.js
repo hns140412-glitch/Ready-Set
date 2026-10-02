@@ -78,3 +78,43 @@ test('Snap prior lap ID cannot close the current task even for the original chil
  }));
  expect(result).toEqual({state:'PENDING',unconsumed:true});
 });
+
+
+test('Snap same-tab completion return preserves minimal learning provenance',async({page})=>{
+ const ids=await seededRun(page);
+ const payload={
+  child_authored:true,
+  landmark:'LIGHTHOUSE',
+  learning_provenance:{
+   contract_version:'READY_LEARNING_CONTEXT_V1',
+   learning_unit_id:'LU_TEST',
+   analysis_id:'AN_TEST',
+   assignment_id:'AS_TEST',
+   subject:'영어',
+   concept_skill_target:'문장 표현',
+   provenance:{engine:'READY_SCOPED_SPECIALIST_CONTINUITY_ONLY',
+    version:'READY_SNAP_RUN_SCOPE_V01',confirmation_state:'FACT_CONFIRMED'}
+  }
+ };
+ const raw=Buffer.from(JSON.stringify(payload),'utf8').toString('base64url');
+ const url=new URL(READY);
+ for(const [k,v] of Object.entries({...ids,task_state:'COMPLETED',
+    from_app:'snap-pop',event_id:'snap-test-event',result_payload:raw}))
+  url.searchParams.set(k,v);
+ await page.goto(url.href,{waitUntil:'load'});
+ const result=await page.evaluate(()=>{
+  const task=ReadySetRev07.contract()?.tasks?.[0];
+  return {
+   state:task?.state,
+   app:ReadySetRev07.contract()?.active_app,
+   sourceApp:task?.specialist_result?.sourceApp,
+   childAuthored:task?.specialist_result?.childAuthored,
+   learningUnit:task?.specialist_result?.learningProvenance?.learning_unit_id,
+   consumed:!location.search.includes('result_payload')
+  };
+ });
+ expect(result).toEqual({
+  state:'COMPLETED',app:'ready-set',sourceApp:'snap-pop',
+  childAuthored:true,learningUnit:'LU_TEST',consumed:true
+ });
+});
