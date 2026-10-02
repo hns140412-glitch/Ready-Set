@@ -556,7 +556,7 @@ async function resumePausedSession(resumeSource=''){
   const s=state.activeSession;if(!s||!s.pausedAt)return;
   const pauseStartedAt=s.pausedAt;
   window.ReadyBadgeSourceObservationV01?.recordPauseReturn?.({
-    contract:s.rev07,sessionId:s.id,pauseStartedAt,resumeSource,at:new Date().toISOString()
+    contract:s.rev07,sessionId:s.id,pauseStartedAt,pauseReason:s.pauseReason||'',resumeSource,at:new Date().toISOString()
   });
   s.issueMs+=(Date.now()-pauseStartedAt);s.pausedAt=null;save();$('#pauseSheet').hidden=true;renderFocus();
   if(s.sound!=='OFF')await resumeBgm(s.sound);
