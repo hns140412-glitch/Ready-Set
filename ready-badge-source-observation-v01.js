@@ -268,6 +268,38 @@
 
 
 
+
+  function recordVoluntaryFlowContinuation({contract,sessionId,previousTaskRef,previousCompletionEventRef,nextTaskRef,nextChoiceActionRef,startedTaskRef,at}={}){
+    const session=clean(sessionId,160),previous=clean(previousTaskRef,180),completed=clean(previousCompletionEventRef,180);
+    const next=clean(nextTaskRef,180),choice=clean(nextChoiceActionRef,180),started=clean(startedTaskRef,180);
+    if(!contract||!session||!previous||!completed||!next||!choice||!started||next!==started||previous===next)return null;
+    return record(contract,{
+      event_id:\`ready_badge_flow_continue_\${session}_\${previous}_\${next}\`,
+      event_family:'SELF_CHOICE',
+      behavior_code:'VOLUNTARY_NEXT_TASK_CONTINUE',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_VOLUNTARY_FLOW_CONTINUATION_V1',
+      evidence_ref:\`ready-flow-continue:\${session}:\${previous}:\${next}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,previousTaskRef:previous,previousCompletionEventRef:completed,nextTaskRef:next,nextChoiceActionRef:choice,startedTaskRef:started}
+    });
+  }
+
+  function recordExplicitMicroTaskComplete({contract,sessionId,taskRef,smallTaskRef,completionEventRef,at}={}){
+    const session=clean(sessionId,160),task=clean(taskRef,180),small=clean(smallTaskRef,180),completion=clean(completionEventRef,180);
+    if(!contract||!session||!task||!small||!completion)return null;
+    return record(contract,{
+      event_id:\`ready_badge_micro_complete_\${session}_\${task}\`,
+      event_family:'GOAL_COMPLETE',
+      behavior_code:'MICRO_TASK_COMPLETE',
+      occurred_at:at||new Date().toISOString(),
+      source_contract_id:'READY_EXPLICIT_MICRO_TASK_COMPLETE_V1',
+      evidence_ref:\`ready-micro-complete:\${session}:\${task}\`,
+      explicit_child_action:true,
+      payload:{sessionId:session,taskRef:task,smallTaskRef:small,completionEventRef:completion}
+    });
+  }
+
   function recordVoluntaryExtraAfterRequiredComplete({contract,sessionId,requiredSetRef,requiredCompleteEventRefs,selectedExtraTaskRef,extraChoiceRef,startedTaskRef,at}={}){
     const session=clean(sessionId,160),required=clean(requiredSetRef,180),selected=clean(selectedExtraTaskRef,180),choice=clean(extraChoiceRef,180),started=clean(startedTaskRef,180);
     const completed=Array.isArray(requiredCompleteEventRefs)?requiredCompleteEventRefs.map(x=>clean(x,180)).filter(Boolean):[];
@@ -320,6 +352,6 @@
   window.ReadyBadgeSourceObservationV01=Object.freeze({
     VERSION,CONTRACT,
     families:Object.freeze([...ALLOWED_FAMILIES]),
-    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
+    normalize,record,recordTaskChoice,recordCarryOverCompletion,recordSelfCheckCompletion,recordPauseReturn,recordPreMealMicroComplete,recordPostMealRestart,recordFreeWindowSelfStart,recordScheduledBreakReturn,recordBreakTimerReturn,recordVoluntaryFlowContinuation,recordExplicitMicroTaskComplete,recordVoluntaryExtraAfterRequiredComplete,recordChildSequencePlan,recordChildPriorityChoice,hasForbiddenKeyDeep
   });
 })();
