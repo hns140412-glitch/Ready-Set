@@ -257,6 +257,15 @@
     return app === 'snap-pop' ? configuredSnapUrl() : location.href;
   }
 
+  function encodeLearningContext(value) {
+    try {
+      const bytes=new TextEncoder().encode(JSON.stringify(value));
+      let binary='';
+      for(const b of bytes) binary+=String.fromCharCode(b);
+      return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    } catch { return null; }
+  }
+
   function launchSpecialist(app) {
     const session = state.activeSession;
     const c = ensureContract(session);
@@ -316,6 +325,25 @@
     if(app==='snap-pop'&&snapBinding?.ok){
       for(const [key,value] of Object.entries(snapBinding.fields))
         url.searchParams.set(key,value);
+      const learningContext=encodeLearningContext({
+        contract_version:'READY_LEARNING_CONTEXT_V1',
+        learning_unit_id:snapBinding.evidence_refs.learning_unit_id,
+        analysis_id:snapBinding.evidence_refs.analysis_id,
+        assignment_id:snapBinding.evidence_refs.assignment_id,
+        subject:snapBinding.fields.subject,
+        concept_skill_target:snapBinding.fields.concept_skill_target,
+        activity_types:[],
+        cognitive_load_profile:[],
+        divisible_boundary:null,
+        confidence:1,
+        unresolved_flags:[],
+        provenance:{
+          engine:'READY_SCOPED_SPECIALIST_CONTINUITY_ONLY',
+          version:'READY_SNAP_RUN_SCOPE_V01',
+          confirmation_state:'FACT_CONFIRMED'
+        }
+      });
+      if(learningContext)url.searchParams.set('learning_context',learningContext);
     }
     if(app==='hide-seek'&&task.review_directive){
       url.searchParams.set('review_directive',JSON.stringify(task.review_directive));
