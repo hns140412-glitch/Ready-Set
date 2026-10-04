@@ -12,6 +12,16 @@
   const id=p=>p+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
   const clean=v=>String(v??'').trim();
   const clone=v=>JSON.parse(JSON.stringify(v));
+  // Some iPhone/gallery file pickers omit File.type. Never label unknown bytes JPEG.
+  function captureMime(file){
+    const known=clean(file?.type).toLowerCase();
+    if(known && known!=='application/octet-stream')return known;
+    const ext=clean(file?.name).split('.').pop().toLowerCase();
+    return ({
+      jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',
+      webp:'image/webp',heic:'image/heic',heif:'image/heif'
+    })[ext]||'application/octet-stream';
+  }
   function draftId(sessionId,groupKey,index,runNo){
     return 'review_'+String(sessionId||'capture')+'_'+String(runNo||1)+'_'+String(index)+'_'+String(groupKey||'group').replace(/[^a-zA-Z0-9가-힣]+/g,'_');
   }
@@ -106,6 +116,18 @@
     return tx(storeName,'readwrite',store=>{store.delete(key);return true});
   }
 
+  function hydrateItem(row){
+    if(!row)return row;
+    // Previous revisions may contain an IndexedDB-native Blob/File.
+    if(row.blob instanceof Blob)return row;
+    // Store bytes in an ArrayBuffer, not a File or Blob structured clone:
+    // Linux WebKit and some Safari storage configurations reject those.
+    if(row.blob_encoding==='ARRAY_BUFFER_V1'&&row.blob_bytes instanceof ArrayBuffer){
+      return {...row,blob:new Blob([row.blob_bytes],{type:row.mime_type||'application/octet-stream'})};
+    }
+    return row;
+  }
+
   async function listByIndex(storeName,indexName,value){
     const db=await openDb();
     try{
@@ -174,6 +196,13 @@
     const list=Array.from(files||[]).filter(Boolean);
     const created=[];
     for(const file of list){
+      // WebKit IndexedDB may reject structured-cloning a File instance. Store
+      // its exact bytes as a plain Blob and keep the original name/MIME in
+      // explicit metadata; File itself is not needed for later OCR transport.
+      const mime=captureMime(file);
+      const sourceBlob=file instanceof Blob
+        ?file.slice(0,file.size,mime)
+        :new Blob([file],{type:mime});
       const item={
         capture_item_id:id('capture_item'),
         capture_session_id:session.capture_session_id,
@@ -181,9 +210,10 @@
         kind,
         visibility:kind==='ANSWER_REFERENCE'?'PARENT_ONLY':'FAMILY',
         file_name:clean(file.name)||'capture.jpg',
-        mime_type:clean(file.type)||'image/jpeg',
-        size:Number(file.size)||0,
-        blob:file,
+        mime_type:mime,
+        size:sourceBlob.size,
+        blob_encoding:'ARRAY_BUFFER_V1',
+        blob_bytes:await sourceBlob.arrayBuffer(),
         state:'TEMP_SAVED',
         ocr_state:'NOT_REQUESTED',
         classification_state:'GROUP_LOCKED_BY_PARENT',
@@ -191,7 +221,7 @@
         updated_at:now()
       };
       await put(ITEM_STORE,item);
-      created.push({...item,blob:undefined});
+      created.push({...item,blob:undefined,blob_bytes:undefined});
     }
     await updateSession({current_group_key:groupKey,current_kind:kind});
     return created;
@@ -201,11 +231,11 @@
     const id=clean(sessionId)||(await activeSession())?.capture_session_id;
     if(!id)return [];
     const items=await listByIndex(ITEM_STORE,'capture_session_id',id);
-    return items.sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at)));
+    return items.map(hydrateItem).sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at)));
   }
 
   async function getItem(itemId){
-    return getByKey(ITEM_STORE,itemId);
+    return hydrateItem(await getByKey(ITEM_STORE,itemId));
   }
 
   async function removeItem(itemId){
