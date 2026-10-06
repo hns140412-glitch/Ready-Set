@@ -161,6 +161,19 @@
     });
   }
 
+  // PARENT = capture / input / confirm. Planner assignments are shown as status only; execution stays in child mode.
+  function renderParent(core, model, {title, lead, todayTitle, actions, todo}) {
+    if (title) title.textContent = '시간표와 숙제를 먼저 준비해요';
+    const assigned = core.tasks(true);
+    if (lead) lead.textContent = assigned.length ? `오늘 배정 ${assigned.length}개 · 남은 ${model.task_count}개. 실행은 아이 화면에서 해요.` : '확정된 시간표와 숙제 FACT가 있어야 Planner가 오늘을 배정해요.';
+    if (todayTitle) todayTitle.textContent = 'Planner가 오늘 배정한 할 일 · 상태';
+    actions.querySelector('#readyHomeworkPrimary')?.remove();
+    const shown = assigned.slice(0, 5);
+    todo.innerHTML = shown.length ? shown.map(task => `<div class="readyHomeworkTask ${task.status === 'COMPLETED' ? 'done' : ''}"><div><b>${escape(task.title)}</b><small>${escape(taskMeta(task) || '분량 확인 필요')}</small></div><span class="readyHomeworkState" data-state="${escape(task.status)}">${escape(STATUS_LABEL[task.status] || '아직 시작 전')}</span></div>`).join('') : '<div class="baseEmpty">오늘 배정된 숙제가 없어요. 숙제 입력 · 확인 후 Planner 배정을 확인해 주세요.</div>';
+    document.documentElement.dataset.readyHomeworkUI = VERSION;
+    return true;
+  }
+
   function render() {
     const core = api();
     renderReports();
@@ -178,6 +191,7 @@
     const title = document.getElementById('baseHomeTitle');
     const lead = document.getElementById('baseHomeLead');
     const todayTitle = document.getElementById('baseTodayTitle');
+    if (core.reportRole() === 'PARENT_REPORTED') return renderParent(core, model, {title, lead, todayTitle, actions, todo});
     if (title) title.textContent = `${childName}오늘 뭐부터 탐험할까?`;
     if (lead) lead.textContent = model.task_count ? `오늘 숙제 ${model.task_count}개. 지금은 하나만 시작하면 돼.` : '오늘 숙제를 먼저 불러오자.';
     if (todayTitle) todayTitle.textContent = '오늘의 탐험 목록';
