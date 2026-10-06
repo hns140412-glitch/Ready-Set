@@ -20,7 +20,9 @@
   function enforceImplementationHold(){
     const home=document.getElementById('homeView');
     if(!home)return;
-    home.classList.remove('worldShell');
+    // Only write when needed: classList.remove always rewrites the class attribute,
+    // which re-triggers the class observer below and locks the main thread.
+    if(home.classList.contains('worldShell'))home.classList.remove('worldShell');
     home.querySelector('#worldStage')?.remove();
     home.querySelectorAll('.worldLegacySection').forEach(el=>el.classList.remove('worldLegacySection'));
     document.documentElement.dataset.readyWorldImplementation='HOLD';

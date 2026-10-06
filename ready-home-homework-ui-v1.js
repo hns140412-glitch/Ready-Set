@@ -20,6 +20,11 @@
     node.textContent = `
       #readyHomeworkPrimary{width:100%;border:0;border-radius:22px;padding:18px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left;background:#191919;color:#fff;box-shadow:0 12px 28px rgba(21,45,58,.18)}
       #readyHomeworkPrimary span{display:grid;gap:3px}#readyHomeworkPrimary small{font-size:11px;font-weight:850;letter-spacing:.08em;color:#ffd51f}#readyHomeworkPrimary b{font-size:21px;line-height:1.15}#readyHomeworkPrimary strong{font-size:24px;color:#ffd51f}
+      #homeView .baseActions #readyHomeworkPrimary{display:flex;background:linear-gradient(135deg,#173f5b,#0f2a3d);color:#fff;padding:20px 20px;border-radius:24px;box-shadow:0 14px 30px rgba(15,42,61,.28)}
+      #homeView .baseActions #readyHomeworkPrimary small{color:#ffd51f;margin:0;font-size:12px}#homeView .baseActions #readyHomeworkPrimary b{font-size:26px;color:#fff}#homeView .baseActions #readyHomeworkPrimary em{font-style:normal;font-size:15px;font-weight:800;color:#d8ecf7;line-height:1.3}
+      #homeView .baseActions #readyHomeworkPrimary strong{display:grid;place-items:center;width:52px;height:52px;flex:none;border-radius:50%;background:#ffd51f;color:#173f5b;font-size:26px}
+      #homeView .baseActions #readyHomeworkPrimary.ready-empty{background:rgba(255,255,255,.92);color:#173f5b}#homeView .baseActions #readyHomeworkPrimary.ready-empty b{color:#173f5b}
+      .readyHomeworkTask.done b{color:#6b8494;text-decoration:line-through}.readyHomeworkState{font-size:13px;font-weight:900;color:#31566d;background:#e6f0f5;border-radius:999px;padding:7px 11px;white-space:nowrap}.readyHomeworkState[data-state="COMPLETED"]{background:#ffe680;color:#5a4300}
       #readyHomeworkPrimary.ready-empty{background:rgba(255,255,255,.92);color:#173f5b;border:1px solid rgba(19,77,109,.12)}#readyHomeworkPrimary.ready-empty small{color:#68879a}#readyHomeworkPrimary.ready-empty strong{color:#173f5b}
       .readyHomeworkTask{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:14px 15px;border-radius:18px;background:rgba(255,255,255,.86);border:1px solid rgba(19,77,109,.10);margin-top:9px}
       .readyHomeworkTask b{display:block;color:#173f5b}.readyHomeworkTask small{display:block;margin-top:4px;color:#6b8494;font-weight:700}.readyHomeworkTask button{border:0;border-radius:13px;background:#173f5b;color:#fff;padding:10px 12px;font-weight:900}
@@ -30,14 +35,19 @@
   }
 
   function taskMeta(task) {
-    return [task.subject, task.volume, task.learningProgress ? `${task.learningProgress.remainingQuantity}% 남음` : '', task.deadline && task.deadline !== '미확정' ? `마감 ${task.deadline}` : ''].filter(Boolean).join(' · ');
+    return [['PARTIAL','DEFERRED'].includes(task.status) ? STATUS_LABEL[task.status] : '', task.subject, task.volume, task.learningProgress && task.status !== 'COMPLETED' ? `${task.learningProgress.remainingQuantity}% 남음` : '', task.deadline && task.deadline !== '미확정' ? `마감 ${task.deadline}` : ''].filter(Boolean).join(' · ');
   }
+
+  const STATUS_LABEL = {IN_PROGRESS:'탐험 중', COMPLETED:'완료', PARTIAL:'일부 남음', DEFERRED:'다음에', BLOCKED:'막힘', WAITING_FOR_PARENT:'부모 도움 필요'};
+  const sessionActive = core => core.activeSession()?.session_state === 'ACTIVE';
 
   function startTask(task) {
     const core = api();
-    if (!core || !task) return;
+    if (!core || (!task && !sessionActive(core))) return;
     try {
-      core.createSession(task);
+      // One session: an ACTIVE session is resumed (new lap on the chosen task), never duplicated.
+      if (sessionActive(core)) core.resumeSession(task ? task.task_id : null);
+      else core.createSession(task);
       document.documentElement.dataset.readyHomeworkStart = 'ACTIVE';
       go('focus');
     } catch (error) {
@@ -69,6 +79,10 @@
 
   function onPrimary(model) {
     if (model.gate !== 'READY_HOME') return;
+    if (model.start_mode === 'RESUME') {
+      startTask(null);
+      return;
+    }
     if (model.start_mode === 'EMPTY') {
       go('mission');
       return;
@@ -166,15 +180,27 @@
     const todayTitle = document.getElementById('baseTodayTitle');
     if (title) title.textContent = `${childName}오늘 뭐부터 탐험할까?`;
     if (lead) lead.textContent = model.task_count ? `오늘 숙제 ${model.task_count}개. 지금은 하나만 시작하면 돼.` : '오늘 숙제를 먼저 불러오자.';
-    if (todayTitle) todayTitle.textContent = '오늘 뭐부터 탐험할까?';
+    if (todayTitle) todayTitle.textContent = '오늘의 탐험 목록';
+    if (lead && model.resume) lead.textContent = `탐험 중이야. ${model.resume.total}개 중 ${model.resume.done}개 기록했어.`;
 
-    actions.innerHTML = `<button id="readyHomeworkPrimary" class="${model.start_mode === 'EMPTY' ? 'ready-empty' : ''}"><span><small>${model.start_mode === 'EMPTY' ? 'TODAY HOMEWORK' : 'READY TO START'}</small><b>${escape(model.primary_action)}</b></span><strong>→</strong></button>`;
+    const kicker = {EMPTY:'TODAY HOMEWORK', RESUME:`탐험 중 · ${model.resume?.done ?? 0}/${model.resume?.total ?? 0}`}[model.start_mode] || 'READY TO START';
+    const next = model.resume?.label || (model.start_mode === 'DIRECT' ? model.tasks[0]?.title : '');
+    actions.innerHTML = `<button id="readyHomeworkPrimary" class="${model.start_mode === 'EMPTY' ? 'ready-empty' : ''}"><span><small>${escape(kicker)}</small><b>${escape(model.primary_action)}</b>${next ? `<em>${escape(next)}</em>` : ''}</span><strong>→</strong></button>`;
     actions.querySelector('#readyHomeworkPrimary').onclick = () => onPrimary(model);
 
-    const shown = core.tasks().slice(0, 3);
-    todo.innerHTML = shown.length ? shown.map(task => `<div class="readyHomeworkTask"><div><b>${escape(task.title)}</b><small>${escape(taskMeta(task) || '분량 확인 필요')}</small></div><button data-quick-start="${escape(task.task_id)}">시작</button></div>`).join('') : '<div class="baseEmpty">오늘 등록된 숙제가 없어요. 부모/관리자에서 숙제를 추가해 주세요.</div>';
+    // Today's tasks are the primary object: keep them directly under the start action, above the timetable peek.
+    const todaySection = todo.closest('section');
+    const peek = document.getElementById('baseSchedulePeek');
+    if (todaySection && peek && peek.parentElement === todaySection.parentElement && todaySection.nextElementSibling !== peek) peek.before(todaySection);
+
+    const active = sessionActive(core);
+    const startable = task => active
+      ? core.activeSession()?.tasks?.find(t => t.task_id === core.resolveCanonicalTaskId(task.task_id))?.state === 'PENDING'
+      : ['PLANNED','PARTIAL','DEFERRED'].includes(task.status);
+    const shown = core.tasks(true).slice(0, 5);
+    todo.innerHTML = shown.length ? shown.map(task => `<div class="readyHomeworkTask ${task.status === 'COMPLETED' ? 'done' : ''}"><div><b>${escape(task.title)}</b><small>${escape(taskMeta(task) || '분량 확인 필요')}</small></div>${startable(task) ? `<button data-quick-start="${escape(task.task_id)}">${active ? '이걸로' : '시작'}</button>` : `<span class="readyHomeworkState" data-state="${escape(task.status)}">${escape(STATUS_LABEL[task.status] || '')}</span>`}</div>`).join('') : '<div class="baseEmpty">오늘 등록된 숙제가 없어요. 부모/관리자에서 숙제를 추가해 주세요.</div>';
     todo.querySelectorAll('[data-quick-start]').forEach(button => button.onclick = () => {
-      const task = core.tasks().find(item => item.task_id === button.dataset.quickStart);
+      const task = core.tasks(true).find(item => item.task_id === button.dataset.quickStart);
       startTask(task);
     });
 

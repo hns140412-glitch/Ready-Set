@@ -595,6 +595,19 @@ function speakGuide(text){
   speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';
   const cfg={warm:{rate:.92,pitch:1.02},bright:{rate:1.04,pitch:1.12},calm:{rate:.86,pitch:.94},playful:{rate:1.08,pitch:1.18}}[state.guide.voice]||{rate:.95,pitch:1};u.rate=cfg.rate;u.pitch=cfg.pitch;u.volume=.92;speechSynthesis.speak(u);return true;
 }
+function readySharedContext(){
+  const p=new URLSearchParams(location.search),s=state.activeSession||{};
+  return{session_id:p.get('session_id')||s.id||null,goal_id:p.get('goal_id')||null,task_id:p.get('task_id')||null,lap_id:p.get('lap_id')||null,return_target:p.get('return_target')||null};
+}
+function readySupportEvent(type,reason,payload={}){
+  const c=readySharedContext(),event={event_id:`ready-event-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,type,app:'ready-set',at:new Date().toISOString(),...c,payload:{reason,...payload}};
+  try{window.dispatchEvent(new CustomEvent('taky-learning-event',{detail:event}))}catch{}
+  return event;
+}
+window.ReadyRadioSemantic=Object.freeze({
+  requestGuide:(reason='guide_support',payload={})=>readySupportEvent('GUIDE_RADIO_REQUEST',reason,payload),
+  requestImaginationCloud:(reason='concept_support',payload={})=>readySupportEvent('IMAGINATION_CLOUD_REQUEST',reason,payload)
+});
 $('#voicePreviewBtn').onclick=()=>speakGuide(`${state.guide.name}야. 오늘 작전도 네 옆에서 같이 갈게.`);
 $('#coachVoiceBtn').onclick=()=>speakGuide($('#duoText').textContent||'오늘 녹음을 끝까지 잘 마쳤어.');
 

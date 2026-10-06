@@ -128,10 +128,9 @@
     return [hit, ...available.filter(task => task.task_id !== hit.task_id)];
   }
 
-  function seedCanonicalTaskList(chosen) {
+  function seedCanonicalTaskList(ordered) {
     const host = hostSession();
     if (!host) throw new Error('READY_HOST_SESSION_REQUIRED');
-    const ordered = readyTasks(chosen);
     host.tasks = ordered.map(taskLabel);
     host.selected = [];
     host.taskLabel = taskLabel(ordered[0]);
@@ -168,9 +167,12 @@
     if (!task?.task_id) throw new Error('TASK_REQUIRED');
     if (!window.ReadyBaseRuntimeV1?.start) throw new Error('CANONICAL_READY_RUNTIME_REQUIRED');
     if (!canonical()?.switchTask) throw new Error('REV07_RUNTIME_REQUIRED');
+    if (canonicalSession()?.session_state === 'ACTIVE') throw new Error('SESSION_ALREADY_ACTIVE');
+    // Snapshot the ready list before start() marks the chosen Planner task IN_PROGRESS.
+    const ordered = readyTasks(task);
     selectPlannerTask(task);
-    window.ReadyBaseRuntimeV1.start();
-    const ordered = seedCanonicalTaskList(task);
+    window.ReadyBaseRuntimeV1.start({taskLabels:ordered.map(taskLabel)});
+    seedCanonicalTaskList(ordered);
     canonical().switchTask('__READY_HOME_ENSURE_CONTRACT__');
     const session = canonicalSession();
     if (!session?.session_id) throw new Error('CANONICAL_SESSION_NOT_CREATED');
@@ -180,6 +182,31 @@
   }
 
   function activeSession() { return canonicalSession(); }
+
+  const openLapTask = session => {
+    const active = session.tasks?.find(t => t.task_id === session.active_task_id);
+    return active?.laps?.some(l => l.lap_id === session.active_lap_id && !l.ended_at) ? active : null;
+  };
+
+  // Return to the one ACTIVE session: keep an open lap, otherwise open a lap on the requested/next PENDING task.
+  function resumeSession(homeworkTaskId = null) {
+    const runtime = canonical();
+    const session = canonicalSession();
+    if (!runtime || session?.session_state !== 'ACTIVE') throw new Error('NO_ACTIVE_CANONICAL_SESSION');
+    const wanted = homeworkTaskId == null ? null : resolveCanonicalTaskId(homeworkTaskId);
+    if (homeworkTaskId != null && !wanted) throw new Error('TASK_NOT_IN_CANONICAL_SESSION');
+    const target = wanted || openLapTask(session)?.task_id || session.tasks.find(t => t.state === 'PENDING')?.task_id;
+    if (!target) throw new Error('NO_PENDING_TASK');
+    if (target !== session.active_task_id) runtime.switchTask(target);
+    return clone(canonicalSession());
+  }
+
+  function resumeModel() {
+    const session = canonicalSession();
+    if (session?.session_state !== 'ACTIVE') return null;
+    const next = openLapTask(session) || session.tasks.find(t => t.state === 'PENDING');
+    return next ? {label:next.label, done:session.tasks.filter(t => t.state !== 'PENDING').length, total:session.tasks.length} : null;
+  }
 
   function switchTask(homeworkTaskId) {
     const runtime = canonical();
@@ -217,6 +244,13 @@
     const character = confirmedCharacter();
     const list = tasks();
     const start = chooseStartMode(list);
+    const resume = resumeModel();
+    if (resume) return {
+      version:VERSION,
+      gate:character.confirmed ? 'READY_HOME' : 'CHARACTER_REQUIRED',
+      character, title:'오늘 뭐부터 탐험할까?', primary_action:'숙제 이어서 하기',
+      start_mode:'RESUME', resume, task_count:list.length, tasks:[]
+    };
     return {
       version:VERSION,
       gate:character.confirmed ? 'READY_HOME' : 'CHARACTER_REQUIRED',
@@ -236,7 +270,7 @@
     return {
       version:VERSION,
       characterGate:['READY_HOME','CHARACTER_REQUIRED'].includes(model.gate),
-      oneDominantCTA:['숙제 시작','숙제 추가'].includes(model.primary_action),
+      oneDominantCTA:['숙제 시작','숙제 추가','숙제 이어서 하기'].includes(model.primary_action),
       timerOptional:true,
       target_min:null,
       startMode:model.start_mode,
@@ -252,7 +286,7 @@
 
   window.ReadyHomeHomeworkMVPV1 = Object.freeze({
     version:VERSION, model:renderHomeModel, tasks, chooseStartMode, createSession,
-    activeSession:() => clone(activeSession()), switchTask, finishTask, endSession,
+    activeSession:() => clone(activeSession()), resumeSession, switchTask, finishTask, endSession,
     resolveCanonicalTaskId, recordLearning, confirmLearning, reportRole, validate
   });
 
