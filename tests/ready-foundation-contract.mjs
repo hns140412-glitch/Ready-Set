@@ -36,7 +36,7 @@ assert.match(fs.readFileSync('ready-stage-c.js','utf8'),/AFTER_IDENTITY=\['\.\/r
 console.log('PASS foundation: profiles, revisions, overrides, adapters, source loss, authority, Planner, capture, loader guards');
 // Runtime boundary: projection publishing uses existing planner, never canonical session storage.
 const store=new Map();const writes=[];
-const runtime=vm.createContext({URLSearchParams,location:{search:'?role=parent'},Date,JSON,Event:class {},CustomEvent:class {},MutationObserver:class {observe(){}},document:{body:{},querySelector(){return null}},localStorage:{getItem:k=>store.get(k)||null,setItem(k,v){writes.push(k);store.set(k,v)}}});
+const runtime=vm.createContext({URLSearchParams,setTimeout,clearTimeout,location:{search:'?role=parent'},Date,JSON,Event:class {},CustomEvent:class {},MutationObserver:class {observe(){}},document:{body:{},documentElement:{dataset:{}},querySelector(){return null}},localStorage:{getItem:k=>store.get(k)||null,setItem(k,v){writes.push(k);store.set(k,v)}}});
 runtime.window=runtime;runtime.dispatchEvent=()=>{};
 vm.runInContext(fs.readFileSync('ready-foundation-v1.js','utf8'),runtime);vm.runInContext(fs.readFileSync('ready-foundation-control-v1.js','utf8'),runtime);
 const C=runtime.ReadyFoundationControlV1,R=runtime.ReadyFoundationV1;
