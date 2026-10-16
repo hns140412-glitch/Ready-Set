@@ -1,0 +1,1 @@
+globalThis.TakyCrewApprovedManifest={"schema_version":"TAKY_EXPLORER_CREW_AUDIO_MANIFEST_264_V1","source_authority":"R10_SCRIPT_LOCK_PLUS_APPROVED_SCENE_SIGNATURE_MEMORY_SOURCE","total_slots":264,"clips":[]};
