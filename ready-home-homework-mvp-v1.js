@@ -14,7 +14,7 @@
     catch { return fallback; }
   };
   const writeJSON = (key, value) => localStorage.setItem(key, JSON.stringify(value));
-  const taskLabel = task => [String(task?.title || task?.subject || '숙제').trim(), String(task?.volume || '').trim(), task?.learningProgress ? `${task.learningProgress.remainingQuantity}% 남음` : ''].filter(Boolean).join(' · ');
+  const taskLabel = task => {const progress=task?.learningProgress;const measured=progress?.unit==='PERCENT_OF_PLAN'&&Number.isFinite(progress.remainingQuantity)&&progress.remainingQuantity>=0&&progress.remainingQuantity<=100;return [String(task?.title || task?.subject || '숙제').trim(),String(task?.volume || '').trim(),measured?`${progress.remainingQuantity}% 남음`:''].filter(Boolean).join(' · ')};
 
   function identity() { return readJSON(IDENTITY_KEY, {}) || {}; }
   function planner() { return readJSON(PLANNER_KEY, {version:1, days:{}}) || {version:1, days:{}}; }
