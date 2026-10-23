@@ -29,7 +29,7 @@
         core.activeSession=null;
       }
     }
-    write(PLANNER_KEY,planner);write(CORE_KEY,core);
+    write(PLANNER_KEY,planner);window.dispatchEvent(new Event('ready-planner-local-change'));write(CORE_KEY,core);
     return true;
   }
   document.addEventListener('change',e=>{

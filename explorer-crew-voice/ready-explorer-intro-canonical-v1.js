@@ -62,7 +62,10 @@
    if(quote)quote.textContent=row?.exact_text||'만나고 싶은 탐험대원을 눌러 봐!';
    if(small)small.textContent=info;
    area.querySelectorAll('[data-rc-crew]').forEach(card=>card.setAttribute('aria-pressed',card.dataset.rcCrew===id?'true':'false'));
-   const next=area.querySelector('#rcConfirmEncounter');if(next)next.disabled=!id;
+   const seen=(root.ReadyIdentityV1?.get?.().introSeenCrewIds||[]).filter(x=>CORE6.includes(x));
+   const count=new Set(seen).size;
+   const next=area.querySelector('#rcConfirmEncounter');
+   if(next){next.disabled=!id||count<CORE6.length;next.textContent=count<CORE6.length?'탐험대원 만나기 '+count+' / 6':'이 탐험대원과 출발 준비'}
  }
  async function preview(id){
    if(!CORE6.includes(id)||!pick.has(id))return {ok:false,status:'CORE6_APPROVED_SOURCE_NOT_FOUND'};
@@ -70,6 +73,8 @@
    try{engine().stop();}catch{}
    setSpeech(id,'인사 음성 재생 중…');
    status.taps.push(id);
+   const previous=root.ReadyIdentityV1?.get?.().introSeenCrewIds||[];
+   if(!previous.includes(id))root.ReadyIdentityV1?.patch?.({introSeenCrewIds:[...previous,id]});
    let result;
    try{
      result=await engine().play({app_id:'READY_SET',character_id:id,intent:'GREET',
@@ -86,7 +91,7 @@
    status.state='EXPLORER';currentId=CORE6.includes(record.explorerId)?record.explorerId:(CORE6.includes(currentId)?currentId:null);
    el.innerHTML='<div class="rc-intro firstRunSky" data-rc-screen="EXPLORER">'+
      '<span>4 / 5 · FIRST ENCOUNTER</span><h1>오늘 함께 만날 탐험대원은?</h1>'+
-     '<p>여섯 탐험대원 중 한 명을 눌러 인사말을 들어 봐. 다시 누르면 또 들을 수 있어.</p>'+
+     '<p>여섯 탐험대원을 차례로 눌러 만나 봐. 모두 만나고 나면 출발 준비를 할 수 있어.</p>'+
      '<div class="rc-crew-grid">'+CORE6.map(id=>{
        const row=pick.get(id);
        return '<button type="button" class="rc-crew-card" data-rc-crew="'+id+'" aria-pressed="'+(id===currentId?'true':'false')+'">'+
@@ -101,15 +106,16 @@
      '<button type="button" class="rc-primary" id="rcConfirmEncounter" '+(currentId?'':'disabled')+'>이 탐험대원과 출발 준비</button></div></div>';
    el.querySelectorAll('[data-rc-crew]').forEach(card=>card.addEventListener('click',()=>void preview(card.dataset.rcCrew)));
    el.querySelector('#rcBackCharacter').onclick=()=>{
-     engine().stop();root.ReadyIdentityV1.patch({onboardingStep:'CHARACTER'});root.ReadyIdentityV1.render();
+     engine().stop();root.ReadyIdentityV1.patch({onboardingStep:record.teamName?'TEAM_NAME':'MODE'});root.ReadyIdentityV1.render();
    };
    el.querySelector('#rcConfirmEncounter').onclick=()=>{
-     if(!currentId)return;
+     if(!currentId||new Set((root.ReadyIdentityV1.get().introSeenCrewIds||[]).filter(x=>CORE6.includes(x))).size!==CORE6.length)return;
      engine().stop();
-     root.ReadyIdentityV1.patch({onboardingStep:'THEME',
-       explorerId:currentId,explorerName:nameById[currentId],
-       introPreferredCrewId:currentId,status:'INTRO_CREW_PREVIEW_SELECTED'});
-     status.confirmations++;root.ReadyIdentityV1.render();
+     root.ReadyIdentityV1.patch({onboardingStep:root.ReadyFirstJourneyScenesV1?'MAIN_INTRO_CHOICE':'THEME',
+       status:'CORE6_FIRST_MEETING_COMPLETE'});
+     status.confirmations++;
+     if(root.ReadyFirstJourneyScenesV1)root.ReadyFirstJourneyScenesV1.render();
+     else root.ReadyIdentityV1.render();
    };
    if(currentId)setSpeech(currentId,'다시 터치하면 목소리를 재생해요.');
  }
@@ -134,6 +140,7 @@
    };
    el.querySelector('#rcFinish').onclick=()=>{
      if(!selected||!CORE6.includes(record.explorerId))return;
+     if(root.ReadyFirstJourneyScenesV1?.beginAfterTheme?.(selected,el))return;
      try{
        const i=root.ReadyIdentityV1.get();
        root.ReadyIdentityV1.complete({
@@ -157,7 +164,7 @@
    button.textContent='내 캐릭터는 나중에 만들고 탐험대원 만나기';
    button.onclick=()=>{
      root.ReadyIdentityV1.patch({characterSetupState:'DEFERRED_NO_COST',
-       onboardingStep:'EXPLORER',status:'CHARACTER_DEFERRED'});
+       onboardingStep:root.ReadyFirstJourneyScenesV1?'PACK_BAG':'EXPLORER',status:'CHARACTER_DEFERRED'});
      root.ReadyIdentityV1.render();
    };
    section.appendChild(button);

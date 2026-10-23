@@ -136,7 +136,7 @@
         Number.isFinite(task.learningProgress.completedQuantity) && Number.isFinite(task.learningProgress.remainingQuantity) &&
         reports.some(hasReportQuantity) ? task.learningProgress : null;
       return `<div class="readyHomeworkTask"><div><b>${escape(task.title)}</b><small>${escape(task.volume)}${progress ? ` · ${progress.completedQuantity}% 완료 · ${progress.remainingQuantity}% 남음` : ''}</small>
-        ${reports.map(report => `<small>${escape(reportSourceLabel(report.source))} · ${escape(reportResultLabel(report))} · 기록 ${escape((report.reportedAt || '').slice(0,10))} · 한 날짜 ${escape(report.actualWorkDate || '모름')}${report.confirmedAt ? ' · 보호자 확인됨' : ''}</small>
+        ${reports.map(report => `<small>${escape(reportSourceLabel(report.source))} · ${escape(reportResultLabel(report))} · 기록 ${escape((report.reportedAt || '').slice(0,10))} · 한 날짜 ${escape(report.actualWorkDate || '모름')}${report.learningVerification==='NOT_VERIFIED_BY_LEARNING_ENGINE'?' · 활동 기록(학습 성취 검증 별도)':''}${report.confirmedAt ? ' · 보호자 확인됨' : ''}</small>
           ${parent && report.source === 'CHILD_REPORTED' && !report.confirmedAt ? `<button data-confirm-task="${escape(task.task_id)}" data-report="${escape(report.reportId)}">보호자 확인</button>` : ''}`).join('')}</div>
         ${task.status !== 'COMPLETED' ? `<button data-record-task="${escape(task.task_id)}">이미 했어 · 기록</button>` : '<span>완료</span>'}</div>`;
     }).join('');

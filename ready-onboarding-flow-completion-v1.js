@@ -21,7 +21,24 @@
     if(document.getElementById('readyOnboardingCompletionStyle'))return;
     const s=document.createElement('style');s.id='readyOnboardingCompletionStyle';s.textContent=`
       .rof-intro{min-height:100dvh;box-sizing:border-box;padding:max(64px,calc(env(safe-area-inset-top) + 38px)) 26px max(34px,calc(env(safe-area-inset-bottom) + 22px));background:linear-gradient(#83d3ff,#ebfaff 58%,#71cfe5);color:#123f63;display:flex;flex-direction:column}.rof-intro .brand{font-size:11px;font-weight:950;letter-spacing:.18em}.rof-intro h1{font-size:36px;line-height:1.04;letter-spacing:-.045em;margin:14px 0 10px}.rof-intro p{font-size:14px;line-height:1.55;font-weight:750;opacity:.74;margin:0}.rof-intro .flow{margin-top:30px;display:grid;gap:10px}.rof-intro .flow span{display:flex;align-items:center;gap:10px;padding:13px 14px;border-radius:17px;background:rgba(255,255,255,.78);font-size:12px;font-weight:900}.rof-intro .flow i{width:26px;height:26px;border-radius:9px;background:#0d8ee9;color:#fff;display:grid;place-items:center;font-style:normal;font-size:11px}.rof-intro button,.rof-primary{width:100%;border:0;border-radius:18px;background:#0d8ee9;color:#fff;padding:15px;font-size:15px;font-weight:950}.rof-intro button{margin-top:auto}.rof-defer{width:100%;border:1px solid rgba(18,63,99,.18);border-radius:18px;background:rgba(255,255,255,.84);color:#15537b;padding:14px;font-weight:950;margin:8px 0}.rof-defer small{display:block;font-size:10px;opacity:.62;margin-top:4px}.rof-grid{display:grid;gap:12px;margin:24px 0}.rof-guide,.rof-theme{width:100%;border:2px solid transparent;border-radius:24px;background:rgba(255,255,255,.86);padding:13px;text-align:left;color:#123f63;box-shadow:0 14px 30px rgba(24,93,133,.12)}.rof-guide{display:grid;grid-template-columns:86px 1fr;align-items:center;gap:14px}.rof-guide img{width:86px;height:86px;border-radius:22px;object-fit:cover;background:#eef8fb}.rof-guide b,.rof-guide small,.rof-theme b,.rof-theme small{display:block}.rof-guide b,.rof-theme b{font-size:16px}.rof-guide small,.rof-theme small{font-size:11px;line-height:1.4;opacity:.66;margin-top:5px}.rof-theme{padding:18px}.rof-theme[data-selected='1'],.rof-guide[data-selected='1']{border-color:#0d8ee9;background:#fff}.rof-summary{padding:16px;border-radius:20px;background:rgba(255,255,255,.78);font-size:12px;line-height:1.55;margin:18px 0}.rof-summary b{display:block;font-size:15px;margin-bottom:5px}
-    `;document.head.appendChild(s);
+    `;
+    s.textContent+=`
+      .rof-intro.rof-brand-entry{isolation:isolate;position:relative;overflow:hidden;background:linear-gradient(180deg,#72b8ef 0%,#ccecfb 47%,#9edccc 100%);padding:max(49px,calc(env(safe-area-inset-top) + 20px)) 23px max(32px,calc(env(safe-area-inset-bottom) + 18px));}
+      .rof-brand-entry::before{content:'';position:absolute;inset:12% -30% auto;height:55%;border-radius:50%;background:radial-gradient(ellipse,rgba(255,255,255,.66),rgba(255,255,255,0) 70%);z-index:-1;pointer-events:none}
+      .rof-brand-entry .brand{display:flex;align-items:center;justify-content:space-between;font-size:13px;letter-spacing:.18em;color:#164765;}
+      .rof-brand-entry .brand small{font-size:11px;letter-spacing:0;font-weight:850;background:rgba(255,255,255,.75);padding:7px 11px;border-radius:999px}
+      .rof-brand-entry .brandIntroTitle{text-align:center;margin:7vh 0 5px;color:#fff;text-shadow:0 4px 16px rgba(19,96,142,.25),0 2px 0 #2e749c;font:900 clamp(37px,11.8vw,55px)/1.05 system-ui,-apple-system,sans-serif;letter-spacing:-.06em}
+      .rof-brand-entry .brandIntroLine{text-align:center;margin:9px auto 0;line-height:1.45;font-size:16px;font-weight:900;color:#165c70}
+      .rof-brand-entry .brandIntroActor{width:min(80vw,350px);flex:1;min-height:220px;max-height:390px;position:relative;display:flex;align-items:center;justify-content:center;margin:auto}
+      .rof-brand-entry .brandIntroActor::before{content:'';position:absolute;bottom:17%;width:85%;height:21%;background:rgba(17,116,125,.22);filter:blur(23px);border-radius:50%}
+      .rof-brand-entry .brandIntroActor img{max-height:100%;width:100%;object-fit:contain;filter:drop-shadow(0 15px 14px rgba(14,91,105,.18))}
+      .rof-brand-entry .brandIntroCaption{text-align:center;display:block;color:#14526a;font-size:12px;font-weight:800;margin-top:-18px;margin-bottom:15px;z-index:1}
+      .rof-brand-entry .brandIntroButton{position:relative;margin-top:0;min-height:58px;border-radius:24px;background:#f9fff8;color:#136659;box-shadow:0 7px 0 rgba(41,112,91,.18),0 16px 32px rgba(25,98,98,.2);font-size:19px;letter-spacing:-.025em}
+      .rof-brand-entry .brandIntroButton:focus-visible{outline:4px solid #155c92;outline-offset:3px}
+      .rof-brand-entry .brandIntroFooter{text-align:center;display:block;color:#1e6372;opacity:.86;font-size:11px;font-weight:800;margin-top:21px}
+      @media(max-height:690px){.rof-brand-entry .brandIntroTitle{margin-top:2vh}.rof-brand-entry .brandIntroActor{min-height:135px;max-height:245px}.rof-brand-entry .brandIntroCaption{margin-top:-5px}}
+    `;
+    document.head.appendChild(s);
   }
   function startIntro(){
     localStorage.setItem(INTRO_KEY,'1');
@@ -35,7 +52,7 @@
       if(existing.dataset.bound!=='1'){existing.dataset.bound='1';existing.addEventListener('click',startIntro)}
       return true;
     }
-    r.innerHTML=`<div class="rof-intro"><span class="brand">READY & SET · FIRST JOURNEY</span><h1>준비는 가볍게.<br>시작은 자신 있게.</h1><p>시간표와 숙제 원본을 먼저 정리하면 Planner가 오늘 할 일을 준비해요. 부모의 준비 화면과 아이의 탐험 화면은 분리해서 사용합니다.</p><div class="flow"><span><i>1</i>누가 준비하는지 정하기</span><span><i>2</i>아이 또는 사용자 기본 정보</span><span><i>3</i>탐험대와 기본 세계 정하기</span><span><i>4</i>시간표 · 숙제 입력으로 바로 이어가기</span></div><button id="rofIntroStart" type="button">Ready & Set 시작하기</button></div>`;
+    r.innerHTML=`<div class="rof-intro rof-brand-entry"><div class="brand"><span>GUIDE</span><small>FIRST JOURNEY</small></div><h1 class="brandIntroTitle">Ready & Set</h1><p class="brandIntroLine">오늘도, 작은 도전이<br>큰 이야기가 되어!</p><div class="brandIntroActor"><img src="./characters/ui_cutouts/dubi.png" alt="첫 탐험을 기다리는 탐험대원 두비"></div><span class="brandIntroCaption">우리의 탐험은 여기서 시작돼요.</span><button id="rofIntroStart" class="brandIntroButton" type="button">시작하기 &rarr;</button><small class="brandIntroFooter">탐험대원 첫 만남 · 나의 준비 · 첫 섬 · 베이스캠프</small></div>`;
     const button=r.querySelector('#rofIntroStart');
     button.dataset.bound='1';
     button.addEventListener('click',startIntro);
@@ -47,7 +64,7 @@
     const btn=document.createElement('button');btn.id='rofCharacterDefer';btn.type='button';btn.className='rof-defer';btn.innerHTML='<b>캐릭터는 나중에 완성하고 계속</b><small>지금은 비용 없이 인트로·시간표·숙제 기능부터 사용할 수 있어요.</small>';
     const back=sky.querySelector('.firstRunBack');sky.insertBefore(btn,back||null);
     btn.onclick=()=>{
-      patch({characterSetupState:'DEFERRED_NO_COST',characterCandidateState:'DEFERRED',status:'CHARACTER_DEFERRED',onboardingStep:'EXPLORER'});renderStep();
+      patch({characterSetupState:'DEFERRED_NO_COST',characterCandidateState:'DEFERRED',status:'CHARACTER_DEFERRED',onboardingStep:window.ReadyFirstJourneyScenesV1?'PACK_BAG':'EXPLORER'});renderStep();
     };
   }
   function explorer(r,i){
@@ -76,8 +93,17 @@
     installStyle();const r=root(),i=identity();if(!r||i.status==='READY')return;
     if(i.onboardingStep==='MODE'){welcome(r);return}
     if(i.onboardingStep==='CHARACTER'){addCharacterDefer(r,i);return}
-    if(i.onboardingStep==='EXPLORER'){if(r.querySelector('#rofExplorerNext'))return;explorer(r,i);return}
-    if(i.onboardingStep==='THEME'){if(r.querySelector('#rofFinish'))return;theme(r,i);return}
+    if(i.onboardingStep==='EXPLORER'||i.onboardingStep==='THEME'){
+      // Canonical Core6 is the sole owner of these two scenes.
+      // Never fight its MutationObserver by painting the legacy 3-guide markup.
+      if(window.ReadyExplorerIntroCanonicalV1){
+        if(r.querySelector('[data-rc-screen]')?.dataset.rcScreen!==i.onboardingStep)
+          window.ReadyExplorerIntroCanonicalV1.render(r);
+        return;
+      }
+      if(i.onboardingStep==='EXPLORER'){if(!r.querySelector('#rofExplorerNext'))explorer(r,i);return}
+      if(!r.querySelector('#rofFinish'))theme(r,i);
+    }
   }
   function sync(){requestAnimationFrame(renderStep)}
   const observer=new MutationObserver(sync);observer.observe(document.documentElement,{subtree:true,childList:true});

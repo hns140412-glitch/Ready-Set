@@ -22,20 +22,24 @@ try{
   page.on('dialog',dialog=>dialog.dismiss());
 
   await page.goto('http://127.0.0.1:4177/__visual/?state=onboarding-photo',{waitUntil:'load',timeout:15000});
-  await page.waitForFunction(()=>window.ReadyIdentityV1&&document.documentElement.dataset.readyStageLoader);
+  // During first-run onboarding the core loader is deliberately held until identity is READY.
+  await page.waitForFunction(()=>window.ReadyIdentityV1&&(document.documentElement.dataset.readyBootState==='ONBOARDING'||document.documentElement.dataset.readyStageLoader));
   await page.locator('#gal').setInputFiles({name:'fixture.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64')});
   await page.waitForFunction(()=>!document.querySelector('#readyFirstRun #next')?.disabled);
   await page.locator('#readyFirstRun #next').tap();
   await page.waitForSelector('#readyCharacterCandidateMount .takyConsult',{timeout:12000});
   assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().onboardingStep),'CHARACTER');
 
-  await page.locator('[data-taky-choice="FEEL_BRIGHT"]').tap();
-  await page.locator('[data-taky-confirm]').tap();
-  await page.locator('[data-taky-choice="LOOK_ACTIVE"]').tap();
-  await page.locator('[data-taky-confirm]').tap();
-  await page.waitForSelector('[data-taky-generate]',{timeout:8000});
-  assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections.length),3);
-  assert.match(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections[2].tileKey),/^AUTO_/);
+  // Current 3-round mood direction contract: all choices are explicitly made,
+  // there is no auto-derived third choice and paid generation stays locked.
+  for(const key of ['BRIGHT','IMAGINE','FOCUS']){
+    await page.locator('[data-taky-choice="'+key+'"]').tap();
+    await page.locator('[data-taky-confirm]').tap();
+  }
+  await page.waitForSelector('#readyCharacterCandidateMount .takySummary',{timeout:8000});
+  const moodChoices=await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections.map(x=>x.tileKey));
+  assert.deepEqual(moodChoices,['BRIGHT','IMAGINE','FOCUS']);
+  assert.equal(await page.locator('[data-paid-lock="true"]').count(),1);
 
   await page.waitForSelector('#rofCharacterDefer',{timeout:8000});
   await page.locator('#rofCharacterDefer').tap();
@@ -135,42 +139,60 @@ try{
   },factResult);
   assert.deepEqual(parentRoundtrip,{studyOpportunity:true,factCommitted:true,plannerCandidate:true,todayTask:true});
 
-  // Parent → child role reload. The live child UI is Today's Island; governed tasks surface as island pins.
+  // Parent → child role reload. The world island is intentionally on HOLD.
+  // Select the governed task through the actual native child home instead;
+  // never turn on an unapproved world scene just to make a test pass.
   await page.evaluate(()=>window.ReadyRoleContextV1.switchRole('child',{reload:true}));
   await page.waitForLoadState('load',{timeout:12000});
-  await page.waitForFunction(()=>window.ReadyRoleContextV1?.current?.()==='child'&&window.ReadyHomeHomeworkMVPV1&&window.ReadyWorldShellV1,{timeout:12000});
+  await page.waitForFunction(()=>window.ReadyRoleContextV1?.current?.()==='child'&&window.ReadyBaseNativeV2&&window.ReadyHomeHomeworkMVPV1,{timeout:12000});
   await page.waitForFunction(()=>window.ReadyHomeHomeworkMVPV1.tasks().length>0,{timeout:10000});
-  await page.evaluate(()=>window.ReadyWorldShellV1?.render?.());
-  await page.waitForSelector('#worldStage .worldTaskPin',{timeout:10000});
+  // Loader replaces the initial native task tile with a real homework start
+  // control. Wait for the settled user-facing state, not transient boot HTML.
+  await page.waitForFunction(()=>document.documentElement.dataset.readyBootState==='READY'&&!!window.ReadyHomeHomeworkUIV1,{timeout:12000});
+  await page.waitForSelector('#homeTodayTodoList button[data-quick-start]',{timeout:10000});
   const childOutcome=await page.evaluate(({id})=>({
     role:ReadyRoleContextV1.current(),
     parentHub:!!document.querySelector('#readyParentSetupHub'),
     taskCount:ReadyHomeHomeworkMVPV1.tasks().length,
-    sourceTask:ReadyHomeHomeworkMVPV1.tasks().some(t=>t.task_id.includes(id)||t.title==='수학 숙제'||t.subject==='수학'),
-    worldPins:document.querySelectorAll('#worldStage .worldTaskPin').length,
-    pinText:[...document.querySelectorAll('#worldStage .worldTaskPin')].map(x=>x.textContent||'').join(' ')
+    sourceTask:ReadyHomeHomeworkMVPV1.tasks().some(t=>String(t.task_id||'').includes(id)||t.title==='수학 숙제'||t.subject==='수학'),
+    actionableTasks:document.querySelectorAll('#homeTodayTodoList button[data-quick-start]').length,
+    actionableText:document.querySelector('#homeTodayTodoList')?.textContent||'',
+    worldImplementation:document.documentElement.dataset.readyWorldImplementation,
+    worldPresent:!!document.getElementById('worldStage')
   }),factResult);
   assert.equal(childOutcome.role,'child');
   assert.equal(childOutcome.parentHub,false);
   assert.ok(childOutcome.taskCount>0);
   assert.equal(childOutcome.sourceTask,true);
-  assert.ok(childOutcome.worldPins>0);
-  assert.match(childOutcome.pinText,/수학|10~15|발견하기/);
+  assert.ok(childOutcome.actionableTasks>0);
+  assert.match(childOutcome.actionableText,/수학|10~15/);
+  assert.equal(childOutcome.worldImplementation,'HOLD');
+  assert.equal(childOutcome.worldPresent,false);
 
-  // Tap the actual island task pin. This is the child-facing start/select action and must persist the governed task.
-  await page.locator('#worldStage .worldTaskPin').first().tap();
-  await page.waitForLoadState('load',{timeout:12000});
+  // Tap the settled homework CTA. This starts the canonical Ready session,
+  // preserving the approved world implementation HOLD.
+  await page.locator('#homeTodayTodoList button[data-quick-start]').first().tap();
   await page.waitForFunction(({id,today})=>{
     const planner=JSON.parse(localStorage.getItem('readyset_planner_v1')||'{"days":{}}');
-    const tasks=planner.days?.[today]?.tasks||[];
-    const selected=tasks.find(t=>t.selected===true);
-    const core=JSON.parse(localStorage.getItem('readyset_state')||'{}');
-    return !!selected&&selected.sourceAssignmentId===id&&String(core.g13PlannerTask?.id)===String(selected.id);
+    const selected=(planner.days?.[today]?.tasks||[]).find(t=>t.selected===true);
+    const session=window.ReadyHomeHomeworkMVPV1?.activeSession?.();
+    return !!selected&&selected.sourceAssignmentId===id&&!!session?.session_id;
   },factResult,{timeout:12000});
-
+  const started=await page.evaluate(()=>({
+    session:ReadyHomeHomeworkMVPV1.activeSession(),
+    focusActive:document.querySelector('#focusView')?.classList.contains('active')||false,
+    startState:document.documentElement.dataset.readyHomeworkStart,
+    worldImplementation:document.documentElement.dataset.readyWorldImplementation,
+    worldPresent:!!document.getElementById('worldStage')
+  }));
+  assert.ok(started.session?.session_id);
+  assert.equal(started.startState,'ACTIVE');
+  assert.equal(started.focusActive,true);
+  assert.equal(started.worldImplementation,'HOLD');
+  assert.equal(started.worldPresent,false);
   assert.equal(apiCalls,0);
   assert.deepEqual(errors,[]);
-  console.log('PASS: First Journey → parent STUDY_OPPORTUNITY → reviewed homework FACT → Planner TODAY_TASK → child island pin selection; API calls 0');
+  console.log('PASS: First Journey → parent timetable/homework FACT → Planner TODAY_TASK → child homework CTA → canonical focus session; held world respected; API calls 0');
   await context.close();
 } finally {
   await browser?.close();

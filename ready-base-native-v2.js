@@ -4,7 +4,7 @@
   const ROLE=new URLSearchParams(location.search).get('role')==='parent'?'PARENT':'CHILD';
   const TODAY=()=>new Date().toLocaleDateString('sv-SE'),PLANNER_KEY='readyset_planner_v1',CORE_KEY='readyset_state',PENDING_KEY='ready_g13_pending_task';
   const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-  const read=(k,f={})=>{try{return JSON.parse(localStorage.getItem(k)||'null')||f}catch{return f}},write=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+  const read=(k,f={})=>{try{return JSON.parse(localStorage.getItem(k)||'null')||f}catch{return f}},write=(k,v)=>{localStorage.setItem(k,JSON.stringify(v));if(k===PLANNER_KEY)window.dispatchEvent(new Event('ready-planner-local-change'));};
   const statusRank=s=>s==='IN_PROGRESS'?0:(s==='COMPLETED'?2:1),statusLabel=s=>s==='IN_PROGRESS'?'진행 중':s==='COMPLETED'?'완료':'아직 시작 전';
   function todayTasks(){const p=read(PLANNER_KEY,{});return [...(p.days?.[TODAY()]?.tasks||[])].map((task,index)=>({task,index})).sort((a,b)=>statusRank(a.task.status)-statusRank(b.task.status)||a.index-b.index).map(x=>x.task)}
   function taskTitle(t){return t?.title||t?.subject||'할 일'}

@@ -49,7 +49,7 @@
   };
 
   function load(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||'null')||{}}catch{return {}}}
-  function save(p){localStorage.setItem(STORE_KEY,JSON.stringify(p));return p}
+  function save(p){localStorage.setItem(STORE_KEY,JSON.stringify(p));window.dispatchEvent(new Event('ready-planner-local-change'));return p}
   function ensureShape(p){
     p.days=p.days&&typeof p.days==='object'?p.days:{};
     p.assignmentFacts=p.assignmentFacts&&typeof p.assignmentFacts==='object'?p.assignmentFacts:{};

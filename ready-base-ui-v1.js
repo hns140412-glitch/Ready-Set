@@ -21,7 +21,7 @@
       <section class="baseToday"><div class="sectionTitle"><div><span>${role==='PARENT'?'오늘 배정 현황':'오늘의 할 일'}</span><h2>${role==='PARENT'?'Planner가 오늘 배정한 할 일이에요':'오늘 뭐부터 탐험할까?'}</h2></div><button class="linkBtn" data-nav="mission">자세히</button></div><div id="homeTodayTodoList">${list.length?list.slice(0,3).map(t=>`<${role==='PARENT'?'div':'button'} class="baseTask ${t.status==='COMPLETED'?'completed':''}" ${role==='PARENT'?'':'type="button" data-base-task="'+esc(t.id)+'"'}><span><b>${esc(t.title||t.subject||'할 일')}</b><small>${esc(t.volume||t.unitLabel||t.note||'분량/단위 확인 필요')}</small></span><em>${esc(status(t))}</em></${role==='PARENT'?'div':'button'}>`).join(''):`<div class="baseEmpty">오늘 배정된 탐험은 없어요.${role==='PARENT'?'<small>숙제 원본 FACT가 있다면 Planner 배정 상태를 확인해 주세요.</small>':''}</div>`}</div></section>`;
     home.querySelectorAll('[data-base-task]').forEach(btn=>btn.addEventListener('click',()=>{
       const id=btn.dataset.baseTask; const p=planner(); const day=p.days?.[today()]; if(!day)return;
-      day.tasks=(day.tasks||[]).map(t=>({...t,selected:String(t.id)===String(id)})); localStorage.setItem('readyset_planner_v1',JSON.stringify(p));
+      day.tasks=(day.tasks||[]).map(t=>({...t,selected:String(t.id)===String(id)})); localStorage.setItem('readyset_planner_v1',JSON.stringify(p));window.dispatchEvent(new Event('ready-planner-local-change'));
       sessionStorage.setItem('ready_g13_pending_task',String(id)); location.reload();
     }));
     document.documentElement.dataset.readyBaseUi=VERSION;

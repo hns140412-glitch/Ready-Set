@@ -41,7 +41,7 @@
     return p;
   }
   function load(){try{return normalize(JSON.parse(localStorage.getItem(STORE_KEY)||'null'))}catch{return normalize({})}}
-  function save(p){localStorage.setItem(STORE_KEY,JSON.stringify(normalize(p)));return p}
+  function save(p){localStorage.setItem(STORE_KEY,JSON.stringify(normalize(p)));window.dispatchEvent(new Event('ready-planner-local-change'));return p}
   function ensureDay(p,date){return p.days[date]||(p.days[date]={localDate:date,createdAt:isoNow(),scheduleNote:'',tasks:[]})}
   function nextTuesdayAfter(base){
     const d=new Date(`${base}T12:00:00`);let add=(2-d.getDay()+7)%7;if(add===0)add=7;d.setDate(d.getDate()+add);return d.toLocaleDateString('sv-SE');

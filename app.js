@@ -488,7 +488,7 @@ function storeAudio(blob,name,type){
   });
 }
 
-function resultSource(){return state.lastResult||state.records[0]||null}
+function resultSource(){return state.records?.[0]||state.lastResult||null}
 function resultSceneFor(r){
   const delta=r.deltaMs;
   if(delta<=-120000)return{headline:'엣헴~! 오늘 좀 했습니다.',line:'잠깐… 시계보다 먼저 왔는데?',label:'TIME SAVE'};
@@ -595,6 +595,19 @@ function speakGuide(text){
   speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';
   const cfg={warm:{rate:.92,pitch:1.02},bright:{rate:1.04,pitch:1.12},calm:{rate:.86,pitch:.94},playful:{rate:1.08,pitch:1.18}}[state.guide.voice]||{rate:.95,pitch:1};u.rate=cfg.rate;u.pitch=cfg.pitch;u.volume=.92;speechSynthesis.speak(u);return true;
 }
+function readySharedContext(){
+  const p=new URLSearchParams(location.search),s=state.activeSession||{};
+  return{session_id:p.get('session_id')||s.id||null,goal_id:p.get('goal_id')||null,task_id:p.get('task_id')||null,lap_id:p.get('lap_id')||null,return_target:p.get('return_target')||null};
+}
+function readySupportEvent(type,reason,payload={}){
+  const c=readySharedContext(),event={event_id:`ready-event-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,type,app:'ready-set',at:new Date().toISOString(),...c,payload:{reason,...payload}};
+  try{window.dispatchEvent(new CustomEvent('taky-learning-event',{detail:event}))}catch{}
+  return event;
+}
+window.ReadyRadioSemantic=Object.freeze({
+  requestGuide:(reason='guide_support',payload={})=>readySupportEvent('GUIDE_RADIO_REQUEST',reason,payload),
+  requestImaginationCloud:(reason='concept_support',payload={})=>readySupportEvent('IMAGINATION_CLOUD_REQUEST',reason,payload)
+});
 $('#voicePreviewBtn').onclick=()=>speakGuide(`${state.guide.name}야. 오늘 작전도 네 옆에서 같이 갈게.`);
 $('#coachVoiceBtn').onclick=()=>speakGuide($('#duoText').textContent||'오늘 녹음을 끝까지 잘 마쳤어.');
 
@@ -658,7 +671,9 @@ async function shareCard(kind='result'){
   x.fillStyle='#fff9f2';roundRect(x,70,70,940,1210,54);x.fill();
   x.fillStyle='#2a231f';x.textAlign='left';x.textBaseline='alphabetic';
   x.font='900 54px sans-serif';x.fillText('Ready & Set',120,160);
-  const sc=r?resultSceneFor(r):null;
+  const multiShare=kind==='result'&&r&&Array.isArray(r.tasks)&&r.tasks.some(t=>t&&typeof t==='object');
+  const completeCount=multiShare?r.tasks.filter(t=>t?.status==='COMPLETED').length:0;
+  const sc=multiShare?{headline:'오늘의 탐험 기록',line:`${r.tasks.length}개 활동 · ${completeCount}개 완료`}:r?resultSceneFor(r):null;
   x.font='900 68px sans-serif';
   wrapText(x,kind==='result'?sc.headline:'작전 개시 전, 응원 요청!',120,260,820,82);
 
@@ -671,7 +686,8 @@ async function shareCard(kind='result'){
   x.fillStyle='#2b2521';x.font='700 29px sans-serif';
   wrapText(x,kind==='result'?sc.line:`${state.guide.name}: 응원 한 스푼만 부탁해요!`,585,455,290,38);
 
-  const text=kind==='result'?[...(r?.selected||[]),...(r?.tasks||[])].join(' · '):[...state.selected,...state.tasks].join(' · ');
+  const shareItems=kind==='result'?[...(r?.selected||[]),...(r?.tasks||[])]:[...state.selected,...state.tasks];
+  const text=shareItems.map(t=>typeof t==='string'?t:(t?.label?`${t.label}${t.status==='COMPLETED'?' ✓':''}`:'')).filter(Boolean).join(' · ');
   x.fillStyle='#2a231f';x.font='700 32px sans-serif';wrapText(x,text||'오늘의 작전',120,925,820,46);
   x.font='900 48px sans-serif';
   if(kind==='result'&&r)x.fillText(`목표 ${fmt(r.targetMs)}   집중 ${fmt(r.focusMs)}`,120,1110);
@@ -681,12 +697,17 @@ async function shareCard(kind='result'){
 
   const blob=await new Promise(res=>c.toBlob(res,'image/png'));
   const file=new File([blob],`Ready_Set_${kind}_${Date.now()}.png`,{type:'image/png'});
-  try{
-    if(navigator.canShare?.({files:[file]})){
-      await navigator.share({files:[file],text:kind==='result'?'Ready & Set 작전 완료!':'Ready & Set 작전 시작!'});return;
-    }
+  const download=()=>{
     const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=file.name;a.click();
     setTimeout(()=>URL.revokeObjectURL(url),1000);toast('공유 카드를 이미지로 저장했어요.');
+  };
+  try{
+    if(navigator.maxTouchPoints>0&&typeof navigator.share==='function'&&navigator.canShare?.({files:[file]})){
+      try{
+        await navigator.share({files:[file],text:kind==='result'?'Ready & Set 작전 완료!':'Ready & Set 작전 시작!'});return;
+      }catch(e){if(e.name==='AbortError')return}
+    }
+    download();
   }catch(e){if(e.name!=='AbortError')toast('공유를 완료하지 못했어요.')}
 }
 function roundRect(ctx,x,y,w,h,r){

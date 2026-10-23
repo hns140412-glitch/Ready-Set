@@ -13,7 +13,7 @@
     try { const value = JSON.parse(localStorage.getItem(key) || 'null'); return value ?? fallback; }
     catch { return fallback; }
   };
-  const writeJSON = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+  const writeJSON = (key, value) => {localStorage.setItem(key, JSON.stringify(value));if(key === PLANNER_KEY)window.dispatchEvent(new Event('ready-planner-local-change'));};
   const taskLabel = task => {const progress=task?.learningProgress;const measured=progress?.unit==='PERCENT_OF_PLAN'&&Number.isFinite(progress.remainingQuantity)&&progress.remainingQuantity>=0&&progress.remainingQuantity<=100;return [String(task?.title || task?.subject || '숙제').trim(),String(task?.volume || '').trim(),measured?`${progress.remainingQuantity}% 남음`:''].filter(Boolean).join(' · ')};
 
   function identity() { return readJSON(IDENTITY_KEY, {}) || {}; }
@@ -122,7 +122,10 @@
   }
 
   function readyTasks(chosen) {
-    const available = tasks().filter(task => ['PLANNED','PARTIAL','DEFERRED'].includes(task.status));
+    // ReadyBaseRuntimeV1.start() marks the selected Planner task IN_PROGRESS
+    // before this canonical task list is seeded. Preserve that task in the
+    // session rather than treating a legitimate start as TASK_NOT_READY.
+    const available = tasks().filter(task => ['PLANNED','IN_PROGRESS','PARTIAL','DEFERRED'].includes(task.status));
     const hit = available.find(task => task.task_id === chosen.task_id);
     if (!hit) throw new Error('TASK_NOT_READY');
     return [hit, ...available.filter(task => task.task_id !== hit.task_id)];
@@ -171,6 +174,7 @@
     selectPlannerTask(task);
     window.ReadyBaseRuntimeV1.start();
     const ordered = seedCanonicalTaskList(task);
+    if (!canonical().reconcileHostTasks?.()) throw new Error('CANONICAL_TASK_RECONCILE_FAILED');
     canonical().switchTask('__READY_HOME_ENSURE_CONTRACT__');
     const session = canonicalSession();
     if (!session?.session_id) throw new Error('CANONICAL_SESSION_NOT_CREATED');

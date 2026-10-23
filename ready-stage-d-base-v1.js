@@ -25,8 +25,9 @@
       return {version:1,days:{},talentWeek:{}};
     }
   }
-  function savePlanner(){ localStorage.setItem(STORE_KEY, JSON.stringify(planner)); }
+  function savePlanner(){ localStorage.setItem(STORE_KEY, JSON.stringify(planner)); window.dispatchEvent(new Event('ready-planner-local-change')); }
   let planner = loadPlanner();
+  window.addEventListener('ready-planner-remote-restored',()=>{planner=loadPlanner();try{window.ReadyStageD?.renderPlanner?.()}catch{}});
 
   function seedToday(){
     const date = todayKey();

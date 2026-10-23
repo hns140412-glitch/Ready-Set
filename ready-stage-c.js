@@ -36,8 +36,14 @@
   });
 
   function releaseHeldLayers() {
-    document.documentElement.classList.remove('identityFirstPaint', 'worldFirstPaint', 'readyFirstRun');
-    document.getElementById('readyFirstRun')?.remove();
+    // An unfinished world implementation may be held, but an unfinished user onboarding
+    // must not be deleted by core boot/focus/pageshow. Profile/crew choice is the owner.
+    const onboardingPending = window.ReadyIdentityV1?.isReady?.() === false;
+    if (!onboardingPending) {
+      document.documentElement.classList.remove('identityFirstPaint', 'worldFirstPaint', 'readyFirstRun');
+      document.getElementById('readyFirstRun')?.remove();
+    }
+    document.documentElement.dataset.readyOnboardingPreserved = onboardingPending ? 'true' : 'false';
     document.getElementById('worldStage')?.remove();
     document.getElementById('homeView')?.classList.remove('worldShell');
     document.querySelectorAll('.worldLegacySection').forEach(el => el.classList.remove('worldLegacySection'));
@@ -76,19 +82,42 @@
     document.documentElement.dataset.readyStageLoader = VERSION;
   }
 
+  // First encounter and user onboarding own the screen before native app boot.
+  // Heavy planner/role modules must not steal focus or remove the first-run overlay.
+  let coreBootPromise = null;
+  let coreBootCompleted = false;
+  function needsFirstRun() {
+    return window.ReadyIdentityV1?.isReady?.() === false;
+  }
+  function startCoreWhenReady() {
+    if (needsFirstRun()) {
+      document.documentElement.dataset.readyBootState = 'ONBOARDING';
+      return;
+    }
+    if (coreBootPromise) return coreBootPromise;
+    coreBootPromise = boot().then(() => {
+      coreBootCompleted = true;
+    }).catch(error => {
+      console.error('[Ready Core Boot]', error);
+      document.documentElement.dataset.readyBootState = 'ERROR';
+      document.documentElement.dataset.readyBootDetail = error.message || 'UNKNOWN';
+      document.documentElement.dataset.readyStageLoader = 'ERROR';
+    });
+    return coreBootPromise;
+  }
   const recover = () => {
+    if (needsFirstRun()) {
+      document.documentElement.dataset.readyBootState = 'ONBOARDING';
+      return;
+    }
+    if (!coreBootPromise) { startCoreWhenReady(); return; }
+    if (!coreBootCompleted) return;
     releaseHeldLayers();
     renderCore();
   };
 
-  boot().catch(error => {
-    console.error('[Ready Core Boot]', error);
-    releaseHeldLayers();
-    document.documentElement.dataset.readyBootState = 'ERROR';
-    document.documentElement.dataset.readyBootDetail = error.message || 'UNKNOWN';
-    document.documentElement.dataset.readyStageLoader = 'ERROR';
-  });
-
+  startCoreWhenReady();
+  window.addEventListener('ready-member-profile-local-commit', () => startCoreWhenReady());
   window.addEventListener('pageshow', recover);
   window.addEventListener('focus', recover);
   document.addEventListener('visibilitychange', () => {

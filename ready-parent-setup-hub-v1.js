@@ -65,8 +65,11 @@
   }
   function mountParentHub(){
     if(role()!=='parent'){ $('#readyParentSetupHub')?.remove();return }
-    const world=$('#worldStage .worldSky');if(!world)return;
-    let hub=$('#readyParentSetupHub');if(hub&&hub.parentElement!==world)hub.remove();if(!hub){hub=document.createElement('section');hub.id='readyParentSetupHub';hub.className='rps-hub';const top=world.querySelector('.worldTop');top?.insertAdjacentElement('afterend',hub)}
+    // The world UI may be deliberately held; parent setup must still work.
+    // Reuse the existing parent hub inside the native home rather than
+    // unholding or reconstructing an unapproved world scene.
+    const world=$('#worldStage .worldSky')||$('#homeView .homeMain');if(!world)return;
+    let hub=$('#readyParentSetupHub');if(hub&&hub.parentElement!==world)hub.remove();if(!hub){hub=document.createElement('section');hub.id='readyParentSetupHub';hub.className='rps-hub';const top=world.querySelector('.worldTop');if(top)top.insertAdjacentElement('afterend',hub);else world.prepend(hub)}
     const ss=scheduleSummary(),hs=homeworkSummary(),ps=plannerSummary();
     const signature=JSON.stringify({events:ss.events,facts:hs.facts,confirmed:hs.confirmed,planned:ps.planned,noOpportunity:ps.noOpportunity});
     if(hub.dataset.renderSignature!==signature){

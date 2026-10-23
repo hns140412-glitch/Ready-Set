@@ -76,3 +76,22 @@
 .pauseReasonGrid button.on{background:#ffe784;border-color:#d7ad32}
 .nameTools{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}.compactBtn{min-height:42px;padding:0 12px}.nameSuggestions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}.nameSuggestions button{border:1px solid #e6d5ca;border-radius:999px;background:#fff;padding:7px 11px;font-size:9px;font-weight:850}.subSettingTitle{margin-top:16px!important}.voiceChoiceGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:9px 0}.voiceChoiceGrid button{min-height:44px;border:1px solid #e5d7cf;border-radius:13px;background:#fff;font-size:9px;font-weight:850}.voiceChoiceGrid button.on{background:#ffe784;border-color:#d7ad32}.voiceCoachBtn{width:100%;border:1px solid #ddcfc6;background:#fffaf5;color:#44362f;margin:9px 0}.resultGuest{position:absolute;right:84px!important;bottom:24px!important;width:48px!important;height:48px!important;z-index:3}.resultGuest[hidden]{display:none!important}.resultScene #resultGuidePortrait{z-index:4}.homeGuideCard{overflow:visible}.homeGuideCard .guidePortrait{transform:scale(1.02)}
 @media(max-width:340px){.voiceChoiceGrid,.pauseReasonGrid{grid-template-columns:1fr 1fr}.nameTools{grid-template-columns:1fr}.compactBtn{width:100%}}
+
+/* Ready result: evidence-backed multi-app task list, scoped to the result view.
+   Existing card, illustration and navigation visuals are unchanged. */
+#resultTasks[role="list"]{display:grid;gap:7px;margin:10px 0 14px}
+#resultTasks .ready-result-task{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:13px;border:1px solid #e8dacb;background:#fffdf8;min-width:0}
+#resultTasks .ready-result-task>div{flex:1;min-width:0}
+#resultTasks .ready-result-task__source{display:block;font-size:10px;font-weight:800;color:#866757;line-height:1.35}
+#resultTasks .ready-result-task b{display:block;margin-top:3px;font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+#resultTasks .ready-result-task em{flex:none;font-style:normal;font-size:11px;font-weight:850;border-radius:99px;padding:5px 8px;background:#e6efe3;color:#264b37}
+#resultTasks .ready-result-task[data-result-state="BLOCKED"] em,#resultTasks .ready-result-task[data-result-state="WAITING_FOR_PARENT"] em{background:#fce7c4;color:#774b1b}
+#resultTasks .ready-result-task[data-result-state="PARTIAL"] em,#resultTasks .ready-result-task[data-result-state="DEFERRED"] em{background:#f0ece5;color:#655e54}
+.ready-history-entry{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.ready-history-entry>div{min-width:0;flex:1}
+.ready-history-tasks{padding-left:16px;margin:7px 0 0;font-size:11px;line-height:1.6}
+.ready-history-tasks li{margin:2px 0;overflow-wrap:anywhere}
+.ready-history-tasks strong{font-weight:850}
+
+/* The companion chooser belongs to active exploration, not the final learning receipt. */
+body:has(#resultView.active) #takyCrewSelectionLauncher{display:none!important}

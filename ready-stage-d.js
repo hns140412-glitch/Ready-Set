@@ -20,7 +20,9 @@
   function enforceImplementationHold(){
     const home=document.getElementById('homeView');
     if(!home)return;
-    home.classList.remove('worldShell');
+    // MutationObserver watches class changes. An absent-token remove can still
+    // emit an attribute mutation in Chromium, recursively retriggering this callback.
+    if(home.classList.contains('worldShell'))home.classList.remove('worldShell');
     home.querySelector('#worldStage')?.remove();
     home.querySelectorAll('.worldLegacySection').forEach(el=>el.classList.remove('worldLegacySection'));
     document.documentElement.dataset.readyWorldImplementation='HOLD';
