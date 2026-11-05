@@ -29,7 +29,7 @@ async function confirmFinal(){const i=read(),c=i.characterRefinedDraft;if(get().
 async function generate(){
   const adapter=globalThis.ReadyCharacterGeneratorAdapterV1;
   const plan=generationPlan();
-  if(!adapter?.status?.().available){patch({characterCandidateError:'GENERATOR_UNAVAILABLE'});rerender();return}
+  if(!adapter?.status?.().available){patch({characterCandidateError:'PAID_GENERATION_DISABLED'});rerender();return}
   const requestId=`charreq_${Date.now()}`;
   setGenerating(requestId);rerender();
   try{
@@ -42,7 +42,7 @@ async function masterRefine(){
   const i=read();
   if(!i.sourcePhoto||!i.characterSelectedDraft)throw Error('REFINEMENT_NOT_READY');
   const adapter=globalThis.ReadyCharacterGeneratorAdapterV1;
-  if(!adapter?.status?.().available){patch({characterCandidateError:'GENERATOR_UNAVAILABLE'});rerender();return}
+  if(!adapter?.status?.().available){patch({characterCandidateError:'PAID_GENERATION_DISABLED'});rerender();return}
   patch({characterCandidateState:'REFINING',characterCandidateError:null});rerender();
   try{
     const item=await adapter.refineMaster({sourcePhoto:i.sourcePhoto,selectedDraft:i.characterSelectedDraft,refinementPlan:i.characterRefinementPlan||null,consultation:consultationPayload(i)});

@@ -1,0 +1,183 @@
+{
+  "pass": true,
+  "scenario": "PARENT FACT -> PLANNER -> CHILD READY -> SNAP 3 STEPS -> READY COMPLETED -> REPLAN",
+  "steps": {
+    "parent_boot": true,
+    "parent_fact_planner": {
+      "fact": {
+        "id": "english_assignment_1791640113782_ty3h0",
+        "state": "FACT_CONFIRMED"
+      },
+      "task": {
+        "id": "foundation:foundation-unit:english_assignment_1791640113782_ty3h0:workbook",
+        "title": "영어",
+        "status": "PLANNED",
+        "sourceUnitId": "foundation-unit:english_assignment_1791640113782_ty3h0:workbook"
+      }
+    },
+    "ready_session_started": {
+      "planner_id": "foundation:foundation-unit:english_assignment_1791640113782_ty3h0:workbook",
+      "homework_task_id": "foundation:foundation-unit:english_assignment_1791640113782_ty3h0:workbook",
+      "session_id": "s_1791640117602",
+      "active_task_id": "task_s_1791640117602_1"
+    },
+    "ready_child_focus": {
+      "view": "focus",
+      "plannerStatus": "IN_PROGRESS",
+      "contract": {
+        "session_id": "s_1791640117602",
+        "goal_id": "goal_1791640117602_hnhonn",
+        "task_id": "task_s_1791640117602_1",
+        "lap_id": "lap_1791640117602_3tp2y1",
+        "state": "ACTIVE"
+      }
+    },
+    "snap_context": {
+      "session_id": "s_1791640117602",
+      "task_id": "task_s_1791640117602_1",
+      "lap_id": "lap_1791640117602_3tp2y1"
+    },
+    "snap_expression_evidence": {
+      "records": 1,
+      "latest": {
+        "id": 1791640120323,
+        "landmark": "idea",
+        "answers": [
+          "먼저 보이는 특징을 한 문장으로 적었어.",
+          "앞 생각과 연결해서 이유를 한 문장 더 적었어.",
+          "내 생각을 마지막 문장으로 정리했어."
+        ],
+        "date": "2026-10-10T13:48:40.323Z",
+        "expansionPack": null,
+        "sourceRef": null,
+        "sourceSha256": null
+      },
+      "active": null,
+      "gemTotal": 1,
+      "eventTypes": [
+        "APP_ENTERED",
+        "TASK_COMPLETED"
+      ],
+      "completedEvents": 1,
+      "context": {
+        "session_id": "s_1791640117602",
+        "goal_id": "goal_1791640117602_hnhonn",
+        "task_id": "task_s_1791640117602_1",
+        "lap_id": "lap_1791640117602_3tp2y1",
+        "return_target": "http://127.0.0.1:4320/?snap_target=http%3A%2F%2F127.0.0.1%3A4321",
+        "from_app": "ready-set",
+        "school_stage": "E5",
+        "subject": "영어",
+        "target_time_ms": "0",
+        "session_start_at": "1791640117602",
+        "issue_ms": "0",
+        "received_at": "2026-10-10T13:48:39.169Z",
+        "task_completed": true,
+        "completed_at": "2026-10-10T13:48:40.325Z"
+      }
+    },
+    "ready_after_snap": {
+      "beforeEnd": {
+        "planner": {
+          "id": "foundation:foundation-unit:english_assignment_1791640113782_ty3h0:workbook",
+          "status": "COMPLETED",
+          "reports": [
+            {
+              "eventId": "session_s_1791640117602_foundation:foundation-unit:english_assignment_1791640113782_ty3h0:workbook_COMPLETED",
+              "source": "snap-pop",
+              "reportedAt": "2026-10-10T13:48:40.857Z",
+              "actualWorkDate": "2026-10-10",
+              "resultState": "COMPLETED",
+              "focusMs": 3255,
+              "pausedMs": 0,
+              "sessionId": "s_1791640117602"
+            }
+          ]
+        },
+        "actualHistory": [
+          {
+            "status": "COMPLETED"
+          }
+        ],
+        "contract": {
+          "active_app": "ready-set",
+          "task": {
+            "task_id": "task_s_1791640117602_1",
+            "label": "영어 · 문장 표현 1개",
+            "state": "COMPLETED",
+            "suggested_app": "snap-pop",
+            "laps": [
+              {
+                "focus_start_ms": 0,
+                "lap_id": "lap_1791640117602_3tp2y1",
+                "task_id": "task_s_1791640117602_1",
+                "started_at": "2026-10-10T13:48:37.602Z",
+                "started_ms": 1791640117602,
+                "ended_at": "2026-10-10T13:48:40.857Z",
+                "elapsed_ms": 3255,
+                "end_reason": "SPECIALIST_RESULT",
+                "result_state": "COMPLETED",
+                "focus_ms": 3255
+              }
+            ],
+            "updated_at": "2026-10-10T13:48:40.856Z"
+          },
+          "pending": 0
+        }
+      },
+      "afterEnd": {
+        "planner": {
+          "id": "foundation:foundation-unit:english_assignment_1791640113782_ty3h0:workbook",
+          "status": "COMPLETED",
+          "reports": [
+            {
+              "eventId": "session_s_1791640117602_foundation:foundation-unit:english_assignment_1791640113782_ty3h0:workbook_COMPLETED",
+              "source": "snap-pop",
+              "reportedAt": "2026-10-10T13:48:40.857Z",
+              "actualWorkDate": "2026-10-10",
+              "resultState": "COMPLETED",
+              "focusMs": 3255,
+              "pausedMs": 0,
+              "sessionId": "s_1791640117602"
+            }
+          ]
+        },
+        "recordCount": 1,
+        "latestRecord": {
+          "id": "r_1791640121751",
+          "date": "2026-10-10",
+          "completedAt": "2026-10-10T13:48:41.751Z",
+          "plannerTaskId": "foundation:foundation-unit:english_assignment_1791640113782_ty3h0:workbook",
+          "label": "영어 · 문장 표현 1개",
+          "focusMs": 4149,
+          "pausedMs": 0,
+          "issueMs": 0,
+          "systemWaitMs": 0,
+          "targetMs": null,
+          "status": "COMPLETED",
+          "tasks": [
+            {
+              "label": "영어 · 문장 표현 1개",
+              "state": "COMPLETED"
+            }
+          ]
+        },
+        "historyText": "영어 · 문장 표현 1개2026-10-10 · 집중 00:04COMPLETED"
+      }
+    },
+    "replan_preserves_actual": {
+      "completed": 1,
+      "replanned": 0,
+      "actualCompleted": 1,
+      "sourceTasks": [
+        {
+          "id": "foundation:foundation-unit:english_assignment_1791640113782_ty3h0:workbook",
+          "status": "COMPLETED",
+          "reports": 1
+        }
+      ]
+    }
+  },
+  "gaps": [],
+  "errors": []
+}

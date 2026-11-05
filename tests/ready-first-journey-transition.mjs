@@ -3,12 +3,13 @@
 import assert from 'node:assert/strict';
 import {pathToFileURL} from 'node:url';
 import {createServer} from './visual-qa/server.mjs';
-const {chromium} = await import(process.argv[2] ? pathToFileURL(process.argv[2]).href : 'playwright');
+const playwrightEntry=process.argv[2]?pathToFileURL(process.argv[2]).href:new URL('../../Play Camp/node_modules/playwright-core/index.mjs',import.meta.url).href;
+const {chromium} = await import(playwrightEntry);
 const server = createServer();
 await new Promise(resolve => server.listen(4177, '127.0.0.1', resolve));
 let browser;
 try {
- browser = await chromium.launch({headless:true,timeout:15000,...(process.argv[3]?{executablePath:process.argv[3]}:{})});
+ browser = await chromium.launch({headless:true,timeout:15000,...(process.argv[3]?{executablePath:process.argv[3]}:{channel:'chrome'})});
  for (const scenario of ['normal','quota','candidate-unavailable']) {
   const context = await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
   let apiCalls=0;
@@ -48,7 +49,7 @@ try {
    const overlay=document.querySelector('#worldJourneyOverlay');if(overlay)overlay.hidden=false;
   });
   await page.locator('#readyFirstRun #next').tap();
-  const candidateSelector=scenario==='candidate-unavailable'?'#readyCharacterCandidateMount [data-fallback-handoff]':'#readyCharacterCandidateMount .takyConsult';
+  const candidateSelector=scenario==='candidate-unavailable'?'#rofCharacterDefer':'#readyCharacterCandidateMount .takyConsult';
   await page.waitForSelector(candidateSelector,{timeout:12000});
   assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().onboardingStep),'CHARACTER');
   assert.equal(await page.evaluate(()=>transitionEvents),1);
@@ -57,17 +58,17 @@ try {
   assert.equal(await page.locator('#readyFirstRun #next').count(),0);
 
   if(scenario==='candidate-unavailable'){
-   assert.equal(await page.locator('#readyCharacterCandidateMount').getAttribute('data-candidate-fallback'),'1');
-   assert.match(await page.locator('#readyCharacterCandidateMount .ccConsult').innerText(),/사진은 그대로 보관 중이에요/);
    assert.equal(apiCalls,0);
    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('readyset_identity_v1')).onboardingStep),'CHARACTER');
    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('readyset_identity_v1')).sourcePhoto),photo);
-   await page.locator('[data-fallback-handoff]').tap();
-   await page.waitForSelector('#readyCharacterCandidateMount [data-fallback-handoff]',{timeout:12000});
+   await page.locator('#rofCharacterDefer').tap();
+   await page.waitForSelector('#rofExplorerNext',{timeout:12000});
+   assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().onboardingStep),'EXPLORER');
+   assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().characterSetupState),'DEFERRED_NO_COST');
    assert.equal(apiCalls,0);
    assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().sourcePhoto),photo);
    assert.deepEqual(errors,[]);
-   console.log('PASS candidate-unavailable: upload, CHARACTER ownership, degraded fallback, retry safety, zero-cost lock, photo preservation');
+   console.log('PASS candidate-unavailable: upload, CHARACTER ownership, no-cost defer, EXPLORER handoff, photo preservation');
    await context.close();
    continue;
   }
@@ -81,13 +82,13 @@ try {
    window.dispatchEvent(new Event('focus'));
   });
   assert.equal(await page.evaluate(()=>originalMount===document.querySelector('#readyCharacterCandidateMount')),true);
-  await page.locator('[data-taky-choice="FEEL_BRIGHT"]').tap();
-  await page.locator('[data-taky-confirm]').tap();
-  await page.locator('[data-taky-choice="LOOK_ACTIVE"]').tap();
-  await page.locator('[data-taky-confirm]').tap();
-  assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections.length),3);
-  assert.match(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections[2].tileKey),/^AUTO_/);
-  await page.locator('[data-taky-generate]').tap();
+  for(let round=1;round<=3;round++){
+   await page.locator('[data-taky-choice]').first().tap();
+   await page.locator('[data-taky-confirm]').tap();
+   assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections.length),round);
+  }
+  await page.waitForSelector('[data-paid-lock="true"]',{timeout:8000});
+  assert.equal(await page.evaluate(()=>ReadyMoodDirectionV2.choices(ReadyIdentityV1.get().characterMoodDirections.selections).length),0);
   for(const width of [320,390,430]){await page.setViewportSize({width,height:844});const measurements=await page.locator('#readyCharacterCandidateMount').evaluate(el=>({overflow:document.documentElement.scrollWidth>innerWidth,small:[...el.querySelectorAll('button')].some(b=>{const r=b.getBoundingClientRect();return r.width<44||r.height<44})}));assert.equal(measurements.overflow,false);assert.equal(measurements.small,false);}
   assert.equal(apiCalls,0);
   if(scenario==='quota')await page.evaluate(()=>{Storage.prototype.setItem=originalSetItem;window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}))});

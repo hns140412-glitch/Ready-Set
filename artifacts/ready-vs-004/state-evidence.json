@@ -1,0 +1,124 @@
+{
+  "pass": true,
+  "contract": "READY-VS-004",
+  "viewport": "390x844",
+  "parentHome": {
+    "role": "parent",
+    "hub": true,
+    "schedule": true,
+    "homework": true,
+    "firstRun": false
+  },
+  "scheduleEntered": {
+    "open": true,
+    "title": "VS004 확인된 학습 가능",
+    "kind": "STUDY_OPPORTUNITY",
+    "date": "2026-10-08",
+    "start": "13:00",
+    "end": "14:00"
+  },
+  "beforeSave": {
+    "surface": true,
+    "workbook": "READY English",
+    "range": "p.32~41",
+    "nextAcademy": "2026-10-10",
+    "confirmedBefore": 0
+  },
+  "factPlanner": {
+    "today": "2026-10-08",
+    "factId": "english_assignment_1791470853686_cusc5",
+    "confirmationState": "FACT_CONFIRMED",
+    "deadlineBoundary": "2026-10-10",
+    "taskCount": 1,
+    "task": {
+      "id": "foundation:foundation-unit:english_assignment_1791470853686_cusc5:workbook",
+      "sourceAssignmentId": "english_assignment_1791470853686_cusc5",
+      "sourceUnitId": "foundation-unit:english_assignment_1791470853686_cusc5:workbook",
+      "authority": "PLANNER/MAIN",
+      "projection": "TODAY_TASK",
+      "status": "PLANNED",
+      "title": "영어",
+      "volume": "p.32~41"
+    }
+  },
+  "parentAllocation": {
+    "role": "parent",
+    "hubText": "PARENT SETUP · 먼저 준비할 것\n시간표와 숙제를 먼저 잡아요\n확정 시간표 → 숙제 원본 FACT → Planner 날짜 배정 순서로 연결됩니다.\n1\n시간표 확인 · 수정\n학원·고정 일정과 확인된 학습 가능 구간\n2\n숙제 촬영 · 입력\n재능 6권·영어·과학 숙제 원본 FACT\n시간표 7개 기준\n숙제 FACT 1개\n확정 1개\n배정 1개",
+    "todayTasks": [
+      {
+        "title": "영어",
+        "status": "PLANNED",
+        "planner_id": "foundation:foundation-unit:english_assignment_1791470853686_cusc5:workbook"
+      }
+    ]
+  },
+  "childHome": {
+    "role": "child",
+    "parentHub": false,
+    "primary": "READY TO START\n숙제 시작\n영어\n→",
+    "tasks": [
+      {
+        "title": "영어",
+        "volume": "p.32~41",
+        "status": "PLANNED",
+        "planner_id": "foundation:foundation-unit:english_assignment_1791470853686_cusc5:workbook"
+      }
+    ]
+  },
+  "focus": {
+    "view": "focus",
+    "focusMission": "영어 · p.32~41",
+    "plannerStatus": "IN_PROGRESS",
+    "session": {
+      "id": "s_1791470859952",
+      "state": "ACTIVE",
+      "active": "task_s_1791470859952_1"
+    }
+  },
+  "completed": {
+    "count": 1,
+    "id": "foundation:foundation-unit:english_assignment_1791470853686_cusc5:workbook",
+    "status": "COMPLETED"
+  },
+  "replan": {
+    "sourceTasks": [
+      {
+        "id": "foundation:foundation-unit:english_assignment_1791470853686_cusc5:workbook",
+        "status": "COMPLETED",
+        "sourceUnitId": "foundation-unit:english_assignment_1791470853686_cusc5:workbook",
+        "learningReports": [
+          {
+            "eventId": "session_s_1791470859952_foundation:foundation-unit:english_assignment_1791470853686_cusc5:workbook_COMPLETED",
+            "source": "READY_FOCUS",
+            "reportedAt": "2026-10-08T14:47:42.622Z",
+            "actualWorkDate": "2026-10-08",
+            "resultState": "COMPLETED",
+            "focusMs": 2670,
+            "pausedMs": 0,
+            "sessionId": "s_1791470859952"
+          }
+        ]
+      }
+    ],
+    "completed": 1,
+    "replanned": 0,
+    "completedHistory": 1,
+    "overrideCount": 1
+  },
+  "finalState": {
+    "role": "parent",
+    "fact": {
+      "id": "english_assignment_1791470853686_cusc5",
+      "confirmationState": "FACT_CONFIRMED",
+      "deadlineBoundary": "2026-10-10"
+    },
+    "sourceTaskCount": 1,
+    "completed": 1,
+    "planned": 0,
+    "sourceUnitIds": [
+      "foundation-unit:english_assignment_1791470853686_cusc5:workbook"
+    ],
+    "apiCalls": []
+  },
+  "browserErrors": []
+}

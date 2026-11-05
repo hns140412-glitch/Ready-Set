@@ -98,6 +98,10 @@ assert.match(ui, /if \(sessionActive\(core\)\) core\.resumeSession/);
 assert.match(ui, /start_mode === 'RESUME'/);
 assert.match(runtimeSource, /end\.textContent='이 숙제 마치기';end\.onclick=openTaskFinish/);
 assert.match(runtimeSource, /if\(done\.pending===0\)return finalizeSession\(\)/);
-// Stage D world hold must not rewrite the observed class attribute unconditionally (observer recursion).
-assert.match(fs.readFileSync('ready-stage-d.js', 'utf8'), /if\(home\.classList\.contains\('worldShell'\)\)home\.classList\.remove\('worldShell'\)/);
+// Stage D now activates Today's Island for child role while preserving the parent setup surface.
+const stageD=fs.readFileSync('ready-stage-d.js','utf8');
+assert.match(stageD,/WORLD_IMPLEMENTATION_HOLD = false/);
+assert.match(stageD,/ready-world-base-v1\.js/);
+assert.match(stageD,/ready-world-shell-v1\.js/);
+assert.match(stageD,/current\?\.\(\)===\'child\'/);
 console.log('PASS: READY-VS-001 home -> start (no timer) -> focus lap -> explicit result -> home resume, single session');

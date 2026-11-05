@@ -1,0 +1,176 @@
+{
+  "pass": true,
+  "scenario": "PARENT FACT -> PLANNER -> CHILD READY -> HIDE 4 MODES -> READY COMPLETED -> REPLAN",
+  "steps": {
+    "parent_boot": true,
+    "parent_fact_planner": {
+      "fact": {
+        "id": "english_assignment_1791640102889_bwwzx",
+        "state": "FACT_CONFIRMED"
+      },
+      "task": {
+        "id": "foundation:foundation-unit:english_assignment_1791640102889_bwwzx:workbook",
+        "title": "영어",
+        "status": "PLANNED",
+        "sourceUnitId": "foundation-unit:english_assignment_1791640102889_bwwzx:workbook"
+      }
+    },
+    "ready_session_started": {
+      "planner_id": "foundation:foundation-unit:english_assignment_1791640102889_bwwzx:workbook",
+      "homework_task_id": "foundation:foundation-unit:english_assignment_1791640102889_bwwzx:workbook",
+      "session_id": "s_1791640106742",
+      "active_task_id": "task_s_1791640106742_1"
+    },
+    "ready_child_focus": {
+      "view": "focus",
+      "plannerStatus": "IN_PROGRESS",
+      "contract": {
+        "session_id": "s_1791640106742",
+        "goal_id": "goal_1791640106742_9eo6od",
+        "task_id": "task_s_1791640106742_1",
+        "lap_id": "lap_1791640106743_ppnjaq",
+        "state": "ACTIVE",
+        "suggested_app": "hide-seek"
+      }
+    },
+    "hide_context": {
+      "session_id": "s_1791640106742",
+      "task_id": "task_s_1791640106742_1",
+      "lap_id": "lap_1791640106743_ppnjaq"
+    },
+    "hide_learning_evidence": {
+      "count": 5,
+      "modes": [
+        "TRACE",
+        "LINK",
+        "CORE",
+        "RECALL"
+      ],
+      "last": [
+        {
+          "mode": "TRACE",
+          "result": "SELF_KNOWN",
+          "term": "apple"
+        },
+        {
+          "mode": "LINK",
+          "result": "CORRECT",
+          "term": "apple"
+        },
+        {
+          "mode": "CORE",
+          "result": "CORRECT",
+          "term": "apple"
+        },
+        {
+          "mode": "RECALL",
+          "result": "CORRECT",
+          "term": "apple"
+        }
+      ]
+    },
+    "ready_after_hide": {
+      "beforeEnd": {
+        "planner": {
+          "id": "foundation:foundation-unit:english_assignment_1791640102889_bwwzx:workbook",
+          "status": "COMPLETED",
+          "reports": [
+            {
+              "eventId": "session_s_1791640106742_foundation:foundation-unit:english_assignment_1791640102889_bwwzx:workbook_COMPLETED",
+              "source": "hide-seek",
+              "reportedAt": "2026-10-10T13:48:31.078Z",
+              "actualWorkDate": "2026-10-10",
+              "resultState": "COMPLETED",
+              "focusMs": 4334,
+              "pausedMs": 0,
+              "sessionId": "s_1791640106742"
+            }
+          ]
+        },
+        "actualHistory": [
+          {
+            "status": "COMPLETED"
+          }
+        ],
+        "contract": {
+          "active_app": "ready-set",
+          "task": {
+            "task_id": "task_s_1791640106742_1",
+            "label": "영어 · apple 1개",
+            "state": "COMPLETED",
+            "suggested_app": "hide-seek",
+            "laps": [
+              {
+                "focus_start_ms": 1,
+                "lap_id": "lap_1791640106743_ppnjaq",
+                "task_id": "task_s_1791640106742_1",
+                "started_at": "2026-10-10T13:48:26.742Z",
+                "started_ms": 1791640106742,
+                "ended_at": "2026-10-10T13:48:31.078Z",
+                "elapsed_ms": 4336,
+                "end_reason": "SPECIALIST_RESULT",
+                "result_state": "COMPLETED",
+                "focus_ms": 4335
+              }
+            ],
+            "updated_at": "2026-10-10T13:48:31.076Z"
+          },
+          "pending": 0
+        }
+      },
+      "afterEnd": {
+        "planner": {
+          "id": "foundation:foundation-unit:english_assignment_1791640102889_bwwzx:workbook",
+          "status": "COMPLETED",
+          "reports": [
+            {
+              "eventId": "session_s_1791640106742_foundation:foundation-unit:english_assignment_1791640102889_bwwzx:workbook_COMPLETED",
+              "source": "hide-seek",
+              "reportedAt": "2026-10-10T13:48:31.078Z",
+              "actualWorkDate": "2026-10-10",
+              "resultState": "COMPLETED",
+              "focusMs": 4334,
+              "pausedMs": 0,
+              "sessionId": "s_1791640106742"
+            }
+          ]
+        },
+        "recordCount": 1,
+        "latestRecord": {
+          "id": "r_1791640111989",
+          "date": "2026-10-10",
+          "completedAt": "2026-10-10T13:48:31.989Z",
+          "plannerTaskId": "foundation:foundation-unit:english_assignment_1791640102889_bwwzx:workbook",
+          "label": "영어 · apple 1개",
+          "focusMs": 5247,
+          "pausedMs": 0,
+          "issueMs": 0,
+          "systemWaitMs": 0,
+          "targetMs": null,
+          "status": "COMPLETED",
+          "tasks": [
+            {
+              "label": "영어 · apple 1개",
+              "state": "COMPLETED"
+            }
+          ]
+        },
+        "historyText": "영어 · apple 1개2026-10-10 · 집중 00:05COMPLETED"
+      }
+    },
+    "replan_preserves_actual": {
+      "completed": 1,
+      "replanned": 0,
+      "actualCompleted": 1,
+      "sourceTasks": [
+        {
+          "id": "foundation:foundation-unit:english_assignment_1791640102889_bwwzx:workbook",
+          "status": "COMPLETED",
+          "reports": 1
+        }
+      ]
+    }
+  },
+  "gaps": [],
+  "errors": []
+}

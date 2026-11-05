@@ -1,3 +1,5 @@
+[Reading 107 lines from start (total: 107 lines, 0 remaining)]
+
 # READY & SET — NEW CHAT START LATEST
 
 Updated: 2026-10-06
@@ -15,8 +17,8 @@ Purpose: single rolling resume pointer. Replace this file in future; do not crea
 
 - Repo: D:\Git PWA\READY-WEBAPP-20261006
 - Branch: taky/ready-webapp-vertical-slice-20261006
-- Current verified HEAD: 68b3df0c147965a7c0ef2d6a2a9d67e65fcb5585
-- Working tree at resume preparation: clean
+- Resume HEAD: 2d10583713a82dae2fb55f2aa7f482df4f578193
+- Working tree: READY-VS-004 locally verified and intentionally uncommitted; bounded production fixes exist only in ready-parent-setup-hub-v1.js and ready-stage-f.js.
 
 ## CLOSED — inherit
 
@@ -62,6 +64,26 @@ Focused PASS:
 - ready-vs-001-home-focus-result-contract
 - git diff --check
 
+### READY-VS-004 — Parent FACT → Planner Today → Child Focus → Actual History → Replan
+Status: CLOSED_LOCAL_VERIFIED at resume HEAD 2d10583713a82dae2fb55f2aa7f482df4f578193; do not commit unless explicitly instructed.
+- parent/candidate input cannot self-confirm FACT
+- explicit parent English FACT save produces FACT_CONFIRMED
+- missing timetable row is not inferred as free time; explicit STUDY_OPPORTUNITY is required
+- Foundation/Planner publishes exactly one PLANNER/MAIN + TODAY_TASK with sourceAssignmentId/sourceUnitId
+- child Home receives the dated task and starts Focus without a timer requirement
+- COMPLETED execution writes READY_FOCUS Actual History
+- later schedule replan preserves completed history and does not reproject the completed source unit
+- Chrome/CDP 390x844 evidence: artifacts/ready-vs-004/
+- browser errors []
+- API/paid calls 0
+- focused VS-004 contract PASS; VS-001/002/003 focused regression PASS
+- pre-existing suite baseline rechecked: 22 total / 17 PASS / 5 known FAIL; no new failure family
+- bounded UI fix: ready-parent-setup-hub-v1.js + ready-stage-f.js guard `window.toast` by type and fall back to the `#toast` element; prevents DOM named-access TypeError after successful saves
+- no Planner/session/runtime ownership changes
+- 공방검토 완료: PARTIAL 40% → replan에서 remainder 진행률이 유실되는 반례를 발견·재OPEN 후 방어 수정. remainder가 completedQuantity 40 / remainingQuantity 60을 승계하도록 ready-foundation-control-v1.js 보강
+- 2차 공격 PASS: 반복 replan 3회에도 remainder 증식 없음; remainder 완료 후 추가 PLANNED 재투영 0; 원본 PARTIAL actual row 보존
+- 공방 최종 회귀 GONGBANG_FINAL_FAIL=0; VS-004 CLOSED_LOCAL_VERIFIED 유지
+
 ## Pre-existing non-blocking failures — do not mislabel as regressions
 
 1. Playwright missing: two first-journey browser tests
@@ -73,26 +95,10 @@ Do not spend time fixing these unless the next real slice needs them.
 
 ## OPEN — next practical vertical slice
 
-READY-VS-004:
-Parent confirmed homework FACT
-→ existing Foundation / Planner allocation
-→ child Home shows allocated task
-→ child starts task
-→ result writes actual history
-→ Planner replan preserves completed history.
-
-Use existing schedule + homework capture/analysis/parent-confirm contracts; do not create a second Planner owner.
-Prefer local deterministic/browser evidence. Use Claude/Codex only when Necessity justifies it.
-
-Acceptance should include:
-- parent candidate/analysis cannot self-confirm FACT
-- parent explicit confirmation publishes only confirmed facts to Planner
-- no inference that missing timetable row is free time
-- child Home receives the resulting dated task
-- completed history is immutable across replan
-- browser errors []
-- VS-001/002/003 focused regression PASS
-- no new full-suite failure family
+No further Ready vertical slice is assigned yet.
+- READY-VS-004 is CLOSED locally and should be inherited.
+- Do not invent READY-VS-005 without a concrete product objective.
+- Next implementation slice selection is the current user/product decision point.
 
 ## Device-only HOLD
 
@@ -100,4 +106,22 @@ Physical iPhone/Safari lifecycle and installed-PWA evidence remain unverified. D
 
 ## Resume command
 
-Read this file first, verify git HEAD/status, inherit CLOSED, and start READY-VS-004 only.
+Read this file first, verify git HEAD/status, inherit READY-VS-001~004 CLOSED, and wait for/derive the next explicitly assigned Ready slice without reopening MASTER/Beta/Alpha.
+
+[executed on device: YKH-SangMinYang (b855257f-4eb6-4a74-9254-fa2985212e1c)]
+## Copy-ready new-chat prompt
+
+최신 Ready & Set 기준으로 재개해.
+먼저 D:\\Git PWA\\READY-WEBAPP-20261006\\.taky\\READY_NEW_CHAT_START_LATEST.md와 현재 git HEAD/status만 확인하고, READY-VS-001~004 CLOSED는 그대로 상속해. MASTER/Beta/Alpha 재감사나 이미 끝난 단계 재구현은 하지 말고 OPEN만 진행해.
+
+현재 기준:
+- repo: D:\\Git PWA\\READY-WEBAPP-20261006
+- branch: taky/ready-webapp-vertical-slice-20261006
+- resume HEAD: 2d10583713a82dae2fb55f2aa7f482df4f578193
+- READY-VS-004: CLOSED_LOCAL_VERIFIED, production fixes/tests/artifacts are intentionally uncommitted
+- 공방검토 포함: PARTIAL remainder 진행률 승계 및 반복 replan 증식 방지까지 PASS
+- full local baseline: 22 total / 17 PASS / 5 known pre-existing FAIL
+- push / merge / deploy / Netlify / paid API 금지
+- USER≠DEBUGGER / 동일 실패 반복 금지
+
+다음 OPEN은 아직 지정되지 않았다. READY-VS-005를 임의로 만들지 말고, 현재 제품 흐름을 비교검토해 가장 가치 높은 다음 vertical slice 후보만 짧게 제안한 뒤 선택된 OPEN만 진행해. 물리 iPhone/PWA 검증은 USER가 선택할 때만 진행해.

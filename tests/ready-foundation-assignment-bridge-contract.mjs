@@ -11,7 +11,7 @@ assert.match(control,/authority:'LEARNING\/SUBJECT'/,'Foundation units must carr
 assert.match(control,/prepareConfirmedFacts/,'confirmed facts must have an explicit Foundation replanning bridge');
 assert.match(control,/const history=actualHistory\(units\),result=service\.prepare\(\{from:today\(\),dates,units,carryOver:\[\],actualHistory:history\}\)/,'bridge must invoke the Foundation Planner with bounded inputs and real execution history');
 assert.match(control,/function actualHistory\(units=\[\]\)/,'bridge must derive actual execution history from Planner state');
-assert.match(control,/\['COMPLETED','IN_PROGRESS','WAITING_FOR_PARENT'\]/,'stable execution states must be protected from replanning');
+assert.match(control,/\['COMPLETED','IN_PROGRESS','PARTIAL','DEFERRED','BLOCKED','WAITING_FOR_PARENT'\]/,'actual execution/result states must be explicit in replanning history');
 assert.match(control,/upsertTalentPackage\(args=\{\}\).*service\.prepareConfirmedFacts\(\)/s,'Talent parent FACT save must trigger Foundation replanning');
 assert.match(control,/upsertEnglishPackage\(args=\{\}\).*service\.prepareConfirmedFacts\(\)/s,'English parent FACT save must trigger Foundation replanning');
 assert.match(control,/confirmFact\(id,actor='PARENT'\).*service\.prepareConfirmedFacts\(\)/s,'explicit FACT confirmation must trigger Foundation replanning');

@@ -127,6 +127,7 @@ function applyGuide(el,type=state.guide.type){
   el.classList.remove('lumi','pico','mori','guest');
   el.classList.add('guidePortrait',type);
   el.setAttribute('data-guide',type);
+  void window.ReadyExplorerCrewVisibleV1?.render?.();
 }
 function guideData(type=state.guide.type){return GUIDE_TYPES[type]||GUIDE_TYPES.lumi}
 

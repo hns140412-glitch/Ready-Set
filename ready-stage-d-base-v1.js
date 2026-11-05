@@ -144,7 +144,8 @@
     modal.id='stageDFocusTools';
     modal.className='focus-tools';
     modal.hidden=true;
-    modal.innerHTML='<div class="focus-tools-sheet"><h3>현재 과제 · 학습 도구</h3><div class="focus-tool-apps"><button data-tool-app="hide-seek">Hide & Seek</button><button data-tool-app="snap-pop">Snap & Pop</button></div><div id="stageDFocusTaskList"></div><button class="focus-tools-close">닫기</button></div>';
+    const playCampButton=window.ReadySetRev07?.routing?.().play_camp_url?'<button data-tool-app="play-camp">Play Camp</button>':'';
+    modal.innerHTML='<div class="focus-tools-sheet"><h3>현재 과제 · 학습 도구</h3><div class="focus-tool-apps"><button data-tool-app="hide-seek">Hide & Seek</button><button data-tool-app="snap-pop">Snap & Pop</button>'+playCampButton+'</div><div id="stageDFocusTaskList"></div><button class="focus-tools-close">닫기</button></div>';
     document.body.appendChild(modal);
     modal.querySelector('.focus-tools-close').onclick=()=>modal.hidden=true;
     modal.addEventListener('click', e=>{

@@ -5,7 +5,8 @@
   const model=()=>window.ReadyAssignmentModel;
   const today=()=>new Date().toLocaleDateString('sv-SE');
   const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-  const toast=msg=>window.toast?window.toast(msg):alert(msg);
+  // #toast is a DOM id, so window.toast resolves to the element via named access; only call it when it is a function.
+  const toast=msg=>{if(typeof window.toast==='function')return window.toast(msg);const t=document.getElementById('toast');if(!t)return alert(msg);t.textContent=msg;t.hidden=false;clearTimeout(t._tm);t._tm=setTimeout(()=>t.hidden=true,2200)};
 
   function styles(){
     if(document.getElementById('readyStageFStyle'))return;

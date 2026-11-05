@@ -1,0 +1,23 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const read=f=>fs.readFileSync(f,'utf8'),store=new Map(),ls={getItem:k=>store.has(k)?store.get(k):null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)};
+const noop=()=>{},doc={documentElement:{dataset:{readyRole:'PARENT'}},body:{},querySelector:()=>null,getElementById:()=>null,createElement:()=>({innerHTML:'',querySelector:()=>null,querySelectorAll:()=>[],append:noop,prepend:noop,remove:noop})};
+class MO{observe(){}disconnect(){}}class E{constructor(t){this.type=t}}class CE extends E{constructor(t,i={}){super(t);this.detail=i.detail}}
+let role='parent';const c={console,structuredClone,URL,URLSearchParams,Date,Math,JSON,localStorage:ls,document:doc,location:{search:'?role=parent'},history:{replaceState:noop},MutationObserver:MO,Event:E,CustomEvent:CE,dispatchEvent:noop,addEventListener:noop,setTimeout:f=>{f();return 1},clearTimeout:noop};c.window=c;c.globalThis=c;c.ReadyRoleContextV1={current:()=>role};vm.createContext(c);
+for(const f of ['ready-foundation-v1.js','ready-stage-e.js','ready-foundation-control-v1.js','ready-home-homework-mvp-v1.js'])vm.runInContext(read(f),c,{filename:f});
+const C=c.ReadyFoundationControlV1,A=c.ReadyAssignmentModel,H=c.ReadyHomeHomeworkMVPV1,today=new Date().toLocaleDateString('sv-SE'),plus=n=>{const d=new Date(today+'T12:00:00');d.setDate(d.getDate()+n);return d.toLocaleDateString('sv-SE')},weekday=new Date(today+'T12:00:00').getDay();
+C.saveProfile({id:'opp',revision:1,state:'ACTIVE',effective_from:today,effective_to:null,provenance:{source:'PARENT_INPUT'},events:[{id:'o',key:'o',title:'study',weekday,start:'16:00',end:'17:00',kind:'STUDY_OPPORTUNITY',parent_editable:true,planner_movable:false,source:'LOCAL'}]});
+const x=A.upsertEnglishPackage({actor:'PARENT',workbookName:'R',range:'p1-10',nextAcademy:plus(2),prints:{},components:{}});
+const p=()=>JSON.parse(ls.getItem('readyset_planner_v1'));let task=Object.values(p().days).flatMap(d=>d.tasks||[]).find(t=>t.sourceAssignmentId===x.assignmentId);assert(task);
+role='child';H.recordLearning(task.id,{completedQuantity:40,actualWorkDate:today});
+role='parent';C.prepareConfirmedFacts();C.prepareConfirmedFacts();C.prepareConfirmedFacts();
+let tasks=Object.values(p().days).flatMap(d=>d.tasks||[]).filter(t=>t.sourceAssignmentId===x.assignmentId);
+const remainder=tasks.find(t=>t.remainderOfTaskId);
+assert.equal(tasks.length,2,'repeated replan must not multiply partial remainder rows');
+assert.equal(remainder.learningProgress.completedQuantity,40);
+assert.equal(remainder.learningProgress.remainingQuantity,60);
+role='child';H.recordLearning(remainder.id,{completedQuantity:100,actualWorkDate:today});
+role='parent';C.prepareConfirmedFacts();
+tasks=Object.values(p().days).flatMap(d=>d.tasks||[]).filter(t=>t.sourceAssignmentId===x.assignmentId);
+assert.equal(tasks.filter(t=>t.status==='COMPLETED').length,1,'finishing the remainder must create one completed execution row');
+assert.equal(tasks.filter(t=>t.status==='PLANNED').length,0,'completed remainder must block further reprojection');
+console.log(JSON.stringify({pass:true,rows:tasks.map(t=>({id:t.id,status:t.status,progress:t.learningProgress||null,remainderOfTaskId:t.remainderOfTaskId||null,sourceUnitId:t.sourceUnitId}))},null,2));

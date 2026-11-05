@@ -1,0 +1,198 @@
+{
+  "pass": true,
+  "scenario": "ONE READY SESSION -> HIDE -> SNAP -> PLAY CAMP -> ONE READY RECORD",
+  "steps": {
+    "session_created": {
+      "session_id": "s_1791598885912",
+      "tasks": [
+        {
+          "id": "task_s_1791598885912_1",
+          "label": "영어 · apple 1개",
+          "suggested_app": "hide-seek",
+          "state": "PENDING"
+        },
+        {
+          "id": "task_s_1791598885912_2",
+          "label": "영어 · 문장 표현 1개",
+          "suggested_app": "snap-pop",
+          "state": "PENDING"
+        },
+        {
+          "id": "task_s_1791598885912_3",
+          "label": "영어 · CVC 소리 1개",
+          "suggested_app": "play-camp",
+          "state": "PENDING"
+        }
+      ]
+    },
+    "hide_completed": {
+      "planner": {
+        "id": "planner-hide",
+        "status": "COMPLETED",
+        "reports": [
+          {
+            "eventId": "session_s_1791598885912_planner-hide_COMPLETED",
+            "source": "hide-seek",
+            "reportedAt": "2026-10-10T02:21:27.153Z",
+            "actualWorkDate": "2026-10-10",
+            "resultState": "COMPLETED",
+            "focusMs": 1240,
+            "pausedMs": 0,
+            "sessionId": "s_1791598885912"
+          }
+        ]
+      },
+      "task": {
+        "task_id": "task_s_1791598885912_1",
+        "label": "영어 · apple 1개",
+        "state": "COMPLETED",
+        "suggested_app": "hide-seek",
+        "laps": [
+          {
+            "focus_start_ms": 1,
+            "lap_id": "lap_1791598885913_93zk88",
+            "task_id": "task_s_1791598885912_1",
+            "started_at": "2026-10-10T02:21:25.913Z",
+            "started_ms": 1791598885913,
+            "ended_at": "2026-10-10T02:21:27.154Z",
+            "elapsed_ms": 1241,
+            "end_reason": "SPECIALIST_RESULT",
+            "result_state": "COMPLETED",
+            "focus_ms": 1241
+          }
+        ],
+        "updated_at": "2026-10-10T02:21:27.152Z"
+      }
+    },
+    "snap_completed": {
+      "plannerStatusAtStart": "IN_PROGRESS",
+      "planner": {
+        "id": "planner-snap",
+        "status": "COMPLETED",
+        "reports": [
+          {
+            "eventId": "session_s_1791598885912_planner-snap_COMPLETED",
+            "source": "snap-pop",
+            "reportedAt": "2026-10-10T02:21:28.911Z",
+            "actualWorkDate": "2026-10-10",
+            "resultState": "COMPLETED",
+            "focusMs": 1654,
+            "pausedMs": 0,
+            "sessionId": "s_1791598885912"
+          }
+        ]
+      },
+      "task": {
+        "task_id": "task_s_1791598885912_2",
+        "label": "영어 · 문장 표현 1개",
+        "state": "COMPLETED",
+        "suggested_app": "snap-pop",
+        "laps": [
+          {
+            "focus_start_ms": 1345,
+            "lap_id": "lap_1791598887257_pggkvm",
+            "task_id": "task_s_1791598885912_2",
+            "started_at": "2026-10-10T02:21:27.257Z",
+            "started_ms": 1791598887257,
+            "ended_at": "2026-10-10T02:21:28.912Z",
+            "elapsed_ms": 1655,
+            "end_reason": "SPECIALIST_RESULT",
+            "result_state": "COMPLETED",
+            "focus_ms": 1655
+          }
+        ],
+        "updated_at": "2026-10-10T02:21:28.911Z"
+      }
+    },
+    "play_completed": {
+      "plannerStatusAtStart": "IN_PROGRESS",
+      "planner": {
+        "id": "planner-play",
+        "status": "COMPLETED",
+        "reports": [
+          {
+            "eventId": "session_s_1791598885912_planner-play_COMPLETED",
+            "source": "play-camp",
+            "reportedAt": "2026-10-10T02:21:31.684Z",
+            "actualWorkDate": "2026-10-10",
+            "resultState": "COMPLETED",
+            "focusMs": 2656,
+            "pausedMs": 0,
+            "sessionId": "s_1791598885912"
+          }
+        ]
+      },
+      "task": {
+        "task_id": "task_s_1791598885912_3",
+        "label": "영어 · CVC 소리 1개",
+        "state": "COMPLETED",
+        "suggested_app": "play-camp",
+        "laps": [
+          {
+            "focus_start_ms": 3116,
+            "lap_id": "lap_1791598889028_1z43yj",
+            "task_id": "task_s_1791598885912_3",
+            "started_at": "2026-10-10T02:21:29.028Z",
+            "started_ms": 1791598889028,
+            "ended_at": "2026-10-10T02:21:31.685Z",
+            "elapsed_ms": 2657,
+            "end_reason": "SPECIALIST_RESULT",
+            "result_state": "COMPLETED",
+            "focus_ms": 2657
+          }
+        ],
+        "updated_at": "2026-10-10T02:21:31.684Z"
+      }
+    },
+    "final": {
+      "planner": [
+        {
+          "id": "planner-hide",
+          "status": "COMPLETED",
+          "source": "hide-seek"
+        },
+        {
+          "id": "planner-snap",
+          "status": "COMPLETED",
+          "source": "snap-pop"
+        },
+        {
+          "id": "planner-play",
+          "status": "COMPLETED",
+          "source": "play-camp"
+        }
+      ],
+      "activeSession": null,
+      "recordCount": 1,
+      "record": {
+        "id": "r_1791598891869",
+        "date": "2026-10-10",
+        "completedAt": "2026-10-10T02:21:31.869Z",
+        "plannerTaskId": "planner-hide",
+        "label": "오늘 과제 3개",
+        "focusMs": 5957,
+        "pausedMs": 0,
+        "issueMs": 0,
+        "systemWaitMs": 0,
+        "targetMs": null,
+        "status": "COMPLETED",
+        "tasks": [
+          {
+            "label": "영어 · apple 1개",
+            "state": "COMPLETED"
+          },
+          {
+            "label": "영어 · 문장 표현 1개",
+            "state": "COMPLETED"
+          },
+          {
+            "label": "영어 · CVC 소리 1개",
+            "state": "COMPLETED"
+          }
+        ]
+      }
+    }
+  },
+  "gaps": [],
+  "errors": []
+}

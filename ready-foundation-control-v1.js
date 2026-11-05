@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
 'use strict';
 const F=window.ReadyFoundationV1,KEY='ready_foundation_v1';
 const today=()=>new Date().toLocaleDateString('sv-SE');
@@ -19,7 +19,7 @@ function legacyConfirmedFacts(){return Object.values(plannerStore().assignmentFa
 function makeUnit(id,assignmentId,label,loads=[2,2],kind='GENERAL'){return{id,assignment_id:assignmentId,label:String(label||'숙제 단위'),authority:'LEARNING/SUBJECT',cognitiveLoad:Number(loads[0]),activityLoad:Number(loads[1]),kind}}
 function planningUnits(){const out=[];for(const f of legacyConfirmedFacts()){const deadline=planningDeadline(f);if(!deadline||deadline<today())continue;if(f.sourceType==='TALENT_BOOK_ASSIGNMENT'){if(String(f.range||'').trim())out.push(makeUnit(`foundation-unit:${f.assignmentId}:range`,f.assignmentId,f.range,TALENT_LOAD[f.talentSubject]||[2,2],'TALENT_BOOK_RANGE'));continue}if(f.sourceType==='ENGLISH_ACADEMY_PACKAGE'){if(String(f.range||'').trim())out.push(makeUnit(`foundation-unit:${f.assignmentId}:workbook`,f.assignmentId,f.range,ENGLISH_LOAD.WORKBOOK_RANGE,'WORKBOOK_RANGE'));for(const [k,v] of Object.entries(f.printUnits||{}))if(String(v||'').trim())out.push(makeUnit(`foundation-unit:${f.assignmentId}:print:${k}`,f.assignmentId,`${k} 프린트 · ${v}`,ENGLISH_LOAD.PRINT,'PRINT'));for(const [k,v] of Object.entries(f.components||{}))if(String(v||'').trim())out.push(makeUnit(`foundation-unit:${f.assignmentId}:component:${k}`,f.assignmentId,`${k} · ${v}`,ENGLISH_LOAD[k]||ENGLISH_LOAD.other,k));continue}const label=String(f.range||f.title||f.subject||'').trim();if(label)out.push(makeUnit(`foundation-unit:${f.assignmentId}:main`,f.assignmentId,label,[2,2],f.sourceType||'GENERAL'))}const s=load();for(const a of s.assignments||[]){if(!a?.id||!validDate(a.deadline)||a.deadline<today())continue;if(out.some(u=>u.assignment_id===a.id))continue;out.push(makeUnit(`foundation-unit:${a.id}:manual`,a.id,a.volume||a.title||'숙제',[2,2],'MANUAL_CONFIRMED'))}return out}
 function planningDates(assignments){const ds=assignments.map(a=>a.deadline).filter(d=>validDate(d)&&d>=today()).sort();if(!ds.length)return[];const max=ds.at(-1),out=[];for(let d=today(),i=0;d<=max&&i<62;d=datePlus(d,1),i++)out.push(d);return out}
-function actualHistory(units=[]){const p=plannerStore(),byAssignment=new Map();for(const u of units){if(!byAssignment.has(u.assignment_id))byAssignment.set(u.assignment_id,[]);byAssignment.get(u.assignment_id).push(u)}const rows=[];for(const [localDate,day] of Object.entries(p.days||{}))for(const task of day.tasks||[]){if(!['COMPLETED','IN_PROGRESS','WAITING_FOR_PARENT'].includes(task.status)&&!(task.learningReports||[]).length)continue;const direct=task.sourceUnitId&&units.find(u=>u.id===task.sourceUnitId),matches=direct?[direct]:(byAssignment.get(task.sourceAssignmentId)||[]);for(const unit of matches)rows.push({unit_id:unit.id,status:task.status,localDate,taskId:task.id,selected:task.selected===true,learningReports:task.learningReports||[]})}return rows}
+function actualHistory(units=[]){const p=plannerStore(),byAssignment=new Map();for(const u of units){if(!byAssignment.has(u.assignment_id))byAssignment.set(u.assignment_id,[]);byAssignment.get(u.assignment_id).push(u)}const rows=[];for(const [localDate,day] of Object.entries(p.days||{}))for(const task of day.tasks||[]){if(!['COMPLETED','IN_PROGRESS','PARTIAL','DEFERRED','BLOCKED','WAITING_FOR_PARENT'].includes(task.status)&&!(task.learningReports||[]).length)continue;const direct=task.sourceUnitId&&units.find(u=>u.id===task.sourceUnitId),matches=direct?[direct]:(byAssignment.get(task.sourceAssignmentId)||[]);for(const unit of matches)rows.push({unit_id:unit.id,status:task.status,localDate,taskId:task.id,selected:task.selected===true,learningReports:task.learningReports||[]})}return rows}
 const service={load,assignmentFacts,
  importBaseline(authority){const s=load();if(s.baselineImported)return;s.baselineImported=true;if(!s.profiles.length){s.mode='HYBRID';s.profiles.push(F.profile({id:'legacy-confirmed-baseline',revision:1,state:'ACTIVE',effective_from:authority.capturedAt.slice(0,10),effective_to:null,provenance:{source:'NOTION_SNAPSHOT',capturedAt:authority.capturedAt},events:authority.rows.map((r,i)=>F.normalize('NOTION',{id:'baseline:'+i,key:r.activity+':'+r.weekday,title:r.activity,weekday:['일','월','화','수','목','금','토'].indexOf(r.weekday),start:r.start,end:r.end,parent_editable:true,planner_movable:false}))}))}save(s)},
  saveProfile(input){parent();const s=load(),p=F.profile(input);if(s.profiles.some(x=>x.id===p.id)){s.profiles=F.revise(s.profiles,p.id,p.effective_from,p)}else s.profiles.push(p);save(s);if(s.lastPlannerInput)service.prepare({...s.lastPlannerInput,from:today(),actualHistory:actualHistory(s.lastPlannerInput.units||[])});return s},
@@ -47,7 +47,14 @@ const service={load,assignmentFacts,
     if(!remainderStates.has(actual.status))return false;
     previous=actual.id;t.id=`${baseId}:remainder:${++revision}`;
    }
-   if(previous)t.remainderOfTaskId=previous;
+   if(previous){
+    t.remainderOfTaskId=previous;
+    const actual=protectedTasks.get(previous),progress=actual?.learningProgress;
+    if(actual?.status==='PARTIAL'&&progress&&Number.isFinite(progress.completedQuantity)&&Number.isFinite(progress.remainingQuantity)){
+     t.learningProgress={...progress};
+     t.remainderProgress={completedQuantity:progress.completedQuantity,remainingQuantity:progress.remainingQuantity,unit:progress.unit||'PERCENT_OF_PLAN'};
+    }
+   }
    const day=p.days[t.localDate]||(p.days[t.localDate]={localDate:t.localDate,tasks:[]});
    day.tasks.push(t);return true;
   });

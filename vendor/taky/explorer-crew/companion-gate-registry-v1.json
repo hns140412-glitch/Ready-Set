@@ -1,0 +1,329 @@
+{
+  "schema": "EXPLORER_CREW_COMPANION_GATE_REGISTRY_V1",
+  "generated_from_actual_repo_evidence": true,
+  "generated_at": "2026-09-30T11:29:40.767Z",
+  "source_status": {
+    "asset_release_status": "INTEGRATION_CANDIDATE_CORE6_STATE_CODED_NOT_RELEASED",
+    "visual_review_status": "CORE6_SOURCED_HOME_BEHAVIOR_VISUAL_RENDER_PENDING_APPROVAL",
+    "expansion_registry_status": "STAGED_FAIL_CLOSED_NOT_RUNTIME"
+  },
+  "characters": {
+    "dubi": {
+      "character_id": "dubi",
+      "type": "core",
+      "character_approved": true,
+      "manifest_ready": false,
+      "source_sha": "611f460174a09e0ed186e909812464e8a991cc24a9891e21c087050e78d6109b",
+      "manifest_status": "SOURCE_PARTITION_PROTOTYPE_NOT_ANIMATION_READY",
+      "evidence": {
+        "asset_gate": "onboarding/asset-and-release-gate.json",
+        "visual_review": "onboarding/visual-review-current.json",
+        "layer_spec": "onboarding/characters/layer_specs/dubi.json"
+      }
+    },
+    "lori": {
+      "character_id": "lori",
+      "type": "core",
+      "character_approved": true,
+      "manifest_ready": false,
+      "source_sha": "1642e080034e48cf7a11cd3bea12be8db44e10468b20b231f5f714360f27fcac",
+      "manifest_status": "SOURCE_PARTITION_PROTOTYPE_NOT_ANIMATION_READY",
+      "evidence": {
+        "asset_gate": "onboarding/asset-and-release-gate.json",
+        "visual_review": "onboarding/visual-review-current.json",
+        "layer_spec": "onboarding/characters/layer_specs/lori.json"
+      }
+    },
+    "ink": {
+      "character_id": "ink",
+      "type": "core",
+      "character_approved": true,
+      "manifest_ready": false,
+      "source_sha": "5108c5d31437afda09eebd414ac3fd7000dabeca7504b469e630f2368160ef30",
+      "manifest_status": "SOURCE_PARTITION_PROTOTYPE_NOT_ANIMATION_READY",
+      "evidence": {
+        "asset_gate": "onboarding/asset-and-release-gate.json",
+        "visual_review": "onboarding/visual-review-current.json",
+        "layer_spec": "onboarding/characters/layer_specs/ink.json"
+      }
+    },
+    "nova": {
+      "character_id": "nova",
+      "type": "core",
+      "character_approved": true,
+      "manifest_ready": false,
+      "source_sha": "11aea6f91f0197a0c2ab70a203550530ebe2e2aad39136198851ca97092a0d34",
+      "manifest_status": "SOURCE_PARTITION_PROTOTYPE_NOT_ANIMATION_READY",
+      "evidence": {
+        "asset_gate": "onboarding/asset-and-release-gate.json",
+        "visual_review": "onboarding/visual-review-current.json",
+        "layer_spec": "onboarding/characters/layer_specs/nova.json"
+      }
+    },
+    "take": {
+      "character_id": "take",
+      "type": "core",
+      "character_approved": true,
+      "manifest_ready": false,
+      "source_sha": "3cd6720c13473f20f4b23f64fa3d42c7491ea9277ba204f80f096e3f0d57d88a",
+      "manifest_status": "SOURCE_PARTITION_PROTOTYPE_NOT_ANIMATION_READY",
+      "evidence": {
+        "asset_gate": "onboarding/asset-and-release-gate.json",
+        "visual_review": "onboarding/visual-review-current.json",
+        "layer_spec": "onboarding/characters/layer_specs/take.json"
+      }
+    },
+    "zero": {
+      "character_id": "zero",
+      "type": "core",
+      "character_approved": true,
+      "manifest_ready": false,
+      "source_sha": "7eb9ad58b94349eb8367236a3058a7feb0c9e994b981915c6ef82f74dd88b233",
+      "manifest_status": "SOURCE_PARTITION_PROTOTYPE_NOT_ANIMATION_READY",
+      "evidence": {
+        "asset_gate": "onboarding/asset-and-release-gate.json",
+        "visual_review": "onboarding/visual-review-current.json",
+        "layer_spec": "onboarding/characters/layer_specs/zero.json"
+      }
+    },
+    "guide-07": {
+      "character_id": "guide-07",
+      "visual_id": 7,
+      "code": "SOLA",
+      "type": "regular",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-08": {
+      "character_id": "guide-08",
+      "visual_id": 8,
+      "code": "BELO",
+      "type": "regular",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-09": {
+      "character_id": "guide-09",
+      "visual_id": 9,
+      "code": "MOCA",
+      "type": "regular",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-10": {
+      "character_id": "guide-10",
+      "visual_id": 10,
+      "code": "NIA",
+      "type": "regular",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-11": {
+      "character_id": "guide-11",
+      "visual_id": 11,
+      "code": "KIRO",
+      "type": "regular",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-12": {
+      "character_id": "guide-12",
+      "visual_id": 12,
+      "code": "PEACH",
+      "type": "regular",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-13": {
+      "character_id": "guide-13",
+      "visual_id": 13,
+      "code": "MINT",
+      "type": "regular",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-14": {
+      "character_id": "guide-14",
+      "visual_id": 14,
+      "code": "TOTO",
+      "type": "regular",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-15": {
+      "character_id": "guide-15",
+      "visual_id": 15,
+      "code": "RUNE",
+      "type": "regular",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-16": {
+      "character_id": "guide-16",
+      "visual_id": 16,
+      "code": "POPO",
+      "type": "regular",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-17": {
+      "character_id": "guide-17",
+      "visual_id": 17,
+      "code": "MARU",
+      "type": "regular",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-18": {
+      "character_id": "guide-18",
+      "visual_id": 18,
+      "code": "BORI",
+      "type": "regular",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-19": {
+      "character_id": "guide-19",
+      "visual_id": 19,
+      "code": "RIN",
+      "type": "special",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-20": {
+      "character_id": "guide-20",
+      "visual_id": 20,
+      "code": "LUMI",
+      "type": "special",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-21": {
+      "character_id": "guide-21",
+      "visual_id": 21,
+      "code": "TESS",
+      "type": "special",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-22": {
+      "character_id": "guide-22",
+      "visual_id": 22,
+      "code": "SEL",
+      "type": "special",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-23": {
+      "character_id": "guide-23",
+      "visual_id": 23,
+      "code": "ZEKE",
+      "type": "special",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    },
+    "guide-24": {
+      "character_id": "guide-24",
+      "visual_id": 24,
+      "code": "VIVI",
+      "type": "special",
+      "character_approved": false,
+      "manifest_ready": false,
+      "source_sha": null,
+      "manifest_status": "AWAITING_INDEPENDENT_CUTOUT_SHA_AND_MASK_SPEC",
+      "evidence": {
+        "registry": "onboarding/guide-07-24-independent-source-registry.v1.json"
+      }
+    }
+  },
+  "defaults": {
+    "story_unlocked": false,
+    "affinity_requirement_met": false,
+    "fail_closed": true
+  }
+}

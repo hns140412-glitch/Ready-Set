@@ -11,7 +11,7 @@ const MAX_ACKED=500;
 const MAX_FLUSH=20;
 const ACK_KINDS=new Set(['REAL_EVIDENCE_RECEIPT','OBSERVATION_INGEST_RECEIPT']);
 const ELIGIBLE=Object.freeze({
-  'ready-set':new Set(['TASK_STATE_CHANGED','LAP_ENDED','SESSION_ENDED']),
+  'ready-set':new Set(['TASK_STATE_CHANGED','LAP_ENDED','SESSION_ENDED','PRACTICE_RESPONSE_RESULT']),
   'hide-seek':new Set(['RETRIEVAL_ATTEMPT_RESULT','TASK_COMPLETED','TASK_PARTIAL','TASK_BLOCKED','HELP_NEEDED']),
   'snap-pop':new Set(['TASK_COMPLETED','TASK_PARTIAL','TASK_BLOCKED','HELP_NEEDED'])
 });
@@ -138,9 +138,9 @@ function runtime(){
   if(!r||typeof r.getToken!=='function'||typeof r.getFamilyId!=='function'||!clean(r.apiBaseUrl))return null;
   return r;
 }
-let flushing=false;
+let flushing=false,flushRequested=false;
 async function flush(){
-  if(flushing)return {ok:false,reason:'FLUSH_IN_PROGRESS'};
+  if(flushing){flushRequested=true;return {ok:false,reason:'FLUSH_IN_PROGRESS'};}
   const r=runtime();
   if(!r)return {ok:false,reason:'TAKY_FAMILY_RUNTIME_REQUIRED'};
   flushing=true;
@@ -178,12 +178,17 @@ async function flush(){
         stats.failed++;continue;
       }
       markAck(row.key);
-      q=q.filter(x=>x.key!==row.key);
+      // Remove only the acknowledged row from the latest queue. New events may
+      // have been enqueued while this flush was awaiting the network response.
+      q=readQueue().filter(x=>x.key!==row.key);
       writeQueue(q);
       stats.acked++;
     }
     return {ok:true,...stats,pending:readQueue().length};
-  }finally{flushing=false;}
+  }finally{
+    flushing=false;
+    if(flushRequested){flushRequested=false;Promise.resolve().then(()=>flush());}
+  }
 }
 function sourceEvents(){
   const rows=[];

@@ -1,0 +1,113 @@
+{
+  "pass": true,
+  "scenario": "ONE READY SESSION -> HIDE -> SNAP -> PLAY CAMP -> ONE HISTORY RECORD",
+  "steps": {
+    "session_start": {
+      "homework": [
+        {
+          "id": "mock-hide-task",
+          "label": "영어 · apple 단어 1개"
+        },
+        {
+          "id": "mock-snap-task",
+          "label": "영어 · 문장 표현 1개"
+        },
+        {
+          "id": "mock-play-task",
+          "label": "영어 · CVC 소리 1개"
+        }
+      ],
+      "session_id": "s_1791640350010",
+      "tasks": [
+        {
+          "id": "task_s_1791640350010_1",
+          "label": "영어 · apple 단어 1개",
+          "state": "PENDING",
+          "suggested_app": "hide-seek"
+        },
+        {
+          "id": "task_s_1791640350010_2",
+          "label": "영어 · 문장 표현 1개",
+          "state": "PENDING",
+          "suggested_app": "snap-pop"
+        },
+        {
+          "id": "task_s_1791640350010_3",
+          "label": "영어 · CVC 소리 1개",
+          "state": "PENDING",
+          "suggested_app": "play-camp"
+        }
+      ]
+    },
+    "hide": {
+      "evidence": 5,
+      "task_state": "COMPLETED"
+    },
+    "snap": {
+      "records": 1,
+      "gems": 1,
+      "task_state": "COMPLETED"
+    },
+    "play_camp": {
+      "evidence": 1,
+      "word": "cat",
+      "task_state": "COMPLETED"
+    },
+    "all_tasks_completed": {
+      "contract": [
+        {
+          "label": "영어 · apple 단어 1개",
+          "state": "COMPLETED",
+          "suggested_app": "hide-seek",
+          "lap_result": "COMPLETED"
+        },
+        {
+          "label": "영어 · 문장 표현 1개",
+          "state": "COMPLETED",
+          "suggested_app": "snap-pop",
+          "lap_result": "COMPLETED"
+        },
+        {
+          "label": "영어 · CVC 소리 1개",
+          "state": "COMPLETED",
+          "suggested_app": "play-camp",
+          "lap_result": "COMPLETED"
+        }
+      ],
+      "planner": [
+        {
+          "id": "mock-hide-task",
+          "status": "COMPLETED"
+        },
+        {
+          "id": "mock-snap-task",
+          "status": "COMPLETED"
+        },
+        {
+          "id": "mock-play-task",
+          "status": "COMPLETED"
+        }
+      ]
+    },
+    "final": {
+      "recordCount": 1,
+      "tasks": [
+        {
+          "label": "영어 · apple 단어 1개",
+          "state": "COMPLETED"
+        },
+        {
+          "label": "영어 · 문장 표현 1개",
+          "state": "COMPLETED"
+        },
+        {
+          "label": "영어 · CVC 소리 1개",
+          "state": "COMPLETED"
+        }
+      ],
+      "historyText": "오늘 과제 3개2026-10-10 · 집중 00:06COMPLETED"
+    }
+  },
+  "gaps": [],
+  "errors": []
+}

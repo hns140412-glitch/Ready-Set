@@ -1,11 +1,14 @@
 (() => {
   'use strict';
 
-  const VERSION = '2026.09.15-stage-d-homework-loader-v2-world-hold';
+  const VERSION = '2026.10.08-stage-d-homework-world-active-v3';
+  const WORLD_IMPLEMENTATION_HOLD = false;
   const CHAIN = [
     './ready-stage-d-base-v1.js',
     './ready-home-homework-mvp-v1.js',
-    './ready-home-homework-ui-v1.js'
+    './ready-home-homework-ui-v1.js',
+    './ready-world-base-v1.js',
+    './ready-world-shell-v1.js'
   ];
 
   const load = src => new Promise((resolve, reject) => {
@@ -18,6 +21,7 @@
   });
 
   function enforceImplementationHold(){
+    if(!WORLD_IMPLEMENTATION_HOLD)return;
     const home=document.getElementById('homeView');
     if(!home)return;
     // Only write when needed: classList.remove always rewrites the class attribute,
@@ -30,6 +34,7 @@
 
   const worldHoldObserver=new MutationObserver(()=>enforceImplementationHold());
   const startWorldHold=()=>{
+    if(!WORLD_IMPLEMENTATION_HOLD)return;
     const home=document.getElementById('homeView');
     if(!home)return;
     enforceImplementationHold();
@@ -42,6 +47,12 @@
     for (const src of CHAIN) await load(src);
     document.documentElement.dataset.readyStageDLoader = VERSION;
     window.ReadyHomeHomeworkUIV1?.render?.();
+    if(window.ReadyRoleContextV1?.current?.()==='child'){
+      document.documentElement.dataset.readyWorldImplementation='ACTIVE';
+      window.ReadyWorldShellV1?.render?.();
+    }else{
+      document.documentElement.dataset.readyWorldImplementation='PARENT_NOT_APPLICABLE';
+    }
     enforceImplementationHold();
   })().catch(error => {
     console.error('[Ready Stage D Homework Loader]', error);

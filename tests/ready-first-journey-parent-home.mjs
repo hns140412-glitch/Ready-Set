@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import {pathToFileURL} from 'node:url';
 import {createServer} from './visual-qa/server.mjs';
 
-const {chromium}=await import(process.argv[2]?pathToFileURL(process.argv[2]).href:'playwright');
+const playwrightEntry=process.argv[2]?pathToFileURL(process.argv[2]).href:new URL('../../Play Camp/node_modules/playwright-core/index.mjs',import.meta.url).href;
+const {chromium}=await import(playwrightEntry);
 const server=createServer();
 await new Promise(resolve=>server.listen(4177,'127.0.0.1',resolve));
 let browser;
 try{
-  browser=await chromium.launch({headless:true,timeout:15000,...(process.argv[3]?{executablePath:process.argv[3]}:{})});
+  browser=await chromium.launch({headless:true,timeout:15000,...(process.argv[3]?{executablePath:process.argv[3]}:{channel:'chrome'})});
   const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,serviceWorkers:'block'});
   let apiCalls=0;
   await context.route('**/*',route=>{
@@ -29,13 +30,15 @@ try{
   await page.waitForSelector('#readyCharacterCandidateMount .takyConsult',{timeout:12000});
   assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().onboardingStep),'CHARACTER');
 
-  await page.locator('[data-taky-choice="FEEL_BRIGHT"]').tap();
-  await page.locator('[data-taky-confirm]').tap();
-  await page.locator('[data-taky-choice="LOOK_ACTIVE"]').tap();
-  await page.locator('[data-taky-confirm]').tap();
-  await page.waitForSelector('[data-taky-generate]',{timeout:8000});
-  assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections.length),3);
-  assert.match(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections[2].tileKey),/^AUTO_/);
+  for(let round=1;round<=3;round++){
+    await page.locator('[data-taky-choice]').first().tap();
+    await page.locator('[data-taky-confirm]').tap();
+    assert.equal(await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections.length),round);
+  }
+  await page.waitForSelector('[data-paid-lock="true"]',{timeout:8000});
+  const moodSelections=await page.evaluate(()=>ReadyIdentityV1.get().characterMoodDirections.selections);
+  assert.equal(moodSelections.length,3);
+  assert.ok(moodSelections.every(item=>['BRIGHT','EXCITED','COZY','COOL','FOCUS','IMAGINE'].includes(item.tileKey)));
 
   await page.waitForSelector('#rofCharacterDefer',{timeout:8000});
   await page.locator('#rofCharacterDefer').tap();
@@ -136,8 +139,10 @@ try{
   assert.deepEqual(parentRoundtrip,{studyOpportunity:true,factCommitted:true,plannerCandidate:true,todayTask:true});
 
   // Parent → child role reload. The live child UI is Today's Island; governed tasks surface as island pins.
-  await page.evaluate(()=>window.ReadyRoleContextV1.switchRole('child',{reload:true}));
-  await page.waitForLoadState('load',{timeout:12000});
+  await Promise.all([
+    page.waitForURL(url=>url.searchParams.get('role')==='child',{waitUntil:'load',timeout:12000}),
+    page.evaluate(()=>window.ReadyRoleContextV1.switchRole('child',{reload:true}))
+  ]);
   await page.waitForFunction(()=>window.ReadyRoleContextV1?.current?.()==='child'&&window.ReadyHomeHomeworkMVPV1&&window.ReadyWorldShellV1,{timeout:12000});
   await page.waitForFunction(()=>window.ReadyHomeHomeworkMVPV1.tasks().length>0,{timeout:10000});
   await page.evaluate(()=>window.ReadyWorldShellV1?.render?.());

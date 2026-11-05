@@ -4,7 +4,7 @@
   window.__readyJourneyLoader = true;
 
   const VERSION = '2026.10.06-stage-c-first-run-owner-phased-boot-v1';
-  const IMPLEMENTATION_HOLD = true;
+  const IMPLEMENTATION_HOLD = false;
   // Canonical identity owner. index.html may still execute the byte-identical legacy URL;
   // Stage-C only loads this when no owner is present, so there is never a second owner.
   const IDENTITY='./ready-onboarding-identity-v2.js?v=20260913-deferred';
@@ -68,13 +68,17 @@
   // Only called once identity is READY: the first-run owner has finished.
   function releaseHeldLayers() {
     if (!identityReady()) return;
-    html.classList.remove('identityFirstPaint', 'worldFirstPaint', 'readyFirstRun');
+    html.classList.remove('identityFirstPaint', 'readyFirstRun');
     document.getElementById('readyFirstRun')?.remove();
-    document.getElementById('worldStage')?.remove();
-    document.getElementById('homeView')?.classList.remove('worldShell');
-    document.querySelectorAll('.worldLegacySection').forEach(el => el.classList.remove('worldLegacySection'));
-    html.dataset.readyIdentityImplementation = IMPLEMENTATION_HOLD ? 'HOLD' : 'ACTIVE';
-    html.dataset.readyWorldImplementation = IMPLEMENTATION_HOLD ? 'HOLD' : 'ACTIVE';
+    const role=window.ReadyRoleContextV1?.current?.()||'child';
+    if (IMPLEMENTATION_HOLD || role === 'parent') {
+      html.classList.remove('worldFirstPaint');
+      document.getElementById('worldStage')?.remove();
+      document.getElementById('homeView')?.classList.remove('worldShell');
+      document.querySelectorAll('.worldLegacySection').forEach(el => el.classList.remove('worldLegacySection'));
+    }
+    html.dataset.readyIdentityImplementation = 'ACTIVE';
+    html.dataset.readyWorldImplementation = IMPLEMENTATION_HOLD ? 'HOLD' : (role === 'child' ? 'ACTIVE' : 'PARENT_NOT_APPLICABLE');
   }
 
   function renderCore() {
@@ -87,6 +91,7 @@
     window.ReadyFocusToolsV1?.render?.();
     window.ReadyScheduleBaseV1?.render?.();
     window.ReadyParentSetupHubV1?.render?.();
+    if (window.ReadyRoleContextV1?.current?.() === 'child') window.ReadyWorldShellV1?.render?.();
   }
 
   // Preserve the first-run owner: never remove #readyFirstRun while identity is incomplete.
