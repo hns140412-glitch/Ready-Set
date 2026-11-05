@@ -62,7 +62,7 @@
   const hhmm = ts => { const d = new Date(ts); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
   const ymd = ts => { const d = new Date(ts); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
   const uid = p => p + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  const guide = () => CREW.get(S.profile && S.profile.guide);
+  const guide = () => { const c = CREW.get(S.profile && S.profile.guide); const n = S.profile && S.profile.guideNick; return n ? Object.assign({}, c, { name: n }) : c; };
   const shareName = p => p && p.nickname ? (p.name ? `${p.nickname}(${p.name})` : p.nickname) : '';
   function toast(msg, ms = 2200) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), ms); }
   const targetMin = () => { const p = S.plan; const c = parseInt(p.custom, 10); return p.target === 'custom' ? (c > 0 ? Math.min(c, 180) : 0) : p.target; };
@@ -121,7 +121,7 @@
     a._f = setInterval(() => { const n = a.volume + step; if ((step >= 0 && n >= v) || (step < 0 && n <= v) || step === 0) { a.volume = Math.max(0, Math.min(1, v)); clearInterval(a._f); done && done(); } else a.volume = Math.max(0, Math.min(1, n)); }, 40);
   }
   function playVoice(c) {
-    if (!S.profile || S.profile.voice === false || !c) return;
+    if (!c || (S.profile && S.profile.voice === false)) return;
     try { if (AUD.voice) AUD.voice.pause(); } catch (e) { /* noop */ }
     const v = new Audio(c.voice); AUD.voice = v;
     const b = AUD.bgm; const duck = b && !b.paused; if (duck) b.volume = .12;
@@ -616,42 +616,123 @@
       </div>
       ${vNav('settings')}</section>`;
   }
+  /* ---------- GUIDE first journey (mockup "GUIDE 1~8": crew intro → companion → photo+name tag → item+vibe → sail/fall → island → basecamp → ready) ---------- */
+  // Painted backgrounds: drop rs/scenes/<key>.webp and list the key here; until then a vector plate is drawn.
+  const SCENE_FILES = [];
+  const OB_STEPS = ['ob1', 'ob2', 'ob3', 'ob4', 'ob5', 'ob6', 'ob7', 'ob8'];
+  const ITEMS = [['compass', '나침반'], ['camera', '탐험 카메라'], ['notebook', '탐험 수첩'], ['lantern', '랜턴'], ['map', '지도']];
+  const VIBES = [['curious', '호기심 가득', '새로운 것을 발견'], ['calm', '평화로운', '여유롭게, 천천히'], ['bold', '도전적인', '더 멀리, 더 높이'], ['warm', '따뜻한', '함께, 다정하게']];
+  function plate(kind) {
+    const sky = { camp: ['#9cc9ef', '#e9f3fb'], island: ['#8cc6ee', '#e6f4fb'], base: ['#f2c58e', '#fbe7cf'], sea: ['#9fd2f2', '#eaf6fc'], sky: ['#7fb6ea', '#dceefb'] }[kind] || ['#9cc9ef', '#e9f3fb'];
+    const mtn = `<path d="M0 250 L70 170 L120 205 L190 120 L250 190 L300 150 L360 210 L400 180 V400 H0Z" fill="#6f8fbf" opacity=".55"/><path d="M190 120 L172 146 L186 142 L196 152 L206 138 L212 140Z" fill="#fff" opacity=".9"/><path d="M0 285 L60 225 L110 255 L170 200 L230 250 L290 215 L350 262 L400 236 V400 H0Z" fill="#4f6ea3" opacity=".75"/>`;
+    const pines = (y, c) => [12, 40, 66, 330, 356, 384].map((x, i) => `<path d="M${x} ${y - 46 - (i % 2) * 10} L${x - 13} ${y} H${x + 13}Z" fill="${c}"/>`).join('');
+    let mid = '';
+    if (kind === 'island' || kind === 'sea') mid = `<rect y="270" width="400" height="130" fill="#3f86c2"/><path d="M0 300 Q50 292 100 300 T200 300 T300 300 T400 300" stroke="#bfe3fa" stroke-width="3" fill="none" opacity=".7"/><path d="M0 340 Q50 332 100 340 T200 340 T300 340 T400 340" stroke="#bfe3fa" stroke-width="3" fill="none" opacity=".5"/>`
+      + (kind === 'island' ? `<path d="M110 282 Q150 190 205 200 Q240 150 285 206 Q318 230 330 282Z" fill="#4c8a52"/><path d="M180 282 Q200 232 236 236 Q258 240 270 282Z" fill="#7a6a58"/><path d="M96 284 H344 Q300 296 220 296 Q140 296 96 284Z" fill="#f1dfb0"/>${[160, 214, 262].map((x, i) => `<path d="M${x} ${222 - i * 8} L${x - 10} ${250 - i * 4} H${x + 10}Z" fill="#2f6b3f"/>`).join('')}` : '');
+    else if (kind === 'base') mid = `<rect y="300" width="400" height="100" fill="#7a5a3a"/><path d="M120 300 V214 L200 168 L280 214 V300Z" fill="#9b6b42" stroke="#5a3a22" stroke-width="5"/><path d="M110 218 L200 160 L290 218" fill="none" stroke="#5a3a22" stroke-width="10" stroke-linecap="round"/><rect x="180" y="248" width="40" height="52" rx="4" fill="#5a3a22"/><rect x="138" y="232" width="28" height="24" rx="3" fill="#ffd27a"/><rect x="234" y="232" width="28" height="24" rx="3" fill="#ffd27a"/><path d="M200 168 V108" stroke="#5a3a22" stroke-width="4"/><path d="M200 110 H246 L236 124 L246 138 H200Z" fill="#203f86"/><path d="M212 132 L222 118 L232 132Z" fill="#fff"/>${[52, 348].map(x => `<path d="M${x} 300 L${x - 34} 300 L${x} 248 L${x + 34} 300Z" fill="#203f86" opacity=".9"/>`).join('')}`;
+    else mid = `<rect y="292" width="400" height="108" fill="#6aa0d0"/><path d="M0 292 H400" stroke="#cfe6f6" stroke-width="3"/>`;
+    if (kind === 'sky') mid = `<rect y="318" width="400" height="82" fill="#3f86c2"/><path d="M140 322 Q190 270 250 322Z" fill="#4c8a52"/>${[60, 300].map(x => `<ellipse cx="${x}" cy="120" rx="44" ry="16" fill="#fff" opacity=".85"/>`).join('')}`;
+    return `<svg class="plate" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="sk-${kind}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient></defs><rect width="400" height="400" fill="url(#sk-${kind})"/>${kind === 'sky' ? '' : mtn}${mid}${kind === 'base' || kind === 'camp' ? pines(kind === 'base' ? 300 : 292, '#2f5b45') : ''}</svg>`;
+  }
+  const sceneBg = k => SCENE_FILES.includes(k) ? `<img class="plate" src="rs/scenes/${k}.webp" alt="">` : plate(k);
+  const gdHead = (n, t, sub) => `<header class="gd-head"><span class="gd-no">${n}</span><h1>${t}</h1><p>${sub}</p></header>`;
+  const gdDots = n => `<div class="gd-dots" aria-label="${n}/8 단계">${OB_STEPS.map((s, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div>`;
+  const arrow = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+  const gdCta = (act, label, ok) => `<button class="gd-cta" id="obNext" data-act="${act}" ${ok ? '' : 'disabled'}>${label}${arrow}</button>`;
+  const guideNick = d => (d.guideNick || '').trim() || CREW.get(d.guide).name;
+  function obOk(d, s) {
+    if (s === 'ob3') return !!d.nickname.trim();
+    if (s === 'ob4') return !!(d.item && d.vibe);
+    if (s === 'ob5') return !!d.theme;
+    return true;
+  }
   function vOb() {
-    const p = UI.draft;
-    if (UI.screen === 'ob1') {
-      return `<section class="screen ob">
-        <div class="ob-hero"><div class="brand">READY &amp; SET</div><h1>준비는 가볍게,<br>시작은 자신 있게</h1><p>먼저 탐험가 이름표를 만들어요.</p></div>
-        <div class="ob-scene" aria-hidden="true"><div class="ob-rays"></div><div class="crew-line">${[[2, 0, 52, 1], [1, 11, 64, 2], [0, 23, 80, 4], [3, 40, 80, 3], [4, 57, 64, 2], [5, 73, 52, 1]].map(([i, l, h, z]) => `<img src="${CREW.core[i].img}" alt="" style="left:${l}%;height:${h}%;z-index:${z}">`).join('')}</div></div>
-        <div class="grow" style="flex:0 0 auto;justify-content:flex-end">
-          <div class="card"><p class="label">닉네임 <small>공유할 때 앞에 보여요</small></p><input class="field" data-draft="nickname" value="${esc(p.nickname)}" placeholder="예: 별이" maxlength="10" autocomplete="off"></div>
-          <div class="card"><p class="label">이름 <small>괄호 안에 보여요</small></p><input class="field" data-draft="name" value="${esc(p.name)}" placeholder="예: 김하늘" maxlength="10" autocomplete="off">
-          <p class="preview-name">공유 이름: <b id="pvName">${esc(shareName(p) || '닉네임(이름)')}</b></p></div>
+    const d = UI.draft; const s = UI.screen; const g = CREW.get(d.guide);
+    const wrap = (bg, body) => `<section class="screen gd gd-${s}"><div class="gd-bg">${sceneBg(bg)}</div><div class="gd-card">${body}</div></section>`;
+    if (s === 'ob1') {
+      const say = CREW.core[UI.obSay || 0];
+      return wrap('camp', `${gdHead(1, '탐험대원 자기소개', '우리와 함께할 친구들을 만나보세요! 친구를 누르면 인사해요.')}
+        <div class="gd-stage">
+          <div class="crew-line">${[[1, 3, 44, 46, 1], [2, 31, 46, 44, 1], [4, 57, 44, 46, 1], [3, -1, 0, 52, 3], [0, 28, 0, 56, 4], [5, 59, 0, 52, 3]].map(([i, l, bt, h, z]) => `<button class="${(UI.obSay || 0) === i ? 'on' : ''}" data-act="obSay" data-i="${i}" style="left:${l}%;bottom:${bt}%;height:${h}%;width:${Math.round(h * .82)}%;z-index:${z}" aria-label="${esc(CREW.core[i].name)} 인사 듣기"><img src="${CREW.core[i].img}" alt=""></button>`).join('')}</div>
+          <div class="gd-bubble top"><b>${esc(say.name)}</b>“${esc(say.signature)}”</div>
         </div>
-        <button class="cta" data-act="ob2" ${p.nickname.trim() ? '' : 'disabled'} id="ob1Next">다음</button>
-      </section>`;
+        <p class="gd-hand">좋은 친구들과 어디든 갈 수 있어!</p>
+        ${gdDots(1)}${gdCta('obGo', '다음으로', true)}`);
     }
-    if (UI.screen === 'ob2') {
-      const pages = [0, 1, 2, 3]; const list = CREW.all.slice(UI.obPage * 6, UI.obPage * 6 + 6); const sel = CREW.get(p.guide);
-      return `<section class="screen ob">
-        ${UI.obEdit ? `<div class="top"><button class="back" data-act="nav" data-to="settings" aria-label="뒤로">${I.back}</button><h1>길잡이 바꾸기</h1></div>` : ''}
-        <div class="ob-hero"><h1 style="font-size:25px">함께 갈 길잡이를 골라요</h1><p>누르면 목소리를 들을 수 있어요.</p></div>
-        <div class="grow" style="justify-content:center">
-          <div class="pager">${pages.map(i => `<button class="${UI.obPage === i ? 'on' : ''}" data-act="obPage" data-i="${i}">${i ? i * 6 + 1 + '~' + (i * 6 + 6) : '탐험대'}</button>`).join('')}</div>
-          <div class="crew-grid">${list.map(c => `<button class="crew ${p.guide === c.id ? 'on' : ''}" data-act="pickGuide" data-id="${c.id}" aria-pressed="${p.guide === c.id}"><img src="${c.face}" alt="" loading="lazy"><b>${esc(c.name)}</b><span>${esc(c.keywords.slice(0, 2).join(' · '))}</span></button>`).join('')}</div>
-          <div class="guide-say"><img src="${sel.face}" alt="${esc(sel.name)}"><div class="bubble"><small>${esc(sel.name)}</small>${esc(sel.signature)}</div></div>
+    if (s === 'ob2') {
+      const page = UI.obPage; const list = CREW.all.slice(page * 6, page * 6 + 6);
+      return wrap('camp', `${UI.obEdit ? `<button class="gd-back" data-act="nav" data-to="settings" aria-label="뒤로">${I.back}</button>` : ''}${gdHead(2, UI.obEdit ? '동행 탐험대원 바꾸기' : '동행 탐험대원 선택', '함께할 탐험대원을 한 명 선택해 주세요.')}
+        <div class="gd-stage pick">
+          <button class="gd-arr l" data-act="obStep" data-d="-1" aria-label="이전 친구">‹</button>
+          <img class="gd-fig" src="${g.img}" alt="${esc(g.name)}">
+          <button class="gd-arr r" data-act="obStep" data-d="1" aria-label="다음 친구">›</button>
+          <div class="gd-bubble side"><b>${esc(g.name)}</b>“${esc(g.signature)}”</div>
         </div>
-        <button class="cta" data-act="${UI.obEdit ? 'guideSave' : 'ob3'}">${UI.obEdit ? '이 길잡이로 할게요' : '다음'}</button>
-      </section>`;
+        <div class="gd-faces">${list.map(c => `<button class="${d.guide === c.id ? 'on' : ''}" data-act="pickGuide" data-id="${c.id}" aria-pressed="${d.guide === c.id}"><img src="${c.face}" alt=""><span>${esc(c.name)}</span></button>`).join('')}</div>
+        <div class="gd-pager">${[0, 1, 2, 3].map(i => `<button class="${page === i ? 'on' : ''}" data-act="obPage" data-i="${i}">${i ? `${i * 6 + 1}~${i * 6 + 6}` : '탐험대 6'}</button>`).join('')}</div>
+        <div class="gd-names"><label>기본 이름<input class="gd-field" value="${esc(g.name)}" disabled></label><label>표시할 이름(닉네임)<input class="gd-field" data-draft="guideNick" value="${esc(d.guideNick)}" placeholder="${esc(g.name)}" maxlength="8" autocomplete="off"></label></div>
+        ${gdDots(2)}${gdCta(UI.obEdit ? 'guideSave' : 'obGo', UI.obEdit ? '이 친구로 바꿀게요' : '이 친구와 함께할게요!', true)}`);
     }
-    return `<section class="screen ob">
-      <div class="ob-hero"><h1 style="font-size:25px">어떻게 섬에 도착할까요?</h1><p>공유 카드와 탐험 분위기에 쓰여요. 나중에 설정에서 바꿀 수 있어요.</p></div>
-      <div class="grow">
-        <div class="theme-pick"><button class="${p.theme === '항해' ? 'on' : ''}" data-act="obTheme" data-t="항해">${I.sail}<b>항해</b><span>바다를 건너 섬으로</span></button><button class="${p.theme === '낙하' ? 'on' : ''}" data-act="obTheme" data-t="낙하">${I.chute}<b>낙하</b><span>하늘에서 섬으로 내려가기</span></button></div>
-        ${guideScene(CREW.get(p.guide))}
-        <div class="guide-say"><img src="${CREW.get(p.guide).face}" alt=""><div class="bubble"><small>${esc(CREW.get(p.guide).name)}</small>${esc(shareName(p))}, 반가워! 이제 오늘 할 일을 골라보자.</div></div>
+    if (s === 'ob3') {
+      return wrap('camp', `${gdHead(3, '사진 찍기 · 이름표', '지금의 너를 기록해요. 사진은 이 기기에만 저장돼요.')}
+        <div class="gd-photo">${d.photo ? `<img src="${d.photo}" alt="내 사진">` : `<img class="ph-guide" src="${g.img}" alt=""><div class="gd-bubble ph">안녕! 우리 함께 멋진 모험을 떠나자!</div>`}</div>
+        <div class="gd-photo-btns"><label class="gd-btn navy">${I.cam || ''}사진 찍기<input type="file" accept="image/*" capture="user" data-photo hidden></label><label class="gd-btn">사진 보관함에서 선택<input type="file" accept="image/*" data-photo hidden></label></div>
+        <div class="gd-names"><label>닉네임 <small>공유할 때 앞</small><input class="gd-field" data-draft="nickname" value="${esc(d.nickname)}" placeholder="예: 별이" maxlength="10" autocomplete="off"></label><label>이름 <small>괄호 안</small><input class="gd-field" data-draft="name" value="${esc(d.name)}" placeholder="예: 김하늘" maxlength="10" autocomplete="off"></label></div>
+        <p class="gd-preview">공유 이름: <b id="pvName">${esc(shareName({ nickname: d.nickname.trim(), name: d.name.trim() }) || '닉네임(이름)')}</b></p>
+        ${gdDots(3)}${gdCta('obGo', '다음으로', obOk(d, s))}`);
+    }
+    if (s === 'ob4') {
+      return wrap('camp', `${gdHead(4, '아이템 선정 + 분위기 선택', '탐험에 꼭 필요한 아이템 하나와 탐험 분위기를 골라요.')}
+        <p class="gd-label">탐험 아이템 <small>(하나만 선택)</small></p>
+        <div class="gd-items">${ITEMS.map(([k, n]) => `<button class="${d.item === k ? 'on' : ''}" data-act="obItem" data-k="${k}" aria-pressed="${d.item === k}"><img src="rs/items/${k}.svg" alt=""><span>${n}</span></button>`).join('')}</div>
+        <p class="gd-label">어떤 분위기로 탐험할까요?</p>
+        <div class="gd-vibes">${VIBES.map(([k, n, t]) => `<button class="v-${k} ${d.vibe === k ? 'on' : ''}" data-act="obVibe" data-k="${k}" aria-pressed="${d.vibe === k}"><i></i><b>${n}</b><span>${t}</span></button>`).join('')}</div>
+        <p class="gd-hand">이제, 너만의 탐험대 캐릭터가 준비되고 있어요!</p>
+        ${gdDots(4)}${gdCta('obGo', '다음으로', obOk(d, s))}`);
+    }
+    if (s === 'ob5') {
+      const me = d.photo ? `<img class="me" src="${d.photo}" alt="">` : '';
+      return wrap('sea', `${gdHead(5, '항해모드 / 낙하모드 선택', '어떻게 이 섬에 도착하고 싶나요?')}
+        <div class="gd-modes">
+          <button class="${d.theme === '항해' ? 'on' : ''}" data-act="obTheme" data-t="항해" aria-pressed="${d.theme === '항해'}"><div class="mode-pic">${plate('sea')}<svg class="boat" viewBox="0 0 120 90" aria-hidden="true"><path d="M60 6V60" stroke="#5a3a22" stroke-width="4"/><path d="M62 10 L100 56 H62Z" fill="#f7f1e2" stroke="#203f86" stroke-width="2"/><path d="M58 16 L28 56 H58Z" fill="#203f86"/><path d="M10 60 H110 L96 82 H24Z" fill="#8a5a34" stroke="#5a3a22" stroke-width="3"/></svg><img class="rider" src="${g.face}" alt="">${me}</div><b>항해모드</b><span>바람을 따라, 천천히 세상을 만나며 도착해요.</span></button>
+          <button class="${d.theme === '낙하' ? 'on' : ''}" data-act="obTheme" data-t="낙하" aria-pressed="${d.theme === '낙하'}"><div class="mode-pic">${plate('sky')}<svg class="chute" viewBox="0 0 120 100" aria-hidden="true"><path d="M10 44 Q60 -14 110 44Z" fill="#203f86"/><path d="M35 44 Q60 4 85 44" fill="#f7f1e2"/><path d="M12 44 L52 90 M108 44 L68 90 M42 44 L56 90 M78 44 L64 90" stroke="#5a3a22" stroke-width="2"/></svg><img class="rider f" src="${g.face}" alt="">${me}</div><b>낙하모드</b><span>하늘에서 내려다보며 힘차게 도착해요.</span></button>
+        </div>
+        <p class="gd-hand">어떤 방법으로 가든, 멋진 모험이 기다리고 있어요!</p>
+        ${gdDots(5)}${gdCta('obGo', '이 방법으로 출발할게요!', obOk(d, s))}`);
+    }
+    if (s === 'ob6' || s === 'ob7') {
+      const isl = s === 'ob6';
+      return wrap(isl ? 'island' : 'base', `${gdHead(isl ? 6 : 7, isl ? '섬 발견 + 섬 이름 짓기' : '베이스 캠프 이동 + 이름 짓기', isl ? `드디어 첫 번째 섬에 ${d.theme === '낙하' ? '내려왔어요' : '도착했어요'}! 이 특별한 섬의 이름을 지어 주세요.` : '이제, 우리의 베이스 캠프로 가요. 여기서 더 많은 이야기가 시작될 거예요.')}
+        <div class="gd-stage open"><div class="gd-bubble float">${isl ? '새로운 이야기가 시작되는 곳!' : '좋은 친구들과 더 많은 이야기를 만들어가자!'}</div><img class="gd-mini" src="${g.img}" alt=""></div>
+        <div class="gd-sign"><p>${isl ? '이 섬의 이름은?' : '우리의 베이스 캠프 이름은?'}</p><input class="gd-field" data-draft="${isl ? 'island' : 'camp'}" value="${esc(isl ? d.island : d.camp)}" placeholder="${isl ? '반짝이는 섬' : '하늘빛 캠프'}" maxlength="12" autocomplete="off"></div>
+        <p class="gd-hand">${isl ? '멋진 이름이에요! 이곳에서 어떤 이야기가 펼쳐질까요?' : '멋진 베이스 캠프! 이제, 진짜 탐험이 시작돼요.'}</p>
+        ${gdDots(isl ? 6 : 7)}${gdCta('obGo', isl ? '다음으로' : '탐험을 시작해요!', true)}`);
+    }
+    const isl = d.island.trim() || '반짝이는 섬'; const camp = d.camp.trim() || '하늘빛 캠프';
+    const it = (ITEMS.find(x => x[0] === d.item) || ITEMS[0]);
+    return wrap('base', `${gdHead(8, '탐험 준비 완료!', '같은 하늘 아래, 더 멋진 이야기를 함께!')}
+      <div class="gd-ready">
+        <div class="hello"><small>안녕, ${esc(guideNick(d))}와 함께하는</small><b>${esc(camp)}!</b><span>${esc(shareName({ nickname: d.nickname.trim(), name: d.name.trim() }))}, 오늘도 좋은 하루, 탐험할 준비 됐나요?</span></div>
+        <div class="buddy"><div class="gd-bubble">“${esc(g.signature)}”<small>- ${esc(guideNick(d))}</small></div><img src="${g.img}" alt=""></div>
       </div>
-      <button class="cta" data-act="obDone" ${p.theme ? '' : 'disabled'}>시작하기</button>
-    </section>`;
+      <div class="gd-tiles">
+        <div>${d.photo ? `<img class="me" src="${d.photo}" alt="">` : `<img src="${g.face}" alt="">`}<b>나</b><span>${esc(d.nickname.trim())}</span></div>
+        <div><img src="rs/items/${it[0]}.svg" alt=""><b>탐험 아이템</b><span>${it[1]}</span></div>
+        <div>${d.theme === '낙하' ? I.chute : I.sail}<b>나의 섬</b><span>${esc(isl)}</span></div>
+        <div><svg viewBox="0 0 48 48" fill="none" stroke="#203f86" stroke-width="2.6" stroke-linejoin="round"><path d="M8 40V22L24 10l16 12v18z" fill="#dfe7f6"/><path d="M20 40V30h8v10"/></svg><b>베이스 캠프</b><span>${esc(camp)}</span></div>
+      </div>
+      <div class="gd-banner">${sceneBg('island')}<p>지금, 어떤 이야기를 시작할까요?</p></div>
+      ${gdCta('obDone', '탐험하기', true)}`);
+  }
+  async function obPhoto(file) {
+    if (!file) return;
+    try {
+      const url = URL.createObjectURL(file); const img = new Image();
+      await new Promise((ok, no) => { img.onload = ok; img.onerror = no; img.src = url; });
+      const side = Math.min(img.naturalWidth, img.naturalHeight); const c = document.createElement('canvas'); c.width = c.height = 320;
+      c.getContext('2d').drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, 320, 320);
+      URL.revokeObjectURL(url); UI.draft.photo = c.toDataURL('image/jpeg', .82); render();
+    } catch (e) { toast('사진을 불러오지 못했어요. 다른 사진으로 해 볼까요?'); }
   }
   function vShareOv() {
     const sh = UI.share;
@@ -667,9 +748,9 @@
   }
 
   function render() {
-    if (!S.profile && !/^ob/.test(UI.screen || '')) { UI.draft = UI.draft || { name: '', nickname: '', guide: 'dubi', theme: '' }; UI.screen = 'ob1'; }
+    if (!S.profile && !/^ob/.test(UI.screen || '')) { UI.draft = UI.draft || { name: '', nickname: '', guide: 'dubi', guideNick: '', photo: '', item: '', vibe: '', theme: '', island: '', camp: '' }; UI.screen = 'ob1'; UI.obSay = 0; }
     if (S.session && !['focus', 'record'].includes(UI.screen)) UI.screen = 'focus';
-    const v = { home: vHome, setup1: vSetup1, setup2: vSetup2, brief: vBrief, focus: vFocus, record: vRecord, result: vResult, history: vHistory, calendar: vCalendar, settings: vSettings, ob1: vOb, ob2: vOb, ob3: vOb }[UI.screen] || vHome;
+    const v = { home: vHome, setup1: vSetup1, setup2: vSetup2, brief: vBrief, focus: vFocus, record: vRecord, result: vResult, history: vHistory, calendar: vCalendar, settings: vSettings, ob1: vOb, ob2: vOb, ob3: vOb, ob4: vOb, ob5: vOb, ob6: vOb, ob7: vOb, ob8: vOb }[UI.screen] || vHome;
     let html = v();
     if (UI.ov === 'sheet') html += vSheet();
     if (UI.ov === 'pause') html += vPauseOv();
@@ -747,18 +828,21 @@
     backFocus: () => { recStop(); cleanupMic(); if (AUD.take) AUD.take.pause(); go('focus'); const s = S.session; if (s && s.bgmOn && !isPaused(s)) bgmPlay(s.bgm); },
     calMove: e => { const now = new Date(); const m = UI.calMonth || new Date(now.getFullYear(), now.getMonth(), 1); UI.calMonth = new Date(m.getFullYear(), m.getMonth() + (+e.dataset.d), 1); render(); },
     calDay: e => { UI.calSel = e.dataset.d; render(); },
-    editGuide: () => { UI.draft = Object.assign({}, S.profile); UI.obEdit = true; UI.obPage = Math.floor(CREW.all.indexOf(guide()) / 6); go('ob2'); },
-    guideSave: () => { S.profile.guide = UI.draft.guide; save(); UI.obEdit = false; go('settings'); },
+    editGuide: () => { UI.draft = Object.assign({ guideNick: '' }, S.profile); UI.obEdit = true; UI.obPage = Math.floor(CREW.all.indexOf(CREW.get(S.profile.guide)) / 6); go('ob2'); },
+    guideSave: () => { S.profile.guide = UI.draft.guide; S.profile.guideNick = (UI.draft.guideNick || '').trim(); save(); UI.obEdit = false; go('settings'); },
     theme: e => { S.profile.theme = e.dataset.t; save(); render(); },
     voice: () => { S.profile.voice = S.profile.voice === false; save(); render(); },
     resetAsk: () => { UI.ov = 'reset'; render(); },
     resetDo: () => { try { localStorage.removeItem(KEY); } catch (e) { /* noop */ } S = blank(); UI.draft = null; go('ob1'); },
-    ob2: () => { if (!UI.draft.nickname.trim()) return; UI.draft.nickname = UI.draft.nickname.trim(); UI.draft.name = UI.draft.name.trim(); go('ob2'); },
+    obGo: () => { const d = UI.draft; const i = OB_STEPS.indexOf(UI.screen); if (!obOk(d, UI.screen)) return; ['nickname', 'name', 'guideNick', 'island', 'camp'].forEach(k => { d[k] = (d[k] || '').trim(); }); go(OB_STEPS[i + 1] || 'ob8'); if (UI.screen === 'ob2') playVoice(CREW.get(d.guide)); },
+    obSay: e => { UI.obSay = +e.dataset.i; render(); playVoice(CREW.core[UI.obSay]); },
+    obStep: e => { const all = CREW.all; const i = (all.indexOf(CREW.get(UI.draft.guide)) + +e.dataset.d + all.length) % all.length; UI.draft.guide = all[i].id; UI.obPage = Math.floor(i / 6); render(); playVoice(all[i]); },
     obPage: e => { UI.obPage = +e.dataset.i; render(); },
     pickGuide: e => { UI.draft.guide = e.dataset.id; render(); playVoice(CREW.get(e.dataset.id)); },
-    ob3: () => go('ob3'),
+    obItem: e => { UI.draft.item = e.dataset.k; render(); },
+    obVibe: e => { UI.draft.vibe = e.dataset.k; render(); },
     obTheme: e => { UI.draft.theme = e.dataset.t; render(); },
-    obDone: () => { const d = UI.draft; S.profile = { name: d.name, nickname: d.nickname, guide: d.guide, theme: d.theme, voice: true, recPrefix: '' }; save(); UI.draft = null; go('home'); }
+    obDone: () => { const d = UI.draft; S.profile = { name: d.name.trim(), nickname: d.nickname.trim(), guide: d.guide, guideNick: d.guideNick.trim(), photo: d.photo, item: d.item, vibe: d.vibe, theme: d.theme, island: d.island.trim() || '반짝이는 섬', camp: d.camp.trim() || '하늘빛 캠프', voice: true, recPrefix: '' }; save(); UI.draft = null; go('home'); }
   };
   // playVoice during onboarding (no profile yet) — allow
   const _pv = playVoice; playVoice = function (c) { if (!S.profile) { const v = new Audio(c.voice); AUD.voice && AUD.voice.pause(); AUD.voice = v; v.play().catch(() => {}); return; } _pv(c); };
@@ -773,10 +857,10 @@
     const t = e.target;
     if (t.dataset.detail) { const k = S.plan.tasks.find(x => x.id === t.dataset.detail); if (k) { k.detail = t.value.slice(0, 30); save(); } }
     if (t.id === 'customMin') { S.plan.custom = t.value.replace(/\D/g, '').slice(0, 3); save(); const lbl = t.closest('.card').querySelector('.label small'); if (lbl) lbl.textContent = targetMin() ? targetMin() + '분' : '정해 주세요'; const b = $('[data-act="toSetup2"]'); if (b) b.disabled = !(S.plan.tasks.length && targetMin()); }
-    if (t.dataset.draft) { UI.draft[t.dataset.draft] = t.value; const pv = $('#pvName'); if (pv) pv.textContent = shareName({ nickname: UI.draft.nickname.trim(), name: UI.draft.name.trim() }) || '닉네임(이름)'; const nb = $('#ob1Next'); if (nb) nb.disabled = !UI.draft.nickname.trim(); }
+    if (t.dataset.draft) { UI.draft[t.dataset.draft] = t.value; const pv = $('#pvName'); if (pv) pv.textContent = shareName({ nickname: UI.draft.nickname.trim(), name: UI.draft.name.trim() }) || '닉네임(이름)'; const nb = $('#obNext'); if (nb) nb.disabled = !obOk(UI.draft, UI.screen); }
     if (t.dataset.prof) { const k = t.dataset.prof; const v = t.value.trim(); if (k === 'nickname' && !v) return; S.profile[k] = v; save(); }
   });
-  app.addEventListener('change', e => { if (e.target.dataset.prof) render(); });
+  app.addEventListener('change', e => { if (e.target.dataset.prof) render(); if (e.target.dataset.photo !== undefined) obPhoto(e.target.files && e.target.files[0]); });
 
   /* ---------------- boot ---------------- */
   UI.screen = S.session ? 'focus' : 'home';
