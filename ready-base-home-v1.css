@@ -34,3 +34,4 @@
 #resultView #resultHeadline,#resultView #resultLine{padding-right:112px}
 #resultGuidePortrait.crewPortrait{position:absolute;right:20px;top:18px;width:86px;height:86px;border-radius:50%;box-shadow:0 10px 22px rgba(110,70,40,.16),inset 0 0 0 3px #fff}
 #resultView #resultAvatar{position:absolute;right:84px;top:70px;width:40px;height:40px;border-radius:14px;display:grid;place-items:center;font-weight:950;font-size:16px;color:#5a3a28;background:linear-gradient(145deg,#ffe7d6,#eaa789);border:3px solid #fff;box-shadow:0 6px 14px rgba(90,58,40,.16);background-size:cover;background-position:center}
+#focusView #remainingTime.overtime{color:#ff8a65}

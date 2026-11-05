@@ -2,7 +2,10 @@
   'use strict';
   const VERSION='2026.09.15-focus-golden-v4';
   const $=s=>document.querySelector(s);
-  let mediaRecorder=null,mediaStream=null,chunks=[],currentAudio=null,recordStartedAt=0,recordTicker=null;
+  let mediaRecorder=null,mediaStream=null,chunks=[],currentAudio=null,recordStartedAt=0,recordTicker=null,starting=false,previewUrl='';
+  const MAX_RECORDING_MS=180000;
+  function setRecordingActive(on){window.__readyRecordingActive=!!on}
+  function revokePreview(){if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=''}}
 
   function toast(message){const t=$('#toast');if(!t)return;t.textContent=message;t.hidden=false;clearTimeout(t._focusTm);t._focusTm=setTimeout(()=>t.hidden=true,2200)}
   function fmt(ms){const seconds=Math.max(0,Math.floor(Number(ms||0)/1000));return`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`}
@@ -67,7 +70,7 @@
 
   function stopStream(){mediaStream?.getTracks?.().forEach(track=>track.stop());mediaStream=null}
   function resetRecordingUI(){
-    clearInterval(recordTicker);recordTicker=null;stopStream();currentAudio=null;chunks=[];
+    clearInterval(recordTicker);recordTicker=null;stopStream();setRecordingActive(false);revokePreview();currentAudio=null;chunks=[];
     if($('#recordClock'))$('#recordClock').textContent='00:00';if($('#recordState'))$('#recordState').textContent='READY';
     if($('#reviewPanel'))$('#reviewPanel').hidden=true;if($('#audioPreview'))$('#audioPreview').removeAttribute('src');$('#waveform')?.classList.remove('active');
     const action=$('#recordAction');if(action){action.textContent='녹음 시작';action.classList.remove('recording')}
@@ -87,7 +90,8 @@
     const save=$('#saveRecordingBtn'),retry=$('#rerecordBtn');if(save&&!save.textContent.trim())save.textContent='녹음 저장';if(retry&&!retry.textContent.trim())retry.textContent='다시 녹음'
   }
   function finishRecording(){
-    clearInterval(recordTicker);recordTicker=null;stopStream();
+    clearInterval(recordTicker);recordTicker=null;stopStream();setRecordingActive(false);
+    if(!chunks.length){resetRecordingUI();toast('녹음된 소리가 없어요. 다시 녹음해 주세요.');return}
     const action=$('#recordAction');if(action){action.textContent='녹음 시작';action.classList.remove('recording')}
     if($('#recordState'))$('#recordState').textContent='REVIEW';$('#waveform')?.classList.remove('active');
     const main=crew(),pool=(runtime()?.crewCore6||['dubi','lori','ink','nova','take','zero']).filter(id=>id!==main.id),guest=runtime()?.crewGuide?.(pool[Math.floor(Math.random()*pool.length)]||'lori');
@@ -95,20 +99,26 @@
     if($('#guideDialogue'))$('#guideDialogue').textContent=`${main.name}: 끝까지 녹음했어! 같이 들어보자.`;
     if($('#duoText'))$('#duoText').textContent=guest?`${main.name} · ${guest.name}: 녹음을 끝까지 완료한 것을 먼저 확인할게. 자동 평가는 하지 않아요.`:'';
     const type=mediaRecorder?.mimeType||chunks[0]?.type||'audio/webm';currentAudio=new Blob(chunks,{type});
-    const preview=$('#audioPreview');if(preview){preview.src=URL.createObjectURL(currentAudio)}if($('#reviewPanel'))$('#reviewPanel').hidden=false;
+    const preview=$('#audioPreview');if(preview){revokePreview();previewUrl=URL.createObjectURL(currentAudio);preview.src=previewUrl}if($('#reviewPanel'))$('#reviewPanel').hidden=false;
     if($('#formatNote'))$('#formatNote').textContent=/audio\/(mp4|m4a)/.test(type)?'이 기기에 m4a 형식으로 저장돼요.':'이 기기에 webm 형식으로 저장돼요.'
   }
   async function startRecording(){
+    if(starting||mediaRecorder?.state==='recording')return;
+    if(window.isSecureContext===false){toast('마이크 녹음은 https 주소에서만 할 수 있어요.');return}
     if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){toast('이 브라우저는 마이크 녹음을 지원하지 않습니다.');return}
+    const action=$('#recordAction');starting=true;if(action)action.disabled=true;
+    stopStream();window.ReadyBgmV1?.pause?.();
     try{
       mediaStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+      if(document.visibilityState==='hidden'){stopStream();return}
       const candidates=['audio/mp4;codecs=mp4a.40.2','audio/mp4','audio/webm;codecs=opus','audio/webm'];
       const mime=candidates.find(m=>MediaRecorder.isTypeSupported?.(m))||'';
       mediaRecorder=new MediaRecorder(mediaStream,mime?{mimeType:mime}:undefined);chunks=[];
-      mediaRecorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};mediaRecorder.onstop=finishRecording;mediaRecorder.start(250);recordStartedAt=Date.now();
+      mediaRecorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};mediaRecorder.onstop=finishRecording;mediaRecorder.start(250);recordStartedAt=Date.now();setRecordingActive(true);
       if($('#recordState'))$('#recordState').textContent='RECORDING';$('#waveform')?.classList.add('active');const action=$('#recordAction');if(action){action.textContent='녹음 끝내기';action.classList.add('recording')}
-      recordTicker=setInterval(()=>{if($('#recordClock'))$('#recordClock').textContent=fmt(Date.now()-recordStartedAt);renderRecordingContext()},250)
-    }catch(error){stopStream();toast(error?.name==='NotAllowedError'?'마이크 권한이 필요합니다.':'녹음을 시작할 수 없습니다.')}
+      recordTicker=setInterval(()=>{const ms=Date.now()-recordStartedAt;if($('#recordClock'))$('#recordClock').textContent=fmt(ms);renderRecordingContext();if(ms>=MAX_RECORDING_MS&&mediaRecorder?.state==='recording'){mediaRecorder.stop();toast('녹음은 최대 3분까지 할 수 있어요.')}},250)
+    }catch(error){stopStream();setRecordingActive(false);const n=error?.name;toast(n==='NotAllowedError'||n==='SecurityError'?'마이크 권한이 필요합니다.':n==='NotFoundError'?'마이크를 찾을 수 없습니다.':n==='NotReadableError'?'다른 앱이 마이크를 사용 중이에요.':'녹음을 시작할 수 없습니다.')}
+    finally{starting=false;const a=$('#recordAction');if(a)a.disabled=false}
   }
   function storeAudio(blob,name,type){
     return new Promise((resolve,reject)=>{const req=indexedDB.open('readyset_audio',1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('audio'))req.result.createObjectStore('audio',{keyPath:'id'})};req.onerror=()=>reject(req.error);req.onsuccess=()=>{const tx=req.result.transaction('audio','readwrite');tx.objectStore('audio').put({id:`a_${Date.now()}`,name,type,blob,createdAt:Date.now()});tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)}})
@@ -175,6 +185,10 @@
     document.documentElement.dataset.readyFocusTools=VERSION
   }
 
+  // Never leave the mic open when the page is hidden, locked or unloaded.
+  function stopForBackground(){if(mediaRecorder?.state==='recording'){try{mediaRecorder.stop()}catch{stopStream()}}else if(!starting)stopStream()}
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')stopForBackground()});
+  window.addEventListener('pagehide',stopForBackground);
   const rerender=()=>setTimeout(ensure,0);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensure,{once:true});else ensure();
   window.addEventListener('pageshow',rerender);document.addEventListener('click',event=>{if(event.target.closest('[data-rev07-task],#focusMission,#recordBackBtn,#saveRecordingBtn'))rerender()});
