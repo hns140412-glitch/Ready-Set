@@ -3,3 +3,7 @@ Thumbs.db
 *.log
 .env.local
 artifacts/visual-qa/
+
+# Explorer Crew mock voices: canonical copy lives in TAKY-ASSETS/audio/explorer-crew/mock
+# sync with: python TAKY-ASSETS/tools/sync_explorer_crew_audio.py --apply
+audio/explorer-crew/mock/
