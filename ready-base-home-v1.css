@@ -28,3 +28,9 @@
 #homeView .heroBlock,#homeView .stopwatchArt,#homeView .homeGuideCard,#homeView .commandCard,#homeView .challengePanel>.categoryGrid,#homeView #homeChips{display:none!important}
 /* Time remains secondary; there is no default timer hero on Home. */
 @media (max-width:390px){#homeView .baseHeroCopy h1{font-size:31px}#homeView .baseCompanion{padding:14px;grid-template-columns:50px minmax(0,1fr) 50px}#homeView .baseUser,#homeView .baseCompanion .guidePortrait{width:50px;height:50px;min-width:50px}}
+/* Explorer Crew portraits on focus/record/result (ported from legacy app.js rendering, 2026-11-05) */
+.crewPortrait{background-color:#fff6ed;background-size:contain!important;background-repeat:no-repeat;background-position:center bottom}
+#resultView .resultCard{position:relative}
+#resultView #resultHeadline,#resultView #resultLine{padding-right:112px}
+#resultGuidePortrait.crewPortrait{position:absolute;right:20px;top:18px;width:86px;height:86px;border-radius:50%;box-shadow:0 10px 22px rgba(110,70,40,.16),inset 0 0 0 3px #fff}
+#resultView #resultAvatar{position:absolute;right:84px;top:70px;width:40px;height:40px;border-radius:14px;display:grid;place-items:center;font-weight:950;font-size:16px;color:#5a3a28;background:linear-gradient(145deg,#ffe7d6,#eaa789);border:3px solid #fff;box-shadow:0 6px 14px rgba(90,58,40,.16);background-size:cover;background-position:center}

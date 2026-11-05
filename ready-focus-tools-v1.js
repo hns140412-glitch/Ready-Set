@@ -69,20 +69,34 @@
   function resetRecordingUI(){
     clearInterval(recordTicker);recordTicker=null;stopStream();currentAudio=null;chunks=[];
     if($('#recordClock'))$('#recordClock').textContent='00:00';if($('#recordState'))$('#recordState').textContent='READY';
-    if($('#reviewPanel'))$('#reviewPanel').hidden=true;if($('#audioPreview'))$('#audioPreview').removeAttribute('src');
+    if($('#reviewPanel'))$('#reviewPanel').hidden=true;if($('#audioPreview'))$('#audioPreview').removeAttribute('src');$('#waveform')?.classList.remove('active');
     const action=$('#recordAction');if(action){action.textContent='녹음 시작';action.classList.remove('recording')}
   }
+  const runtime=()=>window.ReadyBaseRuntimeV1;
+  function crew(){return runtime()?.crewGuide?.()||{id:'dubi',name:'두비',src:'./characters/ui_cutouts/dubi.png'}}
+  function ensureRecordingMarkup(){
+    $('#recordState')?.classList.add('recordState');$('#recordClock')?.classList.add('recordClock');
+    const wave=$('#waveform');if(wave){wave.classList.add('waveform');if(!wave.children.length)for(let i=0;i<18;i++)wave.appendChild(document.createElement('i'))}
+    const coach=$('#coachVoiceBtn');if(coach)coach.hidden=true; // no active coach-voice handler since app.js removal
+  }
   function renderRecordingContext(){
+    ensureRecordingMarkup();
     if($('#recordTimerContext'))$('#recordTimerContext').textContent=$('#remainingTime')?.textContent||'';
-    if($('#guideDialogue'))$('#guideDialogue').textContent='문장을 읽고 녹음한 뒤 저장해 주세요.';
+    runtime()?.applyCrew?.($('#recordGuidePortrait'));runtime()?.applyUserAvatar?.($('#recordAvatar'));
+    if($('#guideDialogue')&&$('#reviewPanel')?.hidden!==false)$('#guideDialogue').textContent=`${crew().name}: 문장을 소리 내어 읽고 녹음한 뒤 저장해 주세요.`;
     const save=$('#saveRecordingBtn'),retry=$('#rerecordBtn');if(save&&!save.textContent.trim())save.textContent='녹음 저장';if(retry&&!retry.textContent.trim())retry.textContent='다시 녹음'
   }
   function finishRecording(){
     clearInterval(recordTicker);recordTicker=null;stopStream();
     const action=$('#recordAction');if(action){action.textContent='녹음 시작';action.classList.remove('recording')}
-    if($('#recordState'))$('#recordState').textContent='REVIEW';
+    if($('#recordState'))$('#recordState').textContent='REVIEW';$('#waveform')?.classList.remove('active');
+    const main=crew(),pool=(runtime()?.crewCore6||['dubi','lori','ink','nova','take','zero']).filter(id=>id!==main.id),guest=runtime()?.crewGuide?.(pool[Math.floor(Math.random()*pool.length)]||'lori');
+    runtime()?.applyCrew?.($('#duoMainGuide'),main);if(guest)runtime()?.applyCrew?.($('#duoGuestGuide'),guest);
+    if($('#guideDialogue'))$('#guideDialogue').textContent=`${main.name}: 끝까지 녹음했어! 같이 들어보자.`;
+    if($('#duoText'))$('#duoText').textContent=guest?`${main.name} · ${guest.name}: 녹음을 끝까지 완료한 것을 먼저 확인할게. 자동 평가는 하지 않아요.`:'';
     const type=mediaRecorder?.mimeType||chunks[0]?.type||'audio/webm';currentAudio=new Blob(chunks,{type});
-    const preview=$('#audioPreview');if(preview){preview.src=URL.createObjectURL(currentAudio)}if($('#reviewPanel'))$('#reviewPanel').hidden=false
+    const preview=$('#audioPreview');if(preview){preview.src=URL.createObjectURL(currentAudio)}if($('#reviewPanel'))$('#reviewPanel').hidden=false;
+    if($('#formatNote'))$('#formatNote').textContent=/audio\/(mp4|m4a)/.test(type)?'이 기기에 m4a 형식으로 저장돼요.':'이 기기에 webm 형식으로 저장돼요.'
   }
   async function startRecording(){
     if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){toast('이 브라우저는 마이크 녹음을 지원하지 않습니다.');return}
@@ -92,7 +106,7 @@
       const mime=candidates.find(m=>MediaRecorder.isTypeSupported?.(m))||'';
       mediaRecorder=new MediaRecorder(mediaStream,mime?{mimeType:mime}:undefined);chunks=[];
       mediaRecorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};mediaRecorder.onstop=finishRecording;mediaRecorder.start(250);recordStartedAt=Date.now();
-      if($('#recordState'))$('#recordState').textContent='RECORDING';const action=$('#recordAction');if(action){action.textContent='녹음 끝내기';action.classList.add('recording')}
+      if($('#recordState'))$('#recordState').textContent='RECORDING';$('#waveform')?.classList.add('active');const action=$('#recordAction');if(action){action.textContent='녹음 끝내기';action.classList.add('recording')}
       recordTicker=setInterval(()=>{if($('#recordClock'))$('#recordClock').textContent=fmt(Date.now()-recordStartedAt);renderRecordingContext()},250)
     }catch(error){stopStream();toast(error?.name==='NotAllowedError'?'마이크 권한이 필요합니다.':'녹음을 시작할 수 없습니다.')}
   }
@@ -137,6 +151,24 @@
       #focusView .clockBrand{position:absolute;left:50%;top:31%;transform:translateX(-50%);z-index:2;font-size:clamp(11px,3vw,15px);font-weight:950;letter-spacing:-.03em;white-space:nowrap;color:#25231f}
       #focusView .timeStrip{grid-template-columns:1fr 1fr}#focusView .timeStrip.recording-required{grid-template-columns:1fr auto 1fr}
       #focusView .recButton{min-width:52px;min-height:52px;width:52px;height:52px;touch-action:manipulation}#focusView .recButton.completed span{font-size:9px;letter-spacing:0}#focusView .recButton.completed i{box-shadow:0 0 0 3px rgba(255,255,255,.12)}
+      #recordingView .recordingMain{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:6px 22px calc(30px + env(safe-area-inset-bottom))}
+      #recordingView #recordTimerContext{font-weight:900;font-size:13px;color:#8a5a3d;align-self:center}
+      #recordGuidePortrait{order:-2;width:min(46vw,176px);height:min(46vw,176px);border-radius:50%;box-shadow:0 14px 30px rgba(110,70,40,.16),inset 0 0 0 4px #fff}
+      #recordAvatar{order:-1;width:52px;height:52px;margin:-58px 0 0 min(34vw,128px);border-radius:18px;display:grid;place-items:center;font-weight:950;font-size:19px;color:#5a3a28;background:linear-gradient(145deg,#ffe7d6,#eaa789);border:3px solid #fff;box-shadow:0 6px 14px rgba(90,58,40,.18);background-size:cover;background-position:center}
+      #guideDialogue{max-width:330px;margin:4px 0 0;padding:12px 16px;border-radius:18px;background:#fff;font-weight:800;font-size:15px;line-height:1.45;color:#2a231f;box-shadow:0 8px 20px rgba(90,58,40,.08)}
+      #guideDialogue:empty{display:none}
+      #recordingView .recordState{margin-top:6px;color:#b0714f;font-weight:900}
+      #recordingView .recordClock{color:#2a231f;font-variant-numeric:tabular-nums}
+      #recordingView .waveform{width:100%;max-width:320px;height:64px;margin:4px 0}
+      #recordAction{width:min(300px,100%);min-height:58px;border:0;border-radius:999px;background:#2a231f;color:#fff;font:900 17px/1 system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 12px 24px rgba(42,35,31,.22);touch-action:manipulation}
+      #recordAction::before{content:"";width:14px;height:14px;border-radius:50%;background:#ff4b3e}
+      #recordAction.recording{background:#d9483b}#recordAction.recording::before{border-radius:3px;background:#fff}
+      #recordAction:disabled{opacity:.6}
+      #reviewPanel{width:100%;max-width:340px;margin-top:8px;padding:14px;border-radius:22px;background:#fff;display:flex;flex-wrap:wrap;justify-content:center;gap:10px;box-shadow:0 10px 24px rgba(90,58,40,.1)}#reviewPanel[hidden]{display:none}
+      #reviewPanel audio{flex-basis:100%;width:100%}
+      #duoMainGuide,#duoGuestGuide{width:64px;height:64px;border-radius:50%}#duoGuestGuide{box-shadow:0 0 0 2px #f4c66d}
+      #duoText,#formatNote{flex-basis:100%;margin:0;font-size:13px;font-weight:700;color:#6b5546;line-height:1.45}#formatNote{font-size:11px;opacity:.75}
+      #rerecordBtn,#saveRecordingBtn{flex:1 1 40%;min-height:48px;border:0;border-radius:16px;font-weight:900;font-size:15px;background:#f3ebe3;color:#2a231f}#saveRecordingBtn{background:#2a231f;color:#fff}
       @media(max-width:390px){#focusView .clockHero{max-width:68vw;max-height:68vw}#focusView::after{opacity:.18}}
       @media(min-width:760px){#focusView{width:100%;max-width:none}#focusView .focusMain{width:min(430px,calc(100% - 48px));margin-left:auto;margin-right:clamp(28px,8vw,128px)}#focusView .focusHeader{width:min(430px,calc(100% - 48px));margin-left:auto;margin-right:clamp(28px,8vw,128px)}#focusView::before{width:62vmin;height:62vmin;left:4vw;top:14%;opacity:.2}#focusView::after{right:auto;left:22vw;top:56%;transform:rotate(18deg) scale(.7)}}
     `;document.head.appendChild(style)}
