@@ -20,6 +20,7 @@
     './ready-base-native-v2.js',
     './ready-planner-selection-bridge-v1.js',
     './ready-focus-tools-v1.js',
+    './ready-bgm-v1.js',
     './ready-schedule-base-v1.js',
     './ready-parent-setup-hub-v1.js',
     './ready-base-selftest-v1.js'
