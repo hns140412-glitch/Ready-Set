@@ -15,7 +15,9 @@ const BASE = 'https://central.test/';
 function mockCentral() {
   const st = { calls: [], requests: new Map(), profile: null, tickets: new Map() };
   const json = (status, body) => ({ ok: status < 300, status, json: async () => body, headers: new Map() });
-  const fetchImpl = async (url, opt = {}) => {
+  // Like window.fetch: throws when called as a method of some other object (browser "Illegal invocation").
+  const fetchImpl = async function (url, opt = {}) {
+    if (this !== undefined && this !== globalThis) throw new TypeError('Illegal invocation');
     const u = new URL(url); st.calls.push(u.pathname + ':' + (opt.method || 'GET'));
     if (u.pathname === '/bytes') {
       if (opt.method === 'PUT') {

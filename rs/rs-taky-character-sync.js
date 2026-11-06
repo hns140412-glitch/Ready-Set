@@ -58,7 +58,8 @@
       let j = {}; try { j = await r.json(); } catch {}
       return { status: r.status, ok: r.ok && j && j.ok !== false, j };
     };
-    return { post, family_id, member_id, fetchImpl };
+    // Never call window.fetch as a method of another object ("Illegal invocation" in browsers).
+    return { post, family_id, member_id, fetchImpl: (url, init) => fetchImpl(url, init) };
   }
 
   // Child side: send the photo to the parent as a private request. A newer photo replaces an older one.
