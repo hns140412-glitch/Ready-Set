@@ -899,6 +899,7 @@
   // S.profile.takyCharacter = { state: NEED_PHOTO_SEND | REQUESTED | MASTER_READY | ..., version, at }
   function takyMark(state, extra) {
     if (!S.profile) return; S.profile.takyCharacter = Object.assign({}, S.profile.takyCharacter, { state, at: new Date().toISOString() }, extra || {}); save();
+    const line = document.querySelector('[data-taky-character]'); if (line) line.textContent = takyCharacterLine(S.profile);
   }
   async function takySync() {
     const sync = globalThis.RsTakyCharacterSync; const p = S.profile; if (!sync || !p || UI.takyBusy) return;
@@ -922,8 +923,10 @@
   }
   globalThis.addEventListener('taky-central-auth-ready', () => { if (UI.screen === 'settings') render(); void takySync(); });
   globalThis.addEventListener('taky-central-auth-cleared', () => { if (UI.screen === 'settings') render(); });
+  // Coming back to the app is when a parent-approved character usually becomes visible (no polling loop).
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && globalThis.TAKY_FAMILY_RUNTIME) void takySync(); });
   function takyCharacterLine(p) {
-    const t = (p && p.takyCharacter) || {}, linked = !!globalThis.TAKY_FAMILY_RUNTIME;
+    const t = (p && p.takyCharacter) || (p && p.photo ? { state: 'NEED_PHOTO_SEND' } : {}), linked = !!globalThis.TAKY_FAMILY_RUNTIME;
     if (/^MASTER_READY/.test(t.state || '')) return `타키가 만든 캐릭터 v${t.version || 1}`;
     if (t.state === 'REQUESTED') return '타키가 캐릭터를 만드는 중이에요';
     if (t.state === 'NEED_PHOTO_SEND') return linked ? '사진을 타키에게 보내는 중…' : '가족 연결하면 타키에게 사진이 가요';
