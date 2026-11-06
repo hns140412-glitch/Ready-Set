@@ -676,8 +676,8 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
   color: var(--ink-n);
   background:
     linear-gradient(180deg, rgba(247, 239, 223, 0) 0, rgba(247, 239, 223, .35) 70px, var(--paper) 150px, var(--paper) calc(100% - 210px), rgba(247, 239, 223, .25) calc(100% - 60px)),
-    url(scenes/home-header.webp?v=20261106i) center top / 100% auto no-repeat,
-    url(scenes/camp.webp?v=20261106i) center bottom / 100% auto no-repeat,
+    url(scenes/home-header.webp?v=20261106j) center top / 100% auto no-repeat,
+    url(scenes/camp.webp?v=20261106j) center bottom / 100% auto no-repeat,
     var(--paper); }
 .warm .top .back { background: rgba(255, 252, 244, .82); color: var(--navy); box-shadow: 0 2px 8px rgba(22, 46, 102, .14); }
 .warm .top h1 { color: var(--navy-2); text-shadow: 0 1px 0 rgba(255, 255, 255, .7); }
@@ -771,3 +771,12 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .cal button.sel { background: linear-gradient(160deg, #2a4a9a, #162e66); color: #fff; }
 .cal button.has::after { background: #c9a35a; }
 .cal button.today { outline-color: #c9a35a; }
+/* inputs and mode cards: warm cream instead of flat white (Taky: no white boxes) */
+.gd-field, .warm .field { background: #fffaf0; }
+.gd-field:focus, .warm .field:focus { background: #fffdf7; }
+.gd-modes > button { background: #fdf6e6; }
+@media (max-height: 700px) {
+  .warm .set-row { min-height: 44px; }
+  .warm .card { padding-top: 6px; padding-bottom: 6px; }
+  .warm .set-row .field { padding: 6px 10px !important; }
+}
