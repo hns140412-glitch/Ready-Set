@@ -1,8 +1,8 @@
 /* Ready & Set service worker — approved-design rebuild (2026-11-05).
    Network-first for pages so updates land; cache-first for versioned static assets.
    Removes caches from earlier builds. */
-const CACHE = 'ready-set:rebuild-20261106f';
-const CORE = ['./', './index.html', './rs/rs.css?v=20261106f', './rs/crew.js?v=20261106f', './rs/rs-app.js?v=20261106f', './rs/home-hero.webp', './manifest.webmanifest', './assets/icon-192.png'];
+const CACHE = 'ready-set:rebuild-20261106g';
+const CORE = ['./', './index.html', './rs/rs.css?v=20261106g', './rs/crew.js?v=20261106g', './rs/rs-app.js?v=20261106g', './rs/home-hero.webp', './manifest.webmanifest', './assets/icon-192.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
