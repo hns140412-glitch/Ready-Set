@@ -331,7 +331,7 @@ canvas.wave { width: 100%; height: 64px; }
 
 /* ---------- GUIDE first journey (navy · cream · wood, mockup GUIDE 1~8) ---------- */
 .gd { --navy: #203f86; --navy-2: #162e66; --cream: #fbf6ea; --wood: #8a5a34; padding: calc(var(--safe-t) + 10px) 12px calc(var(--safe-b) + 10px); background: #cfe3f5; }
-.gd-bg { position: absolute; inset: 0; overflow: hidden; }
+.gd-bg { position: absolute; inset: 0; overflow: hidden; background: linear-gradient(#cfe3f5, #f3ead6); }
 .gd-bg .plate, .gd-banner .plate, .mode-pic .plate { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .gd-card { position: relative; z-index: 1; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 8px; background: rgba(251, 246, 234, .9); border: 2px solid rgba(255, 255, 255, .9); border-radius: 26px; box-shadow: 0 12px 30px rgba(22, 46, 102, .22); padding: 14px 14px 12px; width: 100%; max-width: 460px; align-self: center; -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
 .gd-ob6 .gd-card, .gd-ob7 .gd-card { background: linear-gradient(rgba(251, 246, 234, .92) 0, rgba(251, 246, 234, .55) 30%, rgba(251, 246, 234, 0) 46%, rgba(251, 246, 234, 0) 62%, rgba(251, 246, 234, .9) 74%); }
@@ -408,7 +408,7 @@ canvas.wave { width: 100%; height: 64px; }
 .gd-modes > button { position: relative; background: #fff; border: 3px solid #e0e6f3; border-radius: 18px; padding: 0 0 8px; display: flex; flex-direction: column; overflow: hidden; text-align: center; }
 .gd-modes > button.on { border-color: var(--navy); }
 .gd-modes > button.on::after { content: "✓"; position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; background: var(--navy); color: #fff; font-weight: 900; display: grid; place-items: center; }
-.mode-pic { position: relative; flex: 1 1 auto; min-height: 90px; overflow: hidden; }
+.mode-pic { position: relative; flex: 1 1 auto; min-height: 90px; overflow: hidden; background: linear-gradient(#cfe3f5, #f3ead6); }
 .mode-pic .boat { position: absolute; left: 10%; bottom: 14%; width: 80%; }
 .mode-pic .chute { position: absolute; left: 12%; top: 6%; width: 76%; }
 .mode-pic .rider { position: absolute; left: 50%; bottom: 30%; width: 34%; border-radius: 50%; transform: translateX(-50%); border: 2px solid #fff; }
@@ -676,8 +676,8 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
   color: var(--ink-n);
   background:
     linear-gradient(180deg, rgba(247, 239, 223, 0) 0, rgba(247, 239, 223, .35) 70px, var(--paper) 150px, var(--paper) calc(100% - 210px), rgba(247, 239, 223, .25) calc(100% - 60px)),
-    url(scenes/home-header.webp?v=20261106e) center top / 100% auto no-repeat,
-    url(scenes/camp.webp?v=20261106e) center bottom / 100% auto no-repeat,
+    url(scenes/home-header.webp?v=20261106f) center top / 100% auto no-repeat,
+    url(scenes/camp.webp?v=20261106f) center bottom / 100% auto no-repeat,
     var(--paper); }
 .warm .top .back { background: rgba(255, 252, 244, .82); color: var(--navy); box-shadow: 0 2px 8px rgba(22, 46, 102, .14); }
 .warm .top h1 { color: var(--navy-2); text-shadow: 0 1px 0 rgba(255, 255, 255, .7); }
@@ -755,3 +755,9 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .ai-note { margin: 0; text-align: center; font-size: 12px; font-weight: 800; color: var(--navy-2); background: rgba(255, 250, 238, .9); border: 1px solid rgba(217, 164, 65, .55); border-radius: 999px; padding: 4px 10px; align-self: center; animation: aiPulse 1.6s ease-in-out infinite; }
 @keyframes aiPulse { 50% { opacity: .55; } }
 .arrival-cards .ac-me.ai img { aspect-ratio: 2 / 3; object-fit: cover; object-position: top; border-radius: 18px; }
+
+/* ob3 on tall phones: content on top, CTA at the thumb, the camp scene shows through between them (same pattern as ob6/ob7). */
+@media (min-height: 760px) {
+  .gd-ob3 .gd-dots { margin-top: auto; }
+  .gd-ob3 .gd-card { background: linear-gradient(rgba(251, 246, 234, .92) 0, rgba(251, 246, 234, .92) 64%, rgba(251, 246, 234, 0) 72%, rgba(251, 246, 234, 0) 82%, rgba(251, 246, 234, .9) 88%); }
+}
