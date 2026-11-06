@@ -16,13 +16,28 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap">
-<link rel="stylesheet" href="rs/rs.css?v=20261106l">
+<link rel="stylesheet" href="rs/rs.css?v=20261107a">
 </head>
 <body>
 <div id="app" aria-live="polite"></div>
 <div id="toast" role="status"></div>
-<script src="rs/crew.js?v=20261106l"></script>
-<script src="rs/rs-taky-character-sync.js?v=20261106l"></script>
-<script src="rs/rs-app.js?v=20261106l"></script>
+<section id="takyFamilySheet" class="taky-sheet" hidden role="dialog" aria-modal="true" aria-label="타키 가족 연결">
+  <div class="taky-sheet__panel">
+    <button class="taky-sheet__x" type="button" data-taky-close aria-label="닫기">×</button>
+    <h2>타키 가족 연결</h2>
+    <p class="taky-sheet__lead">가족 Google 계정으로 연결하면 내 사진이 타키에게 가고, 타키가 만든 캐릭터가 여기로 와요.</p>
+    <div id="familyLogin">
+      <button id="familySignInBtn" class="taky-sheet__btn" type="button" disabled>Google로 가족 연결</button>
+      <div id="familyGoogleTarget"></div>
+      <div id="familyChooseTarget"></div>
+      <p id="familyLoginStatus" role="status">가족 계정은 타키 중앙 서버가 확인해요.</p>
+      <button id="familySignOutBtn" class="taky-sheet__btn ghost" type="button" hidden>연결 끊기</button>
+    </div>
+  </div>
+</section>
+<script src="rs/crew.js?v=20261107a"></script>
+<script src="rs/rs-taky-character-sync.js?v=20261107a"></script>
+<script src="rs/rs-app.js?v=20261107a"></script>
+<script type="module" src="rs/rs-taky-family.mjs?v=20261107a"></script>
 </body>
 </html>

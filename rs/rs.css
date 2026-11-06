@@ -806,3 +806,18 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .recs .btn-k { background: #203f86; }
 .recs .take { background: rgba(255, 250, 240, .7); border: 1px solid rgba(201, 154, 46, .45); }
 .duo-stage::after { content: ''; position: absolute; left: 8%; right: 8%; bottom: -10px; height: 22px; border-radius: 50%; background: radial-gradient(rgba(122, 90, 58, .28), rgba(122, 90, 58, 0) 70%); }
+
+/* TAKY family link sheet (outside #app; parchment + navy, gold rule) */
+.taky-sheet { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end; justify-content: center; background: rgba(22, 46, 102, .38); padding: 0 10px calc(var(--safe-b, 0px) + 10px); }
+.taky-sheet[hidden] { display: none !important; }
+.taky-sheet__panel { position: relative; width: min(100%, 420px); max-height: 86vh; overflow-y: auto; background: linear-gradient(180deg, #fffaf0, #f6ecd6); border: 2px solid #203f86; border-radius: 22px; padding: 20px 18px 16px; box-shadow: 0 -6px 26px rgba(22, 46, 102, .25); color: #162e66; font-family: var(--font); }
+.taky-sheet__panel h2 { margin: 0 34px 8px 0; font-size: 19px; font-weight: 900; letter-spacing: -.02em; padding-bottom: 8px; border-bottom: 2px solid #d9a441; }
+.taky-sheet__lead { margin: 0 0 12px; font-size: 14px; line-height: 1.5; }
+.taky-sheet__x { position: absolute; right: 10px; top: 10px; width: 44px; height: 44px; border-radius: 50%; color: #203f86; font-size: 26px; line-height: 1; background: none; border: 0; }
+.taky-sheet__btn { width: 100%; min-height: 48px; border-radius: 14px; border: 0; background: #203f86; color: #fff; font-size: 15px; font-weight: 900; font-family: var(--font); }
+.taky-sheet__btn.ghost { margin-top: 10px; background: transparent; color: #203f86; border: 2px solid #203f86; }
+.taky-sheet__btn[hidden] { display: none; }
+.taky-sheet #familyGoogleTarget:not(:empty) { margin-top: 12px; min-height: 44px; display: flex; justify-content: center; }
+.taky-sheet #familyChooseTarget { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.taky-sheet #familyChooseTarget button { min-height: 44px; padding: 0 14px; border-radius: 12px; border: 2px solid #203f86; background: #fffaf0; color: #203f86; font-weight: 800; }
+.taky-sheet #familyLoginStatus { margin: 10px 0 0; font-size: 13px; line-height: 1.5; color: #4a5a80; }

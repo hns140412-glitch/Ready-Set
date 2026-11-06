@@ -1,81 +1,96 @@
-// Ready -> TAKY central Character Master publish (pipeline 6.2), against a mock central that enforces
-// the same contract as TAKY LEARNING/transport (scope-bound asset_ref, sha-verified commit, CONFIRMED projection).
+// Ready -> TAKY central no-cost character request (Taky 11/06): Ready sends the photo as a private request and
+// reads back the master a PARENT approved in TAKY Mobile. Ready never publishes a master itself.
+// The real-handler contract test lives in TAKY-MOBILE tools/test-central-functions.mjs (READY_CHARACTER_SYNC_MODULE).
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const path = require('node:path');
 const Sync = require(path.join(__dirname, '..', 'rs', 'rs-taky-character-sync.js'));
 
-const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
-const dataUrl = 'data:image/png;base64,' + png.toString('base64');
-const sha = crypto.createHash('sha256').update(png).digest('hex');
+const jpg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff]), crypto.randomBytes(500)]);
+const photo = 'data:image/jpeg;base64,' + jpg.toString('base64');
+const master = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47]), crypto.randomBytes(700)]);
+const sha = b => crypto.createHash('sha256').update(b).digest('hex');
 const BASE = 'https://central.test/';
 
-function mockCentral({ failCommit = false } = {}) {
-  const state = { calls: [], uploads: new Map(), committed: new Set(), profile: null, sawRaw: false };
-  const json = (status, body) => ({ ok: status < 300, status, json: async () => body });
+function mockCentral() {
+  const st = { calls: [], requests: new Map(), profile: null, tickets: new Map() };
+  const json = (status, body) => ({ ok: status < 300, status, json: async () => body, headers: new Map() });
   const fetchImpl = async (url, opt = {}) => {
-    const u = new URL(url); state.calls.push(u.pathname + (opt.method === 'PUT' ? ':PUT' : ''));
-    if (opt.method === 'PUT') {
-      const up = state.uploads.get(u.searchParams.get('t')); if (!up) return json(403, {});
-      const h = crypto.createHash('sha256').update(Buffer.from(opt.body)).digest('hex');
-      if (h !== up.sha256) return json(409, {}); up.put = true; return json(200, { ok: true });
+    const u = new URL(url); st.calls.push(u.pathname + ':' + (opt.method || 'GET'));
+    if (u.pathname === '/bytes') {
+      if (opt.method === 'PUT') {
+        const t = st.tickets.get(u.searchParams.get('t')); if (!t) return json(403, {});
+        if (sha(Buffer.from(opt.body)) !== t.sha256) return json(409, {});
+        st.requests.set(t.member_id, { id: t.request_id, bytes: Buffer.from(opt.body) }); return json(200, { ok: true });
+      }
+      return { ok: true, status: 200, headers: { get: () => 'image/png' }, arrayBuffer: async () => master.buffer.slice(master.byteOffset, master.byteOffset + master.length) };
     }
     assert.equal(opt.headers.authorization, 'Bearer TEST_TOKEN_0123456789');
-    const b = JSON.parse(opt.body);
-    if (/photo/i.test(opt.body)) state.sawRaw = true;
-    assert.equal(b.family_id, 'FAM1'); assert.equal(b.member_id, 'KID1');
+    const b = JSON.parse(opt.body); assert.equal(b.family_id, 'FAM1');
+    if (u.pathname === '/api/family/character-request') {
+      assert.equal(b.member_id, 'KID1');
+      if (b.action === 'CREATE') {
+        assert.equal(b.content_type, 'image/jpeg'); assert.equal(b.byte_size, jpg.length); assert.equal(b.sha256, sha(jpg));
+        const t = 'tk' + st.tickets.size, request_id = 'req_' + 'a'.repeat(24); st.tickets.set(t, { ...b, request_id });
+        return json(200, { ok: true, request_id, upload_url: BASE + 'bytes?t=' + t });
+      }
+      if (b.action === 'STATUS') return json(200, { ok: true, pending: st.requests.has('KID1') });
+      return json(400, {});
+    }
     if (u.pathname === '/api/family/character-profile') {
-      if (b.action === 'GET') return json(200, state.profile ? { ok: true, found: true, projection: state.profile } : { ok: true, found: false });
-      const p = b.projection;
-      assert.equal(p.status, 'CONFIRMED'); assert.ok(state.committed.has(p.master_asset_ref), 'publish only a committed master');
-      if (state.profile && p.identity_version <= state.profile.identity_version) return json(409, { ok: false, reason: 'CHARACTER_PROFILE_VERSION_REGRESSION' });
-      state.profile = p; return json(200, { ok: true });
+      assert.equal(b.action, 'GET', 'Ready must only read the profile');
+      return json(200, st.profile ? { ok: true, found: true, projection: st.profile } : { ok: true, found: false });
     }
     if (u.pathname === '/api/family/character-asset') {
-      const prefix = `taky-character:FAM1:KID1:${b.character_id}:`;
-      if (b.action === 'CREATE_UPLOAD') {
-        const t = 'ticket' + state.uploads.size, asset_ref = prefix + b.asset_version;
-        state.uploads.set(t, { sha256: b.sha256, asset_ref });
-        return json(200, { ok: true, asset_ref, upload_id: t, upload_url: BASE + 'api/family/character-asset-bytes?t=' + t });
-      }
-      if (!b.asset_ref.startsWith(prefix)) return json(403, { ok: false, reason: 'ASSET_REF_SCOPE_MISMATCH' });
-      if (b.action === 'COMMIT_UPLOAD') {
-        const up = state.uploads.get(b.upload_id);
-        if (failCommit || !up || !up.put || up.sha256 !== b.sha256) return json(409, { ok: false, reason: 'ASSET_COMMIT_VERIFICATION_FAILED' });
-        state.committed.add(b.asset_ref); return json(200, { ok: true, committed: true, asset_ref: b.asset_ref, sha256: b.sha256 });
-      }
+      assert.equal(b.action, 'RESOLVE_READ', 'Ready must never upload a master');
+      return json(200, { ok: true, read_url: BASE + 'bytes?r=1' });
     }
-    return json(404, { ok: false });
+    return json(404, {});
   };
-  return { state, fetchImpl };
+  return { st, fetchImpl };
 }
-const runtime = { apiBaseUrl: BASE, getToken: async () => 'TEST_TOKEN_0123456789', getFamilyId: async () => 'FAM1', currentSession: async () => ({ family_id: 'FAM1', self_member_id: 'KID1', authorized_member_ids: ['KID1'] }) };
+const runtime = (ids = ['PARENT1', 'KID1']) => ({ apiBaseUrl: BASE, getToken: async () => 'TEST_TOKEN_0123456789', getFamilyId: async () => 'FAM1',
+  currentSession: async () => ({ family_id: 'FAM1', self_member_id: 'PARENT1', authorized_member_ids: ids }) });
 
 (async () => {
-  // 1. no TAKY session -> fail-closed, no network
-  { const m = mockCentral(); const out = await Sync.publishMaster({ image: dataUrl, runtime: null, fetchImpl: m.fetchImpl });
-    assert.equal(out.state, 'PENDING_TAKY_SESSION'); assert.equal(m.state.calls.length, 0); }
-  // 2. first publish -> upload, PUT, commit, publish v1; raw photo never sent
-  const m = mockCentral();
-  let out = await Sync.publishMaster({ image: dataUrl, runtime, fetchImpl: m.fetchImpl });
-  assert.equal(out.ok, true, JSON.stringify(out)); assert.equal(out.state, 'REGISTRY_BOUND'); assert.equal(out.identity_version, 1);
-  assert.deepEqual(m.state.calls, ['/api/family/character-profile', '/api/family/character-asset', '/api/family/character-asset-bytes:PUT', '/api/family/character-asset', '/api/family/character-profile']);
-  assert.equal(m.state.profile.master_sha256, sha); assert.equal(m.state.profile.character_id, 'ready-explorer');
-  assert.equal(m.state.sawRaw, false, 'no photo field is ever sent');
-  // 3. re-onboarding -> monotonic v2, new asset version
-  out = await Sync.publishMaster({ image: dataUrl, runtime, fetchImpl: m.fetchImpl });
-  assert.equal(out.identity_version, 2); assert.ok(m.state.profile.master_asset_ref.endsWith(':v2'));
-  // 4. commit failure -> profile not published
-  { const f = mockCentral({ failCommit: true }); const o = await Sync.publishMaster({ image: dataUrl, runtime, fetchImpl: f.fetchImpl });
-    assert.equal(o.state, 'ASSET_COMMIT_FAILED'); assert.equal(f.state.profile, null); }
-  // 5. non-image / oversized input rejected before any network
-  { const f = mockCentral(); assert.equal((await Sync.publishMaster({ image: 'data:text/plain;base64,aGk=', runtime, fetchImpl: f.fetchImpl })).state, 'MASTER_IMAGE_FORMAT'); assert.equal(f.state.calls.length, 0); }
-  // 6. member resolution: guardian with one child -> child; two children -> selection required; explicit outsider -> refused
-  assert.equal(Sync.resolveMember({ self_member_id: 'P', authorized_member_ids: ['P', 'K'] }), 'K');
-  assert.equal(Sync.resolveMember({ self_member_id: 'P', authorized_member_ids: ['P', 'K1', 'K2'] }), null);
-  assert.equal(Sync.resolveMember({ self_member_id: 'K', authorized_member_ids: ['K'] }), 'K');
-  assert.equal(Sync.resolveMember({ self_member_id: 'P', authorized_member_ids: ['P', 'K'] }, 'X'), '');
-  { const f = mockCentral(); const two = { ...runtime, currentSession: async () => ({ self_member_id: 'P', authorized_member_ids: ['P', 'K1', 'K2'] }) };
-    assert.equal((await Sync.publishMaster({ image: dataUrl, runtime: two, fetchImpl: f.fetchImpl })).state, 'MEMBER_SELECTION_REQUIRED'); assert.equal(f.state.calls.length, 0); }
-  console.log('rs-taky-character-sync: 6 checks passed');
+  let n = 0; const t = async (name, fn) => { await fn(); n++; console.log('PASS', name); };
+  await t('no session -> nothing sent', async () => {
+    const m = mockCentral();
+    assert.equal((await Sync.requestCharacter({ photo, runtime: null, fetchImpl: m.fetchImpl })).state, 'PENDING_TAKY_SESSION');
+    assert.equal(m.st.calls.length, 0);
+  });
+  await t('photo -> private request; status REQUESTED while the parent makes it', async () => {
+    const m = mockCentral();
+    const out = await Sync.requestCharacter({ photo, runtime: runtime(), fetchImpl: m.fetchImpl });
+    assert.equal(out.ok, true); assert.equal(out.state, 'REQUESTED');
+    assert.ok(m.st.requests.get('KID1').bytes.equals(jpg), 'exact photo bytes, sha-checked');
+    const s = await Sync.characterStatus({ runtime: runtime(), fetchImpl: m.fetchImpl });
+    assert.equal(s.state, 'REQUESTED');
+    assert.ok(!m.st.calls.some(c => /character-asset:|PUBLISH/.test(c)), 'no master write');
+  });
+  await t('approved master is read back byte-identical', async () => {
+    const m = mockCentral();
+    m.st.profile = { member_id: 'KID1', character_id: 'ready-explorer', identity_version: 2, master_asset_ref: 'ref', master_sha256: sha(master), status: 'CONFIRMED' };
+    const s = await Sync.characterStatus({ runtime: runtime(), fetchImpl: m.fetchImpl });
+    assert.equal(s.state, 'MASTER_READY'); assert.equal(s.version, 2);
+    assert.ok(Buffer.from(s.image.split(',')[1], 'base64').equals(master)); assert.match(s.image, /^data:image\/png;base64,/);
+  });
+  await t('tampered master bytes are refused', async () => {
+    const m = mockCentral();
+    m.st.profile = { member_id: 'KID1', character_id: 'ready-explorer', identity_version: 1, master_asset_ref: 'ref', master_sha256: 'f'.repeat(64), status: 'CONFIRMED' };
+    const s = await Sync.characterStatus({ runtime: runtime(), fetchImpl: m.fetchImpl });
+    assert.equal(s.ok, false); assert.equal(s.state, 'MASTER_SHA_MISMATCH'); assert.ok(!s.image);
+  });
+  await t('member scope: two children -> MEMBER_SELECTION_REQUIRED; unknown member refused', async () => {
+    const m = mockCentral();
+    assert.equal((await Sync.requestCharacter({ photo, runtime: runtime(['PARENT1', 'KID1', 'KID2']), fetchImpl: m.fetchImpl })).state, 'MEMBER_SELECTION_REQUIRED');
+    assert.equal((await Sync.requestCharacter({ photo, memberId: 'STRANGER', runtime: runtime(), fetchImpl: m.fetchImpl })).state, 'MEMBER_NOT_AUTHORIZED');
+    assert.equal(m.st.calls.length, 0);
+  });
+  await t('only image data URLs are sent', async () => {
+    const m = mockCentral();
+    assert.equal((await Sync.requestCharacter({ photo: 'https://x/y.jpg', runtime: runtime(), fetchImpl: m.fetchImpl })).state, 'PHOTO_FORMAT');
+    assert.equal(typeof Sync.publishMaster, 'undefined');
+  });
+  console.log(`rs-taky-character-sync: ${n} passed`);
 })().catch(e => { console.error(e); process.exit(1); });
