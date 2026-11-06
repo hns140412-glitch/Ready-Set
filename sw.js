@@ -2,7 +2,7 @@
    Network-first for pages so updates land; cache-first for versioned static assets.
    Removes caches from earlier builds. */
 const CACHE = 'ready-set:rebuild-20261106l';
-const CORE = ['./', './index.html', './rs/rs.css?v=20261106l', './rs/crew.js?v=20261106l', './rs/rs-app.js?v=20261106l', './rs/home-hero.webp', './manifest.webmanifest', './assets/icon-192.png'];
+const CORE = ['./', './index.html', './rs/rs.css?v=20261106l', './rs/crew.js?v=20261106l', './rs/rs-taky-character-sync.js?v=20261106l', './rs/rs-app.js?v=20261106l', './rs/home-hero.webp', './manifest.webmanifest', './assets/icon-192.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {

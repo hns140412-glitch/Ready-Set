@@ -790,7 +790,7 @@
       .then(r => r.json().then(j => ({ r, j })))
       .then(async ({ r, j }) => {
         if (!UI.ai || UI.ai.key !== key) return;
-        if (r.ok && j.ok && Array.isArray(j.images)) { UI.ai.imgs = await Promise.all(j.images.map(src => shrink(src, 384))); UI.ai.state = 'done'; }
+        if (r.ok && j.ok && Array.isArray(j.images)) { UI.ai.full = j.images.slice(0, 3); UI.ai.imgs = await Promise.all(j.images.map(src => shrink(src, 384))); UI.ai.state = 'done'; }
         else UI.ai.state = r.status === 423 ? 'locked' : 'error';
         if (UI.screen === 'obArrival') render();
       })
@@ -890,6 +890,21 @@
       <div class="gd-banner">${sceneBg('island')}<p>지금, 어떤 이야기를 시작할까요?</p></div>
       ${gdCta('obDone', '탐험하기', true)}<nav class="gd-welcome-nav" aria-label="탐험 안내">${[['home','홈',I.home],['setup1','탐험',I.target],['island','섬 지도',I.sail],['friends','친구들',I.chat],['settings','더보기',I.gear]].map(([k,n,icon])=>`<button data-act="welcomeNav" data-to="${k}">${icon}<span>${n}</span></button>`).join('')}</nav>`);
   }
+  // The confirmed AI character becomes the child's TAKY Character Master (pipeline 3/6.2).
+  // On-device toon fallbacks are previews, not generated masters, so they are never published.
+  function obMaster(d) {
+    const dirs = vibeDirs(d), tk = d.photo + '|' + dirs.join(), i = 'ABC'.indexOf(d.character || 'A');
+    return (UI.ai && UI.ai.key === tk && UI.ai.state === 'done' && UI.ai.full && UI.ai.full[i]) || '';
+  }
+  function syncMaster(image) {
+    const sync = globalThis.RsTakyCharacterSync; if (!sync || !image) return;
+    UI.pendingMaster = image;
+    sync.publishMaster({ image }).then(out => {
+      if (S.profile) { S.profile.takyCharacter = { state: out.state, version: out.identity_version || null, at: new Date().toISOString() }; save(); }
+      if (out.ok || out.state !== 'PENDING_TAKY_SESSION') UI.pendingMaster = null;
+    }).catch(() => {});
+  }
+  globalThis.addEventListener('taky-central-auth-ready', () => { if (UI.pendingMaster) syncMaster(UI.pendingMaster); });
   function obAvatar(d) {
     const dirs = vibeDirs(d), tk = d.photo + '|' + dirs.join(), i = 'ABC'.indexOf(d.character || 'A');
     return (UI.ai && UI.ai.key === tk && UI.ai.imgs && UI.ai.imgs[i]) || (UI.toon && UI.toon.key === tk && UI.toon.v[i]) || '';
@@ -1033,7 +1048,7 @@
     obItem: e => { UI.draft.item = e.dataset.k; render(); },
     obVibe: e => { const d = UI.draft, k = e.dataset.k, a = d.vibes || (d.vibes = []); const i = a.indexOf(k); if (i >= 0) a.splice(i, 1); else if (a.length < 2) a.push(k); d.vibe = a[0] || ''; d.vibeSys = vibeSys(a); render(); },
     obTheme: e => { UI.draft.theme = e.dataset.t; render(); },
-    obDone: () => { if(UI.campVisit) { UI.campVisit=false; UI.draft=null; return go('home'); } const d = UI.draft; S.profile = { name: d.name.trim(), nickname: d.nickname.trim(), guide: d.guide, guideNick: d.guideNick.trim(), photo: d.photo, avatar: obAvatar(d), character: d.character || 'A', hood: d.hood || 'navy', item: d.item, vibe: (d.vibes || [])[0] || d.vibe, vibes: vibeDirs(d), theme: d.theme, island: d.island.trim() || '반짝이는 섬', camp: d.camp.trim() || '하늘빛 캠프', voice: true, recPrefix: '' }; save(); UI.draft = null; go('home'); }
+    obDone: () => { if(UI.campVisit) { UI.campVisit=false; UI.draft=null; return go('home'); } const d = UI.draft; S.profile = { name: d.name.trim(), nickname: d.nickname.trim(), guide: d.guide, guideNick: d.guideNick.trim(), photo: d.photo, avatar: obAvatar(d), character: d.character || 'A', hood: d.hood || 'navy', item: d.item, vibe: (d.vibes || [])[0] || d.vibe, vibes: vibeDirs(d), theme: d.theme, island: d.island.trim() || '반짝이는 섬', camp: d.camp.trim() || '하늘빛 캠프', voice: true, recPrefix: '' }; const master = obMaster(d); save(); UI.draft = null; go('home'); syncMaster(master); }
   };
   // playVoice during onboarding (no profile yet) — allow
   const _pv = playVoice; playVoice = function (c) { if (!S.profile) { const v = new Audio(c.voice); AUD.voice && AUD.voice.pause(); AUD.voice = v; v.play().catch(() => {}); return; } _pv(c); };
