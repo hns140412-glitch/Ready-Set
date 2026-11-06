@@ -1,7 +1,7 @@
 // Ready & Set: TAKY family login sheet (same contract as TAKY Mobile, vendored as taky-family-signin.mjs).
 // Google credential -> TAKY central /api/family/session -> globalThis.TAKY_FAMILY_RUNTIME (memory only).
 // The sheet lives outside #app so Ready's re-renders never drop its handlers.
-import { createFamilySignin } from './taky-family-signin.mjs?v=20261107e';
+import { createFamilySignin } from './taky-family-signin.mjs?v=20261107f';
 
 const sheet = document.getElementById('takyFamilySheet');
 if (sheet) {

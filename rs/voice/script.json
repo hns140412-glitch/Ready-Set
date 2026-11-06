@@ -220,5 +220,200 @@
   "soft-g2": "그럼 딱 하나네.",
   "soft-m3": "좋아. 다음 작전 발견!",
   "rec-final": "목소리까지 잘 챙겨 넣었어. 이제 보내기만 하면 끝!"
- }
+ },
+ "result": {
+  "dubi": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-08": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-14": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "lori": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-12": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-18": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "ink": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-09": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-17": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "nova": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-10": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-16": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "take": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-11": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "zero": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-07": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-13": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-15": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-19": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-23": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-20": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-22": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-21": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ],
+  "guide-24": [
+   "EXCELLENT_FLOW",
+   "ON_TARGET",
+   "OVERTIME_COMPLETE",
+   "INTERRUPTED_BUT_COMPLETE",
+   "PARTIAL_COMPLETE",
+   "STOPPED"
+  ]
+ },
+ "_note_result": "result: crew -> REACT states recorded as rs/voice/<crew>/res-<STATE>.mp3 (text = REACT[state][2] in rs-app.js), 2026-11-07"
 }
