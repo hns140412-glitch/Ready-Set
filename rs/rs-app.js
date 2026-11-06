@@ -517,7 +517,6 @@
             <div class="target"><small>목표 시간</small><b>${mmss(s.targetMs)}</b></div>
           </div>
           <div class="p-mid"><span class="m">${I.book}${esc(taskLabel(first))}</span><span class="sep"></span><span class="b">${I.note}<b>${bgmName}</b>${s.bgm === 'off' ? '' : (s.bgmOn ? ' · 재생 중' : ' · 꺼짐')}</span></div>
-          ${more > 0 ? `<div class="tasks-mini">${s.tasks.map(t => `<span>${esc(t.item)}${t.detail ? ' · ' + esc(t.detail) : ''}</span>`).join('')}</div>` : ''}
           <div class="p-btns"><button class="pause" data-act="pause">잠깐 멈춤</button><button class="done" data-act="endAsk">완료했어요</button></div>
           <div class="p-stats"><div><small>시작 시간</small><b>${hhmm(s.startAt)}</b></div><div><small>집중 시간</small><b id="focusT">00:00</b></div><div><small>멈춘 시간</small><b id="pauseT">00:00</b></div></div>
         </div>

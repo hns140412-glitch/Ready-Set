@@ -184,9 +184,14 @@ input, textarea { font: inherit; }
   .focus .rays::before { left: 40%; }
 }
 @media (max-height: 700px) {
-  .headline { font-size: 32px; }
-  .note { display: none; }
-  .p-stats { display: none; }
+  .headline { font-size: 30px; }
+  .note { font-size: 18px; }
+  .panel { padding: 10px 12px 8px; }
+  .remain b { font-size: 40px; }
+  .target b { font-size: 20px; }
+  .p-mid { margin-top: 8px; padding: 7px 10px; }
+  .p-btns { margin-top: 8px; } .p-btns button { min-height: 44px; }
+  .p-stats { margin-top: 6px; padding-top: 5px; } .p-stats b { font-size: 14px; }
 }
 
 /* overlays on focus */
