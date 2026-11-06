@@ -821,3 +821,4 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .taky-sheet #familyChooseTarget { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .taky-sheet #familyChooseTarget button { min-height: 44px; padding: 0 14px; border-radius: 12px; border: 2px solid #203f86; background: #fffaf0; color: #203f86; font-weight: 800; }
 .taky-sheet #familyLoginStatus { margin: 10px 0 0; font-size: 13px; line-height: 1.5; color: #4a5a80; }
+.taky-sheet #familyLogin:has(#familyGoogleTarget:not(:empty)) #familySignInBtn { display: none; }
