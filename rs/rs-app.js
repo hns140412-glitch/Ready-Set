@@ -390,7 +390,7 @@
       if (it) return `<button class="wk-cell ${it.k}" ${pos} data-act="wkCell" data-key="${key}"><b>${esc(it.t)}</b><span>${it.e}</span></button>`;
       return `<button class="wk-cell free empty" ${pos} data-act="wkCell" data-key="${key}" aria-label="${WK_DAYS[i]}요일 ${s === 'am' ? '오전' : s === 'pm' ? '오후' : '저녁'} 일정 정하기"><b>자유 시간</b><span>⛰️</span></button>`;
     };
-    const week = `<div class="wk-head">${MAP_IC}<div><h1>이번 주 여정</h1><p>오늘도 한 걸음, 더 멋진 너의 이야기를!</p></div></div>
+    const week = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261106d" alt=""><h1>이번 주 여정</h1><p class="wk-sub">오늘도 한 걸음, 더 멋진 너의 이야기를!</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261106d" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
       <div class="wk-grid">
         ${ti >= 0 ? `<i class="wk-colmark" style="grid-area:1/${ti + 2}/5/${ti + 3}"></i>` : ''}
         ${days.map((d, i) => { const k = ymd(d); return `<button class="wk-day ${i === ti ? 'today' : ''}" style="grid-area:1/${i + 2}" data-act="homeDay" data-day="${k}"><b>${WK_DAYS[i]}</b><small>${i === ti ? '오늘' : `${d.getMonth() + 1}/${d.getDate()}`}</small>${recOf(k).length ? '<i class="wk-dot" aria-label="탐험 기록 있음"></i>' : ''}</button>`; }).join('')}
@@ -398,18 +398,19 @@
       </div>
       <div class="wk-legend"><span><i class="lg-fixed"></i><em>고정 일정<small>(학교 등)</small></em></span><span><i class="lg-todo"></i><em>오늘의 할 일</em></span><span><i class="lg-other"></i><em>다른 일정<small>(학원, 약속 등)</small></em></span><span><i class="lg-free"></i><em>자유 시간</em></span></div>
       <p class="wk-cheer"><span aria-hidden="true">⛰️</span>지금의 너도, 멋지게 성장하고 있어!<span aria-hidden="true">🌤️</span></p>
-      <button class="wk-cta" data-act="homeView" data-k="day">${I.cal}<span>오늘 보기</span><b aria-hidden="true">›</b></button>`;
+      `;
     const day = UI.homeDay || todayKey, dd = new Date(day + 'T12:00:00'), daily = recOf(day);
-    const dayBody = `<div class="wk-head">${MAP_IC}<div><h1>오늘의 탐험길</h1><p>작은 계획이, 좋은 하루를 만들어요.</p></div></div>
+    const dayBody = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261106d" alt=""><h1>오늘의 탐험길</h1><p class="wk-sub">작은 계획이, 좋은 하루를 만들어요.</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261106d" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
       <div class="journey-range"><button data-act="weekMove" data-d="-1" aria-label="이전 날">‹</button><b>${fmt(dd)} (${'일월화수목금토'[dd.getDay()]})</b><button data-act="weekMove" data-d="1" aria-label="다음 날">›</button></div>
       <div class="day-route"><div class="timeline">${daily.map(r => `<article><time>${hhmm(r.startAt)}</time><div><b>${esc(r.tasks.map(t => t.item).join(' · '))}</b><small>${mmss(r.focusMs)} 탐험 기록</small></div></article>`).join('')}<article class="current"><time>${day === todayKey ? hhmm(Date.now()) : '탐험'}</time><div><b>${planTxt ? esc(planTxt) : '새로운 탐험을 시작해요'}</b><button data-act="goSetup">시작하기 →</button></div></article></div></div>
       <div class="week-summary"><h2>이번 주 요약</h2><div><span>기록한 탐험<b>${tasks.length}개</b></span><span>실제 집중 시간<b>${Math.round(weekRecs.reduce((n, r) => n + r.focusMs, 0) / 60000)}분</b></span><span class="summary-ring" style="--rate:${rate}%"><strong>${rate}%</strong><small>완료율</small></span></div></div>
-      <button class="wk-cta" data-act="homeView" data-k="week">${I.cal}<span>이번 주 보기</span><b aria-hidden="true">›</b></button>`;
+      `;
     const ek = UI.wkEdit, pick = ek ? `<div class="wk-pick" role="dialog" aria-label="일정 정하기"><div class="wk-pick-card"><h2>${WK_DAYS[+ek.split('-')[0]]}요일 ${{ am: '오전', pm: '오후', ev: '저녁' }[ek.split('-')[1]]} 일정</h2><p>매주 같은 요일에 반복돼요.</p><div class="wk-pick-grid">${WK_KINDS.map((k, i) => `<button class="wk-cell ${k.k} ${wk[ek] && wk[ek].t === k.t ? 'on' : ''}" data-act="wkSet" data-i="${i}"><b>${k.t}</b><span>${k.e}</span></button>`).join('')}</div><div class="wk-pick-row"><button class="gd-btn" data-act="wkSet" data-i="-1">비우기</button><button class="gd-btn navy" data-act="wkClose">닫기</button></div></div></div>` : '';
     return `<section class="screen wk">
       <div class="wk-bg"><img src="rs/scenes/home-header.webp" alt=""></div>
-      <header class="wk-top"><div class="wk-brand"><b>Ready &amp; Set</b><p>좋은 친구와<br>어디든 멋진 이야기가<br>시작돼! ☺</p></div><button class="wk-me" data-act="nav" data-to="settings" aria-label="내 정보"><img src="${P.photo || g.face}" alt=""></button></header>
+      <header class="wk-top"><img class="wk-art" src="rs/art/home-top.webp?v=20261106d" alt="TAKY Ready &amp; Set. 좋은 친구와 어디든 멋진 이야기가 시작돼!"><button class="wk-me" data-act="nav" data-to="settings" aria-label="내 정보"><img src="${P.photo || g.face}" alt=""></button></header>
       <div class="wk-card">${UI.homeView === 'day' ? dayBody : week}</div>
+      <div class="wk-props"><img src="rs/art/home-props.webp?v=20261106d" alt=""><button class="wk-cta" data-act="homeView" data-k="${UI.homeView === 'day' ? 'week' : 'day'}">${I.cal}<span>${UI.homeView === 'day' ? '이번 주 보기' : '오늘 보기'}</span><b aria-hidden="true">›</b></button></div>
       <nav class="journey-nav wk-nav"><button class="${UI.homeView === 'day' ? '' : 'on'}" data-act="homeView" data-k="week">${I.home}<span>이번 주 여정</span></button><button data-act="goSetup">${I.target}<span>탐험하기</span></button><button data-act="campView">${MAP_IC}<span>베이스캠프</span></button><button data-act="editGuide">${I.chat}<span>친구들</span></button><button data-act="nav" data-to="settings">${I.gear}<span>더보기</span></button></nav>
       ${pick}
     </section>`;
@@ -713,8 +714,8 @@
     if (s === 'obArrival') {
       const choice = d.character || 'A', hood = d.hood || 'navy';
       return wrap('camp', `${gdHead('3+', '나의 캐릭터 도착!', '함께 떠날 나의 모습을 골라주세요.')}
-        <div class="arrival-preview hood-${hood}"><div class="preset-hood"><img src="${CREW.core[['A','B','C'].indexOf(choice)].face}" alt="선택한 ${choice} 프리셋"><i></i></div></div>
-        <div class="arrival-options">${['A','B','C'].map((k,i)=>`<button data-act="obCharacter" data-k="${k}" class="${choice===k?'on':''}" aria-pressed="${choice===k}"><img src="${CREW.core[i].img}" alt="">${k}</button>`).join('')}</div>
+        <div class="arrival-cards hood-${hood}">${[['A','밝고 든든한 탐험가','좋은 친구들과 어디든 갈 수 있어!'],['B','호기심 많은 탐험가','음…! 더 재밌는 게 기다리고 있어!'],['C','에너지 넘치는 탐험가','언제나, 더 멀리! 더 즐겁게!']].map(([k,t,q],i)=>`<button data-act="obCharacter" data-k="${k}" class="${choice===k?'on':''}" aria-pressed="${choice===k}" aria-label="${k} ${t}"><span class="ac-tag"><b>${k}</b>${t}</span><i class="ac-check" aria-hidden="true">✓</i><img src="${CREW.core[i].img}" alt=""><em>“${q}”</em></button>`).join('')}</div>
+        <div class="arrival-crew" aria-hidden="true">${CREW.core.map(c=>`<img src="${c.img}" alt="">`).join('')}<p>다른 우리가,<br>더 멋진 이야기를 만든다!</p></div>
         <p class="gd-label">후드 색상</p><div class="hood-options">${[['navy','네이비'],['gold','골드'],['forest','숲 초록'],['rose','로즈']].map(([k,n])=>`<button class="hood-${k} ${hood===k?'on':''}" data-act="obHood" data-k="${k}" aria-pressed="${hood===k}" aria-label="${n}"><i></i><span>${n}</span></button>`).join('')}</div>
         <p class="gd-hand">나만의 모습으로, 새로운 이야기를 시작해요!</p>
         ${gdCta('obGo', '이 모습으로 함께할게요!', true)}`);

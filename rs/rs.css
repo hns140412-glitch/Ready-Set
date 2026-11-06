@@ -599,3 +599,56 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
   .wk-nav button { min-height: 40px; }
 }
 @media (min-width: 700px) { .wk { padding-left: max(24px, calc((100vw - 560px) / 2)); padding-right: max(24px, calc((100vw - 560px) / 2)); } .wk-nav { margin: 0 calc(-1 * max(24px, calc((100vw - 560px) / 2))); } }
+/* home art layer cropped from approved mockup 07 — 20261106d */
+.wk-top { position: relative; z-index: 0; flex: none; height: auto; display: block; margin: calc(-1 * (var(--safe-t) + 8px)) -12px -14px; padding: var(--safe-t) 0 0; container-type: inline-size; }
+.wk-art { display: block; width: 100%; height: auto; aspect-ratio: 640 / 263; object-fit: cover; object-position: 50% 0; -webkit-mask-image: linear-gradient(#000 82%, transparent); mask-image: linear-gradient(#000 82%, transparent); }
+.wk-top .wk-me { position: absolute; left: 85cqw; top: calc(var(--safe-t) + .7cqw); width: 12cqw; min-width: 44px; aspect-ratio: 1; }
+.wk-top .wk-me img { width: 100%; height: 100%; border-width: 2px; }
+.wk-card { background: rgba(250, 249, 245, .84); }
+.wk-head { display: grid; grid-template-columns: 40px minmax(0, 1fr) 44px auto; grid-template-areas: "map h1 tent motto" "sub sub tent motto"; column-gap: 6px; row-gap: 2px; align-items: center; padding: 0 2px; }
+.wk-map { grid-area: map; width: 40px; height: 34px; }
+.wk-head h1 { grid-area: h1; font-size: 26px; white-space: nowrap; }
+.wk-head .wk-sub { grid-area: sub; margin: 0; font-size: 17px; line-height: 1.15; }
+.wk-tent { grid-area: tent; width: 46px; height: 46px; }
+.wk-head .wk-motto { grid-area: motto; margin: 0; font-family: var(--hand); font-size: 10.5px; line-height: 1.2; color: var(--navy-2); }
+.wk-props { flex: none; position: relative; z-index: 0; margin: -12px -12px 0; container-type: inline-size; }
+.wk-props img { display: block; width: 100%; height: auto; aspect-ratio: 640 / 225; }
+.wk-props .wk-cta { position: absolute; left: 26.6cqw; width: 46.6cqw; top: calc(10.1cqw - max(5.1cqw, 22px)); height: max(10.2cqw, 44px); min-width: 0; min-height: 0; margin: 0; padding: 0 12px; }
+.wk-nav { position: relative; z-index: 2; }
+@media (max-height: 700px) {
+  .wk-top { height: auto; margin-bottom: -10px; }
+  .wk-art { aspect-ratio: auto; height: 78px; -webkit-mask-image: linear-gradient(#000 78%, transparent); mask-image: linear-gradient(#000 78%, transparent); }
+  .wk-top .wk-me { width: 10cqw; }
+  .wk-head { grid-template-columns: 30px minmax(0, 1fr) 34px auto; }
+  .wk-map { width: 30px; height: 26px; }
+  .wk-tent { width: 34px; height: 34px; }
+  .wk-head h1 { font-size: 21px; } .wk-head .wk-sub { font-size: 13px; } .wk-head .wk-motto { font-size: 9.5px; }
+  .wk-props { margin-top: -10px; }
+  .wk-props .wk-cta { font-size: 15px; }
+}
+
+/* character arrival cards — mockup 01 — 20261106d */
+.arrival-cards { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.arrival-cards button { position: relative; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 32px 4px 8px; border-radius: 18px; border: 2px solid #fff; overflow: hidden; color: var(--navy); background: url(scenes/camp.webp) 50% 30% / cover; box-shadow: 0 6px 16px rgba(22, 46, 102, .18); }
+.arrival-cards button::before { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(255, 255, 255, .7), rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, .92) 82%); }
+.arrival-cards button > * { position: relative; }
+.arrival-cards img { flex: 1 1 auto; min-height: 0; width: 100%; object-fit: contain; object-position: 50% 100%; }
+.arrival-cards .ac-tag { position: absolute; top: 6px; left: 6px; right: 26px; display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; line-height: 1.15; text-align: left; word-break: keep-all; }
+.arrival-cards .ac-tag b { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--navy); color: #fff; font-size: 12px; }
+.arrival-cards .ac-check { position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #b9c3da; background: #fff; color: transparent; font-style: normal; font-size: 12px; font-weight: 900; display: grid; place-items: center; }
+.arrival-cards em { font-style: normal; font-family: var(--hand); font-size: 14px; line-height: 1.1; word-break: keep-all; margin-top: 2px; }
+.arrival-cards .on { border-color: var(--hood, var(--navy)); box-shadow: 0 0 0 3px var(--hood, var(--navy)), 0 8px 18px rgba(22, 46, 102, .25); }
+.arrival-cards .on .ac-check { background: var(--hood, var(--navy)); border-color: #fff; color: #fff; }
+@media (max-height: 700px) { .arrival-cards em { font-size: 12px; } .arrival-cards button { padding-top: 28px; } }
+.arrival-cards { flex: 0 1 300px; }
+.arrival-cards img { transform: scale(1.3); transform-origin: 50% 100%; }
+.arrival-crew { flex: 1 1 60px; min-height: 0; max-height: 120px; position: relative; display: flex; align-items: flex-end; justify-content: center; border-radius: 16px; overflow: hidden; background: url(scenes/camp.webp) 50% 45% / cover; padding: 0 2px; }
+.arrival-crew img { height: 88%; max-height: 104px; min-width: 0; flex: 0 1 auto; margin: 0 -6px; object-fit: contain; }
+.arrival-crew p { position: absolute; top: 6px; left: 8px; margin: 0; font-family: var(--hand); font-size: 13px; line-height: 1.05; color: #fff; text-shadow: 0 1px 4px rgba(22, 46, 102, .8); }
+@media (max-height: 700px) { .arrival-cards { flex-basis: 230px; } }
+.wk-cell.empty b { max-width: 2.6em; }
+.arrival-cards { flex-grow: 1; max-height: 440px; }
+.arrival-crew img { height: 78%; }
+.wk .day-route { background: rgba(255, 255, 255, .72); border-radius: 16px; padding: 8px; }
+.arrival-crew { padding-top: 30px; }
+.arrival-crew img { height: 100%; }

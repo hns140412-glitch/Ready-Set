@@ -1,0 +1,10 @@
+{
+  "source": "Approved mockup 07 (weekly home), 2026-11-05 set, 852px wide",
+  "method": "Cropped and resized to 640px wide; sample child photo blurred in home-top; map/tent icons keyed to transparent background",
+  "files": {
+    "home-top.webp": "mockup y75-425 (logo, slogan, scenery, flag, signpost)",
+    "home-props.webp": "mockup y1390-1690 (Dubi with sign, map, mug, books, lantern; CTA button overlaid by live button)",
+    "home-map.webp": "map icon beside the 'this week' heading",
+    "home-tent.webp": "tent icon beside the heading"
+  }
+}
