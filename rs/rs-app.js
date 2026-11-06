@@ -163,6 +163,33 @@
     } catch (e) { /* no audio */ }
     try { navigator.vibrate && navigator.vibrate([180, 90, 180]); } catch (e) { /* noop */ }
   }
+  /* ---------------- crew voice lines (REV06 §31-35): rs/voice/<crew>/<key>.mp3, ElevenLabs ---------------- */
+  const VTAG = '20261106k';
+  const REC_TXT = {
+    'rec-intro': '오? 녹음할 시간이군.', 'rec-alone': '잠깐… 오늘은 나 혼자 듣기 좀 아까운데?', 'rec-fetch': '같이 들어줄 친구 좀 잡아올게!',
+    'rec-back': '잡아왔다!', 'g-arrive': '나는 그냥 지나가고 있었는데?', 'rec-listen': '됐고, 이것 좀 같이 들어봐.',
+    'good-m1': '오늘 목소리 좀 달라졌지?', 'good-g1': '응. 마지막 문장 꽤 자연스러웠는데?', 'good-m2': '그치? 내가 잘 듣고 있었다니까.', 'good-g2': '네가 한 건 없잖아.', 'good-m3': '…그건 굳이 말하지 않아도 돼.',
+    'soft-m1': '오늘은 목소리가 살짝 숨어 있었어.', 'soft-g1': '그래도 끝까지 읽었잖아.', 'soft-m2': '맞아. 다음엔 첫 문장만 조금 크게 시작해보자.', 'soft-g2': '그럼 딱 하나네.', 'soft-m3': '좋아. 다음 작전 발견!',
+    'rec-final': '목소리까지 잘 챙겨 넣었어. 이제 보내기만 하면 끝!'
+  };
+  let SCRIPT = null; // scene lines per crew (start/mid/timeup/resume/done/part)
+  fetch('rs/voice/script.json?v=' + VTAG).then(r => r.ok ? r.json() : null).then(j => { SCRIPT = j; }).catch(() => {});
+  const lineText = (cid, key) => REC_TXT[key] || (SCRIPT && SCRIPT.moments && SCRIPT.moments[cid] && SCRIPT.moments[cid][key]) || '';
+  const voiceOn = () => !(S.profile && S.profile.voice === false);
+  function sayLine(cid, key, cb) {
+    const txt = lineText(cid, key); const wait = 700 + txt.length * 75;
+    let fired = false; const done = () => { if (fired) return; fired = true; clearTimeout(t); cb && cb(); };
+    const t = setTimeout(done, voiceOn() ? Math.max(9000, wait + 4000) : wait);
+    if (!voiceOn()) return;
+    try { if (AUD.voice) AUD.voice.pause(); } catch (e) { /* noop */ }
+    const v = new Audio(`rs/voice/${cid}/${key}.mp3?v=${VTAG}`); AUD.voice = v; v.dataset.line = `${cid}/${key}`;
+    const b = AUD.bgm; const duck = b && !b.paused; if (duck) b.volume = .12;
+    const end = () => { if (duck && AUD.bgm === b && !b.paused) fadeTo(b, .55); };
+    v.onended = () => { end(); done(); };
+    v.onerror = () => { end(); clearTimeout(t); setTimeout(done, wait); };
+    v.play().catch(() => { end(); });
+  }
+  function sayScene(key) { const g = guide(); const txt = lineText(g.id, key); sayLine(g.id, key); return txt; }
   // Unlock audio on first gesture (iOS)
   document.addEventListener('pointerdown', () => { if (!AUD.ctx) { try { AUD.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { /* noop */ } } }, { once: true });
 
@@ -179,11 +206,11 @@
     };
     save(); go('focus');
     if (S.session.bgmOn) bgmPlay(S.session.bgm);
-    setTimeout(() => playVoice(guide()), 400);
+    setTimeout(() => sayScene('start'), 400);
   }
   function isPaused(s) { const l = s.pauses[s.pauses.length - 1]; return !!(l && !l.e); }
   function pauseNow() { const s = S.session; if (!s || isPaused(s)) return; s.pauses.push({ s: Date.now(), e: 0, reason: '' }); save(); bgmPause(); UI.ov = 'pause'; render(); }
-  function resume() { const s = S.session; if (!s) return; const l = s.pauses[s.pauses.length - 1]; if (l && !l.e) l.e = Date.now(); save(); UI.ov = null; render(); if (s.bgmOn) bgmPlay(s.bgm); }
+  function resume() { const s = S.session; if (!s) return; const l = s.pauses[s.pauses.length - 1]; if (l && !l.e) l.e = Date.now(); save(); UI.ov = null; render(); if (s.bgmOn) bgmPlay(s.bgm); setTimeout(() => sayScene('resume'), 300); }
   function finalize() {
     const s = S.session; if (!s || s.endAt) return; // exactly one finalization path
     const l = s.pauses[s.pauses.length - 1]; const now = Date.now(); if (l && !l.e) l.e = now;
@@ -198,7 +225,7 @@
     S.records.unshift(rec); S.records = S.records.slice(0, 400); S.result = rec.id; S.session = null; save(); // local save before any share
     bgmStop(); cleanupMic();
     go('result');
-    setTimeout(() => playVoice(guide()), 500);
+    setTimeout(() => sayScene(rec.state === 'STOPPED' || rec.state === 'PARTIAL_COMPLETE' ? 'part' : 'done'), 500);
   }
   function reaction(r) {
     const done = r.tasks.filter(t => t.outcome === 'COMPLETED').length;
@@ -231,6 +258,27 @@
     return g;
   }
 
+  /* ---------------- duo coaching staging (REV06 §31/§33): Main exits, returns with Guest, then good/soft talk ---------------- */
+  const DUO_IN = [['m', 'rec-alone'], ['m', 'rec-fetch'], ['exit'], ['m', 'rec-back'], ['g', 'g-arrive'], ['m', 'rec-listen']];
+  const DUO_TALK = { good: [['m', 'good-m1'], ['g', 'good-g1'], ['m', 'good-m2'], ['g', 'good-g2'], ['m', 'good-m3']], soft: [['m', 'soft-m1'], ['g', 'soft-g1'], ['m', 'soft-m2'], ['g', 'soft-g2'], ['m', 'soft-m3']] };
+  // No speech analysis yet: a confident take = long enough, audible, without many retries. Never mocks the child (§33).
+  function duoTone(R) { const t = R.takes[R.sel]; if (!t) return 'soft'; return t.dur >= 6000 && R.takes.length <= 2 && (t.lvl == null || t.lvl >= .03) ? 'good' : 'soft'; }
+  function duoStart() {
+    const R = UI.rec; const s = S.session; clearTimeout(R.duo && R.duo.t);
+    R.duo = { main: S.profile.guide, guest: s.guest, tone: duoTone(R), i: 0, out: false, back: false, done: false };
+    R.duo.steps = DUO_IN.concat(DUO_TALK[R.duo.tone]);
+    duoRun(R.duo);
+  }
+  function duoRun(D) {
+    if (UI.rec.duo !== D || UI.rec.phase !== 'coach') return;
+    const st = D.steps[D.i];
+    if (!st) { D.done = true; D.i = D.steps.length - 1; render(); return; }
+    if (st[0] === 'exit') { D.out = true; render(); D.t = setTimeout(() => { if (UI.rec.duo !== D) return; D.out = false; D.back = true; D.i++; duoRun(D); }, 1300); return; }
+    render();
+    sayLine(st[0] === 'm' ? D.main : D.guest, st[1], () => { D.t = setTimeout(() => { if (UI.rec.duo !== D || D.done) return; D.i++; duoRun(D); }, 380); });
+  }
+  function duoStop() { const D = UI.rec.duo; if (D) { clearTimeout(D.t); D.done = true; } try { AUD.voice && AUD.voice.pause(); } catch (e) { /* noop */ } }
+
   /* ---------------- recording (REV06 §20-38) ---------------- */
   const MIC = { stream: null, rec: null, chunks: [], t0: 0, busy: false, raf: 0, an: null };
   function cleanupMic() {
@@ -255,7 +303,7 @@
         const blob = new Blob(MIC.chunks, { type });
         const dur = Date.now() - MIC.t0;
         if (MIC.stream) MIC.stream.getTracks().forEach(t => t.stop()); MIC.stream = null;
-        if (blob.size > 0) { UI.rec.takes.push({ blob, url: URL.createObjectURL(blob), type, dur }); UI.rec.sel = UI.rec.takes.length - 1; }
+        if (blob.size > 0) { UI.rec.takes.push({ blob, url: URL.createObjectURL(blob), type, dur, lvl: MIC.ln ? MIC.lv / MIC.ln : null }); UI.rec.sel = UI.rec.takes.length - 1; }
         UI.rec.phase = UI.rec.takes.length ? 'review' : 'ready';
         if (UI.screen === 'record') render();
       };
@@ -271,13 +319,13 @@
     try {
       const ctx = AUD.ctx || (AUD.ctx = new (window.AudioContext || window.webkitAudioContext)());
       const an = ctx.createAnalyser(); an.fftSize = 512; ctx.createMediaStreamSource(stream).connect(an);
-      const buf = new Uint8Array(an.fftSize);
+      const buf = new Uint8Array(an.fftSize); MIC.lv = 0; MIC.ln = 0;
       const loop = () => {
         const cv = $('#wave'); const tm = $('#recTime');
         if (tm) tm.textContent = 'REC ' + mmss(Date.now() - MIC.t0);
         if (cv) {
           const w = cv.width = cv.clientWidth * 2, h = cv.height = cv.clientHeight * 2, g = cv.getContext('2d');
-          an.getByteTimeDomainData(buf); g.clearRect(0, 0, w, h); g.lineWidth = 4; g.strokeStyle = '#ff3b30'; g.beginPath();
+          an.getByteTimeDomainData(buf); { let q = 0; for (let i = 0; i < buf.length; i++) { const d = (buf[i] - 128) / 128; q += d * d; } MIC.lv += Math.sqrt(q / buf.length); MIC.ln++; } g.clearRect(0, 0, w, h); g.lineWidth = 4; g.strokeStyle = '#ff3b30'; g.beginPath();
           for (let i = 0; i < buf.length; i++) { const x = i / (buf.length - 1) * w, y = (buf[i] / 255) * h; i ? g.lineTo(x, y) : g.moveTo(x, y); }
           g.stroke();
         }
@@ -401,7 +449,7 @@
       if (it) return `<button class="wk-cell ${it.k}" ${pos} data-act="wkCell" data-key="${key}"><b>${esc(it.t)}</b><span>${it.e}</span></button>`;
       return `<button class="wk-cell free empty" ${pos} data-act="wkCell" data-key="${key}" aria-label="${WK_DAYS[i]}요일 ${s === 'am' ? '오전' : s === 'pm' ? '오후' : '저녁'} 일정 정하기"><b>자유 시간</b><span>⛰️</span></button>`;
     };
-    const week = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261106j" alt=""><h1>이번 주 여정</h1><p class="wk-sub">오늘도 한 걸음, 더 멋진 너의 이야기를!</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261106j" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
+    const week = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261106k" alt=""><h1>이번 주 여정</h1><p class="wk-sub">오늘도 한 걸음, 더 멋진 너의 이야기를!</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261106k" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
       <div class="wk-grid">
         ${ti >= 0 ? `<i class="wk-colmark" style="grid-area:1/${ti + 2}/5/${ti + 3}"></i>` : ''}
         ${days.map((d, i) => { const k = ymd(d); return `<button class="wk-day ${i === ti ? 'today' : ''}" style="grid-area:1/${i + 2}" data-act="homeDay" data-day="${k}"><b>${WK_DAYS[i]}</b><small>${i === ti ? '오늘' : `${d.getMonth() + 1}/${d.getDate()}`}</small>${recOf(k).length ? '<i class="wk-dot" aria-label="탐험 기록 있음"></i>' : ''}</button>`; }).join('')}
@@ -411,7 +459,7 @@
       <p class="wk-cheer"><span aria-hidden="true">⛰️</span>지금의 너도, 멋지게 성장하고 있어!<span aria-hidden="true">🌤️</span></p>
       `;
     const day = UI.homeDay || todayKey, dd = new Date(day + 'T12:00:00'), daily = recOf(day);
-    const dayBody = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261106j" alt=""><h1>오늘의 탐험길</h1><p class="wk-sub">작은 계획이, 좋은 하루를 만들어요.</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261106j" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
+    const dayBody = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261106k" alt=""><h1>오늘의 탐험길</h1><p class="wk-sub">작은 계획이, 좋은 하루를 만들어요.</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261106k" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
       <div class="journey-range"><button data-act="weekMove" data-d="-1" aria-label="이전 날">‹</button><b>${fmt(dd)} (${'일월화수목금토'[dd.getDay()]})</b><button data-act="weekMove" data-d="1" aria-label="다음 날">›</button></div>
       <div class="day-route"><div class="timeline">${daily.map(r => `<article><time>${hhmm(r.startAt)}</time><div><b>${esc(r.tasks.map(t => t.item).join(' · '))}</b><small>${mmss(r.focusMs)} 탐험 기록</small></div></article>`).join('')}<article class="current"><time>${day === todayKey ? hhmm(Date.now()) : '탐험'}</time><div><b>${planTxt ? esc(planTxt) : '새로운 탐험을 시작해요'}</b><button data-act="goSetup">시작하기 →</button></div></article></div></div>
       <div class="week-summary"><h2>이번 주 요약</h2><div><span>기록한 탐험<b>${tasks.length}개</b></span><span>실제 집중 시간<b>${(m => m > 0 && m < 60000 ? '1분 미만' : `${Math.round(m / 60000)}분`)(weekRecs.reduce((n, r) => n + r.focusMs, 0))}</b></span><span class="summary-ring" style="--rate:${rate}%"><strong>${rate}%</strong><small>완료율</small></span></div></div>
@@ -419,9 +467,9 @@
     const ek = UI.wkEdit, pick = ek ? `<div class="wk-pick" role="dialog" aria-label="일정 정하기"><div class="wk-pick-card"><h2>${WK_DAYS[+ek.split('-')[0]]}요일 ${{ am: '오전', pm: '오후', ev: '저녁' }[ek.split('-')[1]]} 일정</h2><p>매주 같은 요일에 반복돼요.</p><div class="wk-pick-grid">${WK_KINDS.map((k, i) => `<button class="wk-cell ${k.k} ${wk[ek] && wk[ek].t === k.t ? 'on' : ''}" data-act="wkSet" data-i="${i}"><b>${k.t}</b><span>${k.e}</span></button>`).join('')}</div><div class="wk-pick-row"><button class="gd-btn" data-act="wkSet" data-i="-1">비우기</button><button class="gd-btn navy" data-act="wkClose">닫기</button></div></div></div>` : '';
     return `<section class="screen wk">
       <div class="wk-bg"><img src="rs/scenes/home-header.webp" alt=""></div>
-      <header class="wk-top"><img class="wk-art" src="rs/art/home-top.webp?v=20261106j" alt="TAKY Ready &amp; Set. 좋은 친구와 어디든 멋진 이야기가 시작돼!"><button class="wk-me" data-act="nav" data-to="settings" aria-label="내 정보"><img src="${P.avatar || P.photo || g.face}" alt=""></button></header>
+      <header class="wk-top"><img class="wk-art" src="rs/art/home-top.webp?v=20261106k" alt="TAKY Ready &amp; Set. 좋은 친구와 어디든 멋진 이야기가 시작돼!"><button class="wk-me" data-act="nav" data-to="settings" aria-label="내 정보"><img src="${P.avatar || P.photo || g.face}" alt=""></button></header>
       <div class="wk-card">${UI.homeView === 'day' ? dayBody : week}</div>
-      <div class="wk-props"><img src="rs/art/home-props.webp?v=20261106j" alt=""><button class="wk-cta" data-act="homeView" data-k="${UI.homeView === 'day' ? 'week' : 'day'}">${I.cal}<span>${UI.homeView === 'day' ? '이번 주 보기' : '오늘 보기'}</span><b aria-hidden="true">›</b></button></div>
+      <div class="wk-props"><img src="rs/art/home-props.webp?v=20261106k" alt=""><button class="wk-cta" data-act="homeView" data-k="${UI.homeView === 'day' ? 'week' : 'day'}">${I.cal}<span>${UI.homeView === 'day' ? '이번 주 보기' : '오늘 보기'}</span><b aria-hidden="true">›</b></button></div>
       <nav class="journey-nav wk-nav"><button class="${UI.homeView === 'day' ? '' : 'on'}" data-act="homeView" data-k="week">${I.home}<span>이번 주 여정</span></button><button data-act="goSetup">${I.target}<span>탐험하기</span></button><button data-act="campView">${MAP_IC}<span>베이스캠프</span></button><button data-act="editGuide">${I.chat}<span>친구들</span></button><button data-act="nav" data-to="settings">${I.gear}<span>더보기</span></button></nav>
       ${pick}
     </section>`;
@@ -547,7 +595,7 @@
   function vRecIntro() {
     const g = guide();
     return `<div class="overlay"><div class="pop">
-      <div class="guide-say" style="margin-bottom:12px"><img src="${g.face}" alt="${esc(g.name)}"><div class="bubble"><small>${esc(g.name)}</small>오? 녹음할 시간이군.<br>잠깐만… 같이 들어줄 친구 좀 잡아올게!</div></div>
+      <div class="guide-say" style="margin-bottom:12px"><img src="${g.face}" alt="${esc(g.name)}"><div class="bubble"><small>${esc(g.name)}</small>오? 녹음할 시간이군.</div></div>
       <div class="row2"><button class="btn-w" data-act="ovClose">나중에</button><button class="btn-y" data-act="toRecord">녹음하러 가기</button></div>
     </div></div>`;
   }
@@ -567,11 +615,19 @@
         <div class="takes">${R.takes.map((t, i) => `<div class="take ${R.sel === i ? 'on' : ''}"><span>${i + 1}번째 녹음 · ${mmss(t.dur)}</span><button data-act="play" data-i="${i}">들어보기</button><button data-act="selTake" data-i="${i}">${R.sel === i ? '선택됨' : '이걸로'}</button></div>`).join('')}</div>
         <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%"><button class="btn-w" data-act="recRetry">한 번 더 가볼까?</button><button class="btn-y" data-act="recCoach">길잡이에게 들려주기</button></div>`;
     } else if (R.phase === 'coach') {
-      const q = s.guest ? CREW.get(s.guest) : g;
-      const lines = [[g, '같이 들어줄 친구 좀 잡아올게!'], [g, '잡아왔다!'], [q, '나는 그냥 지나가고 있었는데?'], [g, '됐고, 이것 좀 같이 들어봐.'], [q, '오, 끝까지 목소리 담았네.'], [g, '다음엔 첫 문장만 조금 크게 시작해볼까?'], [q, '그럼 딱 하나네.']];
-      body = `<h2>오늘 목소리, 어땠냐면…</h2>
-        <div class="duo">${lines.map(([c, t], i) => `<div class="ln ${c === g ? '' : 'r'}" style="animation-delay:${i * .35}s"><img src="${c.face}" alt="${esc(c.name)}"><div class="bubble"><small>${esc(c.name)}</small>${esc(t)}</div></div>`).join('')}</div>
-        <p class="hint">목소리 분석 코칭은 아직 연결 전이라 길잡이 응원만 나와요.</p>
+      const D = R.duo; const q = CREW.get(D.guest);
+      const said = D.steps.slice(0, D.i + 1).filter(x => x[0] !== 'exit' && x[0] !== 'gap');
+      const cur = D.steps[D.i] || [];
+      const who = c => c === 'm' ? g : q;
+      const last = said.slice(-3);
+      body = `<h2>${D.done ? '오늘 목소리, 어땠냐면…' : D.out ? '후다닥!' : '잠깐만요…'}</h2>
+        <div class="duo-stage ${D.out ? 'out' : ''} ${D.back ? 'back' : ''}" aria-hidden="true">
+          <img class="fig m ${cur[0] === 'm' ? 'talk' : ''}" src="${g.img}" alt="">
+          ${D.back ? `<img class="fig g ${cur[0] === 'g' ? 'talk' : ''}" src="${q.img}" alt="">` : ''}
+          ${D.out ? '<span class="dust"></span>' : ''}
+        </div>
+        <div class="duo" aria-live="polite">${last.map(([c, k]) => `<div class="ln ${c === 'm' ? '' : 'r'}"><img src="${who(c).face}" alt="${esc(who(c).name)}"><div class="bubble"><small>${esc(who(c).name)}</small>${esc(REC_TXT[k])}</div></div>`).join('')}</div>
+        ${D.done ? '' : '<button class="link-btn duo-skip" data-act="duoSkip">넘기기</button>'}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%"><button class="btn-w" data-act="recRetry">한 번 더 가볼까?</button><button class="btn-y" data-act="recFinal">좋아, 이걸로 제출!</button></div>`;
     } else if (R.phase === 'final') {
       const t = R.takes[R.sel];
@@ -676,7 +732,7 @@
     if (kind === 'sky') mid = `<rect y="318" width="400" height="82" fill="#3f86c2"/><path d="M140 322 Q190 270 250 322Z" fill="#4c8a52"/>${[60, 300].map(x => `<ellipse cx="${x}" cy="120" rx="44" ry="16" fill="#fff" opacity=".85"/>`).join('')}`;
     return `<svg class="plate" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="sk-${kind}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient></defs><rect width="400" height="400" fill="url(#sk-${kind})"/>${kind === 'sky' ? '' : mtn}${mid}${kind === 'base' || kind === 'camp' ? pines(kind === 'base' ? 300 : 292, '#2f5b45') : ''}</svg>`;
   }
-  const sceneBg = k => SCENE_FILES.includes(k) ? `<img class="plate" src="rs/scenes/${k}.webp?v=20261106j" alt="">` : plate(k);
+  const sceneBg = k => SCENE_FILES.includes(k) ? `<img class="plate" src="rs/scenes/${k}.webp?v=20261106k" alt="">` : plate(k);
   const gdHead = (n, t, sub) => `<header class="gd-head${n ? '' : ' no-step'}">${n ? `<span class="gd-no">${n}</span>` : ''}<h1>${t}</h1><p>${sub}</p></header>`;
   const gdDots = n => `<div class="gd-dots" aria-label="${n}/8 단계">${Array.from({length: 5}, (_, i) => `<i class="${i < Math.ceil(n * 5 / 8) ? 'on' : ''}"></i>`).join('')}</div>`;
   const arrow = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
@@ -769,7 +825,7 @@
     }
     if (s === 'ob3') {
       return wrap('camp', `${gdHead(3, '사진 찍기 / 사진 보관함 등록', '지금의 너를 기록해요. 탐험 여정에 특별한 추억이 될 거예요!')}
-        <div class="gd-photo pd"><img class="pd-bg" src="rs/art/photo-desk.webp?v=20261106j" alt=""><div class="pd-frame">${d.photo ? `<img src="${d.photo}" alt="내 사진">` : `<span class="pd-empty"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>내 사진</span>`}</div></div>
+        <div class="gd-photo pd"><img class="pd-bg" src="rs/art/photo-desk.webp?v=20261106k" alt=""><div class="pd-frame">${d.photo ? `<img src="${d.photo}" alt="내 사진">` : `<span class="pd-empty"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>내 사진</span>`}</div></div>
         <div class="gd-photo-btns"><label class="gd-btn navy"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>사진 찍기<input type="file" accept="image/*" capture="user" data-photo hidden></label><label class="gd-btn">사진 보관함에서 선택<input type="file" accept="image/*" data-photo hidden></label></div><div class="photo-recent" aria-label="이 기기에서 고른 최근 사진">${Array.from({length:4},(_,i)=>(d.recentPhotos||[])[i]?`<button data-act="obRecent" data-i="${i}" aria-label="최근 사진 ${i+1} 선택"><img src="${d.recentPhotos[i]}" alt="최근 사진 ${i+1}"></button>`:`<span aria-label="빈 사진 자리">${I.book}</span>`).join('')}</div>
         <p class="gd-preview">이 사진은 탐험 여정 속에서 프로필로 사용돼요!</p><div class="gd-names"><label>닉네임 <small>공유할 때 앞</small><input class="gd-field" data-draft="nickname" value="${esc(d.nickname)}" placeholder="예: 별이" maxlength="10" autocomplete="off"></label><label>이름 <small>괄호 안</small><input class="gd-field" data-draft="name" value="${esc(d.name)}" placeholder="예: 김하늘" maxlength="10" autocomplete="off"></label></div>
         <p class="gd-preview">공유 이름: <b id="pvName">${esc(shareName({ nickname: d.nickname.trim(), name: d.name.trim() }) || '닉네임(이름)')}</b></p>
@@ -793,7 +849,7 @@
     if (s === 'ob4') {
       return wrap('camp', `${gdHead(4, '아이템 선정 + 느낌 고르기', '탐험에 꼭 필요한 아이템 하나와, 너다운 느낌 두 개를 골라보세요! 길잡이가 하나를 더해 너만의 캐릭터 세 가지를 만들어요.')}
         <p class="gd-label">탐험 아이템 <small>(하나만 선택)</small></p>
-        <div class="gd-items">${ITEMS.map(([k, n]) => `<button class="${d.item === k ? 'on' : ''}" data-act="obItem" data-k="${k}" aria-pressed="${d.item === k}"><img src="rs/items/${k}.webp?v=20261106j" alt=""><span>${n}</span></button>`).join('')}</div>
+        <div class="gd-items">${ITEMS.map(([k, n]) => `<button class="${d.item === k ? 'on' : ''}" data-act="obItem" data-k="${k}" aria-pressed="${d.item === k}"><img src="rs/items/${k}.webp?v=20261106k" alt=""><span>${n}</span></button>`).join('')}</div>
         <p class="gd-label">어떤 느낌이 더 너 같아? <small>두 개 고르면, 세 번째는 ${esc(josa(guideNick(d), '이', '가'))} 골라줘요</small></p>
         <div class="gd-vibes">${(() => { const pk = d.vibes || [], sy = vibeSys(pk); return VIBES.map(([k, n, t]) => { const i = pk.indexOf(k), sys = sy === k; return `<button class="v-${k} ${i >= 0 ? 'on' : ''} ${sys ? 'sys' : ''}" data-act="obVibe" data-k="${k}" aria-pressed="${i >= 0}" ${i < 0 && pk.length >= 2 ? 'disabled' : ''}>${i >= 0 ? `<em class="v-no">${i + 1}</em>` : sys ? `<em class="v-no g">${esc(guideNick(d))} 픽</em>` : ''}<i style="background-image:url(rs/scenes/vibe-${k}.webp)"></i><b>${n}</b><span>${t}</span></button>`; }).join(''); })()}</div>
         <p class="gd-hand">${(d.vibes || []).length === 2 ? '좋아! 이 세 가지 느낌으로 너의 모습을 만들어 볼게!' : '이제, 너만의 탐험대 캐릭터가 준비되고 있어요!'}</p>
@@ -862,7 +918,7 @@
   let scenesWarm = false;
   function preloadScenes() {
     if (scenesWarm) return; scenesWarm = true;
-    const go = () => SCENE_FILES.forEach(k => { const i = new Image(); i.decoding = 'async'; i.src = `rs/scenes/${k}.webp?v=20261106j`; (window.__rsWarm = window.__rsWarm || []).push(i); });
+    const go = () => SCENE_FILES.forEach(k => { const i = new Image(); i.decoding = 'async'; i.src = `rs/scenes/${k}.webp?v=20261106k`; (window.__rsWarm = window.__rsWarm || []).push(i); });
     (window.requestIdleCallback || (f => setTimeout(f, 400)))(go);
   }
   function render() {
@@ -895,7 +951,8 @@
       set('miniRemain', rem >= 0 ? mmss(rem) : '+' + mmss(-rem));
       set('focusT', mmss(f)); set('pauseT', mmss(pausedMs(s, now)));
       const l = s.pauses[s.pauses.length - 1]; if (l && !l.e) set('pauseBig', mmss(now - l.s));
-      if (rem <= 0 && !s.alerted) { s.alerted = true; save(); chime(); toast('목표 시간 돌파! 지금부터는 보너스 시간이에요', 3500); }
+      if (rem <= 0 && !s.alerted) { s.alerted = true; save(); chime(); toast('목표 시간 돌파! 지금부터는 보너스 시간이에요', 3500); if (UI.screen === 'focus') setTimeout(() => sayScene('timeup'), 1200); }
+      if (!s.midSaid && s.targetMs >= 4 * 60000 && f >= s.targetMs / 2 && rem > 0 && !isPaused(s)) { s.midSaid = true; save(); if (UI.screen === 'focus') { const t = sayScene('mid'); t && toast(`${guide().name}: ${t}`, 3200); } }
     }
   }
   setInterval(tick, 250);
@@ -939,18 +996,19 @@
     outcome: e => { const t = S.session.tasks.find(x => x.id === e.dataset.id); if (t) t.outcome = e.dataset.k; save(); render(); },
     finish: () => finalize(),
     ovClose: () => { if (UI.share && UI.share.url) URL.revokeObjectURL(UI.share.url); UI.share = null; UI.ov = null; render(); },
-    recIntro: () => { UI.ov = 'recIntro'; render(); },
+    recIntro: () => { bgmPause(); UI.ov = 'recIntro'; render(); sayLine(guide().id, 'rec-intro'); },
     toRecord: () => { bgmPause(); UI.rec = { phase: 'ready', takes: UI.rec.takes || [], sel: UI.rec.sel }; go('record'); },
     recStart: () => recStart(),
     recStop: () => recStop(),
     recPhase: e => { UI.rec.phase = e.dataset.p; render(); },
-    recRetry: () => { UI.rec.phase = 'ready'; render(); },
+    recRetry: () => { duoStop(); UI.rec.phase = 'ready'; render(); },
+    duoSkip: () => { const D = UI.rec.duo; duoStop(); if (D) { D.out = false; D.back = true; D.i = D.steps.length - 1; } render(); },
     play: e => { const t = UI.rec.takes[+e.dataset.i]; if (!t) return; if (AUD.take) AUD.take.pause(); AUD.take = new Audio(t.url); AUD.take.play().catch(() => toast('재생할 수 없어요')); },
     selTake: e => { UI.rec.sel = +e.dataset.i; render(); },
-    recCoach: () => { const s = S.session; if (!s.guest) { s.guest = pickGuest(S.profile.guide, s.moods).id; save(); } UI.rec.phase = 'coach'; render(); },
-    recFinal: () => { const s = S.session; const t = UI.rec.takes[UI.rec.sel]; if (!t) return; s.recDone = true; s.recFile = recFileName(t); save(); UI.rec.phase = 'final'; render(); },
+    recCoach: () => { const s = S.session; if (!s.guest) { s.guest = pickGuest(S.profile.guide, s.moods).id; save(); } UI.rec.phase = 'coach'; duoStart(); },
+    recFinal: () => { const s = S.session; const t = UI.rec.takes[UI.rec.sel]; if (!t) return; s.recDone = true; s.recFile = recFileName(t); save(); duoStop(); UI.rec.phase = 'final'; render(); sayLine(S.profile.guide, 'rec-final'); },
     shareRec: async () => { const t = UI.rec.takes[UI.rec.sel]; if (!t) return; const name = recFileName(t); const r = await shareFile(new File([t.blob], name, { type: t.type }), name); if (r === 'shared') toast('보냈어요'); },
-    backFocus: () => { recStop(); cleanupMic(); if (AUD.take) AUD.take.pause(); go('focus'); const s = S.session; if (s && s.bgmOn && !isPaused(s)) bgmPlay(s.bgm); },
+    backFocus: () => { duoStop(); recStop(); cleanupMic(); if (AUD.take) AUD.take.pause(); go('focus'); const s = S.session; if (s && s.bgmOn && !isPaused(s)) bgmPlay(s.bgm); },
     calMove: e => { const now = new Date(); const m = UI.calMonth || new Date(now.getFullYear(), now.getMonth(), 1); UI.calMonth = new Date(m.getFullYear(), m.getMonth() + (+e.dataset.d), 1); render(); },
     calDay: e => { UI.calSel = e.dataset.d; render(); },
     editGuide: () => { UI.draft = Object.assign({ guideNick: '' }, S.profile); UI.obEdit = true; UI.obPage = Math.floor(CREW.all.indexOf(CREW.get(S.profile.guide)) / 6); go('ob2'); },
