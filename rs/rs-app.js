@@ -13,7 +13,9 @@
     학교: { sub: '과제', items: ['독서', '글쓰기', '숙제', '준비물', '기타'] },
     영어: { sub: '학습', items: ['라이팅', '문장 녹음', '단어 외우기', '기타'] }
   };
-  const BGMS = [['off', '끔'], ['lofi', '로파이'], ['nature', '자연'], ['piano', '피아노'], ['water', '물소리']];
+  // Focus sound set confirmed 2026-09-18 (lofi removed as noisy; Essential = linked YouTube playlist).
+  const BGMS = [['essential', 'Essential'], ['metronome', '메트로놈'], ['nature', '자연'], ['water', '물소리'], ['off', '끄기']];
+  const YT_BGM = { essential: { id: 'h2sHEe_xnmU', list: 'PLKRZTF1Q1uwYFbRwQzrySyGXYJVXqcUVu' } };
   const TIMES = [10, 15, 25];
   const REASONS = ['화장실', '물·간식', '준비물', '도움 필요', '컨디션', '기타'];
   const MOODS = [
@@ -26,21 +28,12 @@
     { id: 'tired', t: '지쳤어요', e: 'low', c: '#b08968', k: ['다정함', '여유', '챙김'] },
     { id: 'meh', t: '귀찮아요', e: 'low', c: '#d0769a', k: ['실행', '장난기', '즐거움'] }
   ];
-  // System-chosen 3rd card: a strategy that differs from the two feelings the child picked.
-  const SYS_CARDS = {
-    small: { t: '첫 5분만', d: '딱 5분만 해보고 다시 정하기', ic: 'timer' },
-    easy: { t: '쉬운 것부터', d: '제일 쉬운 것 하나로 시작', ic: 'step' },
-    hard: { t: '어려운 것부터', d: '힘 있을 때 어려운 것 먼저', ic: 'peak' },
-    quiet: { t: '조용히 집중', d: '음악 끄고 한 가지에만', ic: 'mute' },
-    note: { t: '궁금한 것 한 줄', d: '끝나고 궁금한 걸 하나 적기', ic: 'pen' },
-    water: { t: '물 한 컵 먼저', d: '시작 전에 물 한 컵, 기지개', ic: 'drop' }
-  };
 
   /* ---------------- state ---------------- */
   const blank = () => ({
     profile: null, // {name, nickname, guide, theme, voice, recPrefix}
     curCat: '재능',
-    plan: { tasks: [], target: 25, custom: '', bgm: 'lofi', moods: [], sys: null },
+    plan: { tasks: [], target: 25, custom: '', bgm: 'essential', moods: [], sys: null },
     session: null,
     records: [],
     guestHistory: [],
@@ -48,7 +41,7 @@
   });
   let S = load();
   function load() {
-    try { const v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (v && typeof v === 'object') return Object.assign(blank(), v); } catch (e) { /* ignore */ }
+    try { const v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (v && typeof v === 'object') { const o = Object.assign(blank(), v); if (o.plan && !BGMS.some(b => b[0] === o.plan.bgm)) o.plan.bgm = 'essential'; return o; } } catch (e) { /* ignore */ }
     return blank();
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage blocked */ } }
@@ -106,14 +99,43 @@
   function bgmPlay(key, fade = true) {
     if (!key || key === 'off') return bgmStop();
     if (AUD.bgm && AUD.bgmKey === key) { AUD.bgm.play().catch(() => {}); if (fade) fadeTo(AUD.bgm, .55); return; }
-    bgmStop(false);
-    const a = new Audio(`assets/bgm-${key}.wav`); a.loop = true; a.volume = fade ? 0 : .55; a.preload = 'auto';
+    bgmStop(false); if (AUD.bgm && AUD.bgm.destroy) AUD.bgm.destroy();
+    const a = YT_BGM[key] ? ytSource(YT_BGM[key]) : key === 'metronome' ? metronomeSource(52) : new Audio(`assets/bgm-${key}.wav`);
+    a.loop = true; a.volume = fade ? 0 : .55; a.preload = 'auto';
     AUD.bgm = a; AUD.bgmKey = key;
     a.play().then(() => fade && fadeTo(a, .55)).catch(() => toast('음악은 화면을 한 번 누르면 재생돼요'));
   }
   function bgmStop(fade = true) {
     const a = AUD.bgm; if (!a) return;
     if (fade) fadeTo(a, 0, () => a.pause()); else a.pause();
+  }
+  // Hidden YouTube player driven through the iframe API messages (play/pause/volume), shaped like an <audio>.
+  function ytSource(v) {
+    const f = document.createElement('iframe'); let vol = .55;
+    f.id = 'rsYoutubeBgm'; f.title = '집중 음악 Essential'; f.allow = 'autoplay; encrypted-media'; f.tabIndex = -1; f.setAttribute('aria-hidden', 'true');
+    f.style.cssText = 'position:fixed;width:2px;height:2px;left:-20px;top:-20px;border:0;opacity:.01;pointer-events:none';
+    const cmd = (func, args = []) => { try { f.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args }), '*'); } catch (e) { /* not ready */ } };
+    const o = { paused: true, loop: true, preload: 'auto', started: false,
+      get volume() { return vol; }, set volume(n) { vol = n; cmd('setVolume', [Math.round(n * 100)]); },
+      play() { o.paused = false; if (!o.started) { o.started = true; f.src = `https://www.youtube.com/embed/${v.id}?autoplay=1&loop=1&playlist=${v.id}&list=${v.list}&controls=0&playsinline=1&rel=0&enablejsapi=1&origin=${encodeURIComponent(location.origin)}`; f.onload = () => setTimeout(() => { cmd('setVolume', [Math.round(vol * 100)]); if (o.paused) cmd('pauseVideo'); }, 400); document.body.appendChild(f); } else cmd('playVideo'); return Promise.resolve(); },
+      pause() { o.paused = true; cmd('pauseVideo'); },
+      destroy() { o.paused = true; f.remove(); } };
+    return o;
+  }
+  // Soft wood-block metronome (Web Audio), shaped like an <audio>.
+  function metronomeSource(bpm) {
+    let t = null, vol = .55;
+    const o = { paused: true, loop: true, preload: 'auto',
+      get volume() { return vol; }, set volume(n) { vol = n; },
+      play() {
+        o.paused = false; clearInterval(t);
+        const ctx = AUD.ctx || (AUD.ctx = new (window.AudioContext || window.webkitAudioContext)()); if (ctx.resume) ctx.resume();
+        const beat = () => { if (o.paused) return; const c = ctx.currentTime, os = ctx.createOscillator(), g = ctx.createGain(); os.type = 'triangle'; os.frequency.value = 1180; g.gain.setValueAtTime(.0001, c); g.gain.exponentialRampToValueAtTime(Math.max(.0002, .25 * vol), c + .005); g.gain.exponentialRampToValueAtTime(.0001, c + .09); os.connect(g).connect(ctx.destination); os.start(c); os.stop(c + .1); };
+        beat(); t = setInterval(beat, 60000 / bpm); return Promise.resolve();
+      },
+      pause() { o.paused = true; clearInterval(t); },
+      destroy() { o.pause(); } };
+    return o;
   }
   function bgmPause() { const a = AUD.bgm; if (a) fadeTo(a, 0, () => a.pause()); }
   function fadeTo(a, v, done) {
@@ -196,18 +218,7 @@
     STOPPED: ['오늘 탐험은 여기까지.', '기록은 남겨둘게요', '다음에는 조금 더 가볍게 시작해보자.']
   };
 
-  /* ---------------- mood → system card / guest pick ---------------- */
-  function sysCardFor(ids) {
-    const m = ids.map(id => MOODS.find(x => x.id === id)).filter(Boolean);
-    const low = m.filter(x => x.e === 'low').length, up = m.filter(x => x.e === 'up').length;
-    if (ids.includes('worried')) return 'easy';
-    if (low === 2) return 'small';
-    if (ids.includes('sleepy') || ids.includes('tired')) return 'water';
-    if (up === 2) return 'hard';
-    if (ids.includes('curious')) return 'note';
-    if (ids.includes('meh')) return 'small';
-    return 'quiet';
-  }
+  /* ---------------- guest pick ---------------- */
   function pickGuest(mainId, moods) {
     const recent = S.guestHistory.slice(-2);
     const want = new Set(moods.flatMap(id => (MOODS.find(m => m.id === id) || { k: [] }).k));
@@ -390,7 +401,7 @@
       if (it) return `<button class="wk-cell ${it.k}" ${pos} data-act="wkCell" data-key="${key}"><b>${esc(it.t)}</b><span>${it.e}</span></button>`;
       return `<button class="wk-cell free empty" ${pos} data-act="wkCell" data-key="${key}" aria-label="${WK_DAYS[i]}요일 ${s === 'am' ? '오전' : s === 'pm' ? '오후' : '저녁'} 일정 정하기"><b>자유 시간</b><span>⛰️</span></button>`;
     };
-    const week = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261106d" alt=""><h1>이번 주 여정</h1><p class="wk-sub">오늘도 한 걸음, 더 멋진 너의 이야기를!</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261106d" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
+    const week = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261106e" alt=""><h1>이번 주 여정</h1><p class="wk-sub">오늘도 한 걸음, 더 멋진 너의 이야기를!</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261106e" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
       <div class="wk-grid">
         ${ti >= 0 ? `<i class="wk-colmark" style="grid-area:1/${ti + 2}/5/${ti + 3}"></i>` : ''}
         ${days.map((d, i) => { const k = ymd(d); return `<button class="wk-day ${i === ti ? 'today' : ''}" style="grid-area:1/${i + 2}" data-act="homeDay" data-day="${k}"><b>${WK_DAYS[i]}</b><small>${i === ti ? '오늘' : `${d.getMonth() + 1}/${d.getDate()}`}</small>${recOf(k).length ? '<i class="wk-dot" aria-label="탐험 기록 있음"></i>' : ''}</button>`; }).join('')}
@@ -400,7 +411,7 @@
       <p class="wk-cheer"><span aria-hidden="true">⛰️</span>지금의 너도, 멋지게 성장하고 있어!<span aria-hidden="true">🌤️</span></p>
       `;
     const day = UI.homeDay || todayKey, dd = new Date(day + 'T12:00:00'), daily = recOf(day);
-    const dayBody = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261106d" alt=""><h1>오늘의 탐험길</h1><p class="wk-sub">작은 계획이, 좋은 하루를 만들어요.</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261106d" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
+    const dayBody = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261106e" alt=""><h1>오늘의 탐험길</h1><p class="wk-sub">작은 계획이, 좋은 하루를 만들어요.</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261106e" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
       <div class="journey-range"><button data-act="weekMove" data-d="-1" aria-label="이전 날">‹</button><b>${fmt(dd)} (${'일월화수목금토'[dd.getDay()]})</b><button data-act="weekMove" data-d="1" aria-label="다음 날">›</button></div>
       <div class="day-route"><div class="timeline">${daily.map(r => `<article><time>${hhmm(r.startAt)}</time><div><b>${esc(r.tasks.map(t => t.item).join(' · '))}</b><small>${mmss(r.focusMs)} 탐험 기록</small></div></article>`).join('')}<article class="current"><time>${day === todayKey ? hhmm(Date.now()) : '탐험'}</time><div><b>${planTxt ? esc(planTxt) : '새로운 탐험을 시작해요'}</b><button data-act="goSetup">시작하기 →</button></div></article></div></div>
       <div class="week-summary"><h2>이번 주 요약</h2><div><span>기록한 탐험<b>${tasks.length}개</b></span><span>실제 집중 시간<b>${Math.round(weekRecs.reduce((n, r) => n + r.focusMs, 0) / 60000)}분</b></span><span class="summary-ring" style="--rate:${rate}%"><strong>${rate}%</strong><small>완료율</small></span></div></div>
@@ -408,9 +419,9 @@
     const ek = UI.wkEdit, pick = ek ? `<div class="wk-pick" role="dialog" aria-label="일정 정하기"><div class="wk-pick-card"><h2>${WK_DAYS[+ek.split('-')[0]]}요일 ${{ am: '오전', pm: '오후', ev: '저녁' }[ek.split('-')[1]]} 일정</h2><p>매주 같은 요일에 반복돼요.</p><div class="wk-pick-grid">${WK_KINDS.map((k, i) => `<button class="wk-cell ${k.k} ${wk[ek] && wk[ek].t === k.t ? 'on' : ''}" data-act="wkSet" data-i="${i}"><b>${k.t}</b><span>${k.e}</span></button>`).join('')}</div><div class="wk-pick-row"><button class="gd-btn" data-act="wkSet" data-i="-1">비우기</button><button class="gd-btn navy" data-act="wkClose">닫기</button></div></div></div>` : '';
     return `<section class="screen wk">
       <div class="wk-bg"><img src="rs/scenes/home-header.webp" alt=""></div>
-      <header class="wk-top"><img class="wk-art" src="rs/art/home-top.webp?v=20261106d" alt="TAKY Ready &amp; Set. 좋은 친구와 어디든 멋진 이야기가 시작돼!"><button class="wk-me" data-act="nav" data-to="settings" aria-label="내 정보"><img src="${P.photo || g.face}" alt=""></button></header>
+      <header class="wk-top"><img class="wk-art" src="rs/art/home-top.webp?v=20261106e" alt="TAKY Ready &amp; Set. 좋은 친구와 어디든 멋진 이야기가 시작돼!"><button class="wk-me" data-act="nav" data-to="settings" aria-label="내 정보"><img src="${P.photo || g.face}" alt=""></button></header>
       <div class="wk-card">${UI.homeView === 'day' ? dayBody : week}</div>
-      <div class="wk-props"><img src="rs/art/home-props.webp?v=20261106d" alt=""><button class="wk-cta" data-act="homeView" data-k="${UI.homeView === 'day' ? 'week' : 'day'}">${I.cal}<span>${UI.homeView === 'day' ? '이번 주 보기' : '오늘 보기'}</span><b aria-hidden="true">›</b></button></div>
+      <div class="wk-props"><img src="rs/art/home-props.webp?v=20261106e" alt=""><button class="wk-cta" data-act="homeView" data-k="${UI.homeView === 'day' ? 'week' : 'day'}">${I.cal}<span>${UI.homeView === 'day' ? '이번 주 보기' : '오늘 보기'}</span><b aria-hidden="true">›</b></button></div>
       <nav class="journey-nav wk-nav"><button class="${UI.homeView === 'day' ? '' : 'on'}" data-act="homeView" data-k="week">${I.home}<span>이번 주 여정</span></button><button data-act="goSetup">${I.target}<span>탐험하기</span></button><button data-act="campView">${MAP_IC}<span>베이스캠프</span></button><button data-act="editGuide">${I.chat}<span>친구들</span></button><button data-act="nav" data-to="settings">${I.gear}<span>더보기</span></button></nav>
       ${pick}
     </section>`;
@@ -430,7 +441,7 @@
   function vSetup1() {
     const p = S.plan; const min = targetMin();
     return `<section class="screen warm">
-      <div class="top"><button class="back" data-act="nav" data-to="home" aria-label="뒤로">${I.back}</button><h1>오늘 목표 정하기</h1><span class="step">1 / 3</span></div>
+      <div class="top"><button class="back" data-act="nav" data-to="home" aria-label="뒤로">${I.back}</button><h1>오늘 목표 정하기</h1><span class="step">1 / 2</span></div>
       <h2 class="page-title">오늘, 뭐부터 해볼까?</h2>
       <div class="grow">
         <div class="card" style="flex:0 1 auto;min-height:0;display:flex;flex-direction:column">
@@ -449,34 +460,17 @@
       <button class="cta" style="margin-top:10px" data-act="toSetup2" ${p.tasks.length && min ? '' : 'disabled'}>다음</button>
     </section>`;
   }
-  function vSetup2() {
-    const p = S.plan; const picks = p.moods;
-    const slot = i => { const m = MOODS.find(x => x.id === picks[i]); return m ? `<div class="slot fill">${I.face(m.e, m.c)}<b>${m.t}</b><small>내가 고른 카드</small></div>` : `<div class="slot">${i + 1}번째 기분</div>`; };
-    const sc = picks.length === 2 && p.sys ? SYS_CARDS[p.sys] : null;
-    return `<section class="screen warm">
-      <div class="top"><button class="back" data-act="nav" data-to="setup1" aria-label="뒤로">${I.back}</button><h1>오늘 기분 카드</h1><span class="step">2 / 3</span></div>
-      <h2 class="page-title">지금 기분, 두 장 골라요</h2>
-      <p class="page-sub">세 번째 카드는 길잡이 ${esc(josa(guide().name, '이', '가'))} 골라줄게요.</p>
-      <div class="grow">
-        <div class="moods">${MOODS.map(m => { const i = picks.indexOf(m.id); return `<button class="mood ${i >= 0 ? 'on' : ''}" data-n="${i + 1}" data-act="mood" data-id="${m.id}" aria-pressed="${i >= 0}" ${i < 0 && picks.length >= 2 ? 'disabled' : ''}>${I.face(m.e, m.c)}<b>${m.t}</b></button>`; }).join('')}</div>
-        <div class="trio">${slot(0)}${slot(1)}${sc ? `<div class="slot sys">${I.sys(sc.ic)}<b>${sc.t}</b><small>${esc(josa(guide().name, '이', '가'))} 고른 카드</small></div>` : '<div class="slot">길잡이 카드</div>'}</div>
-        ${sc ? `<div class="guide-say"><img src="${guide().face}" alt="${esc(guide().name)}"><div class="bubble"><small>${esc(guide().name)}</small>${esc(sc.d)}! 오늘은 이렇게 가보자.</div></div>` : ''}
-      </div>
-      <button class="cta" data-act="toBrief" ${sc ? '' : 'disabled'}>다음</button>
-    </section>`;
-  }
-  const guideScene = g => `<div class="ob-scene g-scene" aria-hidden="true"><div class="ob-rays"></div><img class="g-fig" src="${g.img}" alt=""></div>`;
+  const guideScene = g => `<div class="ob-scene g-scene" aria-hidden="true"><img class="g-fig" src="${g.img}" alt=""></div>`;
   function vBrief() {
-    const p = S.plan; const g = guide(); const sc = SYS_CARDS[p.sys];
+    const p = S.plan; const g = guide();
     return `<section class="screen warm">
-      <div class="top"><button class="back" data-act="nav" data-to="setup2" aria-label="뒤로">${I.back}</button><h1>탐험 확인</h1><span class="step">3 / 3</span></div>
+      <div class="top"><button class="back" data-act="nav" data-to="setup1" aria-label="뒤로">${I.back}</button><h1>탐험 확인</h1><span class="step">2 / 2</span></div>
       <h2 class="page-title">오늘의 탐험, 접수!</h2>
       <div class="grow">
         <div class="card brief">
           <div class="brief-row"><span>탐험</span><b>${p.tasks.map(t => esc(taskLabel(t))).join('<br>')}</b></div>
           <div class="brief-row"><span>목표 시간</span><b>${targetMin()}분</b></div>
           <div class="brief-row"><span>집중 음악</span><b>${BGMS.find(b => b[0] === p.bgm)[1]}</b></div>
-          <div class="brief-row"><span>오늘의 카드</span><b>${sc ? sc.t : '-'}</b></div>
         </div>
         ${guideScene(g)}
         <div class="guide-say"><img src="${g.face}" alt="${esc(g.name)}"><div class="bubble"><small>${esc(g.name)}</small>${esc(g.signature)} 준비됐으면 바로 출발!</div></div>
@@ -486,18 +480,26 @@
   }
   function clockSVG() {
     let ticks = '', nums = '';
-    for (let i = 0; i < 60; i++) { const a = i * 6 * Math.PI / 180, big = i % 5 === 0, r1 = big ? 86 : 89, r2 = 94; ticks += `<line x1="${100 + r1 * Math.sin(a)}" y1="${100 - r1 * Math.cos(a)}" x2="${100 + r2 * Math.sin(a)}" y2="${100 - r2 * Math.cos(a)}" stroke="#111" stroke-width="${big ? 2.6 : 1.1}" stroke-linecap="round"/>`; }
-    for (let h = 1; h <= 12; h++) { const a = h * 30 * Math.PI / 180; nums += `<text x="${100 + 73 * Math.sin(a)}" y="${100 - 73 * Math.cos(a) + 6.5}" text-anchor="middle" font-size="19" font-weight="700" fill="#111" font-family="Pretendard Variable, sans-serif">${h}</text>`; }
+    for (let i = 0; i < 60; i++) { const a = i * 6 * Math.PI / 180, big = i % 5 === 0, r1 = big ? 78 : 82, r2 = 86; ticks += `<line x1="${(100 + r1 * Math.sin(a)).toFixed(2)}" y1="${(100 - r1 * Math.cos(a)).toFixed(2)}" x2="${(100 + r2 * Math.sin(a)).toFixed(2)}" y2="${(100 - r2 * Math.cos(a)).toFixed(2)}" stroke="#141414" stroke-width="${big ? 3 : 1.2}" stroke-linecap="round"/>`; }
+    for (let h = 1; h <= 12; h++) { const a = h * 30 * Math.PI / 180; nums += `<text x="${(100 + 64 * Math.sin(a)).toFixed(2)}" y="${(100 - 64 * Math.cos(a) + 7.6).toFixed(2)}" text-anchor="middle" font-size="22" font-weight="800" fill="#141414" font-family="Pretendard Variable, Pretendard, sans-serif" letter-spacing="-.5">${h}</text>`; }
     return `<svg class="clock" viewBox="0 0 200 200" role="img" aria-label="현재 시각 시계">
-      <defs><radialGradient id="cf" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#fff"/><stop offset=".85" stop-color="#fbfaf6"/><stop offset="1" stop-color="#eeebe3"/></radialGradient>
-      <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#d9d4ca"/></linearGradient></defs>
-      <circle cx="100" cy="100" r="99" fill="url(#rim)"/><circle cx="100" cy="100" r="95.5" fill="url(#cf)" stroke="#e2ddd2" stroke-width="1"/>
+      <defs>
+        <linearGradient id="rimO" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#f1eee8"/><stop offset="1" stop-color="#c9c2b6"/></linearGradient>
+        <linearGradient id="rimI" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfc8bc"/><stop offset="1" stop-color="#ffffff"/></linearGradient>
+        <radialGradient id="cf" cx="50%" cy="42%" r="62%"><stop offset="0" stop-color="#ffffff"/><stop offset=".8" stop-color="#fbfaf7"/><stop offset="1" stop-color="#ebe7df"/></radialGradient>
+        <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      </defs>
+      <circle cx="100" cy="100" r="99.5" fill="url(#rimO)"/>
+      <circle cx="100" cy="100" r="92.5" fill="url(#rimI)"/>
+      <circle cx="100" cy="100" r="90" fill="url(#cf)"/>
       ${ticks}${nums}
-      <text x="100" y="72" text-anchor="middle" font-size="9.5" font-weight="800" fill="#222" font-family="Pretendard Variable, sans-serif">Ready &amp; Set</text>
-      <g id="hH"><line x1="100" y1="106" x2="100" y2="55" stroke="#111" stroke-width="6" stroke-linecap="round"/></g>
-      <g id="hM"><line x1="100" y1="108" x2="100" y2="30" stroke="#111" stroke-width="4" stroke-linecap="round"/></g>
-      <g id="hS"><line x1="100" y1="118" x2="100" y2="22" stroke="#f0b400" stroke-width="1.6" stroke-linecap="round"/></g>
-      <circle cx="100" cy="100" r="5.5" fill="#f0b400" stroke="#111" stroke-width="1.5"/>
+      <g fill="#141414" font-family="Pretendard Variable, Pretendard, sans-serif"><text x="100" y="70" text-anchor="middle" font-size="9.5" font-weight="800">Ready &amp; Set</text></g>
+      <g stroke="#141414" stroke-width="1.1" stroke-linecap="round"><line x1="94" y1="58.5" x2="92.5" y2="56"/><line x1="100" y1="57.5" x2="100" y2="54.5"/><line x1="106" y1="58.5" x2="107.5" y2="56"/></g>
+      <g id="hH"><path d="M97 112 L98.6 56 Q100 52 101.4 56 L103 112 Z" fill="#141414"/></g>
+      <g id="hM"><path d="M98 114 L99.1 28 Q100 25 100.9 28 L102 114 Z" fill="#141414"/></g>
+      <g id="hS"><line x1="100" y1="122" x2="100" y2="24" stroke="#f2a900" stroke-width="1.6" stroke-linecap="round"/></g>
+      <circle cx="100" cy="100" r="6" fill="#f2b200" stroke="#141414" stroke-width="1.6"/>
+      <path d="M22 82 A80 80 0 0 1 178 82 A90 70 0 0 0 22 82 Z" fill="url(#gloss)"/>
     </svg>`;
   }
   function vFocus() {
@@ -648,8 +650,14 @@
   /* ---------- GUIDE first journey (mockup "GUIDE 1~8": crew intro → companion → photo+name tag → item+vibe → sail/fall → island → basecamp → ready) ---------- */
   // Painted backgrounds: drop rs/scenes/<key>.webp and list the key here; until then a vector plate is drawn.
   const SCENE_FILES = ['camp', 'island', 'base', 'sea', 'sky', 'vibe-curious', 'vibe-calm', 'vibe-bold', 'vibe-warm', 'home-header'];
-  const OB_STEPS = ['ob1', 'ob2', 'ob3', 'obArrival', 'ob4', 'ob5', 'ob6', 'ob7', 'ob8'];
-  const ITEMS = [['compass', '나침반'], ['camera', '탐험 카메라'], ['notebook', '탐험 수첩'], ['lantern', '랜턴'], ['map', '지도']];
+  const OB_STEPS = ['ob1', 'ob2', 'ob3', 'ob4', 'obArrival', 'ob5', 'ob6', 'ob7', 'ob8'];
+  // Item art cut from approved mockup 02 (rs/items/*.webp, see rs/art/PROVENANCE.json).
+  const ITEMS = [['camera', '카메라'], ['compass', '나침반'], ['notebook', '탐험 노트'], ['binoculars', '쌍안경'], ['bottle', '물통']];
+  // Character direction: the child picks two vibes, the guide adds a contrasting third; the three become A/B/C.
+  const VIBE_DIR = { curious: ['호기심 많은 탐험가', '음…! 더 재밌는 게 기다리고 있어!'], calm: ['차분하고 든든한 탐험가', '천천히 가도, 끝까지 갈 수 있어!'], bold: ['에너지 넘치는 탐험가', '언제나, 더 멀리! 더 즐겁게!'], warm: ['밝고 다정한 탐험가', '좋은 친구들과 어디든 갈 수 있어!'] };
+  const VIBE_PAIR = { curious: 'calm', calm: 'bold', bold: 'calm', warm: 'curious' };
+  const vibeSys = picks => { if (picks.length < 2) return ''; for (const k of picks) { const o = VIBE_PAIR[k]; if (!picks.includes(o)) return o; } return VIBES.map(v => v[0]).find(k => !picks.includes(k)); };
+  const vibeDirs = d => { const p = (d.vibes || []).slice(0, 2); return p.length === 2 ? [...p, d.vibeSys || vibeSys(p)] : ['warm', 'curious', 'bold']; };
   const VIBES = [['curious', '호기심 가득', '새로운 것을 발견'], ['calm', '평화로운', '여유롭게, 천천히'], ['bold', '도전적인', '더 멀리, 더 높이'], ['warm', '따뜻한', '함께, 우정으로']];
   function plate(kind) {
     const sky = { camp: ['#9cc9ef', '#e9f3fb'], island: ['#8cc6ee', '#e6f4fb'], base: ['#f2c58e', '#fbe7cf'], sea: ['#9fd2f2', '#eaf6fc'], sky: ['#7fb6ea', '#dceefb'] }[kind] || ['#9cc9ef', '#e9f3fb'];
@@ -672,9 +680,43 @@
   const guideNick = d => (d.guideNick || '').trim() || CREW.get(d.guide).name;
   function obOk(d, s) {
     if (s === 'ob3') return !!d.nickname.trim();
-    if (s === 'ob4') return !!(d.item && d.vibe);
+    if (s === 'ob4') return !!(d.item && (d.vibes || []).length === 2);
     if (s === 'ob5') return !!d.theme;
     return true;
+  }
+  // On-device cartoon look for the child's photo (no upload): smooth, posterize, ink edges, per-style tint.
+  function toonify(src, v) {
+    return new Promise((res, rej) => {
+      const im = new Image();
+      im.onload = () => {
+        const S = 240, c = document.createElement('canvas'); c.width = c.height = S;
+        const x = c.getContext('2d'), m = Math.min(im.width, im.height);
+        x.drawImage(im, (im.width - m) / 2, (im.height - m) / 2, m, m, 0, 0, S, S);
+        const d = x.getImageData(0, 0, S, S), p = d.data;
+        let b = new Uint8ClampedArray(p);
+        for (let pass = 0; pass < 2; pass++) {
+          const a = b.slice();
+          for (let y = 1; y < S - 1; y++) for (let q = 1; q < S - 1; q++) for (let k = 0; k < 3; k++) {
+            let t = 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) t += a[((y + dy) * S + q + dx) * 4 + k];
+            b[(y * S + q) * 4 + k] = t / 9;
+          }
+        }
+        const g = new Float32Array(S * S);
+        for (let i = 0; i < S * S; i++) g[i] = b[i * 4] * .3 + b[i * 4 + 1] * .59 + b[i * 4 + 2] * .11;
+        const T = { warm: [1.06, 1.0, .9, 1.25], curious: [.96, 1.0, 1.06, 1.2], calm: [.92, 1.0, 1.08, 1.05], bold: [1.1, .98, .88, 1.45] }[v] || [1, 1, 1, 1.2];
+        const qz = n => Math.min(255, Math.round(n / 42) * 42 + 18);
+        for (let y = 0; y < S; y++) for (let q = 0; q < S; q++) {
+          const i = y * S + q;
+          const e = (y > 0 && q > 0 && y < S - 1 && q < S - 1) ? Math.hypot(g[i + 1] - g[i - 1], g[i + S] - g[i - S]) : 0;
+          let r = b[i * 4], gg = b[i * 4 + 1], bb = b[i * 4 + 2]; const l = (r + gg + bb) / 3;
+          r = l + (r - l) * T[3]; gg = l + (gg - l) * T[3]; bb = l + (bb - l) * T[3];
+          const ink = e > 26 ? .4 : 1;
+          p[i * 4] = qz(r * T[0]) * ink; p[i * 4 + 1] = qz(gg * T[1]) * ink; p[i * 4 + 2] = qz(bb * T[2]) * ink;
+        }
+        x.putImageData(d, 0, 0); res(c.toDataURL('image/jpeg', .86));
+      };
+      im.onerror = rej; im.src = src;
+    });
   }
   function vOb() {
     const d = UI.draft; const s = UI.screen; const g = CREW.get(d.guide);
@@ -705,7 +747,7 @@
     }
     if (s === 'ob3') {
       return wrap('camp', `${gdHead(3, '사진 찍기 / 사진 보관함 등록', '지금의 너를 기록해요. 탐험 여정에 특별한 추억이 될 거예요!')}
-        <div class="gd-photo pd"><img class="pd-bg" src="rs/art/photo-desk.webp?v=20261106d" alt=""><div class="pd-frame">${d.photo ? `<img src="${d.photo}" alt="내 사진">` : `<span class="pd-empty"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>내 사진</span>`}</div></div>
+        <div class="gd-photo pd"><img class="pd-bg" src="rs/art/photo-desk.webp?v=20261106e" alt=""><div class="pd-frame">${d.photo ? `<img src="${d.photo}" alt="내 사진">` : `<span class="pd-empty"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>내 사진</span>`}</div></div>
         <div class="gd-photo-btns"><label class="gd-btn navy"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>사진 찍기<input type="file" accept="image/*" capture="user" data-photo hidden></label><label class="gd-btn">사진 보관함에서 선택<input type="file" accept="image/*" data-photo hidden></label></div><div class="photo-recent" aria-label="이 기기에서 고른 최근 사진">${Array.from({length:4},(_,i)=>(d.recentPhotos||[])[i]?`<button data-act="obRecent" data-i="${i}" aria-label="최근 사진 ${i+1} 선택"><img src="${d.recentPhotos[i]}" alt="최근 사진 ${i+1}"></button>`:`<span aria-label="빈 사진 자리">${I.book}</span>`).join('')}</div>
         <p class="gd-preview">이 사진은 탐험 여정 속에서 프로필로 사용돼요!</p><div class="gd-names"><label>닉네임 <small>공유할 때 앞</small><input class="gd-field" data-draft="nickname" value="${esc(d.nickname)}" placeholder="예: 별이" maxlength="10" autocomplete="off"></label><label>이름 <small>괄호 안</small><input class="gd-field" data-draft="name" value="${esc(d.name)}" placeholder="예: 김하늘" maxlength="10" autocomplete="off"></label></div>
         <p class="gd-preview">공유 이름: <b id="pvName">${esc(shareName({ nickname: d.nickname.trim(), name: d.name.trim() }) || '닉네임(이름)')}</b></p>
@@ -713,20 +755,22 @@
     }
     if (s === 'obArrival') {
       const choice = d.character || 'A', hood = d.hood || 'navy';
-      return wrap('camp', `${gdHead('3+', '나의 캐릭터 도착!', '함께 떠날 나의 모습을 골라주세요.')}
-        <div class="arrival-cards hood-${hood}">${[['A','밝고 든든한 탐험가','좋은 친구들과 어디든 갈 수 있어!'],['B','호기심 많은 탐험가','음…! 더 재밌는 게 기다리고 있어!'],['C','에너지 넘치는 탐험가','언제나, 더 멀리! 더 즐겁게!']].map(([k,t,q],i)=>`<button data-act="obCharacter" data-k="${k}" class="${choice===k?'on':''}" aria-pressed="${choice===k}" aria-label="${k} ${t}"><span class="ac-tag"><b>${k}</b>${t}</span><i class="ac-check" aria-hidden="true">✓</i><img src="${CREW.core[i].img}" alt=""><em>“${q}”</em></button>`).join('')}</div>
+      const dirs = vibeDirs(d), tk = d.photo + '|' + dirs.join();
+      if (d.photo && !(UI.toon && UI.toon.key === tk)) { UI.toon = { key: tk, v: [] }; Promise.all(dirs.map(v => toonify(d.photo, v))).then(v => { if (UI.toon && UI.toon.key === tk) { UI.toon.v = v; if (UI.screen === 'obArrival') render(); } }).catch(() => {}); }
+      return wrap('camp', `${gdHead('4+', '나의 캐릭터 도착!', '고른 느낌 두 개와 길잡이가 더한 하나로 만든 모습이에요.')}
+        <div class="arrival-cards hood-${hood}">${dirs.map((v, i) => ['ABC'[i], VIBE_DIR[v][0], VIBE_DIR[v][1]]).map(([k,t,q],i)=>`<button data-act="obCharacter" data-k="${k}" class="${choice===k?'on':''}" aria-pressed="${choice===k}" aria-label="${k} ${t}"><span class="ac-tag"><b>${k}</b>${t}</span><i class="ac-check" aria-hidden="true">✓</i>${d.photo ? `<span class="ac-me"><img src="${(UI.toon && UI.toon.key === tk && UI.toon.v[i]) || d.photo}" alt="${k} 모습의 나"></span>` : `<img src="${CREW.core[i].img}" alt="">`}<em>“${q}”</em></button>`).join('')}</div>
         <div class="arrival-crew" aria-hidden="true">${CREW.core.map(c=>`<img src="${c.img}" alt="">`).join('')}<p>다른 우리가,<br>더 멋진 이야기를 만든다!</p></div>
         <p class="gd-label">후드 색상</p><div class="hood-options">${[['navy','네이비'],['gold','골드'],['forest','숲 초록'],['rose','로즈']].map(([k,n])=>`<button class="hood-${k} ${hood===k?'on':''}" data-act="obHood" data-k="${k}" aria-pressed="${hood===k}" aria-label="${n}"><i></i><span>${n}</span></button>`).join('')}</div>
         <p class="gd-hand">나만의 모습으로, 새로운 이야기를 시작해요!</p>
         ${gdCta('obGo', '이 모습으로 함께할게요!', true)}`);
     }
     if (s === 'ob4') {
-      return wrap('camp', `${gdHead(4, '아이템 선정 + 분위기 선택', '탐험에 꼭 필요한 단 하나의 아이템을 고르고, 어떤 분위기로 모험할지 선택해보세요! 이제, 너만의 캐릭터가 완성돼요.')}
+      return wrap('camp', `${gdHead(4, '아이템 선정 + 느낌 고르기', '탐험에 꼭 필요한 아이템 하나와, 너다운 느낌 두 개를 골라보세요! 길잡이가 하나를 더해 너만의 캐릭터 세 가지를 만들어요.')}
         <p class="gd-label">탐험 아이템 <small>(하나만 선택)</small></p>
-        <div class="gd-items">${ITEMS.map(([k, n]) => `<button class="${d.item === k ? 'on' : ''}" data-act="obItem" data-k="${k}" aria-pressed="${d.item === k}"><img src="rs/items/${k}.svg" alt=""><span>${n}</span></button>`).join('')}</div>
-        <p class="gd-label">어떤 분위기로 탐험할까요?</p>
-        <div class="gd-vibes">${VIBES.map(([k, n, t]) => `<button class="v-${k} ${d.vibe === k ? 'on' : ''}" data-act="obVibe" data-k="${k}" aria-pressed="${d.vibe === k}"><i style="background-image:url(rs/scenes/vibe-${k}.webp)"></i><b>${n}</b><span>${t}</span></button>`).join('')}</div>
-        <p class="gd-hand">이제, 너만의 탐험대 캐릭터가 준비되고 있어요!</p>
+        <div class="gd-items">${ITEMS.map(([k, n]) => `<button class="${d.item === k ? 'on' : ''}" data-act="obItem" data-k="${k}" aria-pressed="${d.item === k}"><img src="rs/items/${k}.webp?v=20261106e" alt=""><span>${n}</span></button>`).join('')}</div>
+        <p class="gd-label">어떤 느낌이 더 너 같아? <small>두 개 고르면, 세 번째는 ${esc(josa(guideNick(d), '이', '가'))} 골라줘요</small></p>
+        <div class="gd-vibes">${(() => { const pk = d.vibes || [], sy = vibeSys(pk); return VIBES.map(([k, n, t]) => { const i = pk.indexOf(k), sys = sy === k; return `<button class="v-${k} ${i >= 0 ? 'on' : ''} ${sys ? 'sys' : ''}" data-act="obVibe" data-k="${k}" aria-pressed="${i >= 0}" ${i < 0 && pk.length >= 2 ? 'disabled' : ''}>${i >= 0 ? `<em class="v-no">${i + 1}</em>` : sys ? `<em class="v-no g">${esc(guideNick(d))} 픽</em>` : ''}<i style="background-image:url(rs/scenes/vibe-${k}.webp)"></i><b>${n}</b><span>${t}</span></button>`; }).join(''); })()}</div>
+        <p class="gd-hand">${(d.vibes || []).length === 2 ? '좋아! 이 세 가지 느낌으로 너의 모습을 만들어 볼게!' : '이제, 너만의 탐험대 캐릭터가 준비되고 있어요!'}</p>
         ${gdDots(4)}${gdCta('obGo', '다음으로', obOk(d, s))}`);
     }
     if (s === 'ob5') {
@@ -753,10 +797,10 @@
         <div class="buddy"><div class="gd-bubble">좋은 친구와 어디든 갈 수 있어!<small>- ${esc(guideNick(d))}</small></div><img src="${g.img}" alt=""></div>
       </div>
       <div class="gd-tiles">
-        <div>${I.target}<b>오늘의 탐험</b><span>새로운 이야기를 만나보세요</span></div>
-        <div>${I.sail}<b>나의 섬</b><span>${esc(isl)}</span></div>
-        <div>${I.home}<b>베이스 캠프</b><span>${esc(camp)}</span></div>
-        <div>${I.book}<b>탐험 노트</b><span>기록하고, 되돌아봐요</span></div>
+        <button data-act="welcomeNav" data-to="setup1">${I.target}<b>오늘의 탐험</b><span>새로운 이야기를 만나보세요</span></button>
+        <button data-act="welcomeNav" data-to="island">${I.sail}<b>나의 섬</b><span>${esc(isl)}</span></button>
+        <button data-act="welcomeNav" data-to="home">${I.home}<b>베이스 캠프</b><span>${esc(camp)}</span></button>
+        <button data-act="welcomeNav" data-to="history">${I.book}<b>탐험 노트</b><span>기록하고, 되돌아봐요</span></button>
       </div>
       <div class="gd-banner">${sceneBg('island')}<p>지금, 어떤 이야기를 시작할까요?</p></div>
       ${gdCta('obDone', '탐험하기', true)}<nav class="gd-welcome-nav" aria-label="탐험 안내">${[['home','홈',I.home],['setup1','탐험',I.target],['island','섬 지도',I.sail],['friends','친구들',I.chat],['settings','더보기',I.gear]].map(([k,n,icon])=>`<button data-act="welcomeNav" data-to="${k}">${icon}<span>${n}</span></button>`).join('')}</nav>`);
@@ -787,7 +831,7 @@
   function render() {
     if (!S.profile && !/^ob/.test(UI.screen || '')) { UI.draft = UI.draft || { name: '', nickname: '', guide: 'dubi', guideNick: '', photo: '', item: '', vibe: '', theme: '', island: '', camp: '' }; UI.screen = 'ob1'; UI.obSay = 0; }
     if (S.session && !['focus', 'record'].includes(UI.screen)) UI.screen = 'focus';
-    const v = { home: vHome, setup1: vSetup1, setup2: vSetup2, brief: vBrief, focus: vFocus, record: vRecord, result: vResult, history: vHistory, calendar: vCalendar, settings: vSettings, ob1: vOb, ob2: vOb, ob3: vOb, obArrival: vOb, ob4: vOb, ob5: vOb, ob6: vOb, ob7: vOb, ob8: vOb }[UI.screen] || vHome;
+    const v = { home: vHome, setup1: vSetup1, setup2: vBrief, brief: vBrief, focus: vFocus, record: vRecord, result: vResult, history: vHistory, calendar: vCalendar, settings: vSettings, ob1: vOb, ob2: vOb, ob3: vOb, obArrival: vOb, ob4: vOb, ob5: vOb, ob6: vOb, ob7: vOb, ob8: vOb }[UI.screen] || vHome;
     let html = v();
     if (UI.ov === 'sheet') html += vSheet();
     if (UI.ov === 'pause') html += vPauseOv();
@@ -843,14 +887,13 @@
     delTask: e => { S.plan.tasks = S.plan.tasks.filter(t => t.id !== e.dataset.id); save(); render(); },
     time: e => { const t = e.dataset.t; S.plan.target = t === 'custom' ? 'custom' : +t; save(); render(); if (t === 'custom') { const i = $('#customMin'); i && i.focus(); } },
     bgm: e => { S.plan.bgm = e.dataset.k; save(); render(); if (e.dataset.k !== 'off') { bgmPlay(e.dataset.k, false); clearTimeout(A._pv); A._pv = setTimeout(() => { if (!S.session) bgmStop(); }, 3500); } else bgmStop(false); },
-    toSetup2: () => { bgmStop(false); go('setup2'); },
-    mood: e => { const id = e.dataset.id; const a = S.plan.moods; const i = a.indexOf(id); if (i >= 0) a.splice(i, 1); else if (a.length < 2) a.push(id); S.plan.sys = a.length === 2 ? sysCardFor(a) : null; save(); render(); },
+    toSetup2: () => { bgmStop(false); S.plan.moods = []; S.plan.sys = null; save(); go('brief'); },
     toBrief: () => go('brief'),
     start: () => startSession(),
     preShare: () => { if (!S.plan.tasks.length || !targetMin()) { toast('먼저 오늘 목표를 정해요'); return go('setup1'); } openShare('pre'); },
     postShare: () => { const r = S.records.find(x => x.id === S.result); if (r) openShare('post', r); },
     doShare: () => doShare(),
-    music: () => { const s = S.session; if (s.bgm === 'off') { s.bgm = 'lofi'; } s.bgmOn = !s.bgmOn; save(); s.bgmOn ? bgmPlay(s.bgm) : bgmPause(); render(); },
+    music: () => { const s = S.session; if (s.bgm === 'off') { s.bgm = 'essential'; } s.bgmOn = !s.bgmOn; save(); s.bgmOn ? bgmPlay(s.bgm) : bgmPause(); render(); },
     pause: () => pauseNow(),
     reason: e => { const s = S.session; const l = s.pauses[s.pauses.length - 1]; if (l) l.reason = l.reason === e.dataset.r ? '' : e.dataset.r; save(); render(); },
     resume: () => resume(),
@@ -889,9 +932,9 @@
     obCharacter: e => { UI.draft.character = e.dataset.k; render(); },
     obHood: e => { UI.draft.hood = e.dataset.k; render(); },
     obItem: e => { UI.draft.item = e.dataset.k; render(); },
-    obVibe: e => { UI.draft.vibe = e.dataset.k; render(); },
+    obVibe: e => { const d = UI.draft, k = e.dataset.k, a = d.vibes || (d.vibes = []); const i = a.indexOf(k); if (i >= 0) a.splice(i, 1); else if (a.length < 2) a.push(k); d.vibe = a[0] || ''; d.vibeSys = vibeSys(a); render(); },
     obTheme: e => { UI.draft.theme = e.dataset.t; render(); },
-    obDone: () => { if(UI.campVisit) { UI.campVisit=false; UI.draft=null; return go('home'); } const d = UI.draft; S.profile = { name: d.name.trim(), nickname: d.nickname.trim(), guide: d.guide, guideNick: d.guideNick.trim(), photo: d.photo, character: d.character || 'A', hood: d.hood || 'navy', item: d.item, vibe: d.vibe, theme: d.theme, island: d.island.trim() || '반짝이는 섬', camp: d.camp.trim() || '하늘빛 캠프', voice: true, recPrefix: '' }; save(); UI.draft = null; go('home'); }
+    obDone: () => { if(UI.campVisit) { UI.campVisit=false; UI.draft=null; return go('home'); } const d = UI.draft; S.profile = { name: d.name.trim(), nickname: d.nickname.trim(), guide: d.guide, guideNick: d.guideNick.trim(), photo: d.photo, character: d.character || 'A', hood: d.hood || 'navy', item: d.item, vibe: (d.vibes || [])[0] || d.vibe, vibes: vibeDirs(d), theme: d.theme, island: d.island.trim() || '반짝이는 섬', camp: d.camp.trim() || '하늘빛 캠프', voice: true, recPrefix: '' }; save(); UI.draft = null; go('home'); }
   };
   // playVoice during onboarding (no profile yet) — allow
   const _pv = playVoice; playVoice = function (c) { if (!S.profile) { const v = new Audio(c.voice); AUD.voice && AUD.voice.pause(); AUD.voice = v; v.play().catch(() => {}); return; } _pv(c); };
