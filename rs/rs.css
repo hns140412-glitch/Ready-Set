@@ -231,7 +231,8 @@ canvas.wave { width: 100%; height: 64px; }
 .take span { flex: 1; font-weight: 700; font-size: 14px; }
 .take button { min-height: 36px; padding: 0 10px; border-radius: 10px; background: #f3ecdf; font-weight: 800; font-size: 13px; }
 .duo { display: flex; flex-direction: column; gap: 8px; width: 100%; text-align: left; }
-.duo .ln { display: flex; gap: 8px; align-items: flex-end; animation: up2 .3s both; }
+.duo .ln { display: flex; gap: 8px; align-items: flex-end; }
+.duo .ln.new { animation: up2 .3s both; }
 .duo .ln.r { flex-direction: row-reverse; }
 .duo .ln img { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; background: #fff; border: 2px solid #fff; flex: none; }
 .duo .ln .bubble { font-size: 14px; }
@@ -783,8 +784,10 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 /* duo coaching staging (REV06 §31/§34): main dashes out, comes back with the guest */
 .duo-stage { position: relative; width: 100%; height: 132px; flex: none; overflow: hidden; border-bottom: 2px solid rgba(201,154,46,.45); }
 .duo-stage .fig { position: absolute; bottom: 0; height: 124px; width: auto; filter: drop-shadow(0 4px 6px rgba(20,32,60,.25)); }
-.duo-stage .fig.m { left: 14%; animation: duo-in .45s ease-out both; }
-.duo-stage .fig.g { right: 14%; animation: duo-drag .6s ease-out .1s both; }
+.duo-stage .fig.m { left: 14%; }
+.duo-stage .fig.m.enter { animation: duo-in .45s ease-out both; }
+.duo-stage .fig.g { right: 14%; }
+.duo-stage .fig.g.enter { animation: duo-drag .6s ease-out .1s both; }
 .duo-stage.out .fig.m { animation: duo-out .5s ease-in forwards; }
 .duo-stage .fig.talk { animation: duo-talk .9s ease-in-out infinite; }
 .duo-stage .dust { position: absolute; left: 4%; bottom: 10px; width: 70px; height: 34px; border-radius: 50%; background: radial-gradient(circle, rgba(232,214,170,.9), rgba(232,214,170,0) 70%); animation: duo-dust .9s ease-out .25s both; }
