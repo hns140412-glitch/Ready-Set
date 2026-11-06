@@ -419,7 +419,7 @@
     const ek = UI.wkEdit, pick = ek ? `<div class="wk-pick" role="dialog" aria-label="일정 정하기"><div class="wk-pick-card"><h2>${WK_DAYS[+ek.split('-')[0]]}요일 ${{ am: '오전', pm: '오후', ev: '저녁' }[ek.split('-')[1]]} 일정</h2><p>매주 같은 요일에 반복돼요.</p><div class="wk-pick-grid">${WK_KINDS.map((k, i) => `<button class="wk-cell ${k.k} ${wk[ek] && wk[ek].t === k.t ? 'on' : ''}" data-act="wkSet" data-i="${i}"><b>${k.t}</b><span>${k.e}</span></button>`).join('')}</div><div class="wk-pick-row"><button class="gd-btn" data-act="wkSet" data-i="-1">비우기</button><button class="gd-btn navy" data-act="wkClose">닫기</button></div></div></div>` : '';
     return `<section class="screen wk">
       <div class="wk-bg"><img src="rs/scenes/home-header.webp" alt=""></div>
-      <header class="wk-top"><img class="wk-art" src="rs/art/home-top.webp?v=20261106e" alt="TAKY Ready &amp; Set. 좋은 친구와 어디든 멋진 이야기가 시작돼!"><button class="wk-me" data-act="nav" data-to="settings" aria-label="내 정보"><img src="${P.photo || g.face}" alt=""></button></header>
+      <header class="wk-top"><img class="wk-art" src="rs/art/home-top.webp?v=20261106e" alt="TAKY Ready &amp; Set. 좋은 친구와 어디든 멋진 이야기가 시작돼!"><button class="wk-me" data-act="nav" data-to="settings" aria-label="내 정보"><img src="${P.avatar || P.photo || g.face}" alt=""></button></header>
       <div class="wk-card">${UI.homeView === 'day' ? dayBody : week}</div>
       <div class="wk-props"><img src="rs/art/home-props.webp?v=20261106e" alt=""><button class="wk-cta" data-act="homeView" data-k="${UI.homeView === 'day' ? 'week' : 'day'}">${I.cal}<span>${UI.homeView === 'day' ? '이번 주 보기' : '오늘 보기'}</span><b aria-hidden="true">›</b></button></div>
       <nav class="journey-nav wk-nav"><button class="${UI.homeView === 'day' ? '' : 'on'}" data-act="homeView" data-k="week">${I.home}<span>이번 주 여정</span></button><button data-act="goSetup">${I.target}<span>탐험하기</span></button><button data-act="campView">${MAP_IC}<span>베이스캠프</span></button><button data-act="editGuide">${I.chat}<span>친구들</span></button><button data-act="nav" data-to="settings">${I.gear}<span>더보기</span></button></nav>
@@ -718,6 +718,23 @@
       im.onerror = rej; im.src = src;
     });
   }
+  // AI 2.5D characters (server function, paid, locked until Taky turns it on). Falls back to the on-device toon.
+  function aiCharacters(d, dirs, key) {
+    if (UI.ai && UI.ai.key === key) return;
+    UI.ai = { key, state: 'pending' };
+    fetch('/api/rs-character', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ photo: d.photo, dirs, hood: d.hood || 'navy', item: d.item, confirmCost: true }) })
+      .then(r => r.json().then(j => ({ r, j })))
+      .then(async ({ r, j }) => {
+        if (!UI.ai || UI.ai.key !== key) return;
+        if (r.ok && j.ok && Array.isArray(j.images)) { UI.ai.imgs = await Promise.all(j.images.map(src => shrink(src, 384))); UI.ai.state = 'done'; }
+        else UI.ai.state = r.status === 423 ? 'locked' : 'error';
+        if (UI.screen === 'obArrival') render();
+      })
+      .catch(() => { if (UI.ai && UI.ai.key === key) { UI.ai.state = 'error'; if (UI.screen === 'obArrival') render(); } });
+  }
+  function shrink(src, w) {
+    return new Promise(res => { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = w; c.height = Math.round(im.height * w / im.width); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); res(c.toDataURL('image/jpeg', .85)); }; im.onerror = () => res(src); im.src = src; });
+  }
   function vOb() {
     const d = UI.draft; const s = UI.screen; const g = CREW.get(d.guide);
     const wrap = (bg, body) => `<section class="screen gd gd-${s}"><div class="gd-bg">${sceneBg(bg)}</div><div class="gd-card">${body}</div></section>`;
@@ -757,8 +774,12 @@
       const choice = d.character || 'A', hood = d.hood || 'navy';
       const dirs = vibeDirs(d), tk = d.photo + '|' + dirs.join();
       if (d.photo && !(UI.toon && UI.toon.key === tk)) { UI.toon = { key: tk, v: [] }; Promise.all(dirs.map(v => toonify(d.photo, v))).then(v => { if (UI.toon && UI.toon.key === tk) { UI.toon.v = v; if (UI.screen === 'obArrival') render(); } }).catch(() => {}); }
+      if (d.photo) aiCharacters(d, dirs, tk);
+      const ai = UI.ai && UI.ai.key === tk ? UI.ai : null;
+      const charImg = i => (ai && ai.imgs && ai.imgs[i]) || (UI.toon && UI.toon.key === tk && UI.toon.v[i]) || d.photo;
       return wrap('camp', `${gdHead('4+', '나의 캐릭터 도착!', '고른 느낌 두 개와 길잡이가 더한 하나로 만든 모습이에요.')}
-        <div class="arrival-cards hood-${hood}">${dirs.map((v, i) => ['ABC'[i], VIBE_DIR[v][0], VIBE_DIR[v][1]]).map(([k,t,q],i)=>`<button data-act="obCharacter" data-k="${k}" class="${choice===k?'on':''}" aria-pressed="${choice===k}" aria-label="${k} ${t}"><span class="ac-tag"><b>${k}</b>${t}</span><i class="ac-check" aria-hidden="true">✓</i>${d.photo ? `<span class="ac-me"><img src="${(UI.toon && UI.toon.key === tk && UI.toon.v[i]) || d.photo}" alt="${k} 모습의 나"></span>` : `<img src="${CREW.core[i].img}" alt="">`}<em>“${q}”</em></button>`).join('')}</div>
+        <div class="arrival-cards hood-${hood}">${dirs.map((v, i) => ['ABC'[i], VIBE_DIR[v][0], VIBE_DIR[v][1]]).map(([k,t,q],i)=>`<button data-act="obCharacter" data-k="${k}" class="${choice===k?'on':''}" aria-pressed="${choice===k}" aria-label="${k} ${t}"><span class="ac-tag"><b>${k}</b>${t}</span><i class="ac-check" aria-hidden="true">✓</i>${d.photo ? `<span class="ac-me ${ai && ai.imgs ? 'ai' : ''}"><img src="${charImg(i)}" alt="${k} 모습의 나"></span>` : `<img src="${CREW.core[i].img}" alt="">`}<em>“${q}”</em></button>`).join('')}</div>
+        ${d.photo && ai && ai.state === 'pending' ? '<p class="ai-note" role="status">AI가 너의 2.5D 캐릭터를 그리는 중이에요… (1분쯤 걸려요)</p>' : ''}
         <div class="arrival-crew" aria-hidden="true">${CREW.core.map(c=>`<img src="${c.img}" alt="">`).join('')}<p>다른 우리가,<br>더 멋진 이야기를 만든다!</p></div>
         <p class="gd-label">후드 색상</p><div class="hood-options">${[['navy','네이비'],['gold','골드'],['forest','숲 초록'],['rose','로즈']].map(([k,n])=>`<button class="hood-${k} ${hood===k?'on':''}" data-act="obHood" data-k="${k}" aria-pressed="${hood===k}" aria-label="${n}"><i></i><span>${n}</span></button>`).join('')}</div>
         <p class="gd-hand">나만의 모습으로, 새로운 이야기를 시작해요!</p>
@@ -792,7 +813,7 @@
     }
     const isl = d.island.trim() || '반짝이는 섬'; const camp = d.camp.trim() || '하늘빛 캠프';
     return wrap('base', `${gdHead(8, '탐험 준비 완료!', '같은 하늘 아래, 더 멋진 이야기를 함께!')}
-      <div class="gd-ready-tools"><span aria-label="알림"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17h14l-2-3V9a5 5 0 0 0-10 0v5zM10 20h4"/></svg></span><img src="${d.photo || g.face}" alt="내 프로필"></div><div class="gd-ready">
+      <div class="gd-ready-tools"><span aria-label="알림"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17h14l-2-3V9a5 5 0 0 0-10 0v5zM10 20h4"/></svg></span><img src="${obAvatar(d) || d.photo || g.face}" alt="내 프로필"></div><div class="gd-ready">
         <div class="hello"><small>안녕, ${esc(guideNick(d))}와 함께하는</small><b>${esc(camp)}!</b><span>${esc(shareName({ nickname: d.nickname.trim(), name: d.name.trim() }))}, 오늘도 좋은 하루, 탐험할 준비 되셨나요?</span></div>
         <div class="buddy"><div class="gd-bubble">좋은 친구와 어디든 갈 수 있어!<small>- ${esc(guideNick(d))}</small></div><img src="${g.img}" alt=""></div>
       </div>
@@ -804,6 +825,10 @@
       </div>
       <div class="gd-banner">${sceneBg('island')}<p>지금, 어떤 이야기를 시작할까요?</p></div>
       ${gdCta('obDone', '탐험하기', true)}<nav class="gd-welcome-nav" aria-label="탐험 안내">${[['home','홈',I.home],['setup1','탐험',I.target],['island','섬 지도',I.sail],['friends','친구들',I.chat],['settings','더보기',I.gear]].map(([k,n,icon])=>`<button data-act="welcomeNav" data-to="${k}">${icon}<span>${n}</span></button>`).join('')}</nav>`);
+  }
+  function obAvatar(d) {
+    const dirs = vibeDirs(d), tk = d.photo + '|' + dirs.join(), i = 'ABC'.indexOf(d.character || 'A');
+    return (UI.ai && UI.ai.key === tk && UI.ai.imgs && UI.ai.imgs[i]) || (UI.toon && UI.toon.key === tk && UI.toon.v[i]) || '';
   }
   async function obPhoto(file) {
     if (!file) return;
@@ -934,7 +959,7 @@
     obItem: e => { UI.draft.item = e.dataset.k; render(); },
     obVibe: e => { const d = UI.draft, k = e.dataset.k, a = d.vibes || (d.vibes = []); const i = a.indexOf(k); if (i >= 0) a.splice(i, 1); else if (a.length < 2) a.push(k); d.vibe = a[0] || ''; d.vibeSys = vibeSys(a); render(); },
     obTheme: e => { UI.draft.theme = e.dataset.t; render(); },
-    obDone: () => { if(UI.campVisit) { UI.campVisit=false; UI.draft=null; return go('home'); } const d = UI.draft; S.profile = { name: d.name.trim(), nickname: d.nickname.trim(), guide: d.guide, guideNick: d.guideNick.trim(), photo: d.photo, character: d.character || 'A', hood: d.hood || 'navy', item: d.item, vibe: (d.vibes || [])[0] || d.vibe, vibes: vibeDirs(d), theme: d.theme, island: d.island.trim() || '반짝이는 섬', camp: d.camp.trim() || '하늘빛 캠프', voice: true, recPrefix: '' }; save(); UI.draft = null; go('home'); }
+    obDone: () => { if(UI.campVisit) { UI.campVisit=false; UI.draft=null; return go('home'); } const d = UI.draft; S.profile = { name: d.name.trim(), nickname: d.nickname.trim(), guide: d.guide, guideNick: d.guideNick.trim(), photo: d.photo, avatar: obAvatar(d), character: d.character || 'A', hood: d.hood || 'navy', item: d.item, vibe: (d.vibes || [])[0] || d.vibe, vibes: vibeDirs(d), theme: d.theme, island: d.island.trim() || '반짝이는 섬', camp: d.camp.trim() || '하늘빛 캠프', voice: true, recPrefix: '' }; save(); UI.draft = null; go('home'); }
   };
   // playVoice during onboarding (no profile yet) — allow
   const _pv = playVoice; playVoice = function (c) { if (!S.profile) { const v = new Audio(c.voice); AUD.voice && AUD.voice.pause(); AUD.voice = v; v.play().catch(() => {}); return; } _pv(c); };
