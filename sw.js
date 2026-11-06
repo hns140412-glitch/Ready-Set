@@ -1,8 +1,8 @@
 /* Ready & Set service worker — approved-design rebuild (2026-11-05).
    Network-first for pages so updates land; cache-first for versioned static assets.
    Removes caches from earlier builds. */
-const CACHE = 'ready-set:rebuild-20261107d';
-const CORE = ['./', './index.html', './rs/rs.css?v=20261107d', './rs/crew.js?v=20261107d', './rs/rs-taky-character-sync.js?v=20261107d', './rs/rs-app.js?v=20261107d', './rs/rs-taky-family.mjs?v=20261107d', './rs/taky-family-signin.mjs?v=20261107d', './rs/home-hero.webp', './manifest.webmanifest', './assets/icon-192.png'];
+const CACHE = 'ready-set:rebuild-20261107e';
+const CORE = ['./', './index.html', './rs/rs.css?v=20261107e', './rs/crew.js?v=20261107e', './rs/rs-taky-character-sync.js?v=20261107e', './rs/rs-app.js?v=20261107e', './rs/rs-taky-family.mjs?v=20261107e', './rs/taky-family-signin.mjs?v=20261107e', './rs/home-hero.webp', './manifest.webmanifest', './assets/icon-192.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
