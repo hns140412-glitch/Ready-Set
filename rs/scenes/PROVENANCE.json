@@ -158,5 +158,19 @@
       1080,
       1920
     ]
+  },
+  {
+    "key": "ob1-meet",
+    "path": "C:\\Users\\YKH-RENDER\\.codex\\generated_images\\01a1b446-0ea3-7751-9817-7316882f0f76\\exec-750dd469-b4ef-4ae5-8ede-43a3ca4f586a.png",
+    "prompt": "Codex exec on RENDER (C:\\Temp\\rs-ob1\\PROMPT.md): same scene as the approved mockup with all six characters, bubbles, logo, Korean text, button, dots, status bar and skip pill removed; signpost planks left blank.",
+    "source_mockup": "docs/mockups/ob1-crew-meet-20261107.png",
+    "date": "2026-11-07",
+    "status": "CANDIDATE_A_OF_2_PICKED",
+    "tool": "Codex built-in image_gen (ChatGPT plan)",
+    "file": "rs\\scenes\\ob1-meet.webp",
+    "dimensions": [
+      851,
+      1848
+    ]
   }
 ]

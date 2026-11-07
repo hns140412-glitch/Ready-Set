@@ -164,7 +164,7 @@
     try { navigator.vibrate && navigator.vibrate([180, 90, 180]); } catch (e) { /* noop */ }
   }
   /* ---------------- crew voice lines (REV06 §31-35): rs/voice/<crew>/<key>.mp3, ElevenLabs ---------------- */
-  const VTAG = '20261107h';
+  const VTAG = '20261107i';
   const REC_TXT = {
     'rec-intro': '오? 녹음할 시간이군.', 'rec-alone': '잠깐… 오늘은 나 혼자 듣기 좀 아까운데?', 'rec-fetch': '같이 들어줄 친구 좀 잡아올게!',
     'rec-back': '잡아왔다!', 'g-arrive': '나는 그냥 지나가고 있었는데?', 'rec-listen': '됐고, 이것 좀 같이 들어봐.',
@@ -450,7 +450,7 @@
       if (it) return `<button class="wk-cell ${it.k}" ${pos} data-act="wkCell" data-key="${key}"><b>${esc(it.t)}</b><span>${it.e}</span></button>`;
       return `<button class="wk-cell free empty" ${pos} data-act="wkCell" data-key="${key}" aria-label="${WK_DAYS[i]}요일 ${s === 'am' ? '오전' : s === 'pm' ? '오후' : '저녁'} 일정 정하기"><b>자유 시간</b><span>⛰️</span></button>`;
     };
-    const week = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261107h" alt=""><h1>이번 주 여정</h1><p class="wk-sub">오늘도 한 걸음, 더 멋진 너의 이야기를!</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261107h" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
+    const week = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261107i" alt=""><h1>이번 주 여정</h1><p class="wk-sub">오늘도 한 걸음, 더 멋진 너의 이야기를!</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261107i" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
       <div class="wk-grid">
         ${ti >= 0 ? `<i class="wk-colmark" style="grid-area:1/${ti + 2}/5/${ti + 3}"></i>` : ''}
         ${days.map((d, i) => { const k = ymd(d); return `<button class="wk-day ${i === ti ? 'today' : ''}" style="grid-area:1/${i + 2}" data-act="homeDay" data-day="${k}"><b>${WK_DAYS[i]}</b><small>${i === ti ? '오늘' : `${d.getMonth() + 1}/${d.getDate()}`}</small>${recOf(k).length ? '<i class="wk-dot" aria-label="탐험 기록 있음"></i>' : ''}</button>`; }).join('')}
@@ -460,7 +460,7 @@
       <p class="wk-cheer"><span aria-hidden="true">⛰️</span>지금의 너도, 멋지게 성장하고 있어!<span aria-hidden="true">🌤️</span></p>
       `;
     const day = UI.homeDay || todayKey, dd = new Date(day + 'T12:00:00'), daily = recOf(day);
-    const dayBody = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261107h" alt=""><h1>오늘의 탐험길</h1><p class="wk-sub">작은 계획이, 좋은 하루를 만들어요.</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261107h" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
+    const dayBody = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261107i" alt=""><h1>오늘의 탐험길</h1><p class="wk-sub">작은 계획이, 좋은 하루를 만들어요.</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261107i" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
       <div class="journey-range"><button data-act="weekMove" data-d="-1" aria-label="이전 날">‹</button><b>${fmt(dd)} (${'일월화수목금토'[dd.getDay()]})</b><button data-act="weekMove" data-d="1" aria-label="다음 날">›</button></div>
       <div class="day-route"><div class="timeline">${daily.map(r => `<article><time>${hhmm(r.startAt)}</time><div><b>${esc(r.tasks.map(t => t.item).join(' · '))}</b><small>${mmss(r.focusMs)} 탐험 기록</small></div></article>`).join('')}<article class="current"><time>${day === todayKey ? hhmm(Date.now()) : '탐험'}</time><div><b>${planTxt ? esc(planTxt) : '새로운 탐험을 시작해요'}</b><button data-act="goSetup">시작하기 →</button></div></article></div></div>
       <div class="week-summary"><h2>이번 주 요약</h2><div><span>기록한 탐험<b>${tasks.length}개</b></span><span>실제 집중 시간<b>${(m => m > 0 && m < 60000 ? '1분 미만' : `${Math.round(m / 60000)}분`)(weekRecs.reduce((n, r) => n + r.focusMs, 0))}</b></span><span class="summary-ring" style="--rate:${rate}%"><strong>${rate}%</strong><small>완료율</small></span></div></div>
@@ -468,9 +468,9 @@
     const ek = UI.wkEdit, pick = ek ? `<div class="wk-pick" role="dialog" aria-label="일정 정하기"><div class="wk-pick-card"><h2>${WK_DAYS[+ek.split('-')[0]]}요일 ${{ am: '오전', pm: '오후', ev: '저녁' }[ek.split('-')[1]]} 일정</h2><p>매주 같은 요일에 반복돼요.</p><div class="wk-pick-grid">${WK_KINDS.map((k, i) => `<button class="wk-cell ${k.k} ${wk[ek] && wk[ek].t === k.t ? 'on' : ''}" data-act="wkSet" data-i="${i}"><b>${k.t}</b><span>${k.e}</span></button>`).join('')}</div><div class="wk-pick-row"><button class="gd-btn" data-act="wkSet" data-i="-1">비우기</button><button class="gd-btn navy" data-act="wkClose">닫기</button></div></div></div>` : '';
     return `<section class="screen wk">
       <div class="wk-bg"><img src="rs/scenes/home-header.webp" alt=""></div>
-      <header class="wk-top"><img class="wk-art" src="rs/art/home-top.webp?v=20261107h" alt="TAKY Ready &amp; Set. 좋은 친구와 어디든 멋진 이야기가 시작돼!"><button class="wk-me" data-act="nav" data-to="settings" aria-label="내 정보"><img src="${P.avatar || P.photo || g.face}" alt=""></button></header>
+      <header class="wk-top"><img class="wk-art" src="rs/art/home-top.webp?v=20261107i" alt="TAKY Ready &amp; Set. 좋은 친구와 어디든 멋진 이야기가 시작돼!"><button class="wk-me" data-act="nav" data-to="settings" aria-label="내 정보"><img src="${P.avatar || P.photo || g.face}" alt=""></button></header>
       <div class="wk-card">${UI.homeView === 'day' ? dayBody : week}</div>
-      <div class="wk-props"><img src="rs/art/home-props.webp?v=20261107h" alt=""><button class="wk-cta" data-act="homeView" data-k="${UI.homeView === 'day' ? 'week' : 'day'}">${I.cal}<span>${UI.homeView === 'day' ? '이번 주 보기' : '오늘 보기'}</span><b aria-hidden="true">›</b></button></div>
+      <div class="wk-props"><img src="rs/art/home-props.webp?v=20261107i" alt=""><button class="wk-cta" data-act="homeView" data-k="${UI.homeView === 'day' ? 'week' : 'day'}">${I.cal}<span>${UI.homeView === 'day' ? '이번 주 보기' : '오늘 보기'}</span><b aria-hidden="true">›</b></button></div>
       <nav class="journey-nav wk-nav"><button class="${UI.homeView === 'day' ? '' : 'on'}" data-act="homeView" data-k="week">${I.home}<span>이번 주 여정</span></button><button data-act="goSetup">${I.target}<span>탐험하기</span></button><button data-act="campView">${MAP_IC}<span>베이스캠프</span></button><button data-act="editGuide">${I.chat}<span>친구들</span></button><button data-act="nav" data-to="settings">${I.gear}<span>더보기</span></button></nav>
       ${pick}
     </section>`;
@@ -740,12 +740,19 @@
     if (kind === 'sky') mid = `<rect y="318" width="400" height="82" fill="#3f86c2"/><path d="M140 322 Q190 270 250 322Z" fill="#4c8a52"/>${[60, 300].map(x => `<ellipse cx="${x}" cy="120" rx="44" ry="16" fill="#fff" opacity=".85"/>`).join('')}`;
     return `<svg class="plate" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="sk-${kind}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient></defs><rect width="400" height="400" fill="url(#sk-${kind})"/>${kind === 'sky' ? '' : mtn}${mid}${kind === 'base' || kind === 'camp' ? pines(kind === 'base' ? 300 : 292, '#2f5b45') : ''}</svg>`;
   }
-  const sceneBg = k => SCENE_FILES.includes(k) ? `<img class="plate" src="rs/scenes/${k}.webp?v=20261107h" alt="">` : plate(k);
+  const sceneBg = k => SCENE_FILES.includes(k) ? `<img class="plate" src="rs/scenes/${k}.webp?v=20261107i" alt="">` : plate(k);
   const gdHead = (n, t, sub) => `<header class="gd-head${n ? '' : ' no-step'}">${n ? `<span class="gd-no">${n}</span>` : ''}<h1>${t}</h1><p>${sub}</p></header>`;
   const gdDots = n => `<div class="gd-dots" aria-label="${n}/8 단계">${Array.from({length: 5}, (_, i) => `<i class="${i < Math.ceil(n * 5 / 8) ? 'on' : ''}"></i>`).join('')}</div>`;
   const arrow = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
   const gdCta = (act, label, ok) => `<button class="gd-cta" id="obNext" data-act="${act}" ${ok ? '' : 'disabled'}>${label}${arrow}</button>`;
   const INTRO_LINES = ['언제나, 해보자!', '새상을 더 귀엽게!', '좋은 생각이 떠올라', '더 멀리, 더 높이!', '지금이 바로 그때!', '서로 다른 우리가, 더 멋지잖아!'];
+  // ob1 meet screen: [core index, bubble box, tap box over the figure, name colour] in mockup pixels, mockup reading order.
+  const OB1_MEET = [[1, [42, 598, 218, 724], [70, 726, 300, 1070], '#e0457b'], [2, [388, 642, 568, 754], [290, 756, 515, 1060], '#233f8f'], [3, [670, 678, 826, 804], [505, 806, 765, 1085], '#7a3d1c'],
+    [0, [34, 1000, 208, 1094], [10, 1096, 290, 1440], '#233f8f'], [4, [390, 1010, 556, 1118], [292, 1120, 540, 1420], '#233f8f'], [5, [678, 996, 844, 1100], [540, 1102, 800, 1400], '#233f8f']];
+  const ART_V = '20261107i';
+  const OB1_PEAK = '<svg class="m1-peak" viewBox="0 0 64 30" aria-hidden="true"><path d="M2 28 L22 6 L31 16 L40 4 L62 28" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M15 28 L26 17 L31 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+  const OB1_COMPASS = '<svg class="m1-compass" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="21" fill="none" stroke="currentColor" stroke-width="3"/><path d="M32 2 L36 28 L62 32 L36 36 L32 62 L28 36 L2 32 L28 28Z" fill="currentColor"/><path d="M32 12 L34.5 29.5 L32 32 L29.5 29.5Z" fill="#fff" opacity=".9"/><circle cx="32" cy="32" r="3" fill="#fff"/></svg>';
+  const OB1_LOGO = '<svg class="m1-mark" viewBox="0 0 200 128" aria-hidden="true"><path d="M58 70 L92 22 L104 38 L112 28 L142 70" fill="#1d3577" stroke="#fff" stroke-width="7" stroke-linejoin="round"/><path d="M84 34 L92 22 L100 33 L94 30 L89 36Z" fill="#fff"/><text x="100" y="118" text-anchor="middle" font-family="Jua, Pretendard Variable, sans-serif" font-size="62" font-weight="900" fill="#1d3577" stroke="#fff" stroke-width="10" paint-order="stroke" letter-spacing="-1">TAKY</text></svg>';
   const guideNick = d => (d.guideNick || '').trim() || CREW.get(d.guide).name;
   function obOk(d, s) {
     if (s === 'ob3') return !!d.nickname.trim();
@@ -808,14 +815,25 @@
     const d = UI.draft; const s = UI.screen; const g = CREW.get(d.guide);
     const wrap = (bg, body) => `<section class="screen gd gd-${s}"><div class="gd-bg">${sceneBg(bg)}</div><div class="gd-card">${body}</div></section>`;
     if (s === 'ob1') {
-      const say = CREW.core[UI.obSay || 0];
-      return wrap('camp', `${gdHead(1, '탐험대원 자기소개', '우리와 함께할 친구들을 만나보세요!')}
-        <div class="gd-stage">
-          <div class="crew-line">${[[1, 3, 44, 46, 1], [2, 31, 46, 44, 1], [4, 57, 44, 46, 1], [3, -1, 0, 52, 3], [0, 28, 0, 56, 4], [5, 59, 0, 52, 3]].map(([i, l, bt, h, z]) => `<button class="${(UI.obSay || 0) === i ? 'on' : ''}" data-act="obSay" data-i="${i}" style="left:${l}%;bottom:${bt}%;height:${h}%;width:${Math.round(h * .82)}%;z-index:${z}" aria-label="${esc(CREW.core[i].name)} 인사 듣기"><img src="${CREW.core[i].img}" alt=""></button>`).join('')}</div>
-          <div class="gd-bubble top"><b>${esc(say.name)}</b>“${INTRO_LINES[UI.obSay || 0]}”</div>
-        </div>
-        <p class="gd-hand">좋은 친구들과 어디든 갈 수 있어!</p>
-        ${gdDots(1)}${gdCta('obGo', '다음으로', true)}`);
+      // Approved mockup docs/mockups/ob1-crew-meet-20261107.png. Art: rs/scenes/ob1-meet.webp (Codex) + rs/art/ob1-crew.webp (crew cut from the mockup).
+      // Coordinates below are mockup pixels (851x1848); --u scales them to the phone.
+      const met = UI.obMet || 0, cur = UI.obSay;
+      const at = (x0, y0, x1, y1) => `left:calc(var(--u)*${x0});top:calc(var(--u)*${y0});width:calc(var(--u)*${x1 - x0});height:calc(var(--u)*${y1 - y0})`;
+      const bubbles = OB1_MEET.map(([i, b, hit, tone], k) => { const c = CREW.core[i]; return `<button class="m1-bub${cur === i ? ' on' : ''}${k < met ? ' met' : ''}" data-act="obSay" data-i="${i}" style="${at(...b)}" aria-label="${esc(c.name)} 인사 듣기"><b style="color:${tone}">${esc(c.name)}</b><span>“${esc(c.signature).replace(/, /, ',<br>').replace(/\.\.\. /, '...<br>').replace(/! (?=\S)/, c.signature.length > 8 ? '!<br>' : '! ').replace(/ 같이/, '<br>같이')}”</span></button><button class="m1-hit" data-act="obSay" data-i="${i}" style="${at(...hit)}" aria-label="${esc(c.name)}" tabindex="-1"></button>`; }).join('');
+      const done = met >= OB1_MEET.length;
+      return `<section class="screen gd gd-ob1 m1"><div class="m1-blur" aria-hidden="true"></div><div class="m1-frame">
+        <img class="m1-bg" src="rs/scenes/ob1-meet.webp?v=${ART_V}" alt="">
+        <img class="m1-crew" src="rs/art/ob1-crew.webp?v=${ART_V}" alt="탐험대원 여섯 친구" style="${at(0, 600, 851, 1460)}">
+        <div class="m1-plank" aria-hidden="true">${['EXPLORE', 'LEARN', 'CREATE', 'GROW', 'TOGETHER'].map((w, i) => `<span style="${at(744, [418, 465, 510, 555, 598][i], 851, [462, 508, 553, 597, 642][i])}">${w}</span>`).join('')}</div>
+        <p class="m1-sign" style="${at(46, 1352, 236, 1478)}" aria-hidden="true">Good<br>Friends<br>Brighter<br>Adventures.</p>
+        <div class="m1-logo" style="${at(34, 92, 236, 312)}" aria-label="TAKY">${OB1_LOGO}<p>배우는 모험이<br>더 멋진 내일을 만든다.</p></div>
+        <button class="m1-skip" data-act="obGo" style="${at(652, 118, 822, 176)}">건너뛰기 <i>›</i></button>
+        <div class="m1-head" style="${at(150, 192, 702, 612)}">${OB1_COMPASS}<h1><span>탐험을 떠나기 전</span></h1><p>먼저, 함께할 친구들을<br>만나볼까요?</p>${OB1_PEAK}<em>좋은 친구와 함께라면,<br>어디든 멋진 이야기가 시작돼요! <i>☺</i></em></div>
+        ${bubbles}
+        <button class="m1-cta" id="obNext" data-act="${done ? 'obGo' : 'obMeet'}" style="${at(68, 1585, 782, 1700)}">${done ? '함께할 친구 고르러 가요' : '다음 친구'} <i>›</i></button>
+        <div class="m1-dots" style="${at(300, 1716, 551, 1760)}" aria-label="1/5 단계">${OB1_PEAK}<i class="on"></i><i></i><i></i><i></i><i></i></div>
+        <p class="m1-foot" style="${at(150, 1768, 702, 1806)}">Same Sky, Different Stories, Together.</p>
+      </div></section>`;
     }
     if (s === 'ob2') {
       const page = UI.obPage; const list = CREW.all.slice(page * 6, page * 6 + 6);
@@ -833,7 +851,7 @@
     }
     if (s === 'ob3') {
       return wrap('camp', `${gdHead(3, '사진 찍기 / 사진 보관함 등록', '지금의 너를 기록해요. 탐험 여정에 특별한 추억이 될 거예요!')}
-        <div class="gd-photo pd"><img class="pd-bg" src="rs/art/photo-desk.webp?v=20261107h" alt=""><div class="pd-frame">${d.photo ? `<img src="${d.photo}" alt="내 사진">` : `<span class="pd-empty"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>내 사진</span>`}</div></div>
+        <div class="gd-photo pd"><img class="pd-bg" src="rs/art/photo-desk.webp?v=20261107i" alt=""><div class="pd-frame">${d.photo ? `<img src="${d.photo}" alt="내 사진">` : `<span class="pd-empty"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>내 사진</span>`}</div></div>
         <div class="gd-photo-btns"><label class="gd-btn navy"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>사진 찍기<input type="file" accept="image/*" capture="user" data-photo hidden></label><label class="gd-btn">사진 보관함에서 선택<input type="file" accept="image/*" data-photo hidden></label></div><div class="photo-recent" aria-label="이 기기에서 고른 최근 사진">${Array.from({length:4},(_,i)=>(d.recentPhotos||[])[i]?`<button data-act="obRecent" data-i="${i}" aria-label="최근 사진 ${i+1} 선택"><img src="${d.recentPhotos[i]}" alt="최근 사진 ${i+1}"></button>`:`<span aria-label="빈 사진 자리">${I.book}</span>`).join('')}</div>
         <p class="gd-preview">이 사진은 탐험 여정 속에서 프로필로 사용돼요!</p><div class="gd-names"><label>닉네임 <small>공유할 때 앞</small><input class="gd-field" data-draft="nickname" value="${esc(d.nickname)}" placeholder="예: 별이" maxlength="10" autocomplete="off"></label><label>이름 <small>괄호 안</small><input class="gd-field" data-draft="name" value="${esc(d.name)}" placeholder="예: 김하늘" maxlength="10" autocomplete="off"></label></div>
         <p class="gd-preview">공유 이름: <b id="pvName">${esc(shareName({ nickname: d.nickname.trim(), name: d.name.trim() }) || '닉네임(이름)')}</b></p>
@@ -857,7 +875,7 @@
     if (s === 'ob4') {
       return wrap('camp', `${gdHead(4, '아이템 선정 + 느낌 고르기', '탐험에 꼭 필요한 아이템 하나와, 너다운 느낌 두 개를 골라보세요! 길잡이가 하나를 더해 너만의 캐릭터 세 가지를 만들어요.')}
         <p class="gd-label">탐험 아이템 <small>(하나만 선택)</small></p>
-        <div class="gd-items">${ITEMS.map(([k, n]) => `<button class="${d.item === k ? 'on' : ''}" data-act="obItem" data-k="${k}" aria-pressed="${d.item === k}"><img src="rs/items/${k}.webp?v=20261107h" alt=""><span>${n}</span></button>`).join('')}</div>
+        <div class="gd-items">${ITEMS.map(([k, n]) => `<button class="${d.item === k ? 'on' : ''}" data-act="obItem" data-k="${k}" aria-pressed="${d.item === k}"><img src="rs/items/${k}.webp?v=20261107i" alt=""><span>${n}</span></button>`).join('')}</div>
         <p class="gd-label">어떤 느낌이 더 너 같아? <small>두 개 고르면, 세 번째는 ${esc(josa(guideNick(d), '이', '가'))} 골라줘요</small></p>
         <div class="gd-vibes">${(() => { const pk = d.vibes || [], sy = vibeSys(pk); return VIBES.map(([k, n, t]) => { const i = pk.indexOf(k), sys = sy === k; return `<button class="v-${k} ${i >= 0 ? 'on' : ''} ${sys ? 'sys' : ''}" data-act="obVibe" data-k="${k}" aria-pressed="${i >= 0}" ${i < 0 && pk.length >= 2 ? 'disabled' : ''}>${i >= 0 ? `<em class="v-no">${i + 1}</em>` : sys ? `<em class="v-no g">${esc(guideNick(d))} 픽</em>` : ''}<i style="background-image:url(rs/scenes/vibe-${k}.webp)"></i><b>${n}</b><span>${t}</span></button>`; }).join(''); })()}</div>
         <p class="gd-hand">${(d.vibes || []).length === 2 ? '좋아! 이 세 가지 느낌으로 너의 모습을 만들어 볼게!' : '이제, 너만의 탐험대 캐릭터가 준비되고 있어요!'}</p>
@@ -976,11 +994,11 @@
   let scenesWarm = false;
   function preloadScenes() {
     if (scenesWarm) return; scenesWarm = true;
-    const go = () => SCENE_FILES.forEach(k => { const i = new Image(); i.decoding = 'async'; i.src = `rs/scenes/${k}.webp?v=20261107h`; (window.__rsWarm = window.__rsWarm || []).push(i); });
+    const go = () => SCENE_FILES.forEach(k => { const i = new Image(); i.decoding = 'async'; i.src = `rs/scenes/${k}.webp?v=20261107i`; (window.__rsWarm = window.__rsWarm || []).push(i); });
     (window.requestIdleCallback || (f => setTimeout(f, 400)))(go);
   }
   function render() {
-    if (!S.profile && !/^ob/.test(UI.screen || '')) { UI.draft = UI.draft || { name: '', nickname: '', guide: 'dubi', guideNick: '', photo: '', item: '', vibe: '', theme: '', island: '', camp: '' }; UI.screen = 'ob1'; UI.obSay = 0; }
+    if (!S.profile && !/^ob/.test(UI.screen || '')) { UI.draft = UI.draft || { name: '', nickname: '', guide: 'dubi', guideNick: '', photo: '', item: '', vibe: '', theme: '', island: '', camp: '' }; UI.screen = 'ob1'; UI.obSay = -1; UI.obMet = 0; }
     if (S.session && !['focus', 'record'].includes(UI.screen)) UI.screen = 'focus';
     const v = { home: vHome, setup1: vSetup1, setup2: vBrief, brief: vBrief, focus: vFocus, record: vRecord, result: vResult, history: vHistory, calendar: vCalendar, settings: vSettings, ob1: vOb, ob2: vOb, ob3: vOb, obArrival: vOb, ob4: vOb, ob5: vOb, ob6: vOb, ob7: vOb, ob8: vOb }[UI.screen] || vHome;
     let html = v();
@@ -1076,7 +1094,8 @@
     resetAsk: () => { UI.ov = 'reset'; render(); },
     resetDo: () => { try { localStorage.removeItem(KEY); } catch (e) { /* noop */ } S = blank(); UI.draft = null; go('ob1'); },
     obGo: () => { const d = UI.draft; const i = OB_STEPS.indexOf(UI.screen); if (!obOk(d, UI.screen)) return; ['nickname', 'name', 'guideNick', 'island', 'camp'].forEach(k => { d[k] = (d[k] || '').trim(); }); go(OB_STEPS[i + 1] || 'ob8'); if (UI.screen === 'ob2') playVoice(CREW.get(d.guide)); },
-    obSay: e => { UI.obSay = +e.dataset.i; render(); playVoice(CREW.core[UI.obSay]); },
+    obMeet: () => { const k = UI.obMet || 0; const i = OB1_MEET[k] ? OB1_MEET[k][0] : 0; UI.obMet = k + 1; UI.obSay = i; render(); playVoice(CREW.core[i]); },
+    obSay: e => { UI.obSay = +e.dataset.i; if (UI.draft) UI.draft.guide = CREW.core[UI.obSay].id; render(); playVoice(CREW.core[UI.obSay]); },
     obStep: e => { const all = CREW.all; const i = (all.indexOf(CREW.get(UI.draft.guide)) + +e.dataset.d + all.length) % all.length; UI.draft.guide = all[i].id; UI.obPage = Math.floor(i / 6); render(); playVoice(all[i]); },
     takyFamily: () => { const s = document.getElementById('takyFamilySheet'); if (s) { s.hidden = false; const b = s.querySelector('#familySignInBtn'); (b && !b.hidden ? b : s.querySelector('button')).focus(); } },
     obPage: e => { UI.obPage = +e.dataset.i; render(); },
