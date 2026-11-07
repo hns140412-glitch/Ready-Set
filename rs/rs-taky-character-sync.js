@@ -38,8 +38,18 @@
     return null;
   }
 
+  // Google ID tokens live about an hour. Reading the public exp claim (no verification, no secret) lets
+  // Ready say "join again" before the server has to reject it. The server still verifies every call.
+  function tokenExpired(token, nowMs = Date.now()) {
+    try {
+      const part = String(token).split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const exp = Number(JSON.parse(root.atob(part + '='.repeat((4 - part.length % 4) % 4))).exp);
+      return Number.isFinite(exp) && exp * 1000 <= nowMs + 30000;
+    } catch { return false; }
+  }
+
   // Shared session + scope check. Returns {post, family_id, member_id} or {state}.
-  async function connect({ memberId = '', runtime = root.TAKY_FAMILY_RUNTIME, fetchImpl = root.fetch } = {}) {
+  async function connect({ memberId = '', runtime = root.TAKY_FAMILY_RUNTIME, fetchImpl = root.fetch, now = Date.now } = {}) {
     if (!runtime || typeof runtime.getToken !== 'function') return { state: 'PENDING_TAKY_SESSION' };
     let token, family_id, member_id, base;
     try {
@@ -48,6 +58,7 @@
       member_id = resolveMember(await runtime.currentSession(), memberId);
       base = new URL(String(runtime.apiBaseUrl || ''));
     } catch { return { state: 'PENDING_TAKY_SESSION' }; }
+    if (token && tokenExpired(token, now())) return { state: 'SESSION_EXPIRED' };
     if (member_id === null) return { state: 'MEMBER_SELECTION_REQUIRED' };
     if (!member_id) return { state: 'MEMBER_NOT_AUTHORIZED' };
     if (!token || !family_id || base.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(base.hostname))
@@ -70,6 +81,7 @@
       const sha256 = await sha256Hex(src.bytes);
       const t = await c.post('/api/family/character-request', { action: 'CREATE', family_id: c.family_id, member_id: c.member_id,
         content_type: src.type, byte_size: src.bytes.length, sha256 });
+      if (t.status === 401) return { ok: false, state: 'SESSION_EXPIRED', status: 401 };
       if (!t.ok || !t.j.upload_url) return { ok: false, state: 'REQUEST_TICKET_FAILED', status: t.status };
       const put = await c.fetchImpl(t.j.upload_url, { method: 'PUT', headers: { 'Content-Type': src.type }, body: src.bytes });
       if (!put.ok) return { ok: false, state: 'REQUEST_UPLOAD_FAILED', status: put.status };
@@ -82,6 +94,7 @@
     const c = await connect(opts); if (!c.post) return { ok: false, state: c.state };
     try {
       const prof = await c.post('/api/family/character-profile', { action: 'GET', family_id: c.family_id, member_id: c.member_id });
+      if (prof.status === 401) return { ok: false, state: 'SESSION_EXPIRED', status: 401 };
       if (!prof.ok) return { ok: false, state: 'CHARACTER_PROFILE_UNAVAILABLE', status: prof.status };
       const p = prof.j.found ? prof.j.projection : null;
       const req = await c.post('/api/family/character-request', { action: 'STATUS', family_id: c.family_id, member_id: c.member_id });
@@ -102,7 +115,7 @@
     } catch { return { ok: false, state: 'CENTRAL_UNREACHABLE' }; }
   }
 
-  const api = Object.freeze({ CHARACTER_ID, requestCharacter, characterStatus, decodeDataUrl, resolveMember });
+  const api = Object.freeze({ CHARACTER_ID, requestCharacter, characterStatus, decodeDataUrl, resolveMember, tokenExpired });
   root.RsTakyCharacterSync = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

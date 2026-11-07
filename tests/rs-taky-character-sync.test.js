@@ -94,5 +94,21 @@ const runtime = (ids = ['PARENT1', 'KID1']) => ({ apiBaseUrl: BASE, getToken: as
     assert.equal((await Sync.requestCharacter({ photo: 'https://x/y.jpg', runtime: runtime(), fetchImpl: m.fetchImpl })).state, 'PHOTO_FORMAT');
     assert.equal(typeof Sync.publishMaster, 'undefined');
   });
+  await t('expired Google sign-in -> SESSION_EXPIRED before any call; server 401 -> SESSION_EXPIRED', async () => {
+    const jwt = exp => 'h.' + Buffer.from(JSON.stringify({ exp })).toString('base64url') + '.s';
+    const now = 1_800_000_000_000;
+    assert.equal(Sync.tokenExpired(jwt(now / 1000 - 1), now), true);
+    assert.equal(Sync.tokenExpired(jwt(now / 1000 + 10), now), true, '30s margin');
+    assert.equal(Sync.tokenExpired(jwt(now / 1000 + 600), now), false);
+    assert.equal(Sync.tokenExpired('TEST_TOKEN_0123456789', now), false, 'unreadable token: let the server decide');
+    const m = mockCentral();
+    const old = { ...runtime(), getToken: async () => jwt(now / 1000 - 60) };
+    assert.equal((await Sync.requestCharacter({ photo, runtime: old, fetchImpl: m.fetchImpl, now: () => now })).state, 'SESSION_EXPIRED');
+    assert.equal((await Sync.characterStatus({ runtime: old, fetchImpl: m.fetchImpl, now: () => now })).state, 'SESSION_EXPIRED');
+    assert.equal(m.st.calls.length, 0, 'nothing sent with an expired token');
+    const r401 = async () => ({ ok: false, status: 401, json: async () => ({ ok: false, reason: 'BEARER_IDENTITY_VERIFICATION_FAILED' }) });
+    assert.equal((await Sync.characterStatus({ runtime: runtime(), fetchImpl: r401 })).state, 'SESSION_EXPIRED');
+    assert.equal((await Sync.requestCharacter({ photo, runtime: runtime(), fetchImpl: r401 })).state, 'SESSION_EXPIRED');
+  });
   console.log(`rs-taky-character-sync: ${n} passed`);
 })().catch(e => { console.error(e); process.exit(1); });
