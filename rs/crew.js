@@ -30,7 +30,7 @@
     ['guide-24', '비비', ['유대', '즐거움', '창의', '특별함'], '함께라면 더 재미있어!']
   ].map(([id, name, keywords, signature], i) => {
     const n = String(i + 1).padStart(2, '0');
-    return { id, n, name, keywords, signature, core: i < 6, img: `rs/crew/${n}.webp`, face: `rs/crew/${n}-face.webp`, voice: `rs/voice/${n}.mp3?v=20261107j` };
+    return { id, n, name, keywords, signature, core: i < 6, img: `rs/crew/${n}.webp`, face: `rs/crew/${n}-face.webp`, voice: `rs/voice/${n}.mp3?v=20261108a` };
   });
   const byId = Object.fromEntries(C.map(c => [c.id, c]));
   window.RSCrew = { all: C, core: C.slice(0, 6), get: id => byId[id] || C[0] };

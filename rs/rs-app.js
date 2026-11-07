@@ -164,7 +164,7 @@
     try { navigator.vibrate && navigator.vibrate([180, 90, 180]); } catch (e) { /* noop */ }
   }
   /* ---------------- crew voice lines (REV06 §31-35): rs/voice/<crew>/<key>.mp3, ElevenLabs ---------------- */
-  const VTAG = '20261107j';
+  const VTAG = '20261108a';
   const REC_TXT = {
     'rec-intro': '오? 녹음할 시간이군.', 'rec-alone': '잠깐… 오늘은 나 혼자 듣기 좀 아까운데?', 'rec-fetch': '같이 들어줄 친구 좀 잡아올게!',
     'rec-back': '잡아왔다!', 'g-arrive': '나는 그냥 지나가고 있었는데?', 'rec-listen': '됐고, 이것 좀 같이 들어봐.',
@@ -362,34 +362,38 @@
   async function renderCard(kind, data) {
     const W = 1080, H = 1080, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
     const F = '"Pretendard Variable", Pretendard, "Apple SD Gothic Neo", sans-serif';
-    const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#f9c3a6'); bg.addColorStop(.55, '#fde3d4'); bg.addColorStop(1, '#fff4ec');
+    const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#fbf3e1'); bg.addColorStop(.6, '#f6ecd6'); bg.addColorStop(1, '#efe0bd');
     g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    // expedition scene band behind the headline, fading into parchment
+    const scene = await loadImg('rs/scenes/camp.webp?v=20261108a');
+    if (scene) { const sw = scene.width, sh = sw * 300 / W; g.save(); g.globalAlpha = .55; g.drawImage(scene, 0, scene.height * .42, sw, sh, 0, 0, W, 300); g.restore(); const fade = g.createLinearGradient(0, 0, 0, 300); fade.addColorStop(0, 'rgba(251,243,225,.35)'); fade.addColorStop(.55, 'rgba(251,243,225,.8)'); fade.addColorStop(1, '#fbf3e1'); g.fillStyle = fade; g.fillRect(0, 0, W, 300); }
+    g.strokeStyle = '#d9a441'; g.lineWidth = 6; rr(g, 22, 22, W - 44, H - 44, 34); g.stroke(); g.strokeStyle = 'rgba(32,63,134,.35)'; g.lineWidth = 2; rr(g, 36, 36, W - 72, H - 72, 26); g.stroke();
     // theme motif (profile theme, no picker at share time)
-    g.save(); g.globalAlpha = .18; g.strokeStyle = '#ef6b45'; g.lineWidth = 6;
+    g.save(); g.globalAlpha = .14; g.strokeStyle = '#203f86'; g.lineWidth = 6;
     if (S.profile.theme === '낙하') { g.beginPath(); g.arc(880, 210, 120, Math.PI, 0); g.stroke(); [[760, 210, 850, 330], [1000, 210, 910, 330], [840, 210, 870, 330], [920, 210, 890, 330]].forEach(l => { g.beginPath(); g.moveTo(l[0], l[1]); g.lineTo(l[2], l[3]); g.stroke(); }); }
     else { for (let k = 0; k < 3; k++) { g.beginPath(); for (let x = 0; x <= W; x += 20) g.lineTo(x, 1010 - k * 26 + Math.sin(x / 40) * 10); g.stroke(); } }
     g.restore();
-    g.fillStyle = '#8a4a30'; g.font = `800 30px ${F}`; g.fillText('READY & SET', 80, 110);
-    g.fillStyle = '#4a2214'; g.font = `900 66px ${F}`;
+    g.fillStyle = '#a86f1c'; g.font = `800 30px ${F}`; g.fillText('READY & SET  ·  탐험 일지', 80, 110);
+    g.fillStyle = '#162e66'; g.font = `900 66px ${F}`;
     g.fillText(kind === 'pre' ? '탐험 시작 전, 응원 요청!' : data.head, 80, 200);
-    g.font = `700 34px ${F}`; g.fillStyle = '#ef6b45'; g.fillText(shareName(S.profile) + (kind === 'pre' ? '의 오늘의 탐험' : '의 탐험 기록'), 80, 258);
+    g.font = `700 34px ${F}`; g.fillStyle = '#a86f1c'; g.fillText(shareName(S.profile) + (kind === 'pre' ? '의 오늘의 탐험' : '의 탐험 기록'), 80, 258);
     // info box
-    g.fillStyle = 'rgba(255,255,255,.9)'; rr(g, 60, 300, W - 120, 430, 40); g.fill();
-    g.fillStyle = '#8a6a5c'; g.font = `700 30px ${F}`; g.fillText('오늘의 탐험', 110, 365);
-    g.fillStyle = '#2a1a14'; g.font = `800 40px ${F}`;
+    g.fillStyle = 'rgba(255,253,246,.92)'; rr(g, 60, 300, W - 120, 430, 40); g.fill(); g.strokeStyle = 'rgba(217,164,65,.7)'; g.lineWidth = 3; g.stroke(); g.fillStyle = '#203f86'; g.fillRect(60, 340, 10, 120);
+    g.fillStyle = '#5d6784'; g.font = `700 30px ${F}`; g.fillText('오늘의 탐험', 110, 365);
+    g.fillStyle = '#162e66'; g.font = `800 40px ${F}`;
     let y = 420; data.tasks.slice(0, 3).forEach(t => { g.fillText((t.mark || '•') + ' ' + t.text, 110, y); y += 56; });
-    if (data.tasks.length > 3) { g.font = `700 30px ${F}`; g.fillStyle = '#8a6a5c'; g.fillText(`외 ${data.tasks.length - 3}개`, 110, y); y += 46; }
-    g.fillStyle = '#f0d8cb'; g.fillRect(110, 600, W - 220, 3);
+    if (data.tasks.length > 3) { g.font = `700 30px ${F}`; g.fillStyle = '#5d6784'; g.fillText(`외 ${data.tasks.length - 3}개`, 110, y); y += 46; }
+    g.fillStyle = '#d9a441'; g.fillRect(110, 600, W - 220, 3);
     const cols = data.stats; const cw = (W - 220) / cols.length;
-    cols.forEach((c, i) => { g.fillStyle = '#8a6a5c'; g.font = `700 28px ${F}`; g.fillText(c[0], 110 + i * cw, 650); g.fillStyle = c[2] || '#2a1a14'; g.font = `900 46px ${F}`; g.fillText(c[1], 110 + i * cw, 705); });
+    cols.forEach((c, i) => { g.fillStyle = '#5d6784'; g.font = `700 28px ${F}`; g.fillText(c[0], 110 + i * cw, 650); g.fillStyle = c[2] || '#162e66'; g.font = `900 46px ${F}`; g.fillText(c[1], 110 + i * cw, 705); });
     // guide
     const gd = guide(); const im = await loadImg(gd.face);
     g.save(); g.beginPath(); g.arc(170, 880, 100, 0, Math.PI * 2); g.closePath(); g.fillStyle = '#fff'; g.fill(); g.clip(); if (im) g.drawImage(im, 70, 780, 200, 200); g.restore();
-    g.lineWidth = 8; g.strokeStyle = '#fff'; g.beginPath(); g.arc(170, 880, 100, 0, Math.PI * 2); g.stroke();
-    g.fillStyle = '#fff'; rr(g, 300, 790, W - 360, 170, 36); g.fill();
-    g.fillStyle = '#ef6b45'; g.font = `800 28px ${F}`; g.fillText(gd.name, 336, 835);
-    g.fillStyle = '#2a1a14'; g.font = `700 34px ${F}`; wrap(g, data.say, 336, 882, W - 430, 44, 2);
-    g.fillStyle = '#8a6a5c'; g.font = `700 28px ${F}`; g.fillText(data.date, W - 80 - g.measureText(data.date).width, 1040);
+    g.lineWidth = 10; g.strokeStyle = '#203f86'; g.beginPath(); g.arc(170, 880, 100, 0, Math.PI * 2); g.stroke(); g.lineWidth = 4; g.strokeStyle = '#e6c27a'; g.beginPath(); g.arc(170, 880, 107, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = '#fffdf6'; rr(g, 300, 790, W - 360, 170, 36); g.fill(); g.strokeStyle = 'rgba(217,164,65,.7)'; g.lineWidth = 3; g.stroke();
+    g.fillStyle = '#203f86'; g.font = `800 28px ${F}`; g.fillText(gd.name, 336, 835);
+    g.fillStyle = '#162e66'; g.font = `700 34px ${F}`; wrap(g, data.say, 336, 882, W - 430, 44, 2);
+    g.fillStyle = '#5d6784'; g.font = `700 28px ${F}`; g.fillText(data.date, W - 80 - g.measureText(data.date).width, 1040);
     return new Promise(r => cv.toBlob(b => r(b), 'image/png'));
   }
   async function openShare(kind, rec) {
@@ -401,7 +405,7 @@
     } else {
       const R = REACT[rec.state]; const save = rec.targetMs - rec.focusMs;
       const mark = { COMPLETED: '✓', PARTIAL: '△', DEFERRED: '→' };
-      data = { head: R[0], tasks: rec.tasks.map(t => ({ mark: mark[t.outcome] || '•', text: taskLabel(t) })), stats: [['목표', mmss(rec.targetMs)], ['집중', mmss(rec.focusMs)]].concat(save > 0 && rec.state !== 'STOPPED' ? [['TIME SAVE', mmss(save), '#ef6b45']] : []), say: R[2], date: ymd(rec.endAt).replace(/-/g, '.') };
+      data = { head: R[0], tasks: rec.tasks.map(t => ({ mark: mark[t.outcome] || '•', text: taskLabel(t) })), stats: [['목표', mmss(rec.targetMs)], ['집중', mmss(rec.focusMs)]].concat(save > 0 && rec.state !== 'STOPPED' ? [['TIME SAVE', mmss(save), '#a86f1c']] : []), say: R[2], date: ymd(rec.endAt).replace(/-/g, '.') };
       caption = `${shareName(S.profile)}의 탐험 기록: ${R[0]} 집중 ${mmss(rec.focusMs)} / 목표 ${mmss(rec.targetMs)}`;
     }
     UI.share = { kind, caption, url: null, file: null }; UI.ov = 'share'; render();
@@ -450,7 +454,7 @@
       if (it) return `<button class="wk-cell ${it.k}" ${pos} data-act="wkCell" data-key="${key}"><b>${esc(it.t)}</b><span>${it.e}</span></button>`;
       return `<button class="wk-cell free empty" ${pos} data-act="wkCell" data-key="${key}" aria-label="${WK_DAYS[i]}요일 ${s === 'am' ? '오전' : s === 'pm' ? '오후' : '저녁'} 일정 정하기"><b>자유 시간</b><span>⛰️</span></button>`;
     };
-    const week = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261107j" alt=""><h1>이번 주 여정</h1><p class="wk-sub">오늘도 한 걸음, 더 멋진 너의 이야기를!</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261107j" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
+    const week = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261108a" alt=""><h1>이번 주 여정</h1><p class="wk-sub">오늘도 한 걸음, 더 멋진 너의 이야기를!</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261108a" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
       <div class="wk-grid">
         ${ti >= 0 ? `<i class="wk-colmark" style="grid-area:1/${ti + 2}/5/${ti + 3}"></i>` : ''}
         ${days.map((d, i) => { const k = ymd(d); return `<button class="wk-day ${i === ti ? 'today' : ''}" style="grid-area:1/${i + 2}" data-act="homeDay" data-day="${k}"><b>${WK_DAYS[i]}</b><small>${i === ti ? '오늘' : `${d.getMonth() + 1}/${d.getDate()}`}</small>${recOf(k).length ? '<i class="wk-dot" aria-label="탐험 기록 있음"></i>' : ''}</button>`; }).join('')}
@@ -460,7 +464,7 @@
       <p class="wk-cheer"><span aria-hidden="true">⛰️</span>지금의 너도, 멋지게 성장하고 있어!<span aria-hidden="true">🌤️</span></p>
       `;
     const day = UI.homeDay || todayKey, dd = new Date(day + 'T12:00:00'), daily = recOf(day);
-    const dayBody = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261107j" alt=""><h1>오늘의 탐험길</h1><p class="wk-sub">작은 계획이, 좋은 하루를 만들어요.</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261107j" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
+    const dayBody = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261108a" alt=""><h1>오늘의 탐험길</h1><p class="wk-sub">작은 계획이, 좋은 하루를 만들어요.</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261108a" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
       <div class="journey-range"><button data-act="weekMove" data-d="-1" aria-label="이전 날">‹</button><b>${fmt(dd)} (${'일월화수목금토'[dd.getDay()]})</b><button data-act="weekMove" data-d="1" aria-label="다음 날">›</button></div>
       <div class="day-route"><div class="timeline">${daily.map(r => `<article><time>${hhmm(r.startAt)}</time><div><b>${esc(r.tasks.map(t => t.item).join(' · '))}</b><small>${mmss(r.focusMs)} 탐험 기록</small></div></article>`).join('')}<article class="current"><time>${day === todayKey ? hhmm(Date.now()) : '탐험'}</time><div><b>${planTxt ? esc(planTxt) : '새로운 탐험을 시작해요'}</b><button data-act="goSetup">시작하기 →</button></div></article></div></div>
       <div class="week-summary"><h2>이번 주 요약</h2><div><span>기록한 탐험<b>${tasks.length}개</b></span><span>실제 집중 시간<b>${(m => m > 0 && m < 60000 ? '1분 미만' : `${Math.round(m / 60000)}분`)(weekRecs.reduce((n, r) => n + r.focusMs, 0))}</b></span><span class="summary-ring" style="--rate:${rate}%"><strong>${rate}%</strong><small>완료율</small></span></div></div>
@@ -468,9 +472,9 @@
     const ek = UI.wkEdit, pick = ek ? `<div class="wk-pick" role="dialog" aria-label="일정 정하기"><div class="wk-pick-card"><h2>${WK_DAYS[+ek.split('-')[0]]}요일 ${{ am: '오전', pm: '오후', ev: '저녁' }[ek.split('-')[1]]} 일정</h2><p>매주 같은 요일에 반복돼요.</p><div class="wk-pick-grid">${WK_KINDS.map((k, i) => `<button class="wk-cell ${k.k} ${wk[ek] && wk[ek].t === k.t ? 'on' : ''}" data-act="wkSet" data-i="${i}"><b>${k.t}</b><span>${k.e}</span></button>`).join('')}</div><div class="wk-pick-row"><button class="gd-btn" data-act="wkSet" data-i="-1">비우기</button><button class="gd-btn navy" data-act="wkClose">닫기</button></div></div></div>` : '';
     return `<section class="screen wk">
       <div class="wk-bg"><img src="rs/scenes/home-header.webp" alt=""></div>
-      <header class="wk-top"><img class="wk-art" src="rs/art/home-top.webp?v=20261107j" alt="TAKY Ready &amp; Set. 좋은 친구와 어디든 멋진 이야기가 시작돼!"><button class="wk-me" data-act="nav" data-to="settings" aria-label="내 정보"><img src="${P.avatar || P.photo || g.face}" alt=""></button></header>
+      <header class="wk-top"><img class="wk-art" src="rs/art/home-top.webp?v=20261108a" alt="TAKY Ready &amp; Set. 좋은 친구와 어디든 멋진 이야기가 시작돼!"><button class="wk-me" data-act="nav" data-to="settings" aria-label="내 정보"><img src="${P.avatar || P.photo || g.face}" alt=""></button></header>
       <div class="wk-card">${UI.homeView === 'day' ? dayBody : week}</div>
-      <div class="wk-props"><img src="rs/art/home-props.webp?v=20261107j" alt=""><button class="wk-cta" data-act="homeView" data-k="${UI.homeView === 'day' ? 'week' : 'day'}">${I.cal}<span>${UI.homeView === 'day' ? '이번 주 보기' : '오늘 보기'}</span><b aria-hidden="true">›</b></button></div>
+      <div class="wk-props"><img src="rs/art/home-props.webp?v=20261108a" alt=""><button class="wk-cta" data-act="homeView" data-k="${UI.homeView === 'day' ? 'week' : 'day'}">${I.cal}<span>${UI.homeView === 'day' ? '이번 주 보기' : '오늘 보기'}</span><b aria-hidden="true">›</b></button></div>
       <nav class="journey-nav wk-nav"><button class="${UI.homeView === 'day' ? '' : 'on'}" data-act="homeView" data-k="week">${I.home}<span>이번 주 여정</span></button><button data-act="goSetup">${I.target}<span>탐험하기</span></button><button data-act="campView">${MAP_IC}<span>베이스캠프</span></button><button data-act="editGuide">${I.chat}<span>친구들</span></button><button data-act="nav" data-to="settings">${I.gear}<span>더보기</span></button></nav>
       ${pick}
     </section>`;
@@ -740,7 +744,7 @@
     if (kind === 'sky') mid = `<rect y="318" width="400" height="82" fill="#3f86c2"/><path d="M140 322 Q190 270 250 322Z" fill="#4c8a52"/>${[60, 300].map(x => `<ellipse cx="${x}" cy="120" rx="44" ry="16" fill="#fff" opacity=".85"/>`).join('')}`;
     return `<svg class="plate" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="sk-${kind}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient></defs><rect width="400" height="400" fill="url(#sk-${kind})"/>${kind === 'sky' ? '' : mtn}${mid}${kind === 'base' || kind === 'camp' ? pines(kind === 'base' ? 300 : 292, '#2f5b45') : ''}</svg>`;
   }
-  const sceneBg = k => SCENE_FILES.includes(k) ? `<img class="plate" src="rs/scenes/${k}.webp?v=20261107j" alt="">` : plate(k);
+  const sceneBg = k => SCENE_FILES.includes(k) ? `<img class="plate" src="rs/scenes/${k}.webp?v=20261108a" alt="">` : plate(k);
   const gdHead = (n, t, sub) => `<header class="gd-head${n ? '' : ' no-step'}">${n ? `<span class="gd-no">${n}</span>` : ''}<h1>${t}</h1><p>${sub}</p></header>`;
   const gdDots = n => `<div class="gd-dots" aria-label="${n}/8 단계">${Array.from({length: 5}, (_, i) => `<i class="${i < Math.ceil(n * 5 / 8) ? 'on' : ''}"></i>`).join('')}</div>`;
   const arrow = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
@@ -749,7 +753,7 @@
   // ob1 meet screen: [core index, bubble box, tap box over the figure, name colour] in mockup pixels, mockup reading order.
   const OB1_MEET = [[1, [42, 598, 218, 724], [70, 726, 300, 1070], '#e0457b'], [2, [388, 642, 568, 754], [290, 756, 515, 1060], '#233f8f'], [3, [670, 678, 826, 804], [505, 806, 765, 1085], '#7a3d1c'],
     [0, [34, 1000, 208, 1094], [10, 1096, 290, 1440], '#233f8f'], [4, [390, 1010, 556, 1118], [292, 1120, 540, 1420], '#233f8f'], [5, [678, 996, 844, 1100], [540, 1102, 800, 1400], '#233f8f']];
-  const ART_V = '20261107j';
+  const ART_V = '20261108a';
   const OB1_PEAK = '<svg class="m1-peak" viewBox="0 0 64 30" aria-hidden="true"><path d="M2 28 L22 6 L31 16 L40 4 L62 28" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M15 28 L26 17 L31 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg>';
   const OB1_COMPASS = '<svg class="m1-compass" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="21" fill="none" stroke="currentColor" stroke-width="3"/><path d="M32 2 L36 28 L62 32 L36 36 L32 62 L28 36 L2 32 L28 28Z" fill="currentColor"/><path d="M32 12 L34.5 29.5 L32 32 L29.5 29.5Z" fill="#fff" opacity=".9"/><circle cx="32" cy="32" r="3" fill="#fff"/></svg>';
   const OB1_LOGO = '<svg class="m1-mark" viewBox="0 0 200 128" aria-hidden="true"><path d="M58 70 L92 22 L104 38 L112 28 L142 70" fill="#1d3577" stroke="#fff" stroke-width="7" stroke-linejoin="round"/><path d="M84 34 L92 22 L100 33 L94 30 L89 36Z" fill="#fff"/><text x="100" y="118" text-anchor="middle" font-family="Jua, Pretendard Variable, sans-serif" font-size="62" font-weight="900" fill="#1d3577" stroke="#fff" stroke-width="10" paint-order="stroke" letter-spacing="-1">TAKY</text></svg>';
@@ -819,7 +823,7 @@
       // Coordinates below are mockup pixels (851x1848); --u scales them to the phone.
       const cur = UI.obSay == null ? -1 : UI.obSay;
       const at = (x0, y0, x1, y1) => `left:calc(var(--u)*${x0});top:calc(var(--u)*${y0});width:calc(var(--u)*${x1 - x0});height:calc(var(--u)*${y1 - y0})`;
-      const bubbles = OB1_MEET.map(([i, b, hit, tone], k) => { const c = CREW.core[i]; return `<button class="m1-bub${cur === i ? ' on' : ''}" data-act="obSay" data-i="${i}" style="${at(...b)}" aria-label="${esc(c.name)} 인사 듣기"><b style="color:${tone}">${esc(c.name)}</b><span>“${esc(c.signature).replace(/, /, ',<br>').replace(/\.\.\. /, '...<br>').replace(/! (?=\S)/, c.signature.length > 8 ? '!<br>' : '! ').replace(/ 같이/, '<br>같이')}”</span></button><button class="m1-hit" data-act="obSay" data-i="${i}" style="${at(...hit)}" aria-label="${esc(c.name)}" tabindex="-1"></button>`; }).join('');
+      const bubbles = OB1_MEET.map(([i, b, hit, tone], k) => { const c = CREW.core[i]; return `<button class="m1-bub${cur === i ? ' on' : ''}${c.signature.length > 14 ? ' long' : ''}" data-act="obSay" data-i="${i}" style="${at(...b)}" aria-label="${esc(c.name)} 인사 듣기"><b style="color:${tone}">${esc(c.name)}</b><span>“${esc(c.signature).replace(/, /, ',<br>').replace(/\.\.\. /, '...<br>').replace(/! (?=\S)/, c.signature.length > 8 ? '!<br>' : '! ').replace(/ 같이/, '<br>같이')}”</span></button><button class="m1-hit" data-act="obSay" data-i="${i}" style="${at(...hit)}" aria-label="${esc(c.name)}" tabindex="-1"></button>`; }).join('');
       const sel = cur >= 0 ? CREW.core[cur] : null;
       return `<section class="screen gd gd-ob1 m1"><div class="m1-blur" aria-hidden="true"></div><div class="m1-frame">
         <img class="m1-bg" src="rs/scenes/ob1-meet.webp?v=${ART_V}" alt="">
@@ -852,7 +856,7 @@
     }
     if (s === 'ob3') {
       return wrap('camp', `${gdHead(3, '사진 찍기 / 사진 보관함 등록', '지금의 너를 기록해요. 탐험 여정에 특별한 추억이 될 거예요!')}
-        <div class="gd-photo pd"><img class="pd-bg" src="rs/art/photo-desk.webp?v=20261107j" alt=""><div class="pd-frame">${d.photo ? `<img src="${d.photo}" alt="내 사진">` : `<span class="pd-empty"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>내 사진</span>`}</div></div>
+        <div class="gd-photo pd"><img class="pd-bg" src="rs/art/photo-desk.webp?v=20261108a" alt=""><div class="pd-frame">${d.photo ? `<img src="${d.photo}" alt="내 사진">` : `<span class="pd-empty"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>내 사진</span>`}</div></div>
         <div class="gd-photo-btns"><label class="gd-btn navy"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>사진 찍기<input type="file" accept="image/*" capture="user" data-photo hidden></label><label class="gd-btn">사진 보관함에서 선택<input type="file" accept="image/*" data-photo hidden></label></div><div class="photo-recent" aria-label="이 기기에서 고른 최근 사진">${Array.from({length:4},(_,i)=>(d.recentPhotos||[])[i]?`<button data-act="obRecent" data-i="${i}" aria-label="최근 사진 ${i+1} 선택"><img src="${d.recentPhotos[i]}" alt="최근 사진 ${i+1}"></button>`:`<span aria-label="빈 사진 자리">${I.book}</span>`).join('')}</div>
         <p class="gd-preview">이 사진은 탐험 여정 속에서 프로필로 사용돼요!</p><div class="gd-names"><label>닉네임 <small>공유할 때 앞</small><input class="gd-field" data-draft="nickname" value="${esc(d.nickname)}" placeholder="예: 별이" maxlength="10" autocomplete="off"></label><label>이름 <small>괄호 안</small><input class="gd-field" data-draft="name" value="${esc(d.name)}" placeholder="예: 김하늘" maxlength="10" autocomplete="off"></label></div>
         <p class="gd-preview">공유 이름: <b id="pvName">${esc(shareName({ nickname: d.nickname.trim(), name: d.name.trim() }) || '닉네임(이름)')}</b></p>
@@ -876,7 +880,7 @@
     if (s === 'ob4') {
       return wrap('camp', `${gdHead(4, '아이템 선정 + 느낌 고르기', '탐험에 꼭 필요한 아이템 하나와, 너다운 느낌 두 개를 골라보세요! 길잡이가 하나를 더해 너만의 캐릭터 세 가지를 만들어요.')}
         <p class="gd-label">탐험 아이템 <small>(하나만 선택)</small></p>
-        <div class="gd-items">${ITEMS.map(([k, n]) => `<button class="${d.item === k ? 'on' : ''}" data-act="obItem" data-k="${k}" aria-pressed="${d.item === k}"><img src="rs/items/${k}.webp?v=20261107j" alt=""><span>${n}</span></button>`).join('')}</div>
+        <div class="gd-items">${ITEMS.map(([k, n]) => `<button class="${d.item === k ? 'on' : ''}" data-act="obItem" data-k="${k}" aria-pressed="${d.item === k}"><img src="rs/items/${k}.webp?v=20261108a" alt=""><span>${n}</span></button>`).join('')}</div>
         <p class="gd-label">어떤 느낌이 더 너 같아? <small>두 개 고르면, 세 번째는 ${esc(josa(guideNick(d), '이', '가'))} 골라줘요</small></p>
         <div class="gd-vibes">${(() => { const pk = d.vibes || [], sy = vibeSys(pk); return VIBES.map(([k, n, t]) => { const i = pk.indexOf(k), sys = sy === k; return `<button class="v-${k} ${i >= 0 ? 'on' : ''} ${sys ? 'sys' : ''}" data-act="obVibe" data-k="${k}" aria-pressed="${i >= 0}" ${i < 0 && pk.length >= 2 ? 'disabled' : ''}>${i >= 0 ? `<em class="v-no">${i + 1}</em>` : sys ? `<em class="v-no g">${esc(guideNick(d))} 픽</em>` : ''}<i style="background-image:url(rs/scenes/vibe-${k}.webp)"></i><b>${n}</b><span>${t}</span></button>`; }).join(''); })()}</div>
         <p class="gd-hand">${(d.vibes || []).length === 2 ? '좋아! 이 세 가지 느낌으로 너의 모습을 만들어 볼게!' : '이제, 너만의 탐험대 캐릭터가 준비되고 있어요!'}</p>
@@ -995,7 +999,7 @@
   let scenesWarm = false;
   function preloadScenes() {
     if (scenesWarm) return; scenesWarm = true;
-    const go = () => SCENE_FILES.forEach(k => { const i = new Image(); i.decoding = 'async'; i.src = `rs/scenes/${k}.webp?v=20261107j`; (window.__rsWarm = window.__rsWarm || []).push(i); });
+    const go = () => SCENE_FILES.forEach(k => { const i = new Image(); i.decoding = 'async'; i.src = `rs/scenes/${k}.webp?v=20261108a`; (window.__rsWarm = window.__rsWarm || []).push(i); });
     (window.requestIdleCallback || (f => setTimeout(f, 400)))(go);
   }
   function render() {
