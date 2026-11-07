@@ -826,7 +826,7 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .gd-ob1.m1 { padding: 0 !important; background: #2a3a5c; display: block; }
 .m1 { --fw: min(100vw, calc(100dvh * 851 / 1848)); --u: calc(var(--fw) / 851); --m1-navy: #1c2f6e; }
 .m1-blur { position: absolute; inset: 0; overflow: hidden; }
-.m1-blur::before { content: ''; position: absolute; inset: -30px; background: url(scenes/ob1-meet.webp?v=20261107i) center / cover; filter: blur(14px) brightness(.9); }
+.m1-blur::before { content: ''; position: absolute; inset: -30px; background: url(scenes/ob1-meet.webp?v=20261107j) center / cover; filter: blur(14px) brightness(.9); }
 .m1-frame { position: absolute; left: 50%; top: 50%; width: var(--fw); height: calc(var(--fw) * 1848 / 851); transform: translate(-50%, -50%); overflow: hidden; }
 .m1-frame > * { position: absolute; margin: 0; }
 .m1-bg { inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -860,3 +860,8 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .m1-plank { inset: 0; pointer-events: none; }
 .m1-plank span { position: absolute; display: flex; align-items: center; justify-content: center; font-family: Jua, var(--font); font-size: calc(var(--u) * 20); letter-spacing: .02em; color: #4a2c15; text-shadow: 0 calc(var(--u) * 1) 0 rgba(255, 228, 180, .55); transform: rotate(-5deg); }
 .m1-sign { font-family: Gaegu, var(--hand); font-weight: 700; font-size: calc(var(--u) * 29); line-height: .98; color: #4a321c; transform: rotate(-7deg); transform-origin: left top; pointer-events: none; opacity: .9; }
+.m1-info { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: calc(var(--u) * 10); padding: 0 calc(var(--u) * 18); border-radius: 999px; background: rgba(251, 246, 234, .9); border: calc(var(--u) * 2.5) solid rgba(28, 47, 110, .25); box-shadow: 0 calc(var(--u) * 4) calc(var(--u) * 12) rgba(30, 24, 10, .25); color: var(--m1-navy); pointer-events: none; z-index: 4; }
+.m1-info em { font-style: normal; font-family: var(--hand); font-size: calc(var(--u) * 38); }
+.m1-info b { font-family: Jua, var(--font); font-weight: 400; font-size: calc(var(--u) * 36); margin-right: calc(var(--u) * 4); }
+.m1-info span { font-weight: 800; font-size: calc(var(--u) * 24); padding: calc(var(--u) * 5) calc(var(--u) * 14); border-radius: 999px; background: var(--m1-navy); color: #fff; }
+.m1-info.on { border-color: #f6c64a; }
