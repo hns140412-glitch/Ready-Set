@@ -1,0 +1,15 @@
+{
+ "source": "Approved mockup 07 (weekly home), 2026-11-05 set, 852px wide",
+ "method": "Cropped and resized to 640px wide; sample child photo blurred in home-top; map/tent icons keyed to transparent background",
+ "files": {
+  "home-top.webp": "mockup y75-425 (logo, slogan, scenery, flag, signpost)",
+  "home-props.webp": "mockup y1390-1690 (Dubi with sign, map, mug, books, lantern; CTA button overlaid by live button)",
+  "home-map.webp": "map icon beside the 'this week' heading",
+  "home-tent.webp": "tent icon beside the heading",
+  "photo-desk.webp": "mockup 14 y340-616 desk scene with Dubi; sample child photo blurred, covered by live photo frame",
+  "ob1-crew.webp": "six crew figures cut from approved mockup docs/mockups/ob1-crew-meet-20261107.png (y600-1460) with BiRefNet (rembg birefnet-general); bubble areas cleared (live HTML bubbles sit there), bottom 60px faded. 2026-11-07"
+ },
+ "items": {
+  "rs/items/{camera,compass,notebook,binoculars,bottle}.webp": "mockup 02 item row (x46-812, y864-1003), background keyed to transparent by edge flood fill, 2026-11-06"
+ }
+}

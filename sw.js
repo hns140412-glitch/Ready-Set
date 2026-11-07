@@ -1,114 +1,13 @@
-importScripts('./ready-release-v01.js');
-const RELEASE=globalThis.ReadySetReleaseDescriptor;
-const CACHE='ready-set:'+RELEASE.release_id;
-const EXPLORER_CREW_V2_CORE=[
-'./vendor/taky/explorer-crew/app-consumer-v2.js',
-'./vendor/taky/explorer-crew/asset-engine-pr10-v1.js',
-'./vendor/taky/explorer-crew/asset-render-adapter-v1.js',
-'./vendor/taky/explorer-crew/behavior-patterns-v1.js',
-'./vendor/taky/explorer-crew/browser-host-v1.js',
-'./vendor/taky/explorer-crew/canonical-runtime-v1.js',
-'./vendor/taky/explorer-crew/companion-gate-policy-v1.js',
-'./vendor/taky/explorer-crew/companion-gate-registry-v1.js',
-'./vendor/taky/explorer-crew/companion-gate-registry-v1.json',
-'./vendor/taky/explorer-crew/composable-asset-manifest-pr10-v1.js',
-'./vendor/taky/explorer-crew/composable-asset-manifest-pr10-v1.json',
-'./vendor/taky/explorer-crew/composable-promotion-gate-v1.js',
-'./vendor/taky/explorer-crew/contracts-v1.js',
-'./vendor/taky/explorer-crew/dialogue-personality-v1.js',
-'./vendor/taky/explorer-crew/handoff-v1.js',
-'./vendor/taky/explorer-crew/manifest-registry-pr10-v1.js',
-'./vendor/taky/explorer-crew/personality-behavior-v1.js',
-'./vendor/taky/explorer-crew/personality-registry-v1.js',
-'./vendor/taky/explorer-crew/personality-registry-v2.js',
-'./vendor/taky/explorer-crew/personality-source-board-v1.js',
-'./vendor/taky/explorer-crew/relation-affinity-v1.js',
-'./vendor/taky/explorer-crew/render-plan-dom-consumer-v1.js',
-'./vendor/taky/explorer-crew/role-behavior-policy-v1.js',
-'./vendor/taky/explorer-crew/runtime-log-adapter-v1.js',
-'./vendor/taky/explorer-crew/runtime-log-pr10-v1.js',
-'./vendor/taky/explorer-crew/runtime-policy-adapter-v1.js',
-'./vendor/taky/explorer-crew/runtime-policy-pr10-v1.js',
-'./vendor/taky/explorer-crew/runtime-v1.js',
-'./vendor/taky/explorer-crew/semantic-command-compat-v1.js',
-'./vendor/taky/explorer-crew/shared-memory-episode-v1.js',
-'./vendor/taky/explorer-crew/source-lock-v2.json',
-'./vendor/taky/explorer-crew/state-store-v1.js',
-'./vendor/taky/explorer-crew/story-gate-v1.js',
-'./vendor/taky/explorer-crew/system-v2.js',
-'./vendor/taky/explorer-crew/ui-renderer-pr10-v1.js',
-'./characters/ui_cutouts/dubi.png',
-'./characters/ui_cutouts/ink.png',
-'./characters/ui_cutouts/lori.png',
-'./characters/ui_cutouts/nova.png',
-'./characters/ui_cutouts/take.png',
-'./characters/ui_cutouts/zero.png'
-];
-const CORE=[
-...EXPLORER_CREW_V2_CORE,
-'./','./index.html','./styles.css','./config.js',
-'./vendor/taky/release-contract.js','./vendor/taky/pwa-update-state.js','./vendor/taky/explorer-crew/ready-authority-consumer-v1.js',
-'./ready-release-v01.js','./ready-pwa-update-v01.js',
-'./ready-sync-adapter-v01.js','./ready-local-first-v01.js','./ready-assignment-domain-v2.js','./ready-subject-master-v01.js','./ready-official-standard-registry-v01.js','./ready-official-unit-map-v01.js','./ready-learning-standard-matcher-v01.js','./ready-learning-reference-v01.js','./ready-learning-master-v01.js','./ready-planner-v01.js',
-'./ready-hide-memory-review-v01.js','./ready-central-evidence-session-v01.js',
-'./ready-central-observation-handoff-v01.js','./ready-central-learning-decision-intake-v01.js',
-'./ready-central-learning-decision-http-v01.js','./ready-central-intent-to-planner-v01.js','./ready-central-hide-directive-v01.js',
-'./vendor/taky-central-evidence-v1.js','./ready-central-learning-roundtrip-v01.js',
-'./ready-central-browser-bootstrap-v01.js',
-'./ready-integration-v1.js','./app.js','./ready-runtime-v07.js','./manifest.webmanifest','./VERSION.json',
-'./Ready_Set_Ui_Master_Logic_REV_06.md','./Ready_Set_Ui_Master_Logic_REV_07.md',
-'./assets/icon-192.png','./assets/icon-512.png',
-'./assets/guide-lumi.png','./assets/guide-pico.png','./assets/guide-mori.png',
-'./assets/bgm-piano.wav','./assets/bgm-nature.wav','./assets/bgm-water.wav','./assets/bgm-lofi.wav'
-];
-
-self.addEventListener('install',event=>{
-  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)));
-});
-
-self.addEventListener('message',event=>{
-  if(event.data?.type==='APPLY_UPDATE'){
-    event.waitUntil(self.skipWaiting());
-  }
-});
-
-self.addEventListener('activate',event=>{
-  event.waitUntil(
-    caches.keys()
-      .then(keys=>Promise.all(
-        keys
-          .filter(key=>(key.startsWith('ready-set-')||key.startsWith('ready-set:'))&&key!==CACHE)
-          .map(key=>caches.delete(key))
-      ))
-      .then(()=>self.clients.claim())
-  );
-});
-
-self.addEventListener('fetch',event=>{
-  if(event.request.method!=='GET')return;
-  const url=new URL(event.request.url);
-  if(url.origin!==location.origin)return;
-  if(event.request.mode==='navigate'){
-    event.respondWith(
-      fetch(event.request)
-        .then(response=>{
-          const copy=response.clone();
-          caches.open(CACHE).then(cache=>cache.put('./index.html',copy));
-          return response;
-        })
-        .catch(()=>caches.match('./index.html'))
-    );
-    return;
-  }
-  event.respondWith(
-    fetch(event.request)
-      .then(response=>{
-        if(response.ok){
-          const copy=response.clone();
-          caches.open(CACHE).then(cache=>cache.put(event.request,copy));
-        }
-        return response;
-      })
-      .catch(()=>caches.match(event.request))
-  );
+/* Ready & Set service worker — approved-design rebuild (2026-11-05).
+   Network-first for pages so updates land; cache-first for versioned static assets.
+   Removes caches from earlier builds. */
+const CACHE = 'ready-set:rebuild-20261107j';
+const CORE = ['./', './index.html', './rs/rs.css?v=20261107j', './rs/crew.js?v=20261107j', './rs/rs-taky-character-sync.js?v=20261107j', './rs/rs-app.js?v=20261107j', './rs/rs-taky-family.mjs?v=20261107j', './rs/taky-family-signin.mjs?v=20261107j', './rs/home-hero.webp', './manifest.webmanifest', './assets/icon-192.png'];
+self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
+self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
+self.addEventListener('fetch', e => {
+  const r = e.request; if (r.method !== 'GET') return;
+  const u = new URL(r.url); if (u.origin !== location.origin) return;
+  if (r.mode === 'navigate') { e.respondWith(fetch(r).then(res => { const c = res.clone(); caches.open(CACHE).then(x => x.put('./index.html', c)); return res; }).catch(() => caches.match('./index.html'))); return; }
+  e.respondWith(caches.match(r).then(hit => hit || fetch(r).then(res => { if (res.ok && /\/(rs|assets)\//.test(u.pathname)) { const c = res.clone(); caches.open(CACHE).then(x => x.put(r, c)); } return res; })));
 });
