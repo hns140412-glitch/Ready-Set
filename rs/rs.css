@@ -825,7 +825,8 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 /* ob1 — meet the crew (approved mockup docs/mockups/ob1-crew-meet-20261107.png, 851x1848). --u = one mockup pixel. */
 .gd-ob1.m1 { padding: 0 !important; background: #2a3a5c; display: block; }
 .m1 { --fw: min(100vw, calc(100dvh * 851 / 1848)); --u: calc(var(--fw) / 851); --m1-navy: #1c2f6e; }
-.m1-blur { position: absolute; inset: -30px; background: url(scenes/ob1-meet.webp?v=20261107i) center / cover; filter: blur(14px) brightness(.9); }
+.m1-blur { position: absolute; inset: 0; overflow: hidden; }
+.m1-blur::before { content: ''; position: absolute; inset: -30px; background: url(scenes/ob1-meet.webp?v=20261107i) center / cover; filter: blur(14px) brightness(.9); }
 .m1-frame { position: absolute; left: 50%; top: 50%; width: var(--fw); height: calc(var(--fw) * 1848 / 851); transform: translate(-50%, -50%); overflow: hidden; }
 .m1-frame > * { position: absolute; margin: 0; }
 .m1-bg { inset: 0; width: 100%; height: 100%; object-fit: cover; }
