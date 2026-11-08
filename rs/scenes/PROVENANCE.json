@@ -169,8 +169,9 @@
     "tool": "Codex built-in image_gen (ChatGPT plan)",
     "file": "rs\\scenes\\ob1-meet.webp",
     "dimensions": [
-      851,
-      1848
-    ]
+      1702,
+      3696
+    ],
+    "upscale": "RealESRGAN_x4plus on RENDER GPU then Lanczos to exactly 2x (1702x3696), 2026-11-08; source branch assets/rs-hd-20261108 5850dd7"
   }
 ]
