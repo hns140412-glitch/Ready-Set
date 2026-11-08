@@ -1,16 +1,20 @@
 {
- "source": "Approved mockup 07 (weekly home), 2026-11-05 set, 852px wide",
- "method": "Cropped and resized to 640px wide; sample child photo blurred in home-top; map/tent icons keyed to transparent background",
- "files": {
-  "home-top.webp": "mockup y75-425 (logo, slogan, scenery, flag, signpost)",
-  "home-props.webp": "mockup y1390-1690 (Dubi with sign, map, mug, books, lantern; CTA button overlaid by live button)",
-  "home-map.webp": "map icon beside the 'this week' heading",
-  "home-tent.webp": "tent icon beside the heading",
-  "photo-desk.webp": "mockup 14 y340-616 desk scene with Dubi; sample child photo blurred, covered by live photo frame",
-  "ob1-crew.webp": "six crew cut (BiRefNet) from the approved mockup upscaled 2x (RealESRGAN_x4plus, RENDER, 2026-11-08; branch assets/rs-hd-20261108 5850dd7), crop y1200-2920 of 1702x3696; bubble areas cleared for live HTML bubbles; bottom fade"
- },
- "items": {
-  "rs/items/{camera,compass,notebook,binoculars,bottle}.webp": "mockup 02 item row (x46-812, y864-1003), background keyed to transparent by edge flood fill, 2026-11-06"
- },
- "crew_07_12": "rs/crew/07-12 (+ -face): the shared ui_cutouts guide-07..12 were clipped on the right edge. Missing parts completed with local FLUX.2 Klein 4B reference edit on RENDER (4 seeds each, picks 14/11/12/11/11/13), BiRefNet cutout, 780px tall. Face/outfit/colour/pose kept; small details redrawn. Notes: branch assets/rs-hd-20261108 incoming/rs-hd-20261108/NOTES.txt"
+  "source": "Approved mockup 07 (weekly home), 2026-11-05 set, 852px wide",
+  "method": "Cropped and resized to 640px wide; sample child photo blurred in home-top; map/tent icons keyed to transparent background",
+  "files": {
+    "home-top.webp": "mockup y75-425 (logo, slogan, scenery, flag, signpost)",
+    "home-props.webp": "mockup y1390-1690 (Dubi with sign, map, mug, books, lantern; CTA button overlaid by live button)",
+    "home-map.webp": "map icon beside the 'this week' heading",
+    "home-tent.webp": "tent icon beside the heading",
+    "photo-desk.webp": "mockup 14 y340-616 desk scene with Dubi; sample child photo blurred, covered by live photo frame",
+    "ob1-crew.webp": "six crew cut (BiRefNet) from the approved mockup upscaled 2x (RealESRGAN_x4plus, RENDER, 2026-11-08; branch assets/rs-hd-20261108 5850dd7), crop y1200-2920 of 1702x3696; bubble areas cleared for live HTML bubbles; bottom fade"
+  },
+  "items": {
+    "rs/items/{camera,compass,notebook,binoculars,bottle}.webp": "mockup 02 item row (x46-812, y864-1003), background keyed to transparent by edge flood fill, 2026-11-06"
+  },
+  "crew_07_12": "rs/crew/07-12 (+ -face): the shared ui_cutouts guide-07..12 were clipped on the right edge. Missing parts completed with local FLUX.2 Klein 4B reference edit on RENDER (4 seeds each, picks 14/11/12/11/11/13), BiRefNet cutout, 780px tall. Face/outfit/colour/pose kept; small details redrawn. Notes: branch assets/rs-hd-20261108 incoming/rs-hd-20261108/NOTES.txt",
+  "ob1-crew.webp": {
+    "source": "Taky-supplied sitting-pose originals for crew 1-6 (2026-11-08), /mnt/project-files/ready-set-rebuild/crew-natural-20261108/core-sitting/",
+    "method": "alpha trim, LANCZOS fit into OB1_MEET hit boxes at 2x, composited (no upscale beyond source)"
+  }
 }
