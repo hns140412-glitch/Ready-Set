@@ -1,0 +1,35 @@
+Ready & Set art fix (rs-hd-20261108), RENDER PC (RTX 2080 Ti), 2026-11-08
+
+GOAL A: explorer crew guide-07..12 (whole figures, RGBA, trimmed, 24px transparent margin)
+Uncropped originals: NOT FOUND. Searched C:\Users\YKH-RENDER\YKH Dropbox\YKH_PERSONAL, C:\Temp, Desktop/Downloads/Pictures/Documents, ~/.codex
+  (names: guide-07..12, crew, explorer, sheet, lineup, turnaround, animal names). The only other copies
+  (C:\Temp\pc-t3\public\assets\crew\turnaround-front\guide-07..12.png, C:\Temp\appcheck\...\ui_cutouts) are the same clipped files.
+Codex redraw: ATTEMPTED, FAILED. codex exec (ChatGPT login) returned "You've hit your usage limit ... try again at Nov 12th, 2026 1:57 PM".
+  No credits were bought. The Codex prompts are kept in C:\Temp\rs-hd\work\cNN\PROMPT.md.
+USED INSTEAD: local, free FLUX.2 Klein 4B (fp8) reference-image edit in ComfyUI on RENDER (C:\ComfyUI_windows_portable), no API.
+  Input: each clipped original on a 1024x1536 #E6E6E6 canvas with free space to the right. Output 1024x1536, 4 steps, euler, cfg 1.0.
+  4 seeds per character, compared side by side with the original; the pick keeps face/outfit/colours/pose, completes the cut parts, and has no stray lines.
+  Rejected seeds: still-clipped, dropped tail, extra or doubled tail/ear, vertical line artifacts.
+  Picks: 07 seed14 | 08 seed11 | 09 seed12 | 10 seed11 | 11 seed11 | 12 seed13
+  Prompt template ({missing} per character below):
+    "Complete this cut-off character illustration. The image is cut by a straight vertical edge on the right side, so {missing} is/are missing.
+     Draw the missing parts so the whole character is complete and fully inside the frame, mirroring the visible left side.
+     Keep every part that is already visible (including any tail behind the legs, wings, ears, hair) and keep everything else exactly identical:
+     same character, same face and expression, same outfit, same colours, same pose, same position and size, same soft 3D storybook rendering.
+     Remove the straight cut edge. Plain flat light grey background, no shadow, no floor."
+  {missing}: 07 Sola "her big pointed ear on the right side, her right arm with black glove, and the fluffy cream tail"
+             08 Bello "his arm with black glove on the right side and the orange fluffy tail"
+             09 Moka "his brown mitten hand on the right side"
+             10 Nia "the lavender feathered wing on the right side, spread exactly like the left wing"
+             11 Kiro "his arm with black glove on the right side"
+             12 Peach "her long fluffy pink bunny ear on the right side, the wavy pink hair volume on the right, and her open hand on the right"
+Cutout: rembg birefnet-general (CUDA), alpha bbox trim (alpha>8), 24px transparent margin.
+Note: the new figures are regenerated at higher resolution (~800-900 px tall vs the old 523-864). Fine detail (buckles, embroidery) is redrawn and close to,
+  but not pixel-identical with, the old art. Please eyeball compare.jpg before replacing the assets.
+
+GOAL B: 2x upscale (1702x3696)
+  mockup-2x.png <- ob1-crew-meet-20261107.png (Ready-Set rebuild/approved-design-20261105)
+  bg-2x.png     <- C:\Temp\rs-ob1\out\bg-ob1-a.png
+  Model: RealESRGAN_x4plus (GPU, fp16, tiled 512), then Lanczos down to exactly 2x.
+  RealESRGAN_x4plus_anime_6B was tried and REJECTED: it flattened the painterly background (rocks/trees) into plastic cel shapes.
+  x4plus stays natural, with no visible oversharpening on faces or the depth-blurred background.
