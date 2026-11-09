@@ -826,7 +826,7 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .gd-ob1.m1 { padding: 0 !important; background: #2a3a5c; display: block; }
 .m1 { --fw: min(100vw, calc(100dvh * 851 / 1848)); --u: calc(var(--fw) / 851); --m1-navy: #1c2f6e; }
 .m1-blur { position: absolute; inset: 0; overflow: hidden; }
-.m1-blur::before { content: ''; position: absolute; inset: -30px; background: url(scenes/ob1-meet.webp?v=20261109a) center / cover; filter: blur(14px) brightness(.9); }
+.m1-blur::before { content: ''; position: absolute; inset: -30px; background: url(scenes/ob1-meet.webp?v=20261109b) center / cover; filter: blur(14px) brightness(.9); }
 .m1-frame { position: absolute; left: 50%; top: 50%; width: var(--fw); height: calc(var(--fw) * 1848 / 851); transform: translate(-50%, -50%); overflow: hidden; }
 .m1-frame > * { position: absolute; margin: 0; }
 .m1-bg { inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -906,3 +906,15 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .overlay .seg button { background: rgba(255, 255, 255, .6); border: 1.5px solid rgba(217, 164, 65, .55); color: #162e66; }
 .overlay .seg button.on, .overlay .outcome .o .seg button.on { background: linear-gradient(180deg, #2a4fa0, #162e66); border-color: #162e66; color: #fff; }
 .overlay .outcome .o { background: rgba(255, 255, 255, .55); border: 1px solid rgba(217, 164, 65, .45); }
+
+/* focus (11/09 Taky: "시계 원 시안과 동일하게, 거긴 방사형 괜찮아"): mockup 06 burst from the clock, clean clock face. */
+.focus .rays { -webkit-mask-image: none; mask-image: none; }
+.focus .rays::before { display: block; content: ""; position: absolute; inset: 0; width: auto; height: auto; left: 0; top: 0; transform: none;
+  background: repeating-conic-gradient(from 4deg at var(--cx, 50%) var(--cy, 42%), rgba(255, 140, 0, .42) 0deg 3.4deg, transparent 3.4deg 9deg, rgba(255, 150, 10, .26) 9deg 10.6deg, transparent 10.6deg 17deg);
+  -webkit-mask-image: radial-gradient(circle at var(--cx, 50%) var(--cy, 42%), transparent 0 calc(var(--cr, 130px) * .95), #000 calc(var(--cr, 130px) * 1.35));
+  mask-image: radial-gradient(circle at var(--cx, 50%) var(--cy, 42%), transparent 0 calc(var(--cr, 130px) * .95), #000 calc(var(--cr, 130px) * 1.35)); }
+.focus .clock { position: relative; z-index: 1; }
+.focus .clock-wrap .note { z-index: 1; }
+.focus .panel { position: relative; z-index: 2; }
+.focus .headline, .focus .pill { position: relative; z-index: 2; }
+.focus .music { z-index: 3; }
