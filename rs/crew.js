@@ -1,7 +1,7 @@
 /* Ready & Set — explorer crew projection (read-only consumer of TAKY shared crew board).
    Names/keywords/signature lines copied from explorer-crew-voice/personality-source-board-v1.js.
    Images: rs/crew/NN.webp (figure) / NN-face.webp — display-only resizes of characters/ui_cutouts.
-   07-24 figures (20261111c): Taky-supplied natural-pose originals (full body, transparent), trimmed + resized to 780px tall. Faces unchanged.
+   07-24 figures (20261111d): Taky-supplied natural-pose originals (full body, transparent), trimmed + resized to 780px tall. Faces unchanged.
    Voice: rs/voice/NN.mp3 — SIGNATURE clip (ElevenLabs, best of 3–12 takes, ASR-checked). Scene/recording lines: rs/voice/<id>/<key>.mp3 (script.json). */
 (function () {
   const C = [
@@ -31,7 +31,7 @@
     ['guide-24', '비비', ['유대', '즐거움', '창의', '특별함'], '함께라면 더 재미있어!']
   ].map(([id, name, keywords, signature], i) => {
     const n = String(i + 1).padStart(2, '0');
-    return { id, n, name, keywords, signature, core: i < 6, img: `rs/crew/${n}.webp?v=20261111c`, face: `rs/crew/${n}-face.webp?v=20261111c`, voice: `rs/voice/${n}.mp3?v=20261111c` };
+    return { id, n, name, keywords, signature, core: i < 6, img: `rs/crew/${n}.webp?v=20261111d`, face: `rs/crew/${n}-face.webp?v=20261111d`, voice: `rs/voice/${n}.mp3?v=20261111d` };
   });
   const byId = Object.fromEntries(C.map(c => [c.id, c]));
   window.RSCrew = { all: C, core: C.slice(0, 6), get: id => byId[id] || C[0] };
