@@ -826,7 +826,7 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .gd-ob1.m1 { padding: 0 !important; background: #2a3a5c; display: block; }
 .m1 { --fw: min(100vw, calc(100dvh * 851 / 1848)); --u: calc(var(--fw) / 851); --m1-navy: #1c2f6e; }
 .m1-blur { position: absolute; inset: 0; overflow: hidden; }
-.m1-blur::before { content: ''; position: absolute; inset: -30px; background: url(scenes/ob1-meet.webp?v=20261111b) center / cover; filter: blur(14px) brightness(.9); }
+.m1-blur::before { content: ''; position: absolute; inset: -30px; background: url(scenes/ob1-meet.webp?v=20261111c) center / cover; filter: blur(14px) brightness(.9); }
 .m1-frame { position: absolute; left: 50%; top: 50%; width: var(--fw); height: calc(var(--fw) * 1848 / 851); transform: translate(-50%, -50%); overflow: hidden; }
 .m1-frame > * { position: absolute; margin: 0; }
 .m1-bg { inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -960,3 +960,10 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .focus .rays::before { background: repeating-conic-gradient(from 0deg at 50% 42%, rgba(255, 140, 0, .62) 0deg .9deg, transparent .9deg 9deg);
   -webkit-mask-image: radial-gradient(ellipse 70% 58% at 50% 42%, transparent 70%, rgba(0, 0, 0, .7) 86%, #000 100%);
   mask-image: radial-gradient(ellipse 70% 58% at 50% 42%, transparent 70%, rgba(0, 0, 0, .7) 86%, #000 100%); }
+/* arrival band = the gathered crew group (mockup 01 bottom band), not a row of separate figures */
+.arrival-crew.group { padding: 0; align-items: flex-end; }
+.arrival-crew.group img { height: auto; width: 100%; max-height: none; margin: 0; object-fit: cover; object-position: 50% 62%; position: absolute; inset: 0; width: 100%; height: 100%; }
+.gd-label small { display: block; margin-top: 1px; }
+/* overlays on the focus screen use the mockup-06 palette (black / yellow), not the parchment red */
+.focus ~ .overlay .btn-k { background: #1b1b1b; color: #fff; }
+.focus ~ .overlay .btn-y { background: #fdd931; color: #141414; }
