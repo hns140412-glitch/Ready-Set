@@ -2,7 +2,7 @@
 // Google credential -> TAKY central /api/family/session -> globalThis.TAKY_FAMILY_RUNTIME.
 // Joined once per device: a renewable TAKY device token (localStorage) reconnects on the next visit.
 // The sheet lives outside #app so Ready's re-renders never drop its handlers.
-import { createFamilySignin } from './taky-family-signin.mjs?v=20261114a';
+import { createFamilySignin } from './taky-family-signin.mjs?v=20261114b';
 
 const sheet = document.getElementById('takyFamilySheet');
 if (sheet) {
@@ -31,11 +31,17 @@ if (sheet) {
   const status = document.getElementById('familyLoginStatus');
   if (status) new MutationObserver(() => { const v = VOICE[status.textContent.trim()]; if (v) status.textContent = v; })
     .observe(status, { childList: true, characterData: true, subtree: true });
-  const signin = createFamilySignin();
+  // viaCentral: the 합류 button signs in on the TAKY central page, so the same sign-in also serves Hide/Snap/
+  // Play Camp in this browser (Android, desktop). Opening them from Ready also hands over a 2-minute pass (iOS).
+  const signin = createFamilySignin({ viaCentral: true });
   signin.mount();
   // Ready calls expire() when TAKY central refuses the session (401: removed from the family, or an old
   // 1-hour Google sign-in): clear it, device sign-in included, and leave a note for the next time.
   globalThis.RsTakyFamily = Object.freeze({
+    // Open Hide & Seek / Snap & Pop / Play Camp already signed in (Taky 2026-11-14: "래디앤셋 로그인 하면
+    // 나머지는 일괄 차용"): the link carries a 2-minute pass in its #fragment; without a sign-in it is the plain link.
+    handoffUrl: url => signin.handoffUrl(url),
+    openApp: url => signin.openApp(url),
     expire() {
       signin.signOut();
       delete globalThis.TAKY_FAMILY_RUNTIME;   // a session the server already rejected is never reused
