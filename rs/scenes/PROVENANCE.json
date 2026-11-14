@@ -1,0 +1,177 @@
+[
+  {
+    "key": "camp",
+    "path": "C:\\Users\\YKH_1507-03\\.codex\\generated_images\\01a1ade9-a67b-7390-8556-99a1e2673092\\exec-605a0825-0c3c-4c4e-b881-e2c2bd440ad9.png",
+    "prompt": "Create a text-free painterly children's adventure storybook background plate, portrait 1080x1920. Alpine lake basecamp village, wooden chalets, lanterns, tents and blank navy pennants among pine trees, towering soft green mountains and turquoise lake. Warm cream sunlight, navy #203f86 accents, wood brown #8a5a34 and gold #d9a441. Rich hand-painted watercolor/gouache, charming detailed Korean children's exploration app art. Scene visible across whole image with quiet sky in upper quarter. No text, letters, UI, frames, or people. Save generated image for project camp scene.",
+    "source_mockup": "CODEX_TASK_RS_MOCKUP_UI.md GUIDE panel transcription; supplied images are historical style references",
+    "date": "2026-11-06",
+    "status": "GENERATED_CANDIDATE_PENDING_TAKY_REVIEW",
+    "tool": "built-in image_gen",
+    "file": "rs\\scenes\\camp.webp",
+    "size_bytes": 388016,
+    "quality": 82,
+    "dimensions": [
+      1080,
+      1920
+    ]
+  },
+  {
+    "key": "island",
+    "path": "C:\\Users\\YKH_1507-03\\.codex\\generated_images\\01a1ade9-a67b-7390-8556-99a1e2673092\\exec-06050b87-b0ea-4a6d-a507-9fa612743fc4.png",
+    "prompt": "Use case: illustration-story. Text-free painted background for children's exploration app. Portrait 1080x1920. First island seen from the turquoise sea: lush green cliffs, pine trees, sandy beach, winding path toward distant peaks. Charming detailed watercolor and gouache storybook art. Palette cream #fbf6ea, navy #203f86, wood brown #8a5a34, gold #d9a441, forest green and sky blue. No text, letters, logos, UI or frames. No people except where specifically requested.",
+    "source_mockup": "CODEX_TASK_RS_MOCKUP_UI.md GUIDE panel transcription; supplied images are historical style references",
+    "date": "2026-11-06",
+    "status": "GENERATED_CANDIDATE_PENDING_TAKY_REVIEW",
+    "tool": "built-in image_gen",
+    "file": "rs\\scenes\\island.webp",
+    "size_bytes": 353078,
+    "quality": 77,
+    "dimensions": [
+      1080,
+      1920
+    ]
+  },
+  {
+    "key": "base",
+    "path": "C:\\Users\\YKH_1507-03\\.codex\\generated_images\\01a1ade9-a67b-7390-8556-99a1e2673092\\exec-2828f5ec-c713-47e5-9664-e0b67a0e57ac.png",
+    "prompt": "Use case: illustration-story. Text-free painted background for children's exploration app. Portrait 1080x1920. Welcoming wooden alpine basecamp lodge, large blank navy banner, tents and glowing lanterns, forest and mountains. Charming detailed watercolor and gouache storybook art. Palette cream #fbf6ea, navy #203f86, wood brown #8a5a34, gold #d9a441, forest green and sky blue. No text, letters, logos, UI or frames. No people except where specifically requested.",
+    "source_mockup": "CODEX_TASK_RS_MOCKUP_UI.md GUIDE panel transcription; supplied images are historical style references",
+    "date": "2026-11-06",
+    "status": "GENERATED_CANDIDATE_PENDING_TAKY_REVIEW",
+    "tool": "built-in image_gen",
+    "file": "rs\\scenes\\base.webp",
+    "size_bytes": 360078,
+    "quality": 77,
+    "dimensions": [
+      1080,
+      1920
+    ]
+  },
+  {
+    "key": "sea",
+    "path": "C:\\Users\\YKH_1507-03\\.codex\\generated_images\\01a1ade9-a67b-7390-8556-99a1e2673092\\exec-2941160f-eb10-4d11-9a92-1f6a33fe8635.png",
+    "prompt": "Use case: illustration-story. Text-free painted background for children's exploration app. Portrait 1080x1920. A child explorer and cute orange fox sailing a wooden sailboat with a blank navy sail on a turquoise alpine lake. Charming detailed watercolor and gouache storybook art. Palette cream #fbf6ea, navy #203f86, wood brown #8a5a34, gold #d9a441, forest green and sky blue. No text, letters, logos, UI or frames. No people except where specifically requested.",
+    "source_mockup": "CODEX_TASK_RS_MOCKUP_UI.md GUIDE panel transcription; supplied images are historical style references",
+    "date": "2026-11-06",
+    "status": "GENERATED_CANDIDATE_PENDING_TAKY_REVIEW",
+    "tool": "built-in image_gen",
+    "file": "rs\\scenes\\sea.webp",
+    "size_bytes": 376548,
+    "quality": 82,
+    "dimensions": [
+      1080,
+      1920
+    ]
+  },
+  {
+    "key": "sky",
+    "path": "C:\\Users\\YKH_1507-03\\.codex\\generated_images\\01a1ade9-a67b-7390-8556-99a1e2673092\\exec-6e358162-99b7-4f18-b2fa-a4da4474b848.png",
+    "prompt": "Use case: illustration-story. Text-free painted background for children's exploration app. Portrait 1080x1920. A child explorer and cute penguin descending beneath a navy and cream parachute toward a lush island in turquoise sea. Charming detailed watercolor and gouache storybook art. Palette cream #fbf6ea, navy #203f86, wood brown #8a5a34, gold #d9a441, forest green and sky blue. No text, letters, logos, UI or frames. No people except where specifically requested.",
+    "source_mockup": "CODEX_TASK_RS_MOCKUP_UI.md GUIDE panel transcription; supplied images are historical style references",
+    "date": "2026-11-06",
+    "status": "GENERATED_CANDIDATE_PENDING_TAKY_REVIEW",
+    "tool": "built-in image_gen",
+    "file": "rs\\scenes\\sky.webp",
+    "size_bytes": 385504,
+    "quality": 82,
+    "dimensions": [
+      1080,
+      1920
+    ]
+  },
+  {
+    "key": "vibe-curious",
+    "path": "C:\\Users\\YKH_1507-03\\.codex\\generated_images\\01a1ade9-a67b-7390-8556-99a1e2673092\\exec-7a988bc4-dd49-4a39-b128-2d1883fd7474.png",
+    "prompt": "Use case: illustration-story. Text-free painted background for children's exploration app. Square 600x600. Curious discovery mood: winding woodland trail reveals a sparkling alpine lake beyond pine trees. Charming detailed watercolor and gouache storybook art. Palette cream #fbf6ea, navy #203f86, wood brown #8a5a34, gold #d9a441, forest green and sky blue. No text, letters, logos, UI or frames. No people except where specifically requested.",
+    "source_mockup": "CODEX_TASK_RS_MOCKUP_UI.md GUIDE panel transcription; supplied images are historical style references",
+    "date": "2026-11-06",
+    "status": "GENERATED_CANDIDATE_PENDING_TAKY_REVIEW",
+    "tool": "built-in image_gen",
+    "file": "rs\\scenes\\vibe-curious.webp",
+    "size_bytes": 125918,
+    "quality": 82,
+    "dimensions": [
+      600,
+      600
+    ]
+  },
+  {
+    "key": "vibe-calm",
+    "path": "C:\\Users\\YKH_1507-03\\.codex\\generated_images\\01a1ade9-a67b-7390-8556-99a1e2673092\\exec-0ec834f2-1fca-46e7-995f-d23798052df4.png",
+    "prompt": "Use case: illustration-story. Text-free painted background for children's exploration app. Square 600x600. Peaceful mood: still turquoise lake, soft clouds, gentle shore, tranquil mountain morning. Charming detailed watercolor and gouache storybook art. Palette cream #fbf6ea, navy #203f86, wood brown #8a5a34, gold #d9a441, forest green and sky blue. No text, letters, logos, UI or frames. No people except where specifically requested.",
+    "source_mockup": "CODEX_TASK_RS_MOCKUP_UI.md GUIDE panel transcription; supplied images are historical style references",
+    "date": "2026-11-06",
+    "status": "GENERATED_CANDIDATE_PENDING_TAKY_REVIEW",
+    "tool": "built-in image_gen",
+    "file": "rs\\scenes\\vibe-calm.webp",
+    "size_bytes": 103306,
+    "quality": 82,
+    "dimensions": [
+      600,
+      600
+    ]
+  },
+  {
+    "key": "vibe-bold",
+    "path": "C:\\Users\\YKH_1507-03\\.codex\\generated_images\\01a1ade9-a67b-7390-8556-99a1e2673092\\exec-4ba1836f-e579-4091-8b09-7980eb8ef96b.png",
+    "prompt": "Use case: illustration-story. Text-free painted background for children's exploration app. Square 600x600. Bold adventure mood: dramatic mountain summit, climbing path and golden sunrise. Charming detailed watercolor and gouache storybook art. Palette cream #fbf6ea, navy #203f86, wood brown #8a5a34, gold #d9a441, forest green and sky blue. No text, letters, logos, UI or frames. No people except where specifically requested.",
+    "source_mockup": "CODEX_TASK_RS_MOCKUP_UI.md GUIDE panel transcription; supplied images are historical style references",
+    "date": "2026-11-06",
+    "status": "GENERATED_CANDIDATE_PENDING_TAKY_REVIEW",
+    "tool": "built-in image_gen",
+    "file": "rs\\scenes\\vibe-bold.webp",
+    "size_bytes": 119178,
+    "quality": 82,
+    "dimensions": [
+      600,
+      600
+    ]
+  },
+  {
+    "key": "vibe-warm",
+    "path": "C:\\Users\\YKH_1507-03\\.codex\\generated_images\\01a1ade9-a67b-7390-8556-99a1e2673092\\exec-353aa02f-fb29-47c9-b1e8-c8d4ecc017cf.png",
+    "prompt": "Use case: illustration-story. Text-free painted background for children's exploration app. Square 600x600. Warm friendship mood: welcoming campsite with two chairs, lantern and warm sunset. Charming detailed watercolor and gouache storybook art. Palette cream #fbf6ea, navy #203f86, wood brown #8a5a34, gold #d9a441, forest green and sky blue. No text, letters, logos, UI or frames. No people except where specifically requested.",
+    "source_mockup": "CODEX_TASK_RS_MOCKUP_UI.md GUIDE panel transcription; supplied images are historical style references",
+    "date": "2026-11-06",
+    "status": "GENERATED_CANDIDATE_PENDING_TAKY_REVIEW",
+    "tool": "built-in image_gen",
+    "file": "rs\\scenes\\vibe-warm.webp",
+    "size_bytes": 120382,
+    "quality": 82,
+    "dimensions": [
+      600,
+      600
+    ]
+  },
+  {
+    "key": "home-header",
+    "path": "C:\\Users\\YKH_1507-03\\.codex\\generated_images\\01a1ade9-a67b-7390-8556-99a1e2673092\\exec-1e4285eb-c7f7-4804-adf7-458c6c416f93.png",
+    "prompt": "Use case: illustration-story. Text-free painted background for children's exploration app. Portrait 1080x1920. Alpine mountain basecamp panorama with cream tents, wooden cabins, navy pennants, blue lake and pine trees. Main scene in middle, spacious sky. Charming detailed watercolor and gouache storybook art. Palette cream #fbf6ea, navy #203f86, wood brown #8a5a34, gold #d9a441, forest green and sky blue. No text, letters, logos, UI or frames. No people except where specifically requested.",
+    "source_mockup": "CODEX_TASK_RS_MOCKUP_UI.md GUIDE panel transcription; supplied images are historical style references",
+    "date": "2026-11-06",
+    "status": "GENERATED_CANDIDATE_PENDING_TAKY_REVIEW",
+    "tool": "built-in image_gen",
+    "file": "rs\\scenes\\home-header.webp",
+    "size_bytes": 342992,
+    "quality": 82,
+    "dimensions": [
+      1080,
+      1920
+    ]
+  },
+  {
+    "key": "ob1-meet",
+    "path": "C:\\Users\\YKH-RENDER\\.codex\\generated_images\\01a1b446-0ea3-7751-9817-7316882f0f76\\exec-750dd469-b4ef-4ae5-8ede-43a3ca4f586a.png",
+    "prompt": "Codex exec on RENDER (C:\\Temp\\rs-ob1\\PROMPT.md): same scene as the approved mockup with all six characters, bubbles, logo, Korean text, button, dots, status bar and skip pill removed; signpost planks left blank.",
+    "source_mockup": "docs/mockups/ob1-crew-meet-20261107.png",
+    "date": "2026-11-07",
+    "status": "CANDIDATE_A_OF_2_PICKED",
+    "tool": "Codex built-in image_gen (ChatGPT plan)",
+    "file": "rs\\scenes\\ob1-meet.webp",
+    "dimensions": [
+      1702,
+      3696
+    ],
+    "upscale": "RealESRGAN_x4plus on RENDER GPU then Lanczos to exactly 2x (1702x3696), 2026-11-08; source branch assets/rs-hd-20261108 5850dd7"
+  }
+]
