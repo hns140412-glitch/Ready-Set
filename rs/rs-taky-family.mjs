@@ -1,7 +1,8 @@
 // Ready & Set: TAKY family login sheet (same contract as TAKY Mobile, vendored as taky-family-signin.mjs).
-// Google credential -> TAKY central /api/family/session -> globalThis.TAKY_FAMILY_RUNTIME (memory only).
+// Google credential -> TAKY central /api/family/session -> globalThis.TAKY_FAMILY_RUNTIME.
+// Joined once per device: a renewable TAKY device token (localStorage) reconnects on the next visit.
 // The sheet lives outside #app so Ready's re-renders never drop its handlers.
-import { createFamilySignin } from './taky-family-signin.mjs?v=20261107h';
+import { createFamilySignin } from './taky-family-signin.mjs?v=20261114a';
 
 const sheet = document.getElementById('takyFamilySheet');
 if (sheet) {
@@ -21,14 +22,19 @@ if (sheet) {
     '중앙 서버에서 승인된 가족을 선택하세요.': '어느 탐험대로 갈지 골라 줘요.',
     '가족 소속을 확인하지 못했습니다. 로그인 상태가 적용되지 않았습니다.': '명단에서 이름을 못 찾았어요. 가족 계정이 맞는지 확인해 줘요.',
     '중앙 가족 인증 완료 · 본인과 허용된 구성원만 조회합니다.': '합류 완료! 이제 우리 탐험대만 서로 볼 수 있어요.',
+    // One sign-in per device: the next visit reconnects by itself until 탐험대 나가기 (sign-out).
+    '이 기기의 가족 로그인을 이어가는 중…': '지난번 무전 주파수로 탐험본부에 다시 연결 중…',
+    '이 기기의 가족 로그인이 끝났어요. 다시 로그인해 주세요.': '이 기기의 탐험대 무전이 끝났어요. 버튼을 눌러 다시 합류해 줘요.',
+    '중앙 서버에 연결하지 못했어요. 잠시 뒤 다시 열거나 Google 로그인 버튼을 눌러 주세요.': '탐험본부 무전이 잠깐 안 닿아요. 조금 뒤 다시 열면 저절로 이어져요.',
+    '중앙 서버에 연결하지 못했어요. 잠시 뒤 다시 열어 주세요.': '탐험본부 무전이 잠깐 안 닿아요. 조금 뒤 다시 열면 저절로 이어져요.',
   };
   const status = document.getElementById('familyLoginStatus');
   if (status) new MutationObserver(() => { const v = VOICE[status.textContent.trim()]; if (v) status.textContent = v; })
     .observe(status, { childList: true, characterData: true, subtree: true });
   const signin = createFamilySignin();
   signin.mount();
-  // Ready calls expire() when the Google sign-in has run out (about an hour): clear the stale session
-  // and leave a friendly note in the sheet for the next time it opens.
+  // Ready calls expire() when TAKY central refuses the session (401: removed from the family, or an old
+  // 1-hour Google sign-in): clear it, device sign-in included, and leave a note for the next time.
   globalThis.RsTakyFamily = Object.freeze({
     expire() {
       signin.signOut();
