@@ -31,7 +31,9 @@ if (sheet) {
   const status = document.getElementById('familyLoginStatus');
   if (status) new MutationObserver(() => { const v = VOICE[status.textContent.trim()]; if (v) status.textContent = v; })
     .observe(status, { childList: true, characterData: true, subtree: true });
-  const signin = createFamilySignin();
+  // viaCentral: the 합류 button signs in on the TAKY central page, so the same sign-in also serves Hide/Snap/
+  // Play Camp in this browser (Android, desktop). Opening them from Ready also hands over a 2-minute pass (iOS).
+  const signin = createFamilySignin({ viaCentral: true });
   signin.mount();
   // Ready calls expire() when TAKY central refuses the session (401: removed from the family, or an old
   // 1-hour Google sign-in): clear it, device sign-in included, and leave a note for the next time.
@@ -39,7 +41,7 @@ if (sheet) {
     // Open Hide & Seek / Snap & Pop / Play Camp already signed in (Taky 2026-11-14: "래디앤셋 로그인 하면
     // 나머지는 일괄 차용"): the link carries a 2-minute pass in its #fragment; without a sign-in it is the plain link.
     handoffUrl: url => signin.handoffUrl(url),
-    async openApp(url) { location.assign(await signin.handoffUrl(url)); },
+    openApp: url => signin.openApp(url),
     expire() {
       signin.signOut();
       delete globalThis.TAKY_FAMILY_RUNTIME;   // a session the server already rejected is never reused
