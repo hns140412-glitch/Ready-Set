@@ -37,6 +37,7 @@
     plan: { tasks: [], target: 25, custom: '', bgm: 'essential', moods: [], sys: null },
     session: null,
     records: [],
+    carry: [], // unfinished tasks waiting for a later exploration: {root, cat, item, detail, outcome, from, at, n}
     guestHistory: [],
     result: null
   });
@@ -165,7 +166,7 @@
     try { navigator.vibrate && navigator.vibrate([180, 90, 180]); } catch (e) { /* noop */ }
   }
   /* ---------------- crew voice lines (REV06 §31-35): rs/voice/<crew>/<key>.mp3, ElevenLabs ---------------- */
-  const VTAG = '20261114a';
+  const VTAG = '20261116a';
   const REC_TXT = {
     'rec-intro': '오? 녹음할 시간이군.', 'rec-alone': '잠깐… 오늘은 나 혼자 듣기 좀 아까운데?', 'rec-fetch': '같이 들어줄 친구 좀 잡아올게!',
     'rec-back': '잡아왔다!', 'g-arrive': '나는 그냥 지나가고 있었는데?', 'rec-listen': '됐고, 이것 좀 같이 들어봐.',
@@ -202,9 +203,12 @@
     const p = S.plan; const min = targetMin();
     if (!p.tasks.length) { toast('먼저 오늘 할 탐험을 골라요'); return go('setup1'); }
     if (!min) { toast('목표 시간을 정해요'); return go('setup1'); }
+    if (S.session && !S.session.endAt) return go('focus'); // a second start never resets or duplicates a running exploration
+    const now = Date.now(); const tasks = p.tasks.map(t => Object.assign({}, t, { outcome: null }));
     S.session = {
-      id: uid('ses'), startAt: Date.now(), targetMs: min * 60000, pauses: [], bgm: p.bgm, bgmOn: p.bgm !== 'off', alerted: false,
-      tasks: p.tasks.map(t => Object.assign({}, t, { outcome: null })), moods: p.moods.slice(), sys: p.sys, recDone: false, recFile: null, guest: null
+      id: uid('ses'), startAt: now, targetMs: min * 60000, pauses: [], bgm: p.bgm, bgmOn: p.bgm !== 'off', alerted: false,
+      tasks, active: tasks[0].id, laps: [{ task: tasks[0].id, s: now, e: 0 }], // ONE ACTIVE TASK / ONE ACTIVE LAP
+      moods: p.moods.slice(), sys: p.sys, recDone: false, recFile: null, guest: null
     };
     save(); go('focus');
     if (S.session.bgmOn) bgmPlay(S.session.bgm);
@@ -213,17 +217,43 @@
   function isPaused(s) { const l = s.pauses[s.pauses.length - 1]; return !!(l && !l.e); }
   function pauseNow() { const s = S.session; if (!s || isPaused(s)) return; s.pauses.push({ s: Date.now(), e: 0, reason: '' }); save(); bgmPause(); UI.ov = 'pause'; render(); }
   function resume() { const s = S.session; if (!s) return; const l = s.pauses[s.pauses.length - 1]; if (l && !l.e) l.e = Date.now(); save(); UI.ov = null; render(); if (s.bgmOn) bgmPlay(s.bgm); setTimeout(() => sayScene('resume'), 300); }
+  /* Task / lap (canonical: TASK_CHANGE = LAP_END + NEXT_LAP_START; pauses do not count; app switch does not end a lap) */
+  const activeTask = s => s.tasks.find(t => t.id === s.active) || s.tasks[0];
+  function lapMs(s, taskId, now = Date.now()) {
+    let t = 0;
+    for (const l of s.laps || []) {
+      if (l.task !== taskId) continue; const e = l.e || s.endAt || now; let d = e - l.s;
+      for (const p of s.pauses) d -= Math.max(0, Math.min(e, p.e || now) - Math.max(l.s, p.s));
+      t += Math.max(0, d);
+    }
+    return t;
+  }
+  function switchTask(id) {
+    const s = S.session; if (!s || s.endAt || id === s.active || !s.tasks.some(t => t.id === id)) return false;
+    const now = Date.now(); if (!s.laps) s.laps = [{ task: activeTask(s).id, s: s.startAt, e: 0 }]; /* exploration started before laps existed */ const l = s.laps[s.laps.length - 1]; if (l && !l.e) l.e = now;
+    s.laps.push({ task: id, s: now, e: 0 }); s.active = id; save(); return true;
+  }
+  const OUTCOMES = [['COMPLETED', '다 했어요'], ['PARTIAL', '조금 남았어요'], ['DEFERRED', '다음에'], ['WAITING_FOR_PARENT', '도움이 필요해요'], ['BLOCKED', '막혔어요']];
+  const OUT_LAB = { COMPLETED: ['완료', ''], PARTIAL: ['일부', 'p'], DEFERRED: ['다음에', 'd'], WAITING_FOR_PARENT: ['도움 필요', 'w'], BLOCKED: ['막힘', 'b'] };
+  const CARRY_LAB = { PARTIAL: '조금 남음', DEFERRED: '미뤄둠', WAITING_FOR_PARENT: '도움 필요', BLOCKED: '막힘' };
   function finalize() {
     const s = S.session; if (!s || s.endAt) return; // exactly one finalization path
+    // SESSION_END != TASK_COMPLETE: ending never decides a task's result. Every task must be answered by the child first.
+    if (s.tasks.some(t => !OUT_LAB[t.outcome])) { UI.ov = 'end'; render(); toast('탐험마다 어디까지 했는지 골라요'); return; }
     const l = s.pauses[s.pauses.length - 1]; const now = Date.now(); if (l && !l.e) l.e = now;
+    const ll = s.laps && s.laps[s.laps.length - 1]; if (ll && !ll.e) ll.e = now;
     s.endAt = now;
-    s.tasks.forEach(t => { if (!t.outcome) t.outcome = 'COMPLETED'; });
     const f = focusMs(s);
     const rec = {
       id: s.id, startAt: s.startAt, endAt: s.endAt, targetMs: s.targetMs, focusMs: f, pausedMs: pausedMs(s, now), pauseCount: s.pauses.length,
-      tasks: s.tasks.map(t => ({ cat: t.cat, item: t.item, detail: t.detail, outcome: t.outcome })), moods: s.moods, sys: s.sys, recDone: s.recDone, recFile: s.recFile, guide: S.profile.guide
+      tasks: s.tasks.map(t => ({ cat: t.cat, item: t.item, detail: t.detail, outcome: t.outcome, root: t.root || t.id, lapMs: s.laps ? lapMs(s, t.id, now) : null })), moods: s.moods, sys: s.sys, recDone: s.recDone, recFile: s.recFile, guide: S.profile.guide
     };
     rec.state = reaction(rec);
+    // Carry-over: unfinished work never disappears. It waits (with its lineage) until a later exploration finishes it.
+    const old = S.carry || []; const roots = s.tasks.map(t => t.root || t.id);
+    S.carry = old.filter(c => !roots.includes(c.root));
+    s.tasks.forEach(t => { if (t.outcome !== 'COMPLETED') { const root = t.root || t.id, prev = old.find(c => c.root === root); S.carry.push({ root, cat: t.cat, item: t.item, detail: t.detail, outcome: t.outcome, from: s.id, at: now, n: (prev ? prev.n : 0) + 1 }); } });
+    S.plan.tasks = []; // the plan was this exploration's setup; finished tasks must not show again as today's to-do
     S.records.unshift(rec); S.records = S.records.slice(0, 400); S.result = rec.id; S.session = null; save(); // local save before any share
     bgmStop(); cleanupMic();
     go('result');
@@ -447,7 +477,7 @@
     const F = '"Pretendard Variable", Pretendard, "Apple SD Gothic Neo", sans-serif', T = 'Jua, ' + F, HAND = '"Gamja Flower", ' + F;
     try { await Promise.all(['56px Jua', '40px "Gamja Flower"'].map(f => document.fonts.load(f))); } catch (e) { /* system fallback */ }
     const P = S.profile || {}, gd = guide();
-    const [scene, crew, me] = await Promise.all([loadImg('rs/scenes/camp.webp?v=20261114a'), loadImg(gd.img), loadImg(P.avatar || P.photo || '')]);
+    const [scene, crew, me] = await Promise.all([loadImg('rs/scenes/camp.webp?v=20261116a'), loadImg(gd.img), loadImg(P.avatar || P.photo || '')]);
     // parchment + expedition scene band
     const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#fbf3e1'); bg.addColorStop(1, '#efe0bd'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
     if (scene) { const sh = scene.width * 420 / W; g.save(); g.globalAlpha = .9; g.drawImage(scene, 0, scene.height * .35, scene.width, sh, 0, 0, W, 420); g.restore();
@@ -527,9 +557,9 @@
       caption = `${shareName(S.profile)}, ${p.tasks[0] ? taskLabel(p.tasks[0]) + ' ' : ''}${min}분 탐험 출발! ${g.name}: "${say}"`;
     } else {
       const R = REACT[rec.state]; const save = rec.targetMs - rec.focusMs;
-      const mark = { COMPLETED: '✓', PARTIAL: '△', DEFERRED: '→' };
+      const mark = { COMPLETED: '✓', PARTIAL: '△', DEFERRED: '→', WAITING_FOR_PARENT: '?', BLOCKED: '!' };
       const g = guide(), say = shareSay('post', g, { state: rec.state, save, done: rec.tasks.filter(t => t.outcome === 'COMPLETED').length, total: rec.tasks.length });
-      data = { head: R[0], tasks: rec.tasks.map(t => ({ mark: mark[t.outcome] || '•', text: taskLabel(t) })), stats: [['목표', mmss(rec.targetMs)], ['집중', mmss(rec.focusMs)]].concat(save > 0 && rec.state !== 'STOPPED' ? [['TIME SAVE', mmss(save), '#a86f1c']] : []), say, date: ymd(rec.endAt).replace(/-/g, '.') };
+      data = { head: R[0], tasks: rec.tasks.map(t => ({ mark: mark[t.outcome] || '•', text: taskLabel(t) })), stats: [['목표', mmss(rec.targetMs)], ['집중', mmss(rec.focusMs)]].concat(save > 0 && !/^(STOPPED|PARTIAL_COMPLETE)$/.test(rec.state) ? [['TIME SAVE', mmss(save), '#a86f1c']] : []), say, date: ymd(rec.endAt).replace(/-/g, '.') };
       caption = `${shareName(S.profile)}의 탐험 기록: ${R[0]} 집중 ${mmss(rec.focusMs)} / 목표 ${mmss(rec.targetMs)}. ${g.name}: "${say}"`;
     }
     UI.share = { kind, caption, url: null, file: null }; UI.ov = 'share'; render();
@@ -578,7 +608,7 @@
       if (it) return `<button class="wk-cell ${it.k}" ${pos} data-act="wkCell" data-key="${key}"><b>${esc(it.t)}</b><span>${it.e}</span></button>`;
       return `<button class="wk-cell free empty" ${pos} data-act="wkCell" data-key="${key}" aria-label="${WK_DAYS[i]}요일 ${s === 'am' ? '오전' : s === 'pm' ? '오후' : '저녁'} 일정 정하기"><b>자유 시간</b><span>⛰️</span></button>`;
     };
-    const week = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261114a" alt=""><h1>이번 주 여정</h1><p class="wk-sub">오늘도 한 걸음, 더 멋진 너의 이야기를!</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261114a" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
+    const week = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261116a" alt=""><h1>이번 주 여정</h1><p class="wk-sub">오늘도 한 걸음, 더 멋진 너의 이야기를!</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261116a" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
       <div class="wk-grid">
         ${ti >= 0 ? `<i class="wk-colmark" style="grid-area:1/${ti + 2}/5/${ti + 3}"></i>` : ''}
         ${days.map((d, i) => { const k = ymd(d); return `<button class="wk-day ${i === ti ? 'today' : ''}" style="grid-area:1/${i + 2}" data-act="homeDay" data-day="${k}"><b>${WK_DAYS[i]}</b><small>${i === ti ? '오늘' : `${d.getMonth() + 1}/${d.getDate()}`}</small>${recOf(k).length ? '<i class="wk-dot" aria-label="탐험 기록 있음"></i>' : ''}</button>`; }).join('')}
@@ -588,7 +618,7 @@
       <button class="wk-cheer" data-act="rvWeekHome" aria-label="이번 주 여정 기록 열기"><span aria-hidden="true">⛰️</span>지금의 너도, 멋지게 성장하고 있어!<span aria-hidden="true">🌤️</span></button>
       `;
     const day = UI.homeDay || todayKey, dd = new Date(day + 'T12:00:00'), daily = recOf(day);
-    const dayBody = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261114a" alt=""><h1>오늘의 탐험길</h1><p class="wk-sub">작은 계획이, 좋은 하루를 만들어요.</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261114a" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
+    const dayBody = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261116a" alt=""><h1>오늘의 탐험길</h1><p class="wk-sub">작은 계획이, 좋은 하루를 만들어요.</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261116a" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
       <div class="journey-range"><button data-act="weekMove" data-d="-1" aria-label="이전 날">‹</button><b>${fmt(dd)} (${'일월화수목금토'[dd.getDay()]})</b><button data-act="weekMove" data-d="1" aria-label="다음 날">›</button></div>
       <div class="day-route"><div class="timeline">${daily.map(r => `<article><time>${hhmm(r.startAt)}</time><div><b>${esc(r.tasks.map(t => t.item).join(' · '))}</b><small>${mmss(r.focusMs)} 탐험 기록</small></div></article>`).join('')}<article class="current"><time>${day === todayKey ? hhmm(Date.now()) : '탐험'}</time><div><b>${planTxt ? esc(planTxt) : '새로운 탐험을 시작해요'}</b><button data-act="goSetup">시작하기 →</button></div></article></div></div>
       <div class="week-summary"><h2>이번 주 요약</h2><div><span>기록한 탐험<b>${tasks.length}개</b></span><span>실제 집중 시간<b>${(m => m > 0 && m < 60000 ? '1분 미만' : `${Math.round(m / 60000)}분`)(weekRecs.reduce((n, r) => n + r.focusMs, 0))}</b></span><span class="summary-ring" style="--rate:${rate}%"><strong>${rate}%</strong><small>완료율</small></span></div></div>
@@ -596,9 +626,9 @@
     const ek = UI.wkEdit, pick = ek ? `<div class="wk-pick" role="dialog" aria-label="일정 정하기"><div class="wk-pick-card"><h2>${WK_DAYS[+ek.split('-')[0]]}요일 ${{ am: '오전', pm: '오후', ev: '저녁' }[ek.split('-')[1]]} 일정</h2><p>매주 같은 요일에 반복돼요.</p><div class="wk-pick-grid">${WK_KINDS.map((k, i) => `<button class="wk-cell ${k.k} ${wk[ek] && wk[ek].t === k.t ? 'on' : ''}" data-act="wkSet" data-i="${i}"><b>${k.t}</b><span>${k.e}</span></button>`).join('')}</div><div class="wk-pick-row"><button class="gd-btn" data-act="wkSet" data-i="-1">비우기</button><button class="gd-btn navy" data-act="wkClose">닫기</button></div></div></div>` : '';
     return `<section class="screen wk">
       <div class="wk-bg"><img src="rs/scenes/home-header.webp" alt=""></div>
-      <header class="wk-top"><img class="wk-art" src="rs/art/home-top.webp?v=20261114a" alt="TAKY Ready &amp; Set. 좋은 친구와 어디든 멋진 이야기가 시작돼!"><button class="wk-me" data-act="nav" data-to="settings" aria-label="내 정보"><img src="${P.avatar || P.photo || g.face}" alt=""></button></header>
+      <header class="wk-top"><img class="wk-art" src="rs/art/home-top.webp?v=20261116a" alt="TAKY Ready &amp; Set. 좋은 친구와 어디든 멋진 이야기가 시작돼!"><button class="wk-me" data-act="nav" data-to="settings" aria-label="내 정보"><img src="${P.avatar || P.photo || g.face}" alt=""></button></header>
       <div class="wk-card">${UI.homeView === 'day' ? dayBody : week}</div>
-      <div class="wk-props"><img src="rs/art/home-props.webp?v=20261114a" alt=""><button class="wk-cta" data-act="homeView" data-k="${UI.homeView === 'day' ? 'week' : 'day'}">${I.cal}<span>${UI.homeView === 'day' ? '이번 주 보기' : '오늘 보기'}</span><b aria-hidden="true">›</b></button></div>
+      <div class="wk-props"><img src="rs/art/home-props.webp?v=20261116a" alt=""><button class="wk-cta" data-act="homeView" data-k="${UI.homeView === 'day' ? 'week' : 'day'}">${I.cal}<span>${UI.homeView === 'day' ? '이번 주 보기' : '오늘 보기'}</span><b aria-hidden="true">›</b></button></div>
       <nav class="journey-nav wk-nav"><button class="${UI.homeView === 'day' ? '' : 'on'}" data-act="homeView" data-k="week">${I.home}<span>이번 주 여정</span></button><button data-act="goSetup">${I.target}<span>탐험하기</span></button><button data-act="campView">${MAP_IC}<span>베이스캠프</span></button><button data-act="editGuide">${I.chat}<span>친구들</span></button><button data-act="nav" data-to="settings">${I.gear}<span>더보기</span></button></nav>
       ${pick}
     </section>`;
@@ -625,6 +655,7 @@
         <div class="card" style="flex:0 1 auto;min-height:0;display:flex;flex-direction:column">
           <p class="label">오늘의 탐험 <small>${p.tasks.length}개</small></p>
           <div class="task-list" style="flex:1 1 auto;min-height:0;overflow-y:auto">${p.tasks.length ? p.tasks.map(t => `<div class="task-item"><span class="tag">${t.cat} · ${esc(t.item)}</span><input class="field" data-detail="${t.id}" value="${esc(t.detail)}" placeholder="무엇을? 예: 20문제" maxlength="30" enterkeyhint="done"><button class="x" data-act="delTask" data-id="${t.id}" aria-label="${esc(t.item)} 빼기">${I.x}</button></div>`).join('') : '<p class="hint" style="margin:8px 0 10px">아래에서 과제를 골라 담아요</p>'}</div>
+          ${(c => c.length ? `<div class="carry-row"><small>이어서 할 탐험</small><div class="carry-chips">${c.map(x => `<button data-act="carryAdd" data-root="${x.root}">${esc(x.item)}${x.detail ? ' · ' + esc(x.detail) : ''}<em>${CARRY_LAB[x.outcome] || '남음'}</em></button>`).join('')}</div></div>` : '')((S.carry || []).filter(x => !p.tasks.some(t => t.root === x.root)))}
           <div class="add-row" style="margin-top:8px">${Object.keys(CATS).map(c => `<button data-act="cat" data-cat="${c}">+ ${c}</button>`).join('')}</div>
         </div>
         <div class="card"><p class="label">목표 시간 <small>${min ? min + '분' : '정해 주세요'}</small></p>
@@ -680,15 +711,15 @@
     </svg>`;
   }
   function vFocus() {
-    const s = S.session; const first = s.tasks[0]; const more = s.tasks.length - 1;
-    const hasRec = s.tasks.some(t => t.item === '문장 녹음');
+    const s = S.session; const first = activeTask(s); const more = s.tasks.length - 1;
+    const hasRec = first.item === '문장 녹음'; // REC only while the active task is a speaking task
     const bgmName = (BGMS.find(b => b[0] === s.bgm) || BGMS[0])[1];
     return `<section class="screen focus">
       <div class="rays"><i style="left:8%;top:14%">★</i><i style="right:12%;top:30%">★</i><i style="left:6%;top:52%">★</i><i style="right:7%;top:56%">★</i><i style="left:14%;top:34%;font-size:12px">★</i></div>
       <div class="stage">
         <button class="music ${s.bgmOn ? '' : 'off'}" data-act="music" aria-label="집중 음악 ${s.bgmOn ? '끄기' : '켜기'}">${I.note}</button>
         <h1 class="headline"><span class="l1">그냥!</span><br>지금 하면 돼!</h1>
-        <div class="pill">${I.book}<span>${esc(first.cat)} · ${esc(first.detail || first.item)}${more > 0 ? ` 외 ${more}` : ''}</span></div>
+        ${more > 0 ? `<button class="pill pill-btn" data-act="taskAsk" aria-label="탐험 바꾸기">${I.book}<span>${esc(first.cat)} · ${esc(first.detail || first.item)} 외 ${more}</span><i aria-hidden="true">›</i></button>` : `<div class="pill">${I.book}<span>${esc(first.cat)} · ${esc(first.detail || first.item)}</span></div>`}
         <div class="clock-wrap">${clockSVG()}<p class="note l">오늘도<br>너는 충분히<br>멋져!</p><p class="note r">집중하는<br>지금이<br>멋진 너야!</p></div>
         <div class="panel">
           <div class="p-top">
@@ -722,11 +753,19 @@
     </div></div>`;
   }
   function vEndOv() {
-    const s = S.session; const O = [['COMPLETED', '다 했어요'], ['PARTIAL', '조금 남았어요'], ['DEFERRED', '다음에']];
+    const s = S.session; const left = s.tasks.filter(t => !OUT_LAB[t.outcome]).length;
     return `<div class="overlay" data-act="ovClose"><div class="pop" data-stop>
-      <h3>탐험 끝낼까요?</h3><p>과제마다 어디까지 했는지 골라요.</p>
-      <div class="outcome">${s.tasks.map(t => `<div class="o"><b>${esc(taskLabel(t))}</b><div class="seg">${O.map(([k, l]) => `<button class="${(t.outcome || 'COMPLETED') === k ? 'on' : ''}" data-act="outcome" data-id="${t.id}" data-k="${k}">${l}</button>`).join('')}</div></div>`).join('')}</div>
-      <div class="row2"><button class="btn-w" data-act="ovClose">계속하기</button><button class="btn-y" data-act="finish">탐험 끝내기</button></div>
+      <h3>탐험 끝낼까요?</h3><p>${left ? `탐험마다 어디까지 했는지 골라요. <b>${left}개 남았어요.</b>` : '다 골랐어요. 이대로 기록할게요.'}</p>
+      <div class="outcome">${s.tasks.map(t => `<div class="o ${OUT_LAB[t.outcome] ? '' : 'ask'}"><b>${esc(taskLabel(t))}</b><div class="seg o5">${OUTCOMES.map(([k, l]) => `<button class="${t.outcome === k ? 'on' : ''}" data-act="outcome" data-id="${t.id}" data-k="${k}" aria-pressed="${t.outcome === k}">${l}</button>`).join('')}</div></div>`).join('')}</div>
+      <div class="row2"><button class="btn-w" data-act="ovClose">계속하기</button><button class="btn-y" data-act="finish" ${left ? 'disabled' : ''}>탐험 끝내기</button></div>
+    </div></div>`;
+  }
+  function vTaskOv() {
+    const s = S.session; const cur = activeTask(s);
+    return `<div class="overlay" data-act="ovClose"><div class="pop" data-stop>
+      <h3>어느 탐험을 할까요?</h3><p>한 번에 하나씩! 시간은 탐험마다 따로 기록돼요.</p>
+      <div class="tasksw">${s.tasks.map(t => `<button class="${t.id === cur.id ? 'on' : ''} ${t.outcome === 'COMPLETED' ? 'ok' : ''}" data-act="taskGo" data-id="${t.id}" aria-pressed="${t.id === cur.id}"><b>${esc(taskLabel(t))}</b><small>${mmss(lapMs(s, t.id))}${t.id === cur.id ? ' · 지금 하는 중' : t.outcome === 'COMPLETED' ? ' · 다 했어요' : ''}</small></button>`).join('')}</div>
+      <div class="row2"><button class="btn-w" data-act="ovClose">닫기</button><button class="btn-y" data-act="taskDone">이건 다 했어요</button></div>
     </div></div>`;
   }
   function vRecIntro() {
@@ -782,13 +821,13 @@
   function vResult() {
     const r = S.records.find(x => x.id === S.result); if (!r) return vHome();
     const R = REACT[r.state]; const g = CREW.get(r.guide); const save = r.targetMs - r.focusMs;
-    const lab = { COMPLETED: ['완료', ''], PARTIAL: ['일부', 'p'], DEFERRED: ['다음에', 'd'] };
+    const lab = OUT_LAB; const laps = r.tasks.length > 1 && r.tasks.every(t => t.lapMs != null);
     return `<section class="screen warm result">
       <div class="top"><h1>오늘의 탐험 보고서</h1></div>
       <h1>${esc(R[0])}</h1><p class="sub">${esc(R[1])}</p>
       <div class="grow">
-        <div class="stat3"><div><small>목표</small><b>${mmss(r.targetMs)}</b></div><div><small>집중</small><b>${mmss(r.focusMs)}</b></div>${save > 0 && r.state !== 'STOPPED' ? `<div class="save"><small>TIME SAVE</small><b>${mmss(save)}</b></div>` : `<div><small>멈춘 시간</small><b>${mmss(r.pausedMs)}</b></div>`}</div>
-        <div class="res-tasks" style="max-height:30dvh;overflow-y:auto">${r.tasks.map(t => `<div><span>${esc(taskLabel(t))}</span><em class="${lab[t.outcome][1]}">${lab[t.outcome][0]}</em></div>`).join('')}</div>
+        <div class="stat3"><div><small>목표</small><b>${mmss(r.targetMs)}</b></div><div><small>집중</small><b>${mmss(r.focusMs)}</b></div>${save > 0 && !/^(STOPPED|PARTIAL_COMPLETE)$/.test(r.state) ? `<div class="save"><small>TIME SAVE</small><b>${mmss(save)}</b></div>` : `<div><small>멈춘 시간</small><b>${mmss(r.pausedMs)}</b></div>`}</div>
+        <div class="res-tasks" style="max-height:30dvh;overflow-y:auto">${r.tasks.map(t => { const o = lab[t.outcome] || lab.PARTIAL; return `<div><span>${esc(taskLabel(t))}</span>${laps ? `<small class="lap">${mmss(t.lapMs)}</small>` : ''}<em class="${o[1]}">${o[0]}</em></div>`; }).join('')}</div>
         ${guideScene(g)}
         <div class="guide-say solo"><div class="bubble"><small>${esc(g.name)}</small>${esc(R[2])}</div></div>
       </div>
@@ -877,7 +916,7 @@
     if (kind === 'sky') mid = `<rect y="318" width="400" height="82" fill="#3f86c2"/><path d="M140 322 Q190 270 250 322Z" fill="#4c8a52"/>${[60, 300].map(x => `<ellipse cx="${x}" cy="120" rx="44" ry="16" fill="#fff" opacity=".85"/>`).join('')}`;
     return `<svg class="plate" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="sk-${kind}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient></defs><rect width="400" height="400" fill="url(#sk-${kind})"/>${kind === 'sky' ? '' : mtn}${mid}${kind === 'base' || kind === 'camp' ? pines(kind === 'base' ? 300 : 292, '#2f5b45') : ''}</svg>`;
   }
-  const sceneBg = k => SCENE_FILES.includes(k) ? `<img class="plate" src="rs/scenes/${k}.webp?v=20261114a" alt="">` : plate(k);
+  const sceneBg = k => SCENE_FILES.includes(k) ? `<img class="plate" src="rs/scenes/${k}.webp?v=20261116a" alt="">` : plate(k);
   const gdHead = (n, t, sub) => `<header class="gd-head${n ? '' : ' no-step'}">${n ? `<span class="gd-no">${n}</span>` : ''}<h1>${t}</h1><p>${sub}</p></header>`;
   const gdDots = n => `<div class="gd-dots" aria-label="${n}/8 단계">${Array.from({length: 5}, (_, i) => `<i class="${i < Math.ceil(n * 5 / 8) ? 'on' : ''}"></i>`).join('')}</div>`;
   const arrow = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
@@ -885,7 +924,7 @@
   // ob1 meet screen: [core index, bubble box, tap box over the figure, name colour] in mockup pixels, mockup reading order.
   const OB1_MEET = [[1, [42, 598, 218, 724], [40, 720, 300, 1060], '#e0457b'], [2, [388, 642, 568, 754], [300, 680, 560, 1060], '#233f8f'], [3, [670, 678, 826, 804], [560, 735, 830, 1060], '#7a3d1c'],
     [0, [34, 1000, 208, 1094], [20, 1100, 300, 1440], '#233f8f'], [4, [390, 1010, 556, 1118], [300, 1120, 545, 1440], '#233f8f'], [5, [678, 996, 844, 1100], [545, 1102, 830, 1440], '#233f8f']];
-  const ART_V = '20261114a';
+  const ART_V = '20261116a';
   const OB1_PEAK = '<svg class="m1-peak" viewBox="0 0 64 30" aria-hidden="true"><path d="M2 28 L22 6 L31 16 L40 4 L62 28" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M15 28 L26 17 L31 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg>';
   const OB1_COMPASS = '<svg class="m1-compass" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="21" fill="none" stroke="currentColor" stroke-width="3"/><path d="M32 2 L36 28 L62 32 L36 36 L32 62 L28 36 L2 32 L28 28Z" fill="currentColor"/><path d="M32 12 L34.5 29.5 L32 32 L29.5 29.5Z" fill="#fff" opacity=".9"/><circle cx="32" cy="32" r="3" fill="#fff"/></svg>';
   const OB1_LOGO = '<svg class="m1-mark" viewBox="0 0 200 128" aria-hidden="true"><path d="M58 70 L92 22 L104 38 L112 28 L142 70" fill="#1d3577" stroke="#fff" stroke-width="7" stroke-linejoin="round"/><path d="M84 34 L92 22 L100 33 L94 30 L89 36Z" fill="#fff"/><text x="100" y="118" text-anchor="middle" font-family="Jua, Pretendard Variable, sans-serif" font-size="62" font-weight="900" fill="#1d3577" stroke="#fff" stroke-width="10" paint-order="stroke" letter-spacing="-1">TAKY</text></svg>';
@@ -988,7 +1027,7 @@
     }
     if (s === 'ob3') {
       return wrap('camp', `${gdHead(3, '사진 찍기 / 사진 보관함 등록', '지금의 너를 기록해요. 탐험 여정에 특별한 추억이 될 거예요!')}
-        <div class="gd-photo pd"><img class="pd-bg" src="rs/art/photo-desk.webp?v=20261114a" alt=""><div class="pd-frame">${d.photo ? `<img src="${d.photo}" alt="내 사진">` : `<span class="pd-empty"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>내 사진</span>`}</div></div>
+        <div class="gd-photo pd"><img class="pd-bg" src="rs/art/photo-desk.webp?v=20261116a" alt=""><div class="pd-frame">${d.photo ? `<img src="${d.photo}" alt="내 사진">` : `<span class="pd-empty"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>내 사진</span>`}</div></div>
         <div class="gd-photo-btns"><label class="gd-btn navy"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>사진 찍기<input type="file" accept="image/*" capture="user" data-photo hidden></label><label class="gd-btn">사진 보관함에서 선택<input type="file" accept="image/*" data-photo hidden></label></div><div class="photo-recent" aria-label="이 기기에서 고른 최근 사진">${Array.from({length:4},(_,i)=>(d.recentPhotos||[])[i]?`<button data-act="obRecent" data-i="${i}" aria-label="최근 사진 ${i+1} 선택"><img src="${d.recentPhotos[i]}" alt="최근 사진 ${i+1}"></button>`:`<span aria-label="빈 사진 자리">${I.book}</span>`).join('')}</div>
         <p class="gd-preview">이 사진은 탐험 여정 속에서 프로필로 사용돼요!</p><div class="gd-names"><label>닉네임 <small>공유할 때 앞</small><input class="gd-field" data-draft="nickname" value="${esc(d.nickname)}" placeholder="예: 별이" maxlength="10" autocomplete="off"></label><label>이름 <small>괄호 안</small><input class="gd-field" data-draft="name" value="${esc(d.name)}" placeholder="예: 김하늘" maxlength="10" autocomplete="off"></label></div>
         <p class="gd-preview">공유 이름: <b id="pvName">${esc(shareName({ nickname: d.nickname.trim(), name: d.name.trim() }) || '닉네임(이름)')}</b></p>
@@ -1004,7 +1043,7 @@
       return wrap('camp', `${gdHead('4+', '네 캐릭터가 도착했어!', '너와 꼭 닮은 탐험가가 여기 있어. 어떤 모습이 가장 마음에 들어?')}
         <div class="arrival-cards hood-${hood}">${dirs.map((v, i) => ['ABC'[i], VIBE_DIR[v][0], VIBE_DIR[v][1]]).map(([k,t,q],i)=>`<button data-act="obCharacter" data-k="${k}" class="${choice===k?'on':''}" aria-pressed="${choice===k}" aria-label="${k} ${t}"><span class="ac-tag"><b>${k}</b>${t}</span><i class="ac-check" aria-hidden="true">✓</i>${d.photo ? `<span class="ac-me ${ai && ai.imgs ? 'ai' : ''}"><img src="${charImg(i)}" alt="${k} 모습의 나"></span>` : `<img src="${CREW.core[i].img}" alt="">`}<em>“${q}”</em></button>`).join('')}</div>
         ${d.photo && ai && ai.state === 'pending' ? '<p class="ai-note" role="status">AI가 너의 2.5D 캐릭터를 그리는 중이에요… (1분쯤 걸려요)</p>' : ''}
-        <div class="arrival-crew group" aria-hidden="true"><img src="rs/art/ob1-crew.webp?v=20261114a" alt=""></div>
+        <div class="arrival-crew group" aria-hidden="true"><img src="rs/art/ob1-crew.webp?v=20261116a" alt=""></div>
         <p class="gd-label">후드 색을 골라볼까?<small>선택한 색이 네 캐릭터와 탐험대 친구들에게 적용돼. 우리는 하나의 팀이니까!</small></p><div class="hood-options">${[['navy','네이비'],['gold','골드'],['forest','숲 초록'],['rose','로즈']].map(([k,n])=>`<button class="hood-${k} ${hood===k?'on':''}" data-act="obHood" data-k="${k}" aria-pressed="${hood===k}" aria-label="${n}"><i></i><span>${n}</span></button>`).join('')}</div>
         <p class="gd-hand">다른 우리가, 더 멋진 이야기를 만든다!</p>
         ${gdCta('obGo', '이 캐릭터로 시작하기', true)}`);
@@ -1012,7 +1051,7 @@
     if (s === 'ob4') {
       return wrap('camp', `${gdHead(4, '아이템 선정 + 느낌 고르기', '탐험에 꼭 필요한 아이템 하나와, 너다운 느낌 두 개를 골라보세요! 길잡이가 하나를 더해 너만의 캐릭터 세 가지를 만들어요.')}
         <p class="gd-label">탐험 아이템 <small>(하나만 선택)</small></p>
-        <div class="gd-items">${ITEMS.map(([k, n]) => `<button class="${d.item === k ? 'on' : ''}" data-act="obItem" data-k="${k}" aria-pressed="${d.item === k}"><img src="rs/items/${k}.webp?v=20261114a" alt=""><span>${n}</span></button>`).join('')}</div>
+        <div class="gd-items">${ITEMS.map(([k, n]) => `<button class="${d.item === k ? 'on' : ''}" data-act="obItem" data-k="${k}" aria-pressed="${d.item === k}"><img src="rs/items/${k}.webp?v=20261116a" alt=""><span>${n}</span></button>`).join('')}</div>
         <p class="gd-label">어떤 느낌이 더 너 같아? <small>두 개 고르면, 세 번째는 ${esc(josa(guideNick(d), '이', '가'))} 골라줘요</small></p>
         <div class="gd-vibes">${(() => { const pk = d.vibes || [], sy = vibeSys(pk); return VIBES.map(([k, n, t]) => { const i = pk.indexOf(k), sys = sy === k; return `<button class="v-${k} ${i >= 0 ? 'on' : ''} ${sys ? 'sys' : ''}" data-act="obVibe" data-k="${k}" aria-pressed="${i >= 0}" ${i < 0 && pk.length >= 2 ? 'disabled' : ''}>${i >= 0 ? `<em class="v-no">${i + 1}</em>` : sys ? `<em class="v-no g">${esc(guideNick(d))} 픽</em>` : ''}<i style="background-image:url(rs/scenes/vibe-${k}.webp)"></i><b>${n}</b><span>${t}</span></button>`; }).join(''); })()}</div>
         <p class="gd-hand">${(d.vibes || []).length === 2 ? '좋아! 이 세 가지 느낌으로 너의 모습을 만들어 볼게!' : '이제, 너만의 탐험대 캐릭터가 준비되고 있어요!'}</p>
@@ -1131,7 +1170,7 @@
   let scenesWarm = false;
   function preloadScenes() {
     if (scenesWarm) return; scenesWarm = true;
-    const go = () => SCENE_FILES.forEach(k => { const i = new Image(); i.decoding = 'async'; i.src = `rs/scenes/${k}.webp?v=20261114a`; (window.__rsWarm = window.__rsWarm || []).push(i); });
+    const go = () => SCENE_FILES.forEach(k => { const i = new Image(); i.decoding = 'async'; i.src = `rs/scenes/${k}.webp?v=20261116a`; (window.__rsWarm = window.__rsWarm || []).push(i); });
     (window.requestIdleCallback || (f => setTimeout(f, 400)))(go);
   }
   function render() {
@@ -1142,7 +1181,8 @@
     if (UI.ov === 'sheet') html += vSheet();
     if (UI.ov === 'pause') html += vPauseOv();
     if (UI.ov === 'stale' && S.session) html += vStaleOv();
-    if (UI.ov === 'end') html += vEndOv();
+    if (UI.ov === 'end' && S.session) html += vEndOv();
+    if (UI.ov === 'tasks' && S.session) html += vTaskOv();
     if (UI.ov === 'recIntro') html += vRecIntro();
     if (UI.ov === 'share' && UI.share) html += vShareOv();
     if (UI.ov === 'reset') html += vResetOv();
@@ -1225,6 +1265,11 @@
     endAsk: () => { UI.ov = 'end'; render(); },
     outcome: e => { const t = S.session.tasks.find(x => x.id === e.dataset.id); if (t) t.outcome = e.dataset.k; save(); render(); },
     finish: () => finalize(),
+    taskAsk: () => { UI.ov = 'tasks'; render(); },
+    taskGo: e => { switchTask(e.dataset.id); UI.ov = null; render(); },
+    // the child says the active task is done: keep that answer, close its lap, move to the next unanswered task
+    taskDone: () => { const s = S.session; if (!s) return; const cur = activeTask(s); cur.outcome = 'COMPLETED'; save(); const nx = s.tasks.find(t => !OUT_LAB[t.outcome]); if (nx) { switchTask(nx.id); UI.ov = null; render(); toast(`다음 탐험: ${nx.item}`); } else { UI.ov = 'end'; render(); } },
+    carryAdd: e => { const c = (S.carry || []).find(x => x.root === e.dataset.root); if (!c || S.plan.tasks.some(t => t.root === c.root)) return; S.plan.tasks.push({ id: uid('t'), cat: c.cat, item: c.item, detail: c.detail || '', root: c.root }); save(); render(); },
     // gap becomes a recorded pause (reason 자리 비움), then the usual end-of-exploration step: the child still marks outcomes
     staleEnd: () => { const s = S.session; if (!s) return; const seen = (UI.stale && UI.stale.seen) || s.startAt; s.pauses.push({ s: seen, e: Date.now(), reason: '자리 비움', auto: true }); s.seenAt = Date.now(); save(); UI.stale = null; UI.ov = 'end'; render(); },
     staleKeep: () => { UI.stale = null; UI.ov = null; markSeen(true); render(); },

@@ -77,7 +77,7 @@
     const d = dur(rec.focusMs);
     facts.push({ k: 'focus', w: 2, big: d.v, unit: d.u, title: '오늘 집중한 시간', note: rec.focusMs < rec.targetMs ? `목표 ${mins(rec.targetMs)}분 안에서 해냈어.` : `목표 ${mins(rec.targetMs)}분, 끝까지 가 본 시간이야.` });
     const save = rec.targetMs - rec.focusMs;
-    if (save >= 60000 && n) facts.push({ k: 'save', w: 3, big: String(mins(save)), unit: '분', title: 'TIME SAVE', note: pick(['시계보다 먼저 도착했어.', '남은 시간은 너의 자유 시간!'], seed) });
+    if (save >= 60000 && n === total) facts.push({ k: 'save', w: 3, big: String(mins(save)), unit: '분', title: 'TIME SAVE', note: pick(['시계보다 먼저 도착했어.', '남은 시간은 너의 자유 시간!'], seed) });
     if (rec.pauseCount && n) facts.push({ k: 'comeback', w: 3, big: String(rec.pauseCount), unit: '번', title: '멈췄다가 다시 돌아옴', note: '멈춰도 돌아오면 탐험은 이어져.' });
     const today = records.filter(r => ymd(r.startAt) === ymd(rec.startAt));
     if (today.length >= 2) facts.push({ k: 'today', w: 4, big: String(today.length), unit: '번째', title: '오늘의 탐험', note: `오늘만 벌써 ${today.length}번 출발했어.` });

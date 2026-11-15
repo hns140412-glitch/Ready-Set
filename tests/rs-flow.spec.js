@@ -77,12 +77,62 @@ for (const [W, H] of [[390, 844], [390, 664]]) {
     await fits('focus');
     const r1 = await page.textContent('#remain'); await page.waitForTimeout(2100);
     expect(await page.textContent('#remain')).not.toBe(r1);
-    await tap('[data-act=endAsk]'); await tap('[data-act=outcome]'); await tap('[data-act=finish]');
+    // SESSION_END != TASK_COMPLETE: nothing is preselected and the exploration cannot end until the child answers
+    await tap('[data-act=endAsk]');
+    await expect(page.locator('.outcome button.on')).toHaveCount(0);
+    await expect(page.locator('[data-act=finish]')).toBeDisabled();
+    await expect(page.locator('.outcome .o').first().locator('button')).toHaveText(['다 했어요', '조금 남았어요', '다음에', '도움이 필요해요', '막혔어요']);
+    await fits('end overlay');
+    await tap('[data-act=outcome]'); await tap('[data-act=finish]');
     await fits('result');
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('rs2:state:v1')));
     expect(saved.profile.nickname).toBe('별이');
     expect(saved.profile.vibes).toEqual(['curious', 'calm', 'bold']);
     expect(saved.records.length).toBe(1);
+    expect(saved.records[0].tasks[0].outcome).toBe('COMPLETED');
+
+    // second exploration: two tasks, one active lap at a time, truthful per-task results, unfinished work carries over
+    for (let i = 0; i < 12 && await page.locator('[data-act=rvSkip], [data-act=rvClose]').count(); i++) { await page.locator('[data-act=rvSkip], [data-act=rvClose]').first().click(); await page.waitForTimeout(250); }
+    await tap('[data-act=nav][data-to="home"]'); await tap('[data-act=goSetup]');
+    expect(await page.evaluate(() => __RS.state.plan.tasks.length)).toBe(0); // finished tasks are not offered again as to-do
+    await tap('[data-act=cat][data-cat="재능"]'); await tap('[data-act=opt][data-it="국어"]'); await tap('[data-act=opt][data-it="한자"]'); await tap('[data-act=sheetDone]');
+    await tap('[data-act=toSetup2]'); await tap('[data-act=start]'); await page.waitForTimeout(1100);
+    await expect(page.locator('.pill-btn')).toContainText('국어 외 1');
+    await fits('focus multi');
+    await tap('[data-act=taskAsk]'); await fits('task overlay');
+    await tap('[data-act=taskDone]');                       // 국어 done -> lap ends, 한자 lap starts
+    await expect(page.locator('.pill-btn')).toContainText('한자 외 1');
+    let ses = await page.evaluate(() => __RS.state.session);
+    expect(ses.laps.length).toBe(2); expect(ses.laps[0].e).toBeGreaterThan(0); expect(ses.laps[1].e).toBe(0);
+    expect(ses.laps.filter(l => !l.e).length).toBe(1);      // ONE ACTIVE LAP
+    await page.waitForTimeout(1100);
+    await tap('[data-act=endAsk]');
+    await expect(page.locator('.outcome button.on')).toHaveText(['다 했어요']); // only the answered task is filled in
+    await expect(page.locator('[data-act=finish]')).toBeDisabled();
+    await fits('end overlay multi');
+    await page.locator('.outcome .o').nth(1).locator('[data-k=WAITING_FOR_PARENT]').click();
+    await tap('[data-act=finish]');
+    await expect(page.locator('.res-tasks em')).toHaveText(['완료', '도움 필요']);
+    await expect(page.locator('.res-tasks small.lap')).toHaveCount(2);
+    await fits('result multi');
+    const st = await page.evaluate(() => __RS.state);
+    expect(st.records[0].state).toBe('PARTIAL_COMPLETE');
+    expect(st.records[0].tasks.map(t => t.outcome)).toEqual(['COMPLETED', 'WAITING_FOR_PARENT']);
+    expect(st.carry.map(c => [c.item, c.outcome, c.n])).toEqual([['한자', 'WAITING_FOR_PARENT', 1]]);
+    for (let i = 0; i < 12 && await page.locator('[data-act=rvSkip], [data-act=rvClose]').count(); i++) { await page.locator('[data-act=rvSkip], [data-act=rvClose]').first().click(); await page.waitForTimeout(250); }
+    await tap('[data-act=nav][data-to="home"]'); await tap('[data-act=goSetup]');
+    await expect(page.locator('.carry-chips button')).toHaveText(['한자도움 필요']);
+    await tap('[data-act=carryAdd]');
+    await expect(page.locator('.task-item .tag')).toHaveText(['재능 · 한자']);
+    await expect(page.locator('.carry-chips button')).toHaveCount(0);
+    await fits('setup1 carry');
+    // finishing the carried task clears it from the carry list, keeping its lineage
+    await tap('[data-act=toSetup2]'); await tap('[data-act=start]'); await page.waitForTimeout(600);
+    await tap('[data-act=endAsk]'); await tap('[data-act=outcome][data-k=COMPLETED]'); await tap('[data-act=finish]');
+    const st2 = await page.evaluate(() => __RS.state);
+    expect(st2.carry).toEqual([]);
+    expect(st2.records[0].tasks[0].root).toBe(st.records[0].tasks[1].root);
+    expect(st2.records.length).toBe(3);
 
     // every crew voice clip decodes and is not silent
     const voices = await page.evaluate(() => Promise.all(RSCrew.all.map(async c => { const r = await fetch(c.voice); const a = await new OfflineAudioContext(1, 1, 22050).decodeAudioData(await r.arrayBuffer()); const d = a.getChannelData(0); let pk = 0; for (let i = 0; i < d.length; i += 7) pk = Math.max(pk, Math.abs(d[i])); return r.status === 200 && a.duration > .3 && pk > .02; })));
