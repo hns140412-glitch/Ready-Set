@@ -44,11 +44,15 @@ for (const [W, H] of [[390, 844], [390, 664]]) {
     await page.locator('input[data-photo]').nth(1).setInputFiles(PHOTO);
     await page.fill('[data-draft=nickname]', '별이'); await page.fill('[data-draft=name]', '김하늘');
     await expect(page.locator('#pvName')).toContainText('별이(김하늘)');
+    await expect(page.locator('#ob3Photo')).toContainText('캐릭터를 요청해요'); // the photo's purpose is said out loud
     await fits('ob3');
     await tap('[data-act=obGo]');
-    // item + two vibes; the guide adds the third
+    // item + two vibes; the guide adds the third. A blocked 다음 button always says what is still missing.
     await tap('[data-act=obItem][data-k="compass"]');
-    await tap('[data-act=obVibe][data-k="curious"]'); await tap('[data-act=obVibe][data-k="calm"]');
+    await tap('[data-act=obVibe][data-k="curious"]');
+    await expect(page.locator('#obNext')).toBeDisabled(); await expect(page.locator('#obNext')).toContainText('느낌 두 개를 골라주세요');
+    await expect(page.locator('#ob4Hint')).toContainText('하나 더'); await fits('ob4 one vibe');
+    await tap('[data-act=obVibe][data-k="calm"]'); await expect(page.locator('#obNext')).toContainText('다음으로');
     await expect(page.locator('.gd-vibes button.sys')).toHaveCount(1);
     await fits('ob4');
     await tap('[data-act=obGo]');
