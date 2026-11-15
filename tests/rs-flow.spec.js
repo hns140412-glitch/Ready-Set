@@ -11,6 +11,9 @@ for (const [W, H] of [[390, 844], [390, 664]]) {
     const pageErrors = [], bad = [];
     page.on('pageerror', e => pageErrors.push(e.message));
     page.on('response', r => { const u = new URL(r.url()); if (u.origin === new URL(BASE).origin && !u.pathname.startsWith('/api/') && r.status() >= 400) bad.push(`${r.status()} ${u.pathname}`); });
+    // The family sign-in makes one silent stop at TAKY central on a first visit (another origin, covered by the
+    // family-login tests); this journey stays inside Ready, so mark that stop as already made.
+    await ctx.addInitScript(() => { try { localStorage.setItem('taky.familySignin.centralCheckedAt', String(Date.now())); } catch {} });
     await page.goto(BASE);
 
     // one screen, nothing cut off, no broken images
@@ -105,6 +108,15 @@ for (const [W, H] of [[390, 844], [390, 664]]) {
     let ses = await page.evaluate(() => __RS.state.session);
     expect(ses.laps.length).toBe(2); expect(ses.laps[0].e).toBeGreaterThan(0); expect(ses.laps[1].e).toBe(0);
     expect(ses.laps.filter(l => !l.e).length).toBe(1);      // ONE ACTIVE LAP
+    // 한자 is a retrieval task: the Hide & Seek shortcut takes the REC slot; opening it neither pauses nor ends the lap
+    await expect(page.locator('.rec.go')).toHaveAttribute('aria-label', 'Hide & Seek 열기');
+    await expect(page.locator('[data-act=recIntro]')).toHaveCount(0);
+    await page.evaluate(() => { window.RsTakyFamily = { openApp: u => { window.__opened = u; return Promise.resolve(); } }; });
+    await tap('[data-act=openApp]');
+    expect(await page.evaluate(() => window.__opened)).toBe('https://hide-seek-taky.netlify.app/');
+    ses = await page.evaluate(() => __RS.state.session);
+    expect(ses.apps.length).toBe(1); expect(ses.pauses.length).toBe(0); expect(ses.laps.filter(l => !l.e).length).toBe(1); expect(ses.endAt).toBeFalsy();
+    await fits('focus with app shortcut');
     await page.waitForTimeout(1100);
     await tap('[data-act=endAsk]');
     await expect(page.locator('.outcome button.on')).toHaveText(['다 했어요']); // only the answered task is filled in
