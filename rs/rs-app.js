@@ -152,7 +152,7 @@
     clearInterval(a._f); const step = (v - a.volume) / 12;
     a._f = setInterval(() => { const n = a.volume + step; if ((step >= 0 && n >= v) || (step < 0 && n <= v) || step === 0) { a.volume = Math.max(0, Math.min(1, v)); clearInterval(a._f); done && done(); } else a.volume = Math.max(0, Math.min(1, n)); }, 40);
   }
-  // the speaking crew picture moves with its own recorded clip (rs/crew-talk.js); renderer-only, approved art only
+  // the speaking crew's bubble follows its own recorded clip (rs/crew-talk.js); renderer-only, approved art only
   const crewTalk = (v, c) => { try { window.RSCrewTalk && window.RSCrewTalk.talk(v, c); } catch (e) { /* effect only */ } };
   function playVoice(c) {
     if (!c || (S.profile && S.profile.voice === false)) return;

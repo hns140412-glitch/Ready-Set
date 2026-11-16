@@ -1080,8 +1080,8 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .gd-req { min-height: 34px; padding: 0 16px; border-radius: 999px; background: var(--navy); color: #fff; font-weight: 800; font-size: 13px; }
 .gd-req:disabled { opacity: .55; }
 
-/* companion crew talks with its recorded voice (rs/crew-talk.js sets --talk 0..1 from the clip's loudness).
-   Individual transform properties, so the existing enter/float animations keep working underneath. */
-img.crew-talking { transform-origin: 50% 100%; translate: 0 calc(var(--talk, 0) * -6px); rotate: calc(var(--talk, 0) * -1.4deg); scale: calc(1 + var(--talk, 0) * .02) calc(1 + var(--talk, 0) * .035); }
-.duo-stage .fig.talk.crew-talking { animation: none; }
-@media (prefers-reduced-motion: reduce) { img.crew-talking { translate: none; rotate: none; scale: none; } }
+/* companion crew's speech bubble follows its recorded voice (rs/crew-talk.js): typed text, optional rim light + voice bars */
+.ct-rest { visibility: hidden; }
+.ct-speaking { border-color: #f0a830 !important; box-shadow: 0 0 0 4px rgba(240, 168, 48, .22), 0 4px 10px rgba(22, 46, 102, .14) !important; transition: box-shadow .2s, border-color .2s; }
+.ct-wave { display: inline-flex; gap: 3px; align-items: center; height: 14px; margin-left: 6px; vertical-align: -2px; }
+.ct-wave i { display: block; width: 3px; height: 3px; border-radius: 2px; background: #f0a830; }
