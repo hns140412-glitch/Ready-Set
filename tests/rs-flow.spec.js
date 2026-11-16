@@ -44,7 +44,18 @@ for (const [W, H] of [[390, 844], [390, 664]]) {
     await page.locator('input[data-photo]').nth(1).setInputFiles(PHOTO);
     await page.fill('[data-draft=nickname]', '별이'); await page.fill('[data-draft=name]', '김하늘');
     await expect(page.locator('#pvName')).toContainText('별이(김하늘)');
-    await expect(page.locator('#ob3Photo')).toContainText('캐릭터를 요청해요'); // the photo's purpose is said out loud
+    // 요청하기: not joined -> opens the family sheet and keeps the wish; the journey survives a reload (central sign-in
+    // leaves the page); once the family session is there the request leaves by itself, exactly once.
+    await tap('[data-act=obCharReq]');
+    await expect(page.locator('#takyFamilySheet')).toBeVisible();
+    await page.reload(); await page.waitForTimeout(600);
+    expect(await page.evaluate(() => [__RS.ui.screen, !!__RS.ui.draft.photo, __RS.ui.draft.nickname, __RS.ui.draft.charWant])).toEqual(['ob3', true, '별이', true]);
+    await page.evaluate(() => { window.__sent = 0; window.RsTakyCharacterSync = { requestCharacter: async () => { window.__sent++; return { ok: true, state: 'REQUESTED' }; }, characterStatus: async () => ({ ok: false }) };
+      window.TAKY_FAMILY_RUNTIME = {}; window.dispatchEvent(new Event('taky-central-auth-ready')); });
+    await expect(page.locator('#ob3Photo')).toContainText('요청했어요');
+    await expect(page.locator('[data-act=obCharReq]')).toHaveCount(0);
+    expect(await page.evaluate(() => window.__sent)).toBe(1);
+    await page.evaluate(() => { delete window.TAKY_FAMILY_RUNTIME; });
     await fits('ob3');
     await tap('[data-act=obGo]');
     // item + two vibes; the guide adds the third. A blocked 다음 button always says what is still missing.
