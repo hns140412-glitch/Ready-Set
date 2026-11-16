@@ -1,5 +1,5 @@
 /* Ready & Set — the companion crew's speech bubble follows its recorded voice (Taky 2026-11-16).
-   Taky picked the typed bubble (A) after rejecting the hop; A+B (rim light + voice bars) is kept behind one switch.
+   Taky 2026-11-17 chose bubble 1+2 (typing + rim light + voice bars) and no character effect.
    Renderer-only: no new art, no new voice, no network service (EXPLORATION_CREW_CANONICAL §4/§5).
    - envelope: the clip is decoded once with an OfflineAudioContext, so it works before any gesture and never
      reroutes the <audio> element's output. RMS per 1/60 s, normalised, attack/release smoothed.
@@ -12,7 +12,7 @@
    - prefers-reduced-motion: the text is shown at once and the bars stay still. Voice off: no clip, nothing changes. */
 (function () {
   'use strict';
-  const FX = window.RS_CREW_TALK_FX || 'type'; // 'type' (A, Taky 2026-11-16) | 'type+wave' (A+B); the window value is for side-by-side review only
+  const FX = window.RS_CREW_TALK_FX || 'type+wave'; // Taky 2026-11-17: 1+2 (typing + rim light + voice bars); 'type' = typing only
   const FPS = 60;
   const RM = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
   const BUBBLE = '.gd-bubble, .bubble, .rv-say';
