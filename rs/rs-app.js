@@ -152,10 +152,12 @@
     clearInterval(a._f); const step = (v - a.volume) / 12;
     a._f = setInterval(() => { const n = a.volume + step; if ((step >= 0 && n >= v) || (step < 0 && n <= v) || step === 0) { a.volume = Math.max(0, Math.min(1, v)); clearInterval(a._f); done && done(); } else a.volume = Math.max(0, Math.min(1, n)); }, 40);
   }
+  // the speaking crew picture moves with its own recorded clip (rs/crew-talk.js); renderer-only, approved art only
+  const crewTalk = (v, c) => { try { window.RSCrewTalk && window.RSCrewTalk.talk(v, c); } catch (e) { /* effect only */ } };
   function playVoice(c) {
     if (!c || (S.profile && S.profile.voice === false)) return;
     try { if (AUD.voice) AUD.voice.pause(); } catch (e) { /* noop */ }
-    const v = new Audio(c.voice); AUD.voice = v;
+    const v = new Audio(c.voice); AUD.voice = v; crewTalk(v, c);
     const b = AUD.bgm; const duck = b && !b.paused; if (duck) b.volume = .12;
     v.onended = v.onerror = () => { if (duck && AUD.bgm === b && !b.paused) fadeTo(b, .55); };
     v.play().catch(() => {});
@@ -193,7 +195,7 @@
     const t = setTimeout(done, voiceOn() ? Math.max(9000, wait + 4000) : wait);
     if (!voiceOn()) return;
     try { if (AUD.voice) AUD.voice.pause(); } catch (e) { /* noop */ }
-    const v = new Audio(`rs/voice/${cid}/${key}.mp3?v=${VTAG}`); AUD.voice = v; v.dataset.line = `${cid}/${key}`;
+    const v = new Audio(`rs/voice/${cid}/${key}.mp3?v=${VTAG}`); AUD.voice = v; v.dataset.line = `${cid}/${key}`; crewTalk(v, CREW.get(cid));
     const b = AUD.bgm; const duck = b && !b.paused; if (duck) b.volume = .12;
     const end = () => { if (duck && AUD.bgm === b && !b.paused) fadeTo(b, .55); };
     v.onended = () => { end(); done(); };
@@ -1354,7 +1356,7 @@
     obDone: () => { if(UI.campVisit) { UI.campVisit=false; UI.draft=null; return go('home'); } const d = UI.draft; S.profile = { name: d.name.trim(), nickname: d.nickname.trim(), guide: d.guide, guideNick: d.guideNick.trim(), photo: d.photo, avatar: obAvatar(d), character: d.character || 'A', hood: d.hood || 'navy', item: d.item, vibe: (d.vibes || [])[0] || d.vibe, vibes: vibeDirs(d), theme: d.theme, island: d.island.trim() || '반짝이는 섬', camp: d.camp.trim() || '하늘빛 캠프', voice: true, recPrefix: '' }; if (d.photo) S.profile.takyCharacter = { state: d.charReq === 'REQUESTED' ? 'REQUESTED' : 'NEED_PHOTO_SEND', at: new Date().toISOString() }; save(); UI.draft = null; go('home'); void takySync(); }
   };
   // playVoice during onboarding (no profile yet) — allow
-  const _pv = playVoice; playVoice = function (c) { if (!S.profile) { const v = new Audio(c.voice); AUD.voice && AUD.voice.pause(); AUD.voice = v; v.play().catch(() => {}); return; } _pv(c); };
+  const _pv = playVoice; playVoice = function (c) { if (!S.profile) { const v = new Audio(c.voice); AUD.voice && AUD.voice.pause(); AUD.voice = v; crewTalk(v, c); v.play().catch(() => {}); return; } _pv(c); };
 
   app.addEventListener('click', e => {
     const t = e.target.closest('[data-act]'); if (!t) return;
