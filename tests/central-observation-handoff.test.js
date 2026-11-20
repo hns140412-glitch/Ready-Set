@@ -1,9 +1,6 @@
 const assert=require('node:assert/strict');
 const H=require('../ready-central-observation-handoff-v01.js');
-const fs=require('node:fs');
-const html=fs.readFileSync(require('node:path').join(__dirname,'..','index.html'),'utf8');
-for(const script of ['ready-central-evidence-session-v01.js','ready-central-observation-handoff-v01.js','ready-central-learning-decision-intake-v01.js'])
- assert(html.includes('src="./'+script+'"'));
+// Old-app shell script-tag assertions moved out: the rebuilt shell is checked by tests/rs-app-shell.test.js (Taky approved 2026-11-05).
 const session={authenticated:true,family_id:'family-fixture',selected_member_id:'child-A'};
 const row={state:'COMPLETED',task_id:'ready-task-1',specialistResult:{
  sourceApp:'hide-seek',taskState:'COMPLETED',memorySummary:{

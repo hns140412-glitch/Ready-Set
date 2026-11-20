@@ -13,7 +13,7 @@ on:
 
 jobs:
   chromium-runtime:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # Playwright 1.55 has no Chromium build for ubuntu-latest (26.04)
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -22,7 +22,7 @@ jobs:
           node-version: '20'
       - name: Validate shared runtime contract
         run: |
-          node tests/shared-runtime-contract.test.js
+          node tests/rs-app-shell.test.js
           node tests/shared-crew-authority.test.js
           node tests/explorer-crew-v2-source-lock.test.js
       - name: Install Playwright
