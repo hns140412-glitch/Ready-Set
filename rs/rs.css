@@ -9,7 +9,7 @@
   --hand: "Nanum Pen Script", "Pretendard Variable", cursive;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: var(--peach); color: var(--ink); font-family: var(--font); }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #fbf6ea; /* parchment: browsers tint their bars with this; the old peach tone leaked there */ color: var(--ink); font-family: var(--font); }
 body { overscroll-behavior: none; }
 button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
 input, textarea { font: inherit; }
@@ -826,7 +826,7 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .gd-ob1.m1 { padding: 0 !important; background: #2a3a5c; display: block; }
 .m1 { --fw: min(100vw, calc(100dvh * 851 / 1848)); --u: calc(var(--fw) / 851); --m1-navy: #1c2f6e; }
 .m1-blur { position: absolute; inset: 0; overflow: hidden; }
-.m1-blur::before { content: ''; position: absolute; inset: -30px; background: url(scenes/ob1-meet.webp?v=20261117a) center / cover; filter: blur(14px) brightness(.9); }
+.m1-blur::before { content: ''; position: absolute; inset: -30px; background: url(scenes/ob1-meet.webp?v=20261121a) center / cover; filter: blur(14px) brightness(.9); }
 .m1-frame { position: absolute; left: 50%; top: 50%; width: var(--fw); height: calc(var(--fw) * 1848 / 851); transform: translate(-50%, -50%); overflow: hidden; }
 .m1-frame > * { position: absolute; margin: 0; }
 .m1-bg { inset: 0; width: 100%; height: 100%; object-fit: cover; }
