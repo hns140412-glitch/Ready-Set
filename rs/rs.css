@@ -9,7 +9,7 @@
   --hand: "Nanum Pen Script", "Pretendard Variable", cursive;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: var(--app-h, 100%); overflow: hidden; background: var(--peach); color: var(--ink); font-family: var(--font); }
+html, body { margin: 0; height: var(--app-h, 100%); overflow: hidden; background: #fbf6ea; /* parchment: browsers tint their bars with this; the old peach tone leaked there */ color: var(--ink); font-family: var(--font); }
 body { overscroll-behavior: none; }
 button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
 input, textarea { font: inherit; }
