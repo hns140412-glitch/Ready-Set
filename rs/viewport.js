@@ -4,6 +4,7 @@
    - --app-h is the app height. In the home-screen app it holds the tallest height seen at this width
      (the keyboard never squashes the layout); in a browser tab it follows the visible height
      (Safari toolbars come and go).
+   - Home-screen app: if iOS reports the viewport without the status bar, use the full screen height.
    - After an input loses focus, on resume and on rotation: scroll back to the top and, if the
      viewport is still short, force one relayout of #app so WebKit re-measures. */
 (function () {
@@ -12,6 +13,14 @@
   function typing() { var a = document.activeElement; return !!a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable); }
   function measure() {
     var w = window.innerWidth, h = Math.max(window.innerHeight, de.clientHeight);
+    // iOS home-screen app with viewport-fit=cover draws under the status bar but can report the
+    // viewport height without it (iPhone 13 mini: 762 of 812), leaving a status-bar-high blank strip
+    // at the bottom. When the app owns the whole screen width, use the full screen height instead.
+    if (standalone && window.screen) {
+      var sw = screen.width, sh = screen.height, land = w > window.innerHeight;
+      var fw = land ? Math.max(sw, sh) : Math.min(sw, sh), fh = land ? Math.min(sw, sh) : Math.max(sw, sh);
+      if (Math.abs(w - fw) <= 1 && fh > h && fh - h <= 80) h = fh;
+    }
     if (w !== lastW) { lastW = w; maxH = 0; }
     if (!typing() || !maxH) maxH = standalone ? Math.max(maxH, h) : h;
     de.style.setProperty('--app-h', maxH + 'px');
