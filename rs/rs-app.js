@@ -507,8 +507,10 @@
   async function renderCard(kind, data) {
     const W = 1080, H = 1080, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
     const F = '"Pretendard Variable", Pretendard, "Apple SD Gothic Neo", sans-serif', T = 'Jua, ' + F, HAND = '"Gamja Flower", ' + F;
-    try { await Promise.all(['56px Jua', '40px "Gamja Flower"'].map(f => document.fonts.load(f))); } catch (e) { /* system fallback */ }
     const P = S.profile || {}, gd = guide();
+    // Web fonts are split into unicode-range subsets: load the ones that hold the card's actual Hangul, or canvas falls back per syllable.
+    const tTxt = ['탐험 시작 전, 응원 요청!', data.head, shareName(P), gd.name].join(''), hTxt = `“${data.say}”`;
+    try { await Promise.all([document.fonts.load('56px Jua', tTxt), document.fonts.load('40px "Gamja Flower"', hTxt)]); } catch (e) { /* system fallback */ }
     const [scene, crew, me] = await Promise.all([loadImg('rs/scenes/camp.webp?v=20261122a'), loadImg(gd.img), loadImg(P.avatar || P.photo || '')]);
     // parchment + expedition scene band
     const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#fbf3e1'); bg.addColorStop(1, '#efe0bd'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
