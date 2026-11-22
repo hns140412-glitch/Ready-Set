@@ -2,7 +2,7 @@
 // Google credential -> TAKY central /api/family/session -> globalThis.TAKY_FAMILY_RUNTIME.
 // Joined once per device: a renewable TAKY device token (localStorage) reconnects on the next visit.
 // The sheet lives outside #app so Ready's re-renders never drop its handlers.
-import { createFamilySignin } from './taky-family-signin.mjs?v=20261117a';
+import { createFamilySignin } from './taky-family-signin.mjs?v=20261122a';
 
 const sheet = document.getElementById('takyFamilySheet');
 if (sheet) {
