@@ -13,7 +13,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: var(--peach)
 body { overscroll-behavior: none; }
 button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
 input, textarea { font: inherit; }
-#app { height: 100dvh; width: 100%; overflow: hidden; position: relative; }
+#app { height: var(--app-h, 100dvh); width: 100%; overflow: hidden; position: relative; }
 .screen { position: absolute; inset: 0; display: flex; flex-direction: column; padding: calc(var(--safe-t) + 10px) 16px calc(var(--safe-b) + 10px); overflow: hidden; }
 .warm { background: radial-gradient(120% 60% at 50% 0%, #f9c6aa 0%, #fbd7c4 45%, #fde9de 75%, #fff1e9 100%); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -22,7 +22,7 @@ input, textarea { font: inherit; }
 /* ---------- HOME (approved) ---------- */
 .home { justify-content: space-evenly; padding: 0 0 calc(var(--safe-b) + 8px); background: linear-gradient(#f6b69b 0, #fac3a8 calc(var(--safe-t) + 40px), #fde4d6 62%, #fff0e8 100%); }
 .home-hero { position: relative; flex: 0 1 auto; margin: var(--safe-t) auto 0; margin-left: auto; margin-right: auto; width: 100%; max-width: 480px; aspect-ratio: 853 / 779;
-  max-height: calc(100dvh - var(--safe-t) - var(--safe-b) - 458px); min-height: 220px; }
+  max-height: calc(var(--app-h, 100dvh) - var(--safe-t) - var(--safe-b) - 458px); min-height: 220px; }
 .home-hero img.hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%); }
 .home-hero .face { position: absolute; left: 50%; top: 71.85%; width: 32.6%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
   background: radial-gradient(circle at 50% 40%, #121412 0%, #070908 70%); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fffbcd; }
@@ -528,7 +528,7 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .wk > .wk-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
 .wk-bg img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 0; }
 .wk-bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(22, 46, 102, .25), rgba(22, 46, 102, 0) 22%, rgba(251, 246, 234, .2) 60%, rgba(251, 246, 234, .5)); }
-.wk-top { flex: none; height: clamp(56px, 17dvh, 150px); display: flex; justify-content: space-between; align-items: flex-start; padding: 2px 4px 0; }
+.wk-top { flex: none; height: clamp(56px, calc(var(--app-h, 100dvh) * .17), 150px); display: flex; justify-content: space-between; align-items: flex-start; padding: 2px 4px 0; }
 .wk-brand b { display: block; font-size: 27px; font-weight: 900; color: #fff; letter-spacing: -.02em; text-shadow: 0 2px 8px rgba(22, 46, 102, .6); }
 .wk-brand p { margin: 6px 0 0 4px; font-family: var(--hand); font-size: 21px; line-height: 1.12; color: #fff; text-shadow: 0 1px 6px rgba(22, 46, 102, .8); transform: rotate(-5deg); transform-origin: left top; }
 .wk-me { padding: 0; border-radius: 50%; }
@@ -824,7 +824,7 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .taky-sheet #familyLogin:has(#familyGoogleTarget:not(:empty)) #familySignInBtn { display: none; }
 /* ob1 — meet the crew (approved mockup docs/mockups/ob1-crew-meet-20261107.png, 851x1848). --u = one mockup pixel. */
 .gd-ob1.m1 { padding: 0 !important; background: #2a3a5c; display: block; }
-.m1 { --fw: min(100vw, calc(100dvh * 851 / 1848)); --u: calc(var(--fw) / 851); --m1-navy: #1c2f6e; }
+.m1 { --fw: min(100vw, calc(var(--app-h, 100dvh) * 851 / 1848)); --u: calc(var(--fw) / 851); --m1-navy: #1c2f6e; }
 .m1-blur { position: absolute; inset: 0; overflow: hidden; }
 .m1-blur::before { content: ''; position: absolute; inset: -30px; background: url(scenes/ob1-meet.webp?v=20261122a) center / cover; filter: blur(14px) brightness(.9); }
 .m1-frame { position: absolute; left: 50%; top: 50%; width: var(--fw); height: calc(var(--fw) * 1848 / 851); transform: translate(-50%, -50%); overflow: hidden; }
@@ -1101,3 +1101,7 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .plan-add .seg button { font-size: 13px; }
 .plan-add .link-btn { flex: none; white-space: nowrap; padding: 0 4px; }
 .plan-add .seg { flex: none; }
+
+/* iPhone fixes 2026-11-22: the hello card never shrinks under the tiles; a too-short screen scrolls instead */
+.gd-ob8 .gd-ready { min-height: auto; }
+.gd-ob8 .gd-card { overflow-y: auto; }

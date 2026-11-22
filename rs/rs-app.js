@@ -585,7 +585,7 @@
     if (kind === 'pre') {
       const min = targetMin();
       const g = guide(), say = shareSay('pre', g, { min });
-      data = { tasks: p.tasks.map(t => ({ text: taskLabel(t) })), stats: [['목표 시간', `${min}분`], ['길잡이', g.name]], say, date: ymd(Date.now()).replace(/-/g, '.') };
+      data = { tasks: p.tasks.map(t => ({ text: taskLabel(t) })), stats: [['목표 시간', `${min}분`], ['동행 탐험대원', g.name]], say, date: ymd(Date.now()).replace(/-/g, '.') };
       caption = `${shareName(S.profile)}, ${p.tasks[0] ? taskLabel(p.tasks[0]) + ' ' : ''}${min}분 탐험 출발! ${g.name}: "${say}"`;
     } else {
       const R = REACT[rec.state]; const save = rec.targetMs - rec.focusMs;
@@ -736,7 +736,7 @@
       <circle cx="100" cy="100" r="90" fill="url(#rimI)"/>
       <circle cx="100" cy="100" r="88.2" fill="#fbfbfa"/>
       ${ticks}${nums}
-      <text x="100" y="70" text-anchor="middle" font-size="9.6" font-weight="700" fill="#1a1a1a" font-family="Pretendard Variable, Pretendard, sans-serif">Ready &amp; Set</text>
+      <text x="100" y="141" text-anchor="middle" font-size="8.6" font-weight="700" fill="#1a1a1a" font-family="Pretendard Variable, Pretendard, sans-serif">Ready &amp; Set</text>
       <g stroke="#1a1a1a" stroke-width="1" stroke-linecap="round"><line x1="94.5" y1="58.5" x2="93.2" y2="56.4"/><line x1="100" y1="57.6" x2="100" y2="55"/><line x1="105.5" y1="58.5" x2="106.8" y2="56.4"/></g>
       <g id="hH"><line x1="100" y1="100" x2="100" y2="56" stroke="#1a1a1a" stroke-width="5.6" stroke-linecap="round"/></g>
       <g id="hM"><line x1="100" y1="100" x2="100" y2="34" stroke="#1a1a1a" stroke-width="4" stroke-linecap="round"/></g>
@@ -824,7 +824,7 @@
     } else if (R.phase === 'review') {
       body = `<h2>녹음 완료</h2>
         <div class="takes">${R.takes.map((t, i) => `<div class="take ${R.sel === i ? 'on' : ''}"><span>${i + 1}번째 녹음 · ${mmss(t.dur)}</span><button data-act="play" data-i="${i}">들어보기</button><button data-act="selTake" data-i="${i}">${R.sel === i ? '선택됨' : '이걸로'}</button></div>`).join('')}</div>
-        <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%"><button class="btn-w" data-act="recRetry">한 번 더 가볼까?</button><button class="btn-y" data-act="recCoach">길잡이에게 들려주기</button></div>`;
+        <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%"><button class="btn-w" data-act="recRetry">한 번 더 가볼까?</button><button class="btn-y" data-act="recCoach">동행 탐험대원에게 들려주기</button></div>`;
     } else if (R.phase === 'coach') {
       const D = R.duo; const q = CREW.get(D.guest);
       const said = D.steps.slice(0, D.i + 1).filter(x => x[0] !== 'exit' && x[0] !== 'gap');
@@ -922,10 +922,10 @@
           <div class="set-row"><span>공유 이름</span><b>${esc(shareName(p))}</b></div>
         </div>
         <div class="card">
-          <div class="set-row"><span>내 길잡이</span><button class="link-btn" data-act="editGuide" style="display:flex;align-items:center;gap:8px"><img src="${g.face}" alt="" style="width:32px;height:32px;border-radius:50%">${esc(g.name)} 바꾸기</button></div>
+          <div class="set-row"><span>내 동행 탐험대원</span><button class="link-btn" data-act="editGuide" style="display:flex;align-items:center;gap:8px"><img src="${g.face}" alt="" style="width:32px;height:32px;border-radius:50%">${esc(g.name)} 바꾸기</button></div>
           <div class="set-row"><span>탐험 테마</span><div class="seg" style="width:160px"><button class="${p.theme === '항해' ? 'on' : ''}" data-act="theme" data-t="항해">항해</button><button class="${p.theme === '낙하' ? 'on' : ''}" data-act="theme" data-t="낙하">낙하</button></div></div>
           <div class="set-row"><span>계절 꾸미기 <small style="color:var(--muted);font-weight:500">${esc((RV ? RV.SEASONS[seasonKey()] : { name: '기본' }).name)}</small></span><div class="seg" style="width:160px"><button class="${(p.season || 'auto') === 'auto' ? 'on' : ''}" data-act="season" data-t="auto">계절 따라</button><button class="${p.season === 'base' ? 'on' : ''}" data-act="season" data-t="base">기본</button></div></div>
-          <div class="set-row"><span>길잡이 목소리</span><button class="switch ${p.voice !== false ? 'on' : ''}" data-act="voice" role="switch" aria-checked="${p.voice !== false}" aria-label="길잡이 목소리"></button></div>
+          <div class="set-row"><span>동행 탐험대원 목소리</span><button class="switch ${p.voice !== false ? 'on' : ''}" data-act="voice" role="switch" aria-checked="${p.voice !== false}" aria-label="동행 탐험대원 목소리"></button></div>
           <div class="set-row"><span>녹음 파일 이름</span><input class="field" style="max-width:190px;padding:8px 12px" data-prof="recPrefix" value="${esc(p.recPrefix || `${p.nickname}'s English`)}" maxlength="30"></div>
         </div>
         <button class="link-btn" data-act="resetAsk" style="color:#a0522d;align-self:center">모든 기록 지우기</button>
@@ -1089,7 +1089,7 @@
         ${gdCta('obGo', '이 캐릭터로 시작하기', true)}`);
     }
     if (s === 'ob4') {
-      return wrap('camp', `${gdHead(4, '아이템 선정 + 느낌 고르기', '탐험에 꼭 필요한 아이템 하나와, 너다운 느낌 두 개를 골라보세요! 길잡이가 하나를 더해 너만의 캐릭터 세 가지를 만들어요.')}
+      return wrap('camp', `${gdHead(4, '아이템 선정 + 느낌 고르기', '탐험에 꼭 필요한 아이템 하나와, 너다운 느낌 두 개를 골라보세요! 동행 탐험대원이 하나를 더해 너만의 캐릭터 세 가지를 만들어요.')}
         <p class="gd-label">탐험 아이템 <small>(하나만 선택)</small></p>
         <div class="gd-items">${ITEMS.map(([k, n]) => `<button class="${d.item === k ? 'on' : ''}" data-act="obItem" data-k="${k}" aria-pressed="${d.item === k}"><img src="rs/items/${k}.webp?v=20261122a" alt=""><span>${n}</span></button>`).join('')}</div>
         <p class="gd-label">어떤 느낌이 더 너 같아? <small>두 개 고르면, 세 번째는 ${esc(josa(guideNick(d), '이', '가'))} 골라줘요</small></p>
@@ -1221,7 +1221,7 @@
     </div></div>`;
   }
   function vResetOv() {
-    return `<div class="overlay" data-act="ovClose"><div class="pop" data-stop><h3>모든 기록을 지울까요?</h3><p>이름표, 길잡이, 탐험 기록이 이 기기에서 모두 지워져요.</p>
+    return `<div class="overlay" data-act="ovClose"><div class="pop" data-stop><h3>모든 기록을 지울까요?</h3><p>이름표, 동행 탐험대원, 탐험 기록이 이 기기에서 모두 지워져요.</p>
       <div class="row2"><button class="btn-w" data-act="ovClose">취소</button><button class="btn-k" data-act="resetDo">지우기</button></div></div></div>`;
   }
 
