@@ -407,7 +407,7 @@
   }
 
   /* ---------------- duo coaching staging (REV06 §31/§33): Main exits, returns with Guest, then good/soft talk ---------------- */
-  const DUO_IN = [['m', 'rec-alone'], ['m', 'rec-fetch'], ['exit'], ['m', 'rec-back'], ['g', 'g-arrive'], ['m', 'rec-listen']];
+  const DUO_IN = [['m', 'rec-alone'], ['m', 'rec-fetch'], ['exit'], ['m', 'rec-back'], ['g', 'g-arrive'], ['m', 'rec-listen'], ['play']];
   const DUO_TALK = { good: [['m', 'good-m1'], ['g', 'good-g1'], ['m', 'good-m2'], ['g', 'good-g2'], ['m', 'good-m3']], soft: [['m', 'soft-m1'], ['g', 'soft-g1'], ['m', 'soft-m2'], ['g', 'soft-g2'], ['m', 'soft-m3']] };
   // No speech analysis yet: a confident take = long enough, audible, without many retries. Never mocks the child (§33).
   function duoTone(R) { const t = R.takes[R.sel]; if (!t) return 'soft'; return t.dur >= 6000 && R.takes.length <= 2 && (t.lvl == null || t.lvl >= .03) ? 'good' : 'soft'; }
@@ -421,11 +421,22 @@
     if (UI.rec.duo !== D || UI.rec.phase !== 'coach') return;
     const st = D.steps[D.i];
     if (!st) { D.done = true; D.i = D.steps.length - 1; render(); return; }
+    // Taky 2026-11-22: the friend is fetched first, THEN the take plays (both listen), THEN they react.
+    if (st[0] === 'play') {
+      const t = UI.rec.takes[UI.rec.sel]; const next = () => { if (UI.rec.duo !== D || D.done) return; D.playing = false; D.i++; duoRun(D); };
+      if (!t) { D.i++; return duoRun(D); }
+      if (AUD.take) AUD.take.pause();
+      D.playing = true; render();
+      const a = AUD.take = new Audio(t.url); let fin = false; const end = () => { if (fin) return; fin = true; clearTimeout(D.t); D.t = setTimeout(next, 500); };
+      a.onended = end; a.onerror = end;
+      D.t = setTimeout(end, Math.min(Math.max(t.dur || 0, 1500), 90000) + 1500);   // never stall if 'ended' never fires
+      a.play().catch(end); return;
+    }
     if (st[0] === 'exit') { D.out = true; render(); D.t = setTimeout(() => { if (UI.rec.duo !== D) return; D.out = false; D.back = true; D.i++; duoRun(D); }, 1300); return; }
     render();
     sayLine(st[0] === 'm' ? D.main : D.guest, st[1], () => { D.t = setTimeout(() => { if (UI.rec.duo !== D || D.done) return; D.i++; duoRun(D); }, 380); });
   }
-  function duoStop() { const D = UI.rec.duo; if (D) { clearTimeout(D.t); D.done = true; } try { AUD.voice && AUD.voice.pause(); } catch (e) { /* noop */ } }
+  function duoStop() { const D = UI.rec.duo; if (D) { clearTimeout(D.t); D.done = true; } try { AUD.voice && AUD.voice.pause(); } catch (e) { /* noop */ } try { AUD.take && AUD.take.pause(); } catch (e) { /* noop */ } }
 
   /* ---------------- recording (REV06 §20-38) ---------------- */
   const MIC = { stream: null, rec: null, chunks: [], t0: 0, busy: false, raf: 0, an: null };
@@ -850,14 +861,14 @@
         <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%"><button class="btn-w" data-act="recRetry">한 번 더 가볼까?</button><button class="btn-y" data-act="recCoach">동행 탐험대원에게 들려주기</button></div>`;
     } else if (R.phase === 'coach') {
       const D = R.duo; const q = CREW.get(D.guest);
-      const said = D.steps.slice(0, D.i + 1).filter(x => x[0] !== 'exit' && x[0] !== 'gap');
+      const said = D.steps.slice(0, D.i + 1).filter(x => x[0] !== 'exit' && x[0] !== 'gap' && x[0] !== 'play');
       const cur = D.steps[D.i] || [];
       const who = c => c === 'm' ? g : q;
       const last = said.slice(-3);
       // entry animations play once per stage phase; a re-render for the next line must not replay them
       const ph = D.out ? 'out' : D.back ? 'back' : 'in'; const fresh = D.ph !== ph; D.ph = ph;
       const newLine = said.length !== D.shown; D.shown = said.length;   // only the line just spoken slides in
-      body = `<h2>${D.done ? '오늘 목소리, 어땠냐면…' : D.out ? '후다닥!' : '잠깐만요…'}</h2>
+      body = `<h2>${D.done ? '오늘 목소리, 어땠냐면…' : D.out ? '후다닥!' : D.playing ? '쉿, 같이 듣는 중 ♪' : '잠깐만요…'}</h2>
         <div class="duo-stage ${D.out ? 'out' : ''} ${D.back ? 'back' : ''}" aria-hidden="true">
           <img class="fig m ${fresh && !D.out ? 'enter' : ''} ${cur[0] === 'm' && !fresh ? 'talk' : ''}" src="${g.img}" alt="">
           ${D.back ? `<img class="fig g ${fresh ? 'enter' : ''} ${cur[0] === 'g' && !fresh ? 'talk' : ''}" src="${q.img}" alt="">` : ''}
@@ -1169,12 +1180,14 @@
         const sent = await sync.requestCharacter({ photo: p.photo });
         if (sent.state === 'PENDING_TAKY_SESSION') return;
         if (sent.state === 'SESSION_EXPIRED') return takyExpired();
+        UI.takyIssue = sent.ok ? null : sent.state;
         takyMark(sent.ok ? 'REQUESTED' : 'NEED_PHOTO_SEND', { error: sent.ok ? null : sent.state });
         if (!sent.ok) return;
       }
       const st = await sync.characterStatus({});
       if (st.state === 'SESSION_EXPIRED') return takyExpired();
-      if (!st.ok) return;
+      UI.takyIssue = st.ok ? null : st.state;
+      if (!st.ok) { const line = document.querySelector('[data-taky-character]'); if (line) line.textContent = takyCharacterLine(S.profile); return; }
       if (st.image && st.version && st.version !== (p.takyCharacter || {}).version) {
         if (!p.avatarLocal) p.avatarLocal = p.avatar || '';
         p.avatar = st.image; takyMark(st.state, { version: st.version, error: null });
@@ -1197,6 +1210,13 @@
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && globalThis.TAKY_FAMILY_RUNTIME) void takySync(); });
   function takyCharacterLine(p) {
     const t = (p && p.takyCharacter) || (p && p.photo ? { state: 'NEED_PHOTO_SEND' } : {}), linked = !!globalThis.TAKY_FAMILY_RUNTIME;
+    // Say when the card can't arrive instead of looking "still drawing" forever (Taky 2026-11-22 "계속 초기상태").
+    if (!/^MASTER_READY/.test(t.state || '') && t.state) {
+      if (!linked) return UI.takyExpired ? '무전이 끊겼어요 · 다시 합류하면 카드 소식이 와요' : '탐험대에 합류하면 카드 소식이 와요';
+      const iss = UI.takyIssue || t.error;
+      if (iss === 'MEMBER_SELECTION_REQUIRED' || iss === 'MEMBER_NOT_AUTHORIZED') return '탐험본부 명단에서 내 이름을 못 찾았어요';
+      if (iss && t.state === 'NEED_PHOTO_SEND') return '사진이 아직 못 갔어요 · 아래에서 다시 보내 줘요';
+    }
     if (t.state === 'MASTER_READY_NEW_REQUEST') return `새 카드 그리는 중 · 지금은 No.${t.version || 1}`;
     if (/^MASTER_READY/.test(t.state || '')) return `탐험가 카드 No.${t.version || 1} 도착!`;
     if (t.state === 'REQUESTED') return '탐험본부에서 내 카드 그리는 중 ✎';
@@ -1388,7 +1408,7 @@
     duoSkip: () => { const D = UI.rec.duo; duoStop(); if (D) { D.out = false; D.back = true; D.i = D.steps.length - 1; } render(); },
     play: e => { const t = UI.rec.takes[+e.dataset.i]; if (!t) return; if (AUD.take) AUD.take.pause(); AUD.take = new Audio(t.url); AUD.take.play().catch(() => toast('재생할 수 없어요')); },
     selTake: e => { UI.rec.sel = +e.dataset.i; render(); },
-    recCoach: () => { const s = S.session; if (!s.guest) { s.guest = pickGuest(S.profile.guide, s.moods).id; save(); } UI.rec.phase = 'coach'; duoStart(); },
+    recCoach: () => { const s = S.session; if (!s.guest) { s.guest = pickGuest(S.profile.guide, s.moods).id; save(); } if (AUD.take) AUD.take.pause(); UI.rec.phase = 'coach'; duoStart(); },
     recFinal: () => { const s = S.session; const t = UI.rec.takes[UI.rec.sel]; if (!t) return; s.recDone = true; s.recFile = recFileName(t); save(); duoStop(); UI.rec.phase = 'final'; render(); sayLine(S.profile.guide, 'rec-final'); },
     shareRec: async () => { const t = UI.rec.takes[UI.rec.sel]; if (!t) return; const name = recFileName(t); const r = await shareFile(new File([t.blob], name, { type: t.type }), name); if (r === 'shared') toast('보냈어요'); },
     backFocus: () => { duoStop(); recStop(); cleanupMic(); if (AUD.take) AUD.take.pause(); go('focus'); const s = S.session; if (s && s.bgmOn && !isPaused(s)) bgmPlay(s.bgm); },
