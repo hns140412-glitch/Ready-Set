@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gamja+Flower&family=Jua&family=Montserrat:wght@700;800&family=Nanum+Pen+Script&display=swap">
-<link rel="stylesheet" href="rs/rs.css?v=20261121a">
+<link rel="stylesheet" href="rs/rs.css?v=20261122b">
 </head>
 <body>
 <div id="app" aria-live="polite"></div>
@@ -35,11 +35,24 @@
     </div>
   </div>
 </section>
-<script src="rs/crew.js?v=20261121a"></script>
-<script src="rs/crew-talk.js?v=20261121a"></script>
-<script src="rs/rs-taky-character-sync.js?v=20261121a"></script>
-<script src="rs/reveal.js?v=20261121a"></script>
-<script src="rs/rs-app.js?v=20261121a"></script>
-<script type="module" src="rs/rs-taky-family.mjs?v=20261121a"></script>
+<script src="rs/viewport.js?v=20261122b"></script>
+<script src="rs/crew.js?v=20261122b"></script>
+<script src="rs/crew-talk.js?v=20261122b"></script>
+<script src="rs/rs-taky-character-sync.js?v=20261122b"></script>
+<script src="rs/reveal.js?v=20261122b"></script>
+<script src="ready-planner-v01.js?v=20261122b"></script>
+<script src="rs/rs-app.js?v=20261122b"></script>
+<script>
+/* Old iPad/iPhone (iOS 12 and older): if the app could not draw itself, say so instead of a blank screen. ES5 on purpose. */
+setTimeout(function () {
+  var app = document.getElementById('app');
+  if (app && !app.firstElementChild) {
+    app.innerHTML = '<div style="position:absolute;top:0;left:0;right:0;bottom:0;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;padding:24px;text-align:center;font-family:-apple-system,sans-serif;color:#162e66;background:#fbf6ea">' +
+      '<b style="font-size:20px;margin-bottom:10px">이 기기에서는 Ready &amp; Set을 열 수 없어요</b>' +
+      '<span style="font-size:15px;line-height:1.5">iOS 15 이상(아이패드 에어 2, 아이패드 6세대 이후)이나<br>최신 크롬이 있는 기기에서 열어 주세요.</span></div>';
+  }
+}, 2500);
+</script>
+<script type="module" src="rs/rs-taky-family.mjs?v=20261122b"></script>
 </body>
 </html>
