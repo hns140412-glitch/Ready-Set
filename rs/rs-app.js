@@ -80,7 +80,7 @@
   function plToday() { const p = PL(); if (!p) return []; try { return p.today(ymd(Date.now())).filter(x => x.state === 'PLANNED'); } catch (e) { return []; } }
   function plUpcoming(days = 7) {
     const p = PL(); if (!p) return []; const from = ymd(Date.now()), to = ymd(Date.now() + (days - 1) * 864e5);
-    try { return p.snapshot().dated_todos.filter(x => x.date >= from && x.date <= to && x.state === 'PLANNED').sort((a, b) => a.date.localeCompare(b.date) || (a.order ?? 999) - (b.order ?? 999)); } catch (e) { return []; }
+    try { return p.snapshot().dated_todos.filter(x => x.date >= from && x.date <= to && x.state === 'PLANNED').sort((a, b) => a.date.localeCompare(b.date) || (a.order == null ? 999 : a.order) - (b.order == null ? 999 : b.order)); } catch (e) { return []; }
   }
   function plSafe(fn) { try { return fn(PL()); } catch (e) { return null; } }
   function plStart(s) { s.tasks.forEach(t => { if (t.todo) plSafe(p => p && p.recordTaskState({ todo_id: t.todo, ready_state: 'IN_PROGRESS', session_id: s.id, task_id: t.id })); }); }
