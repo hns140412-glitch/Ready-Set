@@ -84,12 +84,17 @@ export function promptFor(files) {
   ].join('\n');
 }
 
+// Same shape as the Ready card-news runs on this PC: the rules live in TASK_CONTRACT.md next to the photos and the CLI is
+// told to read it, with a turn cap big enough for one Read per photo (the 11-24 card-news runs hit "max turns (9)").
 export function runCli(c, dir, files) {
-  const prompt = promptFor(files);
+  fs.writeFileSync(path.join(dir, 'TASK_CONTRACT.md'), '# 재능 숙제 사진 해석 (READY_TALENT_WEEK_V1)\n\n' + promptFor(files) + '\n');
+  const prompt = 'Read TASK_CONTRACT.md in this folder and do exactly what it says. Answer with the JSON only.';
+  const turns = String(Math.max(12, files.length * 2 + 6));
   const opt = { cwd: dir, encoding: 'utf8', timeout: 8 * 60 * 1000, maxBuffer: 8 * 1024 * 1024, shell: process.platform === 'win32', input: '' };
   const r = c.cli === 'codex'
-    ? spawnSync('codex', ['exec', '--skip-git-repo-check', '-i', ...files.map(f => path.basename(f)), prompt], opt)
-    : spawnSync('claude', ['-p', prompt, '--output-format', 'text', '--allowedTools', 'Read'], opt);
+    ? spawnSync('codex', ['exec', '--skip-git-repo-check', ...files.flatMap(f => ['-i', path.basename(f)]), prompt], opt)
+    : spawnSync(c.claude_bin || 'claude', ['-p', prompt, '--max-turns', turns, '--output-format', 'text', '--allowedTools', 'Read'], opt);
+  try { fs.appendFileSync(path.join(dir, 'CLAUDE_RESULT.log'), new Date().toISOString() + ' exit ' + r.status + '\n' + String(r.stdout || '') + '\n' + String(r.stderr || '') + '\n'); } catch { /* noop */ }
   if (r.error || r.status !== 0) throw Error('CLI_FAILED ' + (r.error ? r.error.message : 'exit ' + r.status + ' ' + String(r.stderr || '').slice(0, 300)));
   return r.stdout;
 }
