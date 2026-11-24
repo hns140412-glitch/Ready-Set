@@ -80,7 +80,8 @@ export function promptFor(files) {
     '- 한자 책이면 이번 주에 배우는 한자 글자들을 hanja_chars 에 문자열로 모두 적으세요 (예: "日月火水木"). 못 읽으면 빈 문자열.',
     '- 다른 설명 없이 JSON 한 개만 출력하세요.',
     '- 한자 글자를 모두 또렷하게 읽었으면 hanja_confidence 를 "high", 아니면 "low".',
-    '출력 형식: {"books":[{"key":"calc","range_text":"21~26쪽","confidence":"high","note":""}],"hanja_chars":"","hanja_confidence":"high"}',
+    '- 학습지에 인쇄된 훈음도 hanja_items 에 적으세요: [{"char":"日","meaning":"날","reading":"일"}]. meaning 은 한글 훈, reading 은 한글 한 글자 음. 사진에 인쇄된 것만 쓰고, 안 보이면 그 글자는 빼세요.',
+    '출력 형식: {"books":[{"key":"calc","range_text":"21~26쪽","confidence":"high","note":""}],"hanja_chars":"","hanja_confidence":"high","hanja_items":[]}',
   ].join('\n');
 }
 
@@ -128,7 +129,8 @@ export function merge(payload, answer, Parent, now = Date.now()) {
       interpreted = { by: 'RENDER_CLI', confidence: sure ? 'high' : 'low', note: String((a && a.note) || (a && a.range_text ? '' : '범위를 못 읽었어요')).slice(0, 60), at: new Date(now).toISOString() };
       if (!sure) unsure++;
     }
-    state.books[key] = { range, sessions: cur.sessions || null, chars: key === 'hanja' ? ((payload.hanja && payload.hanja.chars || []).join('') || (answer && answer.hanja_chars) || '') : '' };
+    state.books[key] = { range, sessions: cur.sessions || null, chars: key === 'hanja' ? ((payload.hanja && payload.hanja.chars || []).join('') || (answer && answer.hanja_chars) || '') : '',
+      items: key === 'hanja' ? ((payload.hanja && payload.hanja.items || []).concat((answer && answer.hanja_items) || [])) : undefined };
     state.books[key].interpreted = interpreted;
   }
   // Characters read from the 한자 photo count as sure only when the CLI says so; otherwise the parent sees them once.

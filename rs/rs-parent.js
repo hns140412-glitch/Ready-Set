@@ -63,6 +63,10 @@
     return out;
   }
   const hanjaChars = s => [...new Set(Array.from(String(s || '')).filter(c => /[㐀-䶿一-鿿豈-﫿]/.test(c)))].slice(0, 60);
+  // 훈음 as printed on the worksheet, kept only for this week's chars: {char, meaning (Hangul 훈), reading (one Hangul syllable)}.
+  const hanjaItems = (items, chars) => { const want = new Set(chars || []), seen = new Set();
+    return (Array.isArray(items) ? items : []).map(x => ({ char: String((x && x.char) || '').trim(), meaning: String((x && x.meaning) || '').trim(), reading: String((x && x.reading) || '').trim() }))
+      .filter(x => want.has(x.char) && !seen.has(x.char) && /^[가-힣 ]{1,12}$/.test(x.meaning) && /^[가-힣]$/.test(x.reading) && seen.add(x.char)); };
 
   function plan(state, now = Date.now()) {
     const week = state.week; const days = daysFor(week, now); const load = Object.fromEntries(days.map(d => [d, 0]));
@@ -77,7 +81,8 @@
     });
     const hanja = hanjaChars((state.books.hanja || {}).chars);
     return { schema: SCHEMA, week_id: week.week_id, source_date: week.source_date, deadline: week.deadline, days, books,
-      hanja: { chars: hanja, range_text: (state.books.hanja || {}).range || '', practice_label: '이번 주 구간' } };
+      hanja: Object.assign({ chars: hanja, range_text: (state.books.hanja || {}).range || '', practice_label: '이번 주 구간' },
+        hanjaItems((state.books.hanja || {}).items, hanja).length ? { items: hanjaItems((state.books.hanja || {}).items, hanja) } : {}) };
   }
 
   // ---------- storage ----------
@@ -182,7 +187,8 @@
       const mine = new Set(Object.values(v.refs || {})); const remote = (rb.photo_refs || []).filter(r => !mine.has(r));
       if (String(remote) !== String(v.remote || [])) { v.remote = remote; changed = true; }
       if (!v.range && rb.range_text) { v.range = rb.range_text; v.auto = rb.interpreted || null; if (rb.sessions) v.sessions = rb.sessions; changed = true; }
-      if (key === 'hanja' && !v.chars && pl.hanja && (pl.hanja.chars || []).length) { v.chars = pl.hanja.chars.join(''); changed = true; } }
+      if (key === 'hanja' && !v.chars && pl.hanja && (pl.hanja.chars || []).length) { v.chars = pl.hanja.chars.join(''); changed = true; }
+      if (key === 'hanja' && pl.hanja && Array.isArray(pl.hanja.items) && JSON.stringify(pl.hanja.items) !== JSON.stringify(v.items || [])) { v.items = pl.hanja.items; changed = true; } }
     V.s.remoteState = pl.state || null; store(V.s); return changed;
   }
   // Any Ready with a family session (the child's device) puts a CONFIRMED week into its own Planner, once per update.
@@ -327,6 +333,6 @@
     document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('[data-parent-hold]')) e.preventDefault(); });
   }
   if (root.document) bindHold();
-  root.RsParent = Object.freeze({ open, close, syncPlanner, BOOKS, SCHEMA, CURRENT_ID, weekOf, daysFor, parseRange, splitBook, hanjaChars, plan });
+  root.RsParent = Object.freeze({ open, close, syncPlanner, BOOKS, SCHEMA, CURRENT_ID, weekOf, daysFor, parseRange, splitBook, hanjaChars, hanjaItems, plan });
   if (typeof module !== 'undefined' && module.exports) module.exports = root.RsParent;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
