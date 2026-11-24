@@ -106,62 +106,135 @@
     });
   }
 
-  // ---------- central: the week for Hide & Seek ----------
-  async function publish(p) {
+  // ---------- central (TAKY family): photos in the family Google Drive, the week record for Hide + the render PC ----------
+  // Week record lifecycle (payload.state): PHOTOS_UPLOADED (parent sent photos, ranges empty) -> INTERPRETED (render PC
+  // CLI filled ranges, something uncertain: parent confirms here) -> CONFIRMED (parent saved, or the CLI was sure of every
+  // book). Every Ready with a family session applies a CONFIRMED week to its own Planner (the child's device included).
+  async function central() {
     const rt = root.TAKY_FAMILY_RUNTIME; const Sync = root.RsTakyCharacterSync;
-    if (!rt || !Sync) return { ok: false, state: 'NOT_JOINED' };
+    if (!rt || !Sync) return null;
     try {
       const token = String(await rt.getToken() || ''), family_id = String(await rt.getFamilyId() || '');
       const member_id = Sync.resolveMember(await rt.currentSession());
-      if (!member_id) return { ok: false, state: 'MEMBER_SELECTION_REQUIRED' };
-      const base = new URL(String(rt.apiBaseUrl || ''));
-      const H = { authorization: 'Bearer ' + token };
-      const payload = { schema: SCHEMA, week_id: p.week_id, source_date: p.source_date, deadline: p.deadline, days: p.days,
-        books: p.books.map(b => ({ subject: b.subject, range_text: b.range_text, from: b.from, to: b.to, unit: b.unit, parts: b.parts.map(x => ({ date: x.date, label: x.label, from: x.from, to: x.to, todo_id: x.todo_id })) })),
-        hanja: p.hanja, entered_by: 'PARENT', source: 'READY_PARENT_INTAKE', updated_at: new Date().toISOString() };
-      const one = async record_id => {
-        const q = new URLSearchParams({ family_id, member_id, record_type: 'MATERIAL_REFERENCE', record_id });
-        const g = await fetch(new URL('/api/family/user-data?' + q, base).href, { headers: H, cache: 'no-store', redirect: 'error' });
-        let etag = ''; if (g.ok) { try { etag = (await g.json()).etag || ''; } catch (e) { /* noop */ } }
-        else if (g.status === 401) return { ok: false, state: 'SESSION_EXPIRED' };
-        const r = await fetch(new URL('/api/family/user-data', base).href, { method: 'POST', cache: 'no-store', redirect: 'error',
-          headers: Object.assign({ 'content-type': 'application/json' }, H),
-          body: JSON.stringify({ record: { family_id, member_id, record_type: 'MATERIAL_REFERENCE', record_id, status: 'CONFIRMED', source_app: 'ready-set',
-            occurred_at: new Date().toISOString(), due_at: new Date(atNoon(p.deadline)).toISOString(), payload }, ...(etag ? { expected_etag: etag } : {}) }) });
-        return { ok: r.ok, state: r.ok ? 'PUBLISHED' : 'HTTP_' + r.status };
-      };
-      const cur = await one(CURRENT_ID); if (!cur.ok) return cur;
-      await one('ready-talent-week-' + p.week_id);
-      return { ok: true, state: 'PUBLISHED', member_id };
+      if (!token || !family_id || !member_id) return null;
+      return { base: new URL(String(rt.apiBaseUrl || '')), H: { authorization: 'Bearer ' + token }, family_id, member_id };
+    } catch (e) { return null; }
+  }
+  const qs = o => new URLSearchParams(o).toString();
+  async function getRecord(c, record_id) {
+    const r = await fetch(new URL('/api/family/user-data?' + qs({ family_id: c.family_id, member_id: c.member_id, record_type: 'MATERIAL_REFERENCE', record_id }), c.base).href, { headers: c.H, cache: 'no-store', redirect: 'error' });
+    if (!r.ok) return { status: r.status, record: null, etag: '' };
+    const j = await r.json().catch(() => ({})); return { status: 200, record: j.record || null, etag: j.etag || '' };
+  }
+  async function putRecord(c, record_id, payload, deadline) {
+    for (let i = 0; i < 2; i++) {   // one retry on a concurrent write (render PC vs parent)
+      const g = await getRecord(c, record_id); if (g.status === 401) return { ok: false, state: 'SESSION_EXPIRED' };
+      const r = await fetch(new URL('/api/family/user-data', c.base).href, { method: 'POST', cache: 'no-store', redirect: 'error', headers: Object.assign({ 'content-type': 'application/json' }, c.H),
+        body: JSON.stringify({ record: { family_id: c.family_id, member_id: c.member_id, record_type: 'MATERIAL_REFERENCE', record_id, status: 'CONFIRMED', source_app: 'ready-set',
+          occurred_at: new Date().toISOString(), due_at: new Date(atNoon(deadline)).toISOString(), payload }, ...(g.etag ? { expected_etag: g.etag } : {}) }) });
+      if (r.ok) return { ok: true, state: 'PUBLISHED' }; if (r.status !== 409) return { ok: false, state: 'HTTP_' + r.status };
+    }
+    return { ok: false, state: 'HTTP_409' };
+  }
+  async function uploadPhoto(c, week_id, book, blob) {
+    try {
+      const r = await fetch(new URL('/api/family/material-photo?' + qs({ family_id: c.family_id, member_id: c.member_id, week_id, book }), c.base).href,
+        { method: 'POST', cache: 'no-store', redirect: 'error', headers: Object.assign({ 'content-type': blob.type || 'image/jpeg' }, c.H), body: blob });
+      const j = await r.json().catch(() => ({})); return r.ok && j.photo_ref ? j.photo_ref : null;
+    } catch (e) { return null; }
+  }
+  async function fetchPhoto(c, ref) {
+    try { const r = await fetch(new URL('/api/family/material-photo?' + qs({ family_id: c.family_id, member_id: c.member_id, ref }), c.base).href, { headers: c.H, cache: 'no-store', redirect: 'error' }); return r.ok ? await r.blob() : null; }
+    catch (e) { return null; }
+  }
+  function payloadOf(p, state) {
+    return { schema: SCHEMA, state, week_id: p.week_id, source_date: p.source_date, deadline: p.deadline, days: p.days,
+      books: p.books.map(b => ({ key: b.key, subject: b.subject, range_text: b.range_text, from: b.from, to: b.to, unit: b.unit, sessions: (V.s.books[b.key] || {}).sessions || null,
+        photo_refs: [...new Set(Object.values((V.s.books[b.key] || {}).refs || {}).concat((V.s.books[b.key] || {}).remote || []))],
+        interpreted: (V.s.books[b.key] || {}).auto || null,
+        parts: b.parts.map(x => ({ date: x.date, label: x.label, from: x.from, to: x.to, todo_id: x.todo_id })) })),
+      hanja: p.hanja, entered_by: 'PARENT', source: 'READY_PARENT_INTAKE', updated_at: new Date().toISOString() };
+  }
+  async function publish(p, state) {
+    const c = await central(); if (!c) return { ok: false, state: root.TAKY_FAMILY_RUNTIME ? 'MEMBER_SELECTION_REQUIRED' : 'NOT_JOINED' };
+    try {
+      await flushUploads(c);
+      const payload = payloadOf(p, state);
+      const cur = await putRecord(c, CURRENT_ID, payload, p.deadline); if (!cur.ok) return cur;
+      await putRecord(c, 'ready-talent-week-' + p.week_id, payload, p.deadline);
+      return { ok: true, state: 'PUBLISHED', member_id: c.member_id };
     } catch (e) { return { ok: false, state: 'CENTRAL_UNREACHABLE' }; }
+  }
+  // Photos taken offline or before joining go up on the next save.
+  async function flushUploads(c) {
+    for (const b of BOOKS) { const v = V.s.books[b.key]; if (!v || !v.photos) continue; v.refs = v.refs || {};
+      for (const id of v.photos) if (!v.refs[id]) { const blob = await photoGet(id); const ref = blob && await uploadPhoto(c, V.s.week.week_id, b.key, blob); if (ref) v.refs[id] = ref; } }
+    store(V.s);
+  }
+  // Take what the render PC (or the other parent's phone) already filled in for this week.
+  async function pull() {
+    const c = await central(); if (!c || !V.s) return false;
+    let g; try { g = await getRecord(c, CURRENT_ID); } catch (e) { return false; }
+    const pl = g.record && g.record.payload; if (!pl || pl.schema !== SCHEMA || pl.week_id !== V.s.week.week_id) return false;
+    let changed = false;
+    for (const rb of pl.books || []) { const key = rb.key || (BOOKS.find(b => b.subject === rb.subject) || {}).key; if (!key) continue;
+      const v = V.s.books[key] = V.s.books[key] || {};
+      const mine = new Set(Object.values(v.refs || {})); const remote = (rb.photo_refs || []).filter(r => !mine.has(r));
+      if (String(remote) !== String(v.remote || [])) { v.remote = remote; changed = true; }
+      if (!v.range && rb.range_text) { v.range = rb.range_text; v.auto = rb.interpreted || null; if (rb.sessions) v.sessions = rb.sessions; changed = true; }
+      if (key === 'hanja' && !v.chars && pl.hanja && (pl.hanja.chars || []).length) { v.chars = pl.hanja.chars.join(''); changed = true; } }
+    V.s.remoteState = pl.state || null; store(V.s); return changed;
+  }
+  // Any Ready with a family session (the child's device) puts a CONFIRMED week into its own Planner, once per update.
+  const APPLIED_KEY = 'rs2:talent:applied';
+  async function syncPlanner() {
+    const P = root.ReadySetPlanner; const c = P && await central(); if (!c) return { ok: false };
+    let g; try { g = await getRecord(c, CURRENT_ID); } catch (e) { return { ok: false }; }
+    const pl = g.record && g.record.payload; if (!pl || pl.schema !== SCHEMA || pl.state !== 'CONFIRMED') return { ok: true, applied: 0 };
+    let done = {}; try { done = JSON.parse(root.localStorage.getItem(APPLIED_KEY) || '{}'); } catch (e) { done = {}; }
+    if (done.week_id === pl.week_id && done.updated_at === pl.updated_at) return { ok: true, applied: 0 };
+    const ids = applyParts(P, pl, done.week_id === pl.week_id ? done.todo_ids || [] : []);
+    try { root.localStorage.setItem(APPLIED_KEY, JSON.stringify({ week_id: pl.week_id, updated_at: pl.updated_at, todo_ids: ids })); } catch (e) { /* noop */ }
+    root.dispatchEvent(new Event('rs-planner-changed')); return { ok: true, applied: ids.length };
+  }
+  function applyParts(P, pl, oldIds) {
+    const ids = [];
+    (pl.books || []).forEach(b => (b.parts || []).forEach((x, i) => { if (!x.todo_id || !x.date || !x.label) return; ids.push(x.todo_id);
+      const cur = (P.snapshot().dated_todos || []).find(t => t.todo_id === x.todo_id);
+      if (cur && cur.state !== 'PLANNED') return;   // started or done on this device: leave it
+      P.upsertDatedTodo({ todo_id: x.todo_id, date: x.date, label: x.label, source: 'PLANNER', source_actor: 'PARENT_TALENT', order: 100 + i,
+        provenance: { via: 'READY_PARENT_INTAKE', schema: SCHEMA, week_id: pl.week_id, subject: b.subject } }); }));
+    try { P.snapshot().dated_todos.filter(t => oldIds.includes(t.todo_id) && !ids.includes(t.todo_id) && t.state === 'PLANNED')
+      .forEach(t => P.upsertDatedTodo(Object.assign({}, t, { state: 'SUPERSEDED' }))); } catch (e) { /* noop */ }
+    return ids;
   }
 
   // ---------- UI ----------
   const V = { el: null, s: null, msg: '', busy: false, view: null };
   function toPlanner(p) {
     const P = root.ReadySetPlanner; if (!P) return { ok: false, n: 0 };
-    const ids = new Set(); let n = 0;
-    p.books.forEach(b => b.parts.forEach((x, i) => { ids.add(x.todo_id);
-      P.upsertDatedTodo({ todo_id: x.todo_id, date: x.date, label: x.label, source: 'PLANNER', source_actor: 'PARENT_TALENT', order: 100 + i,
-        provenance: { via: 'READY_PARENT_INTAKE', schema: SCHEMA, week_id: p.week_id, subject: b.subject } }); n++; }));
-    // A re-save replaces this week's earlier split; done or started to-dos are left as they are.
-    const old = [].concat((V.s.saved && V.s.saved.todo_ids) || []);
-    try { P.snapshot().dated_todos.filter(t => old.includes(t.todo_id) && !ids.has(t.todo_id) && t.state === 'PLANNED')
-      .forEach(t => P.upsertDatedTodo(Object.assign({}, t, { state: 'SUPERSEDED' }))); } catch (e) { /* noop */ }
-    V.s.saved = { at: new Date().toISOString(), todo_ids: [...ids] }; store(V.s);
-    return { ok: true, n };
+    const ids = applyParts(P, p, (V.s.saved && V.s.saved.todo_ids) || []);
+    V.s.saved = { at: new Date().toISOString(), todo_ids: ids }; store(V.s);
+    try { root.localStorage.setItem(APPLIED_KEY, JSON.stringify({ week_id: p.week_id, updated_at: null, todo_ids: ids })); } catch (e) { /* noop */ }
+    return { ok: true, n: ids.length };
   }
   function build() {
     const s = V.s; const p = plan(s);
     const ready = p.books.filter(b => b.range_text).length;
+    const photos = BOOKS.reduce((n, b) => n + ((s.books[b.key] || {}).photos || []).length + ((s.books[b.key] || {}).remote || []).length, 0);
+    const autoN = BOOKS.filter(b => (s.books[b.key] || {}).auto).length;
+    const status = s.remoteState === 'PHOTOS_UPLOADED' && !autoN ? '사진을 탐험본부에 올렸어요. 렌더 PC가 해석하면 범위가 저절로 채워져요.'
+      : autoN ? `자동 해석 ${autoN}권이 도착했어요. 표시된 범위를 확인하고 넣어 주세요.` : s.remoteState === 'CONFIRMED' ? '이번 주 숙제가 확정되어 아이 기기 플래너에도 들어가요.' : '';
     return `<section class="screen warm parent">
       <div class="top"><button class="back" data-p="close" aria-label="닫기">‹</button><h1>보호자 · 재능 숙제</h1></div>
       <div class="grow" style="overflow-y:auto">
         <p class="pa-week">${md(p.source_date)} 받은 숙제 · ${md(p.deadline)}까지 · 연습일 ${p.days.length}일</p>
-        <p class="pa-help">책마다 사진을 찍고, 사진을 보며 범위를 적어 주세요. 예: 21~26쪽, 3~5회</p>
+        <p class="pa-help">책마다 사진을 찍어 올리면 렌더 PC가 범위와 한자를 읽어 채워요. 직접 적어도 돼요. 예: 21~26쪽, 3~5회</p>
+        <div data-dyn="status">${status ? `<p class="pa-status">${esc(status)}</p>` : ''}</div>
         ${BOOKS.map(b => { const v = s.books[b.key] || {}; const bp = p.books.find(x => x.key === b.key); return `<div class="card pa-book" data-book="${b.key}">
           <div class="pa-head"><b>${esc(b.subject)}</b><label class="pa-cam"><input type="file" accept="image/*" capture="environment" multiple data-photo="${b.key}" hidden>사진 찍기</label></div>
-          <div class="pa-thumbs" data-thumbs="${b.key}">${(v.photos || []).map(id => `<button class="pa-th" data-view="${id}" aria-label="사진 크게 보기"><img alt="" data-ph="${id}"></button>`).join('')}</div>
+          <div class="pa-thumbs" data-thumbs="${b.key}">${(v.photos || []).map(id => `<button class="pa-th ${(v.refs || {})[id] ? 'up' : ''}" data-view="${id}" aria-label="사진 크게 보기"><img alt="" data-ph="${id}"></button>`).join('')}${(v.remote || []).map(r => `<button class="pa-th up" data-rview="${esc(r)}" aria-label="다른 기기 사진 크게 보기"><img alt="" data-rph="${esc(r)}"></button>`).join('')}</div>
+          ${v.auto ? `<p class="pa-auto">자동 해석${v.auto.confidence === 'low' ? ' · 꼭 확인해 주세요' : ''}${v.auto.note ? ' · ' + esc(v.auto.note) : ''}</p>` : ''}
           <div class="pa-row"><input class="field" data-range="${b.key}" value="${esc(v.range || '')}" placeholder="범위 (예: 21~26쪽)" maxlength="30" enterkeyhint="next">
             <select class="field pa-n" data-sessions="${b.key}" aria-label="나눌 횟수">${['', 1, 2, 3, 4, 5, 6].map(n => `<option value="${n}" ${String(v.sessions || '') === String(n) ? 'selected' : ''}>${n ? n + '번에' : '매일'}</option>`).join('')}</select></div>
           ${b.key === 'hanja' ? `<input class="field pa-hanja" data-chars="hanja" value="${esc(v.chars || '')}" placeholder="이번 주 한자 (예: 日月火水木)" maxlength="80">
@@ -170,27 +243,44 @@
         </div>`; }).join('')}
         <div class="card pa-sum" data-dyn="sum"><b>주간 플래너 미리보기</b>${p.days.map(d => { const l = p.books.flatMap(b => b.parts.filter(x => x.date === d)); return `<div class="pa-day"><small>${md(d)}</small><span>${l.length ? l.map(x => esc(x.label.replace('재능 ', ''))).join(', ') : '<i>쉬는 날</i>'}</span></div>`; }).join('')}</div>
       </div>
-      <div class="pa-foot" data-dyn="foot">${V.msg ? `<p class="pa-msg" role="status">${esc(V.msg)}</p>` : ''}<button class="btn-y" data-p="save" ${ready && !V.busy ? '' : 'disabled'}>${V.busy ? '넣는 중…' : s.saved ? '다시 나눠서 플래너에 넣기' : `플래너에 넣기 (${ready}권)`}</button></div>
+      <div class="pa-foot" data-dyn="foot">${V.msg ? `<p class="pa-msg" role="status">${esc(V.msg)}</p>` : ''}<button class="btn-y" data-p="save" ${(ready || photos) && !V.busy ? '' : 'disabled'}>${V.busy ? '보내는 중…' : !ready && photos ? `사진 ${photos}장 올리고 자동 해석 맡기기` : s.saved ? '다시 나눠서 플래너에 넣기' : `확인하고 플래너에 넣기 (${ready}권)`}</button></div>
       ${V.view ? `<div class="pa-view" data-p="unview"><img alt="숙제 사진" data-ph="${V.view}"><button class="pa-del" data-del="${V.view}">이 사진 지우기</button></div>` : ''}
+      ${V.rview ? `<div class="pa-view" data-p="unview"><img alt="숙제 사진" data-rph="${esc(V.rview)}"></div>` : ''}
     </section>`;
   }
   function render() {
     if (!V.el) return; const sc = V.el.querySelector('.grow'); const y = sc ? sc.scrollTop : 0;
     V.el.innerHTML = build(); const sc2 = V.el.querySelector('.grow'); if (sc2) sc2.scrollTop = y;
     V.el.querySelectorAll('img[data-ph]').forEach(async im => { const b = await photoGet(im.dataset.ph); if (b) im.src = URL.createObjectURL(b); });
+    const rph = [...V.el.querySelectorAll('img[data-rph]')];
+    if (rph.length) central().then(c => c && rph.forEach(async im => { const ref = im.dataset.rph; V.rcache = V.rcache || {};
+      if (!V.rcache[ref]) { const b = await fetchPhoto(c, ref); if (b) V.rcache[ref] = URL.createObjectURL(b); } if (V.rcache[ref]) im.src = V.rcache[ref]; }));
   }
   function set(key, field, value) { const b = V.s.books[key] = V.s.books[key] || {}; b[field] = value; store(V.s); }
   async function onClick(e) {
-    const t = e.target.closest('[data-p],[data-view],[data-del]'); if (!t) return;
-    if (t.dataset.del) { e.stopPropagation(); const id = t.dataset.del; Object.values(V.s.books).forEach(b => { if (b.photos) b.photos = b.photos.filter(x => x !== id); }); store(V.s); await photoDel(id); V.view = null; return render(); }
+    const t = e.target.closest('[data-p],[data-view],[data-rview],[data-del]'); if (!t) return;
+    if (t.dataset.rview) { V.view = null; V.rview = t.dataset.rview; return render(); }
+    if (t.dataset.del) { e.stopPropagation(); const id = t.dataset.del; let ref = null;
+      Object.values(V.s.books).forEach(b => { if (b.photos) b.photos = b.photos.filter(x => x !== id); if (b.refs && b.refs[id]) { ref = b.refs[id]; delete b.refs[id]; } });
+      store(V.s); await photoDel(id); V.view = null; render();
+      if (ref) { const c = await central(); if (c) fetch(new URL('/api/family/material-photo?' + qs({ family_id: c.family_id, member_id: c.member_id, ref }), c.base).href, { method: 'DELETE', headers: c.H, redirect: 'error' }).catch(() => {}); }
+      return; }
     if (t.dataset.view) { V.view = t.dataset.view; return render(); }
     const a = t.dataset.p;
-    if (a === 'unview') { V.view = null; return render(); }
+    if (a === 'unview') { V.view = null; V.rview = null; return render(); }
     if (a === 'close') return close();
     if (a === 'save') {
       if (V.busy) return; V.busy = true; V.msg = ''; render();
-      const p = plan(V.s); const r = toPlanner(p);
-      let c = { ok: false, state: 'NOT_JOINED' }; if (r.ok) c = await publish(p);
+      const p = plan(V.s);
+      if (!p.books.some(b => b.range_text)) {   // photos only: hand them to the render PC
+        const c = await publish(p, 'PHOTOS_UPLOADED'); V.busy = false; if (c.ok) V.s.remoteState = 'PHOTOS_UPLOADED'; store(V.s);
+        V.msg = c.ok ? '사진을 올렸어요. 렌더 PC가 해석하면 이 화면에 범위가 채워져요. 확인만 해 주세요.' : c.state === 'NOT_JOINED' ? '가족 탐험대에 합류해야 사진을 탐험본부로 보낼 수 있어요. 범위를 직접 적어도 돼요.' : `사진을 아직 못 보냈어요 (${c.state}). 다시 눌러 주세요.`;
+        return render();
+      }
+      const r = toPlanner(p);
+      BOOKS.forEach(b => { const v = V.s.books[b.key]; if (v && v.auto) v.auto = Object.assign({}, v.auto, { confirmed_by: 'PARENT' }); });
+      let c = { ok: false, state: 'NOT_JOINED' }; if (r.ok) c = await publish(p, 'CONFIRMED');
+      if (c.ok) V.s.remoteState = 'CONFIRMED'; store(V.s);
       V.busy = false;
       V.msg = !r.ok ? '플래너를 찾지 못했어요. 앱을 다시 열어 주세요.'
         : `플래너에 ${r.n}개 넣었어요. ` + (c.ok ? (p.hanja.chars.length ? `이번 주 한자 ${p.hanja.chars.length}자를 숨바꼭질에 보냈어요.` : '탐험본부에도 이번 주 숙제를 보냈어요.')
@@ -200,7 +290,7 @@
   }
   function onInput(e) {
     const x = e.target;
-    if (x.dataset.range) { set(x.dataset.range, 'range', x.value); refreshParts(); }
+    if (x.dataset.range) { set(x.dataset.range, 'range', x.value); const v = V.s.books[x.dataset.range]; if (v.auto) { v.auto = null; store(V.s); } refreshParts(); }
     else if (x.dataset.chars) { set('hanja', 'chars', x.value); refreshParts(); }
   }
   // Typing must not re-render the field under the finger (keeps focus and the iOS keyboard).
@@ -212,7 +302,9 @@
     if (x.dataset.sessions) { set(x.dataset.sessions, 'sessions', x.value ? +x.value : null); return render(); }
     if (x.dataset.photo && x.files && x.files.length) {
       const key = x.dataset.photo; const b = V.s.books[key] = V.s.books[key] || {}; b.photos = b.photos || [];
-      for (const f of Array.from(x.files).slice(0, 6)) { const id = `${V.s.week.week_id}:${key}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`; if (await photoPut(id, await shrink(f))) b.photos.push(id); }
+      const c = await central(); b.refs = b.refs || {};
+      for (const f of Array.from(x.files).slice(0, 6)) { const id = `${V.s.week.week_id}:${key}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`; const blob = await shrink(f);
+        if (await photoPut(id, blob)) { b.photos.push(id); if (c) { const ref = await uploadPhoto(c, V.s.week.week_id, key, blob); if (ref) b.refs[id] = ref; } } }
       store(V.s); render();
     }
   }
@@ -221,6 +313,7 @@
     if (!V.el) { V.el = document.createElement('div'); V.el.id = 'rsParent'; V.el.setAttribute('role', 'dialog'); V.el.setAttribute('aria-label', '보호자 화면');
       V.el.addEventListener('click', onClick); V.el.addEventListener('input', onInput); V.el.addEventListener('change', onChange); document.body.appendChild(V.el); }
     V.el.hidden = false; document.documentElement.classList.add('parent-open'); render();
+    pull().then(ch => { if (ch && !V.el.hidden) render(); }).catch(() => {});
   }
   function close() { if (V.el) V.el.hidden = true; document.documentElement.classList.remove('parent-open'); root.dispatchEvent(new Event('rs-parent-closed')); }
 
@@ -234,6 +327,6 @@
     document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('[data-parent-hold]')) e.preventDefault(); });
   }
   if (root.document) bindHold();
-  root.RsParent = Object.freeze({ open, close, BOOKS, SCHEMA, CURRENT_ID, weekOf, daysFor, parseRange, splitBook, hanjaChars, plan });
+  root.RsParent = Object.freeze({ open, close, syncPlanner, BOOKS, SCHEMA, CURRENT_ID, weekOf, daysFor, parseRange, splitBook, hanjaChars, plan });
   if (typeof module !== 'undefined' && module.exports) module.exports = root.RsParent;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

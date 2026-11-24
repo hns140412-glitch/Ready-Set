@@ -1207,12 +1207,14 @@
     if (UI.screen === 'settings') render();
     toast('탐험본부 무전이 끊겼어요. 더보기에서 다시 합류해 줘요!');
   }
-  globalThis.addEventListener('taky-central-auth-ready', () => { UI.takyExpired = false; if (UI.screen === 'settings') render(); void takySync(); });
+  globalThis.addEventListener('taky-central-auth-ready', () => { UI.takyExpired = false; if (UI.screen === 'settings') render(); void takySync(); void talentSync(); });
+  // A 재능 week confirmed on any family device (parent phone, render PC) lands in this device's Planner.
+  function talentSync() { const R = globalThis.RsParent; if (!R || !R.syncPlanner) return; R.syncPlanner().then(r => { if (r && r.applied) { if (UI.screen === 'home' || UI.screen === 'settings') render(); toast('이번 주 재능 숙제가 플래너에 들어왔어요'); } }).catch(() => {}); }
   // The 보호자 screen writes Planner to-dos; the settings list and today's picks read them again.
   globalThis.addEventListener('rs-parent-closed', () => { if (UI.screen === 'settings' || UI.screen === 'home') render(); });
   globalThis.addEventListener('taky-central-auth-cleared', () => { if (UI.screen === 'settings') render(); });
   // Coming back to the app is when a parent-approved character usually becomes visible (no polling loop).
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && globalThis.TAKY_FAMILY_RUNTIME) void takySync(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && globalThis.TAKY_FAMILY_RUNTIME) { void takySync(); talentSync(); } });
   function takyCharacterLine(p) {
     const t = (p && p.takyCharacter) || (p && p.photo ? { state: 'NEED_PHOTO_SEND' } : {}), linked = !!globalThis.TAKY_FAMILY_RUNTIME;
     // Say when the card can't arrive instead of looking "still drawing" forever (Taky 2026-11-22 "계속 초기상태").

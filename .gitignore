@@ -2,3 +2,6 @@
 Thumbs.db
 *.log
 node_modules/
+tools/render-talent/talent-interpret.config.json
+tools/render-talent/device-token.txt
+tools/render-talent/work/
