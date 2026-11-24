@@ -826,7 +826,7 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .gd-ob1.m1 { padding: 0 !important; background: #2a3a5c; display: block; }
 .m1 { --fw: min(100vw, calc(var(--app-h, 100dvh) * 851 / 1848)); --u: calc(var(--fw) / 851); --m1-navy: #1c2f6e; }
 .m1-blur { position: absolute; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; }
-.m1-blur::before { content: ''; position: absolute; top: -30px; right: -30px; bottom: -30px; left: -30px; background: url(scenes/ob1-meet.webp?v=20261122c) center / cover; filter: blur(14px) brightness(.9); }
+.m1-blur::before { content: ''; position: absolute; top: -30px; right: -30px; bottom: -30px; left: -30px; background: url(scenes/ob1-meet.webp?v=20261124a) center / cover; filter: blur(14px) brightness(.9); }
 .m1-frame { position: absolute; left: 50%; top: 50%; width: var(--fw); height: calc(var(--fw) * 1848 / 851); transform: translate(-50%, -50%); overflow: hidden; }
 .m1-frame > * { position: absolute; margin: 0; }
 .m1-bg { top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -1139,3 +1139,43 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 @media (max-height: 700px) { .focus .headline { font-size: 44px; } }
 /* tablet landscape base camp: the four tiles sit in one row so the whole card (and its bottom nav) fits 820px */
 @media (min-width: 900px) and (min-aspect-ratio: 5/4) { .gd-ob8 .gd-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* 보호자 화면 (Taky 2026-11-24): 재능 숙제 사진 + 범위 -> 주간 플래너 */
+.pa-hold{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;position:relative}
+.pa-hold.holding{animation:paHold 1.2s linear forwards}
+@keyframes paHold{from{box-shadow:inset 0 0 0 0 rgba(255,178,31,.0)}to{box-shadow:inset 160px 0 0 0 rgba(255,178,31,.35)}}
+#rsParent{position:fixed;inset:0;z-index:80;background:var(--bg,#fbf3e1);display:flex}
+#rsParent[hidden]{display:none}
+#rsParent .screen{display:flex;flex-direction:column;width:100%;max-width:640px;margin:0 auto;height:100%;padding:calc(env(safe-area-inset-top) + 10px) 16px calc(env(safe-area-inset-bottom) + 12px);box-sizing:border-box}
+#rsParent .top{display:flex;align-items:center;gap:8px}
+#rsParent .top h1{font-size:20px;margin:0}
+#rsParent .back{width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.06);font-size:24px;line-height:1}
+#rsParent .grow{flex:1;min-height:0;-webkit-overflow-scrolling:touch}
+.pa-week{font-weight:700;margin:10px 2px 2px}
+.pa-help,.pa-note{color:var(--muted,#7a6f5c);font-size:13px;margin:2px 2px 8px}
+.pa-book{display:flex;flex-direction:column;gap:8px}
+.pa-head{display:flex;align-items:center;justify-content:space-between}
+.pa-head b{font-size:17px}
+.pa-cam{padding:8px 14px;border-radius:999px;background:#1f3a7a;color:#fff;font-weight:700;font-size:14px}
+.pa-thumbs{display:flex;gap:6px;overflow-x:auto}
+.pa-thumbs:empty{display:none}
+.pa-th{flex:0 0 64px;height:64px;padding:0;border:0;border-radius:10px;overflow:hidden;background:#eee}
+.pa-th img{width:100%;height:100%;object-fit:cover}
+.pa-row{display:flex;gap:6px}
+.pa-row .field{flex:1;min-width:0;font-size:16px}
+.pa-row .pa-n{flex:0 0 92px}
+.pa-hanja{font-size:18px;letter-spacing:.08em}
+.pa-parts{font-size:13px;margin:0;color:#3a3326}
+.pa-sum{display:flex;flex-direction:column;gap:6px}
+.pa-day{display:flex;gap:10px;font-size:14px}
+.pa-day small{flex:0 0 64px;color:var(--muted,#7a6f5c)}
+.pa-day i{color:var(--muted,#7a6f5c)}
+.pa-msg{font-weight:700;margin:8px 2px}
+.pa-foot{padding-top:8px;background:var(--bg,#fbf3e1);border-radius:16px 16px 0 0}
+.pa-foot .btn-y{width:100%}
+.pa-foot .btn-y:disabled{opacity:.45}
+.pa-view{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;z-index:2}
+.pa-view img{max-width:100%;max-height:80%;object-fit:contain}
+.pa-del{padding:10px 16px;border-radius:999px;border:0;background:#fff;font-weight:700}
+html.parent-open,html.parent-open body{overflow:hidden}
+@media (min-width:900px){#rsParent .screen{max-width:760px}}
