@@ -35,6 +35,11 @@
     const others = ids.filter(x => x && x !== self);
     if (others.length === 1) return others[0];
     if (!others.length && self) return self;
+    // A parent signed in on the child's device (TAKY-HOME: OWNER + SPOUSE + CHILD, Taky 2026-11-22): Ready is
+    // the child's app, so exactly one child member is that child. Before this, the parent session found two
+    // "others", returned null and Ready silently never sent the photo or read the approved card.
+    const kids = others.filter(x => /^(CHILD|KID)/i.test(x));
+    if (kids.length === 1) return kids[0];
     return null;
   }
 

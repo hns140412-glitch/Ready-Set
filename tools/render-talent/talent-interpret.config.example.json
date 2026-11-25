@@ -1,0 +1,8 @@
+{
+  "central": "https://taky-mobile.netlify.app",
+  "family_id": "TAKY-HOME",
+  "member_id": "CHILD",
+  "device_token_file": "device-token.txt",
+  "cli": "claude",
+  "work_dir": "work"
+}

@@ -89,6 +89,12 @@ const runtime = (ids = ['PARENT1', 'KID1']) => ({ apiBaseUrl: BASE, getToken: as
     assert.equal((await Sync.requestCharacter({ photo, memberId: 'STRANGER', runtime: runtime(), fetchImpl: m.fetchImpl })).state, 'MEMBER_NOT_AUTHORIZED');
     assert.equal(m.st.calls.length, 0);
   });
+  await t('member scope: parent signed in on the child device (OWNER+SPOUSE+CHILD) -> CHILD', async () => {
+    const S = { family_id: 'TAKY-HOME', self_member_id: 'OWNER', authorized_member_ids: ['OWNER', 'SPOUSE', 'CHILD'] };
+    assert.equal(Sync.resolveMember(S), 'CHILD');
+    assert.equal(Sync.resolveMember({ ...S, self_member_id: 'CHILD', authorized_member_ids: ['CHILD'] }), 'CHILD');
+    assert.equal(Sync.resolveMember({ ...S, authorized_member_ids: ['OWNER', 'SPOUSE', 'CHILD', 'CHILD2'] }), null);
+  });
   await t('only image data URLs are sent', async () => {
     const m = mockCentral();
     assert.equal((await Sync.requestCharacter({ photo: 'https://x/y.jpg', runtime: runtime(), fetchImpl: m.fetchImpl })).state, 'PHOTO_FORMAT');

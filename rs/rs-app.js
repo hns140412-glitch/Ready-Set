@@ -66,6 +66,10 @@
   const ymd = ts => { const d = new Date(ts); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
   const uid = p => p + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const guide = () => { const c = CREW.get(S.profile && S.profile.guide); const n = S.profile && S.profile.guideNick; return n ? Object.assign({}, c, { name: n }) : c; };
+  // Profile picture everywhere (home, record, share card): the parent-approved TAKY character once it has
+  // arrived, otherwise the child's own photo as taken. The on-device cartoon filter (posterized, 240px) is
+  // only a preview on the first journey and never stands in for the profile (Taky 2026-11-22).
+  const profImg = p => !p ? '' : (/^MASTER_READY/.test((p.takyCharacter || {}).state || '') && p.avatar) || p.photo || p.avatar || '';
   const shareName = p => p && p.nickname ? (p.name ? `${p.nickname}(${p.name})` : p.nickname) : '';
   function toast(msg, ms = 2200) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), ms); }
   const targetMin = () => { const p = S.plan; const c = parseInt(p.custom, 10); return p.target === 'custom' ? (c > 0 ? Math.min(c, 180) : 0) : p.target; };
@@ -196,7 +200,7 @@
     try { navigator.vibrate && navigator.vibrate([180, 90, 180]); } catch (e) { /* noop */ }
   }
   /* ---------------- crew voice lines (REV06 §31-35): rs/voice/<crew>/<key>.mp3, ElevenLabs ---------------- */
-  const VTAG = '20261122b';
+  const VTAG = '20261125a';
   const REC_TXT = {
     'rec-intro': '오? 녹음할 시간이군.', 'rec-alone': '잠깐… 오늘은 나 혼자 듣기 좀 아까운데?', 'rec-fetch': '같이 들어줄 친구 좀 잡아올게!',
     'rec-back': '잡아왔다!', 'g-arrive': '나는 그냥 지나가고 있었는데?', 'rec-listen': '됐고, 이것 좀 같이 들어봐.',
@@ -354,7 +358,7 @@
     const R = UI.reveal, T = RV.SEASONS[R.season] || RV.SEASONS.base, P = S.profile || {}, g = R.kind === 'session' && R.rec ? CREW.get(R.rec.guide) : guide();
     const cur = R.seq[R.at] || R.seq[R.seq.length - 1], facts = R.seq.slice(0, R.at + 1).filter(x => x.t === 'fact').map(x => x.i);
     const shown = facts.map((i, n) => rvCard(R.steps[i], n === facts.length - 1 && cur.t === 'fact' ? 'new' : ''));
-    const left = R.seq.length - 1 - R.at, me = P.avatar || P.photo || '';
+    const left = R.seq.length - 1 - R.at, me = profImg(P);
     const medal = R.medal && (cur.t === 'medal' || cur.t === 'finale') ? `<div class="rv-medal ${cur.t === 'medal' ? 'new' : 'kept'}"><div class="rv-coin"><b>${esc(R.medal.big)}</b><em>${esc(R.medal.unit)}</em></div><div class="rv-mtxt"><h3>${esc(R.medal.title)}</h3><p>${esc(R.medal.note)}</p></div></div>` : '';
     const fin = cur.t === 'finale';
     const acts = R.kind === 'session'
@@ -403,7 +407,7 @@
   }
 
   /* ---------------- duo coaching staging (REV06 §31/§33): Main exits, returns with Guest, then good/soft talk ---------------- */
-  const DUO_IN = [['m', 'rec-alone'], ['m', 'rec-fetch'], ['exit'], ['m', 'rec-back'], ['g', 'g-arrive'], ['m', 'rec-listen']];
+  const DUO_IN = [['m', 'rec-alone'], ['m', 'rec-fetch'], ['exit'], ['m', 'rec-back'], ['g', 'g-arrive'], ['m', 'rec-listen'], ['play']];
   const DUO_TALK = { good: [['m', 'good-m1'], ['g', 'good-g1'], ['m', 'good-m2'], ['g', 'good-g2'], ['m', 'good-m3']], soft: [['m', 'soft-m1'], ['g', 'soft-g1'], ['m', 'soft-m2'], ['g', 'soft-g2'], ['m', 'soft-m3']] };
   // No speech analysis yet: a confident take = long enough, audible, without many retries. Never mocks the child (§33).
   function duoTone(R) { const t = R.takes[R.sel]; if (!t) return 'soft'; return t.dur >= 6000 && R.takes.length <= 2 && (t.lvl == null || t.lvl >= .03) ? 'good' : 'soft'; }
@@ -417,11 +421,22 @@
     if (UI.rec.duo !== D || UI.rec.phase !== 'coach') return;
     const st = D.steps[D.i];
     if (!st) { D.done = true; D.i = D.steps.length - 1; render(); return; }
+    // Taky 2026-11-22: the friend is fetched first, THEN the take plays (both listen), THEN they react.
+    if (st[0] === 'play') {
+      const t = UI.rec.takes[UI.rec.sel]; const next = () => { if (UI.rec.duo !== D || D.done) return; D.playing = false; D.i++; duoRun(D); };
+      if (!t) { D.i++; return duoRun(D); }
+      if (AUD.take) AUD.take.pause();
+      D.playing = true; render();
+      const a = AUD.take = new Audio(t.url); let fin = false; const end = () => { if (fin) return; fin = true; clearTimeout(D.t); D.t = setTimeout(next, 500); };
+      a.onended = end; a.onerror = end;
+      D.t = setTimeout(end, Math.min(Math.max(t.dur || 0, 1500), 90000) + 1500);   // never stall if 'ended' never fires
+      a.play().catch(end); return;
+    }
     if (st[0] === 'exit') { D.out = true; render(); D.t = setTimeout(() => { if (UI.rec.duo !== D) return; D.out = false; D.back = true; D.i++; duoRun(D); }, 1300); return; }
     render();
     sayLine(st[0] === 'm' ? D.main : D.guest, st[1], () => { D.t = setTimeout(() => { if (UI.rec.duo !== D || D.done) return; D.i++; duoRun(D); }, 380); });
   }
-  function duoStop() { const D = UI.rec.duo; if (D) { clearTimeout(D.t); D.done = true; } try { AUD.voice && AUD.voice.pause(); } catch (e) { /* noop */ } }
+  function duoStop() { const D = UI.rec.duo; if (D) { clearTimeout(D.t); D.done = true; } try { AUD.voice && AUD.voice.pause(); } catch (e) { /* noop */ } try { AUD.take && AUD.take.pause(); } catch (e) { /* noop */ } }
 
   /* ---------------- recording (REV06 §20-38) ---------------- */
   const MIC = { stream: null, rec: null, chunks: [], t0: 0, busy: false, raf: 0, an: null };
@@ -447,11 +462,11 @@
         const blob = new Blob(MIC.chunks, { type });
         const dur = Date.now() - MIC.t0;
         if (MIC.stream) MIC.stream.getTracks().forEach(t => t.stop()); MIC.stream = null;
-        if (blob.size > 0) { UI.rec.takes.push({ blob, url: URL.createObjectURL(blob), type, dur, lvl: MIC.ln ? MIC.lv / MIC.ln : null }); UI.rec.sel = UI.rec.takes.length - 1; }
+        if (blob.size > 0) { const take = { blob, url: URL.createObjectURL(blob), type, dur, lvl: MIC.ln ? MIC.lv / MIC.ln : null }; UI.rec.takes.push(take); UI.rec.sel = UI.rec.takes.length - 1; prepWav(take); }
         UI.rec.phase = UI.rec.takes.length ? 'review' : 'ready';
         if (UI.screen === 'record') render();
       };
-      MIC.t0 = Date.now(); rec.start(250);
+      MIC.t0 = Date.now(); rec.start(); // one piece: Safari's sliced (timeslice) MP4 is fragmented and other apps refuse it
       UI.rec.phase = 'recording'; render(); drawWave(stream);
     } catch (e) {
       cleanupMic();
@@ -478,15 +493,52 @@
       loop();
     } catch (e) { /* waveform optional */ }
   }
-  function recFileName(take) {
-    const d = new Date(); const p = (S.profile.recPrefix || `${S.profile.nickname}'s English`).trim();
-    const ext = /mp4|m4a|aac/.test(take.type) ? 'm4a' : /webm/.test(take.type) ? 'webm' : /ogg/.test(take.type) ? 'ogg' : 'audio';
+  // The file that goes out is a plain WAV (16-bit mono): every phone, KakaoTalk and the Files app play it, unlike
+  // Safari's MP4 pieces or Chrome's WebM. Made on the device right after the take; the original is the fallback.
+  function wavOf(buf) {
+    const n = buf.length, rate = buf.sampleRate, ch = buf.numberOfChannels, out = new DataView(new ArrayBuffer(44 + n * 2));
+    const str = (o, t) => { for (let i = 0; i < t.length; i++) out.setUint8(o + i, t.charCodeAt(i)); };
+    str(0, 'RIFF'); out.setUint32(4, 36 + n * 2, true); str(8, 'WAVE'); str(12, 'fmt '); out.setUint32(16, 16, true); out.setUint16(20, 1, true); out.setUint16(22, 1, true);
+    out.setUint32(24, rate, true); out.setUint32(28, rate * 2, true); out.setUint16(32, 2, true); out.setUint16(34, 16, true); str(36, 'data'); out.setUint32(40, n * 2, true);
+    const data = []; for (let c = 0; c < ch; c++) data.push(buf.getChannelData(c));
+    for (let i = 0; i < n; i++) { let v = 0; for (let c = 0; c < ch; c++) v += data[c][i]; v = Math.max(-1, Math.min(1, v / ch)); out.setInt16(44 + i * 2, v < 0 ? v * 0x8000 : v * 0x7fff, true); }
+    return new Blob([out], { type: 'audio/wav' });
+  }
+  function prepWav(take) {
+    take.wavP = (async () => {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext; const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if (!AC || !OAC) return null;
+        const ctx = AUD.ctx || (AUD.ctx = new AC()); const raw = await take.blob.arrayBuffer();
+        const src = await new Promise((ok, no) => { const p = ctx.decodeAudioData(raw, ok, no); if (p && p.then) p.then(ok, no); });
+        const rate = 22050, len = Math.max(1, Math.ceil(src.duration * rate)); const off = new OAC(1, len, rate);
+        const node = off.createBufferSource(); node.buffer = src; node.connect(off.destination); node.start();
+        const buf = await off.startRendering(); take.wav = wavOf(buf); if (UI.screen === 'record' && UI.rec.phase === 'final') render(); return take.wav;
+      } catch (e) { take.wavErr = (e && e.name) || 'decode'; return null; }
+    })();
+    return take.wavP;
+  }
+  // Academy file name: "<English name>'s grammar|bricks recording YYYY MM DD". The child picks grammar or bricks on the
+  // submit screen (remembered); the English name is set once in 더보기. An old custom prefix ("Judy's English") keeps its name.
+  const REC_KINDS = { grammar: 'Grammar', bricks: 'Bricks' };
+  function recName(P) { const n = String(P.recName || '').trim() || (String(P.recPrefix || '').match(/^(.+?)'s\b/) || [])[1] || P.nickname || ''; return n.trim().slice(0, 24); }
+  function recFileName(take, type = (take && take.wav ? 'audio/wav' : take.type)) {
+    const d = new Date(); const P = S.profile, kind = REC_KINDS[P.recKind] ? P.recKind : 'grammar';
+    const p = `${recName(P)}'s ${kind}`;
+    const ext = /wav/.test(type) ? 'wav' : /mp4|m4a|aac/.test(type) ? 'm4a' : /webm/.test(type) ? 'webm' : /ogg/.test(type) ? 'ogg' : 'audio';
     return `${p} recording ${d.getFullYear()} ${pad(d.getMonth() + 1)} ${pad(d.getDate())}.${ext}`;
   }
-  async function shareFile(file, text) {
-    try {
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return 'shared'; }
-    } catch (e) { if (e && e.name === 'AbortError') return 'cancel'; }
+  const standalone = () => !!((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone);
+  // Share sheet first. Files go out without text: on iPhone, KakaoTalk and Messages take only the text when both are given.
+  // A failure is said plainly; a home-screen iPhone app cannot save a file by download, so it never pretends it did.
+  async function shareFile(file, text, opts = {}) {
+    let why = '';
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share(opts.withText && text ? { files: [file], text } : { files: [file] }); return 'shared'; }
+      catch (e) { if (e && e.name === 'AbortError') return 'cancel'; why = (e && e.name) || 'error'; }
+    } else why = navigator.share ? 'FILE_NOT_SHAREABLE' : 'NO_SHARE';
+    try { localStorage.setItem('rs2:lastShareError', JSON.stringify({ at: new Date().toISOString(), why, type: file.type, size: file.size, standalone: standalone() })); } catch (e) { /* noop */ }
+    if (why === 'NotAllowedError') { toast('한 번 더 눌러 주세요', 2600); return 'retry'; }
+    if (standalone() && /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document) { toast('이 화면에서 보낼 수 없어요. 사파리에서 열어 주세요.', 3600); return 'failed'; }
     const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     toast('파일로 저장했어요'); return 'saved';
@@ -511,7 +563,7 @@
     // Web fonts are split into unicode-range subsets: load the ones that hold the card's actual Hangul, or canvas falls back per syllable.
     const tTxt = ['탐험 시작 전, 응원 요청!', data.head, shareName(P), gd.name].join(''), hTxt = `“${data.say}”`;
     try { await Promise.all([document.fonts.load('56px Jua', tTxt), document.fonts.load('40px "Gamja Flower"', hTxt)]); } catch (e) { /* system fallback */ }
-    const [scene, crew, me] = await Promise.all([loadImg('rs/scenes/camp.webp?v=20261122b'), loadImg(gd.img), loadImg(P.avatar || P.photo || '')]);
+    const [scene, crew, me] = await Promise.all([loadImg('rs/scenes/camp.webp?v=20261125a'), loadImg(gd.img), loadImg(profImg(P))]);
     // parchment + expedition scene band
     const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#fbf3e1'); bg.addColorStop(1, '#efe0bd'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
     if (scene) { const sh = scene.width * 420 / W; g.save(); g.globalAlpha = .9; g.drawImage(scene, 0, scene.height * .35, scene.width, sh, 0, 0, W, 420); g.restore();
@@ -605,12 +657,10 @@
   }
   async function doShare() {
     const sh = UI.share; if (!sh) return;
-    try {
-      if (sh.file && navigator.canShare && navigator.canShare({ files: [sh.file] })) { await navigator.share({ files: [sh.file], text: sh.caption }); return; }
-      if (navigator.share) { await navigator.share({ text: sh.caption }); return; }
-    } catch (e) { if (e && e.name === 'AbortError') return; }
-    if (sh.file) await shareFile(sh.file, sh.caption);
-    try { await navigator.clipboard.writeText(sh.caption); toast('문구도 복사했어요'); } catch (e) { /* noop */ }
+    // Image only (KakaoTalk on iPhone drops the image when text comes along); the caption goes to the clipboard after.
+    if (sh.file) { const r = await shareFile(sh.file, sh.caption); if (r === 'cancel' || r === 'retry') return; }
+    else if (navigator.share) { try { await navigator.share({ text: sh.caption }); return; } catch (e) { return; } }
+    try { await navigator.clipboard.writeText(sh.caption); toast('응원 문구도 복사했어요. 붙여넣기 하면 돼요'); } catch (e) { /* noop */ }
   }
 
   /* ---------------- views ---------------- */
@@ -643,7 +693,7 @@
       if (it) return `<button class="wk-cell ${it.k}" ${pos} data-act="wkCell" data-key="${key}"><b>${esc(it.t)}</b><span>${it.e}</span></button>`;
       return `<button class="wk-cell free empty" ${pos} data-act="wkCell" data-key="${key}" aria-label="${WK_DAYS[i]}요일 ${s === 'am' ? '오전' : s === 'pm' ? '오후' : '저녁'} 일정 정하기"><b>자유 시간</b><span>⛰️</span></button>`;
     };
-    const week = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261122b" alt=""><h1>이번 주 여정</h1><p class="wk-sub">오늘도 한 걸음, 더 멋진 너의 이야기를!</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261122b" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
+    const week = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261125a" alt=""><h1>이번 주 여정</h1><p class="wk-sub">오늘도 한 걸음, 더 멋진 너의 이야기를!</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261125a" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
       <div class="wk-grid">
         ${ti >= 0 ? `<i class="wk-colmark" style="grid-area:1/${ti + 2}/5/${ti + 3}"></i>` : ''}
         ${days.map((d, i) => { const k = ymd(d); return `<button class="wk-day ${i === ti ? 'today' : ''}" style="grid-area:1/${i + 2}" data-act="homeDay" data-day="${k}"><b>${WK_DAYS[i]}</b><small>${i === ti ? '오늘' : `${d.getMonth() + 1}/${d.getDate()}`}</small>${recOf(k).length ? '<i class="wk-dot" aria-label="탐험 기록 있음"></i>' : ''}</button>`; }).join('')}
@@ -653,7 +703,7 @@
       <button class="wk-cheer" data-act="rvWeekHome" aria-label="이번 주 여정 기록 열기"><span aria-hidden="true">⛰️</span>지금의 너도, 멋지게 성장하고 있어!<span aria-hidden="true">🌤️</span></button>
       `;
     const day = UI.homeDay || todayKey, dd = new Date(day + 'T12:00:00'), daily = recOf(day);
-    const dayBody = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261122b" alt=""><h1>오늘의 탐험길</h1><p class="wk-sub">작은 계획이, 좋은 하루를 만들어요.</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261122b" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
+    const dayBody = `<div class="wk-head"><img class="wk-map" src="rs/art/home-map.webp?v=20261125a" alt=""><h1>오늘의 탐험길</h1><p class="wk-sub">작은 계획이, 좋은 하루를 만들어요.</p><img class="wk-tent" src="rs/art/home-tent.webp?v=20261125a" alt=""><p class="wk-motto">Same Sky,<br>Different Stories,<br>Together.</p></div>
       <div class="journey-range"><button data-act="weekMove" data-d="-1" aria-label="이전 날">‹</button><b>${fmt(dd)} (${'일월화수목금토'[dd.getDay()]})</b><button data-act="weekMove" data-d="1" aria-label="다음 날">›</button></div>
       <div class="day-route"><div class="timeline">${daily.map(r => `<article><time>${hhmm(r.startAt)}</time><div><b>${esc(r.tasks.map(t => t.item).join(' · '))}</b><small>${mmss(r.focusMs)} 탐험 기록</small></div></article>`).join('')}<article class="current"><time>${day === todayKey ? hhmm(Date.now()) : '탐험'}</time><div><b>${planTxt ? esc(planTxt) : '새로운 탐험을 시작해요'}</b><button data-act="goSetup">시작하기 →</button></div></article></div></div>
       <div class="week-summary"><h2>이번 주 요약</h2><div><span>기록한 탐험<b>${tasks.length}개</b></span><span>실제 집중 시간<b>${(m => m > 0 && m < 60000 ? '1분 미만' : `${Math.round(m / 60000)}분`)(weekRecs.reduce((n, r) => n + r.focusMs, 0))}</b></span><span class="summary-ring" style="--rate:${rate}%"><strong>${rate}%</strong><small>완료율</small></span></div></div>
@@ -661,9 +711,9 @@
     const ek = UI.wkEdit, pick = ek ? `<div class="wk-pick" role="dialog" aria-label="일정 정하기"><div class="wk-pick-card"><h2>${WK_DAYS[+ek.split('-')[0]]}요일 ${{ am: '오전', pm: '오후', ev: '저녁' }[ek.split('-')[1]]} 일정</h2><p>매주 같은 요일에 반복돼요.</p><div class="wk-pick-grid">${WK_KINDS.map((k, i) => `<button class="wk-cell ${k.k} ${wk[ek] && wk[ek].t === k.t ? 'on' : ''}" data-act="wkSet" data-i="${i}"><b>${k.t}</b><span>${k.e}</span></button>`).join('')}</div><div class="wk-pick-row"><button class="gd-btn" data-act="wkSet" data-i="-1">비우기</button><button class="gd-btn navy" data-act="wkClose">닫기</button></div></div></div>` : '';
     return `<section class="screen wk">
       <div class="wk-bg"><img src="rs/scenes/home-header.webp" alt=""></div>
-      <header class="wk-top"><img class="wk-art" src="rs/art/home-top.webp?v=20261122b" alt="TAKY Ready &amp; Set. 좋은 친구와 어디든 멋진 이야기가 시작돼!"><button class="wk-me" data-act="nav" data-to="settings" aria-label="내 정보"><img src="${P.avatar || P.photo || g.face}" alt=""></button></header>
+      <header class="wk-top"><img class="wk-art" src="rs/art/home-top.webp?v=20261125a" alt="TAKY Ready &amp; Set. 좋은 친구와 어디든 멋진 이야기가 시작돼!"><button class="wk-me" data-act="nav" data-to="settings" aria-label="내 정보"><img src="${profImg(P) || g.face}" alt=""></button></header>
       <div class="wk-card">${UI.homeView === 'day' ? dayBody : week}</div>
-      <div class="wk-props"><img src="rs/art/home-props.webp?v=20261122b" alt=""><button class="wk-cta" data-act="homeView" data-k="${UI.homeView === 'day' ? 'week' : 'day'}">${I.cal}<span>${UI.homeView === 'day' ? '이번 주 보기' : '오늘 보기'}</span><b aria-hidden="true">›</b></button></div>
+      <div class="wk-props"><img src="rs/art/home-props.webp?v=20261125a" alt=""><button class="wk-cta" data-act="homeView" data-k="${UI.homeView === 'day' ? 'week' : 'day'}">${I.cal}<span>${UI.homeView === 'day' ? '이번 주 보기' : '오늘 보기'}</span><b aria-hidden="true">›</b></button></div>
       <nav class="journey-nav wk-nav"><button class="${UI.homeView === 'day' ? '' : 'on'}" data-act="homeView" data-k="week">${I.home}<span>이번 주 여정</span></button><button data-act="goSetup">${I.target}<span>탐험하기</span></button><button data-act="campView">${MAP_IC}<span>베이스캠프</span></button><button data-act="editGuide">${I.chat}<span>친구들</span></button><button data-act="nav" data-to="settings">${I.gear}<span>더보기</span></button></nav>
       ${pick}
     </section>`;
@@ -724,40 +774,57 @@
     </section>`;
   }
   function clockSVG() {
-    // Mockup 06 clock, as drawn there: thick soft white rim, white face, 60 minute ticks (hour ticks heavier),
-    // medium-bold black numerals, rounded black hands, thin yellow second hand, yellow hub. No extra effects.
+    // Original 시안 (Taky 2026-11-22 phone+tablet mockup): thick embossed white bezel, white face, 60 ticks
+    // (hour ticks heavier), large medium-weight numerals, small "Ready & Set" with a sparkle just above the
+    // pivot. The label is drawn over the hands with a white halo so a passing hand never hides it.
     let ticks = '', nums = '';
-    for (let i = 0; i < 60; i++) { const a = i * 6 * Math.PI / 180, big = i % 5 === 0, r1 = big ? 80 : 82.5, r2 = 86; ticks += `<line x1="${(100 + r1 * Math.sin(a)).toFixed(2)}" y1="${(100 - r1 * Math.cos(a)).toFixed(2)}" x2="${(100 + r2 * Math.sin(a)).toFixed(2)}" y2="${(100 - r2 * Math.cos(a)).toFixed(2)}" stroke="#1a1a1a" stroke-width="${big ? 2.6 : 1}" stroke-linecap="butt"/>`; }
-    for (let h = 1; h <= 12; h++) { const a = h * 30 * Math.PI / 180; nums += `<text x="${(100 + 66 * Math.sin(a)).toFixed(2)}" y="${(100 - 66 * Math.cos(a) + 7.4).toFixed(2)}" text-anchor="middle" font-size="21" font-weight="700" fill="#1a1a1a" font-family="Pretendard Variable, Pretendard, sans-serif">${h}</text>`; }
+    for (let i = 0; i < 60; i++) { const a = i * 6 * Math.PI / 180, big = i % 5 === 0, r1 = big ? 77.5 : 80.5, r2 = 84; ticks += `<line x1="${(100 + r1 * Math.sin(a)).toFixed(2)}" y1="${(100 - r1 * Math.cos(a)).toFixed(2)}" x2="${(100 + r2 * Math.sin(a)).toFixed(2)}" y2="${(100 - r2 * Math.cos(a)).toFixed(2)}" stroke="#1a1a1a" stroke-width="${big ? 2.8 : 1}" stroke-linecap="butt"/>`; }
+    for (let h = 1; h <= 12; h++) { const a = h * 30 * Math.PI / 180; nums += `<text x="${(100 + 63.5 * Math.sin(a)).toFixed(2)}" y="${(100 - 63.5 * Math.cos(a) + 8).toFixed(2)}" text-anchor="middle" font-size="23" font-weight="600" fill="#161616" font-family="Pretendard Variable, Pretendard, sans-serif">${h}</text>`; }
     return `<svg class="clock" viewBox="0 0 200 200" role="img" aria-label="현재 시각 시계">
       <defs>
-        <linearGradient id="rimO" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e9e7e3"/></linearGradient>
-        <linearGradient id="rimI" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dcdad5"/><stop offset="1" stop-color="#f7f6f3"/></linearGradient>
+        <linearGradient id="rimO" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#f3f2ef"/><stop offset="1" stop-color="#d4d1cb"/></linearGradient>
+        <linearGradient id="rimI" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfccc6"/><stop offset=".5" stop-color="#ebe9e5"/><stop offset="1" stop-color="#ffffff"/></linearGradient>
+        <radialGradient id="faceG" cx=".5" cy=".42" r=".6"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#f4f3f1"/></radialGradient>
       </defs>
       <circle cx="100" cy="100" r="99.5" fill="url(#rimO)"/>
-      <circle cx="100" cy="100" r="90" fill="url(#rimI)"/>
-      <circle cx="100" cy="100" r="88.2" fill="#fbfbfa"/>
+      <circle cx="100" cy="100" r="91.5" fill="url(#rimI)"/>
+      <circle cx="100" cy="100" r="88.5" fill="url(#faceG)"/>
+      <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(0,0,0,.08)" stroke-width="1.4"/>
       ${ticks}${nums}
-      <text x="100" y="141" text-anchor="middle" font-size="8.6" font-weight="700" fill="#1a1a1a" font-family="Pretendard Variable, Pretendard, sans-serif">Ready &amp; Set</text>
-      <g stroke="#1a1a1a" stroke-width="1" stroke-linecap="round"><line x1="94.5" y1="58.5" x2="93.2" y2="56.4"/><line x1="100" y1="57.6" x2="100" y2="55"/><line x1="105.5" y1="58.5" x2="106.8" y2="56.4"/></g>
-      <g id="hH"><line x1="100" y1="100" x2="100" y2="56" stroke="#1a1a1a" stroke-width="5.6" stroke-linecap="round"/></g>
-      <g id="hM"><line x1="100" y1="100" x2="100" y2="34" stroke="#1a1a1a" stroke-width="4" stroke-linecap="round"/></g>
-      <g id="hS"><line x1="100" y1="108" x2="100" y2="30" stroke="#f5b800" stroke-width="1.3" stroke-linecap="round"/></g>
-      <circle cx="100" cy="100" r="5.4" fill="#f9c200" stroke="#e0a800" stroke-width="1"/>
+      <g id="hH"><line x1="100" y1="100" x2="100" y2="54" stroke="#161616" stroke-width="6" stroke-linecap="round"/></g>
+      <g id="hM"><line x1="100" y1="100" x2="100" y2="31" stroke="#161616" stroke-width="4.2" stroke-linecap="round"/></g>
+      <g class="rs-mark"><text x="100" y="73.5" text-anchor="middle" font-size="9.6" font-weight="700" fill="#161616" stroke="#fff" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke" font-family="Pretendard Variable, Pretendard, sans-serif">Ready &amp; Set</text>
+        <g stroke="#161616" stroke-width="1" stroke-linecap="round"><line x1="95.2" y1="62.6" x2="94" y2="60.6"/><line x1="100" y1="61.8" x2="100" y2="59.3"/><line x1="104.8" y1="62.6" x2="106" y2="60.6"/></g></g>
+      <g id="hS"><line x1="100" y1="112" x2="100" y2="27" stroke="#f5b800" stroke-width="1.3" stroke-linecap="round"/></g>
+      <circle cx="100" cy="100" r="5.6" fill="#f9c200" stroke="#d99c00" stroke-width="1"/>
     </svg>`;
   }
+  // Original 시안 background: comic burst rays from the clock centre and scattered stars (phone and tablet).
+  function focusBurst() {
+    let p = '';
+    for (let i = 0; i < 24; i++) {
+      const a = (i * 15 + (i % 3) * 4) * Math.PI / 180, w = (i % 2 ? 1.5 : 3) * Math.PI / 180, r0 = i % 2 ? 470 : 360, r1 = 1600;
+      const pt = (r, t) => `${(r * Math.sin(t)).toFixed(1)},${(-r * Math.cos(t)).toFixed(1)}`;
+      p += `<polygon points="${pt(r0, a)} ${pt(r1, a - w)} ${pt(r1, a + w)}" fill="${i % 4 === 1 ? '#ffb21f' : '#ff9a0a'}" opacity="${i % 2 ? .5 : .68}"/>`;
+    }
+    return `<svg class="burst" viewBox="-1600 -1600 3200 3200" aria-hidden="true">${p}</svg>`;
+  }
+  const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8l3 6.9 7.4.6-5.6 4.9 1.7 7.3L12 17.6l-6.5 3.9 1.7-7.3L1.6 9.3 9 8.7z" fill="currentColor"/></svg>';
+  const FOCUS_STARS = [[6, 12, 20], [88, 8, 16], [4, 33, 26], [93, 24, 24], [10, 58, 22], [90, 44, 28], [3, 72, 16], [95, 64, 18], [20, 24, 12], [80, 30, 14], [16, 66, 14], [84, 58, 12], [48, 4, 12]];
   function vFocus() {
     const s = S.session; const first = activeTask(s); const more = s.tasks.length - 1;
     const hasRec = first.item === '문장 녹음'; // REC only while the active task is a speaking task
     const app = appFor(first);
     const bgmName = (BGMS.find(b => b[0] === s.bgm) || BGMS[0])[1];
     return `<section class="screen focus">
-      <div class="rays"><i style="left:8%;top:14%">★</i><i style="right:12%;top:30%">★</i><i style="left:6%;top:52%">★</i><i style="right:7%;top:56%">★</i><i style="left:14%;top:34%;font-size:12px">★</i></div>
+      <div class="rays">${FOCUS_STARS.map(([x, y, z]) => `<i class="st" style="left:${x}%;top:${y}%;width:${z}px;height:${z}px">${STAR}</i>`).join('')}
+        <p class="wide-note" aria-hidden="true">오늘도<br>너는 충분히<br>멋져!</p>
+        <svg class="wide-cloud" viewBox="0 0 400 300" aria-hidden="true"><path d="M0 300V150c30-40 80-46 112-20 18-50 82-66 120-30 40-30 104-10 116 44 30 0 52 30 52 60v96z" fill="#ffd36b"/><path d="M0 300V196c26-30 66-34 92-14 16-40 70-52 102-24 34-22 86-6 96 36 26 2 44 24 44 50v56z" fill="#ffe7a8"/></svg></div>
       <div class="stage">
         <button class="music ${s.bgmOn ? '' : 'off'}" data-act="music" aria-label="집중 음악 ${s.bgmOn ? '끄기' : '켜기'}">${I.note}</button>
         <h1 class="headline"><span class="l1">그냥!</span><br>지금 하면 돼!</h1>
         ${more > 0 ? `<button class="pill pill-btn" data-act="taskAsk" aria-label="탐험 바꾸기">${I.book}<span>${esc(first.cat)} · ${esc(first.detail || first.item)} 외 ${more}</span><i aria-hidden="true">›</i></button>` : `<div class="pill">${I.book}<span>${esc(first.cat)} · ${esc(first.detail || first.item)}</span></div>`}
-        <div class="clock-wrap">${clockSVG()}<p class="note l">오늘도<br>너는 충분히<br>멋져!</p><p class="note r">집중하는<br>지금이<br>멋진 너야!</p></div>
+        <div class="clock-wrap">${focusBurst()}${clockSVG()}<p class="note l">오늘도<br>너는 충분히<br>멋져!</p><p class="note r">집중하는<br>지금이<br>멋진 너야!</p></div>
         <div class="panel">
           <div class="p-top">
             <div class="remain" id="remainBox"><small id="remainLbl">남은 시간</small><b id="remain">--:--</b></div>
@@ -829,14 +896,14 @@
         <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%"><button class="btn-w" data-act="recRetry">한 번 더 가볼까?</button><button class="btn-y" data-act="recCoach">동행 탐험대원에게 들려주기</button></div>`;
     } else if (R.phase === 'coach') {
       const D = R.duo; const q = CREW.get(D.guest);
-      const said = D.steps.slice(0, D.i + 1).filter(x => x[0] !== 'exit' && x[0] !== 'gap');
+      const said = D.steps.slice(0, D.i + 1).filter(x => x[0] !== 'exit' && x[0] !== 'gap' && x[0] !== 'play');
       const cur = D.steps[D.i] || [];
       const who = c => c === 'm' ? g : q;
       const last = said.slice(-3);
       // entry animations play once per stage phase; a re-render for the next line must not replay them
       const ph = D.out ? 'out' : D.back ? 'back' : 'in'; const fresh = D.ph !== ph; D.ph = ph;
       const newLine = said.length !== D.shown; D.shown = said.length;   // only the line just spoken slides in
-      body = `<h2>${D.done ? '오늘 목소리, 어땠냐면…' : D.out ? '후다닥!' : '잠깐만요…'}</h2>
+      body = `<h2>${D.done ? '오늘 목소리, 어땠냐면…' : D.out ? '후다닥!' : D.playing ? '쉿, 같이 듣는 중 ♪' : '잠깐만요…'}</h2>
         <div class="duo-stage ${D.out ? 'out' : ''} ${D.back ? 'back' : ''}" aria-hidden="true">
           <img class="fig m ${fresh && !D.out ? 'enter' : ''} ${cur[0] === 'm' && !fresh ? 'talk' : ''}" src="${g.img}" alt="">
           ${D.back ? `<img class="fig g ${fresh ? 'enter' : ''} ${cur[0] === 'g' && !fresh ? 'talk' : ''}" src="${q.img}" alt="">` : ''}
@@ -848,6 +915,7 @@
     } else if (R.phase === 'final') {
       const t = R.takes[R.sel];
       body = `<h2>영어 탐험, 제출 준비 완료!</h2>
+        <div class="seg rec-kind" role="radiogroup" aria-label="녹음 종류">${Object.entries(REC_KINDS).map(([k, l]) => `<button class="${(S.profile.recKind || 'grammar') === k ? 'on' : ''}" role="radio" aria-checked="${(S.profile.recKind || 'grammar') === k}" data-act="recKind" data-k="${k}">${l}</button>`).join('')}</div>
         <div class="file-name">${esc(recFileName(t))}</div>
         <div class="guide-say"><img class="gs-fig" src="${g.img}" alt="${esc(g.name)}"><div class="bubble"><small>${esc(g.name)}</small>목소리까지 잘 챙겨 넣었어. 이제 보내기만 하면 끝!</div></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%"><button class="btn-w" data-act="play" data-i="${R.sel}">들어보기</button><button class="btn-y" data-act="shareRec">파일 공유</button></div>`;
@@ -914,9 +982,13 @@
           ${(l => l.length ? `<div class="plan-list">${l.map(x => `<div class="plan-item"><small>${x.date === ymd(Date.now()) ? '오늘' : x.date === ymd(Date.now() + 864e5) ? '내일' : esc(x.date.slice(5).replace('-', '/'))}</small><b>${esc(x.label)}</b>${x.source_actor === 'PARENT_MANUAL' ? `<button class="x" data-act="planDel" data-todo="${esc(x.todo_id)}" aria-label="${esc(x.label)} 빼기">${I.x}</button>` : ''}</div>`).join('')}</div>` : '<p class="hint" style="margin:4px 0 8px">아직 넣은 할 일이 없어요. 아이는 직접 골라서도 시작할 수 있어요.</p>')(plUpcoming())}
           <div class="plan-add"><div class="seg" style="width:128px"><button class="${UI.planDay !== 'tomorrow' ? 'on' : ''}" data-act="planDay" data-d="today">오늘</button><button class="${UI.planDay === 'tomorrow' ? 'on' : ''}" data-act="planDay" data-d="tomorrow">내일</button></div><input class="field" id="planLabel" placeholder="예: 수학 익힘책 3쪽" maxlength="40" enterkeyhint="done"><button class="link-btn" data-act="planNew">넣기</button></div>
         </div>
+        <div class="card">
+          <div class="set-row"><span>보호자 화면<small style="display:block;color:var(--muted);font-weight:500">재능 숙제 사진 · 주간 플래너</small></span><button class="link-btn pa-hold" data-parent-hold aria-label="보호자 화면, 길게 눌러 열기" style="white-space:nowrap;flex:none">길게 눌러 열기 ›</button></div>
+        </div>
         <div class="card" data-taky-card>
           <div class="set-row"><span>가족 탐험대</span><button class="link-btn" data-act="takyFamily">${globalThis.TAKY_FAMILY_RUNTIME ? '합류 완료 ›' : UI.takyExpired ? '다시 합류 ›' : '합류하기 ›'}</button></div>
           <div class="set-row"><span>탐험가 카드</span><b data-taky-character>${esc(takyCharacterLine(p))}</b></div>
+          ${globalThis.TAKY_FAMILY_RUNTIME && p.photo && !/^(REQUESTED|NEED_PHOTO_SEND|MASTER_READY_NEW_REQUEST)$/.test((p.takyCharacter || {}).state || '') ? `<div class="set-row"><span>내 사진</span><button class="link-btn" data-act="takyResend">${/^MASTER_READY/.test((p.takyCharacter || {}).state || '') ? '새 카드 부탁하기 ›' : '탐험본부에 다시 보내기 ›'}</button></div>` : ''}
         </div>
         <div class="card">
           <div class="set-row"><span>닉네임</span><input class="field" style="max-width:190px;padding:8px 12px" data-prof="nickname" value="${esc(p.nickname)}" maxlength="10"></div>
@@ -928,7 +1000,7 @@
           <div class="set-row"><span>탐험 테마</span><div class="seg" style="width:160px"><button class="${p.theme === '항해' ? 'on' : ''}" data-act="theme" data-t="항해">항해</button><button class="${p.theme === '낙하' ? 'on' : ''}" data-act="theme" data-t="낙하">낙하</button></div></div>
           <div class="set-row"><span>계절 꾸미기 <small style="color:var(--muted);font-weight:500">${esc((RV ? RV.SEASONS[seasonKey()] : { name: '기본' }).name)}</small></span><div class="seg" style="width:160px"><button class="${(p.season || 'auto') === 'auto' ? 'on' : ''}" data-act="season" data-t="auto">계절 따라</button><button class="${p.season === 'base' ? 'on' : ''}" data-act="season" data-t="base">기본</button></div></div>
           <div class="set-row"><span>동행 탐험대원 목소리</span><button class="switch ${p.voice !== false ? 'on' : ''}" data-act="voice" role="switch" aria-checked="${p.voice !== false}" aria-label="동행 탐험대원 목소리"></button></div>
-          <div class="set-row"><span>녹음 파일 이름</span><input class="field" style="max-width:190px;padding:8px 12px" data-prof="recPrefix" value="${esc(p.recPrefix || `${p.nickname}'s English`)}" maxlength="30"></div>
+          <div class="set-row"><span>녹음 파일 영어 이름<small style="display:block;color:var(--muted);font-weight:500">예: Judy's grammar recording</small></span><input class="field" style="max-width:150px;padding:8px 12px" data-prof="recName" value="${esc(recName(p))}" placeholder="Judy" maxlength="24" autocapitalize="words"></div>
         </div>
         <button class="link-btn" data-act="resetAsk" style="color:#a0522d;align-self:center">모든 기록 지우기</button>
       </div>
@@ -958,7 +1030,7 @@
     if (kind === 'sky') mid = `<rect y="318" width="400" height="82" fill="#3f86c2"/><path d="M140 322 Q190 270 250 322Z" fill="#4c8a52"/>${[60, 300].map(x => `<ellipse cx="${x}" cy="120" rx="44" ry="16" fill="#fff" opacity=".85"/>`).join('')}`;
     return `<svg class="plate" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="sk-${kind}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient></defs><rect width="400" height="400" fill="url(#sk-${kind})"/>${kind === 'sky' ? '' : mtn}${mid}${kind === 'base' || kind === 'camp' ? pines(kind === 'base' ? 300 : 292, '#2f5b45') : ''}</svg>`;
   }
-  const sceneBg = k => SCENE_FILES.includes(k) ? `<img class="plate" src="rs/scenes/${k}.webp?v=20261122b" alt="">` : plate(k);
+  const sceneBg = k => SCENE_FILES.includes(k) ? `<img class="plate" src="rs/scenes/${k}.webp?v=20261125a" alt="">` : plate(k);
   const gdHead = (n, t, sub) => `<header class="gd-head${n ? '' : ' no-step'}">${n ? `<span class="gd-no">${n}</span>` : ''}<h1>${t}</h1><p>${sub}</p></header>`;
   const gdDots = n => `<div class="gd-dots" aria-label="${n}/8 단계">${Array.from({length: 5}, (_, i) => `<i class="${i < Math.ceil(n * 5 / 8) ? 'on' : ''}"></i>`).join('')}</div>`;
   const arrow = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
@@ -966,7 +1038,7 @@
   // ob1 meet screen: [core index, bubble box, tap box over the figure, name colour] in mockup pixels, mockup reading order.
   const OB1_MEET = [[1, [42, 598, 218, 724], [40, 720, 300, 1060], '#e0457b'], [2, [388, 642, 568, 754], [300, 680, 560, 1060], '#233f8f'], [3, [670, 678, 826, 804], [560, 735, 830, 1060], '#7a3d1c'],
     [0, [34, 1000, 208, 1094], [20, 1100, 300, 1440], '#233f8f'], [4, [390, 1010, 556, 1118], [300, 1120, 545, 1440], '#233f8f'], [5, [678, 996, 844, 1100], [545, 1102, 830, 1440], '#233f8f']];
-  const ART_V = '20261122b';
+  const ART_V = '20261125a';
   const OB1_PEAK = '<svg class="m1-peak" viewBox="0 0 64 30" aria-hidden="true"><path d="M2 28 L22 6 L31 16 L40 4 L62 28" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M15 28 L26 17 L31 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg>';
   const OB1_COMPASS = '<svg class="m1-compass" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="21" fill="none" stroke="currentColor" stroke-width="3"/><path d="M32 2 L36 28 L62 32 L36 36 L32 62 L28 36 L2 32 L28 28Z" fill="currentColor"/><path d="M32 12 L34.5 29.5 L32 32 L29.5 29.5Z" fill="#fff" opacity=".9"/><circle cx="32" cy="32" r="3" fill="#fff"/></svg>';
   const OB1_LOGO = '<svg class="m1-mark" viewBox="0 0 200 128" aria-hidden="true"><path d="M58 70 L92 22 L104 38 L112 28 L142 70" fill="#1d3577" stroke="#fff" stroke-width="7" stroke-linejoin="round"/><path d="M84 34 L92 22 L100 33 L94 30 L89 36Z" fill="#fff"/><text x="100" y="118" text-anchor="middle" font-family="Jua, Pretendard Variable, sans-serif" font-size="62" font-weight="900" fill="#1d3577" stroke="#fff" stroke-width="10" paint-order="stroke" letter-spacing="-1">TAKY</text></svg>';
@@ -1069,7 +1141,7 @@
     }
     if (s === 'ob3') {
       return wrap('camp', `${gdHead(3, '사진 찍기 / 사진 보관함 등록', '지금의 너를 기록해요. 탐험 여정에 특별한 추억이 될 거예요!')}
-        <div class="gd-photo pd"><img class="pd-bg" src="rs/art/photo-desk.webp?v=20261122b" alt=""><div class="pd-frame">${d.photo ? `<img src="${d.photo}" alt="내 사진">` : `<span class="pd-empty"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>내 사진</span>`}</div></div>
+        <div class="gd-photo pd"><img class="pd-bg" src="rs/art/photo-desk.webp?v=20261125a" alt=""><div class="pd-frame">${d.photo ? `<img src="${d.photo}" alt="내 사진">` : `<span class="pd-empty"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>내 사진</span>`}</div></div>
         <div class="gd-photo-btns"><label class="gd-btn navy"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h5l2-3h4l2 3h5v13H3z"/><circle cx="12" cy="13" r="4"/></svg>사진 찍기<input type="file" accept="image/*" capture="user" data-photo hidden></label><label class="gd-btn">사진 보관함에서 선택<input type="file" accept="image/*" data-photo hidden></label></div><div class="photo-recent" aria-label="이 기기에서 고른 최근 사진">${Array.from({length:4},(_,i)=>(d.recentPhotos||[])[i]?`<button data-act="obRecent" data-i="${i}" aria-label="최근 사진 ${i+1} 선택"><img src="${d.recentPhotos[i]}" alt="최근 사진 ${i+1}"></button>`:`<span aria-label="빈 사진 자리">${I.book}</span>`).join('')}</div>
         <p class="gd-preview" id="ob3Photo">${!d.photo ? '이 사진은 탐험 여정 속에서 프로필로 사용돼요!' : d.charReq === 'REQUESTED' ? '탐험본부에 요청했어요! 승인되면 내 카드가 도착해요 ✎' : `<button class="gd-req" data-act="obCharReq" ${d.charReq === 'SENDING' ? 'disabled' : ''}>${d.charReq === 'SENDING' ? '요청 보내는 중…' : d.charReq === 'FAILED' ? '다시 요청하기 ›' : '이 사진으로 캐릭터 요청하기 ›'}</button>`}</p><div class="gd-names"><label>닉네임 <small>공유할 때 앞</small><input class="gd-field" data-draft="nickname" value="${esc(d.nickname)}" placeholder="예: 별이" maxlength="10" autocomplete="off"></label><label>이름 <small>괄호 안</small><input class="gd-field" data-draft="name" value="${esc(d.name)}" placeholder="예: 김하늘" maxlength="10" autocomplete="off"></label></div>
         <p class="gd-preview">공유 이름: <b id="pvName">${esc(shareName({ nickname: d.nickname.trim(), name: d.name.trim() }) || '닉네임(이름)')}</b></p>
@@ -1085,7 +1157,7 @@
       return wrap('camp', `${gdHead('4+', '네 캐릭터가 도착했어!', '너와 꼭 닮은 탐험가가 여기 있어. 어떤 모습이 가장 마음에 들어?')}
         <div class="arrival-cards hood-${hood}">${dirs.map((v, i) => ['ABC'[i], VIBE_DIR[v][0], VIBE_DIR[v][1]]).map(([k,t,q],i)=>`<button data-act="obCharacter" data-k="${k}" class="${choice===k?'on':''}" aria-pressed="${choice===k}" aria-label="${k} ${t}"><span class="ac-tag"><b>${k}</b>${t}</span><i class="ac-check" aria-hidden="true">✓</i>${d.photo ? `<span class="ac-me ${ai && ai.imgs ? 'ai' : ''}"><img src="${charImg(i)}" alt="${k} 모습의 나"></span>` : `<img src="${CREW.core[i].img}" alt="">`}<em>“${q}”</em></button>`).join('')}</div>
         ${d.photo && ai && ai.state === 'pending' ? '<p class="ai-note" role="status">AI가 너의 2.5D 캐릭터를 그리는 중이에요… (1분쯤 걸려요)</p>' : ''}
-        <div class="arrival-crew group" aria-hidden="true"><img src="rs/art/ob1-crew.webp?v=20261122b" alt=""></div>
+        <div class="arrival-crew group" aria-hidden="true"><img src="rs/art/ob1-crew.webp?v=20261125a" alt=""></div>
         <p class="gd-label">후드 색을 골라볼까?<small>선택한 색이 네 캐릭터와 탐험대 친구들에게 적용돼. 우리는 하나의 팀이니까!</small></p><div class="hood-options">${[['navy','네이비'],['gold','골드'],['forest','숲 초록'],['rose','로즈']].map(([k,n])=>`<button class="hood-${k} ${hood===k?'on':''}" data-act="obHood" data-k="${k}" aria-pressed="${hood===k}" aria-label="${n}"><i></i><span>${n}</span></button>`).join('')}</div>
         <p class="gd-hand">다른 우리가, 더 멋진 이야기를 만든다!</p>
         ${gdCta('obGo', '이 캐릭터로 시작하기', true)}`);
@@ -1093,7 +1165,7 @@
     if (s === 'ob4') {
       return wrap('camp', `${gdHead(4, '아이템 선정 + 느낌 고르기', '탐험에 꼭 필요한 아이템 하나와, 너다운 느낌 두 개를 골라보세요! 동행 탐험대원이 하나를 더해 너만의 캐릭터 세 가지를 만들어요.')}
         <p class="gd-label">탐험 아이템 <small>(하나만 선택)</small></p>
-        <div class="gd-items">${ITEMS.map(([k, n]) => `<button class="${d.item === k ? 'on' : ''}" data-act="obItem" data-k="${k}" aria-pressed="${d.item === k}"><img src="rs/items/${k}.webp?v=20261122b" alt=""><span>${n}</span></button>`).join('')}</div>
+        <div class="gd-items">${ITEMS.map(([k, n]) => `<button class="${d.item === k ? 'on' : ''}" data-act="obItem" data-k="${k}" aria-pressed="${d.item === k}"><img src="rs/items/${k}.webp?v=20261125a" alt=""><span>${n}</span></button>`).join('')}</div>
         <p class="gd-label">어떤 느낌이 더 너 같아? <small>두 개 고르면, 세 번째는 ${esc(josa(guideNick(d), '이', '가'))} 골라줘요</small></p>
         <div class="gd-vibes">${(() => { const pk = d.vibes || [], sy = vibeSys(pk); return VIBES.map(([k, n, t]) => { const i = pk.indexOf(k), sys = sy === k; return `<button class="v-${k} ${i >= 0 ? 'on' : ''} ${sys ? 'sys' : ''}" data-act="obVibe" data-k="${k}" aria-pressed="${i >= 0}" ${i < 0 && pk.length >= 2 ? 'disabled' : ''}>${i >= 0 ? `<em class="v-no">${i + 1}</em>` : sys ? `<em class="v-no g">${esc(guideNick(d))} 픽</em>` : ''}<i style="background-image:url(rs/scenes/vibe-${k}.webp)"></i><b>${n}</b><span>${t}</span></button>`; }).join(''); })()}</div>
         <p class="gd-hand" id="ob4Hint">${(d.vibes || []).length === 2 ? (d.item ? '좋아! 이 세 가지 느낌으로 너의 모습을 만들어 볼게!' : '탐험 아이템도 하나 골라줘!') : (d.vibes || []).length === 1 ? '느낌을 하나 더 골라줘! (1/2)' : d.item ? '너다운 느낌 두 개를 골라줘! (0/2)' : '이제, 너만의 탐험대 캐릭터가 준비되고 있어요!'}</p>
@@ -1147,12 +1219,14 @@
         const sent = await sync.requestCharacter({ photo: p.photo });
         if (sent.state === 'PENDING_TAKY_SESSION') return;
         if (sent.state === 'SESSION_EXPIRED') return takyExpired();
+        UI.takyIssue = sent.ok ? null : sent.state;
         takyMark(sent.ok ? 'REQUESTED' : 'NEED_PHOTO_SEND', { error: sent.ok ? null : sent.state });
         if (!sent.ok) return;
       }
       const st = await sync.characterStatus({});
       if (st.state === 'SESSION_EXPIRED') return takyExpired();
-      if (!st.ok) return;
+      UI.takyIssue = st.ok ? null : st.state;
+      if (!st.ok) { const line = document.querySelector('[data-taky-character]'); if (line) line.textContent = takyCharacterLine(S.profile); return; }
       if (st.image && st.version && st.version !== (p.takyCharacter || {}).version) {
         if (!p.avatarLocal) p.avatarLocal = p.avatar || '';
         p.avatar = st.image; takyMark(st.state, { version: st.version, error: null });
@@ -1169,12 +1243,23 @@
     if (UI.screen === 'settings') render();
     toast('탐험본부 무전이 끊겼어요. 더보기에서 다시 합류해 줘요!');
   }
-  globalThis.addEventListener('taky-central-auth-ready', () => { UI.takyExpired = false; if (UI.screen === 'settings') render(); void takySync(); });
+  globalThis.addEventListener('taky-central-auth-ready', () => { UI.takyExpired = false; if (UI.screen === 'settings') render(); void takySync(); void talentSync(); });
+  // A 재능 week confirmed on any family device (parent phone, render PC) lands in this device's Planner.
+  function talentSync() { const R = globalThis.RsParent; if (!R || !R.syncPlanner) return; R.syncPlanner().then(r => { if (r && r.applied) { if (UI.screen === 'home' || UI.screen === 'settings') render(); toast('이번 주 재능 숙제가 플래너에 들어왔어요'); } }).catch(() => {}); }
+  // The 보호자 screen writes Planner to-dos; the settings list and today's picks read them again.
+  globalThis.addEventListener('rs-parent-closed', () => { if (UI.screen === 'settings' || UI.screen === 'home') render(); });
   globalThis.addEventListener('taky-central-auth-cleared', () => { if (UI.screen === 'settings') render(); });
   // Coming back to the app is when a parent-approved character usually becomes visible (no polling loop).
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && globalThis.TAKY_FAMILY_RUNTIME) void takySync(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && globalThis.TAKY_FAMILY_RUNTIME) { void takySync(); talentSync(); } });
   function takyCharacterLine(p) {
     const t = (p && p.takyCharacter) || (p && p.photo ? { state: 'NEED_PHOTO_SEND' } : {}), linked = !!globalThis.TAKY_FAMILY_RUNTIME;
+    // Say when the card can't arrive instead of looking "still drawing" forever (Taky 2026-11-22 "계속 초기상태").
+    if (!/^MASTER_READY/.test(t.state || '') && t.state) {
+      if (!linked) return UI.takyExpired ? '무전이 끊겼어요 · 다시 합류하면 카드 소식이 와요' : '탐험대에 합류하면 카드 소식이 와요';
+      const iss = UI.takyIssue || t.error;
+      if (iss === 'MEMBER_SELECTION_REQUIRED' || iss === 'MEMBER_NOT_AUTHORIZED') return '탐험본부 명단에서 내 이름을 못 찾았어요';
+      if (iss && t.state === 'NEED_PHOTO_SEND') return '사진이 아직 못 갔어요 · 아래에서 다시 보내 줘요';
+    }
     if (t.state === 'MASTER_READY_NEW_REQUEST') return `새 카드 그리는 중 · 지금은 No.${t.version || 1}`;
     if (/^MASTER_READY/.test(t.state || '')) return `탐험가 카드 No.${t.version || 1} 도착!`;
     if (t.state === 'REQUESTED') return '탐험본부에서 내 카드 그리는 중 ✎';
@@ -1231,7 +1316,7 @@
   let scenesWarm = false;
   function preloadScenes() {
     if (scenesWarm) return; scenesWarm = true;
-    const go = () => SCENE_FILES.forEach(k => { const i = new Image(); i.decoding = 'async'; i.src = `rs/scenes/${k}.webp?v=20261122b`; (window.__rsWarm = window.__rsWarm || []).push(i); });
+    const go = () => SCENE_FILES.forEach(k => { const i = new Image(); i.decoding = 'async'; i.src = `rs/scenes/${k}.webp?v=20261125a`; (window.__rsWarm = window.__rsWarm || []).push(i); });
     (window.requestIdleCallback || (f => setTimeout(f, 400)))(go);
   }
   function render() {
@@ -1362,13 +1447,20 @@
     recStart: () => recStart(),
     recStop: () => recStop(),
     recPhase: e => { UI.rec.phase = e.dataset.p; render(); },
+    recKind: e => { if (!REC_KINDS[e.dataset.k]) return; S.profile.recKind = e.dataset.k; if (S.session && S.session.recDone) { const t = UI.rec.takes[UI.rec.sel]; if (t) S.session.recFile = recFileName(t); } save(); render(); },
     recRetry: () => { duoStop(); UI.rec.phase = 'ready'; render(); },
     duoSkip: () => { const D = UI.rec.duo; duoStop(); if (D) { D.out = false; D.back = true; D.i = D.steps.length - 1; } render(); },
     play: e => { const t = UI.rec.takes[+e.dataset.i]; if (!t) return; if (AUD.take) AUD.take.pause(); AUD.take = new Audio(t.url); AUD.take.play().catch(() => toast('재생할 수 없어요')); },
     selTake: e => { UI.rec.sel = +e.dataset.i; render(); },
-    recCoach: () => { const s = S.session; if (!s.guest) { s.guest = pickGuest(S.profile.guide, s.moods).id; save(); } UI.rec.phase = 'coach'; duoStart(); },
+    recCoach: () => { const s = S.session; if (!s.guest) { s.guest = pickGuest(S.profile.guide, s.moods).id; save(); } if (AUD.take) AUD.take.pause(); UI.rec.phase = 'coach'; duoStart(); },
     recFinal: () => { const s = S.session; const t = UI.rec.takes[UI.rec.sel]; if (!t) return; s.recDone = true; s.recFile = recFileName(t); save(); duoStop(); UI.rec.phase = 'final'; render(); sayLine(S.profile.guide, 'rec-final'); },
-    shareRec: async () => { const t = UI.rec.takes[UI.rec.sel]; if (!t) return; const name = recFileName(t); const r = await shareFile(new File([t.blob], name, { type: t.type }), name); if (r === 'shared') toast('보냈어요'); },
+    shareRec: async () => {
+      const t = UI.rec.takes[UI.rec.sel]; if (!t) return;
+      // The WAV is normally ready long before this tap; if not, send the original now (waiting would lose the tap on iPhone).
+      const blob = t.wav || t.blob, type = t.wav ? 'audio/wav' : t.type, name = recFileName(t, type);
+      let r = await shareFile(new File([blob], name, { type }), name);
+      if (r === 'shared') { toast('보냈어요'); if (S.session) { S.session.recSent = new Date().toISOString(); save(); } }
+    },
     backFocus: () => { duoStop(); recStop(); cleanupMic(); if (AUD.take) AUD.take.pause(); go('focus'); const s = S.session; if (s && s.bgmOn && !isPaused(s)) bgmPlay(s.bgm); },
     calMove: e => { const now = new Date(); const m = UI.calMonth || new Date(now.getFullYear(), now.getMonth(), 1); UI.calMonth = new Date(m.getFullYear(), m.getMonth() + (+e.dataset.d), 1); render(); },
     calDay: e => { UI.calSel = e.dataset.d; render(); },
@@ -1388,6 +1480,7 @@
     obGo: () => { const d = UI.draft; const i = OB_STEPS.indexOf(UI.screen); if (!obOk(d, UI.screen)) return; ['nickname', 'name', 'guideNick', 'island', 'camp'].forEach(k => { d[k] = (d[k] || '').trim(); }); go(OB_STEPS[i + 1] || 'ob8'); if (UI.screen === 'ob2') playVoice(CREW.get(d.guide)); },
     obSay: e => { UI.obSay = +e.dataset.i; if (UI.draft) UI.draft.guide = CREW.core[UI.obSay].id; render(); playVoice(CREW.core[UI.obSay]); },
     obStep: e => { const all = CREW.all; const i = (all.indexOf(CREW.get(UI.draft.guide)) + +e.dataset.d + all.length) % all.length; UI.draft.guide = all[i].id; UI.obPage = Math.floor(i / 6); render(); playVoice(all[i]); },
+    takyResend: () => { if (!S.profile || !S.profile.photo) return; takyMark('NEED_PHOTO_SEND', { error: null }); render(); void takySync().then(() => { render(); toast((S.profile.takyCharacter || {}).state === 'REQUESTED' ? '탐험본부에 사진을 다시 보냈어요!' : '사진이 아직 닿지 않았어요. 잠시 뒤 다시 눌러 줘요!'); }); },
     takyFamily: () => { const s = document.getElementById('takyFamilySheet'); if (s) { s.hidden = false; const b = s.querySelector('#familySignInBtn'); (b && !b.hidden ? b : s.querySelector('button')).focus(); } },
     obPage: e => { UI.obPage = +e.dataset.i; render(); },
     pickGuide: e => { UI.draft.guide = e.dataset.id; render(); playVoice(CREW.get(e.dataset.id)); },
