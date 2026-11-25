@@ -14,6 +14,7 @@
 // Config (JSON, next to this file by default, never committed): see talent-interpret.config.example.json.
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
@@ -31,6 +32,28 @@ const log = (...a) => {
   console.log(line);
   try { fs.appendFileSync(path.join(HERE, 'talent-interpret.log'), line + '\n'); } catch { /* read-only folder */ }
 };
+
+// One-time pairing: the parent screen (Ready 보호자 화면 -> 렌더 PC 연결 파일 받기) saves taky-render-pairing*.txt in
+// Downloads. Take it in: token to device_token_file, family/member into the config, then delete the file.
+export function importPairing(file = cfgPath, dirs = [path.join(os.homedir(), 'Downloads')]) {
+  const c = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : {};
+  for (const d of dirs) {
+    let names = []; try { names = fs.readdirSync(d).filter(n => /^taky-render-pairing.*\.txt$/i.test(n)); } catch { continue; }
+    names.sort((a, b) => fs.statSync(path.join(d, b)).mtimeMs - fs.statSync(path.join(d, a)).mtimeMs);
+    for (const n of names) {
+      const f = path.join(d, n); let j = null; try { j = JSON.parse(fs.readFileSync(f, 'utf8')); } catch { j = null; }
+      if (!j || j.kind !== 'TAKY_RENDER_PAIRING_V1' || !/^tdv1\./.test(j.device_token || '')) continue;
+      const tokenFile = path.resolve(HERE, c.device_token_file || 'device-token.txt');
+      fs.writeFileSync(tokenFile, j.device_token, { mode: 0o600 });
+      Object.assign(c, { central: c.central || j.central, family_id: j.family_id, member_id: j.member_id, device_token_file: c.device_token_file || 'device-token.txt' });
+      fs.writeFileSync(file, JSON.stringify(c, null, 2));
+      for (const m of names) try { fs.unlinkSync(path.join(d, m)); } catch { /* noop */ }
+      log('paired', j.family_id, j.member_id, 'token until', j.expires_at || '?');
+      return true;
+    }
+  }
+  return false;
+}
 
 export function loadConfig(file = cfgPath) {
   const c = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -193,6 +216,9 @@ export async function runOnce(c, { dry = false } = {}) {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   (async () => {
+    importPairing();
+    let c0; try { c0 = JSON.parse(fs.readFileSync(cfgPath, 'utf8')); } catch { c0 = {}; }
+    if (!c0.device_token_file || !fs.existsSync(path.resolve(HERE, c0.device_token_file))) { log('WAITING_FOR_PAIRING: open Ready 보호자 화면 on this PC and press 렌더 PC 연결 파일 받기'); return; }
     const c = loadConfig();
     await renewToken(c).catch(e => log('renew error', e.message));
     const r = await runOnce(c, { dry: flag('--dry-run') });
