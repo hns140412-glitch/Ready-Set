@@ -229,13 +229,13 @@
     const ready = p.books.filter(b => b.range_text).length;
     const photos = BOOKS.reduce((n, b) => n + ((s.books[b.key] || {}).photos || []).length + ((s.books[b.key] || {}).remote || []).length, 0);
     const autoN = BOOKS.filter(b => (s.books[b.key] || {}).auto).length;
-    const status = s.remoteState === 'PHOTOS_UPLOADED' && !autoN ? '사진을 탐험본부에 올렸어요. 렌더 PC가 해석하면 범위가 저절로 채워져요.'
+    const status = s.remoteState === 'PHOTOS_UPLOADED' && !autoN ? '사진을 탐험본부에 올렸어요. 자동 해석이 끝나면 범위가 저절로 채워져요 (화요일 저녁~수요일 아침, 한 시간마다).'
       : autoN ? `자동 해석 ${autoN}권이 도착했어요. 표시된 범위를 확인하고 넣어 주세요.` : s.remoteState === 'CONFIRMED' ? '이번 주 숙제가 확정되어 아이 기기 플래너에도 들어가요.' : '';
     return `<section class="screen warm parent">
       <div class="top"><button class="back" data-p="close" aria-label="닫기">‹</button><h1>보호자 · 재능 숙제</h1></div>
       <div class="grow" style="overflow-y:auto">
         <p class="pa-week">${md(p.source_date)} 받은 숙제 · ${md(p.deadline)}까지 · 연습일 ${p.days.length}일</p>
-        <p class="pa-help">책마다 사진을 찍어 올리면 렌더 PC가 범위와 한자를 읽어 채워요. 직접 적어도 돼요. 예: 21~26쪽, 3~5회</p>
+        <p class="pa-help">책마다 사진을 찍어 올리면 자동 해석이 범위와 한자를 읽어 채워요. 직접 적어도 돼요. 예: 21~26쪽, 3~5회</p>
         <div data-dyn="status">${status ? `<p class="pa-status">${esc(status)}</p>` : ''}</div>
         ${BOOKS.map(b => { const v = s.books[b.key] || {}; const bp = p.books.find(x => x.key === b.key); return `<div class="card pa-book" data-book="${b.key}">
           <div class="pa-head"><b>${esc(b.subject)}</b><label class="pa-cam"><input type="file" accept="image/*" capture="environment" multiple data-photo="${b.key}" hidden>사진 찍기</label></div>
@@ -248,8 +248,6 @@
           <div data-dyn="parts-${b.key}">${bp.parts.length ? `<p class="pa-parts">${bp.parts.map(x => `${md(x.date)} ${esc(x.label.replace('재능 ' + b.subject + ' · ', ''))}`).join(' · ')}</p>` : ''}</div>
         </div>`; }).join('')}
         <div class="card pa-sum" data-dyn="sum"><b>주간 플래너 미리보기</b>${p.days.map(d => { const l = p.books.flatMap(b => b.parts.filter(x => x.date === d)); return `<div class="pa-day"><small>${md(d)}</small><span>${l.length ? l.map(x => esc(x.label.replace('재능 ', ''))).join(', ') : '<i>쉬는 날</i>'}</span></div>`; }).join('')}</div>
-        <div class="card pa-pair"><b>렌더 PC 연결</b><p class="pa-note">렌더 PC에서 이 화면을 열고 한 번만 누르면 자동 해석이 이 가족으로 연결돼요. 받은 파일은 렌더 PC가 알아서 가져가요.</p>
-          <button class="btn-w" data-p="pair">렌더 PC 연결 파일 받기</button></div>
       </div>
       <div class="pa-foot" data-dyn="foot">${V.msg ? `<p class="pa-msg" role="status">${esc(V.msg)}</p>` : ''}<button class="btn-y" data-p="save" ${(ready || photos) && !V.busy ? '' : 'disabled'}>${V.busy ? '보내는 중…' : !ready && photos ? `사진 ${photos}장 올리고 자동 해석 맡기기` : s.saved ? '다시 나눠서 플래너에 넣기' : `확인하고 플래너에 넣기 (${ready}권)`}</button></div>
       ${V.view ? `<div class="pa-view" data-p="unview"><img alt="숙제 사진" data-ph="${V.view}"><button class="pa-del" data-del="${V.view}">이 사진 지우기</button></div>` : ''}
@@ -277,26 +275,12 @@
     const a = t.dataset.p;
     if (a === 'unview') { V.view = null; V.rview = null; return render(); }
     if (a === 'close') return close();
-    // One-time pairing for the render PC job: a 400-day device token for this signed-in family member, saved as a file
-    // that talent-interpret.mjs picks up from Downloads and deletes. No secret ever lives in the code or on the PC by hand.
-    if (a === 'pair') {
-      const c = await central(); if (!c) { V.msg = '가족 탐험대에 로그인한 뒤에 받을 수 있어요.'; return render(); }
-      try {
-        const r = await fetch(new URL('/api/family/device', c.base).href, { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, c.H), body: '{}', cache: 'no-store', redirect: 'error' });
-        const j = await r.json().catch(() => ({}));
-        if (!r.ok || !/^tdv1\./.test(j.device_token || '')) throw Error(j.reason || String(r.status));
-        const blob = new Blob([JSON.stringify({ kind: 'TAKY_RENDER_PAIRING_V1', device_token: j.device_token, expires_at: j.expires_at, family_id: c.family_id, member_id: c.member_id, central: c.base.origin, at: new Date().toISOString() })], { type: 'text/plain' });
-        const u = URL.createObjectURL(blob), el = document.createElement('a'); el.href = u; el.download = 'taky-render-pairing.txt'; document.body.appendChild(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000);
-        V.msg = '연결 파일을 받았어요. 렌더 PC가 15분 안에 가져가서 연결해요.';
-      } catch (err) { V.msg = '연결 파일을 못 받았어요 (' + String(err.message || err).slice(0, 40) + '). 다시 눌러 주세요.'; }
-      return render();
-    }
     if (a === 'save') {
       if (V.busy) return; V.busy = true; V.msg = ''; render();
       const p = plan(V.s);
       if (!p.books.some(b => b.range_text)) {   // photos only: hand them to the render PC
         const c = await publish(p, 'PHOTOS_UPLOADED'); V.busy = false; if (c.ok) V.s.remoteState = 'PHOTOS_UPLOADED'; store(V.s);
-        V.msg = c.ok ? '사진을 올렸어요. 렌더 PC가 해석하면 이 화면에 범위가 채워져요. 확인만 해 주세요.' : c.state === 'NOT_JOINED' ? '가족 탐험대에 합류해야 사진을 탐험본부로 보낼 수 있어요. 범위를 직접 적어도 돼요.' : `사진을 아직 못 보냈어요 (${c.state}). 다시 눌러 주세요.`;
+        V.msg = c.ok ? '사진을 올렸어요. 자동 해석이 끝나면 이 화면에 범위가 채워지고, 확실한 주는 플래너에 바로 들어가요.' : c.state === 'NOT_JOINED' ? '가족 탐험대에 합류해야 사진을 탐험본부로 보낼 수 있어요. 범위를 직접 적어도 돼요.' : `사진을 아직 못 보냈어요 (${c.state}). 다시 눌러 주세요.`;
         return render();
       }
       const r = toPlanner(p);
