@@ -248,6 +248,8 @@
           <div data-dyn="parts-${b.key}">${bp.parts.length ? `<p class="pa-parts">${bp.parts.map(x => `${md(x.date)} ${esc(x.label.replace('재능 ' + b.subject + ' · ', ''))}`).join(' · ')}</p>` : ''}</div>
         </div>`; }).join('')}
         <div class="card pa-sum" data-dyn="sum"><b>주간 플래너 미리보기</b>${p.days.map(d => { const l = p.books.flatMap(b => b.parts.filter(x => x.date === d)); return `<div class="pa-day"><small>${md(d)}</small><span>${l.length ? l.map(x => esc(x.label.replace('재능 ', ''))).join(', ') : '<i>쉬는 날</i>'}</span></div>`; }).join('')}</div>
+        <div class="card pa-pair"><b>렌더 PC 연결</b><p class="pa-note">렌더 PC에서 이 화면을 열고 한 번만 누르면 자동 해석이 이 가족으로 연결돼요. 받은 파일은 렌더 PC가 알아서 가져가요.</p>
+          <button class="btn-w" data-p="pair">렌더 PC 연결 파일 받기</button></div>
       </div>
       <div class="pa-foot" data-dyn="foot">${V.msg ? `<p class="pa-msg" role="status">${esc(V.msg)}</p>` : ''}<button class="btn-y" data-p="save" ${(ready || photos) && !V.busy ? '' : 'disabled'}>${V.busy ? '보내는 중…' : !ready && photos ? `사진 ${photos}장 올리고 자동 해석 맡기기` : s.saved ? '다시 나눠서 플래너에 넣기' : `확인하고 플래너에 넣기 (${ready}권)`}</button></div>
       ${V.view ? `<div class="pa-view" data-p="unview"><img alt="숙제 사진" data-ph="${V.view}"><button class="pa-del" data-del="${V.view}">이 사진 지우기</button></div>` : ''}
@@ -275,6 +277,20 @@
     const a = t.dataset.p;
     if (a === 'unview') { V.view = null; V.rview = null; return render(); }
     if (a === 'close') return close();
+    // One-time pairing for the render PC job: a 400-day device token for this signed-in family member, saved as a file
+    // that talent-interpret.mjs picks up from Downloads and deletes. No secret ever lives in the code or on the PC by hand.
+    if (a === 'pair') {
+      const c = await central(); if (!c) { V.msg = '가족 탐험대에 로그인한 뒤에 받을 수 있어요.'; return render(); }
+      try {
+        const r = await fetch(new URL('/api/family/device', c.base).href, { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, c.H), body: '{}', cache: 'no-store', redirect: 'error' });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok || !/^tdv1\./.test(j.device_token || '')) throw Error(j.reason || String(r.status));
+        const blob = new Blob([JSON.stringify({ kind: 'TAKY_RENDER_PAIRING_V1', device_token: j.device_token, expires_at: j.expires_at, family_id: c.family_id, member_id: c.member_id, central: c.base.origin, at: new Date().toISOString() })], { type: 'text/plain' });
+        const u = URL.createObjectURL(blob), el = document.createElement('a'); el.href = u; el.download = 'taky-render-pairing.txt'; document.body.appendChild(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000);
+        V.msg = '연결 파일을 받았어요. 렌더 PC가 15분 안에 가져가서 연결해요.';
+      } catch (err) { V.msg = '연결 파일을 못 받았어요 (' + String(err.message || err).slice(0, 40) + '). 다시 눌러 주세요.'; }
+      return render();
+    }
     if (a === 'save') {
       if (V.busy) return; V.busy = true; V.msg = ''; render();
       const p = plan(V.s);
