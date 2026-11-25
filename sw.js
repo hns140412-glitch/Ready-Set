@@ -1,8 +1,8 @@
 /* Ready & Set service worker — approved-design rebuild (2026-11-05).
    Network-first for pages so updates land; cache-first for versioned static assets.
    Removes caches from earlier builds. */
-const CACHE = 'ready-set:rebuild-20261124a';
-const CORE = ['./', './index.html', './rs/rs.css?v=20261124a', './rs/viewport.js?v=20261124a', './rs/crew.js?v=20261124a', './rs/crew-talk.js?v=20261124a', './rs/rs-taky-character-sync.js?v=20261124a', './rs/rs-parent.js?v=20261124a', './rs/reveal.js?v=20261124a', './ready-planner-v01.js?v=20261124a', './rs/rs-app.js?v=20261124a', './rs/rs-taky-family.mjs?v=20261124a', './rs/taky-family-signin.mjs?v=20261124a', './rs/home-hero.webp', './manifest.webmanifest', './assets/icon-192.png'];
+const CACHE = 'ready-set:rebuild-20261125a';
+const CORE = ['./', './index.html', './rs/rs.css?v=20261125a', './rs/viewport.js?v=20261125a', './rs/crew.js?v=20261125a', './rs/crew-talk.js?v=20261125a', './rs/rs-taky-character-sync.js?v=20261125a', './rs/rs-parent.js?v=20261125a', './rs/reveal.js?v=20261125a', './ready-planner-v01.js?v=20261125a', './rs/rs-app.js?v=20261125a', './rs/rs-taky-family.mjs?v=20261125a', './rs/taky-family-signin.mjs?v=20261125a', './rs/home-hero.webp', './manifest.webmanifest', './assets/icon-192.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
