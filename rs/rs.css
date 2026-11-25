@@ -1170,7 +1170,7 @@ button:focus-visible,label:focus-within { outline:3px solid #d9a441; outline-off
 .pa-day{display:flex;gap:10px;font-size:14px}
 .pa-day small{flex:0 0 64px;color:var(--muted,#7a6f5c)}
 .pa-day i{color:var(--muted,#7a6f5c)}
-.pa-msg{font-weight:700;margin:8px 2px}
+.pa-msg{font-weight:700;margin:0 0 8px;padding:10px 14px;font-size:15px;line-height:1.45;color:#162e66;background:#eef4e4;border:1px solid #cfe0b6;border-radius:14px}
 .pa-foot{padding-top:8px;background:var(--bg,#fbf3e1);border-radius:16px 16px 0 0}
 .pa-foot .btn-y{width:100%}
 .pa-foot .btn-y:disabled{opacity:.45}

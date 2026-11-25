@@ -977,7 +977,7 @@
           <div class="plan-add"><div class="seg" style="width:128px"><button class="${UI.planDay !== 'tomorrow' ? 'on' : ''}" data-act="planDay" data-d="today">오늘</button><button class="${UI.planDay === 'tomorrow' ? 'on' : ''}" data-act="planDay" data-d="tomorrow">내일</button></div><input class="field" id="planLabel" placeholder="예: 수학 익힘책 3쪽" maxlength="40" enterkeyhint="done"><button class="link-btn" data-act="planNew">넣기</button></div>
         </div>
         <div class="card">
-          <div class="set-row"><span>보호자 화면 <small style="color:var(--muted);font-weight:500">재능 숙제 사진 · 주간 플래너</small></span><button class="link-btn pa-hold" data-parent-hold aria-label="보호자 화면, 길게 누르기">길게 누르기 ›</button></div>
+          <div class="set-row"><span>보호자 화면<small style="display:block;color:var(--muted);font-weight:500">재능 숙제 사진 · 주간 플래너</small></span><button class="link-btn pa-hold" data-parent-hold aria-label="보호자 화면, 길게 눌러 열기" style="white-space:nowrap;flex:none">길게 눌러 열기 ›</button></div>
         </div>
         <div class="card" data-taky-card>
           <div class="set-row"><span>가족 탐험대</span><button class="link-btn" data-act="takyFamily">${globalThis.TAKY_FAMILY_RUNTIME ? '합류 완료 ›' : UI.takyExpired ? '다시 합류 ›' : '합류하기 ›'}</button></div>
