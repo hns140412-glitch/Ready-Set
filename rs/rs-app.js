@@ -517,8 +517,13 @@
     })();
     return take.wavP;
   }
+  // Academy file name: "<English name>'s grammar|bricks recording YYYY MM DD". The child picks grammar or bricks on the
+  // submit screen (remembered); the English name is set once in 더보기. An old custom prefix ("Judy's English") keeps its name.
+  const REC_KINDS = { grammar: 'Grammar', bricks: 'Bricks' };
+  function recName(P) { const n = String(P.recName || '').trim() || (String(P.recPrefix || '').match(/^(.+?)'s\b/) || [])[1] || P.nickname || ''; return n.trim().slice(0, 24); }
   function recFileName(take, type = (take && take.wav ? 'audio/wav' : take.type)) {
-    const d = new Date(); const p = (S.profile.recPrefix || `${S.profile.nickname}'s English`).trim();
+    const d = new Date(); const P = S.profile, kind = REC_KINDS[P.recKind] ? P.recKind : 'grammar';
+    const p = `${recName(P)}'s ${kind}`;
     const ext = /wav/.test(type) ? 'wav' : /mp4|m4a|aac/.test(type) ? 'm4a' : /webm/.test(type) ? 'webm' : /ogg/.test(type) ? 'ogg' : 'audio';
     return `${p} recording ${d.getFullYear()} ${pad(d.getMonth() + 1)} ${pad(d.getDate())}.${ext}`;
   }
@@ -910,6 +915,7 @@
     } else if (R.phase === 'final') {
       const t = R.takes[R.sel];
       body = `<h2>영어 탐험, 제출 준비 완료!</h2>
+        <div class="seg rec-kind" role="radiogroup" aria-label="녹음 종류">${Object.entries(REC_KINDS).map(([k, l]) => `<button class="${(S.profile.recKind || 'grammar') === k ? 'on' : ''}" role="radio" aria-checked="${(S.profile.recKind || 'grammar') === k}" data-act="recKind" data-k="${k}">${l}</button>`).join('')}</div>
         <div class="file-name">${esc(recFileName(t))}</div>
         <div class="guide-say"><img class="gs-fig" src="${g.img}" alt="${esc(g.name)}"><div class="bubble"><small>${esc(g.name)}</small>목소리까지 잘 챙겨 넣었어. 이제 보내기만 하면 끝!</div></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%"><button class="btn-w" data-act="play" data-i="${R.sel}">들어보기</button><button class="btn-y" data-act="shareRec">파일 공유</button></div>`;
@@ -994,7 +1000,7 @@
           <div class="set-row"><span>탐험 테마</span><div class="seg" style="width:160px"><button class="${p.theme === '항해' ? 'on' : ''}" data-act="theme" data-t="항해">항해</button><button class="${p.theme === '낙하' ? 'on' : ''}" data-act="theme" data-t="낙하">낙하</button></div></div>
           <div class="set-row"><span>계절 꾸미기 <small style="color:var(--muted);font-weight:500">${esc((RV ? RV.SEASONS[seasonKey()] : { name: '기본' }).name)}</small></span><div class="seg" style="width:160px"><button class="${(p.season || 'auto') === 'auto' ? 'on' : ''}" data-act="season" data-t="auto">계절 따라</button><button class="${p.season === 'base' ? 'on' : ''}" data-act="season" data-t="base">기본</button></div></div>
           <div class="set-row"><span>동행 탐험대원 목소리</span><button class="switch ${p.voice !== false ? 'on' : ''}" data-act="voice" role="switch" aria-checked="${p.voice !== false}" aria-label="동행 탐험대원 목소리"></button></div>
-          <div class="set-row"><span>녹음 파일 이름</span><input class="field" style="max-width:190px;padding:8px 12px" data-prof="recPrefix" value="${esc(p.recPrefix || `${p.nickname}'s English`)}" maxlength="30"></div>
+          <div class="set-row"><span>녹음 파일 영어 이름<small style="display:block;color:var(--muted);font-weight:500">예: Judy's grammar recording</small></span><input class="field" style="max-width:150px;padding:8px 12px" data-prof="recName" value="${esc(recName(p))}" placeholder="Judy" maxlength="24" autocapitalize="words"></div>
         </div>
         <button class="link-btn" data-act="resetAsk" style="color:#a0522d;align-self:center">모든 기록 지우기</button>
       </div>
@@ -1441,6 +1447,7 @@
     recStart: () => recStart(),
     recStop: () => recStop(),
     recPhase: e => { UI.rec.phase = e.dataset.p; render(); },
+    recKind: e => { if (!REC_KINDS[e.dataset.k]) return; S.profile.recKind = e.dataset.k; if (S.session && S.session.recDone) { const t = UI.rec.takes[UI.rec.sel]; if (t) S.session.recFile = recFileName(t); } save(); render(); },
     recRetry: () => { duoStop(); UI.rec.phase = 'ready'; render(); },
     duoSkip: () => { const D = UI.rec.duo; duoStop(); if (D) { D.out = false; D.back = true; D.i = D.steps.length - 1; } render(); },
     play: e => { const t = UI.rec.takes[+e.dataset.i]; if (!t) return; if (AUD.take) AUD.take.pause(); AUD.take = new Audio(t.url); AUD.take.play().catch(() => toast('재생할 수 없어요')); },

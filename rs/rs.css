@@ -1182,3 +1182,4 @@ html.parent-open,html.parent-open body{overflow:hidden}
 .pa-th.up{outline:2px solid #2f9e6b;outline-offset:-2px}
 .pa-auto{margin:0;font-size:13px;font-weight:700;color:#b25b00}
 .pa-status{margin:4px 2px 10px;padding:10px 12px;border-radius:12px;background:#fff6d8;font-weight:700;font-size:14px}
+.rec-kind{width:100%;max-width:360px;margin:4px auto 0}
