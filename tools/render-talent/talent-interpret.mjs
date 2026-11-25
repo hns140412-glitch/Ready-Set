@@ -114,10 +114,15 @@ export function runCli(c, dir, files) {
   fs.writeFileSync(path.join(dir, 'TASK_CONTRACT.md'), '# 재능 숙제 사진 해석 (READY_TALENT_WEEK_V1)\n\n' + promptFor(files) + '\n');
   const prompt = 'Read TASK_CONTRACT.md in this folder and do exactly what it says. Answer with the JSON only.';
   const turns = String(Math.max(12, files.length * 2 + 6));
-  const opt = { cwd: dir, encoding: 'utf8', timeout: 8 * 60 * 1000, maxBuffer: 8 * 1024 * 1024, shell: process.platform === 'win32', input: '' };
-  const r = c.cli === 'codex'
-    ? spawnSync('codex', ['exec', '--skip-git-repo-check', ...files.flatMap(f => ['-i', path.basename(f)]), prompt], opt)
-    : spawnSync(c.claude_bin || 'claude', ['-p', prompt, '--max-turns', turns, '--output-format', 'text', '--allowedTools', 'Read'], opt);
+  // A full .exe path runs directly (no shell, args stay whole). A bare name on Windows may be a .cmd shim that needs the
+  // shell; then every argument is quoted, or cmd would split the prompt into words ("-p Read").
+  const [bin, argv] = c.cli === 'codex'
+    ? [c.codex_bin || 'codex', ['exec', '--skip-git-repo-check', ...files.flatMap(f => ['-i', path.basename(f)]), prompt]]
+    : [c.claude_bin || 'claude', ['-p', prompt, '--max-turns', turns, '--output-format', 'text', '--allowedTools', 'Read']];
+  const shell = process.platform === 'win32' && !/\.exe$/i.test(bin);
+  const q = a => shell ? '"' + String(a).replace(/"/g, '\\"') + '"' : a;
+  const opt = { cwd: dir, encoding: 'utf8', timeout: 8 * 60 * 1000, maxBuffer: 8 * 1024 * 1024, shell, input: '' };
+  const r = spawnSync(shell ? q(bin) : bin, argv.map(q), opt);
   try { fs.appendFileSync(path.join(dir, 'CLAUDE_RESULT.log'), new Date().toISOString() + ' exit ' + r.status + '\n' + String(r.stdout || '') + '\n' + String(r.stderr || '') + '\n'); } catch { /* noop */ }
   if (r.error || r.status !== 0) throw Error('CLI_FAILED ' + (r.error ? r.error.message : 'exit ' + r.status + ' ' + String(r.stderr || '').slice(0, 300)));
   return r.stdout;
